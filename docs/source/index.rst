@@ -78,6 +78,9 @@ GCPy: Python-powered GEOS-Chem analysis/visualization
     :alt: GEOS-Chem / Python
     :align: center
 
+:Release: |version|
+:Date: |today|
+
 GCPy is a basic toolkit for helping GEOS-Chem users tackle their research analyses
 using the free, powerful tools available in the modern scientific computing ecosystem. Additionally, the documentation for GCPy features many examples on how
 to do common analysis and visualization tasks using this software stack. We hope
@@ -95,6 +98,7 @@ Table of Contents
    getting_started
    tutorials/tutorials
    examples/index
+   reference/index
 
 .. Indices and tables
 .. ==================
