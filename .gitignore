@@ -2,8 +2,7 @@
 # Created by https://www.gitignore.io/api/pydev,emacs,python
 
 .idea
-xbpch/version.py
-WORKING_NOTES.md
+gcpy/version.py
 
 ### Emacs ###
 # -*- mode: gitignore; -*-

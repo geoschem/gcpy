@@ -50,7 +50,8 @@ def airdens(pressure, temperature=None):
 
     if temperature is None:
         # TODO: Implement US Std Atm lookup for temperatures based on pressure
-        temperature = ussa_temp(ussa_alt(pressure))
+        alt = ussa_alt(pressure)
+        temperature = ussa_temp(alt)
         #temperature = 273.15
     temperature = np.asarray(temperature)
 
