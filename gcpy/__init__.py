@@ -5,7 +5,7 @@ from __future__ import print_function
 from .core import open_dataset
 
 try:
-    from .version import version as __Version__
+    from . version import __version__
 except ImportError:
     raise ImportError('gcpy was not properly installed; some functionality '
                       'may be not work. If installing from source code, '
