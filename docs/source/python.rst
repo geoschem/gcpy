@@ -39,7 +39,7 @@ arbitrary size, dimensions, and data types.
 .. note::
 
     The version of Python you will most likely use has been implemented in C, and
-    designed in such a way that it is very easy to work with other compiled
+    is designed in such a way that it is very easy to work with other compiled
     codebases, especially those written in C/C++ or Fortran. In fact, libraries
     like NumPy_ heavily rely on optimized, compiled codes in these languages,
     which greatly improves their performance, reliability, and speed.
@@ -75,7 +75,7 @@ shapefiles, and more. Users coming from R who love ggplot2_ should be aware of
 several upcoming grammar of graphics implementations based on matplotlib,
 including `plotnine <https://plotnine.readthedocs.io/en/stable/>`_,
 `ggplot <http://ggplot.yhathq.com/>`_, and `altair
-<https://altair-viz.github.io/>`_
+<https://altair-viz.github.io/>`_.
 
 Domain-Specific Toolkits
 ========================
@@ -87,7 +87,7 @@ research tasks in Python:
 
 .. todo:: fix link bolding below
 
-**`scikit-learn <http://scikit-learn.org/stable/documentation.html>`_**
+`scikit-learn <http://scikit-learn.org/stable/documentation.html>`_
     A toolkit implement a wide variety of algorithms for un/supervised machine
     learning tasks, including regressions, clustering, manifold learning,
     principal components, density estimation, and much more. It also provides
@@ -95,7 +95,7 @@ research tasks in Python:
     as data processing/normalization, feature engineering, cross-validation,
     fitting, and prediction.
 
-**`statsmodels <http://www.statsmodels.org/>`_**
+`statsmodels <http://www.statsmodels.org/>`_
     A module for fitting and estimating many different types of statistical models
     as well as performing hypothesis testing and exploratory data analysis. It
     features tools for fitting generalized linear models, survival analyses,
@@ -103,25 +103,25 @@ research tasks in Python:
     regression specification similar to R which natively works with pandas_
     data structures.
 
-**`scikit-image <http://scikit-image.org/>`_**
+`scikit-image <http://scikit-image.org/>`_
     An image processing library featuring many common operations including
     convolutional mapping, filtering, edge detection, and image segmentation.
 
-**`pyresample <https://pyresample.readthedocs.io/en/latest/>`_**
+`pyresample <https://pyresample.readthedocs.io/en/latest/>`_
     A Python package for reprojecting earth observing satellite data, capable
     of handling both swath data from polar-orbitting satellites and gridded data
     from geostationary satellites.
 
-**`shapely <http://toblerity.org/shapely/manual.html>`_**
+`shapely <http://toblerity.org/shapely/manual.html>`_
     A spatial analysis library which extends Python to work as a fully-featured
     GIS environmental comparable to commercial software such as ArcGIS.
 
-**`SymPy <http://www.sympy.org/en/index.html>`_**
+`SymPy <http://www.sympy.org/en/index.html>`_
     A full-featured computer algebra system (CAS) similar to Mathematica or Maple.
     SymPy powers an additional ecosystem of domain-specific tools used in
     pure mathematics research and which have many applications in physics.
 
-**`pymc3 <https://pymc-devs.github.io/pymc3/>`_**
+`pymc3 <https://pymc-devs.github.io/pymc3/>`_
     A toolkit for Bayesian statistical modeling and probabilistic programming,
     including a suite of Markov chain Monte Carlo fitting algorithms.
 
@@ -135,12 +135,13 @@ numerical analyses and calculations. However, in applications where vectorizatio
 is non-trivial or inappropriate, Python's performance can be dramatically improved
 by using one of several different approaches.
 
-First, an optimising compiler called cython_ is available to compile your code
+First, an optimising compiler called Cython_ is available to compile your code
 into high-performance, efficient C kernels. Cython will work on your normal Python
 code with few modifications, and can often times increase its performance by 1-2x.
 However, by incorporating a special set of static typing directives into your code
 (similar to what you'd do in Fortran by declaring variable types), Cython can go
-a step further and yield much more significant performance improvements. It also
+a step further and yield much more significant performance improvements,
+often achieving speed-ups to within 50-90% of comparable C-code. It also
 trivializes the task of wrapping legacy code from C/C++ or Fortran applications.
 
 Alternatively, one can use a `just-in-time (JIT)
@@ -158,7 +159,8 @@ Niche optimization tools also exist in the Python world. For instance, the
 together Python with high-performance GPGPU routines written in C/CUDA.
 Meta-programming libraries for working with tensor mathematics are also widely
 used, including `theano <http://deeplearning.net/software/theano/>`_ and
-`TensorFlow <https://www.tensorflow.org/>`_.
+`TensorFlow <https://www.tensorflow.org/>`_, which themselves can bootstrap
+GPGPU kernels for an added performance boost.
 
 
 Parallel Computing
@@ -169,28 +171,35 @@ asynchronous and coroutine programming
 <https://docs.python.org/3/library/asyncio.html?highlight=asyncio#module-asyncio>`_
 in the standard library. The programming model used in this paradigm (using
 "futures" or other "delayed" objects representing a contract for future results
-from calculations) is extended by several libraries in the Python ecosystem.
+from calculations) is extended by several libraries in the Python ecosystem,
+although it may not be familiar to most scientific researchers.
 
-In particular, the `joblib <http://pythonhosted.org/joblib/>`_ library implements
-a very lightweight, easy-to-use set of tools in this programming model. Joblib
-strives to let you make simple modifications to your single-threaded code to
-achieve parallelism when and only where it becomes necessary. An alternative
-library is `dask <http://dask.pydata.org/en/latest/>`_, which provides a similar
-API but works natively with array-like and DataFrame-like structures from NumPy
-and pandas. Dask abstracts the parallel programming model one step further,
-tracking a graph representing your computations; it optimizes this graph before
-any calculations are actually performed, which allows it to optimize the amount
-of data held in memory at any given time, or scale to arbitrary resources as
-they become available.
+As an example, the `joblib <http://pythonhosted.org/joblib/>`_ library
+implements a very lightweight, easy-to-use set of tools in this programming
+model. Joblib strives to let you make simple modifications to your
+single-threaded code to achieve parallelism when and only where it becomes
+necessary, usually by re-factoring an inner loop of a program to a
+stand-alone kernel and parallelizing its application.
+
+An alternative approach is `dask <http://dask.pydata.org/en/latest/>`_,
+which provides a similar API but works natively with array-like and
+DataFrame-like structures from NumPy and pandas. Dask abstracts the parallel
+programming model one step further, tracking a graph representing your
+computations; it optimizes this graph before any calculations are actually
+performed, which allows it to optimize the amount of data held in memory at
+any given time, or scale to arbitrary resources as they become available. An
+advantage of dask is its ability to work with virtually any abritrary data
+processing task or pipeline.
 
 Traditional `MPI <https://mpi4py.readthedocs.io/en/stable/>`_ tools also exist
 in the Python ecosystem, although these tend to be very low-level and
-"un-Pythonic."
+"un-Pythonic." If you're writing C or Fortran in Python, then you're probably
+doing something wrong.
 
 
 .. _Anaconda: https://www.continuum.io/anaconda-overview
 .. _cartopy: http://scitools.org.uk/cartopy/docs/latest/
-.. _cython: http://cython.org/
+.. _Cython: http://cython.org/
 .. _Enthought Python Distribution: https://www.enthought.com/products/epd/
 .. _ggplot2: http://ggplot2.org/
 .. _Jake Vanderplas: https://staff.washington.edu/jakevdp/

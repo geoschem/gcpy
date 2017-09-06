@@ -26,6 +26,7 @@ dependencies:
     - six           # Python 2/3 compatibility
     - tqdm          # Nice progressbar for longer computations
     - xarray        # N-d labeled array library
+      - xbpch       # Interface for bpch output files
     # Sphinx
     - sphinx>=1.4
     - numpydoc
@@ -35,7 +36,6 @@ dependencies:
     - sphinx_rtd_theme
     - pip:
         # These are additional libraries to search for on PyPI
-        - xbpch    # Interface for bpch output files
         - nbsphinx
         - sphinx-gallery
         - sphinx-bootstrap-theme

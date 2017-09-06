@@ -11,8 +11,8 @@ The only hard-and-fast rule about scientific computing in Python is this:
     **Do not use your system Python installation!**
 
 The version of Python that ships with operating systems such as Red Hat Linux and
-macOS is usually outdated and configured to support system functions. Although it
-is entirely possible to install and use the packages mentioned in
+macOS is usually outdated, but configured to support system functions. Although
+it is entirely possible to install and use the packages mentioned in
 :ref:`python-overview` using the system Python, it's much more practical on both
 your local machine and any cluster you work with to curate a specialized Python
 installation.
@@ -28,6 +28,8 @@ installation.
     cumbersome to mantain large codebases that are compatible with both. With the
     exception of a handful of packages you may encounter which do not support
     Python 3, there is no compelling reason to use Python 2 today.
+
+.. _packages:
 
 Packages
 ~~~~~~~~
@@ -87,19 +89,20 @@ like::
         $ pip install -e .
 
     This will automatically call **setup.py** for you. The "**-e**" flag will
-    install the package in "editable" mode, which means that any chane you make
+    install the package in "editable" mode, which means that any change you make
     to the source code will automatically be recognized when you load the package
     in Python; this is *especially* useful when you're developing code.
 
-Finally, you don't *have* to go through this process of install packages. If you
-have code sitting on your disk somewhere, you can always modify the environmental
-variable ``$PYTHONPATH`` to include a path to that code, and Python will find it
-for you. However, you *should not do this* if it can be avoided, because it is
+Finally, you don't *have* to go through this process of installing packages.
+If you have code sitting on your disk somewhere, you can always modify the
+environmental variable ``$PYTHONPATH`` to include a path to that code, and
+Python will find it for you.
+However, you *should not do this* if it can be avoided, because it is
 extremely difficult (if not impossible) to be sure that any compiled code will
 link against the correct libraries it needs, and it is very hard to debug errors
-associated with mis-matched libraries/headers if you go this route. Besides,
-using packages greatly improves transparency and reproducibility, so you're
-already developing all your code as a package, right?
+associated with mis-matched libraries/headers if you go this route.
+Besides, using packages greatly improves transparency and reproducibility, so
+you're already developing all your code as packages, right?
 
 jupyter / IPython
 ~~~~~~~~~~~~~~~~~
@@ -126,11 +129,12 @@ slideshows, or other multi-media.
 
 .. note::
 
-    As an example, the working supporting the LIGO discovery of gravitational
+    As an example, the work supporting the LIGO discovery of gravitational
     waves is `fully documented using Jupyter Notebooks
     <https://losc.ligo.org/s/events/GW150914/GW150914_tutorial.html>`_. This is a
-    major milestone in terms of reproducibility and open science. Hell, let's be
-    frank for a moment: these ladies and gentleman will *undoubtedly* win a Nobel
+    major milestone in terms of reproducibility and open science.
+
+    Let's be frank for a moment: these researchers will *undoubtedly* win a Nobel
     Prize in Physics for this work sometime in the next decade. If these tools are
     good enough for work leading to a *Nobel Prize*, then they're good enough for
     you to consider trying out, right?
@@ -183,15 +187,16 @@ is to follow these steps:
 1. **Obtain a minimal Python installer**
     I like to use the `Miniconda <https://conda.io/miniconda.html>`_ installer;
     this provides a Python install for your operating system, plus the **conda**
-    package manager. This way, you can only install the packages you *want*.
+    package manager. This way, you can install just the packages you want and
+    need.
 
 2. **Run the installer**
     You'll probably need to do this from the command line, e.g.::
 
         $ sh Miniconda3-latest-MacOSX-x86_64.sh
 
-    Follow the instructions; you can choose where to place the installation (
-    preferably somewhere you have write access without super-user/root access,
+    Follow the instructions; you can choose where to place the installation
+    (preferably somewhere you have write access without super-user/root access,
     like your home directory). At the end of this process, add this path to your
     \*rc configuration::
 
@@ -201,11 +206,12 @@ is to follow these steps:
     and you will never have to touch it.
 
 3. **Install any packages you want**
-    As shown :ref:`before <packages>`, install whatever packages you want.
+    As shown in :ref:`packages`, install whatever packages you want
+    using **conda**.
 
 That's all there is to it! In general, this is a better way to go because you can
 quickly curate your own scientific Python installation on any external computer
-resources you may wish to use (e.g. university cluster)
+resources you may wish to use (e.g. university cluster).
 
 Environments
 ============
@@ -217,7 +223,7 @@ and configuration. One environment solution that works well with PyPI is
 on using virtualenv on the internet as it's widely used in web application
 deployments.
 
-For scientific Python, you can instead rely on **conda**\'s built in
+For scientific Python, you can alternatively use **conda**\'s built in
 environment management system. To create a conda environment, you simply
 execute the following command::
 
@@ -229,7 +235,7 @@ Python version 3.6; you can specify exact versions or minima, and conda will
 take care of figuring out all the compatibilties between versions for you. To use
 this environment, simply "activate" it by executing::
 
-    $ source activate my_environment
+    (my_environment) $ source activate my_environment
 
 Regardless of your shell, you should now see the string ``(my_environment)``
 prepended to your prompt. Now, if you execute any Python-related tool from the
@@ -293,9 +299,11 @@ on your local hard drive:
         - six           # Python 2/3 compatibility
         - tqdm          # Nice progressbar for longer computations
         - xarray        # N-d labeled array library
+        - xbpch         # Interface for bpch output files
         - pip:
-            # These are additional libraries to search for on PyPI
-            - xbpch    # Interface for bpch output files
+            # These are additional libraries to search for on PyPI. One example
+            # is provided for reference
+            - simplejson
 
 .. note::
 
