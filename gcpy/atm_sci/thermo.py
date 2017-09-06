@@ -1,6 +1,4 @@
-""" Atmospheric Science Methods and Functions """
-
-
+""" Thermodynamics and equation of state calculations """
 
 import numpy as np
 
@@ -24,7 +22,7 @@ def airdens(pressure, temperature=None):
     Examples
     --------
 
-    >>> from gcpy.atm_sci import airdens
+    >>> from gcpy.atm_sci.std_atm import airdens
 
     Print air density at STP/temperature
 
@@ -101,7 +99,7 @@ def e_h2o(temperature, ice_ref=False, minval=-1e-3):
     Examples
     --------
 
-    >>> from gcpy.atm_sci import e_h2o
+    >>> from gcpy.atm_sci.std_atm import e_h2o
 
     Calculate water vapor pressure for a dewpoint reading of 266 K
 
@@ -159,7 +157,7 @@ def ussa_alt(pressure):
     Examples
     --------
 
-    >>> from gcpy.atm_sci import ussa_alt
+    >>> from gcpy.atm_sci.std_atm import ussa_alt
     >>> ussa_alt([1000., 800., 600., 400., 200.])
     np.array([0.106510, 1.95628, 4.20607, 7.16799, 11.8405])
 
@@ -214,7 +212,7 @@ def ussa_temp(altitude):
     Examples
     --------
 
-    >>> from gcpy.atm_sci import ussa_temp
+    >>> from gcpy.atm_sci.std_atm import ussa_temp
     >>> ussa_temp([0, 10, 20, 30])
     np.array([288.283, 226.094, 216.860, 229.344])
 
