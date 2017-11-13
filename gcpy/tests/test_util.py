@@ -7,7 +7,28 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from gcpy.util import maybe_as_array
+from xarray.testing import assert_equal
+
+from gcpy.util import *
+
+
+def test_convert_lon():
+    lons_greater_zero = np.arange(0, 360)
+    ones = np.ones_like(lons_greater_zero)
+    lons_greater_zero = xr.DataArray(ones, dims=['lon', ],
+                                     coords={'lon': lons_greater_zero})
+
+    lons_less_zero = np.arange(-180, 180)
+    lons_less_zero = xr.DataArray(ones, dims=['lon', ],
+                                  coords={'lon': lons_less_zero})
+
+    # Test atlantic
+    assert_equal(convert_lon(lons_greater_zero, 'lon', 'atlantic'),
+                 lons_less_zero)
+
+    # Test pacific
+    assert_equal(convert_lon(lons_less_zero, 'lon', 'pacific'),
+                 lons_greater_zero)
 
 
 def test_maybe_as_array():
