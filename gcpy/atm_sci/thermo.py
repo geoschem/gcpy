@@ -2,6 +2,8 @@
 
 import numpy as np
 
+from .. constants import G, R_EARTH
+
 
 def airdens(pressure, temperature=None):
     """ Compute air mass density for a given temperature and pressure.
@@ -134,8 +136,26 @@ def e_h2o(temperature, ice_ref=False, minval=-1e-3):
     return e_h2o
 
 
-def hystat():
-    # TODO
+def hystat(alt, temp, psurf=1013.25):
+    """ Compute atmospheric pressures in hydrostatic equilibrium. This
+    function is adapted from the Harvard photochemical point model (CHEM1D)
+
+    Parameters
+    ----------
+    alt : array of floats
+        Altitude in km
+    temp : array of floats
+        Ambient temperature at altitude, in K, corresponding to the given
+        altitudes
+    psurf : float (default=1013.25)
+        Surface presssure, mb
+
+    Returns
+    -------
+    Pressures corresponding to hydrostatic equilibrium, in mb
+
+    """
+
     pass
 
 
@@ -149,9 +169,48 @@ def numden():
     pass
 
 
-def rh():
-    # TODO
-    pass
+def rh(dewpoint, temperature, ice=False):
+    """ Calculate the relative humidity from temperature and dew/frost point.
+
+    Parameters
+    ----------
+    dewpoint : float
+        Dewpoint (or frostpoint) temperature in K
+    temperature : float
+        Dry (or static) air temperature in K
+    ice : logical
+        If true, calculate relative humidity with respect to liquid water
+        (dewpoint): else, with respect to ice (frostpoint)
+
+    Returns
+    -------
+    Relative humidity in %
+
+    Notes
+    -----
+    N/A
+
+    Example
+    -------
+
+    >>> from gcpy.atm_sci.thermo import rh
+
+    Print the RH for dewpoint=366K and temp=278K
+
+    >>> rh(266., 278.)
+    41.4736
+
+    """
+
+    if (dewpoint > temperature):
+        raise ValueError("ERROR in rh: dew-/frostpoint greater than static "
+                         "air temperature")
+
+    # Calculate water vapor pressure and saturation vapor pressure
+    e = e_h2o(dewpoint, ice)
+    esat = e_h2o(temperature, ice)
+
+    return (e/esat) * 100.0
 
 
 def ussa_alt(pressure):
