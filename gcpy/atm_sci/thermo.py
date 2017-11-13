@@ -2,6 +2,7 @@
 
 import numpy as np
 
+
 def airdens(pressure, temperature=None):
     """ Compute air mass density for a given temperature and pressure.
 
@@ -133,6 +134,26 @@ def e_h2o(temperature, ice_ref=False, minval=-1e-3):
     return e_h2o
 
 
+def hystat():
+    # TODO
+    pass
+
+
+def model_to_airnumdens():
+    # TODO
+    pass
+
+
+def numden():
+    # TODO
+    pass
+
+
+def rh():
+    # TODO
+    pass
+
+
 def ussa_alt(pressure):
     """ Compute altitude in km for a given pressure corresponding to the US
     Standard Atmosphere
@@ -182,6 +203,11 @@ def ussa_alt(pressure):
     alts = P(logp)
 
     return alts
+
+
+def ussa_press():
+    # TODO
+    pass
 
 
 def ussa_temp(altitude):
@@ -237,3 +263,6 @@ def ussa_temp(altitude):
     pressure = P(altitude)
 
     return pressure
+
+
+
