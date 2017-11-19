@@ -149,15 +149,39 @@ def calc_p_edge(vert_grid, sfc_pressure):
     p_edge = _Ak + _Bk*_sfc_pressure
 
     return p_edge
+def calc_z_edge():
+    """ Calculates altitude edges from pressure and temperature (optional).
 
-def pmid():
-    # TODO
-    pass
+    Parameters
+    ----------
+    p_edge:  float
+        Array of pressures at grid cell edges, hPa
 
-def zmid():
-    # TODO
-    pass
+    temperature_cell: float
+        Array of temperatures at grid cell centers, K. If not available then
+        values are taken from the International Standard Atmosphere.
 
-def zstart():
-    # TODO
-    pass
+    Returns
+    -------
+    #TODO
+
+    Notes
+    -----
+    #TODO
+
+    Examples
+    --------
+    #TODO
+
+    See Also
+    --------
+    [NONE]
+
+    """
+
+    # z_edge will have the same dimensions as p_edge
+    z_edge = np.copy(p_edge)
+
+    #TODO
+
+    return z_edge
