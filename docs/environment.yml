@@ -17,6 +17,7 @@ dependencies:
     - numpy         # N-d array and numerics
     - pandas        # Labeled array library
     - pyresample    # Geographic resampling tools
+    - pytest        # Unit/mock testing tools
     - scipy         # Common math/stats/science functions
     - scikit-learn  # Macine learning library
     - statsmodels   # Regression/modeling toolkit
