@@ -53,6 +53,38 @@ def calc_rectilinear_lon_edge(lon_stride, center_at_180):
 def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
     """ Compute latitude edge vector for a rectilinear grid.
 
+    Parameters
+    ----------
+    lat_stride : float
+        Stride length in degrees. For example, for a standard GEOS-Chem Classic
+        4x5 grid, lat_stride would be 4.
+
+    half_polar_grid: boolean
+        Whether or not the grid should be "half-polar" (i.e. bands at poles are
+        half the size). In either case the grid will start and end at -/+ 90,
+        but when half_polar_grid is True, the first and last bands will have a
+        width of 1/2 the normal lat_stride.
+
+    Returns
+    -------
+    Latitudes of cell edges in degrees North.
+
+    Notes
+    -----
+    All values are forced to be between [-90,90]. For a grid with N cells in
+    each band, N+1 edges will be returned, with the first and last value being
+    duplicates.
+
+    Examples
+    --------
+    >>> from gcpy.grid.horiz import calc_rectilinear_lat_edge
+    >>> calc_rectilinear_lat_edge(4.0,true)
+    np.array([-90,-88,-84,-80,...,84,88,90])
+
+    See Also
+    --------
+    [NONE]
+
     """
 
     if half_polar_grid:
@@ -71,6 +103,26 @@ def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
 
 def calc_rectilinear_grid_area(lon_edge,lat_edge):
     """ Compute grid cell areas (in m2) for a rectilinear grid.
+
+    Parameters
+    ----------
+    #TODO
+
+    Returns
+    -------
+    #TODO
+
+    Notes
+    -----
+    #TODO
+
+    Examples
+    --------
+    #TODO
+
+    See Also
+    --------
+    [NONE]
 
     """
     from .. constants import R_EARTH
@@ -121,7 +173,6 @@ def calc_delta_lon(lon_edge):
 
     Examples
     --------
-
     #TODO
     """
 
