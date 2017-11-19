@@ -1,0 +1,8 @@
+GCPy
+cartopy
+dask
+matplotlib
+numpy
+scipy
+xarray
+xbpch
