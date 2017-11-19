@@ -18,14 +18,6 @@ jobs:
       # - image: circleci/postgres:9.4
     steps:
       - checkout
-
-      # Build a reference Dockerfile w/ miniconda3
-    #   - run:
-    #       name: docker miniconda3
-    #       command: |
-    #         docker pull continuumio/miniconda3
-    #         docker run -i -t continuumio/miniconda3 /bin/bash
-
       # Download and cache dependencies
     #   - restore_cache:
     #       keys:
@@ -33,11 +25,10 @@ jobs:
     #       # fallback to using the latest cache if no exact match is found
     #       - v1-dependencies-
 
-
       - run:
-          name: install conda environment
+          name: Install conda environment / dependencies
           command: |
-            conda create -n gcpy_env --file requirements.txt
+            conda create -n gcpy_env -c conda-forge --file requirements.txt
 
     #   - save_cache:
     #       paths:
@@ -45,13 +36,13 @@ jobs:
     #       key: v1-dependencies-{{ checksum "requirements.txt" }}
 
       - run:
-          name: install gcpy
+          name: Install GCPy
           command: |
             pip install -e .
 
       # run tests!
       - run:
-          name: run tests
+          name: Run GCPy unit/regression tests
           command: |
             py.test gcpy/tests
 
