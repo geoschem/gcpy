@@ -136,7 +136,7 @@ def calc_rectilinear_grid_area(lon_edge,lat_edge):
     n_lon = (lon_edge.size) - 1
     n_lat = (lat_edge.size) - 1
 
-    grid_area = np.zeros((n_lon,n_lat))
+    grid_area = np.zeros((n_lat,n_lon))
 
     sfc_area_const = 2.0*np.pi*_radius_earth_m*_radius_earth_m
 
@@ -151,7 +151,7 @@ def calc_rectilinear_grid_area(lon_edge,lat_edge):
 
     for i_lat in range(0,n_lat):
         sin_diff = sin_lat_edge[i_lat+1] - sin_lat_edge[i_lat]
-        grid_area[:,i_lat] = sin_diff * sfc_area_const * lon_delta
+        grid_area[i_lat,:] = sin_diff * sfc_area_const * lon_delta
 
     return grid_area
 
