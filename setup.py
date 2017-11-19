@@ -31,8 +31,8 @@ CLASSIFIERS = [
 ]
 
 MAJOR = 0
-MINOR = 0
-MICRO = 2
+MINOR = 1
+MICRO = 1
 VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
 DEV = True
 
