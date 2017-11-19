@@ -109,18 +109,21 @@ def get_vert_grid(grid_name):
                                 coords={'ilev': (['ilev'],range(0,n_lev))})
     return vert_grid
 
-def calc_p_edge(vert_grid, sfc_pressure):
-    """ Calculates pressure edges from surface pressures.
+def calc_grid_pressure(Ak, Bk, sfc_pressure):
+    """ Calculates pressure grid from surface pressures and Ak/Bk values.
 
     Parameters
     ----------
-    vert_grid:  special
-        Grid data returned by get_vert_grid
+    Ak:  float
+        Vector of pressure offsets, hPa
 
+    Bk: float
+        Vector of pressure factors, unitless
 
     Returns
     -------
-    #TODO
+    pressure_grid: float
+        Array of pressure values based on Ak and Bk.
 
     Notes
     -----
@@ -137,18 +140,19 @@ def calc_p_edge(vert_grid, sfc_pressure):
     """
     sfc_pressure = asarray(sfc_pressure)
     if ~np.isscalar(sfc_pressure):
-        _Ak = np.copy(vert_grid.Ak)
-        _Bk = np.copy(vert_grid.Bk)
+        _Ak = np.copy(Ak)
+        _Bk = np.copy(Bk)
         while np.ndim(_Ak) <= np.ndim(sfc_pressure):
             _Ak = np.expand_dims(_Ak,axis=_Ak.ndim)
             _Bk = np.expand_dims(_Bk,axis=_Ak.ndim)
         _sfc_pressure = np.expand_dims(sfc_pressure,axis=0)
     else:
-        _Ak = vert_grid.Ak
-        _Bk = vert_grid.Bk
-    p_edge = _Ak + _Bk*_sfc_pressure
+        _Ak = Ak
+        _Bk = Bk
+    grid_pressure = _Ak + _Bk*_sfc_pressure
 
-    return p_edge
+    return grid_pressure
+
 def calc_z_edge():
     """ Calculates altitude edges from pressure and temperature (optional).
 
