@@ -17,7 +17,7 @@ This package is comprised of two major components:
 1. A library of functions, implementing some of the core chemistry and
    thermodynamic calculations in GEOS-Chem_ for use outside of the model
 2. Documentation including long-form articles, interactive notebooks, and short
-   example snippets illustrating workflows using Python+**GCPy**
+   example snippets illustrating workflows using Python and **GCPy**
 
 For more details, please visit `our documentation on ReadTheDocs <http://gcpy.readthedocs.io/en/latest/?badge=latest>`_.
 
@@ -28,12 +28,12 @@ Requirements
 **GCPy** is built on top of Python 3 and the scientific Python / NumPy
 stack, including
 
-    - `Python >= 3.6 <https://www.python.org/>`_
-    - cartopy_
-    - `matplotlib <https://matplotlib.org/>`_
-    - `numpy <http://www.numpy.org/>`_
-    - `scipy <http://www.scipy.org/>`_
-    - xarray_
+- `Python >= 3.6 <https://www.python.org/>`_
+- cartopy_
+- `matplotlib <https://matplotlib.org/>`_
+- `numpy <http://www.numpy.org/>`_
+- `scipy <http://www.scipy.org/>`_
+- xarray_
 
 To create an environment for working with **GCPy**, we recommend using
 the `Anaconda Python distribution <https://www.continuum.io/downloads>`_
