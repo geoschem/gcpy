@@ -274,5 +274,7 @@ sphinx_gallery_conf = {
     'filename_pattern': os.path.join('.', '*'),
     'backreferences_dir': False,
     'default_thumb_file': os.path.join('source/_static', 'geos-chem_python.png'),
-    'abort_on_example_error': True
+    'abort_on_example_error': True,
+    # Temporary hack since I have hard-coded file paths in the examples gallery
+    'plot_gallery': 'False',
 }
