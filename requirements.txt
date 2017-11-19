@@ -2,6 +2,7 @@ cartopy
 dask
 matplotlib
 numpy
+pytest
 scipy
 xarray
 xbpch

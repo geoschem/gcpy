@@ -4,7 +4,8 @@
 #
 version: 2
 jobs:
-  build:
+  py3:
+    working_directory: ~/gcpy
     docker:
       # specify the version you desire here
       # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
@@ -14,38 +15,51 @@ jobs:
       # CircleCI maintains a library of pre-built images
       # documented at https://circleci.com/docs/2.0/circleci-images/
       # - image: circleci/postgres:9.4
-
-    working_directory: ~/gcpy
-
     steps:
       - checkout
 
+      # Build a reference Dockerfile w/ miniconda3
+      - run:
+          name: docker miniconda3
+          command: |
+          docker pull continuumio/miniconda3
+          docker run -i -t continuumio/miniconda3 /bin/bash
+
       # Download and cache dependencies
-      - restore_cache:
-          keys:
-          - v1-dependencies-{{ checksum "requirements.txt" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+    #   - restore_cache:
+    #       keys:
+    #       - v1-dependencies-{{ checksum "requirements.txt" }}
+    #       # fallback to using the latest cache if no exact match is found
+    #       - v1-dependencies-
+
 
       - run:
-          name: install dependencies
+          name: install conda environment
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
-            pip install -r requirements.txt
+            conda create -n gcpy_env --file requirements.txt
 
-      - save_cache:
-          paths:
-            - ./venv
-          key: v1-dependencies-{{ checksum "requirements.txt" }}
+    #   - save_cache:
+    #       paths:
+    #         - ./venv
+    #       key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: install gcpy
+          command: |
+            pip install -e .
 
       # run tests!
       - run:
           name: run tests
           command: |
-            . venv/bin/activate
-            python manage.py test
+            py.test gcpy/tests
 
-      - store_artifacts:
-          path: test-reports
-          destination: test-reports
+    #   - store_artifacts:
+    #       path: test-reports
+    #       destination: test-reports
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - py3
