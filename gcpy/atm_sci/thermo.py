@@ -1,6 +1,7 @@
 """ Thermodynamics and equation of state calculations """
 
 import numpy as np
+from numpy import asarray
 
 from .. constants import G, R_EARTH
 
@@ -47,17 +48,17 @@ def airdens(pressure, temperature=None):
 
     """
 
-    pressure = np.asarray(pressure)
+    pressure = asarray(pressure)
 
     if temperature is None:
         # TODO: Implement US Std Atm lookup for temperatures based on pressure
         alt = ussa_alt(pressure)
         temperature = ussa_temp(alt)
         #temperature = 273.15
-    temperature = np.asarray(temperature)
+    temperature = asarray(temperature)
 
     airdens = 2.69e10 * (273.15 / temperature) * (pressure / 1013.25)
-    airdens = np.asarray(airdens)
+    airdens = asarray(airdens)
 
     # Mask out densities where temperature and pressure were invalid (< 0)
     mask = (temperature < 0) | (pressure < 0)
@@ -118,7 +119,7 @@ def e_h2o(temperature, ice_ref=False, minval=-1e-3):
 
     """
 
-    temperature = np.asarray(temperature)
+    temperature = asarray(temperature)
 
     if ice_ref:
         # Use constants for frostpoint
@@ -248,7 +249,7 @@ def ussa_alt(pressure):
 
     """
 
-    pressure = np.asarray(pressure, dtype=float)
+    pressure = asarray(pressure, dtype=float)
 
     # Mask pressures where P < 0.0003 mb - correspond to about 100 km)
     pressure[pressure < 3e-4] = np.nan
@@ -308,7 +309,7 @@ def ussa_temp(altitude):
 
     """
 
-    altitude = np.asarray(altitude, dtype=float)
+    altitude = asarray(altitude, dtype=float)
 
     # Mask altitudes above 50 km
     altitude[altitude > 50.0] = np.nan

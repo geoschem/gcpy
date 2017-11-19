@@ -1,5 +1,7 @@
 """ Horizontal grid definitions and helper functions """
 
+import numpy as np
+from numpy import asarray
 #: definitions
 
 def calc_rectilinear_lon_edge(lon_stride, center_at_180):
