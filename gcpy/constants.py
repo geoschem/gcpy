@@ -4,7 +4,8 @@
 G = 9.80665
 
 #: Radius of the Earth, km
-R_EARTH = 6356.77
+# "Equal area" radius. Gives correct total surface area when modeled as a sphere
+R_EARTH = 6371.0072
 
 #: Avogadro's number, molec/mol
 AVOGADRO = 6.022e23
