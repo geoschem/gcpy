@@ -61,7 +61,7 @@ def airdens(pressure, temperature=None):
     airdens = asarray(airdens)
 
     # Mask out densities where temperature and pressure were invalid (< 0)
-    mask = (temperature < 0) | (pressure < 0)
+    mask = (temperature <= 0) | (pressure <= 0)
     airdens[mask] = np.nan
 
     return airdens
@@ -131,8 +131,8 @@ def e_h2o(temperature, ice_ref=False, minval=-1e-3):
         b = 2937.4
         c = 4.9283
 
-    temperature[temperature < minval] = np.nan
     e_h2o = np.power(10., a - (b / temperature)) * np.power(temperature, -c)
+    e_h2o[temperate < minval] = np.nan
 
     return e_h2o
 
@@ -252,7 +252,7 @@ def ussa_alt(pressure):
     pressure = asarray(pressure, dtype=float)
 
     # Mask pressures where P < 0.0003 mb - correspond to about 100 km)
-    pressure[pressure < 3e-4] = np.nan
+    min_pressure = 3e-4
 
     # Construct a 5th-degree polynomial in descending order with given
     # coefficients
@@ -261,6 +261,9 @@ def ussa_alt(pressure):
     logp = np.log10(pressure)
 
     alts = P(logp)
+
+    # Apply
+    alts[pressure < min_pressure] = np.nan
 
     return alts
 
@@ -312,7 +315,7 @@ def ussa_temp(altitude):
     altitude = asarray(altitude, dtype=float)
 
     # Mask altitudes above 50 km
-    altitude[altitude > 50.0] = np.nan
+    max_altitude = 50.0
 
     # Construct a 6th-degree polynomial in descending order with given
     # coefficients
@@ -321,8 +324,6 @@ def ussa_temp(altitude):
     P = np.poly1d(coeffs[::-1], r=False)
 
     pressure = P(altitude)
+    pressure[altitude > max_altitude] = np.nan
 
     return pressure
-
-
-
