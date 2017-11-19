@@ -143,6 +143,9 @@ def calc_p_edge(vert_grid, sfc_pressure):
             _Ak = np.expand_dims(_Ak,axis=_Ak.ndim)
             _Bk = np.expand_dims(_Bk,axis=_Ak.ndim)
         _sfc_pressure = np.expand_dims(sfc_pressure,axis=0)
+    else:
+        _Ak = vert_grid.Ak
+        _Bk = vert_grid.Bk
     p_edge = _Ak + _Bk*_sfc_pressure
 
     return p_edge
