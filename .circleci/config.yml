@@ -44,7 +44,7 @@ jobs:
       - run:
           name: Run GCPy unit/regression tests
           command: |
-            py.test gcpy/tests
+            pytest gcpy/tests
 
     #   - store_artifacts:
     #       path: test-reports
