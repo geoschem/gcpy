@@ -1,4 +1,3 @@
-GCPy
 cartopy
 dask
 matplotlib
