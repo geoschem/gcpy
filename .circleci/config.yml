@@ -22,8 +22,8 @@ jobs:
       - run:
           name: docker miniconda3
           command: |
-          docker pull continuumio/miniconda3
-          docker run -i -t continuumio/miniconda3 /bin/bash
+            docker pull continuumio/miniconda3
+            docker run -i -t continuumio/miniconda3 /bin/bash
 
       # Download and cache dependencies
     #   - restore_cache:
