@@ -135,8 +135,17 @@ def calc_p_edge(vert_grid, sfc_pressure):
     [NONE]
 
     """
-    # TODO
-    pass
+    sfc_pressure = asarray(sfc_pressure)
+    if ~np.isscalar(sfc_pressure):
+        _Ak = np.copy(vert_grid.Ak)
+        _Bk = np.copy(vert_grid.Bk)
+        while np.ndim(_Ak) <= np.ndim(sfc_pressure):
+            _Ak = np.expand_dims(_Ak,axis=_Ak.ndim)
+            _Bk = np.expand_dims(_Bk,axis=_Ak.ndim)
+        _sfc_pressure = np.expand_dims(sfc_pressure,axis=0)
+    p_edge = _Ak + _Bk*_sfc_pressure
+
+    return p_edge
 
 def pmid():
     # TODO
