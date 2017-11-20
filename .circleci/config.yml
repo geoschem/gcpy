@@ -38,12 +38,14 @@ jobs:
       - run:
           name: Install GCPy
           command: |
+            source activate gcpy_env
             pip install -e .
 
       # run tests!
       - run:
           name: Run GCPy unit/regression tests
           command: |
+            source activate gcpy_env
             pytest gcpy/tests
 
     #   - store_artifacts:
