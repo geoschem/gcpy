@@ -12,7 +12,8 @@ from .plot import WhGrYlRd, add_latlon_ticks
 
 # change default fontsize (globally)
 # http://matplotlib.org/users/customizing.html
-mpl.rcParams['font.size'] = 15
+mpl.rcParams['font.size'] = 12
+mpl.rcParams['axes.titlesize'] = 20
 
 cmap_abs = WhGrYlRd  # for absolute magnitude
 cmap_diff = 'RdBu_r'  # for difference plot
@@ -116,8 +117,8 @@ def pdf_two_layers(ds1, ds2, filename):
             for j, ds in enumerate([ds1, ds2]):
                 plot_layer(ds[varname], axes[i][j], fig)
 
-            axes[i][0].set_title(varname+'; surface', fontsize=20)
-            axes[i][1].set_title(varname+'; 500 hpa', fontsize=20)
+            axes[i][0].set_title(varname+'; surface')
+            axes[i][1].set_title(varname+'; 500 hpa')
 
         pdf.savefig(fig)
         plt.close(fig)  # don't show in notebook!
