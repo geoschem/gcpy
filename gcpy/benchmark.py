@@ -7,6 +7,7 @@ import cartopy.crs as ccrs
 
 import matplotlib as mpl
 from matplotlib.backends.backend_pdf import PdfPages
+from cartopy.mpl.geoaxes import GeoAxes  # for assertion
 
 from .plot import WhGrYlRd, add_latlon_ticks
 
@@ -28,6 +29,16 @@ def plot_layer(dr, ax, fig, title=''):
     # - only works with PlateCarree projection
     # - the left map boundary can't be smaller than -180,
     #   so the leftmost box (-182.5 for 4x5 grid) is slightly out of the map
+
+    assert isinstance(ax, GeoAxes), (
+           "Input axis must be cartopy GeoAxes! "
+           "Can be created by: \n"
+           "plt.axes(projection=ccrs.PlateCarree()) \n or \n"
+           "plt.subplots(n, m, subplot_kw={'projection': ccrs.PlateCarree()})"
+           )
+    assert ax.projection == ccrs.PlateCarree(), (
+           'must use PlateCarree projection'
+           )
 
     im = dr.plot.imshow(ax=ax, cmap=cmap_abs, transform=ccrs.PlateCarree(),
                         add_colorbar=False)
