@@ -49,6 +49,42 @@ def plot_layer(dr, ax, fig, title=''):
     add_latlon_ticks(ax)  # add ticks and gridlines
 
 
+def plot_zonal(dr, ax, fig, title=''):
+    '''plot 2D DataArray as a zonal profile
+    '''
+
+    xtick_positions = np.array([-90, -60, -30, 0, 30, 60, 90])
+    xticklabels = ['90$\degree$S',
+                   '60$\degree$S',
+                   '30$\degree$S',
+                   '0$\degree$',
+                   '30$\degree$N',
+                   '60$\degree$N',
+                   '90$\degree$N'
+                   ]
+
+    im = dr.plot.imshow(ax=ax, cmap=cmap_abs, add_colorbar=False)
+
+    ax.set_aspect(1.5)  # the ratio of x-unit/y-unit in screen-space
+
+    ax.set_xticks(xtick_positions)
+    ax.set_xticklabels(xticklabels)
+    ax.set_xlabel('')
+    ax.set_ylabel('Level')
+
+    try:
+        unit = dr.attrs['units']
+    except:
+        unit = ''
+
+    # can also pass cbar_kwargs to dr.plot() to add colorbar
+    # but it is easier to tweak colorbar afterwards
+    cb = fig.colorbar(im, ax=ax, shrink=0.6, orientation='horizontal', pad=0.1)
+    cb.set_label(unit)
+
+    ax.set_title(title)
+
+
 def pdf_two_layers(ds1, ds2, filename):
     '''plot all variables in a 2D DataSet (lat-lon layer)
     '''
