@@ -20,8 +20,25 @@ cmap_abs = WhGrYlRd  # for absolute magnitude
 cmap_diff = 'RdBu_r'  # for difference plot
 
 
-def plot_layer(dr, ax, fig, title='', unit='', diff=False):
-    '''plot 2D DataArray as a lat-lon layer
+def plot_layer(dr, ax, title='', unit='', diff=False):
+    '''Plot 2D DataArray as a lat-lon layer
+
+    Parameters
+    ----------
+    dr : xarray.DataArray
+        Dimension should be [lat, lon]
+
+    ax : Cartopy GeoAxes object with PlateCarree projection
+        Axis on which to plot this figure
+
+    title : string, optional
+        Title of the figure
+
+    unit : string, optional
+        Unit shown near the colorbar
+
+    diff : Boolean, optional
+        Switch to the color scale for difference plot
     '''
 
     # imshow() is 6x faster than pcolormesh(),
@@ -39,6 +56,8 @@ def plot_layer(dr, ax, fig, title='', unit='', diff=False):
     assert ax.projection == ccrs.PlateCarree(), (
            'must use PlateCarree projection'
            )
+
+    fig = ax.figure  # get parent figure
 
     if diff:
         vmax = np.max(np.abs(dr.values))
@@ -66,8 +85,25 @@ def plot_layer(dr, ax, fig, title='', unit='', diff=False):
     add_latlon_ticks(ax)  # add ticks and gridlines
 
 
-def plot_zonal(dr, ax, fig, title='', unit='', diff=False):
-    '''plot 2D DataArray as a zonal profile
+def plot_zonal(dr, ax, title='', unit='', diff=False):
+    '''Plot 2D DataArray as a zonal profile
+
+    Parameters
+    ----------
+    dr : xarray.DataArray
+        dimension should be [lev, lat]
+
+    ax : matplotlib axes object
+        Axis on which to plot this figure
+
+    title : string, optional
+        Title of the figure
+
+    unit : string, optional
+        Unit shown near the colorbar
+
+    diff : Boolean, optional
+        Switch to the color scale for difference plot
     '''
 
     xtick_positions = np.array([-90, -60, -30, 0, 30, 60, 90])
@@ -79,6 +115,8 @@ def plot_zonal(dr, ax, fig, title='', unit='', diff=False):
                    '60$\degree$N',
                    '90$\degree$N'
                    ]
+
+    fig = ax.figure  # get parent figure
 
     if diff:
         vmax = np.max(np.abs(dr.values))
@@ -109,7 +147,29 @@ def plot_zonal(dr, ax, fig, title='', unit='', diff=False):
 
 def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
              title1='DataSet 1', title2='DataSet 2', unit=''):
-    '''plot all variables in a 2D DataSet (lat-lon layer)
+    '''Plot all variables in two 2D DataSets, and create a pdf.
+
+    ds1 : xarray.DataSet
+        shown on the left column
+
+    ds2 : xarray.DataSet
+        shown on the right column
+
+    filename : string
+        Name of the pdf file
+
+    on_map : Boolean, optional
+        If True (default), use plot_layer() to plot
+        If False, use plot_zonal() to plot
+
+    diff : Boolean, optional
+        Switch to the color scale for difference plot
+
+    title1, title2 : string, optional
+        Title for each DataSet
+
+    unit : string, optional
+        Unit shown near the colorbar
     '''
 
     if on_map:
@@ -145,7 +205,7 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
 
         for i, varname in enumerate(sub_varname_list):
             for j, ds in enumerate([ds1, ds2]):
-                plot_func(ds[varname], axes[i][j], fig, unit=unit, diff=diff)
+                plot_func(ds[varname], axes[i][j], unit=unit, diff=diff)
 
             axes[i][0].set_title(varname+'; '+title1)
             axes[i][1].set_title(varname+'; '+title2)

@@ -7,6 +7,8 @@ import matplotlib.ticker as mticker
 def add_latlon_ticks(ax):
     '''Add latlon label ticks and gridlines to ax
 
+    ax : Cartopy GeoAxes object with PlateCarree projection
+
     Adapted from
     http://scitools.org.uk/cartopy/docs/v0.13/matplotlib/gridliner.html
     '''
