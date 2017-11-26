@@ -157,3 +157,6 @@ ENV/
 
 # OS generated files
 .DS_Store
+
+# GEOS-Chem benchmark product
+*.pdf
