@@ -20,7 +20,7 @@ cmap_abs = WhGrYlRd  # for absolute magnitude
 cmap_diff = 'RdBu_r'  # for difference plot
 
 
-def plot_layer(dr, ax, fig, title=''):
+def plot_layer(dr, ax, fig, title='', unit='', diff=False):
     '''plot 2D DataArray as a lat-lon layer
     '''
 
@@ -40,13 +40,18 @@ def plot_layer(dr, ax, fig, title=''):
            'must use PlateCarree projection'
            )
 
-    im = dr.plot.imshow(ax=ax, cmap=cmap_abs, transform=ccrs.PlateCarree(),
-                        add_colorbar=False)
+    if diff:
+        vmax = np.max(np.abs(dr.values))
+        vmin = -vmax
+        cmap = cmap_diff
+    else:
+        vmax = np.max(dr.values)
+        vmin = 0
+        cmap = cmap_abs
 
-    try:
-        unit = dr.attrs['units']
-    except:
-        unit = ''
+    im = dr.plot.imshow(ax=ax, vmin=vmin, vmax=vmax, cmap=cmap,
+                        transform=ccrs.PlateCarree(),
+                        add_colorbar=False)
 
     # can also pass cbar_kwargs to dr.plot() to add colorbar
     # but it is easier to tweak colorbar afterwards
@@ -61,7 +66,7 @@ def plot_layer(dr, ax, fig, title=''):
     add_latlon_ticks(ax)  # add ticks and gridlines
 
 
-def plot_zonal(dr, ax, fig, title=''):
+def plot_zonal(dr, ax, fig, title='', unit='', diff=False):
     '''plot 2D DataArray as a zonal profile
     '''
 
@@ -75,7 +80,17 @@ def plot_zonal(dr, ax, fig, title=''):
                    '90$\degree$N'
                    ]
 
-    im = dr.plot.imshow(ax=ax, cmap=cmap_abs, add_colorbar=False)
+    if diff:
+        vmax = np.max(np.abs(dr.values))
+        vmin = -vmax
+        cmap = cmap_diff
+    else:
+        vmax = np.max(dr.values)
+        vmin = 0
+        cmap = cmap_abs
+
+    im = dr.plot.imshow(ax=ax, vmin=vmin, vmax=vmax, cmap=cmap,
+                        add_colorbar=False)
 
     ax.set_aspect(1.5)  # the ratio of x-unit/y-unit in screen-space
 
@@ -83,11 +98,6 @@ def plot_zonal(dr, ax, fig, title=''):
     ax.set_xticklabels(xticklabels)
     ax.set_xlabel('')
     ax.set_ylabel('Level')
-
-    try:
-        unit = dr.attrs['units']
-    except:
-        unit = ''
 
     # can also pass cbar_kwargs to dr.plot() to add colorbar
     # but it is easier to tweak colorbar afterwards
@@ -97,9 +107,17 @@ def plot_zonal(dr, ax, fig, title=''):
     ax.set_title(title)
 
 
-def pdf_two_layers(ds1, ds2, filename):
+def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
+             title1='DataSet 1', title2='DataSet 2', unit=''):
     '''plot all variables in a 2D DataSet (lat-lon layer)
     '''
+
+    if on_map:
+        plot_func = plot_layer
+        subplot_kw = {'projection': ccrs.PlateCarree()}
+    else:
+        plot_func = plot_zonal
+        subplot_kw = None
 
     # plot all the variables in ds1
     # assume ds2 also has those variables
@@ -113,23 +131,24 @@ def pdf_two_layers(ds1, ds2, filename):
     n_page = (n_var-1) // n_row + 1  # how many pages
 
     print('generating a {}-page pdf'.format(n_page))
+    print('Page: ', end='')
 
     pdf = PdfPages(filename)
 
     for ipage in range(n_page):
         print(ipage, end=' ')
         fig, axes = plt.subplots(n_row, 2, figsize=[16, 16],
-                                 subplot_kw={'projection': ccrs.PlateCarree()})
+                                 subplot_kw=subplot_kw)
 
         # a list of variables names with only 3 elements
         sub_varname_list = varname_list[n_row*ipage:n_row*(ipage+1)]
 
         for i, varname in enumerate(sub_varname_list):
             for j, ds in enumerate([ds1, ds2]):
-                plot_layer(ds[varname], axes[i][j], fig)
+                plot_func(ds[varname], axes[i][j], fig, unit=unit, diff=diff)
 
-            axes[i][0].set_title(varname+'; surface')
-            axes[i][1].set_title(varname+'; 500 hpa')
+            axes[i][0].set_title(varname+'; '+title1)
+            axes[i][1].set_title(varname+'; '+title2)
 
         pdf.savefig(fig)
         plt.close(fig)  # don't show in notebook!
