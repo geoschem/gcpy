@@ -131,7 +131,9 @@ def plot_zonal(dr, ax, title='', unit='', diff=False):
     im = dr.plot.imshow(ax=ax, vmin=vmin, vmax=vmax, cmap=cmap,
                         add_colorbar=False)
 
-    ax.set_aspect(1.5)  # the ratio of x-unit/y-unit in screen-space
+    # the ratio of x-unit/y-unit in screen-space
+    # 'auto' fills current figure with data without changing the figrue size
+    ax.set_aspect('auto')
 
     ax.set_xticks(xtick_positions)
     ax.set_xticklabels(xticklabels)
