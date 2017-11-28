@@ -154,3 +154,9 @@ ENV/
 /site
 
 # End of https://www.gitignore.io/api/pydev,emacs,python
+
+# OS generated files
+.DS_Store
+
+# GEOS-Chem benchmark product
+*.pdf
