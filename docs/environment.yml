@@ -1,4 +1,3 @@
-# name: geo_scipy
 channels:
     - defaults
     - conda-forge
@@ -9,7 +8,6 @@ dependencies:
     - cython        # Transpile Python->C
     - dask          # Parallel processing library
     - future        # Python 2/3 compatibility
-    # - gcpy        # GEOS-Chem python toolkit
     - h5py          # Wrapper for HDF5
     - ipython       # IPython interpreter and tools
     - jupyter       # Jupyter federation architecture
@@ -19,6 +17,7 @@ dependencies:
     - numpy         # N-d array and numerics
     - pandas        # Labeled array library
     - pyresample    # Geographic resampling tools
+    - pytest        # Unit/mock testing tools
     - scipy         # Common math/stats/science functions
     - scikit-learn  # Macine learning library
     - statsmodels   # Regression/modeling toolkit
@@ -26,7 +25,7 @@ dependencies:
     - six           # Python 2/3 compatibility
     - tqdm          # Nice progressbar for longer computations
     - xarray        # N-d labeled array library
-      - xbpch       # Interface for bpch output files
+    - xbpch         # Interface for bpch output files
     # Sphinx
     - sphinx>=1.4
     - numpydoc

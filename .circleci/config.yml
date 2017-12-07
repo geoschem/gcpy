@@ -1,0 +1,59 @@
+# Python CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-python/ for more details
+#
+version: 2
+jobs:
+  py3:
+    working_directory: ~/gcpy
+    docker:
+      # specify the version you desire here
+      # use `-browsers` prefix for selenium tests, e.g. `3.6.1-browsers`
+      # - image: circleci/python:3.6.1
+      - image: continuumio/miniconda3
+
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/postgres:9.4
+    steps:
+      - checkout
+      # Download and cache dependencies
+    #   - restore_cache:
+    #       keys:
+    #       - v1-dependencies-{{ checksum "requirements.txt" }}
+    #       # fallback to using the latest cache if no exact match is found
+    #       - v1-dependencies-
+
+      - run:
+          name: Install conda environment / dependencies
+          command: |
+            conda create -n gcpy_env -c conda-forge --file requirements.txt
+
+    #   - save_cache:
+    #       paths:
+    #         - ./venv
+    #       key: v1-dependencies-{{ checksum "requirements.txt" }}
+
+      - run:
+          name: Install GCPy
+          command: |
+            source activate gcpy_env
+            pip install -e .
+
+      # run tests!
+      - run:
+          name: Run GCPy unit/regression tests
+          command: |
+            source activate gcpy_env
+            pytest gcpy/tests
+
+    #   - store_artifacts:
+    #       path: test-reports
+    #       destination: test-reports
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - py3

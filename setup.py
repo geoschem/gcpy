@@ -14,10 +14,9 @@ Python toolkit for working with GEOS-Chem output
 
 DISTNAME = "gcpy"
 AUTHOR = "GEOS-Chem Support Team"
-AUTHOR_EMAIL = "darothen@mit.edu"
-URL = "https://github.com/darothen/gcpy"
+AUTHOR_EMAIL = "geos-chem-support@as.harvard.edu"
+URL = "http://gcpy.readthedocs.io/en/latest/"
 LICENSE = "MIT"
-# DOWNLOAD_URL = "https://github.com/darothen/xbpch/tarballs/v0.3.0"
 
 CLASSIFIERS = [
     'Development Status :: 4 - Beta',
@@ -37,6 +36,7 @@ MICRO = 1
 VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
 DEV = True
 
+
 # Correct versioning with git info if DEV
 if DEV:
     import subprocess
@@ -55,6 +55,7 @@ if DEV:
         git_rev = git_rev.decode('ascii') # necessary for Python >= 3
 
         VERSION += ".dev-{}".format(git_rev)
+
 
 def _write_version_file():
 
@@ -82,13 +83,9 @@ setup(
     license = LICENSE,
     url = URL,
     version = VERSION,
-    # download_url = DOWNLOAD_URL,
 
     packages = find_packages(),
     package_data = {},
-    # scripts = [
-    #     'scripts/bpch_to_nc',
-    # ],
 
     classifiers = CLASSIFIERS
 )
