@@ -206,8 +206,20 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
         sub_varname_list = varname_list[n_row*ipage:n_row*(ipage+1)]
 
         for i, varname in enumerate(sub_varname_list):
+
+            # Get min/max for both datasets to have same colorbar (ewl)
+            #vmin = min([ds1[varname].data.min(), ds2[varname].data.min()])
+            #vmax = max([ds1[varname].data.max(), ds2[varname].data.max()])
+
             for j, ds in enumerate([ds1, ds2]):
-                plot_func(ds[varname], axes[i][j], unit=unit, diff=diff)
+                if on_map:
+                    plot_func(ds[varname], axes[i][j], unit=ds[varname].units, 
+                              diff=diff)
+                else:
+                    # For now, assume zonal mean if plotting zonal (ewl)
+                    plot_func(ds[varname].mean(axis=2), axes[i][j], 
+                              unit=ds[varname].units, diff=diff)
+
 
             # TODO: tweak varname, e.g. Trim "TRC_O3" to "O3"
             axes[i][0].set_title(varname+'; '+title1)
