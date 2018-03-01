@@ -30,7 +30,7 @@ cmap_abs = WhGrYlRd  # for plotting absolute magnitude
 cmap_diff = 'RdBu_r'  # for plotting difference
 
 
-def plot_layer(dr, ax, title='', unit='', diff=False):
+def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
     '''Plot 2D DataArray as a lat-lon layer
 
     Parameters
@@ -63,13 +63,19 @@ def plot_layer(dr, ax, title='', unit='', diff=False):
 
     fig = ax.figure  # get parent figure
 
+    if vmax == None and vmin == None:
+        if diff:
+            vmax = np.max(np.abs(dr.values))
+            vmin = -vmax
+            cmap = cmap_diff
+        else:
+            vmax = np.max(dr.values)
+            vmin = 0
+            cmap = cmap_abs
+
     if diff:
-        vmax = np.max(np.abs(dr.values))
-        vmin = -vmax
         cmap = cmap_diff
     else:
-        vmax = np.max(dr.values)
-        vmin = 0
         cmap = cmap_abs
 
     # imshow() is 6x faster than pcolormesh(), but with some limitations:
@@ -159,7 +165,8 @@ def plot_zonal(dr, ax, title='', unit='', diff=False):
 
 
 def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
-             title1='DataSet 1', title2='DataSet 2', unit=''):
+             title1='DataSet 1', title2='DataSet 2', unit='',
+             matchcbar=False):
     '''Plot all variables in two 2D DataSets, and create a pdf.
 
     ds1 : xarray.DataSet
@@ -218,18 +225,30 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
         for i, varname in enumerate(sub_varname_list):
 
             # Get min/max for both datasets to have same colorbar (ewl)
-            #vmin = min([ds1[varname].data.min(), ds2[varname].data.min()])
-            #vmax = max([ds1[varname].data.max(), ds2[varname].data.max()])
+            unitmatch = False
+            if matchcbar:
+                vmin = min([ds1[varname].data.min(), ds2[varname].data.min()])
+                vmax = max([ds1[varname].data.max(), ds2[varname].data.max()])
+                unitmatch = ds1[varname].units == ds2[varname].units
 
             for j, ds in enumerate([ds1, ds2]):
                 if on_map:
-                    plot_func(ds[varname], axes[i][j], unit=ds[varname].units, 
-                              diff=diff)
+                    if matchcbar and unitmatch:
+                        plot_func(ds[varname], axes[i][j], 
+                                  unit=ds[varname].units, diff=diff,
+                                  vmin=vmin, vmax=vmax)
+                    else:
+                        plot_func(ds[varname], axes[i][j], 
+                                  unit=ds[varname].units, diff=diff)
                 else:
                     # For now, assume zonal mean if plotting zonal (ewl)
-                    plot_func(ds[varname].mean(axis=2), axes[i][j], 
-                              unit=ds[varname].units, diff=diff)
-
+                    if matchcbar and unitmatch:
+                        plot_func(ds[varname].mean(axis=2), axes[i][j], 
+                                  unit=ds[varname].units, diff=diff,
+                                  vmin=vmin, vmax=vmax)
+                    else:
+                        plot_func(ds[varname].mean(axis=2), axes[i][j], 
+                                  unit=ds[varname].units, diff=diff)
 
             # TODO: tweak varname, e.g. Trim "TRC_O3" to "O3"
             axes[i][0].set_title(varname+'; '+title1)
