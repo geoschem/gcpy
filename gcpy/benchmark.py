@@ -156,6 +156,12 @@ def plot_zonal(dr, ax, title='', unit='', diff=False):
     ax.set_xlabel('')
     ax.set_ylabel('Level')
 
+    # NOTE: The surface has a hybrid eta coordinate of 1.0 and the
+    # atmosphere top has a hybrid eta coordinate of 0.0.  If we don't
+    # flip the Y-axis, then the surface will be plotted at the top
+    # of the plot. (bmy, 3/7/18)
+    ax.invert_yaxis()
+
     # can also pass cbar_kwargs to dr.plot() to add colorbar
     # but it is easier to tweak colorbar afterwards
     cb = fig.colorbar(im, ax=ax, shrink=0.6, orientation='horizontal', pad=0.1)
