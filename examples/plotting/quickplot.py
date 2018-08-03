@@ -61,11 +61,17 @@ def do_the_plot(netcdf_file, variable, time, lev):
     print('Requested variable:    {}'.format(variable))
     print('Requested time slice:  {}; value = {}'.format(time, time_val))
     print('Requested level slice  {}; value = {}'.format(lev, lev_val))
+    print('Min value of data      {} {}'.format(np.min(dr.values), dr.units))
+    print('Max value of data      {} {}'.format(np.max(dr.values), dr.units))
 
-    # Plot the data
-    xr.plot.imshow(dr)
+    # Define the colorbar label to show the name of the variable and the units.
+    # This needs to be defined as a Python dict passed via xr.plot.imshow.
+    cb_label = { "label": "{}   ({})".format(variable, dr.units) }
+
+    # Plot the data using the matplotlib default "rainbow" color table
+    xr.plot.imshow(dr, cmap="rainbow", cbar_kwargs=cb_label)
     plt.show()
-
+    
 if __name__ == "__main__":
 
     '''
