@@ -168,16 +168,22 @@ def compare_varnames(refdata, refstr, devdata, devstr):
     commonvars3D = [v for v in commonvars if devdata[v].ndim == 4]
     
     # Print information on common and mismatching variables, as well as dimensions
-    print('{} common variables: '.format(len(commonvars)))
+    print('{} common variables'.format(len(commonvars)))
     if len(refonly) > 0:
         print('{} variables in {} only (skip)'.format(len(refonly),refstr))
         print('   Variable names: {}'.format(refonly))
+    else:
+        print('0 variables in ref only')
     if len(devonly) > 0:
         print('{} variables in {} only (skip)'.format(len(devonly),devstr))
         print('   Variable names: {}'.format(devonly))
+    else:
+        print('0 variables in dev only')
     if len(dimmismatch) > 0:
         print('{} common variables have different dimensions'.format(len(dimmismatch)))
-        print('   Variable names: {}'.format(dimmismatch))        
+        print('   Variable names: {}'.format(dimmismatch))
+    else:
+        print('All variables have same dimensions in ref and dev')
 
     return [commonvars, commonvars1D, commonvars2D, commonvars3D]
 
