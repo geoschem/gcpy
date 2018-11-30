@@ -244,7 +244,8 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
 # Add docstrings later. Use this function for benchmarking or general comparisons.
 '''Notes: The two GC files must be at the same grid resolution. You can use this function to plot interactively or to generate a multi-page pdf of plots. It take#s a list of variable names to plot for a single collection only. You can plot for any level and any time slice in the file. By default the colorbars for the plots will have the same range, but you can turn this feature off. Also by default the colorbar of the fractional difference between the model outputs will be limited to +/-2, but you can change this as well via the passed parameters.'''
 def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, ilev=0, itime=0, savepdf=False, 
-                         pdfname='map.pdf', match_cbar=True, normalize_by_area=False, check_units=True):
+                         pdfname='map.pdf', match_cbar=True, normalize_by_area=False, check_units=True,
+                         diff_fixed_range=[-1e-9, 1e-9], frac_diff_fixed_range=[-2,2]):
     
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
@@ -383,7 +384,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
         
         # Subplot (1,1): Difference, restricted range
-        [vmin, vmax] = [-1e-9, 1e-9] # Placeholder; need a dictional for this (species: limit)
+        [vmin, vmax] = diff_fixed_range
         ax3.coastlines()
         plot3 = ax3.imshow(absdiff, extent=(minlon, maxlon, minlat, maxlat), 
                            cmap=cmap,vmin=vmin, vmax=vmax)
@@ -415,7 +416,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
         cb.set_label(units)  
         
         # Subplot (2,1): Fractional Difference, restricted
-        [vmin, vmax] = [-2, 2]
+        [vmin, vmax] = frac_diff_fixed_range
         #[vmin, vmax] = [-0.5, 2] # doesn't work with this colorbar. Need to customize one. Already in gamap?
                                   # Switch to this if change to ratios (dev/ref)
         ax5.coastlines()
@@ -437,7 +438,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
 
 # Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, itime=0, savepdf=False, 
-                       pdfname='zonalmean.pdf', match_cbar=True, normalize_by_area=False, check_units=True ):
+                       pdfname='zonalmean.pdf', match_cbar=True, normalize_by_area=False, check_units=True,
+                       diff_fixed_range=[-1e-9,1e9], frac_diff_fixed_range=[-2,2]):
 
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
@@ -569,7 +571,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         cb.set_label(units)
         
         # Subplot 3: Difference, restricted range
-        [vmin, vmax] = [-1e-9, 1e-9] # need a dictional for this (species: limit)
+        [vmin, vmax] = diff_fixed_range
         plot3 = ax3.imshow(zm_diff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
         ax3.set_title('Difference\nDev - Ref, Fixed Range')
         ax3.set_aspect('auto')
@@ -606,7 +608,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         cb.set_label('unitless')   
         
         # Subplot 5: Fractional Difference, restricted range
-        [vmin, vmax] = [-2, 2]
+        [vmin, vmax] = frac_diff_fixed_range
         plot5 = ax5.imshow(zm_fracdiff, vmin=vmin, vmax=vmax, cmap='RdBu_r', extent=extent)
         ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range')
         ax5.set_aspect('auto')
