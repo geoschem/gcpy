@@ -638,12 +638,13 @@ def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='' ):
     # Pdf write and new filename
     pdfname_tmp = pdfname+'_with_bookmarks.pdf'
     output = PdfFileWriter()
-
+    
     # Loop over variables (pages) in the file, removing the diagnostic prefix
     varnamelist = [k.replace(remove_prefix,'') for k in varlist]
     for i, varname in enumerate(varnamelist):
         output.addPage(input.getPage(i))
         output.addBookmark(varname,i)
+        output.setPageMode('/UseOutlines')
         
     # Write to new file
     outputstream = open(pdfname_tmp,'wb')
@@ -652,3 +653,5 @@ def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='' ):
     
     # Replace the old file with the new
     os.rename(pdfname_tmp, pdfname)
+
+
