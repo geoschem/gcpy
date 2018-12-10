@@ -144,6 +144,10 @@ def get_gcc_filepath(outputdir, collection, day, time):
         filepath = os.path.join(outputdir, 'GEOSChem.{}.{}_{}z.nc4'.format(collection,day,time))
     return filepath
 
+def get_gchp_filepath(outputdir, collection, day, time):
+    filepath = os.path.join(outputdir, 'GCHP.{}.{}_{}z.nc4'.format(collection,day,time))
+    return filepath
+
 def check_paths( refpath, devpath):
     if not os.path.exists(refpath):
         print('ERROR! Path 1 does not exist: {}'.format(refpath))
@@ -217,17 +221,32 @@ def get_collection_data(datadir, collection, day, time):
     data_ds = xr.open_dataset(datafile)
     return data_ds
 
-def make_grid_LL(llres):
-    [dlat,dlon] = list(map(float, llres.split('x')))
-    lon_b = np.linspace(-180 - dlon/2, 180 - dlon/2, int(360/dlon) + 1, endpoint=True)
-    lat_b = np.linspace(-90 - dlat/2, 90 + dlat/2, int(180/dlat) + 2, endpoint=True).clip(-90,90)
-    lat = (lat_b[1:] + lat_b[:-1]) / 2
-    lon = (lon_b[1:] + lon_b[:-1]) / 2
-    llgrid = {'lat': lat, 
-              'lon': lon, 
-              'lat_b': lat_b, 
-              'lon_b': lon_b}
-    return llgrid
+def get_gchp_collection_data(datadir, collection, day, time):
+    datafile = get_gchp_filepath(datadir, collection, day, time)
+    data_ds = xr.open_dataset(datafile)
+    return data_ds
+
+def get_stats(refdata, refstr, devdata, devstr, varname):
+    refvar = refdata[varname]
+    devvar = devdata[varname]
+    units = refdata[varname].units
+    print('Data units: {}'.format(units))
+    print('Array sizes:')
+    print('    {}:  {}'.format(refstr,refvar.shape))
+    print('    {}:  {}'.format(devstr,devvar.shape))
+    print('Global stats:')
+    print('  Mean:')
+    print('    {}:  {}'.format(refstr,np.round(refvar.values.mean(),20)))
+    print('    {}:  {}'.format(devstr,np.round(devvar.values.mean(),20)))
+    print('  Min:')
+    print('    {}:  {}'.format(refstr,np.round(refvar.values.min(),20)))
+    print('    {}:  {}'.format(devstr,np.round(devvar.values.min(),20)))
+    print('  Max:')
+    print('    {}:  {}'.format(refstr,np.round(refvar.values.max(),20)))
+    print('    {}:  {}'.format(devstr,np.round(devvar.values.max(),20)))
+    print('  Sum:')
+    print('    {}:  {}'.format(refstr,np.round(refvar.values.sum(),20)))
+    print('    {}:  {}'.format(devstr,np.round(devvar.values.sum(),20)))
 
 def convert_bpch_names_to_netcdf_names(ds, inplace=True, verbose=False):
 
