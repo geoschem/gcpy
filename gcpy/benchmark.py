@@ -413,7 +413,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
             cb.update_ticks()
             if np.all(absdiff==0): 
                 cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
-        cb.set_label(units)  
+        cb.set_label('unitless')  
         
         # Subplot (2,1): Fractional Difference, restricted
         [vmin, vmax] = [-2, 2]
@@ -428,7 +428,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
-        cb.set_label(units) 
+        cb.set_label('unitless') 
             
         if savepdf:    
             pdf.savefig(figs)
