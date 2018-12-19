@@ -563,7 +563,7 @@ def compare_gchp_single_level(refdata, refstr, devdata, devstr, varlist=None, we
         masked_csdata = np.ma.masked_where(np.abs(csgrid_dev['lon'] - 180) < 2, gc_absdiff)
         for i in range(6):
             plot2 = ax2.pcolormesh(csgrid_dev['lon_b'][i,:,:], csgrid_dev['lat_b'][i,:,:], 
-                                   masked_csdata[i,:,:], cmap=WhGrYlRd,vmin=vmin, vmax=vmax)
+                                   masked_csdata[i,:,:], cmap='RdBu_r',vmin=vmin, vmax=vmax)
         ax2.set_title('Difference\n(Dev - Ref)')   
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
@@ -961,6 +961,31 @@ def compare_gchp_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
     if savepdf: pdf.close()
     
 def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='' ):
+    # Existing pdf
+    pdfobj = open(pdfname,"rb")
+    input = PdfFileReader(pdfobj)
+    numpages = input.getNumPages()
+    
+    # Pdf write and new filename
+    pdfname_tmp = pdfname+'_with_bookmarks.pdf'
+    output = PdfFileWriter()
+    
+    # Loop over variables (pages) in the file, removing the diagnostic prefix
+    varnamelist = [k.replace(remove_prefix,'') for k in varlist]
+    for i, varname in enumerate(varnamelist):
+        output.addPage(input.getPage(i))
+        output.addBookmark(varname,i)
+        output.setPageMode('/UseOutlines')
+        
+    # Write to new file
+    outputstream = open(pdfname_tmp,'wb')
+    output.write(outputstream) 
+    outputstream.close()
+    
+    # Replace the old file with the new
+    os.rename(pdfname_tmp, pdfname)
+
+def add_hierarchical_bookmarks_to_pdf( pdfname, catdict, remove_prefix='' ):
     # Existing pdf
     pdfobj = open(pdfname,"rb")
     input = PdfFileReader(pdfobj)
