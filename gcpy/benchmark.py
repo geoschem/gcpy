@@ -480,16 +480,30 @@ def compare_gchp_single_level(refdata, refstr, devdata, devstr, varlist=None, we
         subtitle_extra = ''
                     
         # Slice the data
-        if varndim == 4: 
+        vdims = refdata[varname].dims
+        if 'time' in vdims and 'lev' in vdims: 
             if flip_vert: 
                 ds_ref = refdata[varname].isel(time=itime,lev=71-ilev)
                 ds_dev = devdata[varname].isel(time=itime,lev=71-ilev)
             else: 
                 ds_ref = refdata[varname].isel(time=itime,lev=ilev)
                 ds_dev = devdata[varname].isel(time=itime,lev=ilev)
-        elif varndim == 3: 
-            refds = refdata[varname].isel(time=itime)
-            devds = devdata[varname].isel(time=itime)
+        elif 'lev' in vdims: 
+            if flip_vert: 
+                ds_ref = refdata[varname].isel(lev=71-ilev)
+                ds_dev = devdata[varname].isel(lev=71-ilev)
+            else: 
+                ds_ref = refdata[varname].isel(lev=ilev)
+                ds_dev = devdata[varname].isel(lev=ilev)
+        elif 'time' in vdims:
+            ds_ref = refdata[varname].isel(time=itime)
+            ds_dev = devdata[varname].isel(time=itime)
+        elif 'lat' in vdims and 'lon' in vdims:
+            ds_ref = refdata[varname]
+            ds_dev = devdata[varname]
+        else:
+            print('ERROR: cannot handle variables without lat and lon dimenions.')
+            print(varname)
             
         # if normalizing by area, transform on the native grid and adjust units and subtitle string
         exclude_list = ['WetLossConvFrac','Prod_','Loss_']
@@ -516,15 +530,13 @@ def compare_gchp_single_level(refdata, refstr, devdata, devstr, varlist=None, we
         # Give the figure a title
         offset = 0.96
         fontsize=25
-        if varndim == 4:
+        if 'lev' in vdims: 
             if ilev == 0: levstr = 'Surface'
             elif ilev == 22: levstr = '500 hPa'
             else: levstr = 'Level ' +  str(ilev-1)
             figs.suptitle('{}, {}'.format(varname,levstr), fontsize=fontsize, y=offset)
-        elif varndim == 3: 
+        else: 
             figs.suptitle('{}'.format(varname), fontsize=fontsize, y=offset)
-        else:
-            print('varndim is 2 for {}! Must be 3 or 4.'.format(varname))
             
         # Subplot (0,0): Ref
         ax0.coastlines()
@@ -846,9 +858,22 @@ def compare_gchp_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         subtitle_extra = ''
         
         # Slice the data
-        ds_ref = refdata[varname].isel(time=itime)
-        ds_dev = devdata[varname].isel(time=itime)
-
+        vdims = refdata[varname].dims
+        if 'lev' not in vdims:
+            print('ERROR: variable does not have lev dimension')
+            print(varname)
+            return
+        if 'time' in vdims:
+            ds_ref = refdata[varname].isel(time=itime)
+            ds_dev = devdata[varname].isel(time=itime)
+        elif 'lat' in vdims and 'lon' in vdims:
+            ds_ref = refdata[varname]
+            ds_dev = devdata[varname]
+        else:
+            print('ERROR: cannot handle variables without lat and lon dimenions.')
+            print(varname)
+            return
+            
         # if normalizing by area, transform on the native grid and adjust units and subtitle string
         exclude_list = ['WetLossConvFrac','Prod_','Loss_']
         if normalize_by_area and not any(s in varname for s in exclude_list):
