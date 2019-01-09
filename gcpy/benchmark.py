@@ -435,7 +435,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, refres, devres, cmpre
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
         
         # Subplot (1,1): Difference, restricted range
-        [vmin, vmax] = [np.percentile(absdiff,5), np.percentile(absdiff, 95)] # placeholder: use 5 and 95 percentiles as bounds
+        [pct5, pct95] = [np.percentile(absdiff,5), np.percentile(absdiff, 95)] # placeholder: use 5 and 95 percentiles as bounds
+        abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
+        [vmin,vmax] = [-abspctmax, abspctmax]
         ax3.coastlines()
         plot3 = ax3.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
                            cmap=cmap,vmin=vmin, vmax=vmax)
@@ -863,7 +865,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, refres, devres, cmpres=
         cb.set_label(units)
         
         # Subplot 3: Difference, restricted range
-        [vmin, vmax] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)] # placeholder: use 5 and 95 percentiles as bounds
+        [pct5, pct95] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)] # placeholder: use 5 and 95 percentiles as bounds
+        abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
+        [vmin,vmax] = [-abspctmax, abspctmax]
         plot3 = ax3.imshow(zm_diff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
