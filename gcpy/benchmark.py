@@ -19,6 +19,7 @@ from PyPDF2 import PdfFileWriter, PdfFileReader
 from .plot import WhGrYlRd, add_latlon_ticks
 from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L
+from .grid.regrid import make_regridder_L2L
 
 # change default fontsize (globally)
 # http://matplotlib.org/users/customizing.html
@@ -244,8 +245,21 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
 
 # Add docstrings later. Use this function for benchmarking or general comparisons.
 '''Notes: The two GC files must be at the same grid resolution. You can use this function to plot interactively or to generate a multi-page pdf of plots. It take#s a list of variable names to plot for a single collection only. You can plot for any level and any time slice in the file. By default the colorbars for the plots will have the same range, but you can turn this feature off. Also by default the colorbar of the fractional difference between the model outputs will be limited to +/-2, but you can change this as well via the passed parameters.'''
-def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, ilev=0, itime=0, savepdf=False, 
-                         pdfname='map.pdf', match_cbar=True, normalize_by_area=False, check_units=True):
+def compare_single_level(refdata, refstr, devdata, devstr, refres, devres, cmpres=None, varlist=None, ilev=0,
+                         itime=0, savepdf=False, pdfname='map.pdf', match_cbar=True, normalize_by_area=False,
+                         enforce_units=True, weightsdir=None):
+
+    # If no cmpres is passed then choose highest resolution between ref and dev.
+    if cmpres == None:
+        if refres == devres:
+            cmpres = refres
+        else:
+            cmpres = min([refres, devres])
+
+    # Determine what, if any, need regridding.
+    regridref = refres != cmpres
+    regriddev = devres != cmpres
+    regridany = regridref or regriddev
     
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
@@ -253,12 +267,22 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
         print('Plotting all common variables (surface only if 3D)')
     n_var = len(varlist)
 
-    # Get lat-lon grid
-    llgrid = make_grid_LL(llres)
-
+    # Get lat-lon grids (ref, dev, and comparison)
+    refgrid = make_grid_LL(refres)
+    devgrid = make_grid_LL(devres)
+    cmpgrid = make_grid_LL(cmpres)
+    if regridref:
+        refregridder = make_regridder_L2L(refres, cmpres, weightsdir=weightsdir, reuse_weights=True)
+    if regriddev:
+        devregridder = make_regridder_L2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
+    
     # Get lat/lon extents
-    [minlon, maxlon] = [min(llgrid['lon_b']), max(llgrid['lon_b'])]
-    [minlat, maxlat] = [min(llgrid['lat_b']), max(llgrid['lat_b'])]
+    [refminlon, refmaxlon] = [min(refgrid['lon_b']), max(refgrid['lon_b'])]
+    [refminlat, refmaxlat] = [min(refgrid['lat_b']), max(refgrid['lat_b'])]
+    [devminlon, devmaxlon] = [min(devgrid['lon_b']), max(devgrid['lon_b'])]
+    [devminlat, devmaxlat] = [min(devgrid['lat_b']), max(devgrid['lat_b'])]
+    [cmpminlon, cmpmaxlon] = [min(cmpgrid['lon_b']), max(cmpgrid['lon_b'])]
+    [cmpminlat, cmpmaxlat] = [min(cmpgrid['lat_b']), max(cmpgrid['lat_b'])]
     
     # Create pdf (if saving)
     if savepdf:
@@ -266,6 +290,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
         pdf = PdfPages(pdfname)
 
     # Loop over variables
+    print_units_warning = True
     for ivar in range(n_var):
         if savepdf: print('{} '.format(ivar), end='')
         varname = varlist[ivar]
@@ -276,8 +301,17 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
         
         units_ref = refdata[varname].units.strip()
         units_dev = devdata[varname].units.strip()
-        if check_units: 
-            assert units_ref == units_dev, 'Units do not match for {}!'.format(varname)
+        if units_ref != units_dev:
+            if print_units_warning:
+                print('WARNING: ref and dev concentration units do not match!')
+                print('Ref units: {}'.format(units_ref))
+                print('Dev units: {}'.format(units_dev))
+            if enforce_units:
+            # if enforcing units, stop the program if units do not match
+               assert units_ref == units_dev, 'Units do not match for {}!'.format(varname)
+            else:
+               # if not enforcing units, just keep going after only printing warning once 
+               print_units_warning = False
             
         # if normalizing by area, adjust units to be per m2, and adjust title string
         units = units_ref
@@ -313,14 +347,26 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
             units = '{} m-2'.format(units)
             subtitle_extra = ', Normalized by Area'
             
-        # Regrid the slices (skip for gchp vs gchp for now)
+        # Get comparison data (same grid resolution), regridding the slices if needed
+        if regridref:
+            ds_ref_cmp = refregridder(ds_ref)
+        else:
+            ds_ref_cmp = ds_ref
+        if regriddev:
+            ds_dev_cmp = devregridder(ds_dev)
+        else:
+            ds_dev_cmp = ds_dev
+            
+        # Get min and max values for use in the colorbars
         vmin_ref = ds_ref.min()
-        vmin_dev = ds_dev.min()
-        vmin_cmn = np.min([vmin_ref, vmin_dev])
         vmax_ref = ds_ref.max()
+        vmin_dev = ds_dev.min()
         vmax_dev = ds_dev.max()
-        vmax_cmn = np.max([vmax_ref, vmax_dev])
-        if match_cbar: [vmin, vmax] = [vmin_cmn, vmax_cmn]
+        vmin_cmp = np.min([ds_ref_cmp.min(), ds_dev_cmp.min()])
+        vmax_cmp = np.max([ds_ref_cmp.max(), ds_dev_cmp.max()])
+        vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
+        vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
+        if match_cbar: [vmin, vmax] = [vmin_abs, vmax_abs]
         
         # Create 3x2 figure
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(3, 2, figsize=[12,14], 
@@ -339,32 +385,34 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
         else:
             print('Incorrect dimensions for {}!'.format(varname))   
         
-        # Subplot (0,0): Ref
+        # Subplot (0,0): Ref, plotted on ref grid
         ax0.coastlines()
         if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
-        plot0 = ax0.imshow(ds_ref, extent=(minlon, maxlon, minlat, maxlat), 
-                           cmap=WhGrYlRd,vmin=vmin, vmax=vmax)
-        ax0.set_title('{} (Ref){}\n{}'.format(refstr,subtitle_extra,llres)) 
+        plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon, refminlat, refmaxlat), 
+                           cmap=WhGrYlRd, vmin=vmin, vmax=vmax)
+        ax0.set_title('{} (Ref){}\n{}'.format(refstr,subtitle_extra,refres)) 
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
-        cb.set_label(units)
+        cb.set_label(units_ref)
         
-        # Subplot (0,1): Dev
+        # Subplot (0,1): Dev, plotted on dev grid
         ax1.coastlines()
         if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
-        plot1 = ax1.imshow(ds_dev, extent=(minlon, maxlon, minlat, maxlat), 
-                           cmap=WhGrYlRd,vmin=vmin, vmax=vmax)
-        ax1.set_title('{} (Dev){}\n{}'.format(devstr,subtitle_extra,llres)) 
+        plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon, devminlat, devmaxlat), 
+                           cmap=WhGrYlRd, vmin=vmin, vmax=vmax)
+        ax1.set_title('{} (Dev){}\n{}'.format(devstr,subtitle_extra,devres)) 
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
-        cb.set_label(units)
+        cb.set_label(units_dev)
 
+        # Henceforth use regridded data if regridding done.
+        
         # Calculate difference, get dynamic range, configure colorbar, use gray for NaNs
-        absdiff = np.array(ds_dev) - np.array(ds_ref)
+        absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
         diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])        
         cmap = mpl.cm.RdBu_r
         cmap.set_bad(color='gray')
@@ -372,9 +420,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
         # Subplot (1,0): Difference, dynamic range
         [vmin, vmax] = [-diffabsmax, diffabsmax]
         ax2.coastlines()
-        plot2 = ax2.imshow(absdiff, extent=(minlon, maxlon, minlat, maxlat), 
+        plot2 = ax2.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
                            cmap=cmap,vmin=vmin, vmax=vmax)
-        ax2.set_title('Difference\nDev - Ref, Dynamic Range') 
+        if regridany:
+            ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(cmpres))
+        else:
+            ax2.set_title('Difference\nDev - Ref, Dynamic Range')
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -384,11 +435,14 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
         
         # Subplot (1,1): Difference, restricted range
-        [vmin, vmax] = [-1e-9, 1e-9] # Placeholder; need a dictional for this (species: limit)
+        [vmin, vmax] = [np.percentile(absdiff,5), np.percentile(absdiff, 95)] # placeholder: use 5 and 95 percentiles as bounds
         ax3.coastlines()
-        plot3 = ax3.imshow(absdiff, extent=(minlon, maxlon, minlat, maxlat), 
+        plot3 = ax3.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
                            cmap=cmap,vmin=vmin, vmax=vmax)
-        ax3.set_title('Difference\nDev - Ref, Fixed Range') 
+        if regridany:
+            ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
+        else:
+            ax3.set_title('Difference\nDev - Ref, Restricted Range [5%,95%]')            
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -398,15 +452,19 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
 
         # Calculate fractional difference, get dynamic range, set 0/0 to Nan
-        fracdiff = (np.array(ds_dev) - np.array(ds_ref)) / np.array(ds_ref)
-        fracdiff[(ds_dev==0) & (ds_ref==0)] = np.nan
+        fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(ds_ref_cmp)
+        fracdiff[(ds_dev_cmp == 0) & (ds_ref_cmp == 0)] = np.nan
         fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
         
         # Subplot (2,0): Fractional Difference, full dynamic range
         [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
         ax4.coastlines()
-        plot4 = ax4.imshow(fracdiff, extent=(minlon, maxlon, minlat, maxlat), vmin=vmin, vmax=vmax, cmap=cmap)
-        ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range') 
+        plot4 = ax4.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
+                           vmin=vmin, vmax=vmax, cmap=cmap)
+        if regridany:
+            ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres)) 
+        else:
+            ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range') 
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -420,9 +478,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, llres, varlist=None, 
         #[vmin, vmax] = [-0.5, 2] # doesn't work with this colorbar. Need to customize one. Already in gamap?
                                   # Switch to this if change to ratios (dev/ref)
         ax5.coastlines()
-        plot5 = ax5.imshow(fracdiff, extent=(minlon, maxlon, minlat, maxlat),
+        plot5 = ax5.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
                            cmap=cmap,vmin=vmin, vmax=vmax)
-        ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range') 
+        if regridany:
+            ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
+        else:
+            ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range') 
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
         if np.all(absdiff==0): 
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -513,16 +574,16 @@ def compare_gchp_single_level(refdata, refstr, devdata, devstr, varlist=None, we
             units = '{} m-2'.format(units)
             subtitle_extra = ', Normalized by Area'
             
-        # Regrid the slices (skip for gchp vs gchp for now)
+        # Get min and max for use in colorbars
         csdata_ref = ds_ref.data.reshape(6,csres_ref,csres_ref)
         csdata_dev = ds_dev.data.reshape(6,csres_dev,csres_dev)
         vmin_ref = csdata_ref.min()
         vmin_dev = csdata_dev.min()
-        vmin_cmn = np.min([vmin_ref, vmin_dev])
+        vmin_cmp = np.min([vmin_ref, vmin_dev])
         vmax_ref = csdata_ref.max()
         vmax_dev = csdata_dev.max()
-        vmax_cmn = np.max([vmax_ref, vmax_dev])
-        if match_cbar: [vmin, vmax] = [vmin_cmn, vmax_cmn]
+        vmax_cmp = np.max([vmax_ref, vmax_dev])
+        if match_cbar: [vmin, vmax] = [vmin_cmp, vmax_cmp]
         
         # Create 2x2 figure
         figs, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=[12,9], 
@@ -605,17 +666,44 @@ def compare_gchp_single_level(refdata, refstr, devdata, devstr, varlist=None, we
     if savepdf: pdf.close()
 
 # Add docstrings later. Use this function for benchmarking or general comparisons.
-def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, itime=0, savepdf=False, 
-                       pdfname='zonalmean.pdf', match_cbar=True, normalize_by_area=False, check_units=True ):
-
+def compare_zonal_mean(refdata, refstr, devdata, devstr, refres, devres, cmpres=None, varlist=None, itime=0,
+                       savepdf=False, pdfname='zonalmean.pdf', match_cbar=True, normalize_by_area=False,
+                       enforce_units=True,weightsdir=None ):
+                         
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
         [commonvars, commonvars2D, varlist] = compare_varnames(refdata, devdata)
         print('Plotting all 3D variables')
     n_var = len(varlist)
+
+    # If no cmpres is passed then choose highest resolution between ref and dev.
+    if cmpres == None:
+        if refres == devres:
+            cmpres = refres
+        else:
+            cmpres = min([refres, devres])
+
+    # Determine what, if any, need regridding.
+    regridref = refres != cmpres
+    regriddev = devres != cmpres
+    regridany = regridref or regriddev
+
+    # Get lat-lon grids (ref, dev, and comparison)
+    refgrid = make_grid_LL(refres)
+    devgrid = make_grid_LL(devres)
+    cmpgrid = make_grid_LL(cmpres)
+    if regridref:
+        refregridder = make_regridder_L2L(refres, cmpres, weightsdir=weightsdir, reuse_weights=True)
+    if regriddev:
+        devregridder = make_regridder_L2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
     
-    # Get lat-lon grid
-    llgrid = make_grid_LL(llres)
+    # Get lat/lon extents
+    [refminlon, refmaxlon] = [min(refgrid['lon_b']), max(refgrid['lon_b'])]
+    [refminlat, refmaxlat] = [min(refgrid['lat_b']), max(refgrid['lat_b'])]
+    [devminlon, devmaxlon] = [min(devgrid['lon_b']), max(devgrid['lon_b'])]
+    [devminlat, devmaxlat] = [min(devgrid['lat_b']), max(devgrid['lat_b'])]
+    [cmpminlon, cmpmaxlon] = [min(cmpgrid['lon_b']), max(cmpgrid['lon_b'])]
+    [cmpminlat, cmpmaxlat] = [min(cmpgrid['lat_b']), max(cmpgrid['lat_b'])]
     
     # Universal plot setup
     xtick_positions = np.arange(-90,91,30)
@@ -629,6 +717,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         pdf = PdfPages(pdfname)
 
     # Loop over variables
+    print_units_warning = True
     for ivar in range(n_var):
         if savepdf: print('{} '.format(ivar), end='')
         varname = varlist[ivar]
@@ -638,29 +727,46 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         varndim_dev = devdata[varname].ndim
         nlev = 72
         #assert varndim_ref == varndim_dev, 'Dimensions do not agree for {}!'.format(varname)
+
         units_ref = refdata[varname].units.strip()
         units_dev = devdata[varname].units.strip()
-        assert units_ref == units_dev, 'Units do not match for {}!'.format(varname)
-        
+        if units_ref != units_dev:
+            if print_units_warning:
+                print('WARNING: ref and dev concentration units do not match!')
+                print('Ref units: {}'.format(units_ref))
+                print('Dev units: {}'.format(units_dev))
+            if enforce_units:
+            # if enforcing units, stop the program if units do not match
+               assert units_ref == units_dev, 'Units do not match for {}!'.format(varname)
+            else:
+               # if not enforcing units, just keep going after only printing warning once 
+               print_units_warning = False
+               
         # Set plot extent
         extent=(-90,90,0,nlev)
-        
+
         # if normalizing by area, adjust units to be per m2, and adjust title string
         units = units_ref
         varndim = varndim_ref
         subtitle_extra = ''            
         
         # Slice the data.  Need to handle different incoming number of dimensions and the bpch case
-        # where no time dimension is includes.
-        if 'time' in refdata[varname].dims:
+        # where no time dimension is included.
+
+        # ref
+        vdims = refdata[varname].dims
+        if 'time' in vdims:
             ds_ref = refdata[varname].isel(time=itime)
         else:
             ds_ref = refdata[varname]
-        if 'time' in devdata[varname].dims:
+
+        # dev
+        vdims = devdata[varname].dims      
+        if 'time' in vdims:
             ds_dev = devdata[varname].isel(time=itime)
         else:
             ds_dev = devdata[varname]
-            
+
         # if normalizing by area, transform on the native grid and adjust units and subtitle string
         exclude_list = ['WetLossConvFrac','Prod_','Loss_']
         if normalize_by_area and not any(s in varname for s in exclude_list):
@@ -668,17 +774,33 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
             ds_dev.values = ds_dev.values / devdata['AREAM2'].values[np.newaxis,:,:]
             units = '{} m-2'.format(units)
             subtitle_extra = ', Normalized by Area'
+   
+        # Get comparison data (same grid resolution), regridding the slices if needed
+        if regridref:
+            ds_ref_cmp = refregridder(ds_ref)
+        else:
+            ds_ref_cmp = ds_ref
+        if regriddev:
+            ds_dev_cmp = devregridder(ds_dev)
+        else:
+            ds_dev_cmp = ds_dev
             
-        # Calculate zonal mean of the regridded data
+        # Calculate zonal mean of the data
         zm_ref = ds_ref.mean(dim='lon')
         zm_dev = ds_dev.mean(dim='lon')
-        
+        zm_ref_cmp = ds_ref_cmp.mean(dim='lon')
+        zm_dev_cmp = ds_dev_cmp.mean(dim='lon')
+            
         # Get min and max for colorbar limits
         [vmin_ref, vmax_ref] = [zm_ref.min(), zm_ref.max()]
         [vmin_dev, vmax_dev] = [zm_dev.min(), zm_dev.max()]
-        vmin_cmn = np.min([vmin_ref, vmin_dev])
-        vmax_cmn = np.max([vmax_ref, vmax_dev])
-        if match_cbar: [vmin, vmax] = [vmin_cmn, vmax_cmn]
+        [vmin_ref_cmp, vmax_ref_cmp] = [zm_ref_cmp.min(), zm_ref_cmp.max()]
+        [vmin_dev_cmp, vmax_dev_cmp] = [zm_dev_cmp.min(), zm_dev_cmp.max()]
+        vmin_cmp = np.min([zm_ref_cmp.min(), zm_dev_cmp.min()])
+        vmax_cmp = np.max([zm_ref_cmp.max(), zm_dev_cmp.max()])
+        vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
+        vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
+        if match_cbar: [vmin, vmax] = [vmin_abs, vmax_abs]
         
         # Create 2x2 figure
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(3, 2, figsize=[12,15.3], 
@@ -691,7 +813,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         # Subplot 0: Ref
         if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
         plot0 = ax0.imshow(zm_ref, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
-        ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, llres ))
+        ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, refres ))
         ax0.set_aspect('auto')
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
@@ -701,12 +823,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
-        cb.set_label(units)
+        cb.set_label(units_ref)
         
         # Subplot 1: Dev
         if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
         plot1 = ax1.imshow(zm_dev, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
-        ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, llres))
+        ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, devres ))
         ax1.set_aspect('auto')
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
@@ -716,16 +838,19 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
-        cb.set_label(units)
+        cb.set_label(units_dev)
         
         # Calculate zonal mean difference
-        zm_diff = np.array(zm_dev) - np.array(zm_ref)
+        zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
                 
         # Subplot 2: Difference, dynamic range
         diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
         [vmin, vmax] = [-diffabsmax, diffabsmax]
         plot2 = ax2.imshow(zm_diff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
-        ax2.set_title('Difference\nDev - Ref, Dynamic Range')
+        if regridany:
+            ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(cmpres))
+        else:
+            ax2.set_title('Difference\nDev - Ref, Dynamic Range')
         ax2.set_aspect('auto')
         ax2.set_xticks(xtick_positions)
         ax2.set_xticklabels(xticklabels)
@@ -738,9 +863,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         cb.set_label(units)
         
         # Subplot 3: Difference, restricted range
-        [vmin, vmax] = [-1e-9, 1e-9] # need a dictional for this (species: limit)
+        [vmin, vmax] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)] # placeholder: use 5 and 95 percentiles as bounds
         plot3 = ax3.imshow(zm_diff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
-        ax3.set_title('Difference\nDev - Ref, Fixed Range')
+        if regridany:
+            ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
+        else:
+            ax3.set_title('Difference\nDev - Ref, Restriced Range [5%,95%]')
         ax3.set_aspect('auto')
         ax3.set_xticks(xtick_positions)
         ax3.set_xticklabels(xticklabels)
@@ -753,13 +881,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         cb.set_label(units)
         
         # Zonal mean fractional difference
-        zm_fracdiff = (np.array(zm_dev) - np.array(zm_ref)) / np.array(zm_ref)
+        zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(zm_ref_cmp)
             
         # Subplot 4: Fractional Difference, dynamic range
         fracdiffabsmax = max([np.abs(zm_fracdiff.min()), np.abs(zm_fracdiff.max())])
         [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
         plot4 = ax4.imshow(zm_fracdiff, vmin=vmin, vmax=vmax, cmap='RdBu_r', extent=extent)
-        ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range')
+        if regridany:
+            ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres))
+        else:
+            ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range')
         ax4.set_aspect('auto')
         ax4.set_xticks(xtick_positions)
         ax4.set_xticklabels(xticklabels)
@@ -777,7 +908,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, llres, varlist=None, it
         # Subplot 5: Fractional Difference, restricted range
         [vmin, vmax] = [-2, 2]
         plot5 = ax5.imshow(zm_fracdiff, vmin=vmin, vmax=vmax, cmap='RdBu_r', extent=extent)
-        ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range')
+        if regridany:
+            ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
+        else:
+            ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range')
         ax5.set_aspect('auto')
         ax5.set_xticks(xtick_positions)
         ax5.set_xticklabels(xticklabels)
