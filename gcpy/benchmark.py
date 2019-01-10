@@ -247,7 +247,7 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
 '''Notes: The two GC files must be at the same grid resolution. You can use this function to plot interactively or to generate a multi-page pdf of plots. It take#s a list of variable names to plot for a single collection only. You can plot for any level and any time slice in the file. By default the colorbars for the plots will have the same range, but you can turn this feature off. Also by default the colorbar of the fractional difference between the model outputs will be limited to +/-2, but you can change this as well via the passed parameters.'''
 def compare_single_level(refdata, refstr, devdata, devstr, refres, devres, cmpres=None, varlist=None, ilev=0,
                          itime=0, savepdf=False, pdfname='map.pdf', match_cbar=True, normalize_by_area=False,
-                         enforce_units=True, weightsdir=None):
+                         refarea=[], devarea=[], enforce_units=True, weightsdir=None):
 
     # If no cmpres is passed then choose highest resolution between ref and dev.
     if cmpres == None:
@@ -339,13 +339,23 @@ def compare_single_level(refdata, refstr, devdata, devstr, refres, devres, cmpre
         else:
             ds_dev = devdata[varname]
             
-        # if normalizing by area, transform on the native grid and adjust units and subtitle string
+        # if regridding then normalization by area may be necessary. Either pass normalize_by_area=True to normalize all,
+        # or include units that should always be normalized by area below. If comparing HEMCO diagnostics then the
+        # areas for ref and dev must be passed; otherwise they are included in the HISTORY diagnostics file and do
+        # not need to be passed.
         exclude_list = ['WetLossConvFrac','Prod_','Loss_']
-        if normalize_by_area and not any(s in varname for s in exclude_list):
-            ds_ref.values = ds_ref.values / refdata['AREAM2'].values
-            ds_dev.values = ds_dev.values / devdata['AREAM2'].values
-            units = '{} m-2'.format(units)
-            subtitle_extra = ', Normalized by Area'
+        if regridany and ( ( units == 'kg' or units == 'kgC' ) or normalize_by_area ):
+            if not any(s in varname for s in exclude_list):
+                if len(refarea) == 0 and len(devarea) == 0:
+                    ds_ref.values = ds_ref.values / refdata['AREAM2'].values
+                    ds_dev.values = ds_dev.values / devdata['AREAM2'].values
+                else:
+                    ds_ref.values = ds_ref.values / refarea
+                    ds_dev.values = ds_dev.values / devarea               
+                units = '{}/m2'.format(units)
+                units_ref = units
+                units_dev = units
+                subtitle_extra = ', Normalized by Area'
             
         # Get comparison data (same grid resolution), regridding the slices if needed
         if regridref:
