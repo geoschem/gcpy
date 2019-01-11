@@ -752,265 +752,137 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
 
     if savepdf: pdf.close()
 
-def compare_gchp_single_level(refdata, refstr, devdata, devstr, varlist=None, weightsdir='.', ilev=0, 
-                         itime=0, savepdf=False, pdfname='gchp_vs_gchp_map.pdf', match_cbar=True, 
-                         full_ratio_range=False, normalize_by_area=False, area_ref=None, 
-                         area_dev=None, check_units=True, flip_vert=False):
-    
-    # If no varlist is passed, plot all (surface only for 3D)
-    if varlist == None:
-        [varlist, commonvars2D, commonvars3D] = compare_varnames(refdata, devdata)
-        print('Plotting all common variables (surface only if 3D)')
-    n_var = len(varlist)
-
-    # Get cubed sphere grids and regridder 
-    # for now, do not regrid for gchp vs gchp. Assume same grid.
-    csres_ref = refdata['lon'].size
-    [csgrid_ref, csgrid_list_ref] = make_grid_CS(csres_ref)
-    csres_dev = devdata['lon'].size
-    [csgrid_dev, csgrid_list_dev] = make_grid_CS(csres_dev)
-
-    # Create pdf (if saving)
-    if savepdf:
-        print('\nCreating {} for {} variables'.format(pdfname,n_var))
-        pdf = PdfPages(pdfname)
-
-    # Loop over variables
-    for ivar in range(n_var):
-        if savepdf: print('{} '.format(ivar), end='')
-        varname = varlist[ivar]
-        
-        # Do some checks: dimensions and units
-        varndim_ref = refdata[varname].ndim
-        varndim_dev = devdata[varname].ndim
-        if check_units: 
-            assert varndim_ref == varndim_dev, 'Dimensions do not agree for {}!'.format(varname)
-        units_ref = refdata[varname].units
-        units_dev = devdata[varname].units
-        if check_units: 
-            assert units_ref == units_dev, 'Units do not match for {}!'.format(varname)
-            
-        # if normalizing by area, adjust units to be per m2, and adjust title string
-        units = units_ref
-        varndim = varndim_ref
-        subtitle_extra = ''
-                    
-        # Slice the data
-        vdims = refdata[varname].dims
-        if 'time' in vdims and 'lev' in vdims: 
-            if flip_vert: 
-                ds_ref = refdata[varname].isel(time=itime,lev=71-ilev)
-                ds_dev = devdata[varname].isel(time=itime,lev=71-ilev)
-            else: 
-                ds_ref = refdata[varname].isel(time=itime,lev=ilev)
-                ds_dev = devdata[varname].isel(time=itime,lev=ilev)
-        elif 'lev' in vdims: 
-            if flip_vert: 
-                ds_ref = refdata[varname].isel(lev=71-ilev)
-                ds_dev = devdata[varname].isel(lev=71-ilev)
-            else: 
-                ds_ref = refdata[varname].isel(lev=ilev)
-                ds_dev = devdata[varname].isel(lev=ilev)
-        elif 'time' in vdims:
-            ds_ref = refdata[varname].isel(time=itime)
-            ds_dev = devdata[varname].isel(time=itime)
-        elif 'lat' in vdims and 'lon' in vdims:
-            ds_ref = refdata[varname]
-            ds_dev = devdata[varname]
-        else:
-            print('ERROR: cannot handle variables without lat and lon dimenions.')
-            print(varname)
-            
-        # if normalizing by area, transform on the native grid and adjust units and subtitle string
-        exclude_list = ['WetLossConvFrac','Prod_','Loss_']
-        if normalize_by_area and not any(s in varname for s in exclude_list):
-            ds_ref.values = ds_ref.values / area_ref
-            ds_dev.values = ds_dev.values / area_dev
-            units = '{} m-2'.format(units)
-            subtitle_extra = ', Normalized by Area'
-            
-        # Get min and max for use in colorbars
-        csdata_ref = ds_ref.data.reshape(6,csres_ref,csres_ref)
-        csdata_dev = ds_dev.data.reshape(6,csres_dev,csres_dev)
-        vmin_ref = csdata_ref.min()
-        vmin_dev = csdata_dev.min()
-        vmin_cmp = np.min([vmin_ref, vmin_dev])
-        vmax_ref = csdata_ref.max()
-        vmax_dev = csdata_dev.max()
-        vmax_cmp = np.max([vmax_ref, vmax_dev])
-        if match_cbar: [vmin, vmax] = [vmin_cmp, vmax_cmp]
-        
-        # Create 2x2 figure
-        figs, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=[12,9], 
-                                                      subplot_kw={'projection': crs.PlateCarree()})
-        # Give the figure a title
-        offset = 0.96
-        fontsize=25
-        if 'lev' in vdims: 
-            if ilev == 0: levstr = 'Surface'
-            elif ilev == 22: levstr = '500 hPa'
-            else: levstr = 'Level ' +  str(ilev-1)
-            figs.suptitle('{}, {}'.format(varname,levstr), fontsize=fontsize, y=offset)
-        else: 
-            figs.suptitle('{}'.format(varname), fontsize=fontsize, y=offset)
-            
-        # Subplot (0,0): Ref
-        ax0.coastlines()
-        if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]        
-        masked_csdata = np.ma.masked_where(np.abs(csgrid_ref['lon'] - 180) < 2, csdata_ref)
-        for i in range(6):
-            plot0 = ax0.pcolormesh(csgrid_ref['lon_b'][i,:,:], csgrid_ref['lat_b'][i,:,:], masked_csdata[i,:,:], 
-                                   cmap=WhGrYlRd,vmin=vmin, vmax=vmax)
-        ax0.set_title('{} (Ref){}\nC{}'.format(refstr,subtitle_extra,str(csres_ref)))
-        cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)     
-        
-        # Subplot (0,1): Dev
-        ax1.coastlines()
-        if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]        
-        masked_csdata = np.ma.masked_where(np.abs(csgrid_dev['lon'] - 180) < 2, csdata_dev)
-        for i in range(6):
-            plot1 = ax1.pcolormesh(csgrid_dev['lon_b'][i,:,:], csgrid_dev['lat_b'][i,:,:], 
-                                   masked_csdata[i,:,:], cmap=WhGrYlRd,vmin=vmin, vmax=vmax)
-        ax1.set_title('{} (Dev){}\nC{}'.format(devstr,subtitle_extra,str(csres_dev)))
-        cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)  
-            
-        # Subplot (1,0): Difference
-        gc_absdiff = csdata_dev - csdata_ref
-        diffabsmax = max([np.abs(gc_absdiff.min()), np.abs(gc_absdiff.max())])
-        [vmin, vmax] = [-diffabsmax, diffabsmax]
-        ax2.coastlines()
-        # assume the same grid for now in gchp vs gchp
-        masked_csdata = np.ma.masked_where(np.abs(csgrid_dev['lon'] - 180) < 2, gc_absdiff)
-        for i in range(6):
-            plot2 = ax2.pcolormesh(csgrid_dev['lon_b'][i,:,:], csgrid_dev['lat_b'][i,:,:], 
-                                   masked_csdata[i,:,:], cmap='RdBu_r',vmin=vmin, vmax=vmax)
-        ax2.set_title('Difference\n(Dev - Ref)')   
-        cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)  
-    
-        # Subplot (1,1): Fractional Difference (restrict to +/-2)
-        gc_fracdiff = (csdata_dev - csdata_ref) / csdata_ref
-        if full_ratio_range: [vmin, vmax] = [None, None]
-        else: [vmin, vmax] = [-2, 2]
-        ax3.coastlines()
-        # assume the same grid for now in gchp vs gchp
-        masked_csdata = np.ma.masked_where(np.abs(csgrid_dev['lon'] - 180) < 2, gc_fracdiff)
-        for i in range(6):
-            plot3 = ax3.pcolormesh(csgrid_dev['lon_b'][i,:,:], csgrid_dev['lat_b'][i,:,:], 
-                                   masked_csdata[i,:,:], cmap='RdBu_r',vmin=vmin, vmax=vmax)
-        ax3.set_title('Fractional Difference\n(Dev - Ref)/Ref')   
-        cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
-        cb.set_clim(vmin=vmin, vmax=vmax)
-        cb.set_label('unitless')     
-            
-        if savepdf:    
-            pdf.savefig(figs)
-            plt.close(figs)
-            
-    if savepdf: pdf.close()
-
 # Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, weightsdir=None,
                        savepdf=False, pdfname='zonalmean.pdf', cmpres=None, match_cbar=True,
-                       normalize_by_area=False, enforce_units=True ):
+                       normalize_by_area=False, enforce_units=True, flip_ref=False, flip_dev=False ):
 
-    # If no refres is passed, determine automatically from sizes of lat and lon
-    refnlat = refdata.sizes['lat']
-    refnlon = refdata.sizes['lon']
-    devnlat = devdata.sizes['lat']
-    devnlon = devdata.sizes['lon']
-    
-    # ref grid resolution and type
-    if refnlat == 46 and refnlon == 72:
-        refres = '4x5'
-        refgridtype = 'll'
-    elif refnlat == 91 and refnlon == 144:
-        refres = '2x2.5'
-        refgridtype = 'll'
-    else:
-        print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
-
-    # dev grid resolution and type
-    if devnlat == 46 and devnlon == 72:
-        devres = '4x5'
-        devgridtype = 'll'
-    elif devnlat == 91 and devnlon == 144:
-        devres = '2x2.5'
-        devgridtype = 'll'
-    else:
-        print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
-    
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
         [commonvars, commonvars2D, varlist] = compare_varnames(refdata, devdata)
         print('Plotting all 3D variables')
     n_var = len(varlist)
 
-    # If no cmpres is passed then choose highest resolution between ref and dev.
-    if cmpres == None:
-        if refres == devres:
-            cmpres = refres
-        else:
-            cmpres = min([refres, devres])
+    ##############################################################################
+    # Determine input grid resolutions and types
+    ##############################################################################
 
+    # ref
+    refnlat = refdata.sizes['lat']
+    refnlon = refdata.sizes['lon']
+    if refnlat == 46 and refnlon == 72:
+        refres = '4x5'
+        refgridtype = 'll'
+    elif refnlat == 91 and refnlon == 144:
+        refres = '2x2.5'
+        refgridtype = 'll'
+    elif refnlat/6 == refnlon:
+        refres = refnlon
+        refgridtype = 'cs'
+    else:
+        print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+        return
+    
+    # dev
+    devnlat = devdata.sizes['lat']
+    devnlon = devdata.sizes['lon']
+    if devnlat == 46 and devnlon == 72:
+        devres = '4x5'
+        devgridtype = 'll'
+    elif devnlat == 91 and devnlon == 144:
+        devres = '2x2.5'
+        devgridtype = 'll'
+    elif devnlat/6 == devnlon:
+        devres = devnlon
+        devgridtype = 'cs'
+    else:
+        print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+        return
+    
+    ##############################################################################
+    # Determine comparison grid resolution (if not passed)
+    ##############################################################################
+
+    # If no cmpres is passed then choose highest resolution between ref and dev.
+    # If both datasets are cubed sphere then default to 1x1.25 for comparison.
+    cmpgridtype = 'll'
+    if cmpres == None:
+        if refres == devres and refgridtype == 'll':
+            cmpres = refres
+        elif refgridtype == 'll' and devgridtype == 'll':
+            cmpres = min([refres, devres])
+        else:
+            cmpres = '1x1.25'
+        
     # Determine what, if any, need regridding.
     regridref = refres != cmpres
     regriddev = devres != cmpres
     regridany = regridref or regriddev
 
-    # Get lat-lon grids (ref, dev, and comparison)
-    if refgridtype == 'll': refgrid = make_grid_LL(refres)
-    if devgridtype == 'll': devgrid = make_grid_LL(devres)
+    ##############################################################################
+    # Make grids (ref, dev, and comparison)
+    ##############################################################################
+
+    # Ref
+    if refgridtype == 'll':
+        refgrid = make_grid_LL(refres)
+    else:
+        [refgrid, regrid_list] = make_grid_CS(refres)
+
+    # Dev
+    if devgridtype == 'll':
+        devgrid = make_grid_LL(devres)
+    else:
+        [devgrid, devgrid_list] = make_grid_CS(devres)
+
+    # Comparison    
     cmpgrid = make_grid_LL(cmpres)
-    if regridref and refgridtype == 'll':
-        refregridder = make_regridder_L2L(refres, cmpres, weightsdir=weightsdir, reuse_weights=True)
-    if regriddev and devgridtype == 'll':
-        devregridder = make_regridder_L2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
-    
-    # Get lat/lon extents
-    [refminlon, refmaxlon] = [min(refgrid['lon_b']), max(refgrid['lon_b'])]
-    [refminlat, refmaxlat] = [min(refgrid['lat_b']), max(refgrid['lat_b'])]
-    [devminlon, devmaxlon] = [min(devgrid['lon_b']), max(devgrid['lon_b'])]
-    [devminlat, devmaxlat] = [min(devgrid['lat_b']), max(devgrid['lat_b'])]
-    [cmpminlon, cmpmaxlon] = [min(cmpgrid['lon_b']), max(cmpgrid['lon_b'])]
-    [cmpminlat, cmpmaxlat] = [min(cmpgrid['lat_b']), max(cmpgrid['lat_b'])]
-    
+
+    ##############################################################################
+    # Make regridders, if applicable
+    ##############################################################################
+
+    if regridref:
+        if refgridtype == 'll':
+            refregridder = make_regridder_L2L(refres, cmpres, weightsdir=weightsdir, reuse_weights=True)
+        else:
+            refregridder_list = make_regridder_C2L(refres, cmpres, weightsdir=weightsdir, reuse_weights=True)
+    if regriddev:
+        if devgridtype == 'll':
+            devregridder = make_regridder_L2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
+        else:
+            devregridder_list = make_regridder_C2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
+            
+    ##############################################################################
+    # Create pdf, if savepdf is passed as True
+    ##############################################################################
+
     # Universal plot setup
     xtick_positions = np.arange(-90,91,30)
     xticklabels = ['{}$\degree$'.format(x) for x in xtick_positions]
     ytick_positions = np.arange(0,61,20)
     yticklabels = [str(y) for y in ytick_positions]
-    
-    # Create pdf (if saving)
+    nlev = 72
+    extent=(-90,90,0,nlev)
+
     if savepdf:
-        print('\nCreating {} for {} variables'.format(pdfname, n_var))
+        print('\nCreating {} for {} variables'.format(pdfname,n_var))
         pdf = PdfPages(pdfname)
+
+    ##############################################################################
+    # Loop over variables
+    ##############################################################################    
 
     # Loop over variables
     print_units_warning = True
     for ivar in range(n_var):
         if savepdf: print('{} '.format(ivar), end='')
         varname = varlist[ivar]
-        
+  
         # Do some checks: dimensions and units
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
-        nlev = 72
-        #assert varndim_ref == varndim_dev, 'Dimensions do not agree for {}!'.format(varname)
-
+ 
         units_ref = refdata[varname].units.strip()
         units_dev = devdata[varname].units.strip()
         if units_ref != units_dev:
@@ -1024,32 +896,36 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             else:
                # if not enforcing units, just keep going after only printing warning once 
                print_units_warning = False
-               
-        # Set plot extent
-        extent=(-90,90,0,nlev)
 
-        # if normalizing by area, adjust units to be per m2, and adjust title string
-        units = units_ref
-        varndim = varndim_ref
-        subtitle_extra = ''            
-        
-        # Slice the data.  Need to handle different incoming number of dimensions and the bpch case
-        # where no time dimension is included.
+        ##############################################################################
+        # Slice the data, allowing for possibility of no time dimension (bpch)
+        ##############################################################################
 
-        # ref
+        # Ref
         vdims = refdata[varname].dims
         if 'time' in vdims:
             ds_ref = refdata[varname].isel(time=itime)
         else:
             ds_ref = refdata[varname]
 
-        # dev
+        # Dev
         vdims = devdata[varname].dims      
         if 'time' in vdims:
             ds_dev = devdata[varname].isel(time=itime)
         else:
             ds_dev = devdata[varname]
 
+        print(ds_dev.shape)
+
+        ##############################################################################
+        # Area normalization, if any
+        ##############################################################################
+        
+        # if normalizing by area, adjust units to be per m2, and adjust title string
+        units = units_ref
+        varndim = varndim_ref
+        subtitle_extra = ''
+        
         # if normalizing by area, transform on the native grid and adjust units and subtitle string
         exclude_list = ['WetLossConvFrac','Prod_','Loss_']
         if normalize_by_area and not any(s in varname for s in exclude_list):
@@ -1057,35 +933,96 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             ds_dev.values = ds_dev.values / devdata['AREAM2'].values[np.newaxis,:,:]
             units = '{} m-2'.format(units)
             subtitle_extra = ', Normalized by Area'
-   
-        # Get comparison data (same grid resolution), regridding the slices if needed
+
+        ##############################################################################    
+        # Get comparison data sets, regridding the input slices if needed
+        ##############################################################################            
+
+        # Flip in the veritical if applicable
+        if flip_ref:
+            ds_ref.data = ds_ref.data[::-1,:,:]
+        if flip_dev:
+            ds_ref.data = ds_ref.data[::-1,:,:]
+            
+        # Reshape ref/dev cubed sphere data, if any
+        if refgridtype == 'cs':
+            ds_ref_reshaped = ds_ref.data.reshape(nlev,6,refres,refres).swapaxes(0,1)
+        if devgridtype == 'cs':
+            ds_dev_reshaped = ds_dev.data.reshape(nlev,6,devres,devres).swapaxes(0,1)
+
+        # Ref
         if regridref:
-            ds_ref_cmp = refregridder(ds_ref)
+            if refgridtype == 'll':
+                # regrid ll to ll
+                ds_ref_cmp = refregridder(ds_ref)
+            else:
+                # regrid cs to ll
+                ds_ref_cmp = np.zeros([nlev, cmpgrid['lat'].size, cmpgrid['lon'].size])
+                for i in range(6):
+                    regridder = refregridder_list[i]
+                    ds_ref_cmp += regridder(ds_ref_reshaped[i])
         else:
             ds_ref_cmp = ds_ref
+
+        # Dev
         if regriddev:
-            ds_dev_cmp = devregridder(ds_dev)
+            if devgridtype == 'll':
+                # regrid ll to ll
+                ds_dev_cmp = devregridder(ds_dev)
+            else:
+                # regrid cs to ll
+                ds_dev_cmp = np.zeros([nlev, cmpgrid['lat'].size, cmpgrid['lon'].size])
+                for i in range(6):
+                    regridder = devregridder_list[i]
+                    ds_dev_cmp += regridder(ds_dev_reshaped[i])
         else:
             ds_dev_cmp = ds_dev
+
+        ##############################################################################    
+        # Calculate zonal mean
+        ##############################################################################
+        
+        # Ref
+        if refgridtype == 'll':
+            zm_ref = ds_ref.mean(dim='lon')
+        else:
+            zm_ref = ds_ref_cmp.mean(axis=2)
+
+        # Dev
+        if devgridtype == 'll':
+            zm_dev = ds_dev.mean(dim='lon')
+        else:
+            zm_dev = ds_dev_cmp.mean(axis=2)
+
+        # Comparison
+        zm_dev_cmp = ds_dev_cmp.mean(axis=2)
+        zm_ref_cmp = ds_ref_cmp.mean(axis=2)
             
-        # Calculate zonal mean of the data
-        zm_ref = ds_ref.mean(dim='lon')
-        zm_dev = ds_dev.mean(dim='lon')
-        zm_ref_cmp = ds_ref_cmp.mean(dim='lon')
-        zm_dev_cmp = ds_dev_cmp.mean(dim='lon')
-            
-        # Get min and max for colorbar limits
-        [vmin_ref, vmax_ref] = [zm_ref.min(), zm_ref.max()]
-        [vmin_dev, vmax_dev] = [zm_dev.min(), zm_dev.max()]
-        [vmin_ref_cmp, vmax_ref_cmp] = [zm_ref_cmp.min(), zm_ref_cmp.max()]
-        [vmin_dev_cmp, vmax_dev_cmp] = [zm_dev_cmp.min(), zm_dev_cmp.max()]
-        vmin_cmp = np.min([zm_ref_cmp.min(), zm_dev_cmp.min()])
-        vmax_cmp = np.max([zm_ref_cmp.max(), zm_dev_cmp.max()])
+        ##############################################################################    
+        # Get min and max values for use in the colorbars
+        ##############################################################################
+
+        # Ref
+        vmin_ref = zm_ref.min()
+        vmax_ref = zm_ref.max()
+
+        # Dev
+        vmin_dev = zm_dev.min()
+        vmax_dev = zm_dev.max()
+
+        # Comparison
+        vmin_cmp = np.min([ds_ref_cmp.min(), ds_dev_cmp.min()])
+        vmax_cmp = np.max([ds_ref_cmp.max(), ds_dev_cmp.max()])
+
+        # Take min/max across all
         vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
         if match_cbar: [vmin, vmax] = [vmin_abs, vmax_abs]
-        
+
+        ##############################################################################    
         # Create 2x2 figure
+        ##############################################################################
+        
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(3, 2, figsize=[12,15.3], 
                                                       subplot_kw={'projection': crs.PlateCarree()})
         # Give the page a title
@@ -1093,10 +1030,17 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         fontsize=25
         figs.suptitle('{}, Zonal Mean'.format(varname), fontsize=fontsize, y=offset)
 
+        ##############################################################################            
         # Subplot 0: Ref
+        ##############################################################################
+        
         if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
         plot0 = ax0.imshow(zm_ref, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
-        ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, refres ))
+        if refgridtype == 'll':
+            ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, refres ))
+        else:
+            ax0.set_title('{} (Ref){}\n{} regridded from c{}'.format(refstr, subtitle_extra, 
+                                                                    cmpres, refres))
         ax0.set_aspect('auto')
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
@@ -1107,11 +1051,18 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_ref)
-        
+
+        ##############################################################################    
         # Subplot 1: Dev
+        ##############################################################################
+        
         if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
         plot1 = ax1.imshow(zm_dev, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
-        ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, devres ))
+        if devgridtype == 'll':
+            ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, devres ))
+        else:
+            ax1.set_title('{} (Dev){}\n{} regridded from {}'.format(devstr, subtitle_extra, 
+                                                                    cmpres, devres))
         ax1.set_aspect('auto')
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
@@ -1122,11 +1073,17 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_dev)
-        
+
+        ##############################################################################    
         # Calculate zonal mean difference
+        ##############################################################################
+        
         zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
-                
+
+        ##############################################################################    
         # Subplot 2: Difference, dynamic range
+        ##############################################################################
+        
         diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
         [vmin, vmax] = [-diffabsmax, diffabsmax]
         plot2 = ax2.imshow(zm_diff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
@@ -1146,9 +1103,13 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         if np.all(zm_diff==0): 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
         cb.set_label(units)
-        
+
+        ##############################################################################    
         # Subplot 3: Difference, restricted range
-        [pct5, pct95] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)] # placeholder: use 5 and 95 percentiles as bounds
+        ##############################################################################
+
+         # placeholder: use 5 and 95 percentiles as bounds
+        [pct5, pct95] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)]
         abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
         [vmin,vmax] = [-abspctmax, abspctmax]
         plot3 = ax3.imshow(zm_diff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
@@ -1168,11 +1129,17 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         if np.all(zm_diff==0): 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
         cb.set_label(units)
-        
+
+        ##############################################################################    
         # Zonal mean fractional difference
+        ##############################################################################
+        
         zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(zm_ref_cmp)
-            
+
+        ##############################################################################    
         # Subplot 4: Fractional Difference, dynamic range
+        ##############################################################################
+        
         fracdiffabsmax = max([np.abs(zm_fracdiff.min()), np.abs(zm_fracdiff.max())])
         if np.all(zm_fracdiff == 0 ):
             [vmin, vmax] = [-2, 2]
@@ -1196,8 +1163,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
         cb.set_clim(vmin=vmin, vmax=vmax)
         cb.set_label('unitless')   
-        
+
+        ##############################################################################    
         # Subplot 5: Fractional Difference, restricted range
+        ##############################################################################
+
         [vmin, vmax] = [-2, 2]
         plot5 = ax5.imshow(zm_fracdiff, vmin=vmin, vmax=vmax, cmap='RdBu_r', extent=extent)
         if regridany:
@@ -1221,194 +1191,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         if savepdf:    
             pdf.savefig(figs)
             plt.close(figs)
-            
-    if savepdf: pdf.close()
 
-def compare_gchp_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
-                            weightsdir='.', itime=0, llres_cmp='1x1.25', savepdf=False,
-                            pdfname='gchp_vs_gchp_map.pdf', match_cbar=True, full_ratio_range=False,
-                            normalize_by_area=False, area_ref=None, area_dev=None, flip_vert=False):
-
-    # If no varlist is passed, plot all 3D variables in the dataset
-    if varlist == None:
-        [commonvars, commonvars2D, varlist] = compare_varnames(refdata, devdata)
-        print('Plotting all 3D variables')
-    n_var = len(varlist)
-    
-    # Get lat-lon grid
-    llgrid_cmp = make_grid_LL(llres_cmp)
-
-    # Get cubed sphere grid and regridder for first data set
-    csres_ref = refdata['lon'].size
-    [csgrid_ref, csgrid_list_ref] = make_grid_CS(csres_ref)
-    cs_regridder_list_ref = make_regridder_C2L(csres_ref, llres_cmp, weightsdir=weightsdir, 
-                                               reuse_weights=True)
-
-    # Get cubed sphere grid and regridder for first data set
-    csres_dev = devdata['lon'].size
-    [csgrid_dev, csgrid_list_dev] = make_grid_CS(csres_dev)
-    cs_regridder_list_dev = make_regridder_C2L(csres_dev, llres_cmp, weightsdir=weightsdir, 
-                                               reuse_weights=True)
-    
-    # Universal plot setup
-    xtick_positions = np.arange(-90,91,30)
-    xticklabels = ['{}$\degree$'.format(x) for x in xtick_positions]
-    ytick_positions = np.arange(0,61,20)
-    yticklabels = [str(y) for y in ytick_positions]
-    
-    # Create pdf (if saving)
-    if savepdf:
-        print('\nCreating {} for {} variables'.format(pdfname, n_var))
-        pdf = PdfPages(pdfname)
-
-    # Loop over variables
-    for ivar in range(n_var):
-        if savepdf: print('{} '.format(ivar), end='')
-        varname = varlist[ivar]
-        
-        # Do some checks: dimensions and units
-        varndim_ref = refdata[varname].ndim
-        varndim_dev = devdata[varname].ndim
-        nlev = 72
-        assert varndim_ref == varndim_dev, 'GCHP dimensions do not agree for {}!'.format(varname)
-        units_ref = refdata[varname].units
-        units_dev = devdata[varname].units
-        assert units_ref == units_dev, 'GCHP units do not match for {}!'.format(varname)
-        
-        # Set plot extent
-        extent=(-90,90,0,nlev)
-        
-        # if normalizing by area, adjust units to be per m2, and adjust title string
-        units = units_ref
-        varndim = varndim_ref
-        subtitle_extra = ''
-        
-        # Slice the data
-        vdims = refdata[varname].dims
-        if 'lev' not in vdims:
-            print('ERROR: variable does not have lev dimension')
-            print(varname)
-            return
-        if 'time' in vdims:
-            ds_ref = refdata[varname].isel(time=itime)
-            ds_dev = devdata[varname].isel(time=itime)
-        elif 'lat' in vdims and 'lon' in vdims:
-            ds_ref = refdata[varname]
-            ds_dev = devdata[varname]
-        else:
-            print('ERROR: cannot handle variables without lat and lon dimenions.')
-            print(varname)
-            return
-            
-        # if normalizing by area, transform on the native grid and adjust units and subtitle string
-        exclude_list = ['WetLossConvFrac','Prod_','Loss_']
-        if normalize_by_area and not any(s in varname for s in exclude_list):
-            ds_ref.values = ds_ref.values / area_ref.values[np.newaxis,:,:]
-            ds_dev.values = ds_dev.values / area_dev.values[np.newaxis,:,:]
-            units = '{} m-2'.format(units)
-            subtitle_extra = ', Normalized by Area'
-            
-        # Regrid the slices
-        if flip_vert: 
-            ds_ref.data = ds_ref.data[::-1,:,:]
-            ds_dev.data = ds_dev.data[::-1,:,:]
-        csdata_ref = ds_ref.data.reshape(nlev,6,csres_ref,csres_ref).swapaxes(0,1)
-        csdata_dev = ds_dev.data.reshape(nlev,6,csres_dev,csres_dev).swapaxes(0,1)
-        lldata_ref = np.zeros([nlev, llgrid_cmp['lat'].size, llgrid_cmp['lon'].size])
-        lldata_dev = np.zeros([nlev, llgrid_cmp['lat'].size, llgrid_cmp['lon'].size])
-        for i in range(6):
-            regridder_ref = cs_regridder_list_ref[i]
-            lldata_ref += regridder_ref(csdata_ref[i])
-            regridder_dev = cs_regridder_list_dev[i]
-            lldata_dev += regridder_dev(csdata_dev[i])
-        
-        # Calculate zonal mean of the regridded data
-        zm_ref = lldata_ref.mean(axis=2)
-        zm_dev = lldata_dev.mean(axis=2)
-            
-        # Get min and max for colorbar limits
-        [vmin_ref, vmax_ref] = [zm_ref.min(), zm_ref.max()]
-        [vmin_dev, vmax_dev] = [zm_dev.min(), zm_dev.max()]
-        vmin_cmn = np.min([vmin_ref, vmin_dev])
-        vmax_cmn = np.max([vmax_ref, vmax_dev])
-        if match_cbar: [vmin, vmax] = [vmin_cmn, vmax_cmn]
-        
-        # Create 2x2 figure
-        figs, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=[12,12], 
-                                                      subplot_kw={'projection': crs.PlateCarree()})
-        # Give the page a title
-        offset = 0.96
-        fontsize=25
-        figs.suptitle('{}, Zonal Mean'.format(varname), fontsize=fontsize, y=offset)
-
-        # Subplot 0: Ref
-        if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
-        plot0 = ax0.imshow(zm_ref, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
-        ax0.set_title('{} (Ref){}\n{} regridded from {}'.format(refstr, subtitle_extra, 
-                                                                llres_cmp, csres_ref))
-        ax0.set_aspect('auto')
-        ax0.set_xticks(xtick_positions)
-        ax0.set_xticklabels(xticklabels)
-        ax0.set_yticks(ytick_positions)
-        ax0.set_yticklabels(yticklabels)
-        cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)
-        
-        # Subplot 1: Dev
-        if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
-        plot1 = ax1.imshow(zm_dev, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
-        ax1.set_title('{} (Dev){}\n{} regridded from {}'.format(devstr, subtitle_extra, 
-                                                                llres_cmp, csres_dev))
-        ax1.set_aspect('auto')
-        ax1.set_xticks(xtick_positions)
-        ax1.set_xticklabels(xticklabels)
-        ax1.set_yticks(ytick_positions)
-        ax1.set_yticklabels(yticklabels)
-        cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)
-            
-        # Subplot 2: Difference
-        zm_absdiff = zm_dev - zm_ref
-        diffabsmax = max([np.abs(zm_absdiff.min()), np.abs(zm_absdiff.max())])
-        [vmin, vmax] = [-diffabsmax, diffabsmax]
-        plot2 = ax2.imshow(zm_absdiff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
-        ax2.set_title('Difference\n(Dev - Ref)')
-        ax2.set_aspect('auto')
-        ax2.set_xticks(xtick_positions)
-        ax2.set_xticklabels(xticklabels)
-        ax2.set_yticks(ytick_positions)
-        ax2.set_yticklabels(yticklabels)
-        cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)
-        
-        # Subplot 3: Fractional Difference (restrict to +/-2)
-        zm_fracdiff = (zm_dev - zm_ref) / zm_ref
-        if full_ratio_range: [vmin, vmax] = [None, None]
-        else: [vmin, vmax] = [-2, 2]
-        plot3 = ax3.imshow(zm_fracdiff, vmin=vmin, vmax=vmax, cmap='RdBu_r', extent=extent)
-        ax3.set_title('Fractional Difference\n(Dev - Ref)/Ref')
-        ax3.set_aspect('auto')
-        ax3.set_xticks(xtick_positions)
-        ax3.set_xticklabels(xticklabels)
-        ax3.set_yticks(ytick_positions)
-        ax3.set_yticklabels(yticklabels)
-        cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
-        cb.set_clim(vmin=vmin, vmax=vmax)
-        cb.set_label('unitless')      
-            
-        if savepdf:    
-            pdf.savefig(figs)
-            plt.close(figs)
-            
+    ##############################################################################    
+    # Finish
+    ##############################################################################
     if savepdf: pdf.close()
     
 def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='' ):
@@ -1460,166 +1246,3 @@ def add_hierarchical_bookmarks_to_pdf( pdfname, catdict, remove_prefix='' ):
     
     # Replace the old file with the new
     os.rename(pdfname_tmp, pdfname)
-
-
-def compare_gchp_vs_gcc_zonal_mean(dgcc, dgchp, varlist=None, weightsdir='.', itime=0, llres_raw='4x5', 
-                       llres_cmp='1x1.25', savepdf=False, pdfname='gchp_vs_gcc_map.pdf', match_cbar=True, 
-                       full_ratio_range=False, normalize_by_area=False, area1=None, area2=None,
-                      flip_vert=False):
-
-    # If no varlist is passed, plot all 3D variables in the dataset
-    if varlist == None:
-        [commonvars, commonvars2D, varlist] = compare_varnames(dgcc, dgchp)
-        print('Plotting all 3D variables')
-    n_var = len(varlist)
-    
-    # Get lat-lon grids and regridder. Assume regridding weights have already been generated
-    llgrid_raw = make_grid_LL(llres_raw)
-    llgrid_cmp = make_grid_LL(llres_cmp)
-    ll_regridder = make_regridder_L2L(llres_raw, llres_cmp, weightsdir=weightsdir, reuse_weights=True)
-
-    # Get cubed sphere grid and regridder
-    csres = dgchp['lon'].size
-    [csgrid, csgrid_list] = make_grid_CS(csres)
-    cs_regridder_list = make_regridder_C2L(csres, llres_cmp, weightsdir=weightsdir, reuse_weights=True)
-    
-    # Universal plot setup
-    xtick_positions = np.arange(-90,91,30)
-    xticklabels = ['{}$\degree$'.format(x) for x in xtick_positions]
-    ytick_positions = np.arange(0,61,20)
-    yticklabels = [str(y) for y in ytick_positions]
-    
-    # Create pdf (if saving)
-    if savepdf:
-        print('\nCreating {} for {} variables'.format(pdfname, n_var))
-        pdf = PdfPages(pdfname)
-
-    # Loop over variables
-    for ivar in range(n_var):
-        if savepdf: print('{} '.format(ivar), end='')
-        varname = varlist[ivar]
-        
-        # Do some checks: dimensions and units
-        varndim = dgchp[varname].ndim
-        varndim2 = dgcc[varname].ndim
-        if 'ilev' in dgcc[varname].dims: nlev = 73
-        else: nlev = 72
-        assert varndim == varndim2, 'GCHP and GCC dimensions do not agree for {}!'.format(varname)
-        units_raw = dgchp[varname].units
-        units2 = dgcc[varname].units
-        assert units_raw == units2, 'GCHP and GCC units do not match for {}!'.format(varname)
-        
-        # Set plot extent
-        extent=(-90,90,0,nlev)
-        
-        # if normalizing by area, adjust units to be per m2, and adjust title string
-        units = units_raw
-        subtitle_extra = ''
-         
-        # Slice the data
-        ds1 = dgcc[varname].isel(time=itime)
-        ds2 = dgchp[varname].isel(time=itime)
-
-        # if normalizing by area, transform on the native grid and adjust units and subtitle string
-        exclude_list = ['WetLossConvFrac','Prod_','Loss_']
-        if normalize_by_area and not any(s in varname for s in exclude_list):
-            ds1.values = ds1.values / area1.values[np.newaxis,:,:]
-            ds2.values = ds2.values / area2.values[np.newaxis,:,:]
-            units = '{} m-2'.format(units_raw)
-            subtitle_extra = ', Normalized by Area'
-            
-        # Regrid the slices
-        if flip_vert: ds2.data = ds2.data[::-1,:,:]
-        csdata = ds2.data.reshape(nlev,6,csres,csres).swapaxes(0,1)
-        gchp_ll = np.zeros([nlev, llgrid_cmp['lat'].size, llgrid_cmp['lon'].size])
-        for i in range(6):
-            regridder = cs_regridder_list[i]
-            gchp_ll += regridder(csdata[i])
-        gcc_ll = ll_regridder(ds1)
-        
-        # Calculate zonal mean of the regridded data
-        gchp_zm = gchp_ll.mean(axis=2)
-        gcc_zm = gcc_ll.mean(axis=2)
-            
-        # Get min and max for colorbar limits
-        [vmin_gchp, vmax_gchp] = [gchp_zm.min(), gchp_zm.max()]
-        [vmin_gcc, vmax_gcc] = [gcc_zm.min(), gcc_zm.max()]
-        vmin_cmn = np.min([vmin_gchp, vmin_gcc])
-        vmax_cmn = np.max([vmax_gchp, vmax_gcc])
-        if match_cbar: [vmin, vmax] = [vmin_cmn, vmax_cmn]
-        
-        # Create 2x2 figure
-        figs, ((ax0, ax1), (ax2, ax3)) = plt.subplots(2, 2, figsize=[12,12], 
-                                                      subplot_kw={'projection': crs.PlateCarree()})
-        # Give the page a title
-        offset = 0.96
-        fontsize=25
-        figs.suptitle('{}, Zonal Mean'.format(varname), fontsize=fontsize, y=offset)
-
-        # Subplot 0: GCHP regridded
-        if not match_cbar: [vmin, vmax] = [vmin_gchp, vmax_gchp]
-        plot0 = ax0.imshow(gchp_zm, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
-        ax0.set_title('GCHP Regridded{}\n{}'.format(subtitle_extra, llres_cmp))
-        ax0.set_aspect('auto')
-        ax0.set_xticks(xtick_positions)
-        ax0.set_xticklabels(xticklabels)
-        ax0.set_yticks(ytick_positions)
-        ax0.set_yticklabels(yticklabels)
-        cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)
-        
-        # Subplot 1: GCC regridded
-        if not match_cbar: [vmin, vmax] = [vmin_gcc, vmax_gcc]
-        plot1 = ax1.imshow(gcc_zm, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
-        ax1.set_title('GCC Regridded{}\n{}'.format(subtitle_extra, llres_cmp))
-        ax1.set_aspect('auto')
-        ax1.set_xticks(xtick_positions)
-        ax1.set_xticklabels(xticklabels)
-        ax1.set_yticks(ytick_positions)
-        ax1.set_yticklabels(yticklabels)
-        cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)
-            
-        # Subplot 2: Difference
-        gc_absdiff = gchp_zm - gcc_zm
-        diffabsmax = max([np.abs(gc_absdiff.min()), np.abs(gc_absdiff.max())])
-        [vmin, vmax] = [-diffabsmax, diffabsmax]
-        plot2 = ax2.imshow(gc_absdiff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
-        ax2.set_title('Difference\n(GCHP - GCC)')
-        ax2.set_aspect('auto')
-        ax2.set_xticks(xtick_positions)
-        ax2.set_xticklabels(xticklabels)
-        ax2.set_yticks(ytick_positions)
-        ax2.set_yticklabels(yticklabels)
-        cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)
-        
-        # Subplot 3: Fractional Difference (restrict to +/-2)
-        gc_fracdiff = (gchp_zm - gcc_zm) / gcc_zm
-        if full_ratio_range: [vmin, vmax] = [None, None]
-        else: [vmin, vmax] = [-2, 2]
-        plot3 = ax3.imshow(gc_fracdiff, vmin=vmin, vmax=vmax, cmap='RdBu_r', extent=extent)
-        ax3.set_title('Fractional Difference\n(GCHP-GCC)/GCC')
-        ax3.set_aspect('auto')
-        ax3.set_xticks(xtick_positions)
-        ax3.set_xticklabels(xticklabels)
-        ax3.set_yticks(ytick_positions)
-        ax3.set_yticklabels(yticklabels)
-        cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
-        cb.set_clim(vmin=vmin, vmax=vmax)
-        cb.set_label('unitless')      
-            
-        if savepdf:    
-            pdf.savefig(figs)
-            plt.close(figs)
-            
-    if savepdf: pdf.close()
