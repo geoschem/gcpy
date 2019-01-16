@@ -254,6 +254,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         print('Plotting all common variables (surface only if 3D)')
     n_var = len(varlist)
 
+    # If no weightsdir is passed, set to current directory in case it is needed
+    if weightsdir == None:
+        weightsdir = '.'
+    
     ##############################################################################
     # Determine input grid resolutions and types
     ##############################################################################
@@ -762,6 +766,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         [commonvars, commonvars2D, varlist] = compare_varnames(refdata, devdata)
         print('Plotting all 3D variables')
     n_var = len(varlist)
+
+    # If no weightsdir is passed, set to current directory in case it is needed
+    if weightsdir == None:
+        weightsdir = '.'
 
     ##############################################################################
     # Determine input grid resolutions and types
