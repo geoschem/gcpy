@@ -1019,8 +1019,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         vmax_dev = zm_dev.max()
 
         # Comparison
-        vmin_cmp = np.min([ds_ref_cmp.min(), ds_dev_cmp.min()])
-        vmax_cmp = np.max([ds_ref_cmp.max(), ds_dev_cmp.max()])
+        vmin_cmp = np.min([zm_ref_cmp.min(), zm_dev_cmp.min()])
+        vmax_cmp = np.max([zm_ref_cmp.max(), zm_dev_cmp.max()])
 
         # Take min/max across all
         vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
