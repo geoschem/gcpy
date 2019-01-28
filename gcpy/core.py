@@ -575,8 +575,37 @@ def add_species_to_dataset(ds, varname, varlist, units, verbose=False, overwrite
     ds = xr.merge([ds,darr])
     return ds
 
+def find_varnames(ds, target_text=''):
+    '''
+    Finds the variable names in an xarray Dataset object.
+    
+    Args:
+        ds : An xarray Dataset object.
+        target_text : Target text string for restricting the search.
+    
+    Returns:
+        A list of all variable names in ds.  But if the target_text argument
+        is supplied, then a list of only those variable names containing
+        the target text will be returned.
+        
+    Examples:
+        Obtain a list of all variable names in a Dataset object.
+        
+        >>> import xarray as xr
+        >>> ds = xr.open_dataset(myfile.nc)
+        >>> vars = find_varnames(ds)
+        
+        Obtain a list of only those variable names matching "CO",
+        i.e. the carbon monoxide species:
+        
+        >>> import xarray as xr
+        >>> ds = xr.open_dataset(myfile.nc)
+        >>> vars_CO = find_varnames(ds, "CO")
+    '''
 
+    if target_text != '':
+        varnames = [k for k in ds.data_vars.keys() if target_text in k]
+    else:
+        varnames = [k for k in ds.data_vars.keys() if k]
 
-
-
-
+    return varnames
