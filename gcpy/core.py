@@ -148,7 +148,18 @@ def get_gchp_filepath(outputdir, collection, day, time):
     filepath = os.path.join(outputdir, 'GCHP.{}.{}_{}z.nc4'.format(collection,day,time))
     return filepath
 
-def check_paths( refpath, devpath):
+def check_paths(refpath, devpath):
+    '''
+    Checks to see if paths to data files exist.
+
+    Args:
+        refpath : str
+            Path to the "Reference" data.
+
+        devpath : str
+            Path to the "Development" data.
+    '''
+
     if not os.path.exists(refpath):
         print('ERROR! Path 1 does not exist: {}'.format(refpath))
     else:
@@ -158,8 +169,47 @@ def check_paths( refpath, devpath):
     else:
         print('Path 2 exists: {}'.format(devpath))
 
-def compare_varnames(refdata, devdata):
-    # Find common variables in collection by generating lists and list overlap
+def compare_varnames(refdata, devdata, quiet=False):
+    '''
+    Finds variables that are common to two xarray Dataset objects.
+
+    Args:
+        refdata : xarray Dataset
+            The first Dataset to be compared.
+            (This is often referred to as the "Reference" Dataset.)
+
+        devdata : xarray Dataset
+            The second Dataset to be compared.
+            (This is often referred to as the "Development" Dataset.)
+
+        quiet : boolean
+            If True, will suppress printing to stdout.
+            quiet is set to False by default.
+
+    Returns:
+        commonvars: list of strs
+            Variables that are common to both refdata and devdata,
+            regardless of dimension.
+
+        commonvars1D: list of strs
+            Variables that are common to refdata and devdata,
+            and that are 1-dimensional.
+
+        commonvars2D: list of strs
+            Variables that are common to refdata and devdata,
+            and that are 2-dimensional.
+
+        commonvars3D: list of strs
+            Variables that are common to refdata and devdata,
+            and that are 3-dimensional.
+
+    Examples:
+        >>> import gcpy
+        >>> import xarray as xr
+        >>> refdata = xr.open_dataset("ref_data_file.nc")
+        >>> devdata = xr.open_dataset("dev_data_file.nc")
+        >>> [commonvars, commonvars1D, commonvars2D, commonvars3D ] = gcpy.compare_varnames(refdata, devdata)
+    '''
     refvars = [k for k in refdata.data_vars.keys()]
     devvars= [k for k in devdata.data_vars.keys()]
     commonvars = sorted(list(set(refvars).intersection(set(devvars))))
@@ -171,26 +221,80 @@ def compare_varnames(refdata, devdata):
     commonvars3D = [v for v in commonvars if devdata[v].ndim == 4]
     
     # Print information on common and mismatching variables, as well as dimensions
-    print('{} common variables'.format(len(commonvars)))
-    if len(refonly) > 0:
-        print('{} variables in ref only (skip)'.format(len(refonly)))
-        print('   Variable names: {}'.format(refonly))
-    else:
-        print('0 variables in ref only')
-    if len(devonly) > 0:
-        print('{} variables in dev only (skip)'.format(len(devonly)))
-        print('   Variable names: {}'.format(devonly))
-    else:
-        print('0 variables in dev only')
-    if len(dimmismatch) > 0:
-        print('{} common variables have different dimensions'.format(len(dimmismatch)))
-        print('   Variable names: {}'.format(dimmismatch))
-    else:
-        print('All variables have same dimensions in ref and dev')
+    if quiet == False:
+        print('{} common variables'.format(len(commonvars)))
+        if len(refonly) > 0:
+            print('{} variables in ref only (skip)'.format(len(refonly)))
+            print('   Variable names: {}'.format(refonly))
+        else:
+            print('0 variables in ref only')
+            if len(devonly) > 0:
+                print('{} variables in dev only (skip)'.format(len(devonly)))
+                print('   Variable names: {}'.format(devonly))
+            else:
+                print('0 variables in dev only')
+                if len(dimmismatch) > 0:
+                    print('{} common variables have different dimensions'.format(len(dimmismatch)))
+                    print('   Variable names: {}'.format(dimmismatch))
+                else:
+                    print('All variables have same dimensions in ref and dev')
 
     return [commonvars, commonvars1D, commonvars2D, commonvars3D]
 
 def compare_stats(refdata, refstr, devdata, devstr, varname):
+    '''
+    Prints out global statistics (array sizes, mean, min, max, sum)
+    from two xarray Dataset objects.
+
+    Args:
+        refdata : xarray Dataset
+            The first Dataset to be compared.
+            (This is often referred to as the "Reference" Dataset.)
+
+        refstr : str
+            Label for refdata to be used in the printout
+
+        devdata : xarray Dataset
+            The second Dataset to be compared.
+            (This is often referred to as the "Development" Dataset.)
+
+        devstr : str
+            Label for devdata to be used in the printout
+
+        varname : str
+            Variable name for which global statistics will be printed out.
+
+    Returns:
+        None
+
+    Examples:
+        >>> import gcpy
+        >>> import xarray as xr
+        >>> refdata = xr.open_dataset("ref_data_file.nc")
+        >>> devdata = xr.open_dataset("dev_data_file.nc")
+        >>> gcpy.compare_stats(ds_ref, "Ref", ds_dev, "Dev", "EmisNO2_Anthro")
+
+        Data units:
+            Ref:  molec/cm2/s
+            Dev:  molec/cm2/s
+        Array sizes:
+            Ref:  (1, 47, 46, 72)
+            Dev:  (1, 47, 46, 72)
+        Global stats:
+          Mean:
+            Ref:  1770774.125
+            Dev:  1770774.125
+          Min:
+            Ref:  0.0
+            Dev:  0.0
+          Max:
+            Ref:  11548288000.0
+            Dev:  11548288000.0
+          Sum:
+            Ref:  275645792256.0
+            Dev:  275645792256.0
+    '''
+
     refvar = refdata[varname]
     devvar = devdata[varname]
     units = refdata[varname].units
@@ -225,28 +329,6 @@ def get_gchp_collection_data(datadir, collection, day, time):
     datafile = get_gchp_filepath(datadir, collection, day, time)
     data_ds = xr.open_dataset(datafile)
     return data_ds
-
-def get_stats(refdata, refstr, devdata, devstr, varname):
-    refvar = refdata[varname]
-    devvar = devdata[varname]
-    units = refdata[varname].units
-    print('Data units: {}'.format(units))
-    print('Array sizes:')
-    print('    {}:  {}'.format(refstr,refvar.shape))
-    print('    {}:  {}'.format(devstr,devvar.shape))
-    print('Global stats:')
-    print('  Mean:')
-    print('    {}:  {}'.format(refstr,np.round(refvar.values.mean(),20)))
-    print('    {}:  {}'.format(devstr,np.round(devvar.values.mean(),20)))
-    print('  Min:')
-    print('    {}:  {}'.format(refstr,np.round(refvar.values.min(),20)))
-    print('    {}:  {}'.format(devstr,np.round(devvar.values.min(),20)))
-    print('  Max:')
-    print('    {}:  {}'.format(refstr,np.round(refvar.values.max(),20)))
-    print('    {}:  {}'.format(devstr,np.round(devvar.values.max(),20)))
-    print('  Sum:')
-    print('    {}:  {}'.format(refstr,np.round(refvar.values.sum(),20)))
-    print('    {}:  {}'.format(devstr,np.round(devvar.values.sum(),20)))
 
 def convert_bpch_names_to_netcdf_names(ds, inplace=True, verbose=False):
 
@@ -575,37 +657,41 @@ def add_species_to_dataset(ds, varname, varlist, units, verbose=False, overwrite
     ds = xr.merge([ds,darr])
     return ds
 
-def find_varnames(ds, target_text=''):
+def filter_names(names, text=''):
     '''
-    Finds the variable names in an xarray Dataset object.
+    Returns elements in a list that match a given substring.
+    Can be used in conjnction with compare_varnames to return a subset
+    of variable names pertaining to a given diagnostic type or species.
     
     Args:
-        ds : An xarray Dataset object.
-        target_text : Target text string for restricting the search.
+        names: list of strs
+
+        text: str
+            Target text string for restricting the search.
     
     Returns:
-        A list of all variable names in ds.  But if the target_text argument
-        is supplied, then a list of only those variable names containing
-        the target text will be returned.
+        filtered_names: list of strs
+            Returns all elements of names that contains the substring
+            specified by the "text" argument.  If "text" is omitted,
+            then the original contents of names will be returned.
         
     Examples:
-        Obtain a list of all variable names in a Dataset object.
+        Obtain a list of variable names that contain the substrings
+        "CO", "NO", and "O3":
         
+        >>> import gcpy
         >>> import xarray as xr
-        >>> ds = xr.open_dataset(myfile.nc)
-        >>> vars = find_varnames(ds)
-        
-        Obtain a list of only those variable names matching "CO",
-        i.e. the carbon monoxide species:
-        
-        >>> import xarray as xr
-        >>> ds = xr.open_dataset(myfile.nc)
-        >>> vars_CO = find_varnames(ds, "CO")
+        >>> refdata = xr.open_dataset("ref_data_file.nc")
+        >>> devdata = xr.open_dataset("dev_data_file.nc")
+        >>> [var, var1D, var2D, var3D] = gcpy.compare_varnames(refdata, devdata)
+        >>> var_CO = gcpy.filter_names(var, "CO")
+        >>> var_NO = gcpy.filter_names(var, "NO")
+        >>> var_O3 = gcpy.filter_names(var, "O3")
     '''
 
-    if target_text != '':
-        varnames = [k for k in ds.data_vars.keys() if target_text in k]
+    if text != '':
+        filtered_names = [k for k in names if text in k]
     else:
-        varnames = [k for k in ds.data_vars.keys() if k]
+        filtered_names = [k for k in names if k]
 
-    return varnames
+    return filtered_names
