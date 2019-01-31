@@ -1408,8 +1408,8 @@ def create_emission_display_name(diagnostic_name, by_inventory):
     return display_name
 
 
-def print_emission_totals(refdata, refstr, devdata, devstr,
-                          varnames, speciesname, interval, by_inventory):
+def print_emission_totals(refdata, refstr, devdata, devstr, varnames,
+                          speciesname, f, interval, by_inventory):
     '''
     Computes and prints emission totals (and differences) for a list of
     variables that are found in two xarray Datasets.
