@@ -5,6 +5,7 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
+from json import load as json_load_file
 
 import matplotlib as mpl
 from matplotlib import ticker
@@ -20,6 +21,7 @@ from .plot import WhGrYlRd, add_latlon_ticks
 from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L
 from .grid.regrid import make_regridder_L2L
+from .core import compare_varnames, filter_names
 
 # change default fontsize (globally)
 # http://matplotlib.org/users/customizing.html
@@ -1276,96 +1278,51 @@ def add_hierarchical_bookmarks_to_pdf( pdfname, catdict, remove_prefix='' ):
     outputstream = open(pdfname_tmp,'wb')
     output.write(outputstream) 
     outputstream.close()
-    
+
     # Replace the old file with the new
     os.rename(pdfname_tmp, pdfname)
 
 
-def get_emissions_varnames(commonvars, species_name,
-                           sector_template='', inventory_template=''):
+def get_emissions_varnames(commonvars, template=None):
     '''
-    Will separate a list of emissions diagnostic variable names into two
-    lists: one corresponding to emissions diagnostics by sector, and another
-    corresponding to emissions diagnostics by inventory.  This is necessary
-    when plotting emissions or printing emissions totals for eahc species.
+    Will return a list of emissions diagnostic variable names that
+    contain a particular search string.
 
     Args:
         commonvars : list of strs
             A list of commmon variable names from two data sets.
             (This can be obtained with method gcpy.compare_varnames)
 
-        species_name : str
-            Name of the species for which emissions diagnostic names
-            are requested.
-
-        sector_template : str
+        template : str
             String template for matching variable names corresponding
-            to emission diagnostics by sector.  If left blank, the
-            value "Emis{}" will be used (where {} is filled in by
-            speciesname).
-
-        inventory_template: str
-            String template for matching variable names corresponding
-            to emission diagnostics by inventory.  If left blank, the
-            value "Emis{}_Inv" will be used (where {} is filled in by
-            speciesname).
+            to emission diagnostics by sector.
 
     Returns:
-        varnames_sec : list of strs
+        varnames : list of strs
            A list of variable names corresponding to emission
-           diagnostics by sector.
-
-        varnames_inv : list of strs
-           A list of variable names corresponding to emission
-           diagnostics by inventory.
+           diagnostics for a given species and sector.
 
     Remarks:
-        This method is mainly intended for model benchmarking purposes,
-        rather than as a general-purpose tool.
-
-    Example:
-        Obtain lists of diagnostic variable names for the CO species,
-        by sector and by inventory:
-
-        >>> import gcpy
-        >>> import xarray as xr
-        >>> refdata = xr.open_dataset("my_ref_file.nc")
-        >>> devdata = xr.open_dataset("my_dev_file.nc")
-        >>> [var, var1D, var2D, var3D] = gcpy.compare_varnames(
-               refdata, devdata)
-        >>> [var_sec, var_inv] = gcpy.get_emissions_varnames(var, "CO")
+        This is an internal method, and is only intended to be called
+        from other GCPy benchmarking methods.
     '''
 
-    # Print sectorial information
+    # Make sure the commonvars list has at least one element
     if len(commonvars) == 0:
         raise ValueError("No valid variable names were passed!")
 
-    # Make sure a species name was passed
-    if species_name == '':
-        raise ValueError("A blank species name was passed!")
-
     # Define template for emission diagnostics by sector
-    if sector_template == '':
-        sector_template = "Emis{}".format(species_name)
-
-    # Define template for emission diagnostics by inventory
-    if inventory_template == '':
-        inventory_template = "Emis{}_Inv".format(species_name)
+    if template is None:
+        raise ValueError("The template argument was not passed!")
 
     # Find all emission diagnostics for the given species
-    varnames_sec = gcpy.filter_names(commonvars, sector_template)
+    varnames = filter_names(commonvars, template)
 
-    # Find emission diagnostics matching the inventory template
-    varnames_inv = sorted(filter_names(commonvars, inventory_template))
-
-    # Find emission diagnostics matching the sector template
-    varnames_sec = sorted(list(set(varnames_sec) - set(varnames_inv)))
-
-    # Return lists
-    return [varnames_sec, varnames_inv]
+    # Return list
+    return varnames
 
 
-def create_emission_display_name(diagnostic_name, by_inventory):
+def create_emission_display_name(diagnostic_name):
     '''
     Converts an emissions diagnostic name to a more easily digestible name
     that can be used as a plot title or in a table of emissions totals.
@@ -1373,12 +1330,6 @@ def create_emission_display_name(diagnostic_name, by_inventory):
     Args:
         diagnostic_name : str
             Name of the diagnostic to be formatted
-
-        by_inventory : boolean
-            If True, denotes that diagnostic_name corresponds to an
-            emissions diagnostic from a given inventory.  If False,
-            denotes that diagnostic_name corresponds to an emissions
-            diagnostic by sector.
 
     Returns:
         display_name : str
@@ -1397,19 +1348,14 @@ def create_emission_display_name(diagnostic_name, by_inventory):
     if "EMIS" in display_name:
         display_name = display_name.replace("EMIS", "")
 
-    if by_inventory is True:
-        if "_Inv_" in display_name:
-            display_name = display_name.replace("_Inv_", " from ")
-        if "_INV_" in display_name:
-            display_name = display_name.replace("_INV_", " from ")
-    else:
-        display_name = display_name.replace("_", " ")
+    display_name = display_name.replace("_", " ")
 
     return display_name
 
 
-def print_emission_totals(refdata, refstr, devdata, devstr, varnames,
-                          speciesname, f, interval, by_inventory):
+def print_emission_totals(refdata, refstr, devdata,
+                          devstr, species_name, varnames,
+                          target_unit, interval, f):
     '''
     Computes and prints emission totals (and differences) for a list of
     variables that are found in two xarray Datasets.
@@ -1429,28 +1375,25 @@ def print_emission_totals(refdata, refstr, devdata, devstr, varnames,
             A string that can be used to identify devdata
             (e.g. a model version number or other identifier).
 
-        varnames : list of strs
-            A list of variable names (which must be present in both refdata
-            and devdata) corresponding to emissions diagnostics.  For each
+        species_name: str
+            Name of the species.
+
+        varnames: list of strs
+            A list of variable names corresponding to emissions diagnostics
+            for the species specified by "species_name".  For each
             variable name in varnames, the total of emissions in refdata
             and refdata, as well as the difference (devdata - refdata) will
             be computed and printed.
 
-         speciesname: str
-            Name of the species corresponding to the variable names in
-            varnames.
+         target_unit : str
+            Emissions totals will be displayed in the unit specified
+            by this argument (e.g. "Tg" or "Tg C", etc.).
 
          interval : float
             Number of seconds in the averaging period.
 
          f : file
             File object denoting a text file where output will be directed.
-
-         by_inventory : boolean
-            If True, denotes that varnames corresponds to emissions
-            diagnostics from emissions inventories.  If False, denotes
-            that varnames corresponds to emissons diagnostics by sector.
-            If not specified, by_inventory will be set to False by default.
 
     Returns:
         None.  Prints emissions totals to a file.
@@ -1467,28 +1410,18 @@ def print_emission_totals(refdata, refstr, devdata, devstr, varnames,
             are just multiplying by the AREA variable in each data set.
     '''
 
-    # Proceed only if there are valid variable names
+    # Proceed only if there are valid sector names
     if len(varnames) > 0:
 
         # NOTE: Need a better unit conversion function here.
         # Seconds in the interval
         to_Tg = 1e-9 * interval
 
-        # Write headers for inventory or sectorial totals
-        if by_inventory is True:
-            title = "{} totals by INVENTORY".format(speciesname)
-            f.write("\n{}".format(title.ljust(33)))
-            f.write("Ref            Dev            Dev-Ref\n")
-        else:
-            title = "{} totals by SECTOR".format(speciesname)
-            f.write("\n{}".format(title.ljust(33)))
-            f.write("Ref            Dev            Dev-Ref\n")
-
         # Loop over variables
         for v in varnames:
 
             # Create the emissions display name from the diagnostic name
-            display_name = create_emission_display_name(v, by_inventory)
+            display_name = create_emission_display_name(v)
 
             # Special handling for totals
             if '_TOTAL' in v.upper():
@@ -1512,9 +1445,9 @@ def print_emission_totals(refdata, refstr, devdata, devstr, varnames,
 
 
 def create_total_emissions_table(reffile, refstr, devfile, devstr,
-                                 species_names, outfilename,
-                                 interval=2678400.0, sector_template='',
-                                 inventory_template=''):
+                                 species, outfilename,
+                                 interval=2678400.0, template=None,
+                                 simulation='Benchmark'):
     '''
     Creates a table of emissions totals (by sector and by inventory)
     for a list of species in contained in two data sets.  The data sets,
@@ -1536,8 +1469,14 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
             A string that can be used to identify the data set specified
             by devfile (e.g. a model version number or other identifier).
 
-        species_names : list of strs
-            A list of species names that are common to both data sets.
+        species : dict
+            Dictionary containing the name of each species and the target
+            unit that emissions will be converted to. The format of
+            species is as follows:
+
+                { species_name : target_unit", etc. }
+
+            where "species_name" and "target_unit" are strs.
 
         outfilename : str
             Name of the text file which will contain the table of
@@ -1546,19 +1485,20 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
     Keyword Args (optional):
         interval : float
             The length of the data interval in seconds. By default, interval
-            is set to the number of seconds in a 31-day month (86400 * 31).
+            is set to the number of seconds in a 31-day month (86400 * 31),
+            which corresponds to a GEOS-Chem benchmark simulation.
 
-        sector_template : str
-            String template for matching variable names corresponding
-            to emission diagnostics by sector.  If left blank, the
-            value "Emis{}" will be used (where {} is filled in by
-            speciesname).
+        template : str
+            Template for the diagnostic names that are contained both
+            "Reference" and "Development" data sets.  If not specified,
+            template will be set to "Emis{}", where {} will be replaced
+            by the species name.
 
-        inventory_template: str
-            String template for matching variable names corresponding
-            to emission diagnostics by inventory.  If left blank, the
-            value "Emis{}_Inv" will be used (where {} is filled in by
-            speciesname).
+        simulation : str
+            Name of the GEOS-Chem simulation type.  If not specified, then
+            simulation will be set by default to "Benchmark".  NOTE: At
+            present, only the GEOS-Chem Benchmark simulation is currently
+            supported.
 
     Returns:
         None.  Writes to a text file specified by the "outfilename" argument.
@@ -1566,6 +1506,12 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
     Remarks:
         This method is mainly intended for model benchmarking purposes,
         rather than as a general-purpose tool.
+
+        Species properties (such as molecular weights) are read from a
+        JSON file (stored in the /data subfolder).  You can have several
+        JSON files corresponding to different types of GEOS-Chem
+        simulations.  (As of February 2019, only the "Benchmark"
+        simulation is officially supported.)
 
     Example:
         Print the total of CO and ACET emissions in two different
@@ -1577,9 +1523,9 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
         >>> devfile = '~/output/12.2.0/HEMCO_sa.diagnostics.201607010000.nc'
         >>> devstr = '12.2.0'
         >>> outfilename = '12.2.0_emission_totals.txt'
-        >>> species_names = ['ACET', 'CO']
+        >>> species = { "CO" : "Tg", "ACET", "Tg C" }
         >>> create_total_emissions_table(reffile, refstr, devfile, devstr,
-            species_names, outfilename)
+            species, outfilename)
     '''
 
     # Open "Reference" dataset
@@ -1594,6 +1540,14 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
     else:
         raise ValueError("Argument 'devfile' was not passed")
 
+    # Load a JSON file containing species properties (such as
+    # molecular weights), which we will need for unit conversions.
+    # This is located in the "data" subfolder of this current directory.
+    properties_dir = os.path.join(os.path.dirname(__file__), 'data')
+    properties_file = "GC_Species_Database_for_{}.json".format(simulation)
+    properties_path = os.path.join(properties_dir, properties_file)
+    properties = json_load_file(open(properties_path))
+
     # Find all common variables between the two datasets
     [cvars, cvars1D, cvars2D, cvars3D] = compare_varnames(refdata,
                                                           devdata,
@@ -1602,35 +1556,38 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
     # Open file for output
     f = open(outfilename, "w")
 
-    # Loop through all of the species that were requested
-    for species in species_names:
+    # Loop through all of the species are in species_dict
+    for species_name, target_unit in species.items():
 
-        print("Processing species {}".format(species))
+        # Echo info
+        print("Processing species {}".format(species_name))
 
-        # Get a list of emission diagnostics (by sector and inventory)
-        # that are common to both refdata and devdata
-        [sectors, inventories] = get_emissions_varnames(
-            cvars, species, sector_template, inventory_template)
-
-        # Title string
-        title1 = "### Emission totals for species {}".format(species)
+        # Title strings
+        title1 = "### Emission totals for species {}".format(species_name)
         title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
 
+        # Write header to file
         f.write("#"*79)
         f.write("\n{}{}\n".format(title1.ljust(76), "###"))
         f.write("{}{}\n".format(title2.ljust(76), "###"))
         f.write("#"*79)
         f.write("\n")
 
-        # Print emission totals by sector
-        print_emission_totals(refdata, refstr, devdata, devstr,
-                              sectors, species, interval, f, False)
+        # Define default template for emission diagnostics
+        # (in HEMCO diagnostic configuration file)
+        if template is None:
+            template = "Emis{}"
 
-        # print emission totals by inventory
-        print_emission_totals(refdata, refstr, devdata, devstr,
-                              inventories, species, interval, f, True)
+        # Get a list of emission variable names for each species
+        diagnostic_template = template.format(species_name)
+        varnames = get_emissions_varnames(cvars, diagnostic_template)
 
-        # Add a newline before going to the next species
+        # Print emission totals by
+        print_emission_totals(refdata, refstr, devdata,
+                              devstr, species_name, varnames,
+                              target_unit, interval, f)
+
+        # Write a newline before going to the next sector
         f.write("\n")
 
     # Close file
