@@ -1,181 +1,202 @@
 { "Primary":
-  {"":
-   { "O3": 1,
-     "CO": 1,
-     "OH:" 1,
-     "NOx": 1,
-     "AOD": 1
-   }
-  }
+    { "Primary":
+        [ "O3",
+          "CO",
+          "OH",
+          "NOx",
+          "AOD"
+        ]
+    },
   "Aerosols":
-  {"Inorganic":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   },
-   "Dust":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "OC/BC":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "Sea Salt":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "SOA":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-  }
+    { "Inorganic":
+        [ "SO4",
+          "NIT",
+          "NH4",
+        ],
+      "Dust":
+        [ "DST1",
+          "DST2",
+          "DST3",
+          "DST3",
+        ],
+      "OC/BC":
+        [ "OCPI",
+          "OCPO",
+          "BCPI",
+          "BCPO",
+	],
+      "Sea Salt":
+        [ "SALC",
+          "SALA",
+          "BrSALC",
+          "BrSALA",
+          "AERI",
+          "ISALA",
+          "ISALC",
+          "SO4s",
+          "NITs"
+        ],
+      "SOA":
+        [ "SOA Simple",
+          "SOA Complex"
+        ]
+    },
   "Nitrogen":
-  {"":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-  }
+    { "Nitrogen":
+        [ "NOx",
+          "NOy",
+	  "NHx",
+          "NO",
+          "NO2",
+          "NO3",
+          "N2O5",
+          "HNO2",
+          "HNO4",
+          "MPN",
+          "HNO3",
+          "PAN",
+          "PPN",
+          "IPMN",
+          "N2O",
+          "NH4",
+          "NH3",
+          "NIT",
+          "NHx"
+	]
+    },
   "ROy":
-  {"":
-   {"":1
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-  }
+    { "ROy":
+        [ "OH",
+          "HO2",
+          "RO2",
+          "O1D",
+          "H2O2",
+          "H",
+          "H2",
+          "H2O"
+        ]
+    },
   "Sulfur":
-  {"":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-  }
+    { "Sulfur":
+        [ "SO2",
+          "DMS",
+          "OCS",
+          "SO4",
+	  "SOx"
+	]
+    },
   "Iodine":
-  {"":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-  }
+    { "Iodine":
+      [ "I",
+	"I2",
+	"ICl",
+	"IBr",
+	"IO",
+	"HOI",
+	"HI",
+	"INO2",
+	"IONO2",
+	"OIO",
+	"IxOy",
+	"CH3I",
+	"CH2I2",
+	"CH2ICl",
+	"CH2IBr",
+	"Iy"
+      ]
+    },
   "Bromine":
-  {"":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-  }
+    { "Bromine":
+      [ "Br",
+	"BrO",
+	"Br2",
+	"BrCl",
+	"HOBr",
+	"HBr",
+	"BrNO2",
+	"BrNO3",
+	"CH3Br",
+	"CH2Br2",
+	"CHBr3",
+	"BrOx",
+	"Bry"
+      ]
+    },
   "Chlorine":
-  {"":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-  }
+    { "Chlorine":
+      [ "Cl",
+	"ClO",
+	"Cl2",
+	"HOCl",
+	"HCl",
+	"Cl2O2",
+	"ClOO",
+	"ClNO2",
+	"ClNO3",
+	"OClO",
+	"CCl4",
+	"CH3Cl",
+	"CH3Cl2",
+	"CH3CCl3",
+	"CFCs",
+	"Halons",
+	"HCFCs",
+	"ClOx",
+	"Cly"
+      ]
+    },
   "Primary Organics":
-  {"HCs":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   },
-   "Biogenics":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "Other":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-  }
+    { "HCs":
+      [ "CH4",
+	"C2H6",
+	"C2H4",
+	"C3H8",
+	"PRPE",
+	"ALK4",
+	"BENZ",
+	"TOLU",
+	"XYLE"
+      ],
+      "Biogenics":
+      [ "ISOP",
+	"Alpha-pinene",
+	"B-pinene"
+      ],
+      "Other":
+      [ "GLYX",
+	"HCOOH",
+	"MAP",
+	"MVO",
+	"MOH",
+	"RCHP"
+      ]
+    },
   "Secondary Organics":
-  {"Ketone":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   },
-   "Aldehydes":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "Aldehydes":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "Peroxides":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "Nitrates":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "Epoxides":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "Acids":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
-   }
-   "Alcohols":
-   {"":1,
-    "":1,
-    "":1,
-    "":1,
-    "":1
+    { "Ketones":
+      [ "ACET",
+	"MEK",
+	"MVK"
+      ],
+      "Aldehydes":
+      [ "ALD2",
+	"CH2O",
+	"HPALD"
+      ],
+      "Peroxides":
+      [ "MP"
+      ],
+      "Nitrates":
+      [ "ISOPN"
+      ],
+      "Epoxides":
+      [ "IEPOX"
+      ],
+      "Acids":
+      [ "ACTA"
+      ],
+      "Alcohols":
+      [ "MOH",
+	"EOH"
+      ]
    }
 }
