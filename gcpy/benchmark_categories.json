@@ -11,19 +11,19 @@
     { "Inorganic":
         [ "SO4",
           "NIT",
-          "NH4",
+          "NH4"
         ],
       "Dust":
         [ "DST1",
           "DST2",
           "DST3",
-          "DST3",
+          "DST3"
         ],
       "OC/BC":
         [ "OCPI",
           "OCPO",
           "BCPI",
-          "BCPO",
+          "BCPO"
 	],
       "Sea Salt":
         [ "SALC",
