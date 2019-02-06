@@ -5,6 +5,7 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
+from json import load as json_load_file
 
 import matplotlib as mpl
 from matplotlib import ticker
@@ -20,6 +21,8 @@ from .plot import WhGrYlRd, add_latlon_ticks
 from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L
 from .grid.regrid import make_regridder_L2L
+from .core import compare_varnames, filter_names
+from .units import convert_units
 
 # change default fontsize (globally)
 # http://matplotlib.org/users/customizing.html
@@ -1276,6 +1279,293 @@ def add_hierarchical_bookmarks_to_pdf( pdfname, catdict, remove_prefix='' ):
     outputstream = open(pdfname_tmp,'wb')
     output.write(outputstream) 
     outputstream.close()
-    
+
     # Replace the old file with the new
     os.rename(pdfname_tmp, pdfname)
+
+
+def get_emissions_varnames(commonvars, template=None):
+    '''
+    Will return a list of emissions diagnostic variable names that
+    contain a particular search string.
+
+    Args:
+        commonvars : list of strs
+            A list of commmon variable names from two data sets.
+            (This can be obtained with method gcpy.compare_varnames)
+
+        template : str
+            String template for matching variable names corresponding
+            to emission diagnostics by sector.
+
+    Returns:
+        varnames : list of strs
+           A list of variable names corresponding to emission
+           diagnostics for a given species and sector.
+
+    Example:
+        >>> import gcpy
+        >>> commonvars = ['EmisCO_Anthro', 'EmisNO_Anthro', 'AREA']
+        >>> varnames = gcpy.get_emissions_varnames(commonvars, "Emis")
+        >>> print(varnames)
+        ['EmisCO_Anthro', 'EmisNO_Anthro']
+    '''
+
+    # Make sure the commonvars list has at least one element
+    if len(commonvars) == 0:
+        raise ValueError("No valid variable names were passed!")
+
+    # Define template for emission diagnostics by sector
+    if template is None:
+        raise ValueError("The template argument was not passed!")
+
+    # Find all emission diagnostics for the given species
+    varnames = filter_names(commonvars, template)
+
+    # Return list
+    return varnames
+
+
+def create_emission_display_name(diagnostic_name):
+    '''
+    Converts an emissions diagnostic name to a more easily digestible name
+    that can be used as a plot title or in a table of emissions totals.
+
+    Args:
+        diagnostic_name : str
+            Name of the diagnostic to be formatted
+
+    Returns:
+        display_name : str
+            Formatted name that can be used as plot titles or in tables
+            of emissions totals.
+
+    Example:
+        >>> import gcpy
+        >>> diag_name = "EmisCO_Anthro"
+        >>> display_name = gcpy.create_emission_display_name(diag_name)
+        >>> print(display_name)
+        CO Anthro
+    '''
+
+    display_name = diagnostic_name
+
+    if "Emis" in display_name:
+        display_name = display_name.replace("Emis", "")
+    if "EMIS" in display_name:
+        display_name = display_name.replace("EMIS", "")
+
+    display_name = display_name.replace("_", " ")
+
+    return display_name
+
+
+def print_emission_totals(ref, refstr, dev, devstr, f):
+    '''
+    Computes and prints emission totals for two xarray DataArray objects.
+
+    Args:
+        ref : xarray DataArray
+            The first DataArray to be compared (aka "Reference")
+
+        refstr : str
+            A string that can be used to identify refdata.
+            (e.g. a model version number or other identifier).
+
+        dev : xarray DatArray
+            The second DataArray to be compared (aka "Development")
+
+        devstr : str
+            A string that can be used to identify devdata
+            (e.g. a model version number or other identifier).
+
+         f : file
+            File object denoting a text file where output will be directed.
+
+    Returns:
+        None.  Prints emissions totals to a file.
+
+    Remarks:
+        This is an internal method.  It is meant to be called from method
+        create_total_emissions_table instead of being called directly.
+    '''
+
+    # Throw an error if the two DataArray objects have different units
+    if ref.units != dev.units:
+        msg = 'Ref has units "{}", but Dev array has units "{}"'.format(
+            ref.units, dev.units)
+        raise ValueError(msg)
+
+    # Create the emissions display name from the diagnostic name
+    diagnostic_name = dev.name
+    display_name = create_emission_display_name(diagnostic_name)
+
+    # Special handling for totals
+    if '_TOTAL' in diagnostic_name.upper():
+        f.write("-" * 79)
+        f.write("\n")
+
+    # Compute sums and difference
+    total_ref = np.sum(ref.values)
+    total_dev = np.sum(dev.values)
+    diff = total_dev - total_ref
+
+    # Write output
+    f.write("{} : {:13.6f}  {:13.6f}  {:13.6f} {}\n".format(
+        display_name.ljust(25), total_ref, total_dev, diff, dev.units))
+
+
+def create_total_emissions_table(reffile, refstr, devfile, devstr,
+                                 species, outfilename,
+                                 interval=2678400.0, template=None):
+    '''
+    Creates a table of emissions totals (by sector and by inventory)
+    for a list of species in contained in two data sets.  The data sets,
+    which typically represent output from two differnet model versions,
+    are usually contained in netCDF data files.
+
+    Args:
+        reffile : str
+            File name of the first data set to be compared.
+
+        refstr : str
+            A string that can be used to identify the data set specified
+            by reffile (e.g. a model version number or other identifier).
+
+        devfile : str
+            File name of the second data set to be compared.
+
+        devstr: str
+            A string that can be used to identify the data set specified
+            by devfile (e.g. a model version number or other identifier).
+
+        species : dict
+            Dictionary containing the name of each species and the target
+            unit that emissions will be converted to. The format of
+            species is as follows:
+
+                { species_name : target_unit", etc. }
+
+            where "species_name" and "target_unit" are strs.
+
+        outfilename : str
+            Name of the text file which will contain the table of
+            emissions totals.
+
+    Keyword Args (optional):
+        interval : float
+            The length of the data interval in seconds. By default, interval
+            is set to the number of seconds in a 31-day month (86400 * 31),
+            which corresponds to typical benchmark simulation output.
+
+        template : str
+            Template for the diagnostic names that are contained both
+            "Reference" and "Development" data sets.  If not specified,
+            template will be set to "Emis{}", where {} will be replaced
+            by the species name.
+
+    Returns:
+        None.  Writes to a text file specified by the "outfilename" argument.
+
+    Remarks:
+        This method is mainly intended for model benchmarking purposes,
+        rather than as a general-purpose tool.
+
+        Species properties (such as molecular weights) are read from a
+        JSON file called "species_database.json".
+
+    Example:
+        Print the total of CO and ACET emissions in two different
+        data sets, which represent different model versions:
+
+        >>> include gcpy
+        >>> reffile = '~/output/12.1.1/HEMCO_diagnostics.201607010000.nc'
+        >>> refstr = '12.1.1'
+        >>> devfile = '~/output/12.2.0/HEMCO_sa.diagnostics.201607010000.nc'
+        >>> devstr = '12.2.0'
+        >>> outfilename = '12.2.0_emission_totals.txt'
+        >>> species = { 'CO' : 'Tg', 'ACET', 'Tg C', 'ALK4', 'Gg C' }
+        >>> create_total_emissions_table(reffile, refstr, devfile, devstr,
+            species, outfilename)
+    '''
+
+    # Define default template for emission diagnostics
+    # (in HEMCO diagnostic configuration file)
+    if template is None:
+        template = "Emis{}"
+
+    # Open "Reference" dataset
+    if reffile != '':
+        refdata = xr.open_dataset(reffile)
+    else:
+        raise ValueError("Argument 'reffile' was not passed")
+
+    # Open "Development" dataset
+    if devfile != '':
+        devdata = xr.open_dataset(devfile)
+    else:
+        raise ValueError("Argument 'devfile' was not passed")
+
+    # Load a JSON file containing species properties (such as
+    # molecular weights), which we will need for unit conversions.
+    # This is located in the "data" subfolder of this current directory.
+    properties_path = os.path.join(os.path.dirname(__file__),
+                                   "species_database.json")
+    properties = json_load_file(open(properties_path))
+
+    # Find all common variables between the two datasets
+    [cvars, cvars1D, cvars2D, cvars3D] = compare_varnames(refdata,
+                                                          devdata,
+                                                          quiet=True)
+
+    # Open file for output
+    f = open(outfilename, "w")
+
+    # Loop through all of the species are in species_dict
+    for species_name, target_units in species.items():
+
+        # Echo info
+        print("Computing emissions totals for {}".format(species_name))
+
+        # Title strings
+        title1 = "### Emission totals for species {}".format(species_name)
+        title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+
+        # Write header to file
+        f.write("#"*79)
+        f.write("\n{}{}\n".format(title1.ljust(76), "###"))
+        f.write("{}{}\n".format(title2.ljust(76), "###"))
+        f.write("#"*79)
+        f.write("\n")
+        f.write("{}{}{}{}\n".format(" ".ljust(33), "Ref".ljust(15),
+                                  "Dev".ljust(15), "Dev - Ref"))
+
+        # Get a list of emission variable names for each species
+        diagnostic_template = template.format(species_name)
+        varnames = get_emissions_varnames(cvars, diagnostic_template)
+
+        # Get a list of properties for the given species
+        species_properties = properties.get(species_name)
+
+        # Loop over all emissions variable names
+        for v in varnames:
+
+            # Convert units of Ref, and save to DataArray
+            refarray = convert_units(refdata[v], species_name,
+                                     species_properties, target_units,
+                                     interval, refdata["AREA"])
+
+            # Convert units of Dev, and save to DataArray
+            devarray = convert_units(devdata[v], species_name,
+                                     species_properties, target_units,
+                                     interval, devdata["AREA"])
+
+
+            # Print emission totals for Ref and Dev
+            print_emission_totals(refarray, refstr, devarray, devstr, f)
+
+        # Add newlines before going to the next species
+        f.write("\n\n")
+
+    # Close file
+    f.close()
