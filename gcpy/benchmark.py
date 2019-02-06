@@ -22,6 +22,7 @@ from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L
 from .grid.regrid import make_regridder_L2L
 from .core import compare_varnames, filter_names
+from .units import convert_units
 
 # change default fontsize (globally)
 # http://matplotlib.org/users/customizing.html
@@ -1302,9 +1303,12 @@ def get_emissions_varnames(commonvars, template=None):
            A list of variable names corresponding to emission
            diagnostics for a given species and sector.
 
-    Remarks:
-        This is an internal method, and is only intended to be called
-        from other GCPy benchmarking methods.
+    Example:
+        >>> import gcpy
+        >>> commonvars = ['EmisCO_Anthro', 'EmisNO_Anthro', 'AREA']
+        >>> varnames = gcpy.get_emissions_varnames(commonvars, "Emis")
+        >>> print(varnames)
+        ['EmisCO_Anthro', 'EmisNO_Anthro']
     '''
 
     # Make sure the commonvars list has at least one element
@@ -1336,9 +1340,12 @@ def create_emission_display_name(diagnostic_name):
             Formatted name that can be used as plot titles or in tables
             of emissions totals.
 
-    Remarks:
-         This is an internal method, and is mainly intended to be called
-         from print_emission_totals.
+    Example:
+        >>> import gcpy
+        >>> diag_name = "EmisCO_Anthro"
+        >>> display_name = gcpy.create_emission_display_name(diag_name)
+        >>> print(display_name)
+        CO Anthro
     '''
 
     display_name = diagnostic_name
@@ -1353,44 +1360,24 @@ def create_emission_display_name(diagnostic_name):
     return display_name
 
 
-def print_emission_totals(refdata, refstr, devdata,
-                          devstr, species_name, varnames,
-                          target_unit, interval, f):
+def print_emission_totals(ref, refstr, dev, devstr, f):
     '''
-    Computes and prints emission totals (and differences) for a list of
-    variables that are found in two xarray Datasets.
+    Computes and prints emission totals for two xarray DataArray objects.
 
     Args:
-        refdata : xarray Dataset
-            The first Dataset to be compared (aka "Reference" Dataset).
+        ref : xarray DataArray
+            The first DataArray to be compared (aka "Reference")
 
         refstr : str
             A string that can be used to identify refdata.
             (e.g. a model version number or other identifier).
 
-        devdata : xarray Dataset
-            The second Dataset to be compared (aka "Development" Dataset).
+        dev : xarray DatArray
+            The second DataArray to be compared (aka "Development")
 
         devstr : str
             A string that can be used to identify devdata
             (e.g. a model version number or other identifier).
-
-        species_name: str
-            Name of the species.
-
-        varnames: list of strs
-            A list of variable names corresponding to emissions diagnostics
-            for the species specified by "species_name".  For each
-            variable name in varnames, the total of emissions in refdata
-            and refdata, as well as the difference (devdata - refdata) will
-            be computed and printed.
-
-         target_unit : str
-            Emissions totals will be displayed in the unit specified
-            by this argument (e.g. "Tg" or "Tg C", etc.).
-
-         interval : float
-            Number of seconds in the averaging period.
 
          f : file
             File object denoting a text file where output will be directed.
@@ -1399,55 +1386,38 @@ def print_emission_totals(refdata, refstr, devdata,
         None.  Prints emissions totals to a file.
 
     Remarks:
-        (1) This is an internal method.  It is meant to be called from method
-            create_total_emissions_table instead of being called directly.
-
-        (2) At present, this has only been tested with GEOS-Chem "Classic"
-            output on lat-lon grids.  More work has to be done to extend
-            this to cubed-sphere grids.
-
-        (3) Still need to make unit conversions more general.  Right now we
-            are just multiplying by the AREA variable in each data set.
+        This is an internal method.  It is meant to be called from method
+        create_total_emissions_table instead of being called directly.
     '''
 
-    # Proceed only if there are valid sector names
-    if len(varnames) > 0:
+    # Throw an error if the two DataArray objects have different units
+    if ref.units != dev.units:
+        msg = 'Ref has units "{}", but Dev array has units "{}"'.format(
+            ref.units, dev.units)
+        raise ValueError(msg)
 
-        # NOTE: Need a better unit conversion function here.
-        # Seconds in the interval
-        to_Tg = 1e-9 * interval
+    # Create the emissions display name from the diagnostic name
+    diagnostic_name = dev.name
+    display_name = create_emission_display_name(diagnostic_name)
 
-        # Loop over variables
-        for v in varnames:
+    # Special handling for totals
+    if '_TOTAL' in diagnostic_name.upper():
+        f.write("-" * 79)
+        f.write("\n")
 
-            # Create the emissions display name from the diagnostic name
-            display_name = create_emission_display_name(v)
+    # Compute sums and difference
+    total_ref = np.sum(ref.values)
+    total_dev = np.sum(dev.values)
+    diff = total_dev - total_ref
 
-            # Special handling for totals
-            if '_TOTAL' in v.upper():
-                f.write("-" * 79)
-                f.write("\n")
-
-            # NOTE: Need to write a function to do unit conversion
-
-            # Totals: Ref data
-            total_ref = np.sum(refdata[v].values *
-                               refdata["AREA"].values * to_Tg)
-
-            # Totals: Dev data
-            total_dev = np.sum(devdata[v].values *
-                               devdata["AREA"].values * to_Tg)
-
-            # Print (NOTE: Need to format this better)
-            f.write("{} : {:13.6f}  {:13.6f}  {:13.6f} Tg\n".format(
-                display_name.ljust(25), total_ref,
-                total_dev, total_dev-total_ref))
+    # Write output
+    f.write("{} : {:13.6f}  {:13.6f}  {:13.6f} {}\n".format(
+        display_name.ljust(25), total_ref, total_dev, diff, dev.units))
 
 
 def create_total_emissions_table(reffile, refstr, devfile, devstr,
                                  species, outfilename,
-                                 interval=2678400.0, template=None,
-                                 simulation='Benchmark'):
+                                 interval=2678400.0, template=None):
     '''
     Creates a table of emissions totals (by sector and by inventory)
     for a list of species in contained in two data sets.  The data sets,
@@ -1486,19 +1456,13 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
         interval : float
             The length of the data interval in seconds. By default, interval
             is set to the number of seconds in a 31-day month (86400 * 31),
-            which corresponds to a GEOS-Chem benchmark simulation.
+            which corresponds to typical benchmark simulation output.
 
         template : str
             Template for the diagnostic names that are contained both
             "Reference" and "Development" data sets.  If not specified,
             template will be set to "Emis{}", where {} will be replaced
             by the species name.
-
-        simulation : str
-            Name of the GEOS-Chem simulation type.  If not specified, then
-            simulation will be set by default to "Benchmark".  NOTE: At
-            present, only the GEOS-Chem Benchmark simulation is currently
-            supported.
 
     Returns:
         None.  Writes to a text file specified by the "outfilename" argument.
@@ -1508,10 +1472,7 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
         rather than as a general-purpose tool.
 
         Species properties (such as molecular weights) are read from a
-        JSON file (stored in the /data subfolder).  You can have several
-        JSON files corresponding to different types of GEOS-Chem
-        simulations.  (As of February 2019, only the "Benchmark"
-        simulation is officially supported.)
+        JSON file called "species_database.json".
 
     Example:
         Print the total of CO and ACET emissions in two different
@@ -1523,10 +1484,15 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
         >>> devfile = '~/output/12.2.0/HEMCO_sa.diagnostics.201607010000.nc'
         >>> devstr = '12.2.0'
         >>> outfilename = '12.2.0_emission_totals.txt'
-        >>> species = { "CO" : "Tg", "ACET", "Tg C" }
+        >>> species = { 'CO' : 'Tg', 'ACET', 'Tg C', 'ALK4', 'Gg C' }
         >>> create_total_emissions_table(reffile, refstr, devfile, devstr,
             species, outfilename)
     '''
+
+    # Define default template for emission diagnostics
+    # (in HEMCO diagnostic configuration file)
+    if template is None:
+        template = "Emis{}"
 
     # Open "Reference" dataset
     if reffile != '':
@@ -1543,9 +1509,8 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
     # Load a JSON file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.
-    properties_dir = os.path.join(os.path.dirname(__file__), 'data')
-    properties_file = "GC_Species_Database_for_{}.json".format(simulation)
-    properties_path = os.path.join(properties_dir, properties_file)
+    properties_path = os.path.join(os.path.dirname(__file__),
+                                   "species_database.json")
     properties = json_load_file(open(properties_path))
 
     # Find all common variables between the two datasets
@@ -1557,10 +1522,10 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
     f = open(outfilename, "w")
 
     # Loop through all of the species are in species_dict
-    for species_name, target_unit in species.items():
+    for species_name, target_units in species.items():
 
         # Echo info
-        print("Processing species {}".format(species_name))
+        print("Computing emissions totals for {}".format(species_name))
 
         # Title strings
         title1 = "### Emission totals for species {}".format(species_name)
@@ -1572,23 +1537,35 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
         f.write("{}{}\n".format(title2.ljust(76), "###"))
         f.write("#"*79)
         f.write("\n")
-
-        # Define default template for emission diagnostics
-        # (in HEMCO diagnostic configuration file)
-        if template is None:
-            template = "Emis{}"
+        f.write("{}{}{}{}\n".format(" ".ljust(33), "Ref".ljust(15),
+                                  "Dev".ljust(15), "Dev - Ref"))
 
         # Get a list of emission variable names for each species
         diagnostic_template = template.format(species_name)
         varnames = get_emissions_varnames(cvars, diagnostic_template)
 
-        # Print emission totals by
-        print_emission_totals(refdata, refstr, devdata,
-                              devstr, species_name, varnames,
-                              target_unit, interval, f)
+        # Get a list of properties for the given species
+        species_properties = properties.get(species_name)
 
-        # Write a newline before going to the next sector
-        f.write("\n")
+        # Loop over all emissions variable names
+        for v in varnames:
+
+            # Convert units of Ref, and save to DataArray
+            refarray = convert_units(refdata[v], species_name,
+                                     species_properties, target_units,
+                                     interval, refdata["AREA"])
+
+            # Convert units of Dev, and save to DataArray
+            devarray = convert_units(devdata[v], species_name,
+                                     species_properties, target_units,
+                                     interval, devdata["AREA"])
+
+
+            # Print emission totals for Ref and Dev
+            print_emission_totals(refarray, refstr, devarray, devstr, f)
+
+        # Add newlines before going to the next species
+        f.write("\n\n")
 
     # Close file
     f.close()

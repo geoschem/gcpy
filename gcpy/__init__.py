@@ -6,6 +6,7 @@ from .core import *
 from .grid.horiz import *
 from .grid.regrid import *
 from .benchmark import *
+from .units import *
 from . import plot
 
 #try:
