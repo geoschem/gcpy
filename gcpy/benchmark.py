@@ -1340,6 +1340,12 @@ def create_emission_display_name(diagnostic_name):
             Formatted name that can be used as plot titles or in tables
             of emissions totals.
 
+    Remarks:
+        Assumes that diagnostic names will start with either "Emis"
+        (for emissions by category) or "Inv" (for emissions by inventory).
+        This should be an OK assumption to make since this routine is
+        specifically geared towards model benchmarking.
+
     Example:
         >>> import gcpy
         >>> diag_name = "EmisCO_Anthro"
@@ -1348,15 +1354,21 @@ def create_emission_display_name(diagnostic_name):
         CO Anthro
     '''
 
+    # Initialize
     display_name = diagnostic_name
 
-    if "Emis" in display_name:
-        display_name = display_name.replace("Emis", "")
-    if "EMIS" in display_name:
-        display_name = display_name.replace("EMIS", "")
+    # Special handling for Inventory totals
+    if 'INV' in display_name.upper():
+        display_name = display_name.replace("_", " from ")
 
+    # Replace text
+    for v in ['Emis', 'EMIS', 'emis', 'Inv', 'INV', 'inv']:
+        display_name = display_name.replace(v, "")
+
+    # Replace underscores
     display_name = display_name.replace("_", " ")
 
+    # Return
     return display_name
 
 
@@ -1524,11 +1536,15 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
     # Loop through all of the species are in species_dict
     for species_name, target_units in species.items():
 
-        # Echo info
-        print("Computing emissions totals for {}".format(species_name))
 
         # Title strings
-        title1 = "### Emission totals for species {}".format(species_name)
+        if "Inv" in template:
+            print("Computing inventory totals for {}".format(species_name))
+            title1 = "### Inventory totals for species {}".format(species_name)
+        else:
+            print("Computing emissions totals for {}".format(species_name))
+            title1 = "### Emissions totals for species {}".format(species_name)
+
         title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
 
         # Write header to file
