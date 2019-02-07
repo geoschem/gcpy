@@ -1,10 +1,12 @@
 """ Specific utilities re-factored from the benchmarking utilities. """
 
 import os
+import shutil
 import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
+import json
 from json import load as json_load_file
 
 import matplotlib as mpl
@@ -32,6 +34,8 @@ from .units import convert_units
 cmap_abs = WhGrYlRd  # for plotting absolute magnitude
 cmap_diff = 'RdBu_r'  # for plotting difference
 
+spc_categories = 'benchmark_categories.json'
+lumped_spc = 'lumped_species.json'
 
 def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
     '''Plot 2D DataArray as a lat-lon layer
@@ -1585,3 +1589,27 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
 
     # Close file
     f.close()
+
+def get_species_categories():
+    jsonfile = os.path.join(os.path.dirname(__file__), spc_categories)
+    with open(jsonfile, 'r') as f:
+        spc_cat_dict = json.loads(f.read())
+    return spc_cat_dict
+
+def get_lumped_species_definitions():
+    jsonfile = os.path.join(os.path.dirname(__file__), lumped_spc)
+    with open(jsonfile, 'r') as f:
+        lumped_spc_dict = json.loads(f.read())
+    return lumped_spc_dict
+
+def archive_species_categories(dst):
+    src = os.path.join(os.path.dirname(__file__), spc_categories)
+    print('Archiving {} in {}'.format(spc_categories, dst))
+    shutil.copyfile(src, os.path.join(dst, spc_categories))
+
+def archive_lumped_species_definitions(dst):
+    src = os.path.join(os.path.dirname(__file__), lumped_spc)
+    print('Archiving {} in {}'.format(lumped_spc, dst))
+    shutil.copyfile(src, os.path.join(dst, lumped_spc))
+
+
