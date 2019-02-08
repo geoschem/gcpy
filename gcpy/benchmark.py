@@ -1431,9 +1431,9 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
         display_name.ljust(25), total_ref, total_dev, diff, dev.units))
 
 
-def create_total_emissions_table(reffile, refstr, devfile, devstr,
+def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                  species, outfilename,
-                                 interval=2678400.0, template=None):
+                                 interval=2678400.0, template="Emis{}_"):
     '''
     Creates a table of emissions totals (by sector and by inventory)
     for a list of species in contained in two data sets.  The data sets,
@@ -1441,15 +1441,15 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
     are usually contained in netCDF data files.
 
     Args:
-        reffile : str
-            File name of the first data set to be compared.
+        refdata : xarray Dataset
+            The first data set to be compared (aka "Reference").
 
         refstr : str
-            A string that can be used to identify the data set specified
-            by reffile (e.g. a model version number or other identifier).
+            A string that can be used to identify refdata
+            (e.g. a model version number or other identifier).
 
-        devfile : str
-            File name of the second data set to be compared.
+        devdata : xarray Dataset
+            The second data set to be compared (aka "Development").
 
         devstr: str
             A string that can be used to identify the data set specified
@@ -1495,36 +1495,22 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
         data sets, which represent different model versions:
 
         >>> include gcpy
+        >>> include xarray as xr
         >>> reffile = '~/output/12.1.1/HEMCO_diagnostics.201607010000.nc'
         >>> refstr = '12.1.1'
+        >>> refdata = xr.open_dataset(reffile)
         >>> devfile = '~/output/12.2.0/HEMCO_sa.diagnostics.201607010000.nc'
         >>> devstr = '12.2.0'
+        >>> devdata = xr.open_dataset(devfile)
         >>> outfilename = '12.2.0_emission_totals.txt'
         >>> species = { 'CO' : 'Tg', 'ACET', 'Tg C', 'ALK4', 'Gg C' }
-        >>> create_total_emissions_table(reffile, refstr, devfile, devstr,
+        >>> create_total_emissions_table(refdata, refstr, devdata, devstr,
             species, outfilename)
     '''
 
-    # Define default template for emission diagnostics
-    # (in HEMCO diagnostic configuration file)
-    if template is None:
-        template = "Emis{}"
-
-    # Open "Reference" dataset
-    if reffile != '':
-        refdata = xr.open_dataset(reffile)
-    else:
-        raise ValueError("Argument 'reffile' was not passed")
-
-    # Open "Development" dataset
-    if devfile != '':
-        devdata = xr.open_dataset(devfile)
-    else:
-        raise ValueError("Argument 'devfile' was not passed")
-
     # Load a JSON file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
-    # This is located in the "data" subfolder of this current directory.
+    # This is located in the "data" subfolder of this current directory.2
     properties_path = os.path.join(os.path.dirname(__file__),
                                    "species_database.json")
     properties = json_load_file(open(properties_path))
@@ -1563,6 +1549,14 @@ def create_total_emissions_table(reffile, refstr, devfile, devstr,
         # Get a list of emission variable names for each species
         diagnostic_template = template.format(species_name)
         varnames = get_emissions_varnames(cvars, diagnostic_template)
+
+        # Check if there is a total emissions variable in the list
+        vartot = [v for v in varnames if "_TOTAL" in v.upper()]
+
+        # Push the total variable to the last list element
+        # so that it will be printed last of all
+        if len(vartot) == 1:
+            varnames.append(varnames.pop(varnames.index(vartot[0])))
 
         # Get a list of properties for the given species
         species_properties = properties.get(species_name)
