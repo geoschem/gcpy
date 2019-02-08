@@ -19,13 +19,13 @@
           "DST3",
           "DST3"
         ],
-      "OC/BC":
+      "OC_BC":
         [ "OCPI",
           "OCPO",
           "BCPI",
           "BCPO"
 	],
-      "Sea Salt":
+      "Sea_Salt":
         [ "SALC",
           "SALA",
           "BrSALC",
@@ -145,7 +145,7 @@
 	"Cly"
       ]
     },
-  "Primary Organics":
+  "Primary_Organics":
     { "HCs":
       [ "CH4",
 	"C2H6",
@@ -171,7 +171,7 @@
 	"RCHP"
       ]
     },
-  "Secondary Organics":
+  "Secondary_Organics":
     { "Ketones":
       [ "ACET",
 	"MEK",

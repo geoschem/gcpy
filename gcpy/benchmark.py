@@ -24,6 +24,8 @@ from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L
 from .grid.regrid import make_regridder_L2L
 from .core import compare_varnames, filter_names
+from .core import add_lumped_species_to_dataset, lumped_spc
+from .core import archive_lumped_species_definitions
 from .units import convert_units
 
 # change default fontsize (globally)
@@ -35,7 +37,6 @@ cmap_abs = WhGrYlRd  # for plotting absolute magnitude
 cmap_diff = 'RdBu_r'  # for plotting difference
 
 spc_categories = 'benchmark_categories.json'
-lumped_spc = 'lumped_species.json'
 
 def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
     '''Plot 2D DataArray as a lat-lon layer
@@ -955,8 +956,6 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         else:
             ds_dev = devdata[varname]
 
-        print(ds_dev.shape)
-
         ##############################################################################
         # Area normalization, if any
         ##############################################################################
@@ -1590,20 +1589,53 @@ def get_species_categories():
         spc_cat_dict = json.loads(f.read())
     return spc_cat_dict
 
-def get_lumped_species_definitions():
-    jsonfile = os.path.join(os.path.dirname(__file__), lumped_spc)
-    with open(jsonfile, 'r') as f:
-        lumped_spc_dict = json.loads(f.read())
-    return lumped_spc_dict
-
 def archive_species_categories(dst):
     src = os.path.join(os.path.dirname(__file__), spc_categories)
     print('Archiving {} in {}'.format(spc_categories, dst))
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
-def archive_lumped_species_definitions(dst):
-    src = os.path.join(os.path.dirname(__file__), lumped_spc)
-    print('Archiving {} in {}'.format(lumped_spc, dst))
-    shutil.copyfile(src, os.path.join(dst, lumped_spc))
+def make_gcc_1mo_benchmark_conc_plots(refds, refstr, devds, devstr, dst, overwrite=False):
 
+    refdata = add_lumped_species_to_dataset(refds)
+    devdata = add_lumped_species_to_dataset(devds)
+    catdict = get_species_categories()
 
+    plotsdir = os.path.join(dst,'1mo_benchmark')
+    if os.path.isdir(plotsdir) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite.'.format(dst))
+    elif not os.path.isdir(plotsdir):
+        os.mkdir(plotsdir)
+
+    archive_species_categories(plotsdir)
+    archive_lumped_species_definitions(plotsdir)
+    
+    for i, filecat in enumerate(catdict):
+        catdir = os.path.join(plotsdir,filecat)
+        if not os.path.isdir(catdir):
+            os.mkdir(catdir)
+        varlist = []
+        warninglist = []
+        for subcat in catdict[filecat]:
+            for spc in catdict[filecat][subcat]:
+                varname = 'SpeciesConc_'+spc
+                if varname not in refds.data_vars or varname not in devds.data_vars:
+                    warninglist.append(varname)
+                    continue
+                varlist.append(varname)
+            if warninglist != []:
+                print('\n\nWarning: variables in {} category not in dataset: {}'.format(subcat,warninglist))
+
+        pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
+        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0,
+                                  savepdf=True, pdfname=pdfname )
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='SpeciesConc_')
+
+        pdfname = os.path.join(catdir,'{}_500hPa.pdf'.format(filecat))        
+        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=23,
+                                  savepdf=True, pdfname=pdfname )
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='SpeciesConc_')
+
+        pdfname = os.path.join(catdir,'{}_ZonalMean.pdf'.format(filecat))        
+        compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
+                                  savepdf=True, pdfname=pdfname )
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='SpeciesConc_')
