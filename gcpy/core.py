@@ -640,19 +640,24 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=True, verbose=False):
     # Return the dataset
     return ds
 
-# Define function to add a new variable to a data set using known units, name, and existing vars to sum.
-def add_species_to_dataset(ds, varname, varlist, units, verbose=False, overwrite=False ):
-    if varname in ds.data_vars and overwrite:
-        ds.drop(key)
+def add_species_to_dataset(ds, varname, vardict, units, verbose=False, overwrite=False, prefix='SpeciesConc_'):
+    vname= prefix+varname
+    if vname in ds.data_vars and overwrite:
+        ds.drop(vname)
     else:
-        assert varname not in ds.data_vars, '{} already in dataset!'.format(varname)
-    if verbose: print('Creating {}'.format(varname))
-    darr = ds[varlist[0][0]] * varlist[0][1]
-    for i in range(len(varlist)):
-        if verbose: print(' -> {}'.format(varlist[i][0]))
-        if i==0: continue
-        darr = darr + ds[varlist[i][0]]*varlist[i][1]
-    darr.name = varname
+        assert vname not in ds.data_vars, '{} already in dataset. To overwrite pass overwrite=True.'.format(vname)
+    if verbose: print('Creating {}'.format(vname))
+    for i, k in enumerate(vardict[varname]):
+        ds_varname = prefix+k
+        if ds_varname not in ds.data_vars:
+            print('Warning: {} not in dataset. Skipping species.'.format(k))
+            continue
+        if verbose: print(' -> adding {} with scale {}'.format(k,vardict[varname][k]))
+        if i == 0:
+            darr = ds[ds_varname] * vardict[varname][k]
+        else:
+            darr = darr + ds[ds_varname] * vardict[varname][k]
+    darr.name = vname
     darr.attrs['units'] = units
     ds = xr.merge([ds,darr])
     return ds
