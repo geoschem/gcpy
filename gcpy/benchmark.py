@@ -278,7 +278,7 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
 
 # Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0, itime=0,  weightsdir=None,
-                         savepdf=False, pdfname='map.pdf', cmpres=None, match_cbar=True, normalize_by_area=False,
+                         pdfname='', cmpres=None, match_cbar=True, normalize_by_area=False,
                          refarea=[], devarea=[], enforce_units=True, flip_ref=False, flip_dev=False ):
 
     # If no varlist is passed, plot all (surface only for 3D)
@@ -290,6 +290,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
     # If no weightsdir is passed, set to current directory in case it is needed
     if weightsdir == None:
         weightsdir = '.'
+
+    # If no pdf name passed, then do not save to PDF
+    savepdf = True
+    if pdfname == '':
+        savepdf = False
     
     ##############################################################################
     # Determine input grid resolutions and types
@@ -791,7 +796,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
 
 # Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, weightsdir=None,
-                       savepdf=False, pdfname='zonalmean.pdf', cmpres=None, match_cbar=True,
+                       pdfname='', cmpres=None, match_cbar=True,
                        normalize_by_area=False, enforce_units=True, flip_ref=False, flip_dev=False ):
 
     # If no varlist is passed, plot all 3D variables in the dataset
@@ -804,6 +809,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     if weightsdir == None:
         weightsdir = '.'
 
+    # If no pdf name passed, then do not save to PDF
+    savepdf = True
+    if pdfname == '':
+        savepdf = False
+ 
     ##############################################################################
     # Determine input grid resolutions and types
     ##############################################################################
@@ -1594,23 +1604,27 @@ def archive_species_categories(dst):
     print('Archiving {} in {}'.format(spc_categories, dst))
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
-def make_gcc_1mo_benchmark_conc_plots(refds, refstr, devds, devstr, dst, overwrite=False):
+def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False):
 
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+
+    refds = xr.open_dataset(ref)
     refdata = add_lumped_species_to_dataset(refds)
+
+    devds = xr.open_dataset(dev)
     devdata = add_lumped_species_to_dataset(devds)
+    
     catdict = get_species_categories()
 
-    plotsdir = os.path.join(dst,'1mo_benchmark')
-    if os.path.isdir(plotsdir) and not overwrite:
-        print('Directory {} exists. Pass overwrite=True to overwrite.'.format(dst))
-    elif not os.path.isdir(plotsdir):
-        os.mkdir(plotsdir)
-
-    archive_species_categories(plotsdir)
-    archive_lumped_species_definitions(plotsdir)
+    archive_species_categories(dst)
+    archive_lumped_species_definitions(dst)
     
     for i, filecat in enumerate(catdict):
-        catdir = os.path.join(plotsdir,filecat)
+        catdir = os.path.join(dst,filecat)
         if not os.path.isdir(catdir):
             os.mkdir(catdir)
         varlist = []
@@ -1626,16 +1640,13 @@ def make_gcc_1mo_benchmark_conc_plots(refds, refstr, devds, devstr, dst, overwri
                 print('\n\nWarning: variables in {} category not in dataset: {}'.format(subcat,warninglist))
 
         pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
-        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0,
-                                  savepdf=True, pdfname=pdfname )
+        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='SpeciesConc_')
 
         pdfname = os.path.join(catdir,'{}_500hPa.pdf'.format(filecat))        
-        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=23,
-                                  savepdf=True, pdfname=pdfname )
+        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=23, pdfname=pdfname )
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='SpeciesConc_')
 
         pdfname = os.path.join(catdir,'{}_ZonalMean.pdf'.format(filecat))        
-        compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
-                                  savepdf=True, pdfname=pdfname )
+        compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='SpeciesConc_')
