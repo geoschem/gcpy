@@ -1604,7 +1604,7 @@ def archive_species_categories(dst):
     print('Archiving {} in {}'.format(spc_categories, dst))
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
-def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False):
+def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False, verbose=False):
 
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite.'.format(dst))
@@ -1613,15 +1613,15 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
         os.mkdir(dst)
 
     refds = xr.open_dataset(ref)
-    refdata = add_lumped_species_to_dataset(refds)
+    refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
 
     devds = xr.open_dataset(dev)
-    devdata = add_lumped_species_to_dataset(devds)
+    devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
     
     catdict = get_species_categories()
 
     archive_species_categories(dst)
-    archive_lumped_species_definitions(dst)
+    core.archive_lumped_species_definitions(dst)
     
     for i, filecat in enumerate(catdict):
         catdir = os.path.join(dst,filecat)
