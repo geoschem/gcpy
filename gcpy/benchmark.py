@@ -21,11 +21,11 @@ from PyPDF2 import PdfFileWriter, PdfFileReader
 
 from .plot import WhGrYlRd, add_latlon_ticks
 from .grid.horiz import make_grid_LL, make_grid_CS
-from .grid.regrid import make_regridder_C2L
-from .grid.regrid import make_regridder_L2L
-from .core import compare_varnames, filter_names
-from .core import add_lumped_species_to_dataset, lumped_spc
-from .core import archive_lumped_species_definitions
+from .grid.regrid import make_regridder_C2L, make_regridder_L2L
+from . import core
+#from .core import compare_varnames, filter_names
+#from .core import add_lumped_species_to_dataset, lumped_spc
+#from .core import archive_lumped_species_definitions
 from .units import convert_units
 
 # change default fontsize (globally)
@@ -283,7 +283,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
 
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
-        [varlist, commonvars2D, commonvars3D] = compare_varnames(refdata, devdata)
+        [varlist, commonvars2D, commonvars3D] = core.compare_varnames(refdata, devdata)
         print('Plotting all common variables (surface only if 3D)')
     n_var = len(varlist)
 
@@ -801,7 +801,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
 
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
-        [commonvars, commonvars2D, varlist] = compare_varnames(refdata, devdata)
+        [commonvars, commonvars2D, varlist] = core.compare_varnames(refdata, devdata)
         print('Plotting all 3D variables')
     n_var = len(varlist)
 
@@ -1305,7 +1305,7 @@ def get_emissions_varnames(commonvars, template=None):
     Args:
         commonvars : list of strs
             A list of commmon variable names from two data sets.
-            (This can be obtained with method gcpy.compare_varnames)
+            (This can be obtained with method gcpy.core.compare_varnames)
 
         template : str
             String template for matching variable names corresponding
@@ -1333,7 +1333,7 @@ def get_emissions_varnames(commonvars, template=None):
         raise ValueError("The template argument was not passed!")
 
     # Find all emission diagnostics for the given species
-    varnames = filter_names(commonvars, template)
+    varnames = core.filter_names(commonvars, template)
 
     # Return list
     return varnames
@@ -1525,7 +1525,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     properties = json_load_file(open(properties_path))
 
     # Find all common variables between the two datasets
-    [cvars, cvars1D, cvars2D, cvars3D] = compare_varnames(refdata,
+    [cvars, cvars1D, cvars2D, cvars3D] = core.compare_varnames(refdata,
                                                           devdata,
                                                           quiet=True)
 
