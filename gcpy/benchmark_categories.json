@@ -37,8 +37,8 @@
           "NITs"
         ],
       "SOA":
-        [ "SOA Simple",
-          "SOA Complex"
+        [ "SOA_Simple",
+          "SOA_Complex"
         ]
     },
   "Nitrogen":
