@@ -8,6 +8,7 @@ from .grid.regrid import *
 from .benchmark import *
 from .units import *
 from . import plot
+from . import grid
 
 #try:
 #    from . version import __version__
