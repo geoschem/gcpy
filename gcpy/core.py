@@ -411,7 +411,6 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=True, verbose=False):
              'FJX_FLUX_':         ['TBD',                           'skip'   ],
              'IJ_24H_S_':         ['TBD',                           'skip'   ],
              'IJ_MAX_S_':         ['TBD',                           'skip'   ],
-             'IJ_SOA_S_':         ['AerMass',                       'append' ],
              'INST_MAP_':         ['TBD',                           'skip'   ],
              'ISRPIA_S_ISORPH':   ['Chem_PHSAV',                    'replace'],
              'ISRPIA_S_ISORH+':   ['Chem_HPLUSSAV',                 'replace'],
