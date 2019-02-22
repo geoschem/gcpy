@@ -606,7 +606,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
             elif ilev == 22: levstr = '500 hPa'
             else: levstr = 'Level ' +  str(ilev-1)
             figs.suptitle('{}, {}'.format(varname,levstr), fontsize=fontsize, y=offset)
-        elif 'lat' in refdata[varname].dims and 'lat' in devdata[varname] and 'lon' in refdata[varname].dims and 'lon' in devdata[varname]: 
+        elif 'lat' in refdata[varname].dims and 'lat' in devdata[varname].dims and 'lon' in refdata[varname].dims and 'lon' in devdata[varname].dims:
             figs.suptitle('{}'.format(varname), fontsize=fontsize, y=offset)
         else:
             print('Incorrect dimensions for {}!'.format(varname))   
