@@ -136,7 +136,7 @@
 	"OClO",
 	"CCl4",
 	"CH3Cl",
-	"CH3Cl2",
+	"CH2Cl2",
 	"CH3CCl3",
 	"CFCs",
 	"Halons",
@@ -159,16 +159,16 @@
       ],
       "Biogenics":
       [ "ISOP",
-	"Alpha-pinene",
-	"B-pinene"
+	"Alpha_pinene",
+	"Beta_pinene"
       ],
       "Other":
       [ "GLYX",
 	"HCOOH",
 	"MAP",
-	"MVO",
+	"MBO",
 	"MOH",
-	"RCHP"
+	"RCHO"
       ]
     },
   "Secondary_Organics":

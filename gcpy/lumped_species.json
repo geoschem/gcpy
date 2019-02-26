@@ -92,7 +92,7 @@
       "NO2": 1,
       "NO3": 1,
       "NPMN": 1,
-      "OLDN": 1,
+      "OLND": 1,
       "OLNN": 1,
       "ONIT": 1,
       "PAN": 1,
@@ -215,6 +215,72 @@
       "OCS": 1,
       "SO2": 1,
       "SO4": 1
-    }  
+    }
+  "SOA_Simple":
+    { "SOAP": 1,
+      "SOAS": 1
+    }
+  "SOA_Complex":
+    { "TSOA0": 1,
+      "TSOA1": 1,
+      "TSOA2": 1,
+      "TSOA3": 1,
+      "ISOA1": 1,
+      "ISOA2": 1,
+      "ISOA3": 1,
+      "ASOA1": 1,
+      "ASOA2": 1,
+      "ASOA3": 1,
+      "ASOAN": 1,
+      "TSOG0": 1,
+      "TSOG1": 1,
+      "TSOG2": 1,
+      "TSOG3": 1,
+      "ISOG1": 1,
+      "ISOG2": 1,
+      "ISOG3": 1,
+      "ASOG1": 1,
+      "ASOG2": 1,
+      "ASOG3": 1
+    }
+  "NHx":
+    { "NH3": 1,
+      "NH4": 1
+    }
+  "CFCs":
+    { "CFC11": 1,
+      "CFC12": 1,
+      "CFC113": 1,
+      "CFC114": 1,
+      "CFC115": 1
+    }
+  "Halons":
+    { "H1211": 1,
+      "H1301": 1,
+      "H2402": 1
+    }
+  "HCFCs":
+    { "HCFC123": 1,
+      "HCFC141b": 1,
+      "HCFC142b": 1,
+      "HCFC22": 1,
+      "HC187": 1
+    }
+  "Alpha_pinene":
+    { "MTPA": 1,
+      "MTPO": 1
+    }
+  "Beta_pinene":
+    { "MTPA": 1
+    }
+  "ISOPN":
+    { "ISOPNB": 1,
+      "ISOPND": 1
+    }
+  "IEPOX":
+    { "IEPOXA": 1,
+      "IEPOXB": 1,
+      "IEPOXD": 1
+    }
 }
 
