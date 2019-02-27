@@ -1604,7 +1604,7 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
 
 def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False, verbose=False):
 
-    # NOTE: this function could use some refactoring; abstract processing per category? combine with conc function?
+    # NOTE: this function could use some refactoring; combine with conc function? Wait until we know how to break up emissions plots.
     
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
@@ -1618,8 +1618,10 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     refds = xr.open_dataset(ref)
     devds = xr.open_dataset(dev)
     vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds)
+    commonvars = vars2D+vars3D # not sure why we have 3D emissions output. It is zeros above surface.
+    
     pdfname = os.path.join(emisdir,'Emissions.pdf')
-    compare_single_level(refds, refstr, devds, devstr, varlist=vars2D, pdfname=pdfname )
+    compare_single_level(refds, refstr, devds, devstr, varlist=commonvars, pdfname=pdfname )
     add_bookmarks_to_pdf(pdfname, vars2D, remove_prefix='Emis')
 
 def make_gcc_1mo_benchmark_emis_tables(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False):
