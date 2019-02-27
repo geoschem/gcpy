@@ -37,6 +37,7 @@ cmap_abs = WhGrYlRd  # for plotting absolute magnitude
 cmap_diff = 'RdBu_r'  # for plotting difference
 
 spc_categories = 'benchmark_categories.json'
+emission_spc = 'emission_species.json' 
 
 def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
     '''Plot 2D DataArray as a lat-lon layer
@@ -1069,7 +1070,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         if match_cbar: [vmin, vmax] = [vmin_abs, vmax_abs]
 
         ##############################################################################    
-        # Create 2x2 figure
+        # Create 3x2 figure
         ##############################################################################
         
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(3, 2, figsize=[12,15.3], 
@@ -1084,7 +1085,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
         
         if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
-        plot0 = ax0.imshow(zm_ref, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
+        plot0 = ax0.imshow(zm_ref, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)                
         if refgridtype == 'll':
             ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, refres ))
         else:
@@ -1388,7 +1389,6 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
     f.write("{} : {:13.6f}  {:13.6f}  {:13.6f} {}\n".format(
         display_name.ljust(25), total_ref, total_dev, diff, dev.units))
 
-
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                  species, outfilename,
                                  interval=2678400.0, template="Emis{}_"):
@@ -1602,6 +1602,58 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
         compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
+def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False, verbose=False):
+
+    # NOTE: this function could use some refactoring; abstract processing per category? combine with conc function?
+    
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+    emisdir = os.path.join(dst,'Emissions')
+    if not os.path.isdir(emisdir):
+        os.mkdir(emisdir)   
+
+    refds = xr.open_dataset(ref)
+    devds = xr.open_dataset(dev)
+    vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds)
+    pdfname = os.path.join(emisdir,'Emissions.pdf')
+    compare_single_level(refds, refstr, devds, devstr, varlist=vars2D, pdfname=pdfname )
+    add_bookmarks_to_pdf(pdfname, vars2D, remove_prefix='Emis')
+
+def make_gcc_1mo_benchmark_emis_tables(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False):
+    
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+    emisdir = os.path.join(dst,'Emissions')
+    if not os.path.isdir(emisdir):
+        os.mkdir(emisdir) 
+
+    # Read data
+    refds = xr.open_dataset(ref)
+    devds = xr.open_dataset(dev)
+
+    # Emissions species dictionary
+    species = json_load_file(open(os.path.join(os.path.dirname(__file__),emission_spc)))
+
+    # Destination files
+    file_emis_totals = os.path.join(dst, 'Emission_totals.txt')
+    file_inv_totals = os.path.join(dst, 'Inventory_totals.txt')
+    
+    # Number of seconds in the averaging period (July 2016 = 86400 seconds * 31 days)
+    interval = 86400.0 * 31.0
+
+    # Write to file
+    create_total_emissions_table(refds, refstr, devds, devstr, species, file_emis_totals,
+                                      interval, template="Emis{}_")
+    create_total_emissions_table(refds, refstr, devds, devstr, species, file_inv_totals,
+                                      interval, template="Inv{}_")
+    
+    
 def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='' ):
 
     # Setup
