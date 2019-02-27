@@ -3,8 +3,7 @@
         [ "O3",
           "CO",
           "OH",
-          "NOx",
-          "AOD"
+          "NOx"
         ]
     },
   "Aerosols":
@@ -17,7 +16,7 @@
         [ "DST1",
           "DST2",
           "DST3",
-          "DST3"
+          "DST4"
         ],
       "OC_BC":
         [ "OCPI",
