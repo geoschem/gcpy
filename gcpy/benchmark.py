@@ -1246,57 +1246,6 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     ##############################################################################
     if savepdf: pdf.close()
     
-def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='' ):
-    # Existing pdf
-    pdfobj = open(pdfname,"rb")
-    input = PdfFileReader(pdfobj)
-    numpages = input.getNumPages()
-    
-    # Pdf write and new filename
-    pdfname_tmp = pdfname+'_with_bookmarks.pdf'
-    output = PdfFileWriter()
-    
-    # Loop over variables (pages) in the file, removing the diagnostic prefix
-    varnamelist = [k.replace(remove_prefix,'') for k in varlist]
-    for i, varname in enumerate(varnamelist):
-        output.addPage(input.getPage(i))
-        output.addBookmark(varname,i)
-        output.setPageMode('/UseOutlines')
-        
-    # Write to new file
-    outputstream = open(pdfname_tmp,'wb')
-    output.write(outputstream) 
-    outputstream.close()
-    
-    # Replace the old file with the new
-    os.rename(pdfname_tmp, pdfname)
-
-def add_hierarchical_bookmarks_to_pdf( pdfname, catdict, remove_prefix='' ):
-    # Existing pdf
-    pdfobj = open(pdfname,"rb")
-    input = PdfFileReader(pdfobj)
-    numpages = input.getNumPages()
-    
-    # Pdf write and new filename
-    pdfname_tmp = pdfname+'_with_bookmarks.pdf'
-    output = PdfFileWriter()
-    
-    # Loop over variables (pages) in the file, removing the diagnostic prefix
-    varnamelist = [k.replace(remove_prefix,'') for k in varlist]
-    for i, varname in enumerate(varnamelist):
-        output.addPage(input.getPage(i))
-        output.addBookmark(varname,i)
-        output.setPageMode('/UseOutlines')
-        
-    # Write to new file
-    outputstream = open(pdfname_tmp,'wb')
-    output.write(outputstream) 
-    outputstream.close()
-
-    # Replace the old file with the new
-    os.rename(pdfname_tmp, pdfname)
-
-
 def get_emissions_varnames(commonvars, template=None):
     '''
     Will return a list of emissions diagnostic variable names that
@@ -1606,8 +1555,10 @@ def archive_species_categories(dst):
 
 def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False, verbose=False):
 
+    # NOTE: this function could use some refactoring; abstract processing per category?
+    
     if os.path.isdir(dst) and not overwrite:
-        print('Directory {} exists. Pass overwrite=True to overwrite.'.format(dst))
+        print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
         return
     elif not os.path.isdir(dst):
         os.mkdir(dst)
@@ -1636,17 +1587,81 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
                     warninglist.append(varname)
                     continue
                 varlist.append(varname)
-            if warninglist != []:
-                print('\n\nWarning: variables in {} category not in dataset: {}'.format(subcat,warninglist))
+        if warninglist != []:
+            print('\n\nWarning: variables in {} category not in dataset: {}'.format(filecat,warninglist))
 
         pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
         compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='SpeciesConc_')
+        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
         pdfname = os.path.join(catdir,'{}_500hPa.pdf'.format(filecat))        
         compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=23, pdfname=pdfname )
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='SpeciesConc_')
+        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
         pdfname = os.path.join(catdir,'{}_ZonalMean.pdf'.format(filecat))        
         compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='SpeciesConc_')
+        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+
+def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='' ):
+
+    # Setup
+    pdfobj = open(pdfname,"rb")
+    input = PdfFileReader(pdfobj)
+    output = PdfFileWriter()
+    
+    # Loop over variables (pages) in the file, removing the diagnostic prefix
+    varnamelist = [k.replace(remove_prefix,'') for k in varlist]
+    for i, varname in enumerate(varnamelist):
+        output.addPage(input.getPage(i))
+        output.addBookmark(varname,i)
+        output.setPageMode('/UseOutlines')
+        
+    # Write to temp file
+    pdfname_tmp = pdfname+'_with_bookmarks.pdf'
+    outputstream = open(pdfname_tmp,'wb')
+    output.write(outputstream) 
+    outputstream.close()
+    
+    # Rename temp file with the target name
+    os.rename(pdfname_tmp, pdfname)
+
+def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove_prefix='' ):
+
+    # Setup
+    pdfobj = open(pdfname,"rb")
+    input = PdfFileReader(pdfobj)
+    output = PdfFileWriter()
+    warninglist = [k.replace(remove_prefix,'') for k in warninglist]
+        
+    # Loop over the subcategories in this category; make parent bookmark
+    i = -1
+    for subcat in catdict[category]:
+        i = i+1
+        output.addPage(input.getPage(i))
+        parent = output.addBookmark(subcat,i)
+        output.setPageMode('/UseOutlines')
+        first = True
+        
+        # Loop over variables in this subcategory; make children bookmarks
+        for varname in catdict[category][subcat]:
+            if varname in warninglist:
+                print('Warning: skipping {}'.format(varname))
+                continue
+            if first:
+                output.addBookmark(varname, i, parent)
+                first = False
+            else:
+                i = i+1
+                output.addPage(input.getPage(i))
+                output.addBookmark(varname, i, parent)
+                output.setPageMode('/UseOutlines')
+        
+    # Write to temp file
+    pdfname_tmp = pdfname+'_with_bookmarks.pdf'
+    outputstream = open(pdfname_tmp,'wb')
+    output.write(outputstream) 
+    outputstream.close()
+
+    # Rename temp file with the target name
+    os.rename(pdfname_tmp, pdfname)
+
