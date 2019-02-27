@@ -1595,7 +1595,7 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
         pdfname = os.path.join(catdir,'{}_500hPa.pdf'.format(filecat))        
-        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=23, pdfname=pdfname )
+        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=22, pdfname=pdfname )
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
         pdfname = os.path.join(catdir,'{}_ZonalMean.pdf'.format(filecat))        
