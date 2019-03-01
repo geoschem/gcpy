@@ -1,0 +1,201 @@
+{ "Primary":
+    { "Primary":
+        [ "O3",
+          "CO",
+          "OH",
+          "NOx"
+        ]
+    },
+  "Aerosols":
+    { "Inorganic":
+        [ "SO4",
+          "NIT",
+          "NH4"
+        ],
+      "Dust":
+        [ "DST1",
+          "DST2",
+          "DST3",
+          "DST4"
+        ],
+      "OC_BC":
+        [ "OCPI",
+          "OCPO",
+          "BCPI",
+          "BCPO"
+	],
+      "Sea_Salt":
+        [ "SALC",
+          "SALA",
+          "BrSALC",
+          "BrSALA",
+          "AERI",
+          "ISALA",
+          "ISALC",
+          "SO4s",
+          "NITs"
+        ],
+      "SOA":
+        [ "SOA_Simple",
+          "SOA_Complex"
+        ]
+    },
+  "Nitrogen":
+    { "Nitrogen":
+        [ "NOx",
+          "NOy",
+	  "NHx",
+          "NO",
+          "NO2",
+          "NO3",
+          "N2O5",
+          "HNO2",
+          "HNO4",
+          "MPN",
+          "HNO3",
+          "PAN",
+          "PPN",
+          "IPMN",
+          "N2O",
+          "NH4",
+          "NH3",
+          "NIT",
+          "NHx"
+	]
+    },
+  "ROy":
+    { "ROy":
+        [ "OH",
+          "HO2",
+          "RO2",
+          "O1D",
+          "H2O2",
+          "H",
+          "H2",
+          "H2O"
+        ]
+    },
+  "Sulfur":
+    { "Sulfur":
+        [ "SO2",
+          "DMS",
+          "OCS",
+          "SO4",
+	  "SOx"
+	]
+    },
+  "Iodine":
+    { "Iodine":
+      [ "I",
+	"I2",
+	"ICl",
+	"IBr",
+	"IO",
+	"HOI",
+	"HI",
+	"INO2",
+	"IONO2",
+	"OIO",
+	"IxOy",
+	"CH3I",
+	"CH2I2",
+	"CH2ICl",
+	"CH2IBr",
+	"Iy"
+      ]
+    },
+  "Bromine":
+    { "Bromine":
+      [ "Br",
+	"BrO",
+	"Br2",
+	"BrCl",
+	"HOBr",
+	"HBr",
+	"BrNO2",
+	"BrNO3",
+	"CH3Br",
+	"CH2Br2",
+	"CHBr3",
+	"BrOx",
+	"Bry"
+      ]
+    },
+  "Chlorine":
+    { "Chlorine":
+      [ "Cl",
+	"ClO",
+	"Cl2",
+	"HOCl",
+	"HCl",
+	"Cl2O2",
+	"ClOO",
+	"ClNO2",
+	"ClNO3",
+	"OClO",
+	"CCl4",
+	"CH3Cl",
+	"CH2Cl2",
+	"CH3CCl3",
+	"CFCs",
+	"Halons",
+	"HCFCs",
+	"ClOx",
+	"Cly"
+      ]
+    },
+  "Primary_Organics":
+    { "HCs":
+      [ "CH4",
+	"C2H6",
+	"C2H4",
+	"C3H8",
+	"PRPE",
+	"ALK4",
+	"BENZ",
+	"TOLU",
+	"XYLE"
+      ],
+      "Biogenics":
+      [ "ISOP",
+	"Alpha_pinene",
+	"Beta_pinene"
+      ],
+      "Other":
+      [ "GLYX",
+	"HCOOH",
+	"MAP",
+	"MBO",
+	"MOH",
+	"RCHO"
+      ]
+    },
+  "Secondary_Organics":
+    { "Ketones":
+      [ "ACET",
+	"MEK",
+	"MVK"
+      ],
+      "Aldehydes":
+      [ "ALD2",
+	"CH2O",
+	"HPALD"
+      ],
+      "Peroxides":
+      [ "MP"
+      ],
+      "Nitrates":
+      [ "ISOPN"
+      ],
+      "Epoxides":
+      [ "IEPOX"
+      ],
+      "Acids":
+      [ "ACTA"
+      ],
+      "Alcohols":
+      [ "MOH",
+	"EOH"
+      ]
+   }
+}
