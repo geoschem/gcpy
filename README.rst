@@ -34,7 +34,10 @@ stack, including
 - `numpy <http://www.numpy.org/>`_
 - `scipy <http://www.scipy.org/>`_
 - xarray_
-
+- xesmf_
+- esmpy_
+- pypdf2_
+  
 To create an environment for working with **GCPy**, we recommend using
 the `Anaconda Python distribution <https://www.continuum.io/downloads>`_
 or curating your own *virtualenv* or *conda* environment. Please
@@ -46,20 +49,13 @@ Installation
 ------------
 
 At the moment, the easiest way to install **GCPy** is directly from
-our bitbucket repository::
+our GitHub repository.
 
-    $ pip install git+https://bitbucket.org/gcst/gcpy.git
-
-For development purposes, we recommend cloning the repository and then
-manually installing the package in editable mode via *setuptools*::
-
-    $ git clone https://bitbucket.org/gcst/gcpy.git gcpy
-    $ cd gcpy
-    $ pip install -e .
+    $ git clone https://github.com/geoschem/gcpy.git gcpy
 
 Currently, **GCPy** is not available via conda-forge or PyPI, but we
 anticipate posting early versions of the package to those resources
-in conjunction with the official release of GEOS-Chem v11-02.
+eventually.
 
 
 License
@@ -78,3 +74,6 @@ or reach out to us on the `GEOS-Chem Wiki <http://wiki.seas.harvard.edu/geos-che
 .. _GAMAP: http://acmg.seas.harvard.edu/gamap/
 .. _GEOS-Chem: http://acmg.seas.harvard.edu/geos/
 .. _xarray: http://xarray.pydata.org/
+.. _xesmf: https://xesmf.readthedocs.io/en/latest/
+.. _esmpy: https://www.earthsystemcog.org/projects/esmpy/
+.. _pypdf2: https://pythonhosted.org/PyPDF2/
