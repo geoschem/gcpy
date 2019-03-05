@@ -424,7 +424,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
     ##############################################################################
     # Loop over variables
     ##############################################################################
-    
+
     print_units_warning = True
     for ivar in range(n_var):
         if savepdf: print('{} '.format(ivar), end='')
@@ -934,7 +934,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         # Do some checks: dimensions and units
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
- 
+
         units_ref = refdata[varname].units.strip()
         units_dev = devdata[varname].units.strip()
         if units_ref != units_dev:
@@ -1618,11 +1618,11 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     refds = xr.open_dataset(ref)
     devds = xr.open_dataset(dev)
     vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds)
-    commonvars = vars2D+vars3D # not sure why we have 3D emissions output. It is zeros above surface.
-    
+    varlist = vars2D+vars3D
+
     pdfname = os.path.join(emisdir,'Emissions.pdf')
-    compare_single_level(refds, refstr, devds, devstr, varlist=commonvars, pdfname=pdfname )
-    add_bookmarks_to_pdf(pdfname, vars2D, remove_prefix='Emis')
+    compare_single_level(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
+    add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='Emis', verbose=verbose)
 
 def make_gcc_1mo_benchmark_emis_tables(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False):
     
@@ -1656,18 +1656,18 @@ def make_gcc_1mo_benchmark_emis_tables(ref, refstr, dev, devstr, dst='./1mo_benc
                                       interval, template="Inv{}_")
     
     
-def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='' ):
+def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='', verbose=False ):
 
     # Setup
     pdfobj = open(pdfname,"rb")
     input = PdfFileReader(pdfobj)
     output = PdfFileWriter()
     
-    # Loop over variables (pages) in the file, removing the diagnostic prefix
-    varnamelist = [k.replace(remove_prefix,'') for k in varlist]
-    for i, varname in enumerate(varnamelist):
+    for i, varname in enumerate(varlist):
+        bookmarkname = varname.replace(remove_prefix,'')
+        if verbose: print('Adding bookmark for {} with name {}'.format(varname, bookmarkname))
         output.addPage(input.getPage(i))
-        output.addBookmark(varname,i)
+        output.addBookmark(bookmarkname,i)
         output.setPageMode('/UseOutlines')
         
     # Write to temp file
