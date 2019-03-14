@@ -176,7 +176,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         [cmpminlat, cmpmaxlat] = [min(cmpgrid['lat_b']), max(cmpgrid['lat_b'])]
 
     ##############################################################################
-    # Create pdf, if savepdf is passed as True
+    # Create pdf if saving to file
     ##############################################################################
     
     if savepdf:
@@ -191,10 +191,24 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
     for ivar in range(n_var):
         if savepdf: print('{} '.format(ivar), end='')
         varname = varlist[ivar]
-        
-        # Do some checks: dimensions and units
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim      
+        # If units are mol/mol then convert to ppb
+        conc_units = ['mol mol-1 dry','mol/mol','mol mol-1']
+        if refdata[varname].units.strip() in conc_units:
+            refdata[varname].attrs['units'] = 'ppbv'
+            refdata[varname].values = refdata[varname].values * 1e9
+        if devdata[varname].units.strip() in conc_units:
+            devdata[varname].attrs['units'] = 'ppbv'
+            devdata[varname].values = devdata[varname].values * 1e9
+
+        # Binary diagnostic concentrations have units ppbv. Change to ppb.
+        if refdata[varname].units.strip() == 'ppbv':
+            refdata[varname].attrs['units'] = 'ppb'
+        if devdata[varname].units.strip() == 'ppbv':
+            devdata[varname].attrs['units'] = 'ppb'
+
+        # Check that units match
         units_ref = refdata[varname].units.strip()
         units_dev = devdata[varname].units.strip()
         if units_ref != units_dev:
@@ -692,11 +706,25 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     for ivar in range(n_var):
         if savepdf: print('{} '.format(ivar), end='')
         varname = varlist[ivar]
-  
-        # Do some checks: dimensions and units
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
 
+        # If units are mol/mol then convert to ppb
+        conc_units = ['mol mol-1 dry','mol/mol','mol mol-1']
+        if refdata[varname].units.strip() in conc_units:
+            refdata[varname].attrs['units'] = 'ppbv'
+            refdata[varname].values = refdata[varname].values * 1e9
+        if devdata[varname].units.strip() in conc_units:
+            devdata[varname].attrs['units'] = 'ppbv'
+            devdata[varname].values = devdata[varname].values * 1e9
+
+        # Binary diagnostic concentrations have units ppbv. Change to ppb.
+        if refdata[varname].units.strip() == 'ppbv':
+            refdata[varname].attrs['units'] = 'ppb'
+        if devdata[varname].units.strip() == 'ppbv':
+            devdata[varname].attrs['units'] = 'ppb'
+
+        # Check that units match
         units_ref = refdata[varname].units.strip()
         units_dev = devdata[varname].units.strip()
         if units_ref != units_dev:
@@ -1481,7 +1509,7 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
 
-    def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
+def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
     '''Plot 2D DataArray as a lat-lon layer
 
     Parameters
