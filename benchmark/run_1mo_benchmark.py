@@ -27,3 +27,6 @@ benchmark.make_gcc_1mo_benchmark_conc_plots(refspc, refstr, devspc, devstr, dst=
 
 # Emissions plots (one file for now)
 benchmark.make_gcc_1mo_benchmark_emis_plots(refhco, refstr, devhco, devstr, dst=plotsdir, overwrite=True)
+
+# Emissions tables
+make_gcc_1mo_benchmark_emis_tables(refhco, refstr, devhco, devstr, dst=plotsdir, overwrite=True)
