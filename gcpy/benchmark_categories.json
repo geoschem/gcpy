@@ -158,8 +158,9 @@
       ],
       "Biogenics":
       [ "ISOP",
-	"Alpha_pinene",
-	"Beta_pinene"
+	"MTPA",
+	"MTPO",
+	"LIMO"
       ],
       "Other":
       [ "GLYX",
