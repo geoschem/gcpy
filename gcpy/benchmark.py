@@ -22,6 +22,7 @@ from PyPDF2 import PdfFileWriter, PdfFileReader
 from .plot import WhGrYlRd, add_latlon_ticks
 from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L
+from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 #from .core import compare_varnames, filter_names
 #from .core import add_lumped_species_to_dataset, lumped_spc
@@ -182,7 +183,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
     if savepdf:
         print('\nCreating {} for {} variables'.format(pdfname,n_var))
         pdf = PdfPages(pdfname)
-
+        
     ##############################################################################
     # Loop over variables
     ##############################################################################
@@ -193,6 +194,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim      
+
         # If units are mol/mol then convert to ppb
         conc_units = ['mol mol-1 dry','mol/mol','mol mol-1']
         if refdata[varname].units.strip() in conc_units:
@@ -212,6 +214,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         units_ref = refdata[varname].units.strip()
         units_dev = devdata[varname].units.strip()
         if units_ref != units_dev:
+            print_units_warning=True
             if print_units_warning:
                 print('WARNING: ref and dev concentration units do not match!')
                 print('Ref units: {}'.format(units_ref))
@@ -222,6 +225,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
             else:
                # if not enforcing units, just keep going after only printing warning once 
                print_units_warning = False
+
                
         ##############################################################################
         # Slice the data, allowing for possibility of no time dimension (bpch)
@@ -590,6 +594,19 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     savepdf = True
     if pdfname == '':
         savepdf = False
+
+    # Get mid-point pressure and edge pressures for this grid (assume 72-level)
+    pmid = GEOS_72L_grid.p_mid()
+    pedge = GEOS_72L_grid.p_edge()
+
+    # Convert levels to pressures in ref and dev data
+    refdata['lev'] = pmid
+    refdata['lev'].attrs['units'] = 'hPa'
+    refdata['lev'].attrs['long_name'] = 'level pressure'
+    
+    devdata['lev'] = pmid
+    devdata['lev'].attrs['units'] = 'hPa'
+    devdata['lev'].attrs['long_name'] = 'level pressure'
  
     ##############################################################################
     # Determine input grid resolutions and types
@@ -687,9 +704,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
 
     # Universal plot setup
     xtick_positions = np.arange(-90,91,30)
-    xticklabels = ['{}$\degree$'.format(x) for x in xtick_positions]
-    ytick_positions = np.arange(0,61,20)
-    yticklabels = [str(y) for y in ytick_positions]
+    xticklabels = ['{}$\degree$'.format(x) for x in xtick_positions]    
     nlev = 72
     extent=(-90,90,0,nlev)
 
@@ -837,7 +852,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
-            
+
         ##############################################################################    
         # Get min and max values for use in the colorbars
         ##############################################################################
@@ -863,9 +878,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         # Create 3x2 figure
         ##############################################################################
         
-        figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(3, 2, figsize=[12,15.3], 
-                                                      subplot_kw={'projection': crs.PlateCarree()})
-        # Give the page a title
+        figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(3, 2, figsize=[12,15.3])
         offset = 0.96
         fontsize=25
         figs.suptitle('{}, Zonal Mean'.format(varname), fontsize=fontsize, y=offset)
@@ -875,17 +888,17 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
         
         if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
-        plot0 = ax0.imshow(zm_ref, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)                
+        plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge, zm_ref, cmap=WhGrYlRd, vmin=vmin, vmax=vmax)
+        ax0.invert_yaxis()
         if refgridtype == 'll':
             ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, refres ))
         else:
             ax0.set_title('{} (Ref){}\n{} regridded from c{}'.format(refstr, subtitle_extra, 
                                                                     cmpres, refres))
+        ax0.set_ylabel('Pressure (hPa)')
         ax0.set_aspect('auto')
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
-        ax0.set_yticks(ytick_positions)
-        ax0.set_yticklabels(yticklabels)
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -897,17 +910,17 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
         
         if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
-        plot1 = ax1.imshow(zm_dev, cmap=WhGrYlRd, extent=extent, vmin=vmin, vmax=vmax)
+        plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge, zm_ref, cmap=WhGrYlRd, vmin=vmin, vmax=vmax)
+        ax1.invert_yaxis()
         if devgridtype == 'll':
             ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, devres ))
         else:
             ax1.set_title('{} (Dev){}\n{} regridded from {}'.format(devstr, subtitle_extra, 
                                                                     cmpres, devres))
+        ax1.set_ylabel('Pressure (hPa)')
         ax1.set_aspect('auto')
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
-        ax1.set_yticks(ytick_positions)
-        ax1.set_yticklabels(yticklabels)
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -919,23 +932,23 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
         
         zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
-
+        
         ##############################################################################    
         # Subplot 2: Difference, dynamic range
         ##############################################################################
         
         diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
         [vmin, vmax] = [-diffabsmax, diffabsmax]
-        plot2 = ax2.imshow(zm_diff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
+        plot2 = ax2.pcolormesh(cmpgrid['lat_b'], pedge, zm_diff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        ax2.invert_yaxis()
         if regridany:
             ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(cmpres))
         else:
             ax2.set_title('Difference\nDev - Ref, Dynamic Range')
+        ax2.set_ylabel('Pressure (hPa)')
         ax2.set_aspect('auto')
         ax2.set_xticks(xtick_positions)
         ax2.set_xticklabels(xticklabels)
-        ax2.set_yticks(ytick_positions)
-        ax2.set_yticklabels(yticklabels)
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_diff==0):
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -952,16 +965,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         [pct5, pct95] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)]
         abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
         [vmin,vmax] = [-abspctmax, abspctmax]
-        plot3 = ax3.imshow(zm_diff, cmap='RdBu_r', extent=extent, vmin=vmin, vmax=vmax)
+        plot3 = ax3.pcolormesh(cmpgrid['lat_b'], pedge, zm_diff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        ax3.invert_yaxis()
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
         else:
             ax3.set_title('Difference\nDev - Ref, Restriced Range [5%,95%]')
+        ax3.set_ylabel('Pressure (hPa)')
         ax3.set_aspect('auto')
         ax3.set_xticks(xtick_positions)
         ax3.set_xticklabels(xticklabels)
-        ax3.set_yticks(ytick_positions)
-        ax3.set_yticklabels(yticklabels)
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_diff==0):
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -985,16 +998,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             [vmin, vmax] = [-2, 2]
         else:
             [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
-        plot4 = ax4.imshow(zm_fracdiff, vmin=vmin, vmax=vmax, cmap='RdBu_r', extent=extent)
+        plot4 = ax4.pcolormesh(cmpgrid['lat_b'], pedge, zm_fracdiff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        ax4.invert_yaxis()
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres))
         else:
             ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range')
+        ax4.set_ylabel('Pressure (hPa)')
         ax4.set_aspect('auto')
         ax4.set_xticks(xtick_positions)
         ax4.set_xticklabels(xticklabels)
-        ax4.set_yticks(ytick_positions)
-        ax4.set_yticklabels(yticklabels)
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or np.all(zm_fracdiff==0):
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -1009,16 +1022,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
 
         [vmin, vmax] = [-2, 2]
-        plot5 = ax5.imshow(zm_fracdiff, vmin=vmin, vmax=vmax, cmap='RdBu_r', extent=extent)
+        plot5 = ax5.pcolormesh(cmpgrid['lat_b'], pedge, zm_fracdiff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        ax5.invert_yaxis()
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
         else:
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range')
+        ax5.set_ylabel('Pressure (hPa)')
         ax5.set_aspect('auto')
         ax5.set_xticks(xtick_positions)
         ax5.set_xticklabels(xticklabels)
-        ax5.set_yticks(ytick_positions)
-        ax5.set_yticklabels(yticklabels)
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or np.all(zm_fracdiff==0):
             cb.locator = ticker.MaxNLocator(nbins=4)
