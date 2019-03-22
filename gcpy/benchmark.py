@@ -1425,8 +1425,12 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
         compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=22, pdfname=pdfname )
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
-        pdfname = os.path.join(catdir,'{}_ZonalMean.pdf'.format(filecat))        
+        pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(filecat))        
         compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
+        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+
+        pdfname = os.path.join(catdir,'{}_Strat_ZonalMean.pdf'.format(filecat))        
+        compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname, pres_range=[0,100] )
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
 def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False, verbose=False):
