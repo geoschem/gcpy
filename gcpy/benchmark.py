@@ -577,7 +577,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
 
 # Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, weightsdir=None,
-                       pdfname='', cmpres=None, match_cbar=True,
+                       pdfname='', cmpres=None, match_cbar=True, pres_range=[0,2000],
                        normalize_by_area=False, enforce_units=True, flip_ref=False, flip_dev=False ):
 
     # If no varlist is passed, plot all 3D variables in the dataset
@@ -599,6 +599,17 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     pmid = GEOS_72L_grid.p_mid()
     pedge = GEOS_72L_grid.p_edge()
 
+    # Get indexes of pressure subrange (full range is default)
+    pedge_ind = np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))
+    pedge_ind = pedge_ind[0]
+    # Pad edges if subset does not include surface or TOA so data spans entire subrange
+    if min(pedge_ind) != 0:
+        pedge_ind = np.append(min(pedge_ind)-1, pedge_ind)
+    if max(pedge_ind) != 72:
+        pedge_ind = np.append(pedge_ind, max(pedge_ind)+1)
+    # pmid indexes do not include last pedge index
+    pmid_ind = pedge_ind[:-1]
+        
     # Convert levels to pressures in ref and dev data
     refdata['lev'] = pmid
     refdata['lev'].attrs['units'] = 'hPa'
@@ -754,6 +765,13 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
                # if not enforcing units, just keep going after only printing warning once 
                print_units_warning = False
 
+        ##############################################################################    
+        # Reduce pressure range if reduced range passed as input
+        ##############################################################################
+
+        refdata = refdata.isel(lev=pmid_ind)
+        devdata = devdata.isel(lev=pmid_ind)
+
         ##############################################################################
         # Slice the data, allowing for possibility of no time dimension (bpch)
         ##############################################################################
@@ -888,7 +906,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
         
         if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
-        plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge, zm_ref, cmap=WhGrYlRd, vmin=vmin, vmax=vmax)
+        plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
+                               vmin=vmin, vmax=vmax)
         ax0.invert_yaxis()
         if refgridtype == 'll':
             ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, refres ))
@@ -910,7 +929,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
         
         if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
-        plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge, zm_ref, cmap=WhGrYlRd, vmin=vmin, vmax=vmax)
+        plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
+                               vmin=vmin, vmax=vmax)
         ax1.invert_yaxis()
         if devgridtype == 'll':
             ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, devres ))
@@ -939,7 +959,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         
         diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
         [vmin, vmax] = [-diffabsmax, diffabsmax]
-        plot2 = ax2.pcolormesh(cmpgrid['lat_b'], pedge, zm_diff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        plot2 = ax2.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
+                               zm_diff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
         ax2.invert_yaxis()
         if regridany:
             ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(cmpres))
@@ -965,7 +986,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         [pct5, pct95] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)]
         abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
         [vmin,vmax] = [-abspctmax, abspctmax]
-        plot3 = ax3.pcolormesh(cmpgrid['lat_b'], pedge, zm_diff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        plot3 = ax3.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
+                               zm_diff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
         ax3.invert_yaxis()
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
@@ -998,7 +1020,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             [vmin, vmax] = [-2, 2]
         else:
             [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
-        plot4 = ax4.pcolormesh(cmpgrid['lat_b'], pedge, zm_fracdiff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        plot4 = ax4.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
+                               zm_fracdiff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
         ax4.invert_yaxis()
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres))
@@ -1022,7 +1045,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
 
         [vmin, vmax] = [-2, 2]
-        plot5 = ax5.pcolormesh(cmpgrid['lat_b'], pedge, zm_fracdiff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+        plot5 = ax5.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
+                               zm_fracdiff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
         ax5.invert_yaxis()
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
