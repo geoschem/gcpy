@@ -618,6 +618,13 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     devdata['lev'] = pmid
     devdata['lev'].attrs['units'] = 'hPa'
     devdata['lev'].attrs['long_name'] = 'level pressure'
+
+    ##############################################################################    
+    # Reduce pressure range if reduced range passed as input
+    ##############################################################################
+
+    refdata = refdata.isel(lev=pmid_ind)
+    devdata = devdata.isel(lev=pmid_ind)
  
     ##############################################################################
     # Determine input grid resolutions and types
@@ -764,13 +771,6 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             else:
                # if not enforcing units, just keep going after only printing warning once 
                print_units_warning = False
-
-        ##############################################################################    
-        # Reduce pressure range if reduced range passed as input
-        ##############################################################################
-
-        refdata = refdata.isel(lev=pmid_ind)
-        devdata = devdata.isel(lev=pmid_ind)
 
         ##############################################################################
         # Slice the data, allowing for possibility of no time dimension (bpch)
