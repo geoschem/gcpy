@@ -398,9 +398,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         
         ax0.coastlines()
         if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
+        if np.all(ds_ref==0):
+            cmap = mpl.cm.RdBu_r
+        else:
+            cmap=WhGrYlRd
         if refgridtype == 'll':
             plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon, refminlat, refmaxlat), 
-                               cmap=WhGrYlRd, vmin=vmin, vmax=vmax)
+                               cmap=cmap, vmin=vmin, vmax=vmax)
         else:
             masked_refdata = np.ma.masked_where(np.abs(refgrid['lon'] - 180) < 2, ds_ref_reshaped)
             for i in range(6):
@@ -412,6 +416,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_ref)
+        if np.all(ds_ref==0): 
+            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
         ##############################################################################    
         # Subplot (0,1): Dev, plotted on dev input grid
@@ -419,9 +425,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
                 
         ax1.coastlines()
         if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
+        if np.all(ds_dev==0):
+            cmap = mpl.cm.RdBu_r
+        else:
+            cmap=WhGrYlRd
         if devgridtype == 'll':
             plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon, devminlat, devmaxlat), 
-                               cmap=WhGrYlRd, vmin=vmin, vmax=vmax)
+                               cmap=cmap, vmin=vmin, vmax=vmax)
         else:
             masked_devdata = np.ma.masked_where(np.abs(devgrid['lon'] - 180) < 2, ds_dev_reshaped)
             for i in range(6):
@@ -433,6 +443,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_dev)
+        if np.all(ds_dev==0): 
+            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
         ##############################################################################    
         # Calculate difference, get dynamic range, configure colorbar, use gray for NaNs
@@ -1433,7 +1445,8 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
         compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname, pres_range=[0,100] )
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
-def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False, verbose=False):
+def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
+                                      plot_by_spc=False, plot_by_cat=False, overwrite=False, verbose=False):
 
     # NOTE: this function could use some refactoring; combine with conc function? Wait until we know how to break up emissions plots.
     
@@ -1451,10 +1464,46 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds)
     varlist = vars2D+vars3D
 
-    pdfname = os.path.join(emisdir,'Emissions.pdf')
-    compare_single_level(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
-    add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='Emis', verbose=verbose)
+    # If inputs plot_by_spc and plot_by_cat are both false, plot all emissions in same file
+    if not plot_by_spc and not plot_by_cat:
+        pdfname = os.path.join(emisdir,'Emissions.pdf')
+        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='Emis', verbose=verbose)
+        return
 
+    # Get emissions variables (non-inventory), categories, and species
+    emis_vars = [v for v in varlist if v[:4] == 'Emis']
+    emis_cats = sorted(set([v.split('_')[1] for v in emis_vars]))
+    emis_spc = sorted(set([v.split('_')[0][4:] for v in emis_vars]))
+
+    # Handle Bioburn and BioBurn as same categories (temporary until 12.3.1)
+    emis_cats.remove('BioBurn')
+    
+    # Sort alphabetically (assume English characters)
+    emis_vars.sort(key=str.lower)
+
+    # if plot_by_cat is true, make a file for each emissions category
+    if plot_by_cat:
+
+        emisspcdir = os.path.join(dst,'Emissions','By_HEMCO_Category')
+        if not os.path.isdir(emisspcdir):
+            os.mkdir(emisspcdir)   
+
+        for c in emis_cats:
+            # Handle cases of bioburn and bioBurn (temporary until 12.3.1)
+            if c == 'Bioburn':
+                varnames = [k for k in emis_vars if any(b in k for b in ['Bioburn','BioBurn'])]
+            else:
+                varnames = [k for k in emis_vars if c in k]
+            pdfname = os.path.join(emisspcdir,'{}_Emissions.pdf'.format(c))
+            compare_single_level(refds, refstr, devds, devstr, varlist=varnames, ilev=0, pdfname=pdfname)
+            add_bookmarks_to_pdf(pdfname, varnames, remove_prefix='Emis', verbose=verbose)
+
+    # if plot_by_spc is true, make a file for each benchmark species category with emissions
+    if plot_by_spc: 
+        x = 0 # placeholder
+        
+        
 def make_gcc_1mo_benchmark_emis_tables(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False):
     
     if os.path.isdir(dst) and not overwrite:
