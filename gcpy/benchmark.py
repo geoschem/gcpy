@@ -1451,7 +1451,7 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds)
     varlist = vars2D+vars3D
 
-    # If inputs plot_by_spc and plot_by_cat are both false, plot all emissions in same file
+    # If inputs plot_by* are both false, plot all emissions in same file
     if not plot_by_benchmark_cat and not plot_by_hco_cat:
         pdfname = os.path.join(emisdir,'Emissions.pdf')
         compare_single_level(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
@@ -1469,10 +1469,11 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     # Sort alphabetically (assume English characters)
     emis_vars.sort(key=str.lower)
 
-    # if plot_by_cat is true, make a file for each emissions category
+    # if plot_by_hco_cat is true, make a file for each HEMCO emissions category that is in the
+    # diagnostics file
     if plot_by_hco_cat:
 
-        emisspcdir = os.path.join(dst,'Emissions','By_HEMCO_Category')
+        emisspcdir = os.path.join(dst,'Emissions')
         if not os.path.isdir(emisspcdir):
             os.mkdir(emisspcdir)   
 
@@ -1486,17 +1487,17 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
             compare_single_level(refds, refstr, devds, devstr, varlist=varnames, ilev=0, pdfname=pdfname)
             add_bookmarks_to_pdf(pdfname, varnames, remove_prefix='Emis', verbose=verbose)
 
-    # if plot_by_spc is true, make a file for each benchmark species category with emissions
+    # if plot_by_benchmark_cat is true, make a file for each benchmark species category with
+    # emissions in the diagnostics file
     if plot_by_benchmark_cat:
         
         catdict = get_species_categories()
-        warninglist = [] # not currently populated
-        allcatspc = []   # used for checking if emissions species not defined in benchmark category file
-        emisdict = {}    # used for nested bookmarks in PDF
+        warninglist = [] # in case any emissions are skipped (for use in nested pdf bookmarks)
+        allcatspc = []   # for checking if emissions species not defined in benchmark category file
+        emisdict = {}    # used for nested pdf bookmarks
         for i, filecat in enumerate(catdict):
 
-            # Check if any species in this category have emissions diagnostics (are in emis_spc)
-            #  First, get list of all species in this category
+            # Get emissions for species in this benchmark category
             varlist = []
             emisdict[filecat] = {}
             for subcat in catdict[filecat]:
@@ -1506,7 +1507,7 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
                         emisdict[filecat][spc] = []
                         emisvars = [v for v in emis_vars if spc == v.split('_')[0][4:]]
                         for var in emisvars:
-                            emisdict[filecat][spc].append(var)
+                            emisdict[filecat][spc].append(var.replace('Emis',''))
                             varlist.append(var)
             if not varlist:
                 print('\nWarning: no emissions species in benchmark species category {}'.format(filecat))
@@ -1520,7 +1521,7 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
             # Create emissions file for this benchmark species category
             pdfname = os.path.join(catdir,'{}_Emissions.pdf'.format(filecat))
             compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
-            add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist, remove_prefix='SpeciesConc_')
+            add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
 
         # Give warning if emissions species is not assigned a benchmark category
         for spc in emis_spc:
