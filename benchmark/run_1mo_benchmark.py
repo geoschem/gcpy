@@ -28,7 +28,7 @@ devhco = os.path.join(maindir, devdir, hcofile)
 benchmark.make_gcc_1mo_benchmark_conc_plots(refspc, refstr, devspc, devstr, dst=plotsdir, overwrite=True)
 
 # Emissions plots (one set of files per HEMCO category)
-benchmark.make_gcc_1mo_benchmark_emis_plots(refhco, refstr, devhco, devstr, dst=plotsdir, plot_by_cat=True, overwrite=True)
+benchmark.make_gcc_1mo_benchmark_emis_plots(refhco, refstr, devhco, devstr, dst=plotsdir, plot_by_benchmark_cat=True, plot_by_hco_cat=True, overwrite=True)
 
 # Emissions tables
 benchmark.make_gcc_1mo_benchmark_emis_tables(refhco, refstr, devhco, devstr, dst=plotsdir, overwrite=True)

@@ -8,31 +8,19 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import json
 from json import load as json_load_file
-
 import matplotlib as mpl
 from matplotlib import ticker
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.colors import ListedColormap
-
 from cartopy import crs
 from cartopy.mpl.geoaxes import GeoAxes  # for assertion
-
 from PyPDF2 import PdfFileWriter, PdfFileReader
-
 from .plot import WhGrYlRd, add_latlon_ticks
 from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
-#from .core import compare_varnames, filter_names
-#from .core import add_lumped_species_to_dataset, lumped_spc
-#from .core import archive_lumped_species_definitions
 from .units import convert_units
-
-# change default fontsize (globally)
-# http://matplotlib.org/users/customizing.html
-#mpl.rcParams['font.size'] = 12
-#mpl.rcParams['axes.titlesize'] = 20
 
 cmap_abs = WhGrYlRd  # for plotting absolute magnitude
 cmap_diff = 'RdBu_r'  # for plotting difference
@@ -1446,9 +1434,8 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
 def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
-                                      plot_by_spc=False, plot_by_cat=False, overwrite=False, verbose=False):
-
-    # NOTE: this function could use some refactoring; combine with conc function? Wait until we know how to break up emissions plots.
+                                      plot_by_benchmark_cat=False, plot_by_hco_cat=False,
+                                      overwrite=False, verbose=False):
     
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
@@ -1465,7 +1452,7 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     varlist = vars2D+vars3D
 
     # If inputs plot_by_spc and plot_by_cat are both false, plot all emissions in same file
-    if not plot_by_spc and not plot_by_cat:
+    if not plot_by_benchmark_cat and not plot_by_hco_cat:
         pdfname = os.path.join(emisdir,'Emissions.pdf')
         compare_single_level(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='Emis', verbose=verbose)
@@ -1483,7 +1470,7 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     emis_vars.sort(key=str.lower)
 
     # if plot_by_cat is true, make a file for each emissions category
-    if plot_by_cat:
+    if plot_by_hco_cat:
 
         emisspcdir = os.path.join(dst,'Emissions','By_HEMCO_Category')
         if not os.path.isdir(emisspcdir):
@@ -1500,9 +1487,45 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
             add_bookmarks_to_pdf(pdfname, varnames, remove_prefix='Emis', verbose=verbose)
 
     # if plot_by_spc is true, make a file for each benchmark species category with emissions
-    if plot_by_spc: 
-        x = 0 # placeholder
+    if plot_by_benchmark_cat:
         
+        catdict = get_species_categories()
+        warninglist = [] # not currently populated
+        allcatspc = []   # used for checking if emissions species not defined in benchmark category file
+        emisdict = {}    # used for nested bookmarks in PDF
+        for i, filecat in enumerate(catdict):
+
+            # Check if any species in this category have emissions diagnostics (are in emis_spc)
+            #  First, get list of all species in this category
+            varlist = []
+            emisdict[filecat] = {}
+            for subcat in catdict[filecat]:
+                for spc in catdict[filecat][subcat]:
+                    allcatspc.append(spc)
+                    if spc in emis_spc:
+                        emisdict[filecat][spc] = []
+                        emisvars = [v for v in emis_vars if spc == v.split('_')[0][4:]]
+                        for var in emisvars:
+                            emisdict[filecat][spc].append(var)
+                            varlist.append(var)
+            if not varlist:
+                print('\nWarning: no emissions species in benchmark species category {}'.format(filecat))
+                continue        
+
+            # Use same directory structure as for concentration plots
+            catdir = os.path.join(dst,filecat)
+            if not os.path.isdir(catdir):
+                os.mkdir(catdir)
+
+            # Create emissions file for this benchmark species category
+            pdfname = os.path.join(catdir,'{}_Emissions.pdf'.format(filecat))
+            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
+            add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist, remove_prefix='SpeciesConc_')
+
+        # Give warning if emissions species is not assigned a benchmark category
+        for spc in emis_spc:
+            if spc not in allcatspc:
+                print('Warning: species {} has emissions diagnostics but is not in benchmark_categories.json'.format(spc))
         
 def make_gcc_1mo_benchmark_emis_tables(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False):
     
@@ -1559,7 +1582,7 @@ def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='', verbose=False ):
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
 
-def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove_prefix='' ):
+def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove_prefix=''):
 
     # Setup
     pdfobj = open(pdfname,"rb")
@@ -1598,6 +1621,8 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
 
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
+
+# The rest of this file contains legacy code that may be deleted in the future
 
 def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
     '''Plot 2D DataArray as a lat-lon layer
