@@ -906,8 +906,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
         
         if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
-        plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
-                               vmin=vmin, vmax=vmax)
+        if refgridtype == 'll':
+            plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
+                                   vmin=vmin, vmax=vmax)
+        else:
+            plot0 = ax0.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
+                                   vmin=vmin, vmax=vmax)
         ax0.invert_yaxis()
         if refgridtype == 'll':
             ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, refres ))
@@ -929,8 +933,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################
         
         if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
-        plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
-                               vmin=vmin, vmax=vmax)
+        if devgridtype == 'll':
+            plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
+                                   vmin=vmin, vmax=vmax)
+        else:
+            plot1 = ax1.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
+                                   vmin=vmin, vmax=vmax)            
         ax1.invert_yaxis()
         if devgridtype == 'll':
             ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, devres ))
