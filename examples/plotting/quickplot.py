@@ -34,33 +34,45 @@ def do_the_plot(netcdf_file, variable, time, lev):
 
     # Make sure the variable is located in the file name
     if variable not in varlist:
-        raise Exception(
+        raise ValueError(
             'Variable {} is not in {}!'.format(variable, netcdf_file))
 
     # Make sure the requested time slice is in range
-    if time < 0 or time > ds.dims['time']-1:
-        max_val = ds.dims['time']-1
-        err_msg = 'time={}! Must be between 0 and {}!'.format(time, max_val)
-        raise Exception(err_msg)
+    if 'time' in ds[variable].dims:
+        if time < 0 or time > ds.dims['time']-1:
+            max_val = ds.dims['time']-1
+            err_msg = 'time={}! Must be between 0 and {}!'.format(time, max_val)
+            raise ValueError(err_msg)
 
     # Make sure the requrested level slice (lev) is in range
-    if lev < 0 or lev > ds.dims['lev']-1:
-        max_val = ds.dims['lev']-1
-        err_msg = 'time={}! Must be between 0 and {}!'.format(lev, max_val)
-        raise Exception(err_msg)
+    if 'lev' in ds[variable].dims:
+        if lev < 0 or lev > ds.dims['lev']-1:
+            max_val = ds.dims['lev']-1
+            err_msg = 'lev={}! Must be between 0 and {}!'.format(lev, max_val)
+            raise ValueError(err_msg)
 
     # Extract data for the given species into an xarray DataArray object
-    dr = ds[variable].isel(time=time, lev=lev)
-
-    # Get the time and level values for printout
-    time_val = dr['time'].data
-    lev_val = dr['lev'].data
+    if 'time' in ds[variable].dims and 'lev' in ds[variable].dims:
+        print('a')
+        dr = ds[variable].isel(time=time, lev=lev)
+    elif 'time' in ds[variable].dims:
+        print('b')
+        dr = ds[variable].isel(time=time)
+    elif 'lev' in ds[variable].dims:
+        print('c')
+        dr = ds[variable].isel(lev=lev)
+    else:
+        dr = ds[variable]
 
     # Informational printout
     print('netCDF file name:      {}'.format(netcdf_file))
     print('Requested variable:    {}'.format(variable))
-    print('Requested time slice:  {}; value = {}'.format(time, time_val))
-    print('Requested level slice  {}; value = {}'.format(lev, lev_val))
+    if 'time' in dr.dims:
+        time_val = dr['time'].data
+        print('Requested time slice:  {}; value = {}'.format(time, time_val))
+    if 'lev' in dr.dims:
+        lev_val = dr['lev'].data
+        print('Requested level slice  {}; value = {}'.format(lev, lev_val))
     print('Min value of data      {} {}'.format(np.min(dr.values), dr.units))
     print('Max value of data      {} {}'.format(np.max(dr.values), dr.units))
 
