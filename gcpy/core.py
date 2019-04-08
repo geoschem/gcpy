@@ -430,8 +430,9 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=False, verbose=False):
             oldvar = oldid + varstr
 
             # Most append cases just append with underscore
-            if oldid in ['IJ_AVG_S_', 'RN_DECAY_', 'WETDCV_S_', 'WETDLS_S_', 'BXHGHT_S_', 'DAO_FLDS_', 
-                         'DAO_3D_S_', 'PL_SUL_',   'CV_FLX_S_', 'EW_FLX_S_', 'NS_FLX_S_', 'UP_FLX_S_',
+            if oldid in ['IJ_AVG_S_', 'RN_DECAY_', 'WETDCV_S_', 'WETDLS_S_',
+                         'BXHGHT_S_', 'DAO_FLDS_', 'DAO_3D_S_', 'PL_SUL_',
+                         'CV_FLX_S_', 'EW_FLX_S_', 'NS_FLX_S_', 'UP_FLX_S_',
                          'MC_FRC_S_', 'JV_MAP_S_' ]:
      
                 # Skip certain fields that will cause conflicts w/ netCDF
@@ -443,10 +444,16 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=False, verbose=False):
                 else:
                     newvar = newid + '_' +varstr
 
+            # Special handling for J-values: The bpch variable names all
+            # begin with "J" (e.g. JNO, JACET), so we need to strip the first
+            # character of the variable name manually (bmy, 4/8/19)
+            if oldid == 'JV_MAP_S_':
+                newvar = newid + '_' + varstr[1:]
+
             # IJ_SOA_S_
             elif oldid == 'IJ_SOA_S_':
-                newvar = newid + varstr
-            
+               newvar = newid + varstr
+
             # DRYD_FLX_, DRYD_VEL_
             elif 'DRYD_' in oldid:
                 newvar = newid + '_' + varstr[:-2]
@@ -461,7 +468,8 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=False, verbose=False):
                 
                 # Verbose output
                 if verbose:
-                    print("WARNING: Nothing defined for: {}".format(variable_name))
+                    print("WARNING: Nothing defined for: {}".
+                          format(variable_name))
                 continue
 
           # Overwrite certain variable names
@@ -576,3 +584,65 @@ def filter_names(names, text=''):
 
     return filtered_names
     
+
+def divide_dataset_by_dataarray(ds, dr, varlist=None):
+    '''
+    Divides variables in an xarray Dataset object by a single DataArray
+    object.  Will also make sure that the Dataset variable attributes
+    are preserved.
+
+    This method can be useful for certain types of model diagnostics
+    that have to be divided by a counter array.  For example, local
+    noontime J-value variables in a Dataset can be divided by the
+    fraction of time it was local noon in each grid box, etc.
+
+    Args:
+    -----
+    ds: xarray Dataset
+        The Dataset object containing variables to be divided.
+
+    dr: xarray DataArray
+        The DataArray object that will be used to divide the
+        variables of ds.
+
+    varlist: list (OPTIONAL)
+        If passed, then only those variables of ds that are listed
+        in varlist will be divided by dr.  Otherwise, all variables
+        of ds will be divided by dr.
+
+    Returns:
+    --------
+    ds_new : xarray Dataset
+        A new xarray Dataset object with its variables divided by dr.
+    '''
+
+    # -----------------------------
+    # Check arguments
+    # -----------------------------
+    if not isinstance(ds, xr.Dataset):
+        raise TypeError('The ds argument must be of type xarray.Dataset!')
+
+    if not isinstance(dr, xr.DataArray):
+        raise TypeError('The dr argument must be of type xarray.DataArray!')
+
+    if varlist == None:
+        varlist = ds.data_vars.keys()
+
+    # -----------------------------
+    # Do the division
+    # -----------------------------
+    for v in varlist:
+
+        # Save attributes from each element of the Dataset object
+        attrs = ds[v].attrs
+
+        # Divide each variable of ds by dr
+        ds[v] = ds[v] / dr
+
+        # Save the original attributes back to the DataArray
+        ds[v].attrs = attrs
+
+    # -----------------------------
+    # Return the modified Dataset
+    # -----------------------------
+    return ds
