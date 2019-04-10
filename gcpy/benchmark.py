@@ -447,7 +447,6 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])        
         cmap = mpl.cm.RdBu_r
         if cmpgridtype == 'll':
-            print('got here')
             cmap.set_bad(color='gray')
             
         ##############################################################################    
@@ -933,13 +932,13 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################    
         # Subplot 1: Dev
         ##############################################################################
-        
+
         if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
         if devgridtype == 'll':
             plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
                                    vmin=vmin, vmax=vmax)
         else:
-            plot1 = ax1.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
+            plot1 = ax1.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_dev, cmap=WhGrYlRd,
                                    vmin=vmin, vmax=vmax)            
         ax1.invert_yaxis()
         if devgridtype == 'll':
