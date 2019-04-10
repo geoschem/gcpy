@@ -1445,7 +1445,8 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
 
 def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                                       plot_by_benchmark_cat=False, plot_by_hco_cat=False,
-                                      overwrite=False, verbose=False):
+                                      overwrite=False, verbose=False, flip_ref=False,
+                                      flip_dev=False):
     
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
@@ -1530,7 +1531,7 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
 
             # Create emissions file for this benchmark species category
             pdfname = os.path.join(catdir,'{}_Emissions.pdf'.format(filecat))
-            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
+            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname, flip_ref=flip_ref, flip_dev=flip_dev )
             add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
 
         # Give warning if emissions species is not assigned a benchmark category
