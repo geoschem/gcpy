@@ -435,7 +435,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
         ##############################################################################    
-        # Calculate difference, get dynamic range, configure colorbar, use gray for NaNs
+        # Calculate difference, get dynamic range, configure colorbar,
+        # use gray for NaNs if plotting on lat-lon grid (has strange effect for cs)
         ##############################################################################
         
         if cmpgridtype == 'll':
@@ -445,7 +446,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
             masked_absdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, absdiff)
         diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])        
         cmap = mpl.cm.RdBu_r
-        cmap.set_bad(color='gray')
+        if cmpgridtype == 'll':
+            print('got here')
+            cmap.set_bad(color='gray')
             
         ##############################################################################    
         # Subplot (1,0): Difference, dynamic range
@@ -609,6 +612,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         pedge_ind = np.append(pedge_ind, max(pedge_ind)+1)
     # pmid indexes do not include last pedge index
     pmid_ind = pedge_ind[:-1]
+    nlev = len(pmid_ind)
         
     # Convert levels to pressures in ref and dev data
     refdata['lev'] = pmid
@@ -723,8 +727,6 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     # Universal plot setup
     xtick_positions = np.arange(-90,91,30)
     xticklabels = ['{}$\degree$'.format(x) for x in xtick_positions]    
-    nlev = 72
-    extent=(-90,90,0,nlev)
 
     if savepdf:
         print('\nCreating {} for {} variables'.format(pdfname,n_var))
@@ -943,7 +945,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         if devgridtype == 'll':
             ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, devres ))
         else:
-            ax1.set_title('{} (Dev){}\n{} regridded from {}'.format(devstr, subtitle_extra, 
+            ax1.set_title('{} (Dev){}\n{} regridded from c{}'.format(devstr, subtitle_extra, 
                                                                     cmpres, devres))
         ax1.set_ylabel('Pressure (hPa)')
         ax1.set_aspect('auto')
