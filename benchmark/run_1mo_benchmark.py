@@ -1,9 +1,11 @@
+#!/usr/bin/env python
+
 import os
 from gcpy import benchmark
 
-#----------------
+# =====================================================================
 # Configurables
-#----------------
+# =====================================================================
 
 # Benchmark information (*MUST EDIT*)
 maindir  = '/path/to/main/directory'
@@ -46,13 +48,13 @@ gchp_vs_gcc_plotsdir  = os.path.join(maindir, dev_version, 'output/GCHP_GCC_comp
 gcc_vs_gcc_refstr   = '{}'.format(ref_version)
 gcc_vs_gcc_devstr   = '{}'.format(dev_version)
 gchp_vs_gcc_refstr  = 'GCC {}'.format(dev_version)
-gchp_vs_gcc_devstr  = 'GCHP {]'.format(dev_version)
+gchp_vs_gcc_devstr  = 'GCHP {}'.format(dev_version)
 gchp_vs_gchp_refstr = 'GCHP {}'.format(ref_version)
 gchp_vs_gchp_devstr = 'GCHP {}'.format(dev_version)
 
-#---------------------------------------
-# The rest should not need to be changed
-#---------------------------------------
+# =====================================================================
+# The rest of these settings should not need to be changed
+# =====================================================================
 
 # Species concentration filenames
 gcc_spcfile  = 'GEOSChem.SpeciesConc.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
@@ -78,94 +80,114 @@ gchp_vs_gcc_devhco  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_hcofile)
 gchp_vs_gchp_refhco = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_hcofile)
 gchp_vs_gchp_devhco = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_hcofile)
 
-#----------------
-# GCC vs GCC
-#----------------
+# =====================================================================
+# Create GCC vs GCC benchmark plots and tables
+# =====================================================================
 
 if gcc_vs_gcc:
 
     if plot_conc:
-        # Concentration plots (includes lumped species and separates by category)
-        benchmark.make_gcc_1mo_benchmark_conc_plots(gcc_vs_gcc_refspc,           \
-                                                    gcc_vs_gcc_refstr,           \
-                                                    gcc_vs_gcc_devspc,           \
-                                                    gcc_vs_gcc_devstr,           \
-                                                    dst=gcc_vs_gcc_plotsdir,     \
-                                                    overwrite=True)
+        # Concentration plots
+        # (includes lumped species and separates by category)
+        benchmark.make_benchmark_conc_plots(gcc_vs_gcc_refspc,           \
+                                            gcc_vs_gcc_refstr,           \
+                                            gcc_vs_gcc_devspc,           \
+                                            gcc_vs_gcc_devstr,           \
+                                            dst=gcc_vs_gcc_plotsdir,     \
+                                            overwrite=True)
 
     if plot_emis:
         # Emissions plots
-        benchmark.make_gcc_1mo_benchmark_emis_plots(gcc_vs_gcc_refhco,           \
-                                                    gcc_vs_gcc_refstr,           \
-                                                    gcc_vs_gcc_devhco,           \
-                                                    gcc_vs_gcc_devstr,           \
-                                                    dst=gcc_vs_gcc_plotsdir,     \
-                                                    plot_by_benchmark_cat=True,  \
-                                                    plot_by_hco_cat=True,        \
-                                                    overwrite=True)
+        benchmark.make_benchmark_emis_plots(gcc_vs_gcc_refhco,           \
+                                            gcc_vs_gcc_refstr,           \
+                                            gcc_vs_gcc_devhco,           \
+                                            gcc_vs_gcc_devstr,           \
+                                            dst=gcc_vs_gcc_plotsdir,     \
+                                            plot_by_benchmark_cat=True,  \
+                                            plot_by_hco_cat=True,        \
+                                            overwrite=True)
 
     if emis_table:
         # Emissions tables
-        benchmark.make_gcc_1mo_benchmark_emis_tables(gcc_vs_gchp_refhco,         \
-                                                     gcc_vs_gchp_refstr,         \
-                                                     gcc_vs_gchp_devhco,         \
-                                                     gcc_vs_gchp_devstr,         \
-                                                     dst=gcc_vs_gcc_plotsdir,    \
-                                                     overwrite=True)
+        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_refhco,          \
+                                             gcc_vs_gcc_refstr,          \
+                                             gcc_vs_gcc_devhco,          \
+                                             gcc_vs_gcc_devstr,          \
+                                             dst=gcc_vs_gcc_plotsdir,    \
+                                             overwrite=True)
 
     if plot_jvalues:
         # J-values plots
         # Add function call here
+        pass
 
-#----------------
-# GCHP vs GCC
-#----------------
+# =====================================================================
+# Create GCHP vs GCC benchmark plots and tables
+# =====================================================================
 
 if gchp_vs_gcc:
     if plot_conc:
-        # Concentration plots (includes lumped species and separates by category)
-        benchmark.make_gcc_1mo_benchmark_conc_plots(gchp_vs_gcc_refspc,          \
-                                                    gchp_vs_gcc_refstr,          \
-                                                    gchp_vs_gcc_devspc,          \
-                                                    gchp_vs_gcc_devstr,          \
-                                                    dst=gchp_vs_gcc_plotsdir,    \
-                                                    overwrite=True)
+        # Concentration plots
+        # (includes lumped species and separates by category)
+        benchmark.make_benchmark_conc_plots(gchp_vs_gcc_refspc,          \
+                                            gchp_vs_gcc_refstr,          \
+                                            gchp_vs_gcc_devspc,          \
+                                            gchp_vs_gcc_devstr,          \
+                                            dst=gchp_vs_gcc_plotsdir,    \
+                                            overwrite=True)
 
     if plot_emis:
         # Emissions plots
-        benchmark.make_gcc_1mo_benchmark_emis_plots(gchp_vs_gcc_refhco,          \
-                                                    gchp_vs_gcc_refstr,          \
-                                                    gchp_vs_gcc_devhco,          \
-                                                    gchp_vs_gcc_devstr,          \
-                                                    dst=gchp_vs_gcc_plotsdir,    \
-                                                    plot_by_benchmark_cat=True,  \
-                                                    plot_by_hco_cat=True,        \
-                                                    overwrite=True,              \
-                                                    flip_dev=True)
+        benchmark.make_benchmark_emis_plots(gchp_vs_gcc_refhco,          \
+                                            gchp_vs_gcc_refstr,          \
+                                            gchp_vs_gcc_devhco,          \
+                                            gchp_vs_gcc_devstr,          \
+                                            dst=gchp_vs_gcc_plotsdir,    \
+                                            plot_by_benchmark_cat=True,  \
+                                            plot_by_hco_cat=True,        \
+                                            overwrite=True,              \
+                                            flip_dev=True)
 
-#----------------
-# GCHP vs GCHP
-#----------------
+    if emis_table:
+        # Table of emissions totals
+        pass
+
+    if plot_jvalues:
+        # J-value plots
+        pass
+    
+# =====================================================================
+# Create GCHP vs GCHP benchmark plots and tables
+# =====================================================================
 
 if gchp_vs_gchp:
     if plot_conc:
-        # Concentration plots (includes lumped species and separates by category)
-        benchmark.make_gcc_1mo_benchmark_conc_plots(gchp_vs_gchp_refspc,         \
-                                                    gchp_vs_gchp_refstr,         \
-                                                    gchp_vs_gchp_devspc,         \
-                                                    gchp_vs_gchp_devstr,         \
-                                                    dst=gchp_vs_gchp_plotsdir,   \
-                                                    overwrite=True)
+        # Concentration plots
+        # (includes lumped species and separates by category)
+        benchmark.make_benchmark_conc_plots(gchp_vs_gchp_refspc,         \
+                                            gchp_vs_gchp_refstr,         \
+                                            gchp_vs_gchp_devspc,         \
+                                            gchp_vs_gchp_devstr,         \
+                                            dst=gchp_vs_gchp_plotsdir,   \
+                                            overwrite=True)
 
     if plot_emis:
         # Emissions plots
-        benchmark.make_gcc_1mo_benchmark_emis_plots(gchp_vs_gchp_refhco,         \
-                                                    gchp_vs_gchp_refstr,         \
-                                                    gchp_vs_gchp_devhco,         \
-                                                    gchp_vs_gchp_devstr,         \
-                                                    dst=gchp_vs_gchp_plotsdir,   \
-                                                    plot_by_benchmark_cat=True,  \
-                                                    plot_by_hco_cat=True,        \
-                                                    overwrite=True,              \
-                                                    flip_ref=True,               \
-                                                    flip_dev=True)
+        benchmark.make_benchmark_emis_plots(gchp_vs_gchp_refhco,         \
+                                            gchp_vs_gchp_refstr,         \
+                                            gchp_vs_gchp_devhco,         \
+                                            gchp_vs_gchp_devstr,         \
+                                            dst=gchp_vs_gchp_plotsdir,   \
+                                            plot_by_benchmark_cat=True,  \
+                                            plot_by_hco_cat=True,        \
+                                            overwrite=True,              \
+                                            flip_ref=True,               \
+                                            flip_dev=True)
+
+    if emis_table:
+        # Table of emissions totals
+        pass
+
+    if plot_jvalues:
+        # J-value plots
+        pass
