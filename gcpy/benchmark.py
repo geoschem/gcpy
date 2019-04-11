@@ -1390,10 +1390,9 @@ def get_species_categories():
     plots for the various species.
 
     Returns:
-    -------
-    spc_cat_dict : dict
-        A nested dictionary of categories (and sub-categories)
-        and the species belonging to each.
+        spc_cat_dict : dict
+            A nested dictionary of categories (and sub-categories)
+            and the species belonging to each.
 
     NOTE: The benchmark categories are specified in JSON file
     benchmark_species.json.
@@ -1418,27 +1417,33 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
     for model benchmarking purposes.
 
     Args:
-    ----
-    ref: xarray Dataset
-         The "Reference" (aka "Ref") data set
+        ref: xarray Dataset
+             The "Ref" (aka "Reference") data set
 
-    refstr : str
-         A string to describe Ref (e.g. version number)
+        refstr : str
+             A string to describe ref (e.g. version number)
 
-    dev : xarray Dataset
-         The "Development" (aka "Dev") data set. This data set will
-         be compared to the "Reference" data set.
+        dev : xarray Dataset
+             The "Dev" (aka "Development") data set. This data set
+             will be compared against the "Reference" data set.
 
-    dst : str
-         A string denoting the destination folder where a PDF file
-         containing plots will be written.
+        devstr : str
+             A string to describe dev (e.g. version number)
 
-    overwrite : boolean
-         Set this flag to True to overwrite files in the destination
-         folder (specified by the dst argument).   The default is False.
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where a PDF
+             file containing plots will be written.
+             Default value: ./1mo_benchmark
 
-    verbose : boolean
-         Set this flag to True to print extra informational output.
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value: False.
+
+        verbose : boolean
+             Set this flag to True to print extra informational output.
+             Default value: False.
     '''
 
     # NOTE: this function could use some refactoring; abstract processing per category?
@@ -1493,7 +1498,8 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
 
-def make_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
+def make_benchmark_emis_plots(ref, refstr, dev, devstr,
+                              dst='./1mo_benchmark',
                               plot_by_benchmark_cat=False,
                               plot_by_hco_cat=False,
                               overwrite=False, verbose=False,
@@ -1503,46 +1509,58 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
     benchmarking purposes.
 
     Args:
-    ----
-    ref: xarray Dataset
-         The "Reference" (aka "Ref") data set
+        ref: xarray Dataset
+             The "Ref" (aka "Reference") data set
 
-    refstr : str
-         A string to describe Ref (e.g. version number)
+        refstr : str
+             A string to describe ref (e.g. version number)
 
-    dev : xarray Dataset
-         The "Development" (aka "Dev") data set. This data set will
-         be compared to the "Reference" data set.
+        dev : xarray Dataset
+             The "Dev" (aka "Development") data set. This data set
+             will be compared against the "Reference" data set.
 
-    dst : str
-         A string denoting the destination folder where a PDF file
-         containing plots will be written.
+        devstr : str
+             A string to describe dev (e.g. version number)
 
-    plot_by_benchmark_cat : boolean
-         Set this flag to True to separate plots into PDF files
-         according to the benchmark categories (e.g. Primary,
-         Aerosols, Nitrogen, etc.)  These categories are specified
-         in the JSON file benchmark_species.json.
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where a
+             PDF file containing plots will be written.
+             Default value: './1mo_benchmark
 
-    plot_by_hco_cat : boolean
-         Set this flag to True to separate plots into PDF files
-         according to HEMCO emissions categories (e.g. Anthro,
-         Aircraft, Bioburn, etc.)
+        plot_by_benchmark_cat : boolean
+             Set this flag to True to separate plots into PDF files
+             according to the benchmark categories (e.g. Primary,
+             Aerosols, Nitrogen, etc.)  These categories are specified
+             in the JSON file benchmark_species.json.
+             Default value: False
 
-    overwrite : boolean
-         Set this flag to True to overwrite files in the destination
-         folder (specified by the dst argument).
+        plot_by_hco_cat : boolean
+             Set this flag to True to separate plots into PDF files
+             according to HEMCO emissions categories (e.g. Anthro,
+             Aircraft, Bioburn, etc.)
+             Default value: False
 
-    verbose : boolean
-         Set this flag to True to print extra informational output.
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value: False
 
-    flip_ref : boolean
-         Set this flag to True to reverse the vertical level
-         ordering in the "Ref" dataset.
+        verbose : boolean
+             Set this flag to True to print extra informational output.
+             Default value: False
 
-    flip_dev : boolean
-         Set this flag to True to reverse the vertical level
-         ordering in the "Ref" dataset.
+        flip_ref : boolean
+             Set this flag to True to reverse the vertical level
+             ordering in the "Ref" dataset (in case "Ref" starts
+             from the top of atmosphere instead of the surface).
+             Default value: False
+
+        flip_dev : boolean
+             Set this flag to True to reverse the vertical level
+             ordering in the "Dev" dataset (in case "Dev" starts
+             from the top of atmosphere instead of the surface).
+             Default value: False
 
     Notes:
     ------
@@ -1655,24 +1673,29 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
     category for benchmarking purposes.
 
     Args:
-    ----
-    ref: xarray Dataset
-         The "Reference" (aka "Ref") data set
+        ref: xarray Dataset
+             The "Ref" (aka "Reference") data set
 
-    refstr : str
-         A string to describe Ref (e.g. version number)
+        refstr : str
+             A string to describe ref (e.g. version number)
 
-    dev : xarray Dataset
-         The "Development" (aka "Dev") data set. This data set will
-         be compared to the "Reference" data set.
+        dev : xarray Dataset
+             The "Dev" (aka "Development") data set. This data set
+             will be compared against the "Reference" data set.
 
-    dst : str
-         A string denoting the destination folder where the file
-         containing emissions totals will be written.
+        devstr : str
+             A string to describe dev (e.g. version number)
 
-    overwrite : boolean
-         Set this flag to True to overwrite files in the destination
-         folder (specified by the dst argument).
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where the file
+             containing emissions totals will be written.
+             Default value: ./1mo_benchmark
+
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value : False
     '''
 
     if os.path.isdir(dst) and not overwrite:
@@ -1707,87 +1730,162 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
 
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 dst='./1mo_benchmark',
-                                overwrite=False, verbose=False):
+                                local_noon_jvalues=False,
+                                overwrite=False, verbose=False,
+                                flip_ref=False, flip_dev=False):
     '''
     Creates PDF files containing plots of J-values for model
     benchmarking purposes.
 
     Args:
-    ----
-    ref: xarray Dataset
-         The "Reference" (aka "Ref") data set
+        ref: xarray Dataset
+             The "Ref" (aka "Reference") data set
 
-    refstr : str
-         A string to describe Ref (e.g. version number)
+        refstr : str
+             A string to describe ref (e.g. version number)
     
-    dev : xarray Dataset
-         The "Development" (aka "Dev") data set. This data set will
-         be compared to the "Reference" data set.
-    
-    dst : str
-         A string denoting the destination folder where a PDF file
-         containing plots will be written.
-    
-    overwrite : boolean
-         Set this flag to True to overwrite files in the destination
-         folder (specified by the dst argument).   The default is False.
+        dev : xarray Dataset
+             The "Dev" (aka "Development") data set. This data set
+             will be compared against the "Reference" data set.
 
-    verbose : boolean
-         Set this flag to True to print extra informational output.
-         
+        devstr : str
+             A string to describe dev (e.g. version number)
+    
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where a
+             PDF file  containing plots will be written.
+    
+        local_noon_jvalues : boolean
+             Set this switch to plot local noon J-values.  This will
+             divide all J-value variables by the JNoonFrac counter,
+             which is the fraction of the time that it was local noon
+             at each location.
+             Default value : False
+
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value: False.
+
+        verbose : boolean
+             Set this flag to True to print extra informational output.
+             Default value: False
+
+        flip_ref : boolean
+             Set this flag to True to reverse the vertical level
+             ordering in the "Ref" dataset (in case "Ref" starts
+             from the top of atmosphere instead of the surface).
+             Default value: False
+
+        flip_dev : boolean
+             Set this flag to True to reverse the vertical level
+             ordering in the "Dev" dataset (in case "Dev" starts
+             from the top of atmosphere instead of the surface).
+             Default value: False
+
+    Remarks:
+         Will create 4 files containing J-value plots:
+            (1) Surface values
+            (2) 500 hPa values
+            (3) Full-column zonal mean values.
+            (4) Stratospheric zonal mean values
+
+         At present, we do not yet have the capability to split the
+         plots up into separate files per category (e.g. Primary,
+         Aerosols, etc.).  We could add this functionality later if
+         there is demand. 
     '''
-    pass
     
-#    if os.path.isdir(dst) and not overwrite:
-#        print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
-#        return
-#    elif not os.path.isdir(dst):
-#        os.mkdir(dst)
-#
-#    refds = xr.open_dataset(ref)
-#    if not 'JNoonFrac' in refds.data_vars.keys():
-#        raise ValueError('JNoonFrac is not in ref dataset!')
-#    
-#    devds = xr.open_dataset(dev)
-#    if not 'JNoonFrac' in devdss.data_vars.keys():
-#        raise ValueError('JNoonFrac is not in dev dataset!')
-#    
-#    catdict = get_species_categories()
-#
-#    archive_species_categories(dst)
-#    core.archive_lumped_species_definitions(dst)
-#    
-#    for i, filecat in enumerate(catdict):
-#        catdir = os.path.join(dst,filecat)
-#        if not os.path.isdir(catdir):
-#            os.mkdir(catdir)
-#        varlist = []
-#        warninglist = []
-#        for subcat in catdict[filecat]:
-#            for spc in catdict[filecat][subcat]:
-#                varname = 'JNoon_'+spc
-#                if varname not in refds.data_vars or varname not in devds.data_vars:
-#                    warninglist.append(varname)
-#                    continue
-#                varlist.append(varname)
-#        if warninglist != []:
-#            print('\n\nWarning: variables in {} category not in dataset: {}'.format(filecat,warninglist))
-#
-#        pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
-#        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
-#        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='JNoon_')
-#
-#        pdfname = os.path.join(catdir,'{}_500hPa.pdf'.format(filecat))        
-#        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=22, pdfname=pdfname )
-#        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='JNoon_')
-#
-##        pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(filecat))        
-##        compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
-##        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
-#
-##        pdfname = os.path.join(catdir,'{}_Strat_ZonalMean.pdf'.format(filecat))        
-##        compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname, pres_range=[0,100] )
-##        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite files in tht directory, if any.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+
+    # Find common variables in both datasets
+    refds = xr.open_dataset(ref)
+    devds = xr.open_dataset(dev)
+    quiet = not verbose
+    [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, devds,
+                                                       quiet=quiet)
+
+    # =================================================================
+    # Local noon or continuously-averaged J-values?
+    # =================================================================
+    if local_noon_jvalues:
+
+        # Search for local noon J-value variables
+        prefix = 'JNoon_'
+        varlist = [v for v in cmn if prefix in v]
+
+        # Make sure JNoonFrac (fraction of times it was local noon
+        # in each column) is present in both Ref and Dev datasets
+        if not 'JNoonFrac' in cmn:
+            msg = 'JNoonFrac is not common to Ref and Dev datasets!'
+            raise ValueError(msg)
+
+        # JNoon_* are cumulative sums of local noon J-values; we need
+        # to divide these by JNoonFrac to get the average value
+        refds = core.divide_dataset_by_dataarray(refds,
+                                                 refds['JNoonFrac'],
+                                                 varlist)
+        devds = core.divide_dataset_by_dataarray(devds,
+                                                 devds['JNoonFrac'],
+                                                 varlist)
+
+        # Subfolder of dst where PDF files will be printed
+        subdir= 'JValuesLocalNoon'
+
+    else:
+
+        # Search for continually-averaged J-value variables
+        prefix = 'JVal_'
+        varlist = [v for v in cmn if prefix in v]
+
+        # Subfolder of dst where PDF files will be printed
+        subdir = 'JValues'
+
+    # =================================================================
+    # Create the plots
+    # =================================================================
+
+    # Make the folder to contain plots if it doesn't exist
+    jvdir = os.path.join(dst, subdir)
+    if not os.path.isdir(jvdir):
+        os.mkdir(jvdir)
+    
+    # Surface plots
+    pdfname = os.path.join(jvdir, '{}Surface.pdf'.format(prefix))
+    compare_single_level(refds, refstr, devds, devstr,
+                         varlist=varlist, ilev=0, pdfname=pdfname,
+                         flip_ref=flip_ref, flip_dev=flip_dev)
+    add_bookmarks_to_pdf(pdfname, varlist,
+                         remove_prefix=prefix, verbose=verbose)
+
+    # 500hPa plots
+    pdfname = os.path.join(jvdir, '{}500hPa.pdf'.format(prefix))
+    compare_single_level(refds, refstr, devds, devstr,
+                         varlist=varlist, ilev=22, pdfname=pdfname,
+                         flip_ref=flip_ref, flip_dev=flip_dev )
+    add_bookmarks_to_pdf(pdfname, varlist,
+                         remove_prefix=prefix, verbose=verbose)
+
+    # Full-column zonal mean plots
+    pdfname = os.path.join(jvdir, '{}FullColumn_ZonalMean.pdf'.format(prefix))
+    compare_zonal_mean(refds, refstr, devds, devstr,
+                       varlist=varlist, pdfname=pdfname,
+                       flip_ref=flip_ref, flip_dev=flip_dev)
+    add_bookmarks_to_pdf(pdfname, varlist,
+                         remove_prefix=prefix, verbose=verbose)
+
+    # Stratospheric zonal mean plots
+    pdfname = os.path.join(jvdir,'{}Strat_ZonalMean.pdf'.format(prefix))
+    compare_zonal_mean(refds, refstr, devds, devstr,
+                       varlist=varlist, pdfname=pdfname, pres_range=[0,100],
+                       flip_ref=flip_ref, flip_dev=flip_dev)
+    add_bookmarks_to_pdf(pdfname, varlist,
+                         remove_prefix=prefix, verbose=verbose)
 
 
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):

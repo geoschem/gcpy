@@ -597,23 +597,22 @@ def divide_dataset_by_dataarray(ds, dr, varlist=None):
     fraction of time it was local noon in each grid box, etc.
 
     Args:
-    -----
-    ds: xarray Dataset
-        The Dataset object containing variables to be divided.
+        ds: xarray Dataset
+            The Dataset object containing variables to be divided.
 
-    dr: xarray DataArray
-        The DataArray object that will be used to divide the
-        variables of ds.
+        dr: xarray DataArray
+            The DataArray object that will be used to divide the
+            variables of ds.
 
-    varlist: list (OPTIONAL)
-        If passed, then only those variables of ds that are listed
-        in varlist will be divided by dr.  Otherwise, all variables
-        of ds will be divided by dr.
+    Kewyword Args (optional):
+        varlist: list
+            If passed, then only those variables of ds that are listed
+            in varlist will be divided by dr.  Otherwise, all variables
+            of ds will be divided by dr.
 
     Returns:
-    --------
-    ds_new : xarray Dataset
-        A new xarray Dataset object with its variables divided by dr.
+        ds_new : xarray Dataset
+            A new xarray Dataset object with its variables divided by dr.
     '''
 
     # -----------------------------

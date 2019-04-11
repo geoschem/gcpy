@@ -1,7 +1,17 @@
 #!/usr/bin/env python
+'''
+Driver script for creating benchmark plots.  The options are:
+(1) GEOS-Chem "Classic" vs. GEOS-Chem "Classic"
+(2) GCHP vs GEOS-Chem "Classic"
+(3) GCHP vs GCHP
+'''
 
 import os
 from gcpy import benchmark
+import warnings
+
+# Suppress harmless run-time warnings (mostly about underflow in division)
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # =====================================================================
 # Configurables
@@ -57,12 +67,20 @@ gchp_vs_gchp_devstr = 'GCHP {}'.format(dev_version)
 # =====================================================================
 
 # Species concentration filenames
-gcc_spcfile  = 'GEOSChem.SpeciesConc.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
-gchp_spcfile = 'GCHP.SpeciesConc.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
+gcc_spcfile  = 'GEOSChem.SpeciesConc.{}_{}z.nc4'.format(gcc_datestr,      \
+                                                        gcc_hourstr)   
+gchp_spcfile = 'GCHP.SpeciesConc.{}_{}z.nc4'.format(gchp_datestr,         \
+                                                    gchp_hourstr) 
 
 # HEMCO diagnostic filenames
 gcc_hcofile  = 'HEMCO_diagnostics.{}{}.nc'.format(gcc_datestr, gcc_hourstr)
 gchp_hcofile = 'GCHP.Emissions.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
+
+# Local noon J-value diagnostic filenames
+gcc_jvfile  = 'GEOSChem.JValuesLocalNoon.{}_{}z.nc4'.format(gcc_datestr,  \
+                                                            gcc_hourstr)
+gchp_jvfile = 'GCHP.JValuesLocalNoon.{}_{}z.nc4'.format(gchp_datestr,     \
+                                                        gchp_hourstr)
 
 # Paths to species concentration data
 gcc_vs_gcc_refspc   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_spcfile)
@@ -79,6 +97,14 @@ gchp_vs_gcc_refhco  = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_hcofile)
 gchp_vs_gcc_devhco  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_hcofile)
 gchp_vs_gchp_refhco = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_hcofile)
 gchp_vs_gchp_devhco = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_hcofile)
+
+# Paths to local noon J-value data
+gcc_vs_gcc_refjv    = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_jvfile)
+gcc_vs_gcc_devjv    = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_jvfile)
+gchp_vs_gcc_refjv   = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_jvfile)
+gchp_vs_gcc_devjv   = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_jvfile)
+gchp_vs_gchp_refjv  = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_jvfile)
+gchp_vs_gchp_devjv  = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_jvfile)
 
 # =====================================================================
 # Create GCC vs GCC benchmark plots and tables
@@ -109,17 +135,22 @@ if gcc_vs_gcc:
 
     if emis_table:
         # Emissions tables
-        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_refhco,          \
-                                             gcc_vs_gcc_refstr,          \
-                                             gcc_vs_gcc_devhco,          \
-                                             gcc_vs_gcc_devstr,          \
-                                             dst=gcc_vs_gcc_plotsdir,    \
+        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_refhco,         \
+                                             gcc_vs_gcc_refstr,         \
+                                             gcc_vs_gcc_devhco,         \
+                                             gcc_vs_gcc_devstr,         \
+                                             dst=gcc_vs_gcc_plotsdir,   \
                                              overwrite=True)
 
     if plot_jvalues:
-        # J-values plots
-        # Add function call here
-        pass
+        # Local noon J-values plots
+        benchmark.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv,         \
+                                              gcc_vs_gcc_refstr,        \
+                                              gcc_vs_gcc_devjv,         \
+                                              gcc_vs_gcc_devstr,        \
+                                              dst=gcc_vs_gcc_plotsdir,  \
+                                              local_noon_jvalues=True,  \
+                                              overwrite=True)
 
 # =====================================================================
 # Create GCHP vs GCC benchmark plots and tables
@@ -153,8 +184,14 @@ if gchp_vs_gcc:
         pass
 
     if plot_jvalues:
-        # J-value plots
-        pass
+        # Local noon J-values plots
+        benchmark.make_benchmark_jvalue_plots(gchp_vs_gcc_refjv,         \
+                                              gchp_vs_gcc_refstr,        \
+                                              gchp_vs_gcc_devjv,         \
+                                              gchp_vs_gcc_devstr,        \
+                                              dst=gchp_vs_gcc_plotsdir,  \
+                                              local_noon_jvalues=True,   \
+                                              overwrite=True)
     
 # =====================================================================
 # Create GCHP vs GCHP benchmark plots and tables
@@ -189,5 +226,11 @@ if gchp_vs_gchp:
         pass
 
     if plot_jvalues:
-        # J-value plots
-        pass
+        # Local noon J-values plots
+        benchmark.make_benchmark_jvalue_plots(gchp_vs_gchp_refjv,        \
+                                              gchp_vs_gchp_refstr,       \
+                                              gchp_vs_gchp_devjv,        \
+                                              gchp_vs_gchp_devstr,       \
+                                              dst=gchp_vs_gchp_plotsdir, \
+                                              local_noon_jvalues=True,   \
+                                              overwrite=True)
