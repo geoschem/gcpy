@@ -438,7 +438,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         # Calculate difference, get dynamic range, configure colorbar,
         # use gray for NaNs if plotting on lat-lon grid (has strange effect for cs)
         ##############################################################################
-        
+
         if cmpgridtype == 'll':
             absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
         else:
@@ -447,7 +447,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])        
         cmap = mpl.cm.RdBu_r
         if cmpgridtype == 'll':
-            cmap.set_bad(color='gray')
+            cmap_gray = mpl.cm.RdBu_r
+            cmap_gray.set_bad(color='gray')
             
         ##############################################################################    
         # Subplot (1,0): Difference, dynamic range
@@ -457,7 +458,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         ax2.coastlines()
         if cmpgridtype == 'll':
             plot2 = ax2.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
-                               cmap=cmap,vmin=vmin, vmax=vmax)
+                               cmap=cmap_gray,vmin=vmin, vmax=vmax)
         else:
             for i in range(6):
                 plot2 = ax2.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
@@ -486,7 +487,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         ax3.coastlines()
         if cmpgridtype == 'll':
             plot3 = ax3.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
-                               cmap=cmap,vmin=vmin, vmax=vmax)
+                               cmap=cmap_gray,vmin=vmin, vmax=vmax)
         else:
             for i in range(6):
                 plot3 = ax3.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
@@ -524,7 +525,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         ax4.coastlines()
         if cmpgridtype == 'll':
             plot4 = ax4.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                               vmin=vmin, vmax=vmax, cmap=cmap)
+                               vmin=vmin, vmax=vmax, cmap=cmap_gray)
         else:
             for i in range(6):
                 plot4 = ax4.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
@@ -551,7 +552,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0,
         ax5.coastlines()
         if cmpgridtype == 'll':
             plot5 = ax5.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                               cmap=cmap,vmin=vmin, vmax=vmax)
+                               cmap=cmap_gray, vmin=vmin, vmax=vmax)
         else:
             for i in range(6):
                 plot5 = ax5.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
