@@ -29,9 +29,19 @@ spc_categories = 'benchmark_categories.json'
 emission_spc = 'emission_species.json' 
 
 # Add docstrings later. Use this function for benchmarking or general comparisons.
-def compare_single_level(refdata, refstr, devdata, devstr, varlist=None, ilev=0, itime=0,  weightsdir=None,
-                         pdfname='', cmpres=None, match_cbar=True, normalize_by_area=False,
-                         refarea=[], devarea=[], enforce_units=True, flip_ref=False, flip_dev=False ):
+def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
+                         ilev=0, itime=0,  weightsdir=None,
+                         pdfname='', cmpres=None, match_cbar=True,
+                         normalize_by_area=False,
+                         refarea=[], devarea=[], enforce_units=True,
+                         flip_ref=False, flip_dev=False ):
+
+    # Error check arguments
+    if not isinstance(refdata, xr.Dataset):
+        raise ValueError('The refdata argument must be an xarray Dataset!')
+
+    if not isinstance(devdata, xr.Dataset):
+        raise ValueError('The devdata argument must be an xarray Dataset!')
 
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
@@ -583,6 +593,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
                        pdfname='', cmpres=None, match_cbar=True, pres_range=[0,2000],
                        normalize_by_area=False, enforce_units=True, flip_ref=False, flip_dev=False ):
 
+    if not isinstance(refdata, xr.Dataset):
+        raise ValueError('The refdata argument must be an xarray Dataset!')
+
+    if not isinstance(devdata, xr.Dataset):
+        raise ValueError('The devdata argument must be an xarray Dataset!')
+
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
         [commonvars, commonvars2D, varlist] = core.compare_varnames(refdata, devdata)
@@ -1018,7 +1034,6 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################    
         # Zonal mean fractional difference
         ##############################################################################
-        
         zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(zm_ref_cmp)
 
         ##############################################################################    
@@ -1083,7 +1098,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     # Finish
     ##############################################################################
     if savepdf: pdf.close()
-    
+
+
 def get_emissions_varnames(commonvars, template=None):
     '''
     Will return a list of emissions diagnostic variable names that
@@ -1194,9 +1210,6 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
          f : file
             File object denoting a text file where output will be directed.
 
-    Returns:
-        None.  Prints emissions totals to a file.
-
     Remarks:
         This is an internal method.  It is meant to be called from method
         create_total_emissions_table instead of being called directly.
@@ -1225,6 +1238,7 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
     # Write output
     f.write("{} : {:13.6f}  {:13.6f}  {:13.6f} {}\n".format(
         display_name.ljust(25), total_ref, total_dev, diff, dev.units))
+
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                  species, outfilename,
@@ -1379,18 +1393,81 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     # Close file
     f.close()
 
+
 def get_species_categories():
+    '''
+    Returns the list of benchmark categories that each species
+    belongs to.  This determines which PDF files will contain the
+    plots for the various species.
+
+    Returns:
+        spc_cat_dict : dict
+            A nested dictionary of categories (and sub-categories)
+            and the species belonging to each.
+
+    NOTE: The benchmark categories are specified in JSON file
+    benchmark_species.json.
+    '''
     jsonfile = os.path.join(os.path.dirname(__file__), spc_categories)
     with open(jsonfile, 'r') as f:
         spc_cat_dict = json.loads(f.read())
     return spc_cat_dict
 
+
 def archive_species_categories(dst):
+    '''
+    Writes the list of benchmark categories to a JSON file
+    named "benchmark_species.json".
+
+    Args:
+        dst : str
+            Name of the folder where the JSON file containing
+            benchmark categories ("benchmark_species.json")
+            will be written.
+    '''
+
     src = os.path.join(os.path.dirname(__file__), spc_categories)
     print('Archiving {} in {}'.format(spc_categories, dst))
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
-def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False, verbose=False):
+
+def make_benchmark_conc_plots(ref, refstr, dev, devstr,
+                              dst='./1mo_benchmark',
+                              overwrite=False, verbose=False):
+    '''
+    Creates PDF files containing plots of species concentration
+    for model benchmarking purposes.
+
+    Args:
+        ref: str
+             Path name for the "Ref" (aka "Reference") data set.
+
+        refstr : str
+             A string to describe ref (e.g. version number)
+
+        dev : str
+             Path name for the "Dev" (aka "Development") data set.
+             This data set will be compared against the "Reference"
+             data set.
+
+        devstr : str
+             A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where a PDF
+             file containing plots will be written.
+             Default value: ./1mo_benchmark
+
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value: False.
+
+        verbose : boolean
+             Set this flag to True to print extra informational output.
+             Default value: False.
+    '''
 
     # NOTE: this function could use some refactoring; abstract processing per category?
     
@@ -1400,10 +1477,20 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
-    refds = xr.open_dataset(ref)
+    # Ref dataset (also add lumped species)
+    try:
+        refds = xr.open_dataset(ref)
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(ref))
+        raise
     refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
 
-    devds = xr.open_dataset(dev)
+    # Dev dataset (also add lumped species)
+    try:
+        devds = xr.open_dataset(dev)
+    except FileNotFoundError:
+        print('Could not find Dev file: {}!'.format(dev))
+        raise
     devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
     
     catdict = get_species_categories()
@@ -1427,6 +1514,7 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
         if warninglist != []:
             print('\n\nWarning: variables in {} category not in dataset: {}'.format(filecat,warninglist))
 
+        # Surface plots
         pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
         compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
@@ -1443,11 +1531,81 @@ def make_gcc_1mo_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_bench
         compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname, pres_range=[0,100] )
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
-def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
-                                      plot_by_benchmark_cat=False, plot_by_hco_cat=False,
-                                      overwrite=False, verbose=False, flip_ref=False,
-                                      flip_dev=False):
-    
+
+def make_benchmark_emis_plots(ref, refstr, dev, devstr,
+                              dst='./1mo_benchmark',
+                              plot_by_benchmark_cat=False,
+                              plot_by_hco_cat=False,
+                              overwrite=False, verbose=False,
+                              flip_ref=False, flip_dev=False):
+    '''
+    Creates PDF files containing plots of emissions for model
+    benchmarking purposes.
+
+    Args:
+        ref: str
+             Path name for the "Ref" (aka "Reference") data set.
+
+        refstr : str
+             A string to describe ref (e.g. version number)
+
+        dev : str
+             Path name for the "Dev" (aka "Development") data set.
+             This data set will be compared against the "Reference"
+             data set.
+
+        devstr : str
+             A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where a
+             PDF file containing plots will be written.
+             Default value: './1mo_benchmark
+
+        plot_by_benchmark_cat : boolean
+             Set this flag to True to separate plots into PDF files
+             according to the benchmark categories (e.g. Primary,
+             Aerosols, Nitrogen, etc.)  These categories are specified
+             in the JSON file benchmark_species.json.
+             Default value: False
+
+        plot_by_hco_cat : boolean
+             Set this flag to True to separate plots into PDF files
+             according to HEMCO emissions categories (e.g. Anthro,
+             Aircraft, Bioburn, etc.)
+             Default value: False
+
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value: False
+
+        verbose : boolean
+             Set this flag to True to print extra informational output.
+             Default value: False
+
+        flip_ref : boolean
+             Set this flag to True to reverse the vertical level
+             ordering in the "Ref" dataset (in case "Ref" starts
+             from the top of atmosphere instead of the surface).
+             Default value: False
+
+        flip_dev : boolean
+             Set this flag to True to reverse the vertical level
+             ordering in the "Dev" dataset (in case "Dev" starts
+             from the top of atmosphere instead of the surface).
+             Default value: False
+
+    Remarks:
+        (1) If both plot_by_benchmark_cat and plot_by_hco_cat are
+            False, then all emission plots will be placed into the
+            same PDF file.
+
+        (2) Emissions that are 3-dimensional will be plotted as
+            column sums.
+    '''
+
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
         return
@@ -1457,16 +1615,47 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir)   
 
-    refds = xr.open_dataset(ref)
-    devds = xr.open_dataset(dev)
-    vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds)
+    # Ref dataset
+    try:
+        refds = xr.open_dataset(ref)
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(ref))
+        raise
+
+    # Dev dataset
+    try:
+        devds = xr.open_dataset(dev)
+    except FileNotFoundError:
+        print('Could not find Dev file: {}'.format(dev))
+        raise
+
+    # Find common variables
+    quiet = not verbose
+    vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
     varlist = vars2D+vars3D
 
+    # =================================================================
+    # Compute column sums for 3D emissions
+    # NOTE: We have to manually reattach the variable attributes
+    # =================================================================
+    for v in vars3D:
+        attrs = refds[v].attrs
+        refds[v] = refds[v].sum(dim='lev')
+        refds[v].attrs = attrs
+
+        attrs = devds[v].attrs
+        devds[v] = devds[v].sum(dim='lev')
+        devds[v].attrs = attrs
+
+    # =================================================================
     # If inputs plot_by* are both false, plot all emissions in same file
+    # =================================================================
     if not plot_by_benchmark_cat and not plot_by_hco_cat:
         pdfname = os.path.join(emisdir,'Emissions.pdf')
-        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='Emis', verbose=verbose)
+        compare_single_level(refds, refstr, devds, devstr,
+                             varlist=varlist, pdfname=pdfname )
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix='Emis', verbose=verbose)
         return
 
     # Get emissions variables (non-inventory), categories, and species
@@ -1480,8 +1669,10 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
     # Sort alphabetically (assume English characters)
     emis_vars.sort(key=str.lower)
 
-    # if plot_by_hco_cat is true, make a file for each HEMCO emissions category that is in the
-    # diagnostics file
+    # =================================================================
+    # if plot_by_hco_cat is true, make a file for each HEMCO emissions
+    # category that is in the diagnostics file
+    # =================================================================
     if plot_by_hco_cat:
 
         emisspcdir = os.path.join(dst,'Emissions')
@@ -1495,11 +1686,15 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
             else:
                 varnames = [k for k in emis_vars if c in k]
             pdfname = os.path.join(emisspcdir,'{}_Emissions.pdf'.format(c))
-            compare_single_level(refds, refstr, devds, devstr, varlist=varnames, ilev=0, pdfname=pdfname)
-            add_bookmarks_to_pdf(pdfname, varnames, remove_prefix='Emis', verbose=verbose)
+            compare_single_level(refds, refstr, devds, devstr,
+                                 varlist=varnames, ilev=0, pdfname=pdfname)
+            add_bookmarks_to_pdf(pdfname, varnames,
+                                 remove_prefix='Emis', verbose=verbose)
 
-    # if plot_by_benchmark_cat is true, make a file for each benchmark species category with
-    # emissions in the diagnostics file
+    # =================================================================
+    # if plot_by_benchmark_cat is true, make a file for each benchmark
+    # species category with emissions in the diagnostics file
+    # =================================================================
     if plot_by_benchmark_cat:
         
         catdict = get_species_categories()
@@ -1538,9 +1733,41 @@ def make_gcc_1mo_benchmark_emis_plots(ref, refstr, dev, devstr, dst='./1mo_bench
         for spc in emis_spc:
             if spc not in allcatspc:
                 print('Warning: species {} has emissions diagnostics but is not in benchmark_categories.json'.format(spc))
-        
-def make_gcc_1mo_benchmark_emis_tables(ref, refstr, dev, devstr, dst='./1mo_benchmark', overwrite=False):
-    
+
+
+def make_benchmark_emis_tables(ref, refstr, dev, devstr,
+                               dst='./1mo_benchmark', overwrite=False):
+    '''
+    Creates a text file containing emission totals by species and
+    category for benchmarking purposes.
+
+    Args:
+        ref: str
+             Path name for the "Ref" (aka "Reference") data set.
+
+        refstr : str
+             A string to describe ref (e.g. version number)
+
+        dev : str
+             Path name for the "Dev" (aka "Development") data set.
+             This data set  will be compared against the "Reference"
+             data set.
+
+        devstr : str
+             A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where the file
+             containing emissions totals will be written.
+             Default value: ./1mo_benchmark
+
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value : False
+    '''
+
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
         return
@@ -1550,9 +1777,19 @@ def make_gcc_1mo_benchmark_emis_tables(ref, refstr, dev, devstr, dst='./1mo_benc
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir) 
 
-    # Read data
-    refds = xr.open_dataset(ref)
-    devds = xr.open_dataset(dev)
+    # Ref dataset
+    try:
+        refds = xr.open_dataset(ref)
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(ref))
+        raise
+
+    # Dev dataset
+    try:
+        devds = xr.open_dataset(dev)
+    except FileNotFoundError:
+        print('Could not find Dev file {}'.format(dev))
+        raise
 
     # Emissions species dictionary
     species = json_load_file(open(os.path.join(os.path.dirname(__file__),emission_spc)))
@@ -1569,9 +1806,205 @@ def make_gcc_1mo_benchmark_emis_tables(ref, refstr, dev, devstr, dst='./1mo_benc
                                       interval, template="Emis{}_")
     create_total_emissions_table(refds, refstr, devds, devstr, species, file_inv_totals,
                                       interval, template="Inv{}_")
+
+
+def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
+                                dst='./1mo_benchmark',
+                                local_noon_jvalues=False,
+                                overwrite=False, verbose=False,
+                                flip_ref=False, flip_dev=False):
+    '''
+    Creates PDF files containing plots of J-values for model
+    benchmarking purposes.
+
+    Args:
+        ref: str
+             Path name for the "Ref" (aka "Reference") data set.
+
+        refstr : str
+             A string to describe ref (e.g. version number)
     
+        dev : str
+             Path name for the "Dev" (aka "Development") data set.
+             This data set will be compared against the "Reference"
+             data set.
+
+        devstr : str
+             A string to describe dev (e.g. version number)
     
-def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='', verbose=False ):
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where a
+             PDF file  containing plots will be written.
+    
+        local_noon_jvalues : boolean
+             Set this switch to plot local noon J-values.  This will
+             divide all J-value variables by the JNoonFrac counter,
+             which is the fraction of the time that it was local noon
+             at each location.
+             Default value : False
+
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value: False.
+
+        verbose : boolean
+             Set this flag to True to print extra informational output.
+             Default value: False
+
+        flip_ref : boolean
+             Set this flag to True to reverse the vertical level
+             ordering in the "Ref" dataset (in case "Ref" starts
+             from the top of atmosphere instead of the surface).
+             Default value: False
+
+        flip_dev : boolean
+             Set this flag to True to reverse the vertical level
+             ordering in the "Dev" dataset (in case "Dev" starts
+             from the top of atmosphere instead of the surface).
+             Default value: False
+
+    Remarks:
+         Will create 4 files containing J-value plots:
+            (1) Surface values
+            (2) 500 hPa values
+            (3) Full-column zonal mean values.
+            (4) Stratospheric zonal mean values
+
+         At present, we do not yet have the capability to split the
+         plots up into separate files per category (e.g. Primary,
+         Aerosols, etc.).  We could add this functionality later if
+         there is demand. 
+    '''
+    
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite files in tht directory, if any.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+
+    # Ref dataset
+    try:
+        refds = xr.open_dataset(ref)
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(ref))
+        raise
+
+    # Dev dataset
+    try:
+        devds = xr.open_dataset(dev)
+    except FileNotFoundError:
+        print('Could not find Dev file: {}'.format(dev))
+        raise
+
+    # Find common variables in both datasets
+    quiet = not verbose
+    [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, devds, quiet)
+
+    # =================================================================
+    # Local noon or continuously-averaged J-values?
+    # =================================================================
+    if local_noon_jvalues:
+
+        # Search for local noon J-value variables
+        prefix = 'JNoon_'
+        varlist = [v for v in cmn if prefix in v]
+
+        # Make sure JNoonFrac (fraction of times it was local noon
+        # in each column) is present in both Ref and Dev datasets
+        if not 'JNoonFrac' in cmn:
+            msg = 'JNoonFrac is not common to Ref and Dev datasets!'
+            raise ValueError(msg)
+
+        # JNoon_* are cumulative sums of local noon J-values; we need
+        # to divide these by JNoonFrac to get the average value
+        refds = core.divide_dataset_by_dataarray(refds,
+                                                 refds['JNoonFrac'],
+                                                 varlist)
+        devds = core.divide_dataset_by_dataarray(devds,
+                                                 devds['JNoonFrac'],
+                                                 varlist)
+
+        # Subfolder of dst where PDF files will be printed
+        subdir= 'JValuesLocalNoon'
+
+    else:
+
+        # Search for continually-averaged J-value variables
+        prefix = 'JVal_'
+        varlist = [v for v in cmn if prefix in v]
+
+        # Subfolder of dst where PDF files will be printed
+        subdir = 'JValues'
+
+    # =================================================================
+    # Create the plots
+    # =================================================================
+
+    # Make the folder to contain plots if it doesn't exist
+    jvdir = os.path.join(dst, subdir)
+    if not os.path.isdir(jvdir):
+        os.mkdir(jvdir)
+    
+    # Surface plots
+    pdfname = os.path.join(jvdir, '{}Surface.pdf'.format(prefix))
+    compare_single_level(refds, refstr, devds, devstr,
+                         varlist=varlist, ilev=0, pdfname=pdfname,
+                         flip_ref=flip_ref, flip_dev=flip_dev)
+    add_bookmarks_to_pdf(pdfname, varlist,
+                         remove_prefix=prefix, verbose=verbose)
+
+    # 500hPa plots
+    pdfname = os.path.join(jvdir, '{}500hPa.pdf'.format(prefix))
+    compare_single_level(refds, refstr, devds, devstr,
+                         varlist=varlist, ilev=22, pdfname=pdfname,
+                         flip_ref=flip_ref, flip_dev=flip_dev )
+    add_bookmarks_to_pdf(pdfname, varlist,
+                         remove_prefix=prefix, verbose=verbose)
+
+    # Full-column zonal mean plots
+    pdfname = os.path.join(jvdir, '{}FullColumn_ZonalMean.pdf'.format(prefix))
+    compare_zonal_mean(refds, refstr, devds, devstr,
+                       varlist=varlist, pdfname=pdfname,
+                       flip_ref=flip_ref, flip_dev=flip_dev)
+    add_bookmarks_to_pdf(pdfname, varlist,
+                         remove_prefix=prefix, verbose=verbose)
+
+    # Stratospheric zonal mean plots
+    pdfname = os.path.join(jvdir,'{}Strat_ZonalMean.pdf'.format(prefix))
+    compare_zonal_mean(refds, refstr, devds, devstr,
+                       varlist=varlist, pdfname=pdfname, pres_range=[0,100],
+                       flip_ref=flip_ref, flip_dev=flip_dev)
+    add_bookmarks_to_pdf(pdfname, varlist,
+                         remove_prefix=prefix, verbose=verbose)
+
+
+def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
+    '''
+    Adds bookmarks to an existing PDF file.
+
+    Args:
+        pdfname : str
+            Name of an existing PDF file of species or emission plots
+            to which bookmarks will be attached.
+
+        varlist : list
+            List of variables, which will be used to create the
+            PDF bookmark names.
+
+    Keyword Args (optional):
+        remove_prefix : str
+            Specifies a prefix to remove from each entry in varlist
+            when creating bookmarks.  For example, if varlist has
+            a variable name "SpeciesConc_NO", and you specify
+            remove_prefix="SpeciesConc_", then the bookmark for
+            that variable will be just "NO", etc.
+
+         verbose : boolean
+             Set this flag to True to print extra informational output.
+             Default value: False
+    '''
 
     # Setup
     pdfobj = open(pdfname,"rb")
@@ -1594,6 +2027,7 @@ def add_bookmarks_to_pdf( pdfname, varlist, remove_prefix='', verbose=False ):
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
 
+      
 def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove_prefix=''):
 
     # Setup
@@ -1634,7 +2068,9 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
 
-# The rest of this file contains legacy code that may be deleted in the future
+# =============================================================================
+# The rest of this file contains legacy code that may be deleted in the futur
+# =============================================================================
 
 def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
     '''Plot 2D DataArray as a lat-lon layer
@@ -1655,6 +2091,8 @@ def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
 
     diff : Boolean, optional
         Switch to the color scale for difference plot
+
+    NOTE: This is deprecated and will be removed in the future.
     '''
 
     assert isinstance(ax, GeoAxes), (
@@ -1724,6 +2162,8 @@ def plot_zonal(dr, ax, title='', unit='', diff=False):
 
     diff : Boolean, optional
         Switch to the color scale for difference plot
+
+    NOTE: This is deprecated and will be removed in the future.
     '''
 
     # assume global field from 90S to 90N
@@ -1802,6 +2242,8 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
 
     unit : string, optional
         Unit shown near the colorbar
+
+    NOTE: This is deprecated and will be removed in the future.
     '''
 
     if on_map:
