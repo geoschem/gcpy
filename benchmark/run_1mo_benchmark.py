@@ -4,6 +4,10 @@ Driver script for creating benchmark plots.  The options are:
 (1) GEOS-Chem "Classic" vs. GEOS-Chem "Classic"
 (2) GCHP vs GEOS-Chem "Classic"
 (3) GCHP vs GCHP
+
+Set the path variables below to the folders containing model data
+files from benchmark simulations.  Then set the switches according
+to the plotting options that you want.
 '''
 
 import os
@@ -28,10 +32,11 @@ gchp_vs_gcc  = False
 gchp_vs_gchp = False
 
 # Output to generate (edit as needed)
-plot_conc    = True
-plot_emis    = True
-plot_jvalues = True
-emis_table   = True
+plot_aod     = True
+plot_conc    = False
+plot_emis    = False
+plot_jvalues = False
+emis_table   = False
 
 # Filename date strings (edit as needed)
 gcc_datestr  = '20160701'
@@ -82,6 +87,10 @@ gcc_jvfile  = 'GEOSChem.JValuesLocalNoon.{}_{}z.nc4'.format(gcc_datestr,  \
 gchp_jvfile = 'GCHP.JValuesLocalNoon.{}_{}z.nc4'.format(gchp_datestr,     \
                                                         gchp_hourstr)
 
+# Aerosol optical depth diagnostic filenames
+gcc_aodfile  = 'GEOSChem.Aerosols.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
+gchp_aodfile = 'GCHP.Aerosols.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
+
 # Paths to species concentration data
 gcc_vs_gcc_refspc   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_spcfile)
 gcc_vs_gcc_devspc   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_spcfile)
@@ -105,6 +114,14 @@ gchp_vs_gcc_refjv   = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_jvfile)
 gchp_vs_gcc_devjv   = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_jvfile)
 gchp_vs_gchp_refjv  = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_jvfile)
 gchp_vs_gchp_devjv  = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_jvfile)
+
+# Paths to aerosol optical depth data
+gcc_vs_gcc_refaod   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_aodfile)
+gcc_vs_gcc_devaod   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_aodfile)
+gchp_vs_gcc_refaod  = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_aodfile)
+gchp_vs_gcc_devaod  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_aodfile)
+gchp_vs_gchp_refaod = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_aodfile)
+gchp_vs_gchp_devaod = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_aodfile)
 
 # =====================================================================
 # Create GCC vs GCC benchmark plots and tables
@@ -135,22 +152,30 @@ if gcc_vs_gcc:
 
     if emis_table:
         # Emissions tables
-        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_refhco,         \
-                                             gcc_vs_gcc_refstr,         \
-                                             gcc_vs_gcc_devhco,         \
-                                             gcc_vs_gcc_devstr,         \
-                                             dst=gcc_vs_gcc_plotsdir,   \
+        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_refhco,          \
+                                             gcc_vs_gcc_refstr,          \
+                                             gcc_vs_gcc_devhco,          \
+                                             gcc_vs_gcc_devstr,          \
+                                             dst=gcc_vs_gcc_plotsdir,    \
                                              overwrite=True)
 
     if plot_jvalues:
         # Local noon J-values plots
-        benchmark.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv,         \
-                                              gcc_vs_gcc_refstr,        \
-                                              gcc_vs_gcc_devjv,         \
-                                              gcc_vs_gcc_devstr,        \
-                                              dst=gcc_vs_gcc_plotsdir,  \
-                                              local_noon_jvalues=True,  \
+        benchmark.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv,          \
+                                              gcc_vs_gcc_refstr,         \
+                                              gcc_vs_gcc_devjv,          \
+                                              gcc_vs_gcc_devstr,         \
+                                              dst=gcc_vs_gcc_plotsdir,   \
+                                              local_noon_jvalues=True,   \
                                               overwrite=True)
+    if plot_aod:
+        # Column AOD plots
+        benchmark.make_benchmark_aod_plots(gcc_vs_gcc_refaod,            \
+                                           gcc_vs_gcc_refstr,            \
+                                           gcc_vs_gcc_devaod,            \
+                                           gcc_vs_gcc_devstr,            \
+                                           dst=gcc_vs_gcc_plotsdir,      \
+                                           overwrite=True)
 
 # =====================================================================
 # Create GCHP vs GCC benchmark plots and tables
@@ -192,7 +217,15 @@ if gchp_vs_gcc:
                                               dst=gchp_vs_gcc_plotsdir,  \
                                               local_noon_jvalues=True,   \
                                               overwrite=True)
-    
+    if plot_aod:
+        # Column AOD plots
+        benchmark.make_benchmark_aod_plots(gchp_vs_gcc_refaod,           \
+                                           gchp_vs_gcc_refstr,           \
+                                           gchp_vs_gcc_devaod,           \
+                                           gchp_vs_gcc_devstr,           \
+                                           dst=gchp_vs_gcc_plotsdir,     \
+                                           overwrite=True)
+
 # =====================================================================
 # Create GCHP vs GCHP benchmark plots and tables
 # =====================================================================
@@ -234,3 +267,12 @@ if gchp_vs_gchp:
                                               dst=gchp_vs_gchp_plotsdir, \
                                               local_noon_jvalues=True,   \
                                               overwrite=True)
+
+if plot_aod:
+        # Column AOD plots
+        benchmark.make_benchmark_aod_plots(gchp_vs_gchp_refaod,          \
+                                           gchp_vs_gchp_refstr,          \
+                                           gchp_vs_gchp_devaod,          \
+                                           gchp_vs_gchp_devstr,          \
+                                           dst=gchp_vs_gchp_plotsdir,    \
+                                           overwrite=True)

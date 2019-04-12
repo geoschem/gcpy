@@ -25,6 +25,7 @@ from .units import convert_units
 cmap_abs = WhGrYlRd  # for plotting absolute magnitude
 cmap_diff = 'RdBu_r'  # for plotting difference
 
+aod_spc = 'aod_species.json'
 spc_categories = 'benchmark_categories.json'
 emission_spc = 'emission_species.json' 
 
@@ -1803,9 +1804,9 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
 
     # Write to file
     create_total_emissions_table(refds, refstr, devds, devstr, species, file_emis_totals,
-                                      interval, template="Emis{}_")
+                                 interval, template="Emis{}_")
     create_total_emissions_table(refds, refstr, devds, devstr, species, file_inv_totals,
-                                      interval, template="Inv{}_")
+                                 interval, template="Inv{}_")
 
 
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
@@ -1836,6 +1837,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         dst : str
              A string denoting the destination folder where a
              PDF file  containing plots will be written.
+             Default value: ./1mo_benchmark.
     
         local_noon_jvalues : boolean
              Set this switch to plot local noon J-values.  This will
@@ -1978,6 +1980,162 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                        flip_ref=flip_ref, flip_dev=flip_dev)
     add_bookmarks_to_pdf(pdfname, varlist,
                          remove_prefix=prefix, verbose=verbose)
+
+
+def make_benchmark_aod_plots(ref, refstr, dev, devstr,
+                             dst='./1mo_benchmark',
+                             overwrite=False, verbose=False):
+    '''
+    Creates PDF files containing plots of column aerosol optical
+    depths (AODs) for model benchmarking purposes.
+
+    Args:
+        ref: str
+             Path name for the "Ref" (aka "Reference") data set.
+
+        refstr : str
+             A string to describe ref (e.g. version number)
+
+        dev : str
+             Path name for the "Dev" (aka "Development") data set.
+             This data set will be compared against the "Reference"
+             data set.
+
+        devstr : str
+             A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where a
+             PDF file  containing plots will be written.
+             Default value: ./1mo_benchmark.
+
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value: False.
+
+        verbose : boolean
+             Set this flag to True to print extra informational output.
+             Default value: False
+    '''
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite files in tht directory, if any.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+    aoddir = os.path.join(dst, 'Aerosols')
+    if not os.path.isdir(aoddir):
+        os.mkdir(aoddir)
+
+    # Ref dataset
+    try:
+        refds = xr.open_dataset(ref)
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(ref))
+        raise
+
+    # Dev dataset
+    try:
+        devds = xr.open_dataset(dev)
+    except FileNotFoundError:
+        print('Could not find Dev file: {}'.format(dev))
+        raise
+
+    # Find common AOD variables in both datasets
+    quiet = not verbose
+    [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, devds, quiet)
+    varlist = [v for v in cmn3D if 'AOD' in v and '_bin' not in v]
+
+    # Dictionary and list for new display names
+    newvars = json_load_file(open(os.path.join(os.path.dirname(__file__),
+                                               aod_spc)))
+    newvarlist = []
+
+    # =================================================================
+    # Compute the total AOD by summing over the constituent members
+    # =================================================================
+
+    # Take one of the variables so we can use its dims, coords,
+    # attrs to create the DataArray object for total AOD
+    v = varlist[0]
+
+    # Create a DataArray to hold total column AOD
+    # This is the same shape as the DataArray objects in refds
+    reftot = xr.DataArray(np.zeros(refds[v].values.shape),
+                          name='AODTotal',
+                          dims=refds[v].dims,
+                          coords=refds[v].coords,
+                          attrs=refds[v].attrs)
+
+    # Create a DataArray to hold total column AOD
+    # This is the same shape as the DataArray objects in devds
+    devtot = xr.DataArray(np.zeros(devds[v].values.shape),
+                          name='AODTotal',
+                          dims=devds[v].dims,
+                          coords=devds[v].coords,
+                          attrs=devds[v].attrs)
+
+    # Save the variable attributes so that we can reattach them
+    refattrs = reftot.attrs
+    devattrs = devtot.attrs
+
+    # Compute the sum of all AOD variables
+    for v in varlist:
+        reftot = reftot + refds[v]
+        devtot = devtot + devds[v]
+
+    # Reattach the variable attributes
+    reftot.name = 'AODTotal'
+    reftot.attrs = refattrs
+    reftot.attrs['long_name'] = 'Total aerosol optical depth'
+    devtot.name = 'AODTotal'
+    devtot.attrs = devattrs
+    devtot.attrs['long_name'] = 'Total aerosol optical depth'
+
+    # Merge these variables back into the dataset
+    refds = xr.merge([refds, reftot])
+    devds = xr.merge([devds, devtot])
+
+    # Also add AODTotal to the list
+    varlist.append('AODTotal')
+
+    # =================================================================
+    # Compute column AODs
+    # Create a new DataArray for each column AOD variable,
+    #  using the new display name, and preserving attributes.
+    # Merge the new DataArrays back into the DataSets.
+    # =================================================================
+    for v in varlist:
+
+        # Get the new name for each AOD variable (it's easier to display)
+        if v in newvars:
+            newname = newvars[v]
+            newvarlist.append(newname)
+        else:
+            raise ValueError('Could not find a display name for'.format(v))
+
+        # Ref
+        attrs = refds[v].attrs
+        array = refds[v].sum(dim='lev')
+        array.name = newname
+        array.attrs = attrs
+        refds = xr.merge([refds, array])
+
+        # Dev
+        attrs = devds[v].attrs
+        array = devds[v].sum(dim='lev')
+        array.attrs = attrs
+        array.name = newname
+        devds = xr.merge([devds, array])
+
+    # =================================================================
+    # Create the plots
+    # =================================================================
+    pdfname = os.path.join(aoddir, 'Aerosols_ColumnOptDepth.pdf')
+    compare_single_level(refds, refstr, devds, devstr,
+                         varlist=newvarlist, ilev=0, pdfname=pdfname)
+    add_bookmarks_to_pdf(pdfname, newvarlist, verbose=verbose)
 
 
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):

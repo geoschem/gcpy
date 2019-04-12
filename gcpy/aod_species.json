@@ -1,0 +1,12 @@
+{
+    "AODTotal"                  : "Column_AOD_Total",
+    "AODDust"                   : "Column_AOD_Dust",
+    "AODHyg550nm_BCPI"          : "Column_AOD_BCPI",
+    "AODHyg550nm_OCPI"          : "Column_AOD_OCPI",
+    "AODHyg550nm_SALA"          : "Column_AOD_SALA",
+    "AODHyg550nm_SALC"          : "Column_AOD_SALC",
+    "AODHyg550nm_SO4"           : "Column_AOD_SO4",
+    "AODSOAfromAqIsoprene550nm" : "Column_AOD_SOA_from_Aqueous_ISOP",
+    "AODStratLiquidAer550nm"    : "Column_AOD_Strat_Liquid_Aerosol",
+    "AODPolarStratCloud550nm"   : "Column_AOD_Polar_Strat_Cloud"
+}
