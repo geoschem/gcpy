@@ -36,6 +36,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          refarea=[], devarea=[], enforce_units=True,
                          flip_ref=False, flip_dev=False ):
 
+    # Error check arguments
+    if not isinstance(refdata, xr.Dataset):
+        raise ValueError('The refdata argument must be an xarray Dataset!')
+
+    if not isinstance(devdata, xr.Dataset):
+        raise ValueError('The devdata argument must be an xarray Dataset!')
+
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
         [varlist, commonvars2D, commonvars3D] = core.compare_varnames(refdata, devdata)
@@ -585,6 +592,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
                        pdfname='', cmpres=None, match_cbar=True, pres_range=[0,2000],
                        normalize_by_area=False, enforce_units=True, flip_ref=False, flip_dev=False ):
 
+    if not isinstance(refdata, xr.Dataset):
+        raise ValueError('The refdata argument must be an xarray Dataset!')
+
+    if not isinstance(devdata, xr.Dataset):
+        raise ValueError('The devdata argument must be an xarray Dataset!')
+
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
         [commonvars, commonvars2D, varlist] = core.compare_varnames(refdata, devdata)
@@ -1020,7 +1033,6 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ##############################################################################    
         # Zonal mean fractional difference
         ##############################################################################
-        
         zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(zm_ref_cmp)
 
         ##############################################################################    
@@ -1085,7 +1097,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     # Finish
     ##############################################################################
     if savepdf: pdf.close()
-    
+
+
 def get_emissions_varnames(commonvars, template=None):
     '''
     Will return a list of emissions diagnostic variable names that
@@ -1195,9 +1208,6 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
 
          f : file
             File object denoting a text file where output will be directed.
-
-    Returns:
-        None.  Prints emissions totals to a file.
 
     Remarks:
         This is an internal method.  It is meant to be called from method
@@ -1404,6 +1414,17 @@ def get_species_categories():
 
 
 def archive_species_categories(dst):
+    '''
+    Writes the list of benchmark categories to a JSON file
+    named "benchmark_species.json".
+
+    Args:
+        dst : str
+            Name of the folder where the JSON file containing
+            benchmark categories ("benchmark_species.json")
+            will be written.
+    '''
+
     src = os.path.join(os.path.dirname(__file__), spc_categories)
     print('Archiving {} in {}'.format(spc_categories, dst))
     shutil.copyfile(src, os.path.join(dst, spc_categories))
@@ -1417,15 +1438,16 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
     for model benchmarking purposes.
 
     Args:
-        ref: xarray Dataset
-             The "Ref" (aka "Reference") data set
+        ref: str
+             Path name for the "Ref" (aka "Reference") data set.
 
         refstr : str
              A string to describe ref (e.g. version number)
 
-        dev : xarray Dataset
-             The "Dev" (aka "Development") data set. This data set
-             will be compared against the "Reference" data set.
+        dev : str
+             Path name for the "Dev" (aka "Development") data set.
+             This data set will be compared against the "Reference"
+             data set.
 
         devstr : str
              A string to describe dev (e.g. version number)
@@ -1454,10 +1476,20 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
-    refds = xr.open_dataset(ref)
+    # Ref dataset (also add lumped species)
+    try:
+        refds = xr.open_dataset(ref)
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(ref))
+        raise
     refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
 
-    devds = xr.open_dataset(dev)
+    # Dev dataset (also add lumped species)
+    try:
+        devds = xr.open_dataset(dev)
+    except FileNotFoundError:
+        print('Could not find Dev file: {}!'.format(dev))
+        raise
     devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
     
     catdict = get_species_categories()
@@ -1481,6 +1513,7 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
         if warninglist != []:
             print('\n\nWarning: variables in {} category not in dataset: {}'.format(filecat,warninglist))
 
+        # Surface plots
         pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
         compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
         add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
@@ -1509,15 +1542,16 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     benchmarking purposes.
 
     Args:
-        ref: xarray Dataset
-             The "Ref" (aka "Reference") data set
+        ref: str
+             Path name for the "Ref" (aka "Reference") data set.
 
         refstr : str
              A string to describe ref (e.g. version number)
 
-        dev : xarray Dataset
-             The "Dev" (aka "Development") data set. This data set
-             will be compared against the "Reference" data set.
+        dev : str
+             Path name for the "Dev" (aka "Development") data set.
+             This data set will be compared against the "Reference"
+             data set.
 
         devstr : str
              A string to describe dev (e.g. version number)
@@ -1562,10 +1596,13 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
              from the top of atmosphere instead of the surface).
              Default value: False
 
-    Notes:
-    ------
-    If both plot_by_benchmark_cat and plot_by_hco_cat are False,
-    then all emission plots will be placed into the same PDF file.
+    Remarks:
+        (1) If both plot_by_benchmark_cat and plot_by_hco_cat are
+            False, then all emission plots will be placed into the
+            same PDF file.
+
+        (2) Emissions that are 3-dimensional will be plotted as
+            column sums.
     '''
 
     if os.path.isdir(dst) and not overwrite:
@@ -1577,18 +1614,47 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir)   
 
-    refds = xr.open_dataset(ref)
-    devds = xr.open_dataset(dev)
-    vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds)
+    # Ref dataset
+    try:
+        refds = xr.open_dataset(ref)
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(ref))
+        raise
+
+    # Dev dataset
+    try:
+        devds = xr.open_dataset(dev)
+    except FileNotFoundError:
+        print('Could not find Dev file: {}'.format(dev))
+        raise
+
+    # Find common variables
+    quiet = not verbose
+    vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
     varlist = vars2D+vars3D
+
+    # =================================================================
+    # Compute column sums for 3D emissions
+    # NOTE: We have to manually reattach the variable attributes
+    # =================================================================
+    for v in vars3D:
+        attrs = refds[v].attrs
+        refds[v] = refds[v].sum(dim='lev')
+        refds[v].attrs = attrs
+
+        attrs = devds[v].attrs
+        devds[v] = devds[v].sum(dim='lev')
+        devds[v].attrs = attrs
 
     # =================================================================
     # If inputs plot_by* are both false, plot all emissions in same file
     # =================================================================
     if not plot_by_benchmark_cat and not plot_by_hco_cat:
         pdfname = os.path.join(emisdir,'Emissions.pdf')
-        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='Emis', verbose=verbose)
+        compare_single_level(refds, refstr, devds, devstr,
+                             varlist=varlist, pdfname=pdfname )
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix='Emis', verbose=verbose)
         return
 
     # Get emissions variables (non-inventory), categories, and species
@@ -1619,8 +1685,10 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
             else:
                 varnames = [k for k in emis_vars if c in k]
             pdfname = os.path.join(emisspcdir,'{}_Emissions.pdf'.format(c))
-            compare_single_level(refds, refstr, devds, devstr, varlist=varnames, ilev=0, pdfname=pdfname)
-            add_bookmarks_to_pdf(pdfname, varnames, remove_prefix='Emis', verbose=verbose)
+            compare_single_level(refds, refstr, devds, devstr,
+                                 varlist=varnames, ilev=0, pdfname=pdfname)
+            add_bookmarks_to_pdf(pdfname, varnames,
+                                 remove_prefix='Emis', verbose=verbose)
 
     # =================================================================
     # if plot_by_benchmark_cat is true, make a file for each benchmark
@@ -1673,15 +1741,16 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
     category for benchmarking purposes.
 
     Args:
-        ref: xarray Dataset
-             The "Ref" (aka "Reference") data set
+        ref: str
+             Path name for the "Ref" (aka "Reference") data set.
 
         refstr : str
              A string to describe ref (e.g. version number)
 
-        dev : xarray Dataset
-             The "Dev" (aka "Development") data set. This data set
-             will be compared against the "Reference" data set.
+        dev : str
+             Path name for the "Dev" (aka "Development") data set.
+             This data set  will be compared against the "Reference"
+             data set.
 
         devstr : str
              A string to describe dev (e.g. version number)
@@ -1707,9 +1776,19 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir) 
 
-    # Read data
-    refds = xr.open_dataset(ref)
-    devds = xr.open_dataset(dev)
+    # Ref dataset
+    try:
+        refds = xr.open_dataset(ref)
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(ref))
+        raise
+
+    # Dev dataset
+    try:
+        devds = xr.open_dataset(dev)
+    except FileNotFoundError:
+        print('Could not find Dev file {}'.format(dev))
+        raise
 
     # Emissions species dictionary
     species = json_load_file(open(os.path.join(os.path.dirname(__file__),emission_spc)))
@@ -1738,15 +1817,16 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     benchmarking purposes.
 
     Args:
-        ref: xarray Dataset
-             The "Ref" (aka "Reference") data set
+        ref: str
+             Path name for the "Ref" (aka "Reference") data set.
 
         refstr : str
              A string to describe ref (e.g. version number)
     
-        dev : xarray Dataset
-             The "Dev" (aka "Development") data set. This data set
-             will be compared against the "Reference" data set.
+        dev : str
+             Path name for the "Dev" (aka "Development") data set.
+             This data set will be compared against the "Reference"
+             data set.
 
         devstr : str
              A string to describe dev (e.g. version number)
@@ -1803,12 +1883,23 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
+    # Ref dataset
+    try:
+        refds = xr.open_dataset(ref)
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(ref))
+        raise
+
+    # Dev dataset
+    try:
+        devds = xr.open_dataset(dev)
+    except FileNotFoundError:
+        print('Could not find Dev file: {}'.format(dev))
+        raise
+
     # Find common variables in both datasets
-    refds = xr.open_dataset(ref)
-    devds = xr.open_dataset(dev)
     quiet = not verbose
-    [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, devds,
-                                                       quiet=quiet)
+    [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, devds, quiet)
 
     # =================================================================
     # Local noon or continuously-averaged J-values?
@@ -1893,24 +1984,25 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
     Adds bookmarks to an existing PDF file.
 
     Args:
-    -----
-    pdfname : str
-        Name of an existing PDF file of species or emission plots
-        to which bookmarks will be attached.
+        pdfname : str
+            Name of an existing PDF file of species or emission plots
+            to which bookmarks will be attached.
 
-    varlist : list
-        List of variables, which will be used to create the
-        PDF bookmark names.
+        varlist : list
+            List of variables, which will be used to create the
+            PDF bookmark names.
 
-    remove_prefix : str
-        Specifies a prefix to remove from each entry in varlist
-        when creating bookmarks.  For example, if varlist has
-        a variable name "SpeciesConc_NO", and you specify
-        remove_prefix="SpeciesConc_", then the bookmark for
-        that variable will be just "NO", etc.
+    Keyword Args (optional):
+        remove_prefix : str
+            Specifies a prefix to remove from each entry in varlist
+            when creating bookmarks.  For example, if varlist has
+            a variable name "SpeciesConc_NO", and you specify
+            remove_prefix="SpeciesConc_", then the bookmark for
+            that variable will be just "NO", etc.
 
-     verbose : boolean
-        Set this flag to True to print extra informational output.
+         verbose : boolean
+             Set this flag to True to print extra informational output.
+             Default value: False
     '''
 
     # Setup
@@ -1999,7 +2091,7 @@ def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
     diff : Boolean, optional
         Switch to the color scale for difference plot
 
-
+    NOTE: This is deprecated and will be removed in the future.
     '''
 
     assert isinstance(ax, GeoAxes), (
@@ -2069,6 +2161,8 @@ def plot_zonal(dr, ax, title='', unit='', diff=False):
 
     diff : Boolean, optional
         Switch to the color scale for difference plot
+
+    NOTE: This is deprecated and will be removed in the future.
     '''
 
     # assume global field from 90S to 90N
@@ -2147,6 +2241,8 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
 
     unit : string, optional
         Unit shown near the colorbar
+
+    NOTE: This is deprecated and will be removed in the future.
     '''
 
     if on_map:
