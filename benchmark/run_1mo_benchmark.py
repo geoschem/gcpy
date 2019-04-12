@@ -33,10 +33,10 @@ gchp_vs_gchp = False
 
 # Output to generate (edit as needed)
 plot_aod     = True
-plot_conc    = False
-plot_emis    = False
-plot_jvalues = False
-emis_table   = False
+plot_conc    = True
+plot_emis    = True
+plot_jvalues = True
+emis_table   = True
 
 # Filename date strings (edit as needed)
 gcc_datestr  = '20160701'

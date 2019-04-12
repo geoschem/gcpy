@@ -2135,7 +2135,8 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     pdfname = os.path.join(aoddir, 'Aerosols_ColumnOptDepth.pdf')
     compare_single_level(refds, refstr, devds, devstr,
                          varlist=newvarlist, ilev=0, pdfname=pdfname)
-    add_bookmarks_to_pdf(pdfname, newvarlist, verbose=verbose)
+    add_bookmarks_to_pdf(pdfname, newvarlist,
+                         remove_prefix='Column_AOD_', verbose=verbose)
 
 
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
