@@ -33,9 +33,9 @@ gchp_hourstr = '1200'
 gcc_vs_gcc_refdir   = os.path.join(maindir, ref_version)
 gcc_vs_gcc_devdir   = os.path.join(maindir, dev_version)
 gchp_vs_gcc_refdir  = os.path.join(maindir, dev_version)
-gchp_vs_gcc_devdir  = os.path.join(maindir, dev_version, 'gchp/Output')
-gchp_vs_gchp_refdir = os.path.join(maindir, ref_version, 'gchp/Output')
-gchp_vs_gchp_devdir = os.path.join(maindir, dev_version, 'gchp/Output')
+gchp_vs_gcc_devdir  = os.path.join(maindir, dev_version, 'gchp/OutputDir')
+gchp_vs_gchp_refdir = os.path.join(maindir, ref_version, 'gchp/OutputDir')
+gchp_vs_gchp_devdir = os.path.join(maindir, dev_version, 'gchp/OutputDir')
 
 # Plots directories (edit as needed)
 gcc_vs_gcc_plotsdir   = os.path.join(maindir, dev_version, 'output')
@@ -46,7 +46,7 @@ gchp_vs_gcc_plotsdir  = os.path.join(maindir, dev_version, 'output/GCHP_GCC_comp
 gcc_vs_gcc_refstr   = '{}'.format(ref_version)
 gcc_vs_gcc_devstr   = '{}'.format(dev_version)
 gchp_vs_gcc_refstr  = 'GCC {}'.format(dev_version)
-gchp_vs_gcc_devstr  = 'GCHP {]'.format(dev_version)
+gchp_vs_gcc_devstr  = 'GCHP {}'.format(dev_version)
 gchp_vs_gchp_refstr = 'GCHP {}'.format(ref_version)
 gchp_vs_gchp_devstr = 'GCHP {}'.format(dev_version)
 
@@ -113,9 +113,9 @@ if gcc_vs_gcc:
                                                      dst=gcc_vs_gcc_plotsdir,    \
                                                      overwrite=True)
 
-    if plot_jvalues:
-        # J-values plots
-        # Add function call here
+#    if plot_jvalues:
+#        # J-values plots
+#        # Add function call here
 
 #----------------
 # GCHP vs GCC
