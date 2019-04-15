@@ -268,7 +268,7 @@ if gchp_vs_gchp:
                                               local_noon_jvalues=True,   \
                                               overwrite=True)
 
-if plot_aod:
+    if plot_aod:
         # Column AOD plots
         benchmark.make_benchmark_aod_plots(gchp_vs_gchp_refaod,          \
                                            gchp_vs_gchp_refstr,          \
