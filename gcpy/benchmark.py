@@ -1432,9 +1432,9 @@ def archive_species_categories(dst):
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
 
-def make_benchmark_conc_plots(ref, refstr, dev, devstr,
-                              dst='./1mo_benchmark',
-                              overwrite=False, verbose=False):
+def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
+                              overwrite=False, verbose=False, restrict_cats=[],
+                              plots=['sfc', '500hpa', 'zonalmean'] ):
     '''
     Creates PDF files containing plots of species concentration
     for model benchmarking purposes.
@@ -1468,6 +1468,15 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
         verbose : boolean
              Set this flag to True to print extra informational output.
              Default value: False.
+
+        restrict_cats : list of strings
+             List of benchmark categories in benchmark_categories.json to make
+             plots for. If empty, plots are made for all categories.
+             Default value: empty
+
+        plots : list of strings
+             List of plot types to create.
+             Default value: ['sfc', '500hpa', 'zonalmean']
     '''
 
     # NOTE: this function could use some refactoring; abstract processing per category?
@@ -1478,15 +1487,15 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
-    # Ref dataset (also add lumped species)
+    # Ref dataset
     try:
         refds = xr.open_dataset(ref)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
     refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
-
-    # Dev dataset (also add lumped species)
+    
+    # Dev dataset
     try:
         devds = xr.open_dataset(dev)
     except FileNotFoundError:
@@ -1495,11 +1504,16 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
     devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
     
     catdict = get_species_categories()
-
+    
     archive_species_categories(dst)
     core.archive_lumped_species_definitions(dst)
     
     for i, filecat in enumerate(catdict):
+
+        # If restrict_cats list is passed, skip all categories except those in the list
+        if restrict_cats and filecat not in restrict_cats:
+            continue
+
         catdir = os.path.join(dst,filecat)
         if not os.path.isdir(catdir):
             os.mkdir(catdir)
@@ -1516,21 +1530,24 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
             print('\n\nWarning: variables in {} category not in dataset: {}'.format(filecat,warninglist))
 
         # Surface plots
-        pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
-        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
-        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+        if 'sfc' in plots:
+            pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
+            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
+            add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
-        pdfname = os.path.join(catdir,'{}_500hPa.pdf'.format(filecat))        
-        compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=22, pdfname=pdfname )
-        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+        if '500hpa' in plots:
+            pdfname = os.path.join(catdir,'{}_500hPa.pdf'.format(filecat))        
+            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=22, pdfname=pdfname )
+            add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
-        pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(filecat))        
-        compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
-        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+        if 'zonalmean' in plots:
+            pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(filecat))        
+            compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
+            add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
-        pdfname = os.path.join(catdir,'{}_Strat_ZonalMean.pdf'.format(filecat))        
-        compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname, pres_range=[0,100] )
-        add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+            pdfname = os.path.join(catdir,'{}_Strat_ZonalMean.pdf'.format(filecat))        
+            compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname, pres_range=[0,100] )
+            add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
 
 def make_benchmark_emis_plots(ref, refstr, dev, devstr,
@@ -2198,6 +2215,21 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
     # Loop over the subcategories in this category; make parent bookmark
     i = -1
     for subcat in catdict[category]:
+
+        # First check that there are actual variables for this subcategory; otherwise skip
+        numvars = 0
+        if catdict[category][subcat]:
+            for varname in catdict[category][subcat]:
+                if varname in warninglist:
+                    continue
+                else:
+                    numvars += 1
+        else:
+                continue
+        if numvars == 0:
+            continue
+
+        # There are non-zero variables to plot in this subcategory
         i = i+1
         output.addPage(input.getPage(i))
         parent = output.addBookmark(subcat,i)
