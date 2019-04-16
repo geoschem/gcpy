@@ -1,40 +1,41 @@
+name: gcpy
 channels:
     - defaults
     - conda-forge
 dependencies:
-    - python=3.6    # Python version 3.6
-    - bottleneck    # C-optimized array functions for NumPy
-    - cartopy       # Geographic plotting toolkit
-    - cython        # Transpile Python->C
-    - dask          # Parallel processing library
-    - future        # Python 2/3 compatibility
-    - h5py          # Wrapper for HDF5
-    - ipython       # IPython interpreter and tools
-    - jupyter       # Jupyter federation architecture
-    - matplotlib    # 2D plotting library
-    - netcdf4       # Wrapper for netcdf4
-    - notebook      # Notebook interface
-    - numpy         # N-d array and numerics
-    - pandas        # Labeled array library
-    - pyresample    # Geographic resampling tools
-    - pytest        # Unit/mock testing tools
-    - scipy         # Common math/stats/science functions
-    - scikit-learn  # Macine learning library
-    - statsmodels   # Regression/modeling toolkit
-    - seaborn       # Statistical visualizations
-    - six           # Python 2/3 compatibility
-    - tqdm          # Nice progressbar for longer computations
-    - xarray        # N-d labeled array library
-    - xbpch         # Interface for bpch output files
-    # Sphinx
-    - sphinx>=1.4
-    - numpydoc
-    - pandoc
-    - nbconvert
-    - ipykernel
-    - sphinx_rtd_theme
+    - python=3.6       # Python version 3.6
+    - bottleneck       # C-optimized array functions for NumPy
+    - cartopy          # Geographic plotting toolkit
+    - cython           # Transpile Python->C
+    - dask             # Parallel processing library
+    - esmpy            # ESMF for python
+    - graphviz         # visualize dask graph (binary)
+    - future           # Python 2/3 compatibility
+    - h5py             # Wrapper for HDF5
+    - ipython          # IPython interpreter and tools
+    - jupyter          # Jupyter federation architecture
+    - matplotlib       # 2D plotting library
+    - netcdf4          # Wrapper for netcdf4
+    - notebook         # Notebook interface
+    - numpy            # N-d array and numerics
+    - pandas           # Labeled array library
+    - pyresample       # Geographic resampling tools
+    - pytest           # Unit/mock testing tools
+    - scipy            # Common math/stats/science functions
+    - scikit-learn     # Machine learning library
+    - statsmodels      # Regression/modeling toolkit
+    - seaborn          # Statistical visualizations
+    - six              # Python 2/3 compatibility
+    - tqdm             # Nice progressbar for longer computations
+    - xarray           # N-d labeled array library
+    - xbpch            # Interface for bpch output files
+    - sphinx
     - pip:
         # These are additional libraries to search for on PyPI
-        - nbsphinx
-        - sphinx-gallery
-        - sphinx-bootstrap-theme
+        - xbpch        # Interface for bpch output files
+        - h5pyd        # HDF5 for Amazon S3
+        - h5netcdf     # allow HDF5-backend for xarray
+        - graphviz     # visualize dask graph (python package)
+        - pycodestyle  # tool to check style conventions (formerly pep8)
+        - xesmf        # Universal regridder
+        - PyPDF2       # PDF utilities, add bookmarks to PDFs etc.
