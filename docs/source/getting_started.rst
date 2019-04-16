@@ -266,44 +266,8 @@ Geosciences Python Environment
 
 Combining all of the previous sections, we can very easily spin-up a
 full-featured scientific Python environment with a set of packages curated for the
-geosciences. Copy and paste the following ``environment.yml`` file somewhere
-on your local hard drive:
-
-.. parsed-literal::
-
-    name: geo_scipy
-    channels:
-        - defaults
-        - conda-forge
-    dependencies:
-        - python=3.6    # Python version 3.6
-        - bottleneck    # C-optimized array functions for NumPy
-        - cartopy       # Geographic plotting toolkit
-        - cython        # Transpile Python->C
-        - dask          # Parallel processing library
-        - future        # Python 2/3 compatibility
-        # - gcpy        # GEOS-Chem python toolkit
-        - h5py          # Wrapper for HDF5
-        - ipython       # IPython interpreter and tools
-        - jupyter       # Jupyter federation architecture
-        - matplotlib    # 2D plotting library
-        - netcdf4       # Wrapper for netcdf4
-        - notebook      # Notebook interface
-        - numpy         # N-d array and numerics
-        - pandas        # Labeled array library
-        - pyresample    # Geographic resampling tools
-        - scipy         # Common math/stats/science functions
-        - scikit-learn  # Macine learning library
-        - statsmodels   # Regression/modeling toolkit
-        - seaborn       # Statistical visualizations
-        - six           # Python 2/3 compatibility
-        - tqdm          # Nice progressbar for longer computations
-        - xarray        # N-d labeled array library
-        - xbpch         # Interface for bpch output files
-        - pip:
-            # These are additional libraries to search for on PyPI. One example
-            # is provided for reference
-            - simplejson
+geosciences. Copy the ``environment.yml`` file located in gcpy/docs somewhere
+on your local hard drive.
 
 .. note::
 
@@ -322,19 +286,3 @@ Activate this environment::
     $ source activate geo_scipy
 
 You're now ready to reproduce any example analysis in this documentation.
-
-
-
-.. _Anaconda: https://www.continuum.io/anaconda-overview
-.. _cartopy: http://scitools.org.uk/cartopy/docs/latest/
-.. _cython: http://cython.org/
-.. _Enthought Python Distribution: https://www.enthought.com/products/epd/
-.. _ggplot2: http://ggplot2.org/
-.. _Jake Vanderplas: https://staff.washington.edu/jakevdp/
-.. _matplotlib: http://matplotlib.org/
-.. _NumPy: http://www.numpy.org/
-.. _pandas: http://pandas.pydata.org/
-.. _Python: https://www.python.org/
-.. _SciPy: https://www.scipy.org/
-.. _seaborn: http://seaborn.pydata.org/index.html
-.. _xarray: https://xarray.pydata.org/
