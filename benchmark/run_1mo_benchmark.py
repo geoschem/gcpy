@@ -11,6 +11,7 @@ to the plotting options that you want.
 '''
 
 import os
+import xarray as xr
 from gcpy import benchmark
 import warnings
 
@@ -24,13 +25,15 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 # Benchmark information (*MUST EDIT*)
 maindir  = '/path/to/main/directory'
-ref_version = 'ref_version_string'
-dev_version = 'dev_version_string'
+gcc_ref_version = 'gcc_ref_version_string'
+gchp_ref_version = 'gchp_ref_version_string'
+dev_version = 'dev_version_string' # same for both gcc an gchp
 
 # Comparisons to run (edit as needed)
 gcc_vs_gcc   = True
 gchp_vs_gcc  = False
 gchp_vs_gchp = False
+gchp_vs_gcc_diff_of_diffs = False
 
 # Output to generate (edit as needed)
 plot_aod     = True
@@ -48,25 +51,28 @@ gcc_hourstr  = '0000'
 gchp_hourstr = '1200'
 
 # Data directories (edit as needed)
-gcc_vs_gcc_refdir   = os.path.join(maindir, ref_version)
+gcc_vs_gcc_refdir   = os.path.join(maindir, gcc_ref_version)
 gcc_vs_gcc_devdir   = os.path.join(maindir, dev_version)
-gchp_vs_gcc_refdir  = os.path.join(maindir, ref_version)
+gchp_vs_gcc_refdir  = os.path.join(maindir, gcc_ref_version)
 gchp_vs_gcc_devdir  = os.path.join(maindir, dev_version, 'OutputDir')
-gchp_vs_gchp_refdir = os.path.join(maindir, ref_version, 'OutputDir')
+gchp_vs_gchp_refdir = os.path.join(maindir, gchp_ref_version, 'OutputDir')
 gchp_vs_gchp_devdir = os.path.join(maindir, dev_version, 'OutputDir')
 
 # Plots directories (edit as needed)
-gcc_vs_gcc_plotsdir   = os.path.join(maindir, dev_version, 'output')
-gchp_vs_gchp_plotsdir = os.path.join(maindir, dev_version, 'output/GCHP_version_comparison')
-gchp_vs_gcc_plotsdir  = os.path.join(maindir, dev_version, 'output/GCHP_GCC_comparison')
+gcc_vs_gcc_plotsdir    = os.path.join(maindir, dev_version, 'output')
+gchp_vs_gchp_plotsdir  = os.path.join(maindir, dev_version, 'output/GCHP_version_comparison')
+gchp_vs_gcc_plotsdir   = os.path.join(maindir, dev_version, 'output/GCHP_GCC_comparison')
+diff_of_diffs_plotsdir = os.path.join(maindir, dev_version, 'output/GCHP_GCC_diff_of_diffs')
 
 # Plot title strings (edit as needed)
-gcc_vs_gcc_refstr   = '{}'.format(ref_version)
-gcc_vs_gcc_devstr   = '{}'.format(dev_version)
-gchp_vs_gcc_refstr  = 'GCC {}'.format(ref_version)
-gchp_vs_gcc_devstr  = 'GCHP {}'.format(dev_version)
-gchp_vs_gchp_refstr = 'GCHP {}'.format(ref_version)
-gchp_vs_gchp_devstr = 'GCHP {}'.format(dev_version)
+gcc_vs_gcc_refstr    = '{}'.format(gcc_ref_version)
+gcc_vs_gcc_devstr    = '{}'.format(dev_version)
+gchp_vs_gcc_refstr   = 'GCC {}'.format(gcc_ref_version)
+gchp_vs_gcc_devstr   = 'GCHP {}'.format(dev_version)
+gchp_vs_gchp_refstr  = 'GCHP {}'.format(gchp_ref_version)
+gchp_vs_gchp_devstr  = 'GCHP {}'.format(dev_version)
+diff_of_diffs_refstr = 'GCC {} vs {}'.format(dev_version, gcc_ref_version)
+diff_of_diffs_devstr = 'GCHP {} vs {}'.format(dev_version, gchp_ref_version)
 
 # =====================================================================
 # The rest of these settings should not need to be changed
@@ -277,3 +283,40 @@ if gchp_vs_gchp:
                                            gchp_vs_gchp_devstr,          \
                                            dst=gchp_vs_gchp_plotsdir,    \
                                            overwrite=True)
+
+# =====================================================================
+# Create GCC vs GCC difference of differences benchmark plots
+# =====================================================================
+
+if gchp_vs_gcc_diff_of_diffs:
+
+    # NOTE: This can be expanded to differences beyond species
+    # concentrations by following how this is done for conc plots.
+
+    # Target output files
+    diff_of_diffs_refspc = './gcc_diffs_spc.nc4'
+    diff_of_diffs_devspc = './gchp_diffs_spc.nc4'
+        
+    # Create the spc ref file that contains GCC differences
+    gcc_ref  = xr.open_dataset(gcc_vs_gcc_refspc)
+    gcc_dev  = xr.open_dataset(gcc_vs_gcc_devspc)
+    with xr.set_options(keep_attrs=True):
+        gcc_diffs = gcc_dev - gcc_ref
+    gcc_diffs.to_netcdf(diff_of_diffs_refspc)
+    
+    # Create a spc dev file that contains GCHP differences
+    gchp_ref = xr.open_dataset(gchp_vs_gchp_refspc)
+    gchp_dev = xr.open_dataset(gchp_vs_gchp_devspc)
+    with xr.set_options(keep_attrs=True):
+        gchp_diffs = gchp_dev - gchp_ref
+    gchp_diffs.to_netcdf(diff_of_diffs_devspc)
+
+    if plot_conc:
+        # Concentration plots
+        # (includes lumped species and separates by category)
+        benchmark.make_benchmark_conc_plots(diff_of_diffs_refspc,       \
+                                            diff_of_diffs_refstr,       \
+                                            diff_of_diffs_devspc,       \
+                                            diff_of_diffs_devstr,       \
+                                            dst=diff_of_diffs_plotsdir, \
+                                            overwrite=True)
