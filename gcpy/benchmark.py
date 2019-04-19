@@ -62,9 +62,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     if pdfname == '':
         savepdf = False
     
-    ##############################################################################
+    ####################################################################
     # Determine input grid resolutions and types
-    ##############################################################################
+    ####################################################################
 
     # ref
     refnlat = refdata.sizes['lat']
@@ -98,9 +98,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
         return
     
-    ##############################################################################
+    ####################################################################
     # Determine comparison grid resolution and type (if not passed)
-    ##############################################################################
+    ####################################################################
 
     # If no cmpres is passed then choose highest resolution between ref and dev.
     # If both datasets are cubed sphere then default to 1x1.25 for comparison.
@@ -127,9 +127,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     regriddev = devres != cmpres
     regridany = regridref or regriddev
     
-    ##############################################################################
+    ####################################################################
     # Make grids (ref, dev, and comparison)
-    ##############################################################################
+    ####################################################################
 
     # Ref
     if refgridtype == 'll':
@@ -149,9 +149,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     else:
         [cmpgrid, cmpgrid_list] = make_grid_CS(cmpres)
         
-    ##############################################################################
+    ####################################################################
     # Make regridders, if applicable
-    ##############################################################################
+    ####################################################################
 
     if regridref:
         if refgridtype == 'll':
@@ -164,9 +164,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             devregridder_list = make_regridder_C2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
 
-    ##############################################################################
+    ####################################################################
     # Get lat/lon extents, if applicable
-    ##############################################################################
+    ####################################################################
     
     if refgridtype == 'll':
         [refminlon, refmaxlon] = [min(refgrid['lon_b']), max(refgrid['lon_b'])]
@@ -178,17 +178,17 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         [cmpminlon, cmpmaxlon] = [min(cmpgrid['lon_b']), max(cmpgrid['lon_b'])]
         [cmpminlat, cmpmaxlat] = [min(cmpgrid['lat_b']), max(cmpgrid['lat_b'])]
 
-    ##############################################################################
+    ####################################################################
     # Create pdf if saving to file
-    ##############################################################################
+    ####################################################################
     
     if savepdf:
         print('\nCreating {} for {} variables'.format(pdfname,n_var))
         pdf = PdfPages(pdfname)
         
-    ##############################################################################
+    ####################################################################
     # Loop over variables
-    ##############################################################################
+    ####################################################################
 
     print_units_warning = True
     for ivar in range(n_var):
@@ -229,9 +229,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                print_units_warning = False
 
                
-        ##############################################################################
-        # Slice the data, allowing for possibility of no time dimension (bpch)
-        ##############################################################################
+        ################################################################
+        # Slice the data, allowing for the
+        # possibility of no time dimension (bpch)
+        ################################################################
 
         # Ref
         vdims = refdata[varname].dims
@@ -267,9 +268,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             ds_dev = devdata[varname]
             
-        ##############################################################################
+        ################################################################
         # Area normalization, if any
-        ##############################################################################    
+        ################################################################
 
         # if normalizing by area, adjust units to be per m2, and adjust title string
         units = units_ref
@@ -294,9 +295,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 units_dev = units
                 subtitle_extra = ', Normalized by Area'
 
-        ##############################################################################    
-        # Get comparison data sets, regridding the input slices if needed
-        ##############################################################################
+        ###############################################################
+        # Get comparison data sets, regridding input slices if needed
+        ###############################################################
 
         # Reshape ref/dev cubed sphere data, if any
         if refgridtype == 'cs':
@@ -337,9 +338,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ds_ref_cmp_reshaped = ds_ref_cmp.data.reshape(6,cmpres,cmpres)
             ds_dev_cmp_reshaped = ds_dev_cmp.data.reshape(6,cmpres,cmpres)
 
-        ##############################################################################    
+        ################################################################
         # Get min and max values for use in the colorbars
-        ##############################################################################
+        ################################################################
 
         # Ref
         vmin_ref = ds_ref.min()
@@ -366,9 +367,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
         if match_cbar: [vmin, vmax] = [vmin_abs, vmax_abs]
 
-        ##############################################################################    
+        ################################################################
         # Create 3x2 figure
-        ##############################################################################
+        ################################################################
         
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(3, 2, figsize=[12,14], 
                                                       subplot_kw={'projection': crs.PlateCarree()})
@@ -386,18 +387,18 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             print('Incorrect dimensions for {}!'.format(varname))   
 
-        ##############################################################################    
+        ################################################################
         # Set colormap for raw data plots (first row)
-        ##############################################################################
+        ################################################################
 
         if use_cmap_RdBu:
             cmap1 = copy.copy(mpl.cm.RdBu_r) # Copy to avoid application of cmap.set_bad used later on
         else:
             cmap1 = WhGrYlRd
             
-        ##############################################################################    
+        ################################################################
         # Subplot (0,0): Ref, plotted on ref input grid
-        ##############################################################################
+        ################################################################
 
         # Set colorbar min/max
         if use_cmap_RdBu:
@@ -436,9 +437,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         if vmin0 == 0 and vmax0 == 0: 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
-        ##############################################################################    
+        ################################################################
         # Subplot (0,1): Dev, plotted on dev input grid
-        ##############################################################################
+        ################################################################
 
         # Set colorbar min/max
         if use_cmap_RdBu:
@@ -476,10 +477,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         if vmin1 == 0 and vmax1 == 0: 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
-        ##############################################################################    
+        ################################################################
         # Calculate difference, get dynamic range, configure colorbar,
-        # use gray for NaNs if plotting on lat-lon grid (has strange effect for cs)
-        ##############################################################################
+        # use gray for NaNs if plotting on lat-lon grid 
+        # (has strange effect for cubed-sphere)
+        ################################################################
 
         if cmpgridtype == 'll':
             absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
@@ -492,9 +494,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cmap_gray = copy.copy(mpl.cm.RdBu_r)
             cmap_gray.set_bad(color='gray')
             
-        ##############################################################################    
+        ################################################################
         # Subplot (1,0): Difference, dynamic range
-        ##############################################################################
+        ################################################################
 
         [vmin, vmax] = [-diffabsmax, diffabsmax]
         ax2.coastlines()
@@ -517,9 +519,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         if np.all(absdiff==0): 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
-        ##############################################################################    
+        ################################################################
         # Subplot (1,1): Difference, restricted range
-        ##############################################################################
+        ################################################################
 
         # placeholder: use 5 and 95 percentiles as bounds
         [pct5, pct95] = [np.percentile(absdiff,5), np.percentile(absdiff, 95)] 
@@ -546,9 +548,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         if np.all(absdiff==0): 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
 
-        ##############################################################################    
-        # Calculate fractional difference, get dynamic range, set 0/0 to Nan
-        ##############################################################################
+        ################################################################
+        # Calculate fractional difference, get dynamic range, 
+        # set 0/0 to Nan
+        ################################################################
         
         if cmpgridtype == 'll':
             fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(ds_ref_cmp)
@@ -559,9 +562,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             masked_fracdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, fracdiff)
         fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
 
-        ##############################################################################    
+        ################################################################
         # Subplot (2,0): Fractional Difference, full dynamic range
-        ##############################################################################
+        ################################################################
         
         [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
         ax4.coastlines()
@@ -584,9 +587,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
         cb.set_label('unitless')  
 
-        ##############################################################################    
+        ################################################################
         # Subplot (2,1): Fractional Difference, restricted
-        ##############################################################################
+        ################################################################
         
         [vmin, vmax] = [-2, 2]
         #[vmin, vmax] = [-0.5, 2] # doesn't work with this colorbar. Need to customize one. Already in gamap?
@@ -614,17 +617,18 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             pdf.savefig(figs)
             plt.close(figs)
 
-    ##############################################################################    
+    ####################################################################
     # Finish
-    ##############################################################################
+    ####################################################################
 
     if savepdf: pdf.close()
 
 # Add docstrings later. Use this function for benchmarking or general comparisons.
-def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, weightsdir=None,
-                       pdfname='', cmpres=None, match_cbar=True, pres_range=[0,2000],
-                       normalize_by_area=False, enforce_units=True, flip_ref=False,
-                       flip_dev=False, use_cmap_RdBu=False ):
+def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
+                       itime=0, weightsdir=None, pdfname='', cmpres=None,
+                       match_cbar=True, pres_range=[0,2000],
+                       normalize_by_area=False, enforce_units=True,
+                       flip_ref=False, flip_dev=False, use_cmap_RdBu=False ):
 
     # TODO: add docstring
     
@@ -636,7 +640,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
 
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
-        [commonvars, commonvars2D, varlist] = core.compare_varnames(refdata, devdata)
+        [commonvars, commonvars2D, varlist] = core.compare_varnames(refdata,
+                                                                    devdata)
         print('Plotting all 3D variables')
     n_var = len(varlist)
 
@@ -674,16 +679,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     devdata['lev'].attrs['units'] = 'hPa'
     devdata['lev'].attrs['long_name'] = 'level pressure'
 
-    ##############################################################################    
+    ####################################################################
     # Reduce pressure range if reduced range passed as input
-    ##############################################################################
+    ####################################################################
 
     refdata = refdata.isel(lev=pmid_ind)
     devdata = devdata.isel(lev=pmid_ind)
  
-    ##############################################################################
+    ####################################################################
     # Determine input grid resolutions and types
-    ##############################################################################
+    ####################################################################
 
     # ref
     refnlat = refdata.sizes['lat']
@@ -717,9 +722,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
         return
     
-    ##############################################################################
+    ####################################################################
     # Determine comparison grid resolution (if not passed)
-    ##############################################################################
+    ####################################################################
 
     # If no cmpres is passed then choose highest resolution between ref and dev.
     # If both datasets are cubed sphere then default to 1x1.25 for comparison.
@@ -737,9 +742,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     regriddev = devres != cmpres
     regridany = regridref or regriddev
 
-    ##############################################################################
+    ####################################################################
     # Make grids (ref, dev, and comparison)
-    ##############################################################################
+    ####################################################################
 
     # Ref
     if refgridtype == 'll':
@@ -756,9 +761,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
     # Comparison    
     cmpgrid = make_grid_LL(cmpres)
 
-    ##############################################################################
+    ####################################################################
     # Make regridders, if applicable
-    ##############################################################################
+    ####################################################################
 
     if regridref:
         if refgridtype == 'll':
@@ -771,9 +776,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         else:
             devregridder_list = make_regridder_C2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
             
-    ##############################################################################
+    ####################################################################
     # Create pdf, if savepdf is passed as True
-    ##############################################################################
+    ####################################################################
 
     # Universal plot setup
     xtick_positions = np.arange(-90,91,30)
@@ -783,9 +788,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         print('\nCreating {} for {} variables'.format(pdfname,n_var))
         pdf = PdfPages(pdfname)
 
-    ##############################################################################
+    ####################################################################
     # Loop over variables
-    ##############################################################################    
+    ####################################################################
 
     # Loop over variables
     print_units_warning = True
@@ -825,9 +830,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
                # if not enforcing units, just keep going after only printing warning once 
                print_units_warning = False
 
-        ##############################################################################
-        # Slice the data, allowing for possibility of no time dimension (bpch)
-        ##############################################################################
+        ###############################################################
+        # Slice the data, allowing for the
+        # possibility of no time dimension (bpch)
+        ###############################################################
 
         # Ref
         vdims = refdata[varname].dims
@@ -843,9 +849,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         else:
             ds_dev = devdata[varname]
 
-        ##############################################################################
+        ###############################################################
         # Area normalization, if any
-        ##############################################################################
+        ###############################################################
         
         # if normalizing by area, adjust units to be per m2, and adjust title string
         units = units_ref
@@ -860,9 +866,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             units = '{} m-2'.format(units)
             subtitle_extra = ', Normalized by Area'
 
-        ##############################################################################    
-        # Get comparison data sets, regridding the input slices if needed
-        ##############################################################################            
+        ###############################################################
+        # Get comparison data sets, regridding input slices if needed
+        ###############################################################
 
         # Flip in the veritical if applicable
         if flip_ref:
@@ -904,9 +910,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         else:
             ds_dev_cmp = ds_dev
 
-        ##############################################################################    
+        ###############################################################
         # Calculate zonal mean
-        ##############################################################################
+        ###############################################################
         
         # Ref
         if refgridtype == 'll':
@@ -924,9 +930,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
 
-        ##############################################################################    
+        ###############################################################
         # Get min and max values for use in the colorbars
-        ##############################################################################
+        ###############################################################
 
         # Ref
         vmin_ref = zm_ref.min()
@@ -945,27 +951,27 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
         if match_cbar: [vmin, vmax] = [vmin_abs, vmax_abs]
 
-        ##############################################################################    
+        ###############################################################
         # Create 3x2 figure
-        ##############################################################################
+        ###############################################################
         
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(3, 2, figsize=[12,15.3])
         offset = 0.96
         fontsize=25
         figs.suptitle('{}, Zonal Mean'.format(varname), fontsize=fontsize, y=offset)
 
-        ##############################################################################
+        ###############################################################
         # Set colormap for raw data plots (first row)
-        ##############################################################################
+        ###############################################################
 
         if use_cmap_RdBu:
             cmap1 = 'RdBu_r' # do not need to worry about cmap.set_bad since always lat-lon
         else:
             cmap1 = WhGrYlRd
 
-        ##############################################################################            
+        ###############################################################
         # Subplot (0,0): Ref
-        ##############################################################################
+        ###############################################################
 
         # Set colorbar min/max
         if use_cmap_RdBu:
@@ -987,17 +993,20 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
 
         # Plot data
         if refgridtype == 'll':
-            plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=cmap1,
+            plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge[pedge_ind],
+                                   zm_ref, cmap=cmap1,
                                    vmin=vmin0, vmax=vmax0)
         else:
-            plot0 = ax0.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=cmap1,
+            plot0 = ax0.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
+                                   zm_ref, cmap=cmap1,
                                    vmin=vmin0, vmax=vmax0)
         ax0.invert_yaxis()
         if refgridtype == 'll':
-            ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, refres ))
+            ax0.set_title('{} (Ref){}\n{}'.format(refstr, 
+                                                  subtitle_extra, refres ))
         else:
-            ax0.set_title('{} (Ref){}\n{} regridded from c{}'.format(refstr, subtitle_extra, 
-                                                                    cmpres, refres))
+            ax0.set_title('{} (Ref){}\n{} regridded from c{}'.format(
+                refstr, subtitle_extra, cmpres, refres))
         ax0.set_ylabel('Pressure (hPa)')
         ax0.set_aspect('auto')
         ax0.set_xticks(xtick_positions)
@@ -1010,9 +1019,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
         cb.set_label(units)
 
-        ##############################################################################    
+        ###############################################################
         # Subplot (0,1): Dev
-        ##############################################################################
+        ###############################################################
 
         # Set colorbar min/max
         if use_cmap_RdBu:
@@ -1034,17 +1043,20 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
 
         # Plot data
         if devgridtype == 'll':
-            plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], zm_dev, cmap=cmap1,
+            plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], 
+                                   zm_dev, cmap=cmap1,
                                    vmin=vmin1, vmax=vmax1)
         else:
-            plot1 = ax1.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_dev, cmap=cmap1,
+            plot1 = ax1.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], 
+                                   zm_dev, cmap=cmap1,
                                    vmin=vmin1, vmax=vmax1)    
         ax1.invert_yaxis()
         if devgridtype == 'll':
-            ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, devres ))
+            ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, 
+                                                  devres ))
         else:
-            ax1.set_title('{} (Dev){}\n{} regridded from c{}'.format(devstr, subtitle_extra, 
-                                                                    cmpres, devres))
+            ax1.set_title('{} (Dev){}\n{} regridded from c{}'.format(
+                devstr, subtitle_extra, cmpres, devres))
         ax1.set_ylabel('Pressure (hPa)')
         ax1.set_aspect('auto')
         ax1.set_xticks(xtick_positions)
@@ -1057,23 +1069,36 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
         cb.set_label(units)
 
-        ##############################################################################    
+        ################################################################
+        # Configure colorbar for difference plots
+        # use gray for NaNs if plotting on lat-lon grid 
+        # (has strange effect for cubed-sphere)
+        ################################################################
+
+        if cmpgridtype == 'll':
+            cmap_plot = copy.copy(mpl.cm.RdBu_r)
+            cmap_plot.set_bad(color='gray')
+        else:
+            cmap_plot = copy.copy(mpl.cm.RdBu_r)
+
+        ################################################################
         # Calculate zonal mean difference
-        ##############################################################################
-        
+        ################################################################
+
         zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
-        
-        ##############################################################################    
+
+        ################################################################
         # Subplot (1,0): Difference, dynamic range
-        ##############################################################################
-        
+        ################################################################
+
         diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
         [vmin, vmax] = [-diffabsmax, diffabsmax]
         plot2 = ax2.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                               zm_diff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+                               zm_diff, cmap=cmap_plot, vmin=vmin, vmax=vmax)
         ax2.invert_yaxis()
         if regridany:
-            ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(cmpres))
+            ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(
+                cmpres))
         else:
             ax2.set_title('Difference\nDev - Ref, Dynamic Range')
         ax2.set_ylabel('Pressure (hPa)')
@@ -1088,16 +1113,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
         cb.set_label(units)
 
-        ##############################################################################    
+        ################################################################
         # Subplot (1,1): Difference, restricted range
-        ##############################################################################
+        ################################################################
 
          # placeholder: use 5 and 95 percentiles as bounds
         [pct5, pct95] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)]
         abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
         [vmin,vmax] = [-abspctmax, abspctmax]
         plot3 = ax3.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                               zm_diff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+                               zm_diff, cmap=cmap_plot, vmin=vmin, vmax=vmax)
         ax3.invert_yaxis()
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
@@ -1115,22 +1140,24 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
         cb.set_label(units)
 
-        ##############################################################################    
+        ################################################################
         # Zonal mean fractional difference
-        ##############################################################################
+        ################################################################
         zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(zm_ref_cmp)
 
-        ##############################################################################    
+        ################################################################
         # Subplot (2,0): Fractional Difference, dynamic range
-        ##############################################################################
+        ################################################################
         
-        fracdiffabsmax = max([np.abs(zm_fracdiff.min()), np.abs(zm_fracdiff.max())])
+        # Exclude NaN's in the fracdiffabsmax
+        fracdiffabsmax = max([np.abs(np.nanmin(zm_fracdiff)), np.abs(np.nanmax(zm_fracdiff))])
         if np.all(zm_fracdiff == 0 ):
             [vmin, vmax] = [-2, 2]
         else:
             [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
         plot4 = ax4.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                               zm_fracdiff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+                               zm_fracdiff, cmap=cmap_plot, 
+                               vmin=vmin, vmax=vmax)
         ax4.invert_yaxis()
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres))
@@ -1149,13 +1176,14 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         cb.set_clim(vmin=vmin, vmax=vmax)
         cb.set_label('unitless')   
 
-        ##############################################################################    
+        ################################################################
         # Subplot (2,1): Fractional Difference, restricted range
-        ##############################################################################
+        ################################################################
 
         [vmin, vmax] = [-2, 2]
         plot5 = ax5.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                               zm_fracdiff, cmap='RdBu_r', vmin=vmin, vmax=vmax)
+                               zm_fracdiff, cmap=cmap_plot, 
+                               vmin=vmin, vmax=vmax)
         ax5.invert_yaxis()
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
@@ -1178,9 +1206,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
             pdf.savefig(figs)
             plt.close(figs)
 
-    ##############################################################################    
+    ####################################################################
     # Finish
-    ##############################################################################
+    ####################################################################
     if savepdf: pdf.close()
 
 
@@ -1517,7 +1545,8 @@ def archive_species_categories(dst):
 
 def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                               overwrite=False, verbose=False, restrict_cats=[],
-                              plots=['sfc', '500hpa', 'zonalmean'], use_cmap_RdBu=False ):
+                              plots=['sfc', '500hpa', 'zonalmean'], 
+                              use_cmap_RdBu=False ):
     '''
     Creates PDF files containing plots of species concentration
     for model benchmarking purposes.
@@ -1615,26 +1644,40 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
         # Surface plots
         if 'sfc' in plots:
             pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
-            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0,
+            compare_single_level(refds, refstr, devds, devstr, 
+                                 varlist=varlist, ilev=0,
                                  pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu )
-            add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+            add_nested_bookmarks_to_pdf(pdfname, filecat, 
+                                        catdict, warninglist, 
+                                        remove_prefix='SpeciesConc_')
 
         if '500hpa' in plots:
-            pdfname = os.path.join(catdir,'{}_500hPa.pdf'.format(filecat))        
-            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=22,
+            pdfname = os.path.join(catdir,
+                                   '{}_500hPa.pdf'.format(filecat))        
+            compare_single_level(refds, refstr, devds, devstr, 
+                                 varlist=varlist, ilev=22,
                                  pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu )
-            add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+            add_nested_bookmarks_to_pdf(pdfname, filecat, 
+                                        catdict, warninglist, 
+                                        remove_prefix='SpeciesConc_')
 
         if 'zonalmean' in plots:
-            pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(filecat))        
+            pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(
+                filecat))        
             compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
                                pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu )
-            add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+            add_nested_bookmarks_to_pdf(pdfname, filecat, 
+                                        catdict, warninglist, 
+                                        remove_prefix='SpeciesConc_')
 
-            pdfname = os.path.join(catdir,'{}_Strat_ZonalMean.pdf'.format(filecat))        
+            pdfname = os.path.join(catdir,'{}_Strat_ZonalMean.pdf'.format(
+                filecat))        
             compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
-                               pdfname=pdfname, pres_range=[0,100], use_cmap_RdBu=use_cmap_RdBu )
-            add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
+                               pdfname=pdfname, pres_range=[0,100], 
+                               use_cmap_RdBu=use_cmap_RdBu )
+            add_nested_bookmarks_to_pdf(pdfname, filecat, 
+                                        catdict, warninglist, 
+                                        remove_prefix='SpeciesConc_')
 
 
 def make_benchmark_emis_plots(ref, refstr, dev, devstr,
@@ -1735,6 +1778,7 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
         raise
 
     # Find common variables
+    # (or use the varlist passed via keyword argument)
     quiet = not verbose
     vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
     varlist = vars2D+vars3D
@@ -1897,23 +1941,28 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
         raise
 
     # Emissions species dictionary
-    species = json_load_file(open(os.path.join(os.path.dirname(__file__),emission_spc)))
+    species = json_load_file(open(os.path.join(os.path.dirname(__file__),
+                                               emission_spc)))
 
     # Destination files
     file_emis_totals = os.path.join(dst, 'Emission_totals.txt')
     file_inv_totals = os.path.join(dst, 'Inventory_totals.txt')
     
-    # Number of seconds in the averaging period (July 2016 = 86400 seconds * 31 days)
+    # Number of seconds in the averaging period 
+    # (July 2016 = 86400 seconds * 31 days)
     interval = 86400.0 * 31.0
 
     # Write to file
-    create_total_emissions_table(refds, refstr, devds, devstr, species, file_emis_totals,
+    create_total_emissions_table(refds, refstr, devds, devstr, 
+                                 species, file_emis_totals,
                                  interval, template="Emis{}_")
-    create_total_emissions_table(refds, refstr, devds, devstr, species, file_inv_totals,
+    create_total_emissions_table(refds, refstr, devds, devstr, 
+                                 species, file_inv_totals,
                                  interval, template="Inv{}_")
 
 
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
+                                varlist=None, 
                                 dst='./1mo_benchmark',
                                 local_noon_jvalues=False,
                                 plots=['sfc', '500hpa', 'zonalmean'],
@@ -1939,6 +1988,14 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
              A string to describe dev (e.g. version number)
     
     Keyword Args (optional):
+        varlist : list
+             List of J-value variables to plot.  If not passed, 
+             then all J-value variables common to both dev 
+             and ref will be plotted.  The varlist argument can be
+             a useful way of restricting the number of variables
+             plotted to the pdf file when debugging.
+             Default value: None
+
         dst : str
              A string denoting the destination folder where a
              PDF file  containing plots will be written.
@@ -2011,17 +2068,20 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         raise
 
     # Find common variables in both datasets
-    quiet = not verbose
-    [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, devds, quiet)
+    if varlist == None:
+        quiet = not verbose
+        [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, devds, quiet)
 
     # =================================================================
     # Local noon or continuously-averaged J-values?
     # =================================================================
     if local_noon_jvalues:
 
-        # Search for local noon J-value variables
+        # Get a list of local noon J-value variables
+        # (or use the varlist passed via tha argument list)
         prefix = 'JNoon_'
-        varlist = [v for v in cmn if prefix in v]
+        if varlist == None:
+            varlist = [v for v in cmn if prefix in v]
 
         # Make sure JNoonFrac (fraction of times it was local noon
         # in each column) is present in both Ref and Dev datasets
@@ -2043,9 +2103,11 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
     else:
 
-        # Search for continually-averaged J-value variables
+        # Get a list of continuously averaged J-value variables
+        # (or use the varlist passed via tha argument list)
         prefix = 'Jval_'
-        varlist = [v for v in cmn if prefix in v]
+        if varlist == None:
+            varlist = [v for v in cmn if prefix in v]
 
         # Subfolder of dst where PDF files will be printed
         subdir = 'JValues'
@@ -2097,7 +2159,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
 
 def make_benchmark_aod_plots(ref, refstr, dev, devstr,
-                             dst='./1mo_benchmark',
+                             varlist=None, dst='./1mo_benchmark',
                              overwrite=False, verbose=False):
     '''
     Creates PDF files containing plots of column aerosol optical
@@ -2119,6 +2181,14 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
              A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
+        varlist : list
+             List of AOD variables to plot.  If not passed, 
+             then all AOD variables common to both dev 
+             and ref will be plotted.  The varlist argument can be
+             a useful way of restricting the number of variables
+             plotted to the pdf file when debugging.
+             Default value: None
+
         dst : str
              A string denoting the destination folder where a
              PDF file  containing plots will be written.
@@ -2157,9 +2227,12 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
         raise
 
     # Find common AOD variables in both datasets
-    quiet = not verbose
-    [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, devds, quiet)
-    varlist = [v for v in cmn3D if 'AOD' in v and '_bin' not in v]
+    # (or use the varlist passed via keyword argument)
+    if varlist == None:
+        quiet = not verbose
+        [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, 
+                                                           devds, quiet)
+        varlist = [v for v in cmn3D if 'AOD' in v and '_bin' not in v]
 
     # Dictionary and list for new display names
     newvars = json_load_file(open(os.path.join(os.path.dirname(__file__),
