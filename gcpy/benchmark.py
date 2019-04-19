@@ -1916,6 +1916,7 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 dst='./1mo_benchmark',
                                 local_noon_jvalues=False,
+                                plots=['sfc', '500hpa', 'zonalmean'],
                                 overwrite=False, verbose=False,
                                 flip_ref=False, flip_dev=False):
     '''
@@ -1950,6 +1951,10 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
              at each location.
              Default value : False
 
+        plots : list of strings
+             List of plot types to create.
+             Default value: ['sfc', '500hpa', 'zonalmean']
+
         overwrite : boolean
              Set this flag to True to overwrite files in the
              destination folder (specified by the dst argument).
@@ -1973,10 +1978,11 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
     Remarks:
          Will create 4 files containing J-value plots:
-            (1) Surface values
-            (2) 500 hPa values
-            (3) Full-column zonal mean values.
-            (4) Stratospheric zonal mean values
+            (1 ) Surface values
+            (2 ) 500 hPa values
+            (3a) Full-column zonal mean values.
+            (3b) Stratospheric zonal mean values
+         These can be toggled on/off with the plots keyword argument.
 
          At present, we do not yet have the capability to split the
          plots up into separate files per category (e.g. Primary,
@@ -2038,7 +2044,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     else:
 
         # Search for continually-averaged J-value variables
-        prefix = 'JVal_'
+        prefix = 'Jval_'
         varlist = [v for v in cmn if prefix in v]
 
         # Subfolder of dst where PDF files will be printed
@@ -2054,36 +2060,40 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         os.mkdir(jvdir)
     
     # Surface plots
-    pdfname = os.path.join(jvdir, '{}Surface.pdf'.format(prefix))
-    compare_single_level(refds, refstr, devds, devstr,
-                         varlist=varlist, ilev=0, pdfname=pdfname,
-                         flip_ref=flip_ref, flip_dev=flip_dev)
-    add_bookmarks_to_pdf(pdfname, varlist,
-                         remove_prefix=prefix, verbose=verbose)
+    if 'sfc' in plots:
+        pdfname = os.path.join(jvdir, '{}Surface.pdf'.format(prefix))
+        compare_single_level(refds, refstr, devds, devstr,
+                             varlist=varlist, ilev=0, pdfname=pdfname,
+                             flip_ref=flip_ref, flip_dev=flip_dev)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
     # 500hPa plots
-    pdfname = os.path.join(jvdir, '{}500hPa.pdf'.format(prefix))
-    compare_single_level(refds, refstr, devds, devstr,
-                         varlist=varlist, ilev=22, pdfname=pdfname,
-                         flip_ref=flip_ref, flip_dev=flip_dev )
-    add_bookmarks_to_pdf(pdfname, varlist,
-                         remove_prefix=prefix, verbose=verbose)
+    if '500hpa' in plots:
+        pdfname = os.path.join(jvdir, '{}500hPa.pdf'.format(prefix))
+        compare_single_level(refds, refstr, devds, devstr,
+                             varlist=varlist, ilev=22, pdfname=pdfname,
+                             flip_ref=flip_ref, flip_dev=flip_dev )
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
     # Full-column zonal mean plots
-    pdfname = os.path.join(jvdir, '{}FullColumn_ZonalMean.pdf'.format(prefix))
-    compare_zonal_mean(refds, refstr, devds, devstr,
-                       varlist=varlist, pdfname=pdfname,
-                       flip_ref=flip_ref, flip_dev=flip_dev)
-    add_bookmarks_to_pdf(pdfname, varlist,
-                         remove_prefix=prefix, verbose=verbose)
+    if 'zonalmean' in plots:
+        pdfname = os.path.join(jvdir,
+                               '{}FullColumn_ZonalMean.pdf'.format(prefix))
+        compare_zonal_mean(refds, refstr, devds, devstr,
+                           varlist=varlist, pdfname=pdfname,
+                           flip_ref=flip_ref, flip_dev=flip_dev)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
-    # Stratospheric zonal mean plots
-    pdfname = os.path.join(jvdir,'{}Strat_ZonalMean.pdf'.format(prefix))
-    compare_zonal_mean(refds, refstr, devds, devstr,
-                       varlist=varlist, pdfname=pdfname, pres_range=[0,100],
-                       flip_ref=flip_ref, flip_dev=flip_dev)
-    add_bookmarks_to_pdf(pdfname, varlist,
-                         remove_prefix=prefix, verbose=verbose)
+        # Stratospheric zonal mean plots
+        pdfname = os.path.join(jvdir,'{}Strat_ZonalMean.pdf'.format(prefix))
+        compare_zonal_mean(refds, refstr, devds, devstr,
+                           varlist=varlist, pdfname=pdfname, pres_range=[0,100],
+                           flip_ref=flip_ref, flip_dev=flip_dev)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
 
 def make_benchmark_aod_plots(ref, refstr, dev, devstr,
