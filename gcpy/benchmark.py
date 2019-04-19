@@ -7,6 +7,7 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import json
+import copy
 from json import load as json_load_file
 import matplotlib as mpl
 from matplotlib import ticker
@@ -35,7 +36,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          pdfname='', cmpres=None, match_cbar=True,
                          normalize_by_area=False,
                          refarea=[], devarea=[], enforce_units=True,
-                         flip_ref=False, flip_dev=False ):
+                         flip_ref=False, flip_dev=False, use_cmap_RdBu=False ):
+
+    # TODO: add docstring
 
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
@@ -339,27 +342,19 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ##############################################################################
 
         # Ref
-        if refgridtype == 'cs':
-            vmin_ref = ds_ref_reshaped.min()
-            vmax_ref = ds_ref_reshaped.max()
-        else:
-            vmin_ref = ds_ref.min()
-            vmax_ref = ds_ref.max()
+        vmin_ref = ds_ref.min()
+        vmax_ref = ds_ref.max()
 
         # Dev
-        if devgridtype == 'cs':
-            vmin_dev = ds_dev_reshaped.min()
-            vmax_dev = ds_dev_reshaped.max()
-        else:
-            vmin_dev = ds_dev.min()
-            vmax_dev = ds_dev.max()
+        vmin_dev = ds_dev.min()
+        vmax_dev = ds_dev.max()
 
         # Comparison
         if cmpgridtype == 'cs':
-            vmin_ref_cmp = ds_ref_cmp_reshaped.min()
-            vmax_ref_cmp = ds_ref_cmp_reshaped.max()
-            vmin_dev_cmp = ds_dev_cmp_reshaped.min()
-            vmax_dev_cmp = ds_dev_cmp_reshaped.max()
+            vmin_ref_cmp = ds_ref_cmp.min()
+            vmax_ref_cmp = ds_ref_cmp.max()
+            vmin_dev_cmp = ds_dev_cmp.min()
+            vmax_dev_cmp = ds_dev_cmp.max()
             vmin_cmp = np.min([vmin_ref_cmp, vmin_dev_cmp])
             vmax_cmp = np.max([vmax_ref_cmp, vmax_dev_cmp]) 
         else:
@@ -392,57 +387,93 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             print('Incorrect dimensions for {}!'.format(varname))   
 
         ##############################################################################    
+        # Set colormap for raw data plots (first row)
+        ##############################################################################
+
+        if use_cmap_RdBu:
+            cmap1 = copy.copy(mpl.cm.RdBu_r) # Copy to avoid application of cmap.set_bad used later on
+        else:
+            cmap1 = WhGrYlRd
+            
+        ##############################################################################    
         # Subplot (0,0): Ref, plotted on ref input grid
         ##############################################################################
-        
-        ax0.coastlines()
-        if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
-        if np.all(ds_ref==0):
-            cmap = mpl.cm.RdBu_r
+
+        # Set colorbar min/max
+        if use_cmap_RdBu:
+            if vmin_ref == 0 and vmax_ref == 0:
+                [vmin0, vmax0] = [vmin_ref, vmax_ref]
+            else:
+                if not match_cbar:
+                    absmax_ref = max([np.abs(vmin_ref), np.abs(vmax_ref)])
+                    [vmin0, vmax0] = [-absmax_ref, absmax_dev]
+                else:
+                    absmax = max([np.abs(vmin_ref), np.abs(vmax_ref),
+                                  np.abs(vmin_dev), np.abs(vmax_dev)])
+                    [vmin0, vmax0] = [-absmax, absmax]
         else:
-            cmap=WhGrYlRd
+            if not match_cbar:
+                [vmin0, vmax0] = [vmin_dev, vmax_dev]
+            else:
+                [vmin0, vmax0] = [vmin_abs, vmax_abs]
+
+        # Plot data
+        ax0.coastlines()
         if refgridtype == 'll':
             plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon, refminlat, refmaxlat), 
-                               cmap=cmap, vmin=vmin, vmax=vmax)
+                               cmap=cmap1, vmin=vmin0, vmax=vmax0)
         else:
             masked_refdata = np.ma.masked_where(np.abs(refgrid['lon'] - 180) < 2, ds_ref_reshaped)
             for i in range(6):
                 plot0 = ax0.pcolormesh(refgrid['lon_b'][i,:,:], refgrid['lat_b'][i,:,:], masked_refdata[i,:,:], 
-                                       cmap=WhGrYlRd,vmin=vmin, vmax=vmax)
+                                       cmap=cmap1, vmin=vmin0, vmax=vmax0)
         ax0.set_title('{} (Ref){}\n{}'.format(refstr,subtitle_extra,refres)) 
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or (vmin0 == 0 and vmax0 == 0):
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_ref)
-        if np.all(ds_ref==0): 
+        if vmin0 == 0 and vmax0 == 0: 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
         ##############################################################################    
         # Subplot (0,1): Dev, plotted on dev input grid
         ##############################################################################
-                
-        ax1.coastlines()
-        if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
-        if np.all(ds_dev==0):
-            cmap = mpl.cm.RdBu_r
+
+        # Set colorbar min/max
+        if use_cmap_RdBu:
+            if vmin_dev == 0 and vmax_dev == 0:
+                [vmin1, vmax1] = [vmin_dev, vmax_dev]
+            else:
+                if not match_cbar:
+                    absmax_dev = max([np.abs(vmin_dev), np.abs(vmax_dev)])
+                    [vmin1, vmax1] = [-absmax_dev, absmax_dev]
+                else:
+                    absmax = max([np.abs(vmin_ref), np.abs(vmax_ref),
+                                  np.abs(vmin_dev), np.abs(vmax_dev)])
+                    [vmin1, vmax1] = [-absmax, absmax]
         else:
-            cmap=WhGrYlRd
+            if not match_cbar:
+                [vmin1, vmax1] = [vmin_dev, vmax_dev]
+            else:
+                [vmin1, vmax1] = [vmin_abs, vmax_abs]
+
+        ax1.coastlines()
         if devgridtype == 'll':
             plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon, devminlat, devmaxlat), 
-                               cmap=cmap, vmin=vmin, vmax=vmax)
+                               cmap=cmap1, vmin=vmin1, vmax=vmax1)
         else:
             masked_devdata = np.ma.masked_where(np.abs(devgrid['lon'] - 180) < 2, ds_dev_reshaped)
             for i in range(6):
                 plot1 = ax1.pcolormesh(devgrid['lon_b'][i,:,:], devgrid['lat_b'][i,:,:], 
-                                       masked_devdata[i,:,:], cmap=WhGrYlRd,vmin=vmin, vmax=vmax)
+                                       masked_devdata[i,:,:], cmap=cmap1, vmin=vmin1, vmax=vmax1)
         ax1.set_title('{} (Dev){}\n{}'.format(devstr,subtitle_extra,devres)) 
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or (vmin1 == 0 and vmax1 == 0):
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_dev)
-        if np.all(ds_dev==0): 
+        if vmin1 == 0 and vmax1 == 0: 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
         ##############################################################################    
@@ -456,9 +487,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
             masked_absdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, absdiff)
         diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])        
-        cmap = mpl.cm.RdBu_r
+        cmap_nongray = copy.copy(mpl.cm.RdBu_r)
         if cmpgridtype == 'll':
-            cmap_gray = mpl.cm.RdBu_r
+            cmap_gray = copy.copy(mpl.cm.RdBu_r)
             cmap_gray.set_bad(color='gray')
             
         ##############################################################################    
@@ -469,11 +500,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ax2.coastlines()
         if cmpgridtype == 'll':
             plot2 = ax2.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
-                               cmap=cmap_gray,vmin=vmin, vmax=vmax)
+                               cmap=cmap_gray, vmin=vmin, vmax=vmax)
         else:
             for i in range(6):
                 plot2 = ax2.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                       masked_absdiff[i,:,:], cmap='RdBu_r',vmin=vmin, vmax=vmax)
+                                       masked_absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(cmpres))
         else:
@@ -498,11 +529,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ax3.coastlines()
         if cmpgridtype == 'll':
             plot3 = ax3.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
-                               cmap=cmap_gray,vmin=vmin, vmax=vmax)
+                               cmap=cmap_gray, vmin=vmin, vmax=vmax)
         else:
             for i in range(6):
                 plot3 = ax3.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                       masked_absdiff[i,:,:], cmap='RdBu_r',vmin=vmin, vmax=vmax)
+                                       masked_absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
         else:
@@ -540,7 +571,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot4 = ax4.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                   masked_fracdiff[i,:,:], cmap='RdBu_r',vmin=vmin, vmax=vmax)
+                                   masked_fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres)) 
         else:
@@ -567,7 +598,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot5 = ax5.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                   masked_fracdiff[i,:,:], cmap='RdBu_r',vmin=vmin, vmax=vmax)
+                                   masked_fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
         else:
@@ -592,8 +623,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 # Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, weightsdir=None,
                        pdfname='', cmpres=None, match_cbar=True, pres_range=[0,2000],
-                       normalize_by_area=False, enforce_units=True, flip_ref=False, flip_dev=False ):
+                       normalize_by_area=False, enforce_units=True, flip_ref=False,
+                       flip_dev=False, use_cmap_RdBu=False ):
 
+    # TODO: add docstring
+    
     if not isinstance(refdata, xr.Dataset):
         raise ValueError('The refdata argument must be an xarray Dataset!')
 
@@ -920,17 +954,44 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         fontsize=25
         figs.suptitle('{}, Zonal Mean'.format(varname), fontsize=fontsize, y=offset)
 
-        ##############################################################################            
-        # Subplot 0: Ref
         ##############################################################################
-        
-        if not match_cbar: [vmin, vmax] = [vmin_ref, vmax_ref]
-        if refgridtype == 'll':
-            plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
-                                   vmin=vmin, vmax=vmax)
+        # Set colormap for raw data plots (first row)
+        ##############################################################################
+
+        if use_cmap_RdBu:
+            cmap1 = 'RdBu_r' # do not need to worry about cmap.set_bad since always lat-lon
         else:
-            plot0 = ax0.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
-                                   vmin=vmin, vmax=vmax)
+            cmap1 = WhGrYlRd
+
+        ##############################################################################            
+        # Subplot (0,0): Ref
+        ##############################################################################
+
+        # Set colorbar min/max
+        if use_cmap_RdBu:
+            if vmin_ref == 0 and vmax_ref:
+                [vmin0, vmax0] = [vmin_ref, vmax_ref]
+            else:
+                if not match_cbar:
+                    absmax_ref = max([np.abs(vmin_ref), np.abs(vmax_ref)])
+                    [vmin0, vmax0] = [-absmax_ref, absmax_dev]
+                else:
+                    absmax = max([np.abs(vmin_ref), np.abs(vmax_ref),
+                                  np.abs(vmin_dev), np.abs(vmax_dev)])
+                    [vmin0, vmax0] = [-absmax, absmax]
+        else:
+            if not match_cbar:
+                [vmin0, vmax0] = [vmin_ref, vmax_ref]
+            else:
+                [vmin0, vmax0] = [vmin_abs, vmax_abs]
+
+        # Plot data
+        if refgridtype == 'll':
+            plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=cmap1,
+                                   vmin=vmin0, vmax=vmax0)
+        else:
+            plot0 = ax0.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=cmap1,
+                                   vmin=vmin0, vmax=vmax0)
         ax0.invert_yaxis()
         if refgridtype == 'll':
             ax0.set_title('{} (Ref){}\n{}'.format(refstr, subtitle_extra, refres ))
@@ -942,22 +1003,42 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_ref==0):
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
-        cb.set_label(units_ref)
+        if np.all(zm_ref==0): 
+            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+        cb.set_label(units)
 
         ##############################################################################    
-        # Subplot 1: Dev
+        # Subplot (0,1): Dev
         ##############################################################################
 
-        if not match_cbar: [vmin, vmax] = [vmin_dev, vmax_dev]
-        if devgridtype == 'll':
-            plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], zm_ref, cmap=WhGrYlRd,
-                                   vmin=vmin, vmax=vmax)
+        # Set colorbar min/max
+        if use_cmap_RdBu:
+            if vmin_dev == 0 and vmax_dev == 0:
+                [vmin1, vmax1] = [vmin_dev, vmax_dev]
+            else:
+                if not match_cbar:
+                    absmax_dev = max([np.abs(vmin_dev), np.abs(vmax_dev)])
+                    [vmin1, vmax1] = [-absmax_dev, absmax_dev]
+                else:
+                    absmax = max([np.abs(vmin_ref), np.abs(vmax_ref),
+                                  np.abs(vmin_dev), np.abs(vmax_dev)])
+                    [vmin1, vmax1] = [-absmax, absmax]
         else:
-            plot1 = ax1.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_dev, cmap=WhGrYlRd,
-                                   vmin=vmin, vmax=vmax)            
+            if not match_cbar:
+                [vmin1, vmax1] = [vmin_dev, vmax_dev]
+            else:
+                [vmin1, vmax1] = [vmin_abs, vmax_abs]
+
+        # Plot data
+        if devgridtype == 'll':
+            plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], zm_dev, cmap=cmap1,
+                                   vmin=vmin1, vmax=vmax1)
+        else:
+            plot1 = ax1.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], zm_dev, cmap=cmap1,
+                                   vmin=vmin1, vmax=vmax1)    
         ax1.invert_yaxis()
         if devgridtype == 'll':
             ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, devres ))
@@ -969,10 +1050,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_dev==0):
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
-        cb.set_label(units_dev)
+        if np.all(zm_dev==0): 
+            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+        cb.set_label(units)
 
         ##############################################################################    
         # Calculate zonal mean difference
@@ -981,7 +1064,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
         
         ##############################################################################    
-        # Subplot 2: Difference, dynamic range
+        # Subplot (1,0): Difference, dynamic range
         ##############################################################################
         
         diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
@@ -1006,7 +1089,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         cb.set_label(units)
 
         ##############################################################################    
-        # Subplot 3: Difference, restricted range
+        # Subplot (1,1): Difference, restricted range
         ##############################################################################
 
          # placeholder: use 5 and 95 percentiles as bounds
@@ -1038,7 +1121,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(zm_ref_cmp)
 
         ##############################################################################    
-        # Subplot 4: Fractional Difference, dynamic range
+        # Subplot (2,0): Fractional Difference, dynamic range
         ##############################################################################
         
         fracdiffabsmax = max([np.abs(zm_fracdiff.min()), np.abs(zm_fracdiff.max())])
@@ -1067,7 +1150,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None, itime=0, 
         cb.set_label('unitless')   
 
         ##############################################################################    
-        # Subplot 5: Fractional Difference, restricted range
+        # Subplot (2,1): Fractional Difference, restricted range
         ##############################################################################
 
         [vmin, vmax] = [-2, 2]
@@ -1434,7 +1517,7 @@ def archive_species_categories(dst):
 
 def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                               overwrite=False, verbose=False, restrict_cats=[],
-                              plots=['sfc', '500hpa', 'zonalmean'] ):
+                              plots=['sfc', '500hpa', 'zonalmean'], use_cmap_RdBu=False ):
     '''
     Creates PDF files containing plots of species concentration
     for model benchmarking purposes.
@@ -1502,7 +1585,7 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
         print('Could not find Dev file: {}!'.format(dev))
         raise
     devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
-    
+
     catdict = get_species_categories()
     
     archive_species_categories(dst)
@@ -1532,21 +1615,25 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
         # Surface plots
         if 'sfc' in plots:
             pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
-            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname )
+            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0,
+                                 pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu )
             add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
         if '500hpa' in plots:
             pdfname = os.path.join(catdir,'{}_500hPa.pdf'.format(filecat))        
-            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=22, pdfname=pdfname )
+            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=22,
+                                 pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu )
             add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
         if 'zonalmean' in plots:
             pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(filecat))        
-            compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname )
+            compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
+                               pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu )
             add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
             pdfname = os.path.join(catdir,'{}_Strat_ZonalMean.pdf'.format(filecat))        
-            compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist, pdfname=pdfname, pres_range=[0,100] )
+            compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
+                               pdfname=pdfname, pres_range=[0,100], use_cmap_RdBu=use_cmap_RdBu )
             add_nested_bookmarks_to_pdf(pdfname, filecat, catdict, warninglist, remove_prefix='SpeciesConc_')
 
 
