@@ -1356,7 +1356,9 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                  species, outfilename,
-                                 interval=2678400.0, template="Emis{}_"):
+                                 interval=2678400.0, template="Emis{}_",
+                                 ref_area_varname='AREA',
+                                 dev_area_varname='AREA'):
     '''
     Creates a table of emissions totals (by sector and by inventory)
     for a list of species in contained in two data sets.  The data sets,
@@ -1403,6 +1405,16 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
             template will be set to "Emis{}", where {} will be replaced
             by the species name.
 
+        ref_area_varname : str
+            Name of the variable containing the grid box surface areas
+            (in m2) in the ref dataset.
+            Default value: 'AREA'
+
+        dev_area_varname : str
+            Name of the variable containing the grid box surface areas
+            (in m2) in the dev dataset.
+            Default value: 'AREA'
+
     Returns:
         None.  Writes to a text file specified by the "outfilename" argument.
 
@@ -1431,6 +1443,21 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
             species, outfilename)
     '''
 
+    # Error check arguments
+    if not isinstance(refdata, xr.Dataset):
+        raise ValueError('The refdata argument must be an xarray Dataset!')
+
+    if not isinstance(devdata, xr.Dataset):
+        raise ValueError('The devdata argument must be an xarray Dataset!')
+
+    if ref_area_varname not in refdata.data_vars.keys():
+        raise ValueError("Area variable {} is not in the ref Dataset!".format(
+            ref_area_varname))
+
+    if dev_area_varname not in devdata.data_vars.keys():
+        raise ValueError("Area variable {} is not in the dev Dataset!".format(
+            dev_area_varname))
+
     # Load a JSON file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
@@ -1440,15 +1467,14 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
 
     # Find all common variables between the two datasets
     [cvars, cvars1D, cvars2D, cvars3D] = core.compare_varnames(refdata,
-                                                          devdata,
-                                                          quiet=True)
+                                                               devdata,
+                                                               quiet=True)
 
     # Open file for output
     f = open(outfilename, "w")
 
     # Loop through all of the species are in species_dict
     for species_name, target_units in species.items():
-
 
         # Title strings
         if "Inv" in template:
@@ -1490,12 +1516,12 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
             # Convert units of Ref, and save to DataArray
             refarray = convert_units(refdata[v], species_name,
                                      species_properties, target_units,
-                                     interval, refdata["AREA"])
+                                     interval, refdata[ref_area_varname])
 
             # Convert units of Dev, and save to DataArray
             devarray = convert_units(devdata[v], species_name,
                                      species_properties, target_units,
-                                     interval, devdata["AREA"])
+                                     interval, devdata[dev_area_varname])
 
 
             # Print emission totals for Ref and Dev
@@ -1883,11 +1909,12 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
         # Give warning if emissions species is not assigned a benchmark category
         for spc in emis_spc:
             if spc not in allcatspc:
-                print('Warning: species {} has emissions diagnostics but is not in benchmark_categories.json'.format(spc))
+                print('Warning: speciess {} has emissions diagnostics but is not in benchmark_categories.json'.format(spc))
 
 
 def make_benchmark_emis_tables(ref, refstr, dev, devstr,
-                               dst='./1mo_benchmark', overwrite=False):
+                               dst='./1mo_benchmark', overwrite=False,
+                               ref_area_varname=None, dev_area_varname=None):
     '''
     Creates a text file containing emission totals by species and
     category for benchmarking purposes.
@@ -1917,6 +1944,20 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
              Set this flag to True to overwrite files in the
              destination folder (specified by the dst argument).
              Default value : False
+
+        ref_area_varname : str
+            Name of the variable containing the grid box surface areas
+            (in m2) in the ref dataset.  If not specified, then this
+            will be set to "Met_AREAM2" if the ref dataset is on the
+            cubed-sphere grid, or "AREA" if ref is on the lat-lon grid.
+            Default value: None
+
+        dev_area_varname : str
+            Name of the variable containing the grid box surface areas
+            (in m2) in the dev dataset.  If not specified, then this
+            will be set to "Met_AREAM2" if the dev dataset is on the
+            cubed-sphere grid, or "AREA" if dev is on the lat-lon grid.
+            Default value: None
     '''
 
     if os.path.isdir(dst) and not overwrite:
@@ -1928,19 +1969,61 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir) 
 
-    # Ref dataset
+    # ===============================================================
+    # Read data from netCDF into Dataset objects
+    # ===============================================================
+
+    # Ref
     try:
         refds = xr.open_dataset(ref)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
 
-    # Dev dataset
+    # Dev
     try:
         devds = xr.open_dataset(dev)
     except FileNotFoundError:
         print('Could not find Dev file {}'.format(dev))
         raise
+
+    # ===============================================================
+    # Get the surface area variable name
+    # by default, for lat-lon grids this is "AREA"
+    # and for cubed-sphere grids, this is "Met_AREAM2"
+    # ===============================================================
+
+    # Ref
+    if ref_area_varname == None:
+        nlat = refds.sizes['lat']
+        nlon = refds.sizes['lon']
+        if nlat/6 == nlon:
+            ref_area_varname = 'Met_AREAM2'
+        else:
+            ref_area_varname = 'AREA'
+
+    # Error-check Ref
+    if ref_area_varname not in refds.data_vars.keys():
+        raise ValueError('Area variable {} is not in the ref dataset!'.format(
+            ref_area_varname))
+
+    # Dev
+    if dev_area_varname == None:
+        nlat = devds.sizes['lat']
+        nlon = devds.sizes['lon']
+        if nlat/6 == nlon:
+            dev_area_varname = 'Met_AREAM2'
+        else:
+            dev_area_varname = 'AREA'
+
+    # Error-check Dev
+    if dev_area_varname not in devds.data_vars.keys():
+        raise ValueError('Area variable {} is not in the dev dataset!'.format(
+            dev_area_varname))
+
+    # ===============================================================
+    # Create table of emissions
+    # ===============================================================
 
     # Emissions species dictionary
     species = json_load_file(open(os.path.join(os.path.dirname(__file__),
@@ -1957,10 +2040,14 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
     # Write to file
     create_total_emissions_table(refds, refstr, devds, devstr, 
                                  species, file_emis_totals,
-                                 interval, template="Emis{}_")
+                                 interval, template="Emis{}_",
+                                 ref_area_varname=ref_area_varname,
+                                 dev_area_varname=dev_area_varname)
     create_total_emissions_table(refds, refstr, devds, devstr, 
                                  species, file_inv_totals,
-                                 interval, template="Inv{}_")
+                                 interval, template="Inv{}_",
+                                 ref_area_varname=ref_area_varname,
+                                 dev_area_varname=dev_area_varname)
 
 
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
