@@ -229,7 +229,7 @@ def compare_varnames(refdata, devdata, quiet=False):
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
     commonvars1D = [v for v in commonvars if refdata[v].ndim == 2]
     commonvars2D = [v for v in commonvars if refdata[v].ndim == 3]
-    commonvars3D = [v for v in commonvars if devdata[v].ndim == 4]
+    commonvars3D = [v for v in commonvars if refdata[v].ndim == 4]
     
     # Print information on common and mismatching variables, as well as dimensions
     if quiet == False:
