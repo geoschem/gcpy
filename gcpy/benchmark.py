@@ -1912,24 +1912,28 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                 print('Warning: speciess {} has emissions diagnostics but is not in benchmark_categories.json'.format(spc))
 
 
-def make_benchmark_emis_tables(ref, refstr, dev, devstr,
+def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
                                dst='./1mo_benchmark', overwrite=False,
-                               ref_area_varname=None, dev_area_varname=None):
+                               interval=None, ref_area_varname=None,
+                               dev_area_varname=None):
     '''
     Creates a text file containing emission totals by species and
     category for benchmarking purposes.
 
     Args:
-        ref: str
-             Path name for the "Ref" (aka "Reference") data set.
+        reflist: list of str
+             List with the path names of the emissions and/or met field
+             files that will constitute the "Ref" (aka "Reference")
+             data set.
 
         refstr : str
              A string to describe ref (e.g. version number)
 
-        dev : str
-             Path name for the "Dev" (aka "Development") data set.
-             This data set  will be compared against the "Reference"
-             data set.
+        devlist : list of str
+             List with the path names of the emissions and/or met field
+             files that will constitute the "Dev" (aka "Development") 
+             data set.  The "Dev" data set will be compared against the
+             "Ref" data set.
 
         devstr : str
              A string to describe dev (e.g. version number)
@@ -1944,6 +1948,11 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
              Set this flag to True to overwrite files in the
              destination folder (specified by the dst argument).
              Default value : False
+
+        interval : float
+             Specifies the averaging period in seconds, which is used
+             to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
+             Default value : None
 
         ref_area_varname : str
             Name of the variable containing the grid box surface areas
@@ -1960,6 +1969,9 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
             Default value: None
     '''
 
+    # ===============================================================
+    # Define destination directory
+    # ===============================================================
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
         return
@@ -1967,7 +1979,7 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
         os.mkdir(dst)
     emisdir = os.path.join(dst,'Emissions')
     if not os.path.isdir(emisdir):
-        os.mkdir(emisdir) 
+        os.mkdir(emisdir)
 
     # ===============================================================
     # Read data from netCDF into Dataset objects
@@ -1975,16 +1987,16 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
 
     # Ref
     try:
-        refds = xr.open_dataset(ref)
+        refds = xr.open_mfdataset(reflist)
     except FileNotFoundError:
-        print('Could not find Ref file: {}'.format(ref))
+        print('Could not find one of the Ref files: {}'.format(reflist))
         raise
 
     # Dev
     try:
-        devds = xr.open_dataset(dev)
+        devds = xr.open_mfdataset(devlist)
     except FileNotFoundError:
-        print('Could not find Dev file {}'.format(dev))
+        print('Could not find one of the Dev files: {}'.format(devlist))
         raise
 
     # ===============================================================
@@ -2030,12 +2042,13 @@ def make_benchmark_emis_tables(ref, refstr, dev, devstr,
                                                emission_spc)))
 
     # Destination files
-    file_emis_totals = os.path.join(dst, 'Emission_totals.txt')
-    file_inv_totals = os.path.join(dst, 'Inventory_totals.txt')
-    
-    # Number of seconds in the averaging period 
-    # (July 2016 = 86400 seconds * 31 days)
-    interval = 86400.0 * 31.0
+    file_emis_totals = os.path.join(dst, emisdir, 'Emission_totals.txt')
+    file_inv_totals = os.path.join(dst, emisdir, 'Inventory_totals.txt')
+
+    # If the averaging interval (in seconds) is not specified,
+    # then assume July 2016 = 86400 seconds * 31 days
+    if interval == None:
+        interval = 86400.0 * 31.0
 
     # Write to file
     create_total_emissions_table(refds, refstr, devds, devstr, 

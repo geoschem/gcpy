@@ -98,6 +98,10 @@ gchp_jvfile = 'GCHP.JValuesLocalNoon.{}_{}z.nc4'.format(gchp_datestr,     \
 gcc_aodfile  = 'GEOSChem.Aerosols.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
 gchp_aodfile = 'GCHP.Aerosols.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
 
+# StateMet diagnostic filenames
+gcc_metfile  = 'GEOSChem.StateMet.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
+gchp_metfile = 'GCHP.StateMet.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
+
 # Paths to species concentration data
 gcc_vs_gcc_refspc   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_spcfile)
 gcc_vs_gcc_devspc   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_spcfile)
@@ -130,6 +134,14 @@ gchp_vs_gcc_devaod  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_aodfile)
 gchp_vs_gchp_refaod = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_aodfile)
 gchp_vs_gchp_devaod = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_aodfile)
 
+# Paths to StateMet data
+gcc_vs_gcc_refmet   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_metfile)
+gcc_vs_gcc_devmet   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_metfile)
+gchp_vs_gcc_refmet  = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_metfile)
+gchp_vs_gcc_devmet  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_metfile)
+gchp_vs_gchp_refmet = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_metfile)
+gchp_vs_gchp_devmet = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_metfile)
+
 # =====================================================================
 # Create GCC vs GCC benchmark plots and tables
 # =====================================================================
@@ -158,10 +170,12 @@ if gcc_vs_gcc:
                                             overwrite=True)
 
     if emis_table:
-        # Emissions tables
-        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_refhco,          \
+        # Table of emission and inventory totals
+        gcc_vs_gcc_reflist = [gcc_vs_gcc_refhco]
+        gcc_vs_gcc_devlist = [gcc_vs_gcc_devhco]
+        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_reflist,         \
                                              gcc_vs_gcc_refstr,          \
-                                             gcc_vs_gcc_devhco,          \
+                                             gcc_vs_gcc_devlist,         \
                                              gcc_vs_gcc_devstr,          \
                                              dst=gcc_vs_gcc_plotsdir,    \
                                              overwrite=True)
@@ -212,8 +226,15 @@ if gchp_vs_gcc:
                                             flip_dev=True)
 
     if emis_table:
-        # Table of emissions totals
-        pass
+        # Tables of emissions and inventory totals
+        gchp_vs_gcc_reflist = [gchp_vs_gcc_refhco]
+        gchp_vs_gcc_devlist = [gchp_vs_gcc_devhco, gchp_vs_gcc_devmet]
+        benchmark.make_benchmark_emis_tables(gchp_vs_gcc_reflist,        \
+                                             gchp_vs_gcc_refstr,         \
+                                             gchp_vs_gcc_devlist,        \
+                                             gchp_vs_gcc_devstr,         \
+                                             dst=gchp_vs_gcc_plotsdir,   \
+                                             overwrite=True)
 
     if plot_jvalues:
         # Local noon J-values plots
@@ -262,8 +283,15 @@ if gchp_vs_gchp:
                                             flip_dev=True)
 
     if emis_table:
-        # Table of emissions totals
-        pass
+        # Tables of emissions and inventory totals
+        gchp_vs_gchp_reflist = [gchp_vs_gchp_refhco, gchp_vs_gchp_refmet]
+        gchp_vs_gchp_devlist = [gchp_vs_gchp_devhco, gchp_vs_gchp_devmet]
+        benchmark.make_benchmark_emis_tables(gchp_vs_gchp_reflist,       \
+                                             gchp_vs_gchp_refstr,        \
+                                             gchp_vs_gchp_devlist,       \
+                                             gchp_vs_gchp_devstr,        \
+                                             dst=gchp_vs_gchp_plotsdir,  \
+                                             overwrite=True)
 
     if plot_jvalues:
         # Local noon J-values plots
