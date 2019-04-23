@@ -423,12 +423,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         if refgridtype == 'll':
             plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon, refminlat, refmaxlat), 
                                cmap=cmap1, vmin=vmin0, vmax=vmax0)
+            ax0.set_title('{} (Ref){}\n{}'.format(refstr,subtitle_extra,refres))
         else:
             masked_refdata = np.ma.masked_where(np.abs(refgrid['lon'] - 180) < 2, ds_ref_reshaped)
             for i in range(6):
                 plot0 = ax0.pcolormesh(refgrid['lon_b'][i,:,:], refgrid['lat_b'][i,:,:], masked_refdata[i,:,:], 
                                        cmap=cmap1, vmin=vmin0, vmax=vmax0)
-        ax0.set_title('{} (Ref){}\n{}'.format(refstr,subtitle_extra,refres)) 
+            ax0.set_title('{} (Ref){}\nc{}'.format(refstr,subtitle_extra,refres)) 
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or (vmin0 == 0 and vmax0 == 0):
             cb.locator = ticker.MaxNLocator(nbins=4)
@@ -463,12 +464,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         if devgridtype == 'll':
             plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon, devminlat, devmaxlat), 
                                cmap=cmap1, vmin=vmin1, vmax=vmax1)
+            ax1.set_title('{} (Dev){}\n{}'.format(devstr,subtitle_extra,devres)) 
         else:
             masked_devdata = np.ma.masked_where(np.abs(devgrid['lon'] - 180) < 2, ds_dev_reshaped)
             for i in range(6):
                 plot1 = ax1.pcolormesh(devgrid['lon_b'][i,:,:], devgrid['lat_b'][i,:,:], 
                                        masked_devdata[i,:,:], cmap=cmap1, vmin=vmin1, vmax=vmax1)
-        ax1.set_title('{} (Dev){}\n{}'.format(devstr,subtitle_extra,devres)) 
+            ax1.set_title('{} (Dev){}\nc{}'.format(devstr,subtitle_extra,devres)) 
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or (vmin1 == 0 and vmax1 == 0):
             cb.locator = ticker.MaxNLocator(nbins=4)
