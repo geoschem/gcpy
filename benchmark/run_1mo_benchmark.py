@@ -36,11 +36,12 @@ gchp_vs_gchp = False
 gchp_vs_gcc_diff_of_diffs = False
 
 # Output to generate (edit as needed)
-plot_aod     = True
+# Plots/tables will be created in this order:
 plot_conc    = True
 plot_emis    = True
-plot_jvalues = True
 emis_table   = True
+plot_jvalues = True
+plot_aod     = True
 
 # Filename date strings (edit as needed)
 gcc_datestr  = '20160701'
@@ -60,9 +61,12 @@ gchp_vs_gchp_devdir = os.path.join(maindir, dev_version, 'OutputDir')
 
 # Plots directories (edit as needed)
 gcc_vs_gcc_plotsdir    = os.path.join(maindir, dev_version, 'output')
-gchp_vs_gchp_plotsdir  = os.path.join(maindir, dev_version, 'output/GCHP_version_comparison')
-gchp_vs_gcc_plotsdir   = os.path.join(maindir, dev_version, 'output/GCHP_GCC_comparison')
-diff_of_diffs_plotsdir = os.path.join(maindir, dev_version, 'output/GCHP_GCC_diff_of_diffs')
+gchp_vs_gchp_plotsdir  = os.path.join(maindir, dev_version,
+                                      'output/GCHP_version_comparison')
+gchp_vs_gcc_plotsdir   = os.path.join(maindir, dev_version,
+                                      'output/GCHP_GCC_comparison')
+diff_of_diffs_plotsdir = os.path.join(maindir, dev_version,
+                                      'output/GCHP_GCC_diff_of_diffs')
 
 # Plot title strings (edit as needed)
 gcc_vs_gcc_refstr    = '{}'.format(gcc_ref_version)
@@ -99,8 +103,10 @@ gcc_aodfile  = 'GEOSChem.Aerosols.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
 gchp_aodfile = 'GCHP.Aerosols.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
 
 # StateMet diagnostic filenames
-gcc_metfile  = 'GEOSChem.StateMet.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
-gchp_metfile = 'GCHP.StateMet.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
+gcc_metfile  = 'GEOSChem.StateMet_avg.{}_{}z.nc4'.format(gcc_datestr,     \
+                                                         gcc_hourstr)
+gchp_metfile = 'GCHP.StateMet_avg.{}_{}z.nc4'.format(gchp_datestr,        \
+                                                     gchp_hourstr)
 
 # Paths to species concentration data
 gcc_vs_gcc_refspc   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_spcfile)
