@@ -19,9 +19,6 @@ This package is comprised of two major components:
 2. Documentation including long-form articles, interactive notebooks, and short
    example snippets illustrating workflows using Python and **GCPy**
 
-For more details, please visit `our documentation on ReadTheDocs <http://gcpy.readthedocs.io/en/latest/?badge=latest>`_.
-
-
 Requirements
 ------------
 
@@ -40,9 +37,8 @@ stack, including
   
 To create an environment for working with **GCPy**, we recommend using
 the `Anaconda Python distribution <https://www.continuum.io/downloads>`_
-or curating your own *virtualenv* or *conda* environment. Please
-refer to `our documentation <http://gcpy.readthedocs.io/en/latest/getting_started.html>`_
-for more details.
+or curating your own *virtualenv* or *conda* environment. Please see
+gcpy/environment/environment.yml for an example.
 
 
 Installation
