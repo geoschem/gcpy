@@ -1,31 +1,41 @@
 #!/usr/bin/env python
 '''
-Driver script for creating benchmark plots.  The options are:
+run_1mo_benchmark.py: Driver script for creating benchmark plots.
 
-(1) GCC (aka GEOS-Chem "Classic") vs. GCC
-(2) GCHP vs GCC
-(3) GCHP vs GCHP
-(4) GCHP vs GCC diff-of-diffs 
+Run this script to generate benchmark comparisons between:
+
+    (1) GCC (aka GEOS-Chem "Classic") vs. GCC
+    (2) GCHP vs GCC
+    (3) GCHP vs GCHP
+    (4) GCHP vs GCC diff-of-diffs
 
 You can customize this by editing the following settings in the
-# "Configurables" section below:
+"Configurables" section below:
 
-(1) Edit the path variables so that they point to folders w/ model data
-(2) Edit the version strings for each benchmark simulation
-(3) Edit the switches that turn on/off creating of plots and tables
-(4) If necessary, edit labels for the dev and ref versions
+    (1) Edit the path variables so that they point to folders w/ model data
+    (2) Edit the version strings for each benchmark simulation
+    (3) Edit the switches that turn on/off creating of plots and tables
+    (4) If necessary, edit labels for the dev and ref versions
+
+Calling sequence:
+
+    ./run_1mo_benchmark.py
 
 Remarks:
--------- 
-By default, matplotlib will try to open an X window for plotting.
-If you are running this script in an environment where you do not have
-an active X display (such as in a computational queue), then you will
-need to use this command to disable the X-window functionality.
 
-For more information, please see this issue posted at the ipython site:
-https://github.com/ipython/ipython/issues/10627
-#
-This issue might be fixed in matplotlib 3.0.
+    By default, matplotlib will try to open an X window for plotting.
+    If you are running this script in an environment where you do not have
+    an active X display (such as in a computational queue), then you will
+    need to use these commands to disable the X-window functionality.
+
+        import os
+        os.environ['QT_QPA_PLATFORM']='offscreen'
+
+    For more information, please see this issue posted at the ipython site:
+
+        https://github.com/ipython/ipython/issues/10627
+
+    This issue might be fixed in matplotlib 3.0.
 '''
 
 # =====================================================================
