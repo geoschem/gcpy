@@ -1,19 +1,44 @@
 #!/usr/bin/env python
 '''
 Driver script for creating benchmark plots.  The options are:
-(1) GEOS-Chem "Classic" vs. GEOS-Chem "Classic"
-(2) GCHP vs GEOS-Chem "Classic"
-(3) GCHP vs GCHP
 
-Set the path variables below to the folders containing model data
-files from benchmark simulations.  Then set the switches according
-to the plotting options that you want.
+(1) GCC (aka GEOS-Chem "Classic") vs. GCC
+(2) GCHP vs GCC
+(3) GCHP vs GCHP
+(4) GCHP vs GCC diff-of-diffs 
+
+You can customize this by editing the following settings in the
+# "Configurables" section below:
+
+(1) Edit the path variables so that they point to folders w/ model data
+(2) Edit the version strings for each benchmark simulation
+(3) Edit the switches that turn on/off creating of plots and tables
+(4) If necessary, edit labels for the dev and ref versions
+
+Remarks:
+-------- 
+By default, matplotlib will try to open an X window for plotting.
+If you are running this script in an environment where you do not have
+an active X display (such as in a computational queue), then you will
+need to use this command to disable the X-window functionality.
+
+For more information, please see this issue posted at the ipython site:
+https://github.com/ipython/ipython/issues/10627
+#
+This issue might be fixed in matplotlib 3.0.
 '''
+
+# =====================================================================
+# Imports and global settings (you should not need to edit these)
+# =====================================================================
 
 import os
 import xarray as xr
 from gcpy import benchmark
 import warnings
+
+# Tell matplotlib not to look for an X-window
+os.environ['QT_QPA_PLATFORM']='offscreen'
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -83,9 +108,9 @@ diff_of_diffs_devstr = 'GCHP {} vs {}'.format(dev_version, gchp_ref_version)
 # =====================================================================
 
 # Species concentration filenames
-gcc_spcfile  = 'GEOSChem.SpeciesConc.{}_{}z.nc4'.format(gcc_datestr,      \
+gcc_spcfile  = 'GEOSChem.SpeciesConc.{}_{}z.nc4'.format(gcc_datestr,
                                                         gcc_hourstr)   
-gchp_spcfile = 'GCHP.SpeciesConc.{}_{}z.nc4'.format(gchp_datestr,         \
+gchp_spcfile = 'GCHP.SpeciesConc.{}_{}z.nc4'.format(gchp_datestr,
                                                     gchp_hourstr) 
 
 # HEMCO diagnostic filenames
@@ -93,9 +118,9 @@ gcc_hcofile  = 'HEMCO_diagnostics.{}{}.nc'.format(gcc_datestr, gcc_hourstr)
 gchp_hcofile = 'GCHP.Emissions.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
 
 # Local noon J-value diagnostic filenames
-gcc_jvfile  = 'GEOSChem.JValuesLocalNoon.{}_{}z.nc4'.format(gcc_datestr,  \
+gcc_jvfile  = 'GEOSChem.JValuesLocalNoon.{}_{}z.nc4'.format(gcc_datestr,
                                                             gcc_hourstr)
-gchp_jvfile = 'GCHP.JValuesLocalNoon.{}_{}z.nc4'.format(gchp_datestr,     \
+gchp_jvfile = 'GCHP.JValuesLocalNoon.{}_{}z.nc4'.format(gchp_datestr,
                                                         gchp_hourstr)
 
 # Aerosol optical depth diagnostic filenames
@@ -103,9 +128,9 @@ gcc_aodfile  = 'GEOSChem.Aerosols.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
 gchp_aodfile = 'GCHP.Aerosols.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
 
 # StateMet diagnostic filenames
-gcc_metfile  = 'GEOSChem.StateMet_avg.{}_{}z.nc4'.format(gcc_datestr,     \
+gcc_metfile  = 'GEOSChem.StateMet_avg.{}_{}z.nc4'.format(gcc_datestr,
                                                          gcc_hourstr)
-gchp_metfile = 'GCHP.StateMet_avg.{}_{}z.nc4'.format(gchp_datestr,        \
+gchp_metfile = 'GCHP.StateMet_avg.{}_{}z.nc4'.format(gchp_datestr,
                                                      gchp_hourstr)
 
 # Paths to species concentration data
@@ -157,51 +182,51 @@ if gcc_vs_gcc:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
-        benchmark.make_benchmark_conc_plots(gcc_vs_gcc_refspc,           \
-                                            gcc_vs_gcc_refstr,           \
-                                            gcc_vs_gcc_devspc,           \
-                                            gcc_vs_gcc_devstr,           \
-                                            dst=gcc_vs_gcc_plotsdir,     \
+        benchmark.make_benchmark_conc_plots(gcc_vs_gcc_refspc,
+                                            gcc_vs_gcc_refstr,
+                                            gcc_vs_gcc_devspc,
+                                            gcc_vs_gcc_devstr,
+                                            dst=gcc_vs_gcc_plotsdir,
                                             overwrite=True)
 
     if plot_emis:
         # Emissions plots
-        benchmark.make_benchmark_emis_plots(gcc_vs_gcc_refhco,           \
-                                            gcc_vs_gcc_refstr,           \
-                                            gcc_vs_gcc_devhco,           \
-                                            gcc_vs_gcc_devstr,           \
-                                            dst=gcc_vs_gcc_plotsdir,     \
-                                            plot_by_benchmark_cat=True,  \
-                                            plot_by_hco_cat=True,        \
+        benchmark.make_benchmark_emis_plots(gcc_vs_gcc_refhco,
+                                            gcc_vs_gcc_refstr,
+                                            gcc_vs_gcc_devhco,
+                                            gcc_vs_gcc_devstr,
+                                            dst=gcc_vs_gcc_plotsdir,
+                                            plot_by_benchmark_cat=True,
+                                            plot_by_hco_cat=True,
                                             overwrite=True)
 
     if emis_table:
         # Table of emission and inventory totals
         gcc_vs_gcc_reflist = [gcc_vs_gcc_refhco]
         gcc_vs_gcc_devlist = [gcc_vs_gcc_devhco]
-        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_reflist,         \
-                                             gcc_vs_gcc_refstr,          \
-                                             gcc_vs_gcc_devlist,         \
-                                             gcc_vs_gcc_devstr,          \
-                                             dst=gcc_vs_gcc_plotsdir,    \
+        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_reflist,
+                                             gcc_vs_gcc_refstr,
+                                             gcc_vs_gcc_devlist,
+                                             gcc_vs_gcc_devstr,
+                                             dst=gcc_vs_gcc_plotsdir,
                                              overwrite=True)
 
     if plot_jvalues:
         # Local noon J-values plots
-        benchmark.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv,          \
-                                              gcc_vs_gcc_refstr,         \
-                                              gcc_vs_gcc_devjv,          \
-                                              gcc_vs_gcc_devstr,         \
-                                              dst=gcc_vs_gcc_plotsdir,   \
-                                              local_noon_jvalues=True,   \
+        benchmark.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv,
+                                              gcc_vs_gcc_refstr,
+                                              gcc_vs_gcc_devjv,
+                                              gcc_vs_gcc_devstr,
+                                              dst=gcc_vs_gcc_plotsdir,
+                                              local_noon_jvalues=True,
                                               overwrite=True)
     if plot_aod:
         # Column AOD plots
-        benchmark.make_benchmark_aod_plots(gcc_vs_gcc_refaod,            \
-                                           gcc_vs_gcc_refstr,            \
-                                           gcc_vs_gcc_devaod,            \
-                                           gcc_vs_gcc_devstr,            \
-                                           dst=gcc_vs_gcc_plotsdir,      \
+        benchmark.make_benchmark_aod_plots(gcc_vs_gcc_refaod,
+                                           gcc_vs_gcc_refstr,
+                                           gcc_vs_gcc_devaod,
+                                           gcc_vs_gcc_devstr,
+                                           dst=gcc_vs_gcc_plotsdir,
                                            overwrite=True)
 
 # =====================================================================
@@ -212,52 +237,52 @@ if gchp_vs_gcc:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
-        benchmark.make_benchmark_conc_plots(gchp_vs_gcc_refspc,          \
-                                            gchp_vs_gcc_refstr,          \
-                                            gchp_vs_gcc_devspc,          \
-                                            gchp_vs_gcc_devstr,          \
-                                            dst=gchp_vs_gcc_plotsdir,    \
+        benchmark.make_benchmark_conc_plots(gchp_vs_gcc_refspc,
+                                            gchp_vs_gcc_refstr,
+                                            gchp_vs_gcc_devspc,
+                                            gchp_vs_gcc_devstr,
+                                            dst=gchp_vs_gcc_plotsdir,
                                             overwrite=True)
 
     if plot_emis:
         # Emissions plots
-        benchmark.make_benchmark_emis_plots(gchp_vs_gcc_refhco,          \
-                                            gchp_vs_gcc_refstr,          \
-                                            gchp_vs_gcc_devhco,          \
-                                            gchp_vs_gcc_devstr,          \
-                                            dst=gchp_vs_gcc_plotsdir,    \
-                                            plot_by_benchmark_cat=True,  \
-                                            plot_by_hco_cat=True,        \
-                                            overwrite=True,              \
+        benchmark.make_benchmark_emis_plots(gchp_vs_gcc_refhco,
+                                            gchp_vs_gcc_refstr,
+                                            gchp_vs_gcc_devhco,
+                                            gchp_vs_gcc_devstr,
+                                            dst=gchp_vs_gcc_plotsdir,
+                                            plot_by_benchmark_cat=True,
+                                            plot_by_hco_cat=True,
+                                            overwrite=True,
                                             flip_dev=True)
 
     if emis_table:
         # Tables of emissions and inventory totals
         gchp_vs_gcc_reflist = [gchp_vs_gcc_refhco]
         gchp_vs_gcc_devlist = [gchp_vs_gcc_devhco, gchp_vs_gcc_devmet]
-        benchmark.make_benchmark_emis_tables(gchp_vs_gcc_reflist,        \
-                                             gchp_vs_gcc_refstr,         \
-                                             gchp_vs_gcc_devlist,        \
-                                             gchp_vs_gcc_devstr,         \
-                                             dst=gchp_vs_gcc_plotsdir,   \
+        benchmark.make_benchmark_emis_tables(gchp_vs_gcc_reflist,
+                                             gchp_vs_gcc_refstr,
+                                             gchp_vs_gcc_devlist,
+                                             gchp_vs_gcc_devstr,
+                                             dst=gchp_vs_gcc_plotsdir,
                                              overwrite=True)
 
     if plot_jvalues:
         # Local noon J-values plots
-        benchmark.make_benchmark_jvalue_plots(gchp_vs_gcc_refjv,         \
-                                              gchp_vs_gcc_refstr,        \
-                                              gchp_vs_gcc_devjv,         \
-                                              gchp_vs_gcc_devstr,        \
-                                              dst=gchp_vs_gcc_plotsdir,  \
-                                              local_noon_jvalues=True,   \
+        benchmark.make_benchmark_jvalue_plots(gchp_vs_gcc_refjv,
+                                              gchp_vs_gcc_refstr,
+                                              gchp_vs_gcc_devjv,
+                                              gchp_vs_gcc_devstr,
+                                              dst=gchp_vs_gcc_plotsdir,
+                                              local_noon_jvalues=True,
                                               overwrite=True)
     if plot_aod:
         # Column AOD plots
-        benchmark.make_benchmark_aod_plots(gchp_vs_gcc_refaod,           \
-                                           gchp_vs_gcc_refstr,           \
-                                           gchp_vs_gcc_devaod,           \
-                                           gchp_vs_gcc_devstr,           \
-                                           dst=gchp_vs_gcc_plotsdir,     \
+        benchmark.make_benchmark_aod_plots(gchp_vs_gcc_refaod,
+                                           gchp_vs_gcc_refstr,
+                                           gchp_vs_gcc_devaod,
+                                           gchp_vs_gcc_devstr,
+                                           dst=gchp_vs_gcc_plotsdir,
                                            overwrite=True)
 
 # =====================================================================
@@ -268,54 +293,54 @@ if gchp_vs_gchp:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
-        benchmark.make_benchmark_conc_plots(gchp_vs_gchp_refspc,         \
-                                            gchp_vs_gchp_refstr,         \
-                                            gchp_vs_gchp_devspc,         \
-                                            gchp_vs_gchp_devstr,         \
-                                            dst=gchp_vs_gchp_plotsdir,   \
+        benchmark.make_benchmark_conc_plots(gchp_vs_gchp_refspc,
+                                            gchp_vs_gchp_refstr,
+                                            gchp_vs_gchp_devspc,
+                                            gchp_vs_gchp_devstr,
+                                            dst=gchp_vs_gchp_plotsdir,
                                             overwrite=True)
 
     if plot_emis:
         # Emissions plots
-        benchmark.make_benchmark_emis_plots(gchp_vs_gchp_refhco,         \
-                                            gchp_vs_gchp_refstr,         \
-                                            gchp_vs_gchp_devhco,         \
-                                            gchp_vs_gchp_devstr,         \
-                                            dst=gchp_vs_gchp_plotsdir,   \
-                                            plot_by_benchmark_cat=True,  \
-                                            plot_by_hco_cat=True,        \
-                                            overwrite=True,              \
-                                            flip_ref=True,               \
+        benchmark.make_benchmark_emis_plots(gchp_vs_gchp_refhco,
+                                            gchp_vs_gchp_refstr,
+                                            gchp_vs_gchp_devhco,
+                                            gchp_vs_gchp_devstr,
+                                            dst=gchp_vs_gchp_plotsdir,
+                                            plot_by_benchmark_cat=True,
+                                            plot_by_hco_cat=True,
+                                            overwrite=True,
+                                            flip_ref=True,
                                             flip_dev=True)
 
     if emis_table:
         # Tables of emissions and inventory totals
         gchp_vs_gchp_reflist = [gchp_vs_gchp_refhco, gchp_vs_gchp_refmet]
         gchp_vs_gchp_devlist = [gchp_vs_gchp_devhco, gchp_vs_gchp_devmet]
-        benchmark.make_benchmark_emis_tables(gchp_vs_gchp_reflist,       \
-                                             gchp_vs_gchp_refstr,        \
-                                             gchp_vs_gchp_devlist,       \
-                                             gchp_vs_gchp_devstr,        \
-                                             dst=gchp_vs_gchp_plotsdir,  \
+        benchmark.make_benchmark_emis_tables(gchp_vs_gchp_reflist,
+                                             gchp_vs_gchp_refstr,
+                                             gchp_vs_gchp_devlist,
+                                             gchp_vs_gchp_devstr,
+                                             dst=gchp_vs_gchp_plotsdir,
                                              overwrite=True)
 
     if plot_jvalues:
         # Local noon J-values plots
-        benchmark.make_benchmark_jvalue_plots(gchp_vs_gchp_refjv,        \
-                                              gchp_vs_gchp_refstr,       \
-                                              gchp_vs_gchp_devjv,        \
-                                              gchp_vs_gchp_devstr,       \
-                                              dst=gchp_vs_gchp_plotsdir, \
-                                              local_noon_jvalues=True,   \
+        benchmark.make_benchmark_jvalue_plots(gchp_vs_gchp_refjv,
+                                              gchp_vs_gchp_refstr,
+                                              gchp_vs_gchp_devjv,
+                                              gchp_vs_gchp_devstr,
+                                              dst=gchp_vs_gchp_plotsdir,
+                                              local_noon_jvalues=True,
                                               overwrite=True)
 
     if plot_aod:
         # Column AOD plots
-        benchmark.make_benchmark_aod_plots(gchp_vs_gchp_refaod,          \
-                                           gchp_vs_gchp_refstr,          \
-                                           gchp_vs_gchp_devaod,          \
-                                           gchp_vs_gchp_devstr,          \
-                                           dst=gchp_vs_gchp_plotsdir,    \
+        benchmark.make_benchmark_aod_plots(gchp_vs_gchp_refaod,
+                                           gchp_vs_gchp_refstr,
+                                           gchp_vs_gchp_devaod,
+                                           gchp_vs_gchp_devstr,
+                                           dst=gchp_vs_gchp_plotsdir,
                                            overwrite=True)
 
 # =====================================================================
@@ -348,9 +373,9 @@ if gchp_vs_gcc_diff_of_diffs:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
-        benchmark.make_benchmark_conc_plots(diff_of_diffs_refspc,       \
-                                            diff_of_diffs_refstr,       \
-                                            diff_of_diffs_devspc,       \
-                                            diff_of_diffs_devstr,       \
-                                            dst=diff_of_diffs_plotsdir, \
+        benchmark.make_benchmark_conc_plots(diff_of_diffs_refspc,
+                                            diff_of_diffs_refstr,
+                                            diff_of_diffs_devspc,
+                                            diff_of_diffs_devstr,
+                                            dst=diff_of_diffs_plotsdir,
                                             overwrite=True)
