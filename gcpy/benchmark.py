@@ -2305,6 +2305,9 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
              Set this flag to True to print extra informational output.
              Default value: False
     '''
+    # =================================================================
+    # Initialization and also read data
+    # =================================================================
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in tht directory, if any.'.format(dst))
         return
@@ -2314,19 +2317,42 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     if not os.path.isdir(aoddir):
         os.mkdir(aoddir)
 
-    # Ref dataset
+    # Read the Ref dataset
     try:
         refds = xr.open_dataset(ref)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
 
-    # Dev dataset
+    # Read the Dev dataset
     try:
         devds = xr.open_dataset(dev)
     except FileNotFoundError:
         print('Could not find Dev file: {}'.format(dev))
         raise
+
+    # NOTE: GCHP diagnostic variable exports are defined before the
+    # input.geos file is read.  This means "WL1" will not have been
+    # replaced with "550nm" in the variable names.  Do this string
+    # replace operation here, so that we can compare GCC and GCHP
+    # data directly. (bmy, 4/29/19)
+    with xr.set_options(keep_attrs=True):
+
+        # Rename variables in the Ref dataset
+        old2new = {}
+        for v in refds.data_vars.keys():
+            if 'WL1' in v:
+                newname = v.replace('WL1', '550nm')
+                old2new[v] = newname
+        refds = refds.rename(old2new)
+
+        # Rename variables in the Dev dataset
+        old2new = {}
+        for v in devds.data_vars.keys():
+            if 'WL1' in v:
+                newname = v.replace('WL1', '550nm')
+                old2new[v] = newname
+        devds = devds.rename(old2new)
 
     # Find common AOD variables in both datasets
     # (or use the varlist passed via keyword argument)
@@ -2392,7 +2418,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # =================================================================
     # Compute column AODs
     # Create a new DataArray for each column AOD variable,
-    #  using the new display name, and preserving attributes.
+    # using the new display name, and preserving attributes.
     # Merge the new DataArrays back into the DataSets.
     # =================================================================
     for v in varlist:
@@ -2404,19 +2430,18 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
         else:
             raise ValueError('Could not find a display name for'.format(v))
 
-        # Ref
-        attrs = refds[v].attrs
-        array = refds[v].sum(dim='lev')
-        array.name = newname
-        array.attrs = attrs
-        refds = xr.merge([refds, array])
+        # Don't clobber existing DataArray and Dataset attributes
+        with xr.set_options(keep_attrs=True):
 
-        # Dev
-        attrs = devds[v].attrs
-        array = devds[v].sum(dim='lev')
-        array.attrs = attrs
-        array.name = newname
-        devds = xr.merge([devds, array])
+            # Add column AOD of newname to Ref
+            array = refds[v].sum(dim='lev')
+            array.name = newname
+            refds = xr.merge([refds, array])
+
+            # Add column AOD of newname to Dev
+            array = devds[v].sum(dim='lev')
+            array.name = newname
+            devds = xr.merge([devds, array])
 
     # =================================================================
     # Create the plots
