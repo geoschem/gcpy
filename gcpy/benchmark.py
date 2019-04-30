@@ -1809,20 +1809,30 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     # (or use the varlist passed via keyword argument)
     quiet = not verbose
     vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
-    varlist = vars2D+vars3D
+
+    # Skip 2D diagnostics that have incompatible dimensions between versions
+    for v in vars2D:
+        if refds[v].dims != devds[v].dims:
+            print('Variable {} has incompatible dimensions in Dev and Ref, skipping!'.format(v))
+            vars2D.remove(v)
+
+    # Skip 3D diagnostics that have incompatible dimensions between versions
+    for v in vars3D:
+        if refds[v].dims != devds[v].dims:
+            print('Variable {} has incompatible dimensions in Dev and Ref, skipping!'.format(v))
+            vars3D.remove(v)
+
+    # Combine 2D and 3D variables into an overall list
+    varlist = vars2D + vars3D
 
     # =================================================================
     # Compute column sums for 3D emissions
-    # NOTE: We have to manually reattach the variable attributes
+    # Make sure not to clobber the DataArray attributes
     # =================================================================
-    for v in vars3D:
-        attrs = refds[v].attrs
-        refds[v] = refds[v].sum(dim='lev')
-        refds[v].attrs = attrs
-
-        attrs = devds[v].attrs
-        devds[v] = devds[v].sum(dim='lev')
-        devds[v].attrs = attrs
+    with xr.set_options(keep_attrs=True):
+        for v in vars3D:
+            refds[v] = refds[v].sum(dim='lev')
+            devds[v] = devds[v].sum(dim='lev')
 
     # =================================================================
     # If inputs plot_by* are both false, plot all emissions in same file
