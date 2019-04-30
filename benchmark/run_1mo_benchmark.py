@@ -61,8 +61,9 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # Benchmark information (*MUST EDIT*)
 maindir  = '/path/to/main/directory'
 gcc_ref_version = 'gcc_ref_version_string'
+gcc_dev_version = 'gcc_dev_version_string'
 gchp_ref_version = 'gchp_ref_version_string'
-dev_version = 'dev_version_string' # same for both gcc an gchp
+gchp_dev_version = 'gchp_dev_version_string'
 
 # Comparisons to run (edit as needed)
 gcc_vs_gcc   = True
@@ -88,30 +89,31 @@ gchp_hourstr = '1200'
 
 # Data directories (edit as needed)
 gcc_vs_gcc_refdir   = os.path.join(maindir, gcc_ref_version)
-gcc_vs_gcc_devdir   = os.path.join(maindir, dev_version)
+gcc_vs_gcc_devdir   = os.path.join(maindir, gcc_dev_version)
 gchp_vs_gcc_refdir  = os.path.join(maindir, gcc_ref_version)
-gchp_vs_gcc_devdir  = os.path.join(maindir, dev_version, 'OutputDir')
+gchp_vs_gcc_devdir  = os.path.join(maindir, gchp_dev_version, 'OutputDir')
 gchp_vs_gchp_refdir = os.path.join(maindir, gchp_ref_version, 'OutputDir')
-gchp_vs_gchp_devdir = os.path.join(maindir, dev_version, 'OutputDir')
+gchp_vs_gchp_devdir = os.path.join(maindir, gchp_dev_version, 'OutputDir')
 
 # Plots directories (edit as needed)
-gcc_vs_gcc_plotsdir    = os.path.join(maindir, dev_version, 'output')
-gchp_vs_gchp_plotsdir  = os.path.join(maindir, dev_version,
+gcc_vs_gcc_plotsdir    = os.path.join(maindir, gcc_dev_version, 'output')
+gchp_vs_gchp_plotsdir  = os.path.join(maindir, gchp_dev_version,
                                       'output/GCHP_version_comparison')
-gchp_vs_gcc_plotsdir   = os.path.join(maindir, dev_version,
+gchp_vs_gcc_plotsdir   = os.path.join(maindir, gchp_dev_version,
                                       'output/GCHP_GCC_comparison')
-diff_of_diffs_plotsdir = os.path.join(maindir, dev_version,
+diff_of_diffs_plotsdir = os.path.join(maindir, gchp_dev_version,
                                       'output/GCHP_GCC_diff_of_diffs')
 
 # Plot title strings (edit as needed)
 gcc_vs_gcc_refstr    = '{}'.format(gcc_ref_version)
-gcc_vs_gcc_devstr    = '{}'.format(dev_version)
+gcc_vs_gcc_devstr    = '{}'.format(gcc_dev_version)
 gchp_vs_gcc_refstr   = 'GCC {}'.format(gcc_ref_version)
-gchp_vs_gcc_devstr   = 'GCHP {}'.format(dev_version)
+gchp_vs_gcc_devstr   = 'GCHP {}'.format(gchp_dev_version)
 gchp_vs_gchp_refstr  = 'GCHP {}'.format(gchp_ref_version)
-gchp_vs_gchp_devstr  = 'GCHP {}'.format(dev_version)
-diff_of_diffs_refstr = 'GCC {} vs {}'.format(dev_version, gcc_ref_version)
-diff_of_diffs_devstr = 'GCHP {} vs {}'.format(dev_version, gchp_ref_version)
+gchp_vs_gchp_devstr  = 'GCHP {}'.format(gchp_dev_version)
+diff_of_diffs_refstr = 'GCC {} vs {}'.format(gcc_dev_version, gcc_ref_version)
+diff_of_diffs_devstr = 'GCHP {} vs {}'.format(gchp_dev_version,
+                                              gchp_ref_version)
 
 # =====================================================================
 # The rest of these settings should not need to be changed
@@ -192,6 +194,7 @@ if gcc_vs_gcc:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
+        print('%%% Creating GCC vs. GCC concentration plots %%%')
         benchmark.make_benchmark_conc_plots(gcc_vs_gcc_refspc,
                                             gcc_vs_gcc_refstr,
                                             gcc_vs_gcc_devspc,
@@ -201,6 +204,7 @@ if gcc_vs_gcc:
 
     if plot_emis:
         # Emissions plots
+        print('%%% Creating GCC vs. GCC emissions plots %%%')
         benchmark.make_benchmark_emis_plots(gcc_vs_gcc_refhco,
                                             gcc_vs_gcc_refstr,
                                             gcc_vs_gcc_devhco,
@@ -212,6 +216,7 @@ if gcc_vs_gcc:
 
     if emis_table:
         # Table of emission and inventory totals
+        print('%%% Creating GCC vs. GCC emissions and inventory tables %%%')
         gcc_vs_gcc_reflist = [gcc_vs_gcc_refhco]
         gcc_vs_gcc_devlist = [gcc_vs_gcc_devhco]
         benchmark.make_benchmark_emis_tables(gcc_vs_gcc_reflist,
@@ -223,6 +228,7 @@ if gcc_vs_gcc:
 
     if plot_jvalues:
         # Local noon J-values plots
+        print('%%% Creating GCC vs. GCC J-value plots %%%')
         benchmark.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv,
                                               gcc_vs_gcc_refstr,
                                               gcc_vs_gcc_devjv,
@@ -232,6 +238,7 @@ if gcc_vs_gcc:
                                               overwrite=True)
     if plot_aod:
         # Column AOD plots
+        print('%%% Creating GCC vs. GCC column AOD plots %%%')
         benchmark.make_benchmark_aod_plots(gcc_vs_gcc_refaod,
                                            gcc_vs_gcc_refstr,
                                            gcc_vs_gcc_devaod,
@@ -247,6 +254,7 @@ if gchp_vs_gcc:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
+        print('%%% Creating GCHP vs. GCC J-value plots %%%')
         benchmark.make_benchmark_conc_plots(gchp_vs_gcc_refspc,
                                             gchp_vs_gcc_refstr,
                                             gchp_vs_gcc_devspc,
@@ -256,6 +264,7 @@ if gchp_vs_gcc:
 
     if plot_emis:
         # Emissions plots
+        print('%%% Creating GCHP vs. GCC emissions plots %%%')
         benchmark.make_benchmark_emis_plots(gchp_vs_gcc_refhco,
                                             gchp_vs_gcc_refstr,
                                             gchp_vs_gcc_devhco,
@@ -268,6 +277,7 @@ if gchp_vs_gcc:
 
     if emis_table:
         # Tables of emissions and inventory totals
+        print('%%% Creating GCHP vs. GCC emissions and inventory tables %%%')
         gchp_vs_gcc_reflist = [gchp_vs_gcc_refhco]
         gchp_vs_gcc_devlist = [gchp_vs_gcc_devhco, gchp_vs_gcc_devmet]
         benchmark.make_benchmark_emis_tables(gchp_vs_gcc_reflist,
@@ -279,6 +289,7 @@ if gchp_vs_gcc:
 
     if plot_jvalues:
         # Local noon J-values plots
+        print('%%% Creating GCHP vs. GCC J-value plots %%%')
         benchmark.make_benchmark_jvalue_plots(gchp_vs_gcc_refjv,
                                               gchp_vs_gcc_refstr,
                                               gchp_vs_gcc_devjv,
@@ -288,6 +299,7 @@ if gchp_vs_gcc:
                                               overwrite=True)
     if plot_aod:
         # Column AOD plots
+        print('%%% Creating GCHP vs. GCC column AOD plots %%%')
         benchmark.make_benchmark_aod_plots(gchp_vs_gcc_refaod,
                                            gchp_vs_gcc_refstr,
                                            gchp_vs_gcc_devaod,
@@ -300,9 +312,11 @@ if gchp_vs_gcc:
 # =====================================================================
 
 if gchp_vs_gchp:
+
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
+        print('%%% Creating GCHP vs. GCHP concentration plots %%%')
         benchmark.make_benchmark_conc_plots(gchp_vs_gchp_refspc,
                                             gchp_vs_gchp_refstr,
                                             gchp_vs_gchp_devspc,
@@ -312,6 +326,7 @@ if gchp_vs_gchp:
 
     if plot_emis:
         # Emissions plots
+        print('%%% Creating GCHP vs. GCHP emissions plots %%%')
         benchmark.make_benchmark_emis_plots(gchp_vs_gchp_refhco,
                                             gchp_vs_gchp_refstr,
                                             gchp_vs_gchp_devhco,
@@ -325,6 +340,7 @@ if gchp_vs_gchp:
 
     if emis_table:
         # Tables of emissions and inventory totals
+        print('%%% Creating GCHP vs. GCHP emissions and inventory tables %%%')
         gchp_vs_gchp_reflist = [gchp_vs_gchp_refhco, gchp_vs_gchp_refmet]
         gchp_vs_gchp_devlist = [gchp_vs_gchp_devhco, gchp_vs_gchp_devmet]
         benchmark.make_benchmark_emis_tables(gchp_vs_gchp_reflist,
@@ -336,6 +352,7 @@ if gchp_vs_gchp:
 
     if plot_jvalues:
         # Local noon J-values plots
+        print('%%% Creating GCHP vs. GCHP J-value plots %%%')
         benchmark.make_benchmark_jvalue_plots(gchp_vs_gchp_refjv,
                                               gchp_vs_gchp_refstr,
                                               gchp_vs_gchp_devjv,
@@ -346,6 +363,7 @@ if gchp_vs_gchp:
 
     if plot_aod:
         # Column AOD plots
+        print('%%% Creating GCHP vs. GCHP column AOD plots %%%')
         benchmark.make_benchmark_aod_plots(gchp_vs_gchp_refaod,
                                            gchp_vs_gchp_refstr,
                                            gchp_vs_gchp_devaod,
@@ -354,30 +372,39 @@ if gchp_vs_gchp:
                                            overwrite=True)
 
 # =====================================================================
-# Create GCC vs GCC difference of differences benchmark plots
+# Create GCHP vs GCC difference of differences benchmark plots
 # =====================================================================
 
 if gchp_vs_gcc_diff_of_diffs:
 
     # NOTE: This can be expanded to differences beyond species
     # concentrations by following how this is done for conc plots.
+    print('%%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%')
 
     # Target output files
     diff_of_diffs_refspc = './gcc_diffs_spc.nc4'
     diff_of_diffs_devspc = './gchp_diffs_spc.nc4'
-        
+
     # Create the spc ref file that contains GCC differences
+    # NOTE: For some reason, the gcc_diffs Dataset is created
+    # without variable attributes; we have to reattach them.
     gcc_ref  = xr.open_dataset(gcc_vs_gcc_refspc)
     gcc_dev  = xr.open_dataset(gcc_vs_gcc_devspc)
     with xr.set_options(keep_attrs=True):
         gcc_diffs = gcc_dev - gcc_ref
+        for v in gcc_dev.data_vars.keys():
+            gcc_diffs[v].attrs = gcc_dev[v].attrs
     gcc_diffs.to_netcdf(diff_of_diffs_refspc)
-    
+
     # Create a spc dev file that contains GCHP differences
+    # NOTE: For some reason, the gchp_diffs Dataset is created
+    # without variable attributes; we have to reattach them.
     gchp_ref = xr.open_dataset(gchp_vs_gchp_refspc)
     gchp_dev = xr.open_dataset(gchp_vs_gchp_devspc)
     with xr.set_options(keep_attrs=True):
         gchp_diffs = gchp_dev - gchp_ref
+        for v in gchp_dev.data_vars.keys():
+            gchp_diffs[v].attrs = gchp_dev[v].attrs
     gchp_diffs.to_netcdf(diff_of_diffs_devspc)
 
     if plot_conc:
@@ -388,4 +415,5 @@ if gchp_vs_gcc_diff_of_diffs:
                                             diff_of_diffs_devspc,
                                             diff_of_diffs_devstr,
                                             dst=diff_of_diffs_plotsdir,
-                                            overwrite=True)
+                                            overwrite=True,
+                                            use_cmap_RdBu=True)
