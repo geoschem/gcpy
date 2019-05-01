@@ -1806,7 +1806,6 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
         raise
 
     # Find common variables
-    # (or use the varlist passed via keyword argument)
     quiet = not verbose
     vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
 
@@ -1850,8 +1849,9 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     emis_cats = sorted(set([v.split('_')[1] for v in emis_vars]))
     emis_spc = sorted(set([v.split('_')[0][4:] for v in emis_vars]))
 
-    # Handle Bioburn and BioBurn as same categories (temporary until 12.3.1)
-    emis_cats.remove('BioBurn')
+# This is fixed in 12.3.2, comment out for now (bmy, 5/1/19)
+#    # Handle Bioburn and BioBurn as same categories (temporary until 12.3.1)
+#    emis_cats.remove('BioBurn')
     
     # Sort alphabetically (assume English characters)
     emis_vars.sort(key=str.lower)
