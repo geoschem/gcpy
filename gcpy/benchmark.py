@@ -30,15 +30,91 @@ aod_spc = 'aod_species.json'
 spc_categories = 'benchmark_categories.json'
 emission_spc = 'emission_species.json' 
 
-# Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
-                         ilev=0, itime=0,  weightsdir=None,
-                         pdfname='', cmpres=None, match_cbar=True,
-                         normalize_by_area=False,
-                         refarea=[], devarea=[], enforce_units=True,
-                         flip_ref=False, flip_dev=False, use_cmap_RdBu=False ):
+                         ilev=0, itime=0,  weightsdir=None, pdfname='',
+                         cmpres=None, match_cbar=True, normalize_by_area=False,
+                         enforce_units=True, flip_ref=False, flip_dev=False,
+                         use_cmap_RdBu=False ):
+    '''
+    Create single-level 3x2 comparison map plots for variables common in two xarray
+    datasets. Optionally save to PDF. 
 
-    # TODO: add docstring
+    Args:
+        refdata : xarray dataset
+            Dataset used as reference in comparison
+
+        refstr  : str
+            String description for reference data to be used in plots
+     
+        devdata : xarray dataset
+            Dataset used as development in comparison
+
+        devstr  : str
+            String description for development data to be used in plots
+ 
+    Keyword Args (optional):
+        varlist : list of strings
+            List of xarray dataset variable names to make plots for
+            Default value: None (will compare all common variables)
+
+        ilev : integer
+            Dataset level dimension index using 0-based system
+            Default value: 0   
+
+        itime : integer
+            Dataset time dimension index using 0-based system
+            Default value: 0
+
+        weightsdir : str
+            Directory path for storing regridding weights
+            Default value: None (will create/store weights in current directory)
+
+        pdfname : str
+            File path to save plots as PDF
+            Default value: Empty string (will not create PDF)
+
+        cmpres : str
+            String description of grid resolution at which to compare datasets
+            Default value: None (will compare at highest resolution of ref and dev)
+
+        match_cbar : boolean
+            Logical indicating whether to use same colorbar bounds across plots
+            Default value: True
+
+        normalize_by_area : boolean
+            Logical indicating whether to normalize raw data by grid area
+            Default value: False
+
+        enforce_units : boolean
+            Logical to force an error if reference and development variables units differ
+            Default value: True
+
+        flip_ref : boolean
+            Logical to flip the vertical dimension of reference dataset 3D variables
+            Default value: False
+
+        flip_dev : boolean
+            Logical to flip the vertical dimension of development dataset 3D variables
+            Default value: False
+
+        use_cmap_RdBu : boolean
+            Logical to used a blue-white-red colormap for plotting raw reference and
+            development datasets.
+            Default value: False
+
+    Returns:
+        Nothing
+
+    Example:
+        >>> import matplotlib.pyplot as plt
+        >>> import xarray as xr
+        >>> from gcpy import benchmark
+        >>> refds = xr.open_dataset('path/to/ref.nc4')
+        >>> devds = xr.open_dataset('path/to/dev.nc4')
+        >>> varlist = ['SpeciesConc_O3', 'SpeciesConc_NO']
+        >>> benchmark.compare_single_level( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
+        >>> plt.show()
+    '''
 
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
@@ -275,21 +351,20 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # if normalizing by area, adjust units to be per m2, and adjust title string
         units = units_ref
         subtitle_extra = ''
-        varndim = varndim_ref # gchp only?
+        varndim = varndim_ref
 
-        # if regridding then normalization by area may be necessary. Either pass normalize_by_area=True to normalize all,
-        # or include units that should always be normalized by area below. If comparing HEMCO diagnostics then the
-        # areas for ref and dev must be passed; otherwise they are included in the HISTORY diagnostics file and do
-        # not need to be passed.
+        # if regridding then normalization by area may be necessary depending on units. Either pass
+        # normalize_by_area=True to normalize all, or include units that should always be normalized
+        # by area below. GEOS-Chem Classic output files include area and so do not need to be passed.
         exclude_list = ['WetLossConvFrac','Prod_','Loss_']
         if regridany and ( ( units == 'kg' or units == 'kgC' ) or normalize_by_area ):
             if not any(s in varname for s in exclude_list):
-                if len(refarea) == 0 and len(devarea) == 0:
+                if 'AREAM2' in refdata.data_vars.keys() and 'AREAM2' in devdata.data_vars.keys():
                     ds_ref.values = ds_ref.values / refdata['AREAM2'].values
                     ds_dev.values = ds_dev.values / devdata['AREAM2'].values
                 else:
-                    ds_ref.values = ds_ref.values / refarea
-                    ds_dev.values = ds_dev.values / devarea               
+                    print('ERROR: Variables AREAM2 needed for area normalization missing from dataset')
+                    return
                 units = '{}/m2'.format(units)
                 units_ref = units
                 units_dev = units
@@ -625,14 +700,93 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
     if savepdf: pdf.close()
 
-# Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                        itime=0, weightsdir=None, pdfname='', cmpres=None,
                        match_cbar=True, pres_range=[0,2000],
                        normalize_by_area=False, enforce_units=True,
                        flip_ref=False, flip_dev=False, use_cmap_RdBu=False ):
 
-    # TODO: add docstring
+    '''
+    Create single-level 3x2 comparison map plots for variables common in two xarray
+    datasets. Optionally save to PDF. 
+
+    Args:
+        refdata : xarray dataset
+            Dataset used as reference in comparison
+
+        refstr  : str
+            String description for reference data to be used in plots
+     
+        devdata : xarray dataset
+            Dataset used as development in comparison
+
+        devstr  : str
+            String description for development data to be used in plots
+ 
+    Keyword Args (optional):
+        varlist : list of strings
+            List of xarray dataset variable names to make plots for
+            Default value: None (will compare all common 3D variables)
+
+        itime : integer
+            Dataset time dimension index using 0-based system
+            Default value: 0
+
+        weightsdir : str
+            Directory path for storing regridding weights
+            Default value: None (will create/store weights in current directory)
+
+        pdfname : str
+            File path to save plots as PDF
+            Default value: Empty string (will not create PDF)
+
+        cmpres : str
+            String description of grid resolution at which to compare datasets
+            Default value: None (will compare at highest resolution of ref and dev)
+
+        match_cbar : boolean
+            Logical indicating whether to use same colorbar bounds across plots
+            Default value: True
+
+        pres_range : list of two integers
+            Pressure range of levels to plot [hPa]. Vertical axis will span outer
+            pressure edges of levels that contain pres_range endpoints.
+            Default value: [0,2000]
+
+        normalize_by_area : boolean
+            Logical indicating whether to normalize raw data by grid area
+            Default value: False
+
+        enforce_units : boolean
+            Logical to force an error if reference and development variables units differ
+            Default value: True
+
+        flip_ref : boolean
+            Logical to flip the vertical dimension of reference dataset 3D variables
+            Default value: False
+
+        flip_dev : boolean
+            Logical to flip the vertical dimension of development dataset 3D variables
+            Default value: False
+
+        use_cmap_RdBu : boolean
+            Logical to used a blue-white-red colormap for plotting raw reference and
+            development datasets.
+            Default value: False
+
+    Returns:
+        Nothing
+
+    Example:
+        >>> import matplotlib.pyplot as plt
+        >>> import xarray as xr
+        >>> from gcpy import benchmark
+        >>> refds = xr.open_dataset('path/to/ref.nc4')
+        >>> devds = xr.open_dataset('path/to/dev.nc4')
+        >>> varlist = ['SpeciesConc_O3', 'SpeciesConc_NO']
+        >>> benchmark.compare_zonal_mean( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
+        >>> plt.show()
+    '''
     
     if not isinstance(refdata, xr.Dataset):
         raise ValueError('The refdata argument must be an xarray Dataset!')
@@ -2513,6 +2667,33 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
       
 def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove_prefix=''):
 
+    '''
+    Add nested bookmarks to PDF.
+
+    Args:
+        pdfname : str
+             Path of PDF to add bookmarks to
+
+        category : str
+             Top-level key name in catdict that maps to contents of PDF
+
+        catdict : dictionary
+             Dictionary containing key-value pairs where one top-level key matches
+             category and has value fully describing pages in PDF. The value is a 
+             dictionary where keys are level 1 bookmark names, and values are
+             lists of level 2 bookmark names, with one level 2 name per PDF page. 
+             Level 2 names must appear in catdict in the same order as in the PDF.
+
+        warninglist : list of strings
+             Level 2 bookmark names to skip since not present in PDF.
+
+    Keyword Args (optional):
+        remove_prefix : str
+             Prefix to be remove from warninglist names before comparing with 
+             level 2 bookmark names in catdict.
+             Default value: empty string (warninglist names match names in catdict) 
+    '''
+    
     # Setup
     pdfobj = open(pdfname,"rb")
     input = PdfFileReader(pdfobj)
@@ -2567,7 +2748,7 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
     os.rename(pdfname_tmp, pdfname)
 
 # =============================================================================
-# The rest of this file contains legacy code that may be deleted in the futur
+# The rest of this file contains legacy code that may be deleted in the future
 # =============================================================================
 
 def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
