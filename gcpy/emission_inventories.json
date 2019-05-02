@@ -28,7 +28,7 @@
   "OFFLINESOILNOX": "Tg",
   "OFFLINEDUST"   : "Tg",
   "OFFLINESEASALT": "Tg",
-  "OFFLINEBIOVOC" : "Tg",
+  "OFFLINEBIOVOC" : "Tg C",
   "GFED"          : "Tg",
   "IODINE"        : "Tg"
 }
