@@ -2462,6 +2462,181 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     add_bookmarks_to_pdf(pdfname, newvarlist,
                          remove_prefix='Column_AOD_', verbose=verbose)
 
+    
+def create_budget_table(devdata, devstr, region, species, varnames,
+                        outfilename, interval=2678400.0, template="Budget_{}"):
+    '''
+    Creates a table of budgets by species and component for a data set.
+
+    Args:
+        devdata : xarray Dataset
+            The second data set to be compared (aka "Development").
+
+        devstr: str
+            A string that can be used to identify the data set specified
+            by devfile (e.g. a model version number or other identifier).
+
+        region : str
+            Name of region for which budget will be computed.
+
+        species : List of strings
+            List of species  to include in budget tables.
+
+        varnames : List of strings
+            List of variable names in the budget diagnostics.
+
+        outfilename : str
+            Name of the text file which will contain the table of
+            emissions totals.
+
+    Keyword Args (optional):
+        interval : float
+            The length of the data interval in seconds. By default, interval
+            is set to the number of seconds in a 31-day month (86400 * 31),
+            which corresponds to typical benchmark simulation output.
+
+        template : str
+            Template for the diagnostic names that are contained in the
+            data set. If not specified, template will be set to "Budget_{}",
+            where {} will be replaced by the species name.
+
+    Returns:
+        None.  Writes to a text file specified by the "outfilename" argument.
+
+    Remarks:
+        This method is mainly intended for model benchmarking purposes,
+        rather than as a general-purpose tool.
+    '''
+
+    # Error check arguments
+    if not isinstance(devdata, xr.Dataset):
+        raise ValueError('The devdata argument must be an xarray Dataset!')
+
+    # Open file for output
+    f = open(outfilename, "w")
+
+    for spc_name in species:
+
+        # Title string
+        title = '### {} budget totals for species {}'.format(devstr,spc_name)
+    
+        # Write header to file
+        f.write('#'*79)
+        f.write('\n{}{}\n'.format(title.ljust(76), '###'))
+        f.write('#'*79)
+        f.write('\n')
+
+        # Get variable names for this species
+        spc_vars = [ v for v in varnames if v.endswith("_"+spc_name) ]
+
+        for v in spc_vars:
+
+            # Component name
+            comp_name = v.replace('Budget', '')
+            comp_name = comp_name.replace('_'+spc_name, '')
+            comp_name = comp_name.replace(region, '')
+        
+            # Convert from kg/s to Tg
+            devarray = devdata[v] * interval * 1e-9
+            units    = 'Tg'
+        
+            # Compute sum
+            total_dev = np.sum(devarray.values)
+
+            # Write output
+            f.write('{} : {:13.6e} {}\n'.format(comp_name.ljust(12), total_dev,
+                                                units))
+
+        # Add new lines before going to the next species
+        f.write("\n\n")
+
+    # Close file
+    f.close()
+
+    
+def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
+                                 overwrite=False, interval=None):
+    '''
+    Creates a text file containing budgets by species for benchmarking
+    purposes.
+
+    Args:
+        devlist : list of str
+             List with the path names of the emissions and/or met field
+             files that will constitute the "Dev" (aka "Development") 
+             data set.  The "Dev" data set will be compared against the
+             "Ref" data set.
+
+        devstr : str
+             A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where the file
+             containing emissions totals will be written.
+             Default value: ./1mo_benchmark
+
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value : False
+
+        interval : float
+             Specifies the averaging period in seconds, which is used
+             to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
+             Default value : None
+    '''
+
+    # ===============================================================
+    # Define destination directory
+    # ===============================================================
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+    budgetdir = os.path.join(dst,'Budget')
+    if not os.path.isdir(budgetdir):
+        os.mkdir(budgetdir)
+
+    # ===============================================================
+    # Read data from netCDF into Dataset objects
+    # ===============================================================
+
+    # Dev
+    try:
+        devds = xr.open_mfdataset(devlist)
+    except FileNotFoundError:
+        print('Could not find one of the Dev files: {}'.format(devlist))
+        raise
+
+    # ===============================================================
+    # Create budget table
+    # ===============================================================
+
+    # If the averaging interval (in seconds) is not specified,
+    # then assume July 2016 = 86400 seconds * 31 days
+    if interval == None:
+        interval = 86400.0 * 31.0
+    
+    # Get budget variable and regions
+    budget_vars    = [ k for k in devds.data_vars.keys() if k[:6] == 'Budget' ]
+    budget_regions = sorted(set([v.split('_')[0][-4:] for v in budget_vars]))
+
+    for region in budget_regions:
+    
+        # Destination file
+        file_budget = os.path.join( dst, budgetdir,
+                                        'Budget_'+region+'.txt')
+
+        # Get variable names and species for this region
+        region_vars = [ k for k in budget_vars if region in k ]
+        region_spc  = sorted(set([v.split('_')[1] for v in region_vars]))
+        
+        # Write to file
+        create_budget_table(devds, devstr, region, region_spc, region_vars,
+                            file_budget, interval, template="Budget_{}")
+                
 
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
     '''
