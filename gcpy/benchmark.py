@@ -483,14 +483,14 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 if not match_cbar:
                     absmax_ref = max([np.abs(vmin_ref), np.abs(vmax_ref)])
-                    [vmin0, vmax0] = [-absmax_ref, absmax_dev]
+                    [vmin0, vmax0] = [-absmax_ref, absmax_ref]
                 else:
                     absmax = max([np.abs(vmin_ref), np.abs(vmax_ref),
                                   np.abs(vmin_dev), np.abs(vmax_dev)])
                     [vmin0, vmax0] = [-absmax, absmax]
         else:
             if not match_cbar:
-                [vmin0, vmax0] = [vmin_dev, vmax_dev]
+                [vmin0, vmax0] = [vmin_ref, vmax_ref]
             else:
                 [vmin0, vmax0] = [vmin_abs, vmax_abs]
 
