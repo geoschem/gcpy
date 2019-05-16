@@ -440,7 +440,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Take min/max across all
         vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
-        if match_cbar: [vmin, vmax] = [vmin_abs, vmax_abs]
+        if match_cbar:
+            [vmin, vmax] = [vmin_abs, vmax_abs]
 
         ################################################################
         # Create 3x2 figure
@@ -506,7 +507,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                                        cmap=cmap1, vmin=vmin0, vmax=vmax0)
             ax0.set_title('{} (Ref){}\nc{}'.format(refstr,subtitle_extra,refres)) 
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or (vmin0 == 0 and vmax0 == 0):
+        if (vmax0-vmin0) < 0.1 or (vmax0-vmin0) > 100 or (vmin0 == 0 and vmax0 == 0):
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_ref)
@@ -547,7 +548,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                                        masked_devdata[i,:,:], cmap=cmap1, vmin=vmin1, vmax=vmax1)
             ax1.set_title('{} (Dev){}\nc{}'.format(devstr,subtitle_extra,devres)) 
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or (vmin1 == 0 and vmax1 == 0):
+        if (vmax1-vmin1) < 0.1 or (vmax1-vmin1) > 100 or (vmin1 == 0 and vmax1 == 0):
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_dev)
