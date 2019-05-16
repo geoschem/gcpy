@@ -136,11 +136,13 @@ def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
         _opener = xbpch.open_mfbpchdataset
     elif file_extension == '.nc':
         _opener = xr.open_mfdataset
+    elif file_extension == '.nc4':
+        _opener = xr.open_mfdataset
     else:
         raise ValueError("Found unknown file extension ({}); please pass a "
-                         "BPCH or netCDF file with extension 'bpch' or 'nc'."
+                         "BPCH or netCDF file with extension 'bpch' or 'nc' or 'nc4'."
                          .format(file_extension))
-
+        
     return _opener(filenames, concat_dim=concat_dim, compat=compat,
                    preprocess=preprocess, lock=lock, **kwargs)
 
