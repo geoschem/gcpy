@@ -78,6 +78,7 @@ plot_emis    = True
 emis_table   = True
 plot_jvalues = True
 plot_aod     = True
+budget_table = True
 
 # Filename date strings (edit as needed)
 gcc_datestr  = '20160701'
@@ -140,10 +141,16 @@ gcc_aodfile  = 'GEOSChem.Aerosols.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
 gchp_aodfile = 'GCHP.Aerosols.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
 
 # StateMet diagnostic filenames
-gcc_metfile  = 'GEOSChem.StateMet_avg.{}_{}z.nc4'.format(gcc_datestr,
-                                                         gcc_hourstr)
+gcc_metfile  = 'GEOSChem.StateMet.{}_{}z.nc4'.format(gcc_datestr,
+                                                     gcc_hourstr)
 gchp_metfile = 'GCHP.StateMet_avg.{}_{}z.nc4'.format(gchp_datestr,
                                                      gchp_hourstr)
+
+# Budget diagnostic filenames
+gcc_bgtfile = 'GEOSChem.Budget.{}_{}z.nc4'.format(gcc_datestr,
+                                                  gcc_hourstr)
+gchp_bgtfile = 'GCHP.Budget.{}_{}z.nc4'.format(gchp_datestr,
+                                               gchp_hourstr)
 
 # Paths to species concentration data
 gcc_vs_gcc_refspc   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_spcfile)
@@ -184,6 +191,11 @@ gchp_vs_gcc_refmet  = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_metfile)
 gchp_vs_gcc_devmet  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_metfile)
 gchp_vs_gchp_refmet = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_metfile)
 gchp_vs_gchp_devmet = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_metfile)
+
+# Paths to budget data
+gcc_vs_gcc_devbgt   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_bgtfile)
+gchp_vs_gcc_devbgt  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_bgtfile)
+gchp_vs_gchp_devbgt = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_bgtfile)
 
 # =====================================================================
 # Create GCC vs GCC benchmark plots and tables
@@ -246,6 +258,14 @@ if gcc_vs_gcc:
                                            dst=gcc_vs_gcc_plotsdir,
                                            overwrite=True)
 
+    if budget_table:
+        # Bugets tables
+        print('%%% Creating GCC vs. GCC budget tables %%%')
+        benchmark.make_benchmark_budget_tables(gcc_vs_gcc_devbgt,
+                                               gcc_vs_gcc_devstr,
+                                               dst=gcc_vs_gcc_plotsdir,
+                                               overwrite=True)
+        
 # =====================================================================
 # Create GCHP vs GCC benchmark plots and tables
 # =====================================================================

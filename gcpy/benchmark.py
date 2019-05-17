@@ -31,15 +31,94 @@ spc_categories = 'benchmark_categories.json'
 emission_spc = 'emission_species.json' 
 emission_inv = 'emission_inventories.json' 
 
-# Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
-                         ilev=0, itime=0,  weightsdir=None,
-                         pdfname='', cmpres=None, match_cbar=True,
-                         normalize_by_area=False,
-                         refarea=[], devarea=[], enforce_units=True,
-                         flip_ref=False, flip_dev=False, use_cmap_RdBu=False ):
+                         ilev=0, itime=0,  weightsdir=None, pdfname='',
+                         cmpres=None, match_cbar=True, normalize_by_area=False,
+                         enforce_units=True, flip_ref=False, flip_dev=False,
+                         use_cmap_RdBu=False ):
+    '''
+    Create single-level 3x2 comparison map plots for variables common in two xarray
+    datasets. Optionally save to PDF. 
 
-    # TODO: add docstring
+    Args:
+        refdata : xarray dataset
+            Dataset used as reference in comparison
+
+        refstr  : str
+            String description for reference data to be used in plots
+     
+        devdata : xarray dataset
+            Dataset used as development in comparison
+
+        devstr  : str
+            String description for development data to be used in plots
+ 
+    Keyword Args (optional):
+        varlist : list of strings
+            List of xarray dataset variable names to make plots for
+            Default value: None (will compare all common variables)
+
+        ilev : integer
+            Dataset level dimension index using 0-based system
+            Default value: 0   
+
+        itime : integer
+            Dataset time dimension index using 0-based system
+            Default value: 0
+
+        weightsdir : str
+            Directory path for storing regridding weights
+            Default value: None (will create/store weights in current directory)
+
+        pdfname : str
+            File path to save plots as PDF
+            Default value: Empty string (will not create PDF)
+
+        cmpres : str
+            String description of grid resolution at which to compare datasets
+            Default value: None (will compare at highest resolution of ref and dev)
+
+        match_cbar : boolean
+            Logical indicating whether to use same colorbar bounds across plots
+            Default value: True
+
+        normalize_by_area : boolean
+            Logical indicating whether to normalize raw data by grid area
+            Default value: False
+
+        enforce_units : boolean
+            Logical to force an error if reference and development variables units differ
+            Default value: True
+
+        flip_ref : boolean
+            Logical to flip the vertical dimension of reference dataset 3D variables
+            Default value: False
+
+        flip_dev : boolean
+            Logical to flip the vertical dimension of development dataset 3D variables
+            Default value: False
+
+        use_cmap_RdBu : boolean
+            Logical to used a blue-white-red colormap for plotting raw reference and
+            development datasets.
+            Default value: False
+
+    Returns:
+        Nothing
+
+    Example:
+        >>> import matplotlib.pyplot as plt
+        >>> import xarray as xr
+        >>> from gcpy import benchmark
+        >>> refds = xr.open_dataset('path/to/ref.nc4')
+        >>> devds = xr.open_dataset('path/to/dev.nc4')
+        >>> varlist = ['SpeciesConc_O3', 'SpeciesConc_NO']
+        >>> benchmark.compare_single_level( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
+        >>> plt.show()
+    '''
+
+    # TODO: refactor this function and zonal mean plot function. There is a lot of overlap and
+    # repeated code that could be abstracted.
 
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
@@ -67,38 +146,52 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     # Determine input grid resolutions and types
     ####################################################################
 
+    # GCC output and GCHP output using pre-v1.0.0 MAPL have lat and lon dims
+
     # ref
-    refnlat = refdata.sizes['lat']
-    refnlon = refdata.sizes['lon']
-    if refnlat == 46 and refnlon == 72:
-        refres = '4x5'
-        refgridtype = 'll'
-    elif refnlat == 91 and refnlon == 144:
-        refres = '2x2.5'
-        refgridtype = 'll'
-    elif refnlat/6 == refnlon:
-        refres = refnlon
+    vdims = refdata.dims
+    if 'lat' in vdims and 'lon' in vdims:
+        refnlat = refdata.sizes['lat']
+        refnlon = refdata.sizes['lon']
+        if refnlat == 46 and refnlon == 72:
+            refres = '4x5'
+            refgridtype = 'll'
+        elif refnlat == 91 and refnlon == 144:
+            refres = '2x2.5'
+            refgridtype = 'll'
+        elif refnlat/6 == refnlon:
+            refres = refnlon
+            refgridtype = 'cs'
+        else:
+            print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+            return
+    else:
+        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        refres = refdata.dims['Xdim']
         refgridtype = 'cs'
-    else:
-        print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
-    
+
     # dev
-    devnlat = devdata.sizes['lat']
-    devnlon = devdata.sizes['lon']
-    if devnlat == 46 and devnlon == 72:
-        devres = '4x5'
-        devgridtype = 'll'
-    elif devnlat == 91 and devnlon == 144:
-        devres = '2x2.5'
-        devgridtype = 'll'
-    elif devnlat/6 == devnlon:
-        devres = devnlon
-        devgridtype = 'cs'
+    vdims = devdata.dims
+    if 'lat' in vdims and 'lon' in vdims:
+        print('lat found for dev')
+        devnlat = devdata.sizes['lat']
+        devnlon = devdata.sizes['lon']
+        if devnlat == 46 and devnlon == 72:
+            devres = '4x5'
+            devgridtype = 'll'
+        elif devnlat == 91 and devnlon == 144:
+            devres = '2x2.5'
+            devgridtype = 'll'
+        elif devnlat/6 == devnlon:
+            devres = devnlon
+            devgridtype = 'cs'
+        else:
+            print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+            return
     else:
-        print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
-    
+        devres = devdata.dims['Xdim']
+        devgridtype = 'cs'
+
     ####################################################################
     # Determine comparison grid resolution and type (if not passed)
     ####################################################################
@@ -268,6 +361,25 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ds_dev = devdata[varname].isel(time=itime)
         else:
             ds_dev = devdata[varname]
+
+        ################################################################
+        # Reshape cubed sphere data if using MAPL v1.0.0+
+        # TODO: update function to expect data in this format
+        ################################################################
+
+        # ref
+        vdims = refdata[varname].dims
+        if 'nf' in vdims and 'Xdim' in vdims and 'Ydim' in vdims:
+            ds_ref = ds_ref.stack(lat=('nf', 'Ydim'))
+            ds_ref = ds_ref.rename({'Xdim':'lon'})
+            ds_ref = ds_ref.transpose('lat', 'lon')
+
+        # dev
+        vdims = devdata[varname].dims
+        if 'nf' in vdims and 'Xdim' in vdims and 'Ydim' in vdims:
+            ds_dev = ds_dev.stack(lat=('nf', 'Ydim'))
+            ds_dev = ds_dev.rename({'Xdim':'lon'})
+            ds_dev = ds_dev.transpose('lat', 'lon')
             
         ################################################################
         # Area normalization, if any
@@ -276,21 +388,20 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # if normalizing by area, adjust units to be per m2, and adjust title string
         units = units_ref
         subtitle_extra = ''
-        varndim = varndim_ref # gchp only?
+        varndim = varndim_ref
 
-        # if regridding then normalization by area may be necessary. Either pass normalize_by_area=True to normalize all,
-        # or include units that should always be normalized by area below. If comparing HEMCO diagnostics then the
-        # areas for ref and dev must be passed; otherwise they are included in the HISTORY diagnostics file and do
-        # not need to be passed.
+        # if regridding then normalization by area may be necessary depending on units. Either pass
+        # normalize_by_area=True to normalize all, or include units that should always be normalized
+        # by area below. GEOS-Chem Classic output files include area and so do not need to be passed.
         exclude_list = ['WetLossConvFrac','Prod_','Loss_']
         if regridany and ( ( units == 'kg' or units == 'kgC' ) or normalize_by_area ):
             if not any(s in varname for s in exclude_list):
-                if len(refarea) == 0 and len(devarea) == 0:
+                if 'AREAM2' in refdata.data_vars.keys() and 'AREAM2' in devdata.data_vars.keys():
                     ds_ref.values = ds_ref.values / refdata['AREAM2'].values
                     ds_dev.values = ds_dev.values / devdata['AREAM2'].values
                 else:
-                    ds_ref.values = ds_ref.values / refarea
-                    ds_dev.values = ds_dev.values / devarea               
+                    print('ERROR: Variables AREAM2 needed for area normalization missing from dataset')
+                    return
                 units = '{}/m2'.format(units)
                 units_ref = units
                 units_dev = units
@@ -366,7 +477,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Take min/max across all
         vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
-        if match_cbar: [vmin, vmax] = [vmin_abs, vmax_abs]
+        if match_cbar:
+            [vmin, vmax] = [vmin_abs, vmax_abs]
 
         ################################################################
         # Create 3x2 figure
@@ -378,12 +490,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         offset = 0.96
         fontsize=25
         
-        if 'lev' in refdata[varname].dims and 'lev' in devdata[varname].dims:
+        if 'lev' in ds_ref.dims and 'lev' in ds_dev.dims:
             if ilev == 0: levstr = 'Surface'
             elif ilev == 22: levstr = '500 hPa'
             else: levstr = 'Level ' +  str(ilev-1)
             figs.suptitle('{}, {}'.format(varname,levstr), fontsize=fontsize, y=offset)
-        elif 'lat' in refdata[varname].dims and 'lat' in devdata[varname].dims and 'lon' in refdata[varname].dims and 'lon' in devdata[varname].dims:
+        elif 'lat' in ds_ref.dims and 'lat' in ds_dev.dims and 'lon' in ds_ref.dims and 'lon' in ds_dev.dims:
             figs.suptitle('{}'.format(varname), fontsize=fontsize, y=offset)
         else:
             print('Incorrect dimensions for {}!'.format(varname))   
@@ -408,14 +520,14 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 if not match_cbar:
                     absmax_ref = max([np.abs(vmin_ref), np.abs(vmax_ref)])
-                    [vmin0, vmax0] = [-absmax_ref, absmax_dev]
+                    [vmin0, vmax0] = [-absmax_ref, absmax_ref]
                 else:
                     absmax = max([np.abs(vmin_ref), np.abs(vmax_ref),
                                   np.abs(vmin_dev), np.abs(vmax_dev)])
                     [vmin0, vmax0] = [-absmax, absmax]
         else:
             if not match_cbar:
-                [vmin0, vmax0] = [vmin_dev, vmax_dev]
+                [vmin0, vmax0] = [vmin_ref, vmax_ref]
             else:
                 [vmin0, vmax0] = [vmin_abs, vmax_abs]
 
@@ -432,7 +544,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                                        cmap=cmap1, vmin=vmin0, vmax=vmax0)
             ax0.set_title('{} (Ref){}\nc{}'.format(refstr,subtitle_extra,refres)) 
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or (vmin0 == 0 and vmax0 == 0):
+        if (vmax0-vmin0) < 0.1 or (vmax0-vmin0) > 100 or (vmin0 == 0 and vmax0 == 0):
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_ref)
@@ -473,7 +585,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                                        masked_devdata[i,:,:], cmap=cmap1, vmin=vmin1, vmax=vmax1)
             ax1.set_title('{} (Dev){}\nc{}'.format(devstr,subtitle_extra,devres)) 
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or (vmin1 == 0 and vmax1 == 0):
+        if (vmax1-vmin1) < 0.1 or (vmax1-vmin1) > 100 or (vmin1 == 0 and vmax1 == 0):
             cb.locator = ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units_dev)
@@ -626,15 +738,97 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
     if savepdf: pdf.close()
 
-# Add docstrings later. Use this function for benchmarking or general comparisons.
 def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                        itime=0, weightsdir=None, pdfname='', cmpres=None,
                        match_cbar=True, pres_range=[0,2000],
                        normalize_by_area=False, enforce_units=True,
                        flip_ref=False, flip_dev=False, use_cmap_RdBu=False ):
 
-    # TODO: add docstring
-    
+    '''
+    Create single-level 3x2 comparison map plots for variables common in two xarray
+    datasets. Optionally save to PDF. 
+
+    Args:
+        refdata : xarray dataset
+            Dataset used as reference in comparison
+
+        refstr  : str
+            String description for reference data to be used in plots
+     
+        devdata : xarray dataset
+            Dataset used as development in comparison
+
+        devstr  : str
+            String description for development data to be used in plots
+ 
+    Keyword Args (optional):
+        varlist : list of strings
+            List of xarray dataset variable names to make plots for
+            Default value: None (will compare all common 3D variables)
+
+        itime : integer
+            Dataset time dimension index using 0-based system
+            Default value: 0
+
+        weightsdir : str
+            Directory path for storing regridding weights
+            Default value: None (will create/store weights in current directory)
+
+        pdfname : str
+            File path to save plots as PDF
+            Default value: Empty string (will not create PDF)
+
+        cmpres : str
+            String description of grid resolution at which to compare datasets
+            Default value: None (will compare at highest resolution of ref and dev)
+
+        match_cbar : boolean
+            Logical indicating whether to use same colorbar bounds across plots
+            Default value: True
+
+        pres_range : list of two integers
+            Pressure range of levels to plot [hPa]. Vertical axis will span outer
+            pressure edges of levels that contain pres_range endpoints.
+            Default value: [0,2000]
+
+        normalize_by_area : boolean
+            Logical indicating whether to normalize raw data by grid area
+            Default value: False
+
+        enforce_units : boolean
+            Logical to force an error if reference and development variables units differ
+            Default value: True
+
+        flip_ref : boolean
+            Logical to flip the vertical dimension of reference dataset 3D variables
+            Default value: False
+
+        flip_dev : boolean
+            Logical to flip the vertical dimension of development dataset 3D variables
+            Default value: False
+
+        use_cmap_RdBu : boolean
+            Logical to used a blue-white-red colormap for plotting raw reference and
+            development datasets.
+            Default value: False
+
+    Returns:
+        Nothing
+
+    Example:
+        >>> import matplotlib.pyplot as plt
+        >>> import xarray as xr
+        >>> from gcpy import benchmark
+        >>> refds = xr.open_dataset('path/to/ref.nc4')
+        >>> devds = xr.open_dataset('path/to/dev.nc4')
+        >>> varlist = ['SpeciesConc_O3', 'SpeciesConc_NO']
+        >>> benchmark.compare_zonal_mean( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
+        >>> plt.show()
+    '''
+
+    # TODO: refactor this function and single level plot function. There is a lot of overlap and
+    # repeated code that could be abstracted.
+
     if not isinstance(refdata, xr.Dataset):
         raise ValueError('The refdata argument must be an xarray Dataset!')
 
@@ -692,38 +886,51 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
     ####################################################################
     # Determine input grid resolutions and types
     ####################################################################
+    # GCC output and GCHP output using pre-v1.0.0 MAPL have lat and lon dims
 
     # ref
-    refnlat = refdata.sizes['lat']
-    refnlon = refdata.sizes['lon']
-    if refnlat == 46 and refnlon == 72:
-        refres = '4x5'
-        refgridtype = 'll'
-    elif refnlat == 91 and refnlon == 144:
-        refres = '2x2.5'
-        refgridtype = 'll'
-    elif refnlat/6 == refnlon:
-        refres = refnlon
+    vdims = refdata.dims
+    if 'lat' in vdims and 'lon' in vdims:
+        refnlat = refdata.sizes['lat']
+        refnlon = refdata.sizes['lon']
+        if refnlat == 46 and refnlon == 72:
+            refres = '4x5'
+            refgridtype = 'll'
+        elif refnlat == 91 and refnlon == 144:
+            refres = '2x2.5'
+            refgridtype = 'll'
+        elif refnlat/6 == refnlon:
+            refres = refnlon
+            refgridtype = 'cs'
+        else:
+            print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+            return
+    else:
+        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        refres = refdata.dims['Xdim']
         refgridtype = 'cs'
-    else:
-        print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
-    
+
     # dev
-    devnlat = devdata.sizes['lat']
-    devnlon = devdata.sizes['lon']
-    if devnlat == 46 and devnlon == 72:
-        devres = '4x5'
-        devgridtype = 'll'
-    elif devnlat == 91 and devnlon == 144:
-        devres = '2x2.5'
-        devgridtype = 'll'
-    elif devnlat/6 == devnlon:
-        devres = devnlon
-        devgridtype = 'cs'
+    vdims = devdata.dims
+    if 'lat' in vdims and 'lon' in vdims:
+        print('lat found for dev')
+        devnlat = devdata.sizes['lat']
+        devnlon = devdata.sizes['lon']
+        if devnlat == 46 and devnlon == 72:
+            devres = '4x5'
+            devgridtype = 'll'
+        elif devnlat == 91 and devnlon == 144:
+            devres = '2x2.5'
+            devgridtype = 'll'
+        elif devnlat/6 == devnlon:
+            devres = devnlon
+            devgridtype = 'cs'
+        else:
+            print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+            return
     else:
-        print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
+        devres = devdata.dims['Xdim']
+        devgridtype = 'cs'
     
     ####################################################################
     # Determine comparison grid resolution (if not passed)
@@ -851,6 +1058,25 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             ds_dev = devdata[varname].isel(time=itime)
         else:
             ds_dev = devdata[varname]
+
+        ################################################################
+        # Reshape cubed sphere data if using MAPL v1.0.0+
+        # TODO: update function to expect data in this format
+        ################################################################
+
+        # ref
+        vdims = refdata[varname].dims
+        if 'nf' in vdims and 'Xdim' in vdims and 'Ydim' in vdims:
+            ds_ref = ds_ref.stack(lat=('nf', 'Ydim'))
+            ds_ref = ds_ref.rename({'Xdim':'lon'})
+            ds_ref = ds_ref.transpose('lev', 'lat', 'lon')
+
+        # dev
+        vdims = devdata[varname].dims
+        if 'nf' in vdims and 'Xdim' in vdims and 'Ydim' in vdims:
+            ds_dev = ds_dev.stack(lat=('nf', 'Ydim'))
+            ds_dev = ds_dev.rename({'Xdim':'lon'})
+            ds_dev = ds_dev.transpose('lev', 'lat', 'lon')
 
         ###############################################################
         # Area normalization, if any
@@ -1812,7 +2038,6 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
         raise
 
     # Find common variables
-    # (or use the varlist passed via keyword argument)
     quiet = not verbose
     vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
 
@@ -1856,8 +2081,9 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     emis_cats = sorted(set([v.split('_')[1] for v in emis_vars]))
     emis_spc = sorted(set([v.split('_')[0][4:] for v in emis_vars]))
 
-    # Handle Bioburn and BioBurn as same categories (temporary until 12.3.1)
-    emis_cats.remove('BioBurn')
+# This is fixed in 12.3.2, comment out for now (bmy, 5/1/19)
+#    # Handle Bioburn and BioBurn as same categories (temporary until 12.3.1)
+#    emis_cats.remove('BioBurn')
     
     # Sort alphabetically (assume English characters)
     emis_vars.sort(key=str.lower)
@@ -2470,6 +2696,181 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     add_bookmarks_to_pdf(pdfname, newvarlist,
                          remove_prefix='Column_AOD_', verbose=verbose)
 
+    
+def create_budget_table(devdata, devstr, region, species, varnames,
+                        outfilename, interval=2678400.0, template="Budget_{}"):
+    '''
+    Creates a table of budgets by species and component for a data set.
+
+    Args:
+        devdata : xarray Dataset
+            The second data set to be compared (aka "Development").
+
+        devstr: str
+            A string that can be used to identify the data set specified
+            by devfile (e.g. a model version number or other identifier).
+
+        region : str
+            Name of region for which budget will be computed.
+
+        species : List of strings
+            List of species  to include in budget tables.
+
+        varnames : List of strings
+            List of variable names in the budget diagnostics.
+
+        outfilename : str
+            Name of the text file which will contain the table of
+            emissions totals.
+
+    Keyword Args (optional):
+        interval : float
+            The length of the data interval in seconds. By default, interval
+            is set to the number of seconds in a 31-day month (86400 * 31),
+            which corresponds to typical benchmark simulation output.
+
+        template : str
+            Template for the diagnostic names that are contained in the
+            data set. If not specified, template will be set to "Budget_{}",
+            where {} will be replaced by the species name.
+
+    Returns:
+        None.  Writes to a text file specified by the "outfilename" argument.
+
+    Remarks:
+        This method is mainly intended for model benchmarking purposes,
+        rather than as a general-purpose tool.
+    '''
+
+    # Error check arguments
+    if not isinstance(devdata, xr.Dataset):
+        raise ValueError('The devdata argument must be an xarray Dataset!')
+
+    # Open file for output
+    f = open(outfilename, "w")
+
+    for spc_name in species:
+
+        # Title string
+        title = '### {} budget totals for species {}'.format(devstr,spc_name)
+    
+        # Write header to file
+        f.write('#'*79)
+        f.write('\n{}{}\n'.format(title.ljust(76), '###'))
+        f.write('#'*79)
+        f.write('\n')
+
+        # Get variable names for this species
+        spc_vars = [ v for v in varnames if v.endswith("_"+spc_name) ]
+
+        for v in spc_vars:
+
+            # Component name
+            comp_name = v.replace('Budget', '')
+            comp_name = comp_name.replace('_'+spc_name, '')
+            comp_name = comp_name.replace(region, '')
+        
+            # Convert from kg/s to Tg
+            devarray = devdata[v] * interval * 1e-9
+            units    = 'Tg'
+        
+            # Compute sum
+            total_dev = np.sum(devarray.values)
+
+            # Write output
+            f.write('{} : {:13.6e} {}\n'.format(comp_name.ljust(12), total_dev,
+                                                units))
+
+        # Add new lines before going to the next species
+        f.write("\n\n")
+
+    # Close file
+    f.close()
+
+    
+def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
+                                 overwrite=False, interval=None):
+    '''
+    Creates a text file containing budgets by species for benchmarking
+    purposes.
+
+    Args:
+        devlist : list of str
+             List with the path names of the emissions and/or met field
+             files that will constitute the "Dev" (aka "Development") 
+             data set.  The "Dev" data set will be compared against the
+             "Ref" data set.
+
+        devstr : str
+             A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+        dst : str
+             A string denoting the destination folder where the file
+             containing emissions totals will be written.
+             Default value: ./1mo_benchmark
+
+        overwrite : boolean
+             Set this flag to True to overwrite files in the
+             destination folder (specified by the dst argument).
+             Default value : False
+
+        interval : float
+             Specifies the averaging period in seconds, which is used
+             to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
+             Default value : None
+    '''
+
+    # ===============================================================
+    # Define destination directory
+    # ===============================================================
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+    budgetdir = os.path.join(dst,'Budget')
+    if not os.path.isdir(budgetdir):
+        os.mkdir(budgetdir)
+
+    # ===============================================================
+    # Read data from netCDF into Dataset objects
+    # ===============================================================
+
+    # Dev
+    try:
+        devds = xr.open_mfdataset(devlist)
+    except FileNotFoundError:
+        print('Could not find one of the Dev files: {}'.format(devlist))
+        raise
+
+    # ===============================================================
+    # Create budget table
+    # ===============================================================
+
+    # If the averaging interval (in seconds) is not specified,
+    # then assume July 2016 = 86400 seconds * 31 days
+    if interval == None:
+        interval = 86400.0 * 31.0
+    
+    # Get budget variable and regions
+    budget_vars    = [ k for k in devds.data_vars.keys() if k[:6] == 'Budget' ]
+    budget_regions = sorted(set([v.split('_')[0][-4:] for v in budget_vars]))
+
+    for region in budget_regions:
+    
+        # Destination file
+        file_budget = os.path.join( dst, budgetdir,
+                                        'Budget_'+region+'.txt')
+
+        # Get variable names and species for this region
+        region_vars = [ k for k in budget_vars if region in k ]
+        region_spc  = sorted(set([v.split('_')[1] for v in region_vars]))
+        
+        # Write to file
+        create_budget_table(devds, devstr, region, region_spc, region_vars,
+                            file_budget, interval, template="Budget_{}")
+                
 
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
     '''
@@ -2521,6 +2922,33 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
       
 def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove_prefix=''):
 
+    '''
+    Add nested bookmarks to PDF.
+
+    Args:
+        pdfname : str
+             Path of PDF to add bookmarks to
+
+        category : str
+             Top-level key name in catdict that maps to contents of PDF
+
+        catdict : dictionary
+             Dictionary containing key-value pairs where one top-level key matches
+             category and has value fully describing pages in PDF. The value is a 
+             dictionary where keys are level 1 bookmark names, and values are
+             lists of level 2 bookmark names, with one level 2 name per PDF page. 
+             Level 2 names must appear in catdict in the same order as in the PDF.
+
+        warninglist : list of strings
+             Level 2 bookmark names to skip since not present in PDF.
+
+    Keyword Args (optional):
+        remove_prefix : str
+             Prefix to be remove from warninglist names before comparing with 
+             level 2 bookmark names in catdict.
+             Default value: empty string (warninglist names match names in catdict) 
+    '''
+    
     # Setup
     pdfobj = open(pdfname,"rb")
     input = PdfFileReader(pdfobj)
@@ -2575,7 +3003,7 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
     os.rename(pdfname_tmp, pdfname)
 
 # =============================================================================
-# The rest of this file contains legacy code that may be deleted in the futur
+# The rest of this file contains legacy code that may be deleted in the future
 # =============================================================================
 
 def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
