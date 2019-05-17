@@ -489,12 +489,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         offset = 0.96
         fontsize=25
         
-        if 'lev' in refdata[varname].dims and 'lev' in devdata[varname].dims:
+        if 'lev' in ds_ref.dims and 'lev' in ds_dev.dims:
             if ilev == 0: levstr = 'Surface'
             elif ilev == 22: levstr = '500 hPa'
             else: levstr = 'Level ' +  str(ilev-1)
             figs.suptitle('{}, {}'.format(varname,levstr), fontsize=fontsize, y=offset)
-        elif 'lat' in refdata[varname].dims and 'lat' in devdata[varname].dims and 'lon' in refdata[varname].dims and 'lon' in devdata[varname].dims:
+        elif 'lat' in ds_ref.dims and 'lat' in ds_dev.dims and 'lon' in ds_ref.dims and 'lon' in ds_dev.dims:
             figs.suptitle('{}'.format(varname), fontsize=fontsize, y=offset)
         else:
             print('Incorrect dimensions for {}!'.format(varname))   
