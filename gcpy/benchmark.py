@@ -116,6 +116,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         >>> plt.show()
     '''
 
+    # TODO: refactor this function and zonal mean plot function. There is a lot of overlap and
+    # repeated code that could be abstracted.
+
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise ValueError('The refdata argument must be an xarray Dataset!')
@@ -142,38 +145,52 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     # Determine input grid resolutions and types
     ####################################################################
 
+    # GCC output and GCHP output using pre-v1.0.0 MAPL have lat and lon dims
+
     # ref
-    refnlat = refdata.sizes['lat']
-    refnlon = refdata.sizes['lon']
-    if refnlat == 46 and refnlon == 72:
-        refres = '4x5'
-        refgridtype = 'll'
-    elif refnlat == 91 and refnlon == 144:
-        refres = '2x2.5'
-        refgridtype = 'll'
-    elif refnlat/6 == refnlon:
-        refres = refnlon
+    vdims = refdata.dims
+    if 'lat' in vdims and 'lon' in vdims:
+        refnlat = refdata.sizes['lat']
+        refnlon = refdata.sizes['lon']
+        if refnlat == 46 and refnlon == 72:
+            refres = '4x5'
+            refgridtype = 'll'
+        elif refnlat == 91 and refnlon == 144:
+            refres = '2x2.5'
+            refgridtype = 'll'
+        elif refnlat/6 == refnlon:
+            refres = refnlon
+            refgridtype = 'cs'
+        else:
+            print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+            return
+    else:
+        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        refres = refdata.dims['Xdim']
         refgridtype = 'cs'
-    else:
-        print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
-    
+
     # dev
-    devnlat = devdata.sizes['lat']
-    devnlon = devdata.sizes['lon']
-    if devnlat == 46 and devnlon == 72:
-        devres = '4x5'
-        devgridtype = 'll'
-    elif devnlat == 91 and devnlon == 144:
-        devres = '2x2.5'
-        devgridtype = 'll'
-    elif devnlat/6 == devnlon:
-        devres = devnlon
-        devgridtype = 'cs'
+    vdims = devdata.dims
+    if 'lat' in vdims and 'lon' in vdims:
+        print('lat found for dev')
+        devnlat = devdata.sizes['lat']
+        devnlon = devdata.sizes['lon']
+        if devnlat == 46 and devnlon == 72:
+            devres = '4x5'
+            devgridtype = 'll'
+        elif devnlat == 91 and devnlon == 144:
+            devres = '2x2.5'
+            devgridtype = 'll'
+        elif devnlat/6 == devnlon:
+            devres = devnlon
+            devgridtype = 'cs'
+        else:
+            print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+            return
     else:
-        print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
-    
+        devres = devdata.dims['Xdim']
+        devgridtype = 'cs'
+
     ####################################################################
     # Determine comparison grid resolution and type (if not passed)
     ####################################################################
@@ -343,6 +360,25 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ds_dev = devdata[varname].isel(time=itime)
         else:
             ds_dev = devdata[varname]
+
+        ################################################################
+        # Reshape cubed sphere data if using MAPL v1.0.0+
+        # TODO: update function to expect data in this format
+        ################################################################
+
+        # ref
+        vdims = refdata[varname].dims
+        if 'nf' in vdims and 'Xdim' in vdims and 'Ydim' in vdims:
+            ds_ref = ds_ref.stack(lat=('nf', 'Ydim'))
+            ds_ref = ds_ref.rename({'Xdim':'lon'})
+            ds_ref = ds_ref.transpose('lat', 'lon')
+
+        # dev
+        vdims = devdata[varname].dims
+        if 'nf' in vdims and 'Xdim' in vdims and 'Ydim' in vdims:
+            ds_dev = ds_dev.stack(lat=('nf', 'Ydim'))
+            ds_dev = ds_dev.rename({'Xdim':'lon'})
+            ds_dev = ds_dev.transpose('lat', 'lon')
             
         ################################################################
         # Area normalization, if any
@@ -788,7 +824,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         >>> benchmark.compare_zonal_mean( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
         >>> plt.show()
     '''
-    
+
+    # TODO: refactor this function and single level plot function. There is a lot of overlap and
+    # repeated code that could be abstracted.
+
     if not isinstance(refdata, xr.Dataset):
         raise ValueError('The refdata argument must be an xarray Dataset!')
 
@@ -846,38 +885,51 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
     ####################################################################
     # Determine input grid resolutions and types
     ####################################################################
+    # GCC output and GCHP output using pre-v1.0.0 MAPL have lat and lon dims
 
     # ref
-    refnlat = refdata.sizes['lat']
-    refnlon = refdata.sizes['lon']
-    if refnlat == 46 and refnlon == 72:
-        refres = '4x5'
-        refgridtype = 'll'
-    elif refnlat == 91 and refnlon == 144:
-        refres = '2x2.5'
-        refgridtype = 'll'
-    elif refnlat/6 == refnlon:
-        refres = refnlon
+    vdims = refdata.dims
+    if 'lat' in vdims and 'lon' in vdims:
+        refnlat = refdata.sizes['lat']
+        refnlon = refdata.sizes['lon']
+        if refnlat == 46 and refnlon == 72:
+            refres = '4x5'
+            refgridtype = 'll'
+        elif refnlat == 91 and refnlon == 144:
+            refres = '2x2.5'
+            refgridtype = 'll'
+        elif refnlat/6 == refnlon:
+            refres = refnlon
+            refgridtype = 'cs'
+        else:
+            print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+            return
+    else:
+        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        refres = refdata.dims['Xdim']
         refgridtype = 'cs'
-    else:
-        print('ERROR: ref {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
-    
+
     # dev
-    devnlat = devdata.sizes['lat']
-    devnlon = devdata.sizes['lon']
-    if devnlat == 46 and devnlon == 72:
-        devres = '4x5'
-        devgridtype = 'll'
-    elif devnlat == 91 and devnlon == 144:
-        devres = '2x2.5'
-        devgridtype = 'll'
-    elif devnlat/6 == devnlon:
-        devres = devnlon
-        devgridtype = 'cs'
+    vdims = devdata.dims
+    if 'lat' in vdims and 'lon' in vdims:
+        print('lat found for dev')
+        devnlat = devdata.sizes['lat']
+        devnlon = devdata.sizes['lon']
+        if devnlat == 46 and devnlon == 72:
+            devres = '4x5'
+            devgridtype = 'll'
+        elif devnlat == 91 and devnlon == 144:
+            devres = '2x2.5'
+            devgridtype = 'll'
+        elif devnlat/6 == devnlon:
+            devres = devnlon
+            devgridtype = 'cs'
+        else:
+            print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
+            return
     else:
-        print('ERROR: dev {}x{} grid not defined in gcpy!'.format(refnlat,refnlon))
-        return
+        devres = devdata.dims['Xdim']
+        devgridtype = 'cs'
     
     ####################################################################
     # Determine comparison grid resolution (if not passed)
@@ -1005,6 +1057,25 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             ds_dev = devdata[varname].isel(time=itime)
         else:
             ds_dev = devdata[varname]
+
+        ################################################################
+        # Reshape cubed sphere data if using MAPL v1.0.0+
+        # TODO: update function to expect data in this format
+        ################################################################
+
+        # ref
+        vdims = refdata[varname].dims
+        if 'nf' in vdims and 'Xdim' in vdims and 'Ydim' in vdims:
+            ds_ref = ds_ref.stack(lat=('nf', 'Ydim'))
+            ds_ref = ds_ref.rename({'Xdim':'lon'})
+            ds_ref = ds_ref.transpose('lev', 'lat', 'lon')
+
+        # dev
+        vdims = devdata[varname].dims
+        if 'nf' in vdims and 'Xdim' in vdims and 'Ydim' in vdims:
+            ds_dev = ds_dev.stack(lat=('nf', 'Ydim'))
+            ds_dev = ds_dev.rename({'Xdim':'lon'})
+            ds_dev = ds_dev.transpose('lev', 'lat', 'lon')
 
         ###############################################################
         # Area normalization, if any
