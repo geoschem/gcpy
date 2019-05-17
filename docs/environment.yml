@@ -27,7 +27,7 @@ dependencies:
     - seaborn          # Statistical visualizations
     - six              # Python 2/3 compatibility
     - tqdm             # Nice progressbar for longer computations
-    - xarray           # N-d labeled array library
+    - xarray=0.11.3    # N-d labeled array library. Use older version for compatibility with xbpch
     - sphinx
     - pip:
         # These are additional libraries to search for on PyPI
