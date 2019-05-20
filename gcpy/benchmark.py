@@ -172,7 +172,6 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     # dev
     vdims = devdata.dims
     if 'lat' in vdims and 'lon' in vdims:
-        print('lat found for dev')
         devnlat = devdata.sizes['lat']
         devnlon = devdata.sizes['lon']
         if devnlat == 46 and devnlon == 72:
