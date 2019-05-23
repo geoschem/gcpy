@@ -529,6 +529,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 [vmin0, vmax0] = [vmin_abs, vmax_abs]
 
+
         # Plot data
         ax0.coastlines()
         if refgridtype == 'll':
@@ -571,6 +572,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 [vmin1, vmax1] = [vmin_abs, vmax_abs]
 
+
         ax1.coastlines()
         if devgridtype == 'll':
             plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon, devminlat, devmaxlat), 
@@ -591,21 +593,24 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
         ################################################################
-        # Calculate difference, get dynamic range, configure colorbar,
-        # use gray for NaNs if plotting on lat-lon grid 
-        # (has strange effect for cubed-sphere)
+        # Calculate difference
         ################################################################
 
         if cmpgridtype == 'll':
             absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
         else:
-            absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
-            masked_absdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, absdiff)
-        diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])        
+            absdiff_raw = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
+            absdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, absdiff_raw)
+        diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])
+
+        ################################################################
+        # Use gray for NaNs if plotting on lat-lon grid 
+        # (has strange effect for cubed-sphere)
+        ################################################################
+
         cmap_nongray = copy.copy(mpl.cm.RdBu_r)
-        if cmpgridtype == 'll':
-            cmap_gray = copy.copy(mpl.cm.RdBu_r)
-            cmap_gray.set_bad(color='gray')
+        cmap_gray = copy.copy(mpl.cm.RdBu_r)
+        cmap_gray.set_bad(color='gray')
             
         ################################################################
         # Subplot (1,0): Difference, dynamic range
@@ -619,7 +624,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot2 = ax2.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                       masked_absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                                       absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(cmpres))
         else:
@@ -648,7 +653,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot3 = ax3.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                       masked_absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                                       absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
         else:
@@ -662,17 +667,16 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
 
         ################################################################
-        # Calculate fractional difference, get dynamic range, 
-        # set 0/0 to Nan
+        # Calculate fractional difference, set divides by zero to Nan
         ################################################################
         
         if cmpgridtype == 'll':
             fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(ds_ref_cmp)
-            fracdiff[(ds_dev_cmp == 0) & (ds_ref_cmp == 0)] = np.nan
         else:
-            fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
-            fracdiff[(ds_dev_cmp_reshaped == 0) & (ds_ref_cmp_reshaped == 0)] = np.nan
-            masked_fracdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, fracdiff)
+            fracdiff_raw = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
+            fracdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, fracdiff_raw)
+
+        fracdiff = np.where(fracdiff==np.inf, np.nan, fracdiff)
         fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
 
         ################################################################
@@ -687,7 +691,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot4 = ax4.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                   masked_fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                                   fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres)) 
         else:
@@ -701,12 +705,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         cb.set_label('unitless')  
 
         ################################################################
-        # Subplot (2,1): Fractional Difference, restricted
+        # Subplot (2,1): Fractional Difference, restricted range
         ################################################################
         
         [vmin, vmax] = [-2, 2]
-        #[vmin, vmax] = [-0.5, 2] # doesn't work with this colorbar. Need to customize one. Already in gamap?
-                                  # Switch to this if change to ratios (dev/ref)
         ax5.coastlines()
         if cmpgridtype == 'll':
             plot5 = ax5.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
@@ -714,7 +716,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot5 = ax5.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                   masked_fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                                   fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
         else:
@@ -1297,16 +1299,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         cb.set_label(units)
 
         ################################################################
-        # Configure colorbar for difference plots
-        # use gray for NaNs if plotting on lat-lon grid 
-        # (has strange effect for cubed-sphere)
+        # Configure colorbar for difference plots, use gray for NaNs
         ################################################################
 
-        if cmpgridtype == 'll':
-            cmap_plot = copy.copy(mpl.cm.RdBu_r)
-            cmap_plot.set_bad(color='gray')
-        else:
-            cmap_plot = copy.copy(mpl.cm.RdBu_r)
+        cmap_plot = copy.copy(mpl.cm.RdBu_r)
+        cmap_plot.set_bad(color='gray')
 
         ################################################################
         # Calculate zonal mean difference
@@ -1368,16 +1365,17 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         cb.set_label(units)
 
         ################################################################
-        # Zonal mean fractional difference
+        # Calculate fractional difference, set divides by zero to Nan
         ################################################################
         zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(zm_ref_cmp)
+        zm_fracdiff = np.where(zm_fracdiff==np.inf, np.nan, zm_fracdiff)
 
         ################################################################
         # Subplot (2,0): Fractional Difference, dynamic range
         ################################################################
         
         # Exclude NaN's in the fracdiffabsmax
-        fracdiffabsmax = max([np.abs(np.nanmin(zm_fracdiff)), np.abs(np.nanmax(zm_fracdiff))])
+        fracdiffabsmax = np.max([np.abs(np.nanmin(zm_fracdiff)), np.abs(np.nanmax(zm_fracdiff))])
         if np.all(zm_fracdiff == 0 ):
             [vmin, vmax] = [-2, 2]
         else:
