@@ -35,7 +35,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          ilev=0, itime=0,  weightsdir=None, pdfname='',
                          cmpres=None, match_cbar=True, normalize_by_area=False,
                          enforce_units=True, flip_ref=False, flip_dev=False,
-                         use_cmap_RdBu=False ):
+                         use_cmap_RdBu=False, verbose=False ):
     '''
     Create single-level 3x2 comparison map plots for variables common in two xarray
     datasets. Optionally save to PDF. 
@@ -101,6 +101,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         use_cmap_RdBu : boolean
             Logical to used a blue-white-red colormap for plotting raw reference and
             development datasets.
+            Default value: False
+
+        verbose : logical
+            Logical to enable informative prints
             Default value: False
 
     Returns:
@@ -173,7 +177,6 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     # dev
     vdims = devdata.dims
     if 'lat' in vdims and 'lon' in vdims:
-        print('lat found for dev')
         devnlat = devdata.sizes['lat']
         devnlon = devdata.sizes['lon']
         if devnlat == 46 and devnlon == 72:
@@ -455,19 +458,19 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ################################################################
 
         # Ref
-        vmin_ref = ds_ref.min()
-        vmax_ref = ds_ref.max()
+        vmin_ref = ds_ref.data.min()
+        vmax_ref = ds_ref.data.max()
 
         # Dev
-        vmin_dev = ds_dev.min()
-        vmax_dev = ds_dev.max()
+        vmin_dev = ds_dev.data.min()
+        vmax_dev = ds_dev.data.max()
 
         # Comparison
         if cmpgridtype == 'cs':
-            vmin_ref_cmp = ds_ref_cmp.min()
-            vmax_ref_cmp = ds_ref_cmp.max()
-            vmin_dev_cmp = ds_dev_cmp.min()
-            vmax_dev_cmp = ds_dev_cmp.max()
+            vmin_ref_cmp = ds_ref_cmp.data.min()
+            vmax_ref_cmp = ds_ref_cmp.data.max()
+            vmin_dev_cmp = ds_dev_cmp.data.min()
+            vmax_dev_cmp = ds_dev_cmp.data.max()
             vmin_cmp = np.min([vmin_ref_cmp, vmin_dev_cmp])
             vmax_cmp = np.max([vmax_ref_cmp, vmax_dev_cmp]) 
         else:
@@ -479,6 +482,20 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
         if match_cbar:
             [vmin, vmax] = [vmin_abs, vmax_abs]
+
+        if verbose:
+            print('vmin_ref: {}'.format(vmin_ref))
+            print('vmin_dev: {}'.format(vmin_dev))
+            print('vmin_ref_cmp: {}'.format(vmin_ref_cmp))
+            print('vmin_dev_cmp: {}'.format(vmin_dev_cmp))
+            print('vmin_cmp: {}'.format(vmin_cmp))
+            print('vmin_abs: {}'.format(vmin_abs))
+            print('vmax_ref: {}'.format(vmax_ref))
+            print('vmax_dev: {}'.format(vmax_dev))
+            print('vmax_ref_cmp: {}'.format(vmax_ref_cmp))
+            print('vmax_dev_cmp: {}'.format(vmax_dev_cmp))
+            print('vmax_cmp: {}'.format(vmax_cmp))
+            print('vmax_abs: {}'.format(vmax_abs))
 
         ################################################################
         # Create 3x2 figure
@@ -531,6 +548,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 [vmin0, vmax0] = [vmin_abs, vmax_abs]
 
+        if verbose: print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(vmin0, vmax0))
+
         # Plot data
         ax0.coastlines()
         if refgridtype == 'll':
@@ -573,6 +592,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 [vmin1, vmax1] = [vmin_abs, vmax_abs]
 
+        if verbose: print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1, vmax1))
+
         ax1.coastlines()
         if devgridtype == 'll':
             plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon, devminlat, devmaxlat), 
@@ -593,27 +614,32 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
         ################################################################
-        # Calculate difference, get dynamic range, configure colorbar,
-        # use gray for NaNs if plotting on lat-lon grid 
-        # (has strange effect for cubed-sphere)
+        # Calculate difference
         ################################################################
 
         if cmpgridtype == 'll':
             absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
         else:
-            absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
-            masked_absdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, absdiff)
-        diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])        
+            absdiff_raw = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
+            absdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, absdiff_raw)
+        diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])
+
+        ################################################################
+        # Use gray for NaNs if plotting on lat-lon grid 
+        # (has strange effect for cubed-sphere)
+        ################################################################
+
         cmap_nongray = copy.copy(mpl.cm.RdBu_r)
-        if cmpgridtype == 'll':
-            cmap_gray = copy.copy(mpl.cm.RdBu_r)
-            cmap_gray.set_bad(color='gray')
+        cmap_gray = copy.copy(mpl.cm.RdBu_r)
+        cmap_gray.set_bad(color='gray')
             
         ################################################################
         # Subplot (1,0): Difference, dynamic range
         ################################################################
 
         [vmin, vmax] = [-diffabsmax, diffabsmax]
+        if verbose: print('Subplot (1,0) vmin, vmax: {}, {}'.format(vmin, vmax))
+
         ax2.coastlines()
         if cmpgridtype == 'll':
             plot2 = ax2.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
@@ -621,7 +647,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot2 = ax2.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                       masked_absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                                       absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(cmpres))
         else:
@@ -643,6 +669,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
         abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
         [vmin,vmax] = [-abspctmax, abspctmax]
+        if verbose: print('Subplot (1,1) vmin, vmax: {}, {}'.format(vmin, vmax))
+
         ax3.coastlines()
         if cmpgridtype == 'll':
             plot3 = ax3.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
@@ -650,7 +678,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot3 = ax3.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                       masked_absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                                       absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
         else:
@@ -664,17 +692,16 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
 
         ################################################################
-        # Calculate fractional difference, get dynamic range, 
-        # set 0/0 to Nan
+        # Calculate fractional difference, set divides by zero to Nan
         ################################################################
         
         if cmpgridtype == 'll':
             fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(ds_ref_cmp)
-            fracdiff[(ds_dev_cmp == 0) & (ds_ref_cmp == 0)] = np.nan
         else:
-            fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
-            fracdiff[(ds_dev_cmp_reshaped == 0) & (ds_ref_cmp_reshaped == 0)] = np.nan
-            masked_fracdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, fracdiff)
+            fracdiff_raw = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
+            fracdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2, fracdiff_raw)
+
+        fracdiff = np.where(fracdiff==np.inf, np.nan, fracdiff)
         fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
 
         ################################################################
@@ -682,6 +709,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ################################################################
         
         [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
+        if verbose: print('Subplot (2,0) vmin, vmax: {}, {}'.format(vmin, vmax))
+  
         ax4.coastlines()
         if cmpgridtype == 'll':
             plot4 = ax4.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
@@ -689,7 +718,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot4 = ax4.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                   masked_fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                                   fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres)) 
         else:
@@ -703,12 +732,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         cb.set_label('unitless')  
 
         ################################################################
-        # Subplot (2,1): Fractional Difference, restricted
+        # Subplot (2,1): Fractional Difference, restricted range
         ################################################################
         
         [vmin, vmax] = [-2, 2]
-        #[vmin, vmax] = [-0.5, 2] # doesn't work with this colorbar. Need to customize one. Already in gamap?
-                                  # Switch to this if change to ratios (dev/ref)
+        if verbose: print('Subplot (2,1) vmin, vmax: {}, {}'.format(vmin, vmax))
+
         ax5.coastlines()
         if cmpgridtype == 'll':
             plot5 = ax5.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
@@ -716,7 +745,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             for i in range(6):
                 plot5 = ax5.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                   masked_fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                                   fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
         else:
@@ -742,7 +771,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                        itime=0, weightsdir=None, pdfname='', cmpres=None,
                        match_cbar=True, pres_range=[0,2000],
                        normalize_by_area=False, enforce_units=True,
-                       flip_ref=False, flip_dev=False, use_cmap_RdBu=False ):
+                       flip_ref=False, flip_dev=False, use_cmap_RdBu=False,
+                       verbose=False ):
 
     '''
     Create single-level 3x2 comparison map plots for variables common in two xarray
@@ -810,6 +840,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         use_cmap_RdBu : boolean
             Logical to used a blue-white-red colormap for plotting raw reference and
             development datasets.
+            Default value: False
+
+        verbose : logical
+            Logical to enable informative prints
             Default value: False
 
     Returns:
@@ -1180,6 +1214,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
         if match_cbar: [vmin, vmax] = [vmin_abs, vmax_abs]
 
+        if verbose:
+            print('vmin_ref: {}'.format(vmin_ref))
+            print('vmin_dev: {}'.format(vmin_dev))
+            print('vmin_cmp: {}'.format(vmin_cmp))
+            print('vmin_abs: {}'.format(vmin_abs))
+            print('vmax_ref: {}'.format(vmax_ref))
+            print('vmax_dev: {}'.format(vmax_dev))
+            print('vmax_cmp: {}'.format(vmax_cmp))
+            print('vmax_abs: {}'.format(vmax_abs))
+
         ###############################################################
         # Create 3x2 figure
         ###############################################################
@@ -1219,6 +1263,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                 [vmin0, vmax0] = [vmin_ref, vmax_ref]
             else:
                 [vmin0, vmax0] = [vmin_abs, vmax_abs]
+        if verbose: print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(vmin0, vmax0))
 
         # Plot data
         if refgridtype == 'll':
@@ -1269,6 +1314,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                 [vmin1, vmax1] = [vmin_dev, vmax_dev]
             else:
                 [vmin1, vmax1] = [vmin_abs, vmax_abs]
+        if verbose: print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1, vmax1))
 
         # Plot data
         if devgridtype == 'll':
@@ -1299,16 +1345,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         cb.set_label(units)
 
         ################################################################
-        # Configure colorbar for difference plots
-        # use gray for NaNs if plotting on lat-lon grid 
-        # (has strange effect for cubed-sphere)
+        # Configure colorbar for difference plots, use gray for NaNs
         ################################################################
 
-        if cmpgridtype == 'll':
-            cmap_plot = copy.copy(mpl.cm.RdBu_r)
-            cmap_plot.set_bad(color='gray')
-        else:
-            cmap_plot = copy.copy(mpl.cm.RdBu_r)
+        cmap_plot = copy.copy(mpl.cm.RdBu_r)
+        cmap_plot.set_bad(color='gray')
 
         ################################################################
         # Calculate zonal mean difference
@@ -1322,6 +1363,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
         diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
         [vmin, vmax] = [-diffabsmax, diffabsmax]
+        if verbose: print('Subplot (1,0) vmin, vmax: {}, {}'.format(vmin, vmax))
+
         plot2 = ax2.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
                                zm_diff, cmap=cmap_plot, vmin=vmin, vmax=vmax)
         ax2.invert_yaxis()
@@ -1350,6 +1393,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         [pct5, pct95] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)]
         abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
         [vmin,vmax] = [-abspctmax, abspctmax]
+        if verbose: print('Subplot (1,1) vmin, vmax: {}, {}'.format(vmin, vmax))
+  
         plot3 = ax3.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
                                zm_diff, cmap=cmap_plot, vmin=vmin, vmax=vmax)
         ax3.invert_yaxis()
@@ -1370,20 +1415,24 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         cb.set_label(units)
 
         ################################################################
-        # Zonal mean fractional difference
+        # Calculate fractional difference, set divides by zero to Nan
         ################################################################
+
         zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(zm_ref_cmp)
+        zm_fracdiff = np.where(zm_fracdiff==np.inf, np.nan, zm_fracdiff)
 
         ################################################################
         # Subplot (2,0): Fractional Difference, dynamic range
         ################################################################
         
         # Exclude NaN's in the fracdiffabsmax
-        fracdiffabsmax = max([np.abs(np.nanmin(zm_fracdiff)), np.abs(np.nanmax(zm_fracdiff))])
+        fracdiffabsmax = np.max([np.abs(np.nanmin(zm_fracdiff)), np.abs(np.nanmax(zm_fracdiff))])
         if np.all(zm_fracdiff == 0 ):
             [vmin, vmax] = [-2, 2]
         else:
             [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
+        if verbose: print('Subplot (2,0) vmin, vmax: {}, {}'.format(vmin, vmax))
+
         plot4 = ax4.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
                                zm_fracdiff, cmap=cmap_plot, 
                                vmin=vmin, vmax=vmax)
@@ -1410,6 +1459,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ################################################################
 
         [vmin, vmax] = [-2, 2]
+        if verbose: print('Subplot (2,1) vmin, vmax: {}, {}'.format(vmin, vmax))
+  
         plot5 = ax5.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
                                zm_fracdiff, cmap=cmap_plot, 
                                vmin=vmin, vmax=vmax)
