@@ -2099,17 +2099,6 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     quiet = not verbose
     vars, varsOther, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
 
-    ## Skip 2D diagnostics that have incompatible dimensions between versions
-    #for v in vars2D:
-    #    if refds[v].dims != devds[v].dims:
-    #        print('Variable {} has incompatible dimensions in Dev and Ref, skipping!'.format(v))
-    #        vars2D.remove(v)
-    #
-    ## Skip 3D diagnostics that have incompatible dimensions between versions
-    #for v in vars3D:
-    #    if refds[v].dims != devds[v].dims:
-    #        print('Variable {} has incompatible dimensions in Dev and Ref, skipping!'.format(v))
-    #        vars3D.remove(v)
 
     # Combine 2D and 3D variables into an overall list
     varlist = vars2D + vars3D
