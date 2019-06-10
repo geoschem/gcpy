@@ -901,11 +901,23 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
     nlev = len(pmid_ind)
         
     # Convert levels to pressures in ref and dev data
-    refdata['lev'] = pmid
+    if refdata.sizes['lev'] == 72:
+        refdata['lev'] = pmid
+    elif refdata.sizes['lev'] == 73:
+        refdata['lev'] = pedge
+    else:
+        print('ERROR: compare_zonal_mean implemented for 72 or 73 levels only. Other values found in ref.')
+        return
     refdata['lev'].attrs['units'] = 'hPa'
     refdata['lev'].attrs['long_name'] = 'level pressure'
-    
-    devdata['lev'] = pmid
+
+    if devdata.sizes['lev'] == 72:
+        devdata['lev'] = pmid
+    elif devdata.sizes['lev'] == 73:
+        devdata['lev'] = pedge
+    else:
+        print('ERROR: compare_zonal_mean implemented for 72 or 73 levels only. Other value found in dev.')
+        return
     devdata['lev'].attrs['units'] = 'hPa'
     devdata['lev'].attrs['long_name'] = 'level pressure'
 
