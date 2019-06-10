@@ -229,14 +229,14 @@ def compare_varnames(refdata, devdata, quiet=False):
     refonly = [v for v in refvars if v not in devvars]
     devonly = [v for v in devvars if v not in refvars]
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
-    commonvarsOther = [v for v in commonvars if (('lat' not in refdata[v].dims or 'lats' not in refdata[v].dims) and
-                                                 ('lon' not in refdata[v].dims or 'lons' not in refdata[v].dims) and
+    commonvarsOther = [v for v in commonvars if (('lat' not in refdata[v].dims or 'Xdim' not in refdata[v].dims) and
+                                                 ('lon' not in refdata[v].dims or 'Ydim' not in refdata[v].dims) and
                                                  ('lev' not in refdata[v].dims))]
-    commonvars2D = [v for v in commonvars if (('lat' in refdata[v].dims or 'lats' in refdata[v].dims) and
-                                              ('lon' in refdata[v].dims or 'lons' in refdata[v].dims) and
+    commonvars2D = [v for v in commonvars if (('lat' in refdata[v].dims or 'Xdim' in refdata[v].dims) and
+                                              ('lon' in refdata[v].dims or 'Ydim' in refdata[v].dims) and
                                               ('lev' not in refdata[v].dims))]
-    commonvars3D = [v for v in commonvars if (('lat' in refdata[v].dims or 'lats' in refdata[v].dims) and
-                                              ('lon' in refdata[v].dims or 'lons' in refdata[v].dims) and
+    commonvars3D = [v for v in commonvars if (('lat' in refdata[v].dims or 'Xdim' in refdata[v].dims) and
+                                              ('lon' in refdata[v].dims or 'Ydim' in refdata[v].dims) and
                                               ('lev' in refdata[v].dims))]
     
     # Print information on common and mismatching variables, as well as dimensions
