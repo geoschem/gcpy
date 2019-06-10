@@ -2005,7 +2005,8 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                               flip_ref=False, flip_dev=False):
     '''
     Creates PDF files containing plots of emissions for model
-    benchmarking purposes.
+    benchmarking purposes. This function is compatiblity with benchmark simulation
+    output only. It is not compatible with transport tracers emissions diagnostics.
 
     Args:
         ref: str
