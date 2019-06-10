@@ -204,24 +204,24 @@ def compare_varnames(refdata, devdata, quiet=False):
             Variables that are common to both refdata and devdata,
             regardless of dimension.
 
-        commonvars1D: list of strs
+        commonvarsOther: list of strs
             Variables that are common to refdata and devdata,
-            and that are 1-dimensional.
+            and that do not have lat, lon, and level dimensions.
 
         commonvars2D: list of strs
             Variables that are common to refdata and devdata,
-            and that are 2-dimensional.
+            and that have lat and lon dimensions, but not level.
 
         commonvars3D: list of strs
             Variables that are common to refdata and devdata,
-            and that are 3-dimensional.
+            and that have lat, lon, and level dimensions.
 
     Examples:
         >>> import gcpy
         >>> import xarray as xr
         >>> refdata = xr.open_dataset("ref_data_file.nc")
         >>> devdata = xr.open_dataset("dev_data_file.nc")
-        >>> [commonvars, commonvars1D, commonvars2D, commonvars3D ] = gcpy.compare_varnames(refdata, devdata)
+        >>> [commonvars, commonvarsOther, commonvars2D, commonvars3D ] = gcpy.compare_varnames(refdata, devdata)
     '''
     refvars = [k for k in refdata.data_vars.keys()]
     devvars= [k for k in devdata.data_vars.keys()]
@@ -229,9 +229,15 @@ def compare_varnames(refdata, devdata, quiet=False):
     refonly = [v for v in refvars if v not in devvars]
     devonly = [v for v in devvars if v not in refvars]
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
-    commonvars1D = [v for v in commonvars if refdata[v].ndim == 2]
-    commonvars2D = [v for v in commonvars if refdata[v].ndim == 3]
-    commonvars3D = [v for v in commonvars if devdata[v].ndim == 4]
+    commonvarsOther = [v for v in commonvars if (('lat' not in refdata[v].dims or 'lats' not in refdata[v].dims) and
+                                                 ('lon' not in refdata[v].dims or 'lons' not in refdata[v].dims) and
+                                                 ('lev' not in refdata[v].dims))]
+    commonvars2D = [v for v in commonvars if (('lat' in refdata[v].dims or 'lats' in refdata[v].dims) and
+                                              ('lon' in refdata[v].dims or 'lons' in refdata[v].dims) and
+                                              ('lev' not in refdata[v].dims))]
+    commonvars3D = [v for v in commonvars if (('lat' in refdata[v].dims or 'lats' in refdata[v].dims) and
+                                              ('lon' in refdata[v].dims or 'lons' in refdata[v].dims) and
+                                              ('lev' in refdata[v].dims))]
     
     # Print information on common and mismatching variables, as well as dimensions
     if quiet == False:
@@ -252,7 +258,7 @@ def compare_varnames(refdata, devdata, quiet=False):
                 else:
                     print('All variables have same dimensions in ref and dev')
 
-    return [commonvars, commonvars1D, commonvars2D, commonvars3D]
+    return [commonvars, commonvarsOther, commonvars2D, commonvars3D]
 
 
 def compare_stats(refdata, refstr, devdata, devstr, varname):
@@ -573,7 +579,7 @@ def filter_names(names, text=''):
         >>> import xarray as xr
         >>> refdata = xr.open_dataset("ref_data_file.nc")
         >>> devdata = xr.open_dataset("dev_data_file.nc")
-        >>> [var, var1D, var2D, var3D] = gcpy.compare_varnames(refdata, devdata)
+        >>> [var, varOther, var2D, var3D] = gcpy.compare_varnames(refdata, devdata)
         >>> var_CO = gcpy.filter_names(var, "CO")
         >>> var_NO = gcpy.filter_names(var, "NO")
         >>> var_O3 = gcpy.filter_names(var, "O3")
