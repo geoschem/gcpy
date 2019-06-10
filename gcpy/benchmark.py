@@ -870,8 +870,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
-        [commonvars, commonvars2D, varlist] = core.compare_varnames(refdata,
-                                                                    devdata)
+        [commonvars, commonvarsOther, commonvars2D, commonvars3D] = core.compare_varnames(refdata, devdata)
+        varlist = commonvars3D
         print('Plotting all 3D variables')
     n_var = len(varlist)
 
@@ -1743,7 +1743,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     properties = json_load_file(open(properties_path))
 
     # Find all common variables between the two datasets
-    [cvars, cvars1D, cvars2D, cvars3D] = core.compare_varnames(refdata,
+    [cvars, cvarsOther, cvars2D, cvars3D] = core.compare_varnames(refdata,
                                                                devdata,
                                                                quiet=True)
 
@@ -2084,7 +2084,7 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
 
     # Find common variables
     quiet = not verbose
-    vars, vars1D, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
+    vars, varsOther, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
 
     # Skip 2D diagnostics that have incompatible dimensions between versions
     for v in vars2D:
@@ -2459,7 +2459,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     # Find common variables in both datasets
     if varlist == None:
         quiet = not verbose
-        [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, devds, quiet)
+        [cmn, cmnOther, cmn2D, cmn3D] = core.compare_varnames(refds, devds, quiet)
 
     # =================================================================
     # Local noon or continuously-averaged J-values?
@@ -2645,7 +2645,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # (or use the varlist passed via keyword argument)
     if varlist == None:
         quiet = not verbose
-        [cmn, cmn1D, cmn2D, cmn3D] = core.compare_varnames(refds, 
+        [cmn, cmnOther, cmn2D, cmn3D] = core.compare_varnames(refds, 
                                                            devds, quiet)
         varlist = [v for v in cmn3D if 'AOD' in v and '_bin' not in v]
 
