@@ -29,6 +29,7 @@ cmap_diff = 'RdBu_r'  # for plotting difference
 aod_spc = 'aod_species.json'
 spc_categories = 'benchmark_categories.json'
 emission_spc = 'emission_species.json' 
+emission_inv = 'emission_inventories.json' 
 
 def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          ilev=0, itime=0,  weightsdir=None, pdfname='',
@@ -1578,7 +1579,7 @@ def create_emission_display_name(diagnostic_name):
 
     # Special handling for Inventory totals
     if 'INV' in display_name.upper():
-        display_name = display_name.replace("_", " from ")
+        display_name = display_name.replace("_", " ")
 
     # Replace text
     for v in ['Emis', 'EMIS', 'emis', 'Inv', 'INV', 'inv']:
@@ -1796,19 +1797,24 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         if len(vartot) == 1:
             varnames.append(varnames.pop(varnames.index(vartot[0])))
 
-        # Get a list of properties for the given species
-        species_properties = properties.get(species_name)
-
         # Loop over all emissions variable names
         for v in varnames:
 
+            if "Inv" in template:
+                spc_name = v.split('_')[1]
+            else:
+                spc_name = species_name
+
+            # Get a list of properties for the given species
+            species_properties = properties.get(spc_name)
+
             # Convert units of Ref, and save to DataArray
-            refarray = convert_units(refdata[v], species_name,
+            refarray = convert_units(refdata[v], spc_name,
                                      species_properties, target_units,
                                      interval, refdata[ref_area_varname])
 
             # Convert units of Dev, and save to DataArray
-            devarray = convert_units(devdata[v], species_name,
+            devarray = convert_units(devdata[v], spc_name,
                                      species_properties, target_units,
                                      interval, devdata[dev_area_varname])
 
@@ -2329,6 +2335,8 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     # Emissions species dictionary
     species = json_load_file(open(os.path.join(os.path.dirname(__file__),
                                                emission_spc)))
+    inventories = json_load_file(open(os.path.join(os.path.dirname(__file__),
+                                                   emission_inv)))
 
     # Destination files
     file_emis_totals = os.path.join(dst, emisdir, 'Emission_totals.txt')
@@ -2346,7 +2354,7 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
                                  ref_area_varname=ref_area_varname,
                                  dev_area_varname=dev_area_varname)
     create_total_emissions_table(refds, refstr, devds, devstr, 
-                                 species, file_inv_totals,
+                                 inventories, file_inv_totals,
                                  interval, template="Inv{}_",
                                  ref_area_varname=ref_area_varname,
                                  dev_area_varname=dev_area_varname)
