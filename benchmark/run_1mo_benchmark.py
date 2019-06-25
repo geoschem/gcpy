@@ -405,26 +405,32 @@ if gchp_vs_gcc_diff_of_diffs:
     diff_of_diffs_refspc = './gcc_diffs_spc.nc4'
     diff_of_diffs_devspc = './gchp_diffs_spc.nc4'
 
-    # Create the spc ref file that contains GCC differences
-    # NOTE: For some reason, the gcc_diffs Dataset is created
-    # without variable attributes; we have to reattach them.
+    # Create a ref file that contains GCC differences
     gcc_ref  = xr.open_dataset(gcc_vs_gcc_refspc)
     gcc_dev  = xr.open_dataset(gcc_vs_gcc_devspc)
     with xr.set_options(keep_attrs=True):
         gcc_diffs = gcc_dev - gcc_ref
-        for v in gcc_dev.data_vars.keys():
-            gcc_diffs[v].attrs = gcc_dev[v].attrs
     gcc_diffs.to_netcdf(diff_of_diffs_refspc)
 
-    # Create a spc dev file that contains GCHP differences
-    # NOTE: For some reason, the gchp_diffs Dataset is created
-    # without variable attributes; we have to reattach them.
+    # Create a dev file that contains GCHP differences. Include special
+    # handling if cubed sphere grid dimension names are different since they
+    # changed in MAPL v1.0.0.
     gchp_ref = xr.open_dataset(gchp_vs_gchp_refspc)
     gchp_dev = xr.open_dataset(gchp_vs_gchp_devspc)
-    with xr.set_options(keep_attrs=True):
-        gchp_diffs = gchp_dev - gchp_ref
+    refdims = gchp_ref.dims
+    devdims = gchp_dev.dims
+    if 'lat' in refdims and 'Xdim' in devdims:
+        gchp_ref_newdimnames = gchp_dev.copy()
         for v in gchp_dev.data_vars.keys():
-            gchp_diffs[v].attrs = gchp_dev[v].attrs
+            if 'Xdim' in gchp_dev[v].dims:
+                gchp_ref_newdimnames[v].values = gchp_ref[v].values.reshape(gchp_dev[v].values.shape)
+                # NOTE: the reverse conversion is gchp_dev[v].stack(lat=('nf','Ydim')).transpose('time','lev','lat','Xdim').values
+        gchp_ref = gchp_ref_newdimnames.copy()
+    with xr.set_options(keep_attrs=True):
+        gchp_diffs = gchp_dev.copy()
+        for v in gchp_dev.data_vars.keys():
+            if 'Xdim' in gchp_dev[v].dims or 'lat' in gchp_dev[v].dims:
+                gchp_diffs[v] = gchp_dev[v] - gchp_ref[v]
     gchp_diffs.to_netcdf(diff_of_diffs_devspc)
 
     if plot_conc:
