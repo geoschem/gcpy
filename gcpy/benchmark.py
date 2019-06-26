@@ -10,7 +10,6 @@ import json
 import copy
 from json import load as json_load_file
 import matplotlib as mpl
-from matplotlib import ticker
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.colors import ListedColormap
 from cartopy import crs
@@ -35,7 +34,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          ilev=0, itime=0,  weightsdir=None, pdfname='',
                          cmpres=None, match_cbar=True, normalize_by_area=False,
                          enforce_units=True, flip_ref=False, flip_dev=False,
-                         use_cmap_RdBu=False, verbose=False ):
+                         use_cmap_RdBu=False, verbose=False, 
+                         log_color_scale=False):
     '''
     Create single-level 3x2 comparison map plots for variables common in two xarray
     datasets. Optionally save to PDF. 
@@ -103,8 +103,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             development datasets.
             Default value: False
 
-        verbose : logical
+        verbose : boolean
             Logical to enable informative prints
+            Default value: False
+
+        log_color_scale: boolean         
+            Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
 
     Returns:
@@ -549,26 +553,45 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 [vmin0, vmax0] = [vmin_abs, vmax_abs]
 
         if verbose: print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(vmin0, vmax0))
+        # Normalize the Ref data to the [0..1] range for the plot,
+        # for either log or linear color scales.  For log scale, the
+        # min value will be 3 orders of magnitude less than the max.
+        if log_color_scale:
+            norm0 = mpl.colors.LogNorm(vmin=vmax0/1e3, vmax=vmax0)
+        else:
+            norm0 = mpl.colors.Normalize(vmin=vmin0, vmax=vmax0)
 
-        # Plot data
+        # Plot data for either lat-lon or cubed-sphere grids.
         ax0.coastlines()
         if refgridtype == 'll':
-            plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon, refminlat, refmaxlat), 
-                               cmap=cmap1, vmin=vmin0, vmax=vmax0)
-            ax0.set_title('{} (Ref){}\n{}'.format(refstr,subtitle_extra,refres))
+            plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon,
+                                               refminlat, refmaxlat),
+                               cmap=cmap1, norm=norm0)
+            ax0.set_title('{} (Ref){}\n{}'.format(
+                refstr, subtitle_extra, refres)) 
         else:
-            masked_refdata = np.ma.masked_where(np.abs(refgrid['lon'] - 180) < 2, ds_ref_reshaped)
+            masked_refdata = np.ma.masked_where(
+                np.abs(refgrid['lon'] - 180) < 2, ds_ref_reshaped)
             for i in range(6):
-                plot0 = ax0.pcolormesh(refgrid['lon_b'][i,:,:], refgrid['lat_b'][i,:,:], masked_refdata[i,:,:], 
-                                       cmap=cmap1, vmin=vmin0, vmax=vmax0)
-            ax0.set_title('{} (Ref){}\nc{}'.format(refstr,subtitle_extra,refres)) 
+                plot0 = ax0.pcolormesh(refgrid['lon_b'][i,:,:],
+                                       refgrid['lat_b'][i,:,:],
+                                       masked_refdata[i,:,:],
+                                       cmap=cmap1, norm=norm0)
+            ax0.set_title('{} (Ref){}\nc{}'.format(
+                refstr, subtitle_extra, refres)) 
+
+        # Define the colorbar for log or linear color scales
+        # If all values of Ref = 0, then manually set tickmarks.
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if (vmax0-vmin0) < 0.1 or (vmax0-vmin0) > 100 or (vmin0 == 0 and vmax0 == 0):
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
+        if log_color_scale:
+            cb.formatter = mpl.ticker.LogFormatter(base=10)
+        else:
+            if (vmax0-vmin0) < 0.1 or (vmax0-vmin0) > 100:
+                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+            if vmin0 == 0 and vmax0 == 0:
+                cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+        cb.update_ticks()
         cb.set_label(units_ref)
-        if vmin0 == 0 and vmax0 == 0: 
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
         ################################################################
         # Subplot (0,1): Dev, plotted on dev input grid
@@ -592,26 +615,43 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 [vmin1, vmax1] = [vmin_abs, vmax_abs]
 
-        if verbose: print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1, vmax1))
+        if verbose: print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1,vmax1))
+        # Normalize the Dev data to the [0..1] range for the plot,
+        # for either log or linear color scales.  For log scale, the
+        # the minimum will be 3 orders of magnitude less than the max.
+        if log_color_scale:
+            norm1 = mpl.colors.LogNorm(vmin=vmax1/1e3, vmax=vmax1)
+        else:
+            norm1 = mpl.colors.Normalize(vmin=vmin1, vmax=vmax1)
 
+        # Plot for either lat-lon or cubed-sphere
         ax1.coastlines()
         if devgridtype == 'll':
-            plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon, devminlat, devmaxlat), 
-                               cmap=cmap1, vmin=vmin1, vmax=vmax1)
+            plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon,
+                                               devminlat, devmaxlat),
+                               cmap=cmap1, norm=norm1)
             ax1.set_title('{} (Dev){}\n{}'.format(devstr,subtitle_extra,devres)) 
         else:
             masked_devdata = np.ma.masked_where(np.abs(devgrid['lon'] - 180) < 2, ds_dev_reshaped)
             for i in range(6):
-                plot1 = ax1.pcolormesh(devgrid['lon_b'][i,:,:], devgrid['lat_b'][i,:,:], 
-                                       masked_devdata[i,:,:], cmap=cmap1, vmin=vmin1, vmax=vmax1)
-            ax1.set_title('{} (Dev){}\nc{}'.format(devstr,subtitle_extra,devres)) 
+                plot1 = ax1.pcolormesh(devgrid['lon_b'][i,:,:],
+                                       devgrid['lat_b'][i,:,:],
+                                       masked_devdata[i,:,:],
+                                       cmap=cmap1, norm=norm1)
+
+            ax1.set_title('{} (Dev){}\nc{}'.format(devstr,subtitle_extra,devres))
+
+        # Define the colorbar for log or linear color scales
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if (vmax1-vmin1) < 0.1 or (vmax1-vmin1) > 100 or (vmin1 == 0 and vmax1 == 0):
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
+        if log_color_scale:
+            cb.formatter = mpl.ticker.LogFormatter(base=10)
+        else:
+            if (vmax1-vmin1) < 0.1 or (vmax1-vmin1) > 100:
+                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+            if vmin1 == 0 and vmax1 == 0:
+                cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
+        cb.update_ticks()
         cb.set_label(units_dev)
-        if vmin1 == 0 and vmax1 == 0: 
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
 
         ################################################################
         # Calculate difference
@@ -654,7 +694,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax2.set_title('Difference\nDev - Ref, Dynamic Range')
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-            cb.locator = ticker.MaxNLocator(nbins=4)
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units)
         if np.all(absdiff==0): 
@@ -685,7 +725,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax3.set_title('Difference\nDev - Ref, Restricted Range [5%,95%]')            
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-            cb.locator = ticker.MaxNLocator(nbins=4)
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         cb.set_label(units)
         if np.all(absdiff==0): 
@@ -725,7 +765,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range') 
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-            cb.locator = ticker.MaxNLocator(nbins=4)
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
             if np.all(absdiff==0): 
                 cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
@@ -752,7 +792,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range') 
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
         if np.all(absdiff==0): 
-            cb.locator = ticker.MaxNLocator(nbins=4)
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
         cb.set_label('unitless') 
@@ -772,7 +812,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                        match_cbar=True, pres_range=[0,2000],
                        normalize_by_area=False, enforce_units=True,
                        flip_ref=False, flip_dev=False, use_cmap_RdBu=False,
-                       verbose=False ):
+                       verbose=False, log_color_scale=False):
 
     '''
     Create single-level 3x2 comparison map plots for variables common in two xarray
@@ -844,6 +884,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
         verbose : logical
             Logical to enable informative prints
+            Default value: False
+
+        log_color_scale: boolean         
+            Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
 
     Returns:
@@ -959,7 +1003,6 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
     # dev
     vdims = devdata.dims
     if 'lat' in vdims and 'lon' in vdims:
-        print('lat found for dev')
         devnlat = devdata.sizes['lat']
         devnlon = devdata.sizes['lon']
         if devnlat == 46 and devnlon == 72:
@@ -1277,32 +1320,44 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                 [vmin0, vmax0] = [vmin_abs, vmax_abs]
         if verbose: print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(vmin0, vmax0))
 
-        # Plot data
+        # Normalize the Dev data to the [0..1] range for the plot,
+        # for either log or linear color scales.  For log scale, the
+        # the minimum will be 3 orders of magnitude less than the max.
+        if log_color_scale:
+            norm0 = mpl.colors.LogNorm(vmin=vmax0/1e3, vmax=vmax0)
+        else:
+            norm0 = mpl.colors.Normalize(vmin=vmin0, vmax=vmax0)
+
+        # Plot data ffor either lat-lon or cubed-sphere grids
         if refgridtype == 'll':
             plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge[pedge_ind],
-                                   zm_ref, cmap=cmap1,
-                                   vmin=vmin0, vmax=vmax0)
+                                   zm_ref, cmap=cmap1, norm=norm0)
+            ax0.set_title('{} (Ref){}\n{}'.format(
+                refstr, subtitle_extra, refres))
         else:
             plot0 = ax0.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                                   zm_ref, cmap=cmap1,
-                                   vmin=vmin0, vmax=vmax0)
-        ax0.invert_yaxis()
-        if refgridtype == 'll':
-            ax0.set_title('{} (Ref){}\n{}'.format(refstr, 
-                                                  subtitle_extra, refres ))
-        else:
+                                   zm_ref, cmap=cmap1, norm=norm0)
             ax0.set_title('{} (Ref){}\n{} regridded from c{}'.format(
                 refstr, subtitle_extra, cmpres, refres))
+        ax0.invert_yaxis()
         ax0.set_ylabel('Pressure (hPa)')
         ax0.set_aspect('auto')
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
+
+        # Define the colorbar for log or linear color scales.
+        # If all values of zm_ref = 0, then manually set tickmarks.
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_ref==0):
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        if np.all(zm_ref==0): 
+        if np.all(zm_ref == 0): 
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+        else:
+            if log_color_scale:
+                cb.formatter = mpl.ticker.LogFormatter(base=10)
+            else:
+                if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+                    cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
         cb.set_label(units)
 
         ###############################################################
@@ -1328,32 +1383,44 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                 [vmin1, vmax1] = [vmin_abs, vmax_abs]
         if verbose: print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1, vmax1))
 
-        # Plot data
+        # Normalize the Dev data to the [0..1] range for the plot,
+        # for either log or linear color scales.  For log scale, the
+        # the minimum will be 3 orders of magnitude less than the max.
+        if log_color_scale:
+            norm1 = mpl.colors.LogNorm(vmin=vmax1/1e3, vmax=vmax1)
+        else:
+            norm1 = mpl.colors.Normalize(vmin=vmin1, vmax=vmax1)
+
+        # Plot data for either lat-lon or cubed-sphere grids.
         if devgridtype == 'll':
             plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], 
-                                   zm_dev, cmap=cmap1,
-                                   vmin=vmin1, vmax=vmax1)
+                                   zm_dev, cmap=cmap1, norm=norm1)
+            ax1.set_title('{} (Dev){}\n{}'.format(
+                devstr, subtitle_extra, devres ))
         else:
             plot1 = ax1.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], 
-                                   zm_dev, cmap=cmap1,
-                                   vmin=vmin1, vmax=vmax1)    
-        ax1.invert_yaxis()
-        if devgridtype == 'll':
-            ax1.set_title('{} (Dev){}\n{}'.format(devstr, subtitle_extra, 
-                                                  devres ))
-        else:
+                                   zm_dev, cmap=cmap1, norm=norm1)
             ax1.set_title('{} (Dev){}\n{} regridded from c{}'.format(
                 devstr, subtitle_extra, cmpres, devres))
+        ax1.invert_yaxis()
         ax1.set_ylabel('Pressure (hPa)')
         ax1.set_aspect('auto')
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
+
+        # Define the colorbar for log or linear color scales.
+        # If all values of zm_dev = 0, then manually set tickmarks.
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_dev==0):
-            cb.locator = ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        if np.all(zm_dev==0): 
+        if np.all(zm_dev == 0): 
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+        else:
+            if log_color_scale:
+                cb.formatter = mpl.ticker.LogFormatter(base=10)
+            else:
+                if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+                    cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
         cb.set_label(units)
 
         ################################################################
@@ -1391,7 +1458,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax2.set_xticklabels(xticklabels)
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_diff==0):
-            cb.locator = ticker.MaxNLocator(nbins=4)
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         if np.all(zm_diff==0): 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
@@ -1420,7 +1487,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax3.set_xticklabels(xticklabels)
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_diff==0):
-            cb.locator = ticker.MaxNLocator(nbins=4)
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         if np.all(zm_diff==0): 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
@@ -1459,7 +1526,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax4.set_xticklabels(xticklabels)
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or np.all(zm_fracdiff==0):
-            cb.locator = ticker.MaxNLocator(nbins=4)
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         if np.all(zm_fracdiff==0): 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
@@ -1487,7 +1554,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax5.set_xticklabels(xticklabels)
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
         if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or np.all(zm_fracdiff==0):
-            cb.locator = ticker.MaxNLocator(nbins=4)
+            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
             cb.update_ticks()
         if np.all(zm_fracdiff==0): 
             cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
@@ -1869,7 +1936,7 @@ def archive_species_categories(dst):
 def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                               overwrite=False, verbose=False, restrict_cats=[],
                               plots=['sfc', '500hpa', 'zonalmean'], 
-                              use_cmap_RdBu=False ):
+                              use_cmap_RdBu=False, log_color_scale=False):
     '''
     Creates PDF files containing plots of species concentration
     for model benchmarking purposes.
@@ -1912,6 +1979,10 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
         plots : list of strings
              List of plot types to create.
              Default value: ['sfc', '500hpa', 'zonalmean']
+
+        log_color_scale: boolean         
+            Logical to enable plotting data (not diffs) on a log color scale.
+            Default value: False
     '''
 
     # NOTE: this function could use some refactoring; abstract processing per category?
@@ -1969,7 +2040,8 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
             pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
             compare_single_level(refds, refstr, devds, devstr, 
                                  varlist=varlist, ilev=0,
-                                 pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu )
+                                 pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
+                                 log_color_scale=log_color_scale)
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
@@ -1979,7 +2051,8 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                                    '{}_500hPa.pdf'.format(filecat))        
             compare_single_level(refds, refstr, devds, devstr, 
                                  varlist=varlist, ilev=22,
-                                 pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu )
+                                 pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
+                                 log_color_scale=log_color_scale)
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
@@ -1988,7 +2061,8 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
             pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(
                 filecat))        
             compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
-                               pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu )
+                               pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
+                               log_color_scale=log_color_scale)
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
@@ -1997,7 +2071,8 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                 filecat))        
             compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
                                pdfname=pdfname, pres_range=[0,100], 
-                               use_cmap_RdBu=use_cmap_RdBu )
+                               use_cmap_RdBu=use_cmap_RdBu,
+                               log_color_scale=log_color_scale)
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
@@ -2008,11 +2083,13 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                               plot_by_benchmark_cat=False,
                               plot_by_hco_cat=False,
                               overwrite=False, verbose=False,
-                              flip_ref=False, flip_dev=False):
+                              flip_ref=False, flip_dev=False,
+                              log_color_scale=False):
     '''
     Creates PDF files containing plots of emissions for model
-    benchmarking purposes. This function is compatiblity with benchmark simulation
-    output only. It is not compatible with transport tracers emissions diagnostics.
+    benchmarking purposes. This function is compatiblity with benchmark 
+    simulation output only. It is not compatible with transport tracers
+    emissions diagnostics.
 
     Args:
         ref: str
@@ -2069,6 +2146,10 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
              from the top of atmosphere instead of the surface).
              Default value: False
 
+        log_color_scale: boolean         
+            Logical to enable plotting data (not diffs) on a log color scale.
+            Default value: False
+ 
     Remarks:
         (1) If both plot_by_benchmark_cat and plot_by_hco_cat are
             False, then all emission plots will be placed into the
@@ -2115,8 +2196,10 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     # =================================================================
     with xr.set_options(keep_attrs=True):
         for v in vars3D:
-            refds[v] = refds[v].sum(dim='lev')
-            devds[v] = devds[v].sum(dim='lev')
+            if 'lev' in refds[v].dims:
+                refds[v] = refds[v].sum(dim='lev')
+            if 'lev' in devds[v].dims:
+                devds[v] = devds[v].sum(dim='lev')
 
     # =================================================================
     # If inputs plot_by* are both false, plot all emissions in same file
@@ -2124,7 +2207,8 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     if not plot_by_benchmark_cat and not plot_by_hco_cat:
         pdfname = os.path.join(emisdir,'Emissions.pdf')
         compare_single_level(refds, refstr, devds, devstr,
-                             varlist=varlist, pdfname=pdfname )
+                             varlist=varlist, pdfname=pdfname,
+                             log_color_scale=log_color_scale)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix='Emis', verbose=verbose)
         return
@@ -2159,7 +2243,8 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                 varnames = [k for k in emis_vars if c in k]
             pdfname = os.path.join(emisspcdir,'{}_Emissions.pdf'.format(c))
             compare_single_level(refds, refstr, devds, devstr,
-                                 varlist=varnames, ilev=0, pdfname=pdfname)
+                                 varlist=varnames, ilev=0, pdfname=pdfname,
+                                 log_color_scale=log_color_scale)
             add_bookmarks_to_pdf(pdfname, varnames,
                                  remove_prefix='Emis', verbose=verbose)
 
@@ -2198,13 +2283,16 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
 
             # Create emissions file for this benchmark species category
             pdfname = os.path.join(catdir,'{}_Emissions.pdf'.format(filecat))
-            compare_single_level(refds, refstr, devds, devstr, varlist=varlist, ilev=0, pdfname=pdfname, flip_ref=flip_ref, flip_dev=flip_dev )
+            compare_single_level(refds, refstr, devds, devstr, 
+                                 varlist=varlist, ilev=0, pdfname=pdfname, 
+                                 flip_ref=flip_ref, flip_dev=flip_dev,
+                                 log_color_scale=log_color_scale)
             add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
 
         # Give warning if emissions species is not assigned a benchmark category
         for spc in emis_spc:
             if spc not in allcatspc:
-                print('Warning: speciess {} has emissions diagnostics but is not in benchmark_categories.json'.format(spc))
+                print('Warning: species {} has emissions diagnostics but is not in benchmark_categories.json'.format(spc))
 
 
 def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
@@ -2366,7 +2454,8 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 local_noon_jvalues=False,
                                 plots=['sfc', '500hpa', 'zonalmean'],
                                 overwrite=False, verbose=False,
-                                flip_ref=False, flip_dev=False):
+                                flip_ref=False, flip_dev=False,
+                                log_color_scale=False):
     '''
     Creates PDF files containing plots of J-values for model
     benchmarking purposes.
@@ -2432,6 +2521,10 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
              from the top of atmosphere instead of the surface).
              Default value: False
 
+        log_color_scale: boolean         
+            Logical to enable plotting data (not diffs) on a log color scale.
+            Default value: False
+
     Remarks:
          Will create 4 files containing J-value plots:
             (1 ) Surface values
@@ -2442,8 +2535,10 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
          At present, we do not yet have the capability to split the
          plots up into separate files per category (e.g. Primary,
-         Aerosols, etc.).  We could add this functionality later if
-         there is demand. 
+         Aerosols, etc.).  This is primarily due to the fact that 
+         we archive J-values from GEOS-Chem for individual species
+         but not family species.  We could attempt to add this 
+         functionality later if there is sufficient demand. 
     '''
     
     if os.path.isdir(dst) and not overwrite:
@@ -2525,7 +2620,8 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         pdfname = os.path.join(jvdir, '{}Surface.pdf'.format(prefix))
         compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist, ilev=0, pdfname=pdfname,
-                             flip_ref=flip_ref, flip_dev=flip_dev)
+                             flip_ref=flip_ref, flip_dev=flip_dev,
+                             log_color_scale=log_color_scale)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
@@ -2534,7 +2630,8 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         pdfname = os.path.join(jvdir, '{}500hPa.pdf'.format(prefix))
         compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist, ilev=22, pdfname=pdfname,
-                             flip_ref=flip_ref, flip_dev=flip_dev )
+                             flip_ref=flip_ref, flip_dev=flip_dev,
+                             log_color_scale=log_color_scale)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
@@ -2544,7 +2641,8 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                '{}FullColumn_ZonalMean.pdf'.format(prefix))
         compare_zonal_mean(refds, refstr, devds, devstr,
                            varlist=varlist, pdfname=pdfname,
-                           flip_ref=flip_ref, flip_dev=flip_dev)
+                           flip_ref=flip_ref, flip_dev=flip_dev,
+                           log_color_scale=log_color_scale)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
@@ -2552,14 +2650,16 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         pdfname = os.path.join(jvdir,'{}Strat_ZonalMean.pdf'.format(prefix))
         compare_zonal_mean(refds, refstr, devds, devstr,
                            varlist=varlist, pdfname=pdfname, pres_range=[0,100],
-                           flip_ref=flip_ref, flip_dev=flip_dev)
+                           flip_ref=flip_ref, flip_dev=flip_dev,
+                           log_color_scale=log_color_scale)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
 
 def make_benchmark_aod_plots(ref, refstr, dev, devstr,
                              varlist=None, dst='./1mo_benchmark',
-                             overwrite=False, verbose=False):
+                             overwrite=False, verbose=False,
+                             log_color_scale=False):
     '''
     Creates PDF files containing plots of column aerosol optical
     depths (AODs) for model benchmarking purposes.
@@ -2601,6 +2701,10 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
         verbose : boolean
              Set this flag to True to print extra informational output.
              Default value: False
+
+        log_color_scale: boolean         
+            Logical to enable plotting data (not diffs) on a log color scale.
+            Default value: False
     '''
     # =================================================================
     # Initialization and also read data
@@ -2745,7 +2849,8 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # =================================================================
     pdfname = os.path.join(aoddir, 'Aerosols_ColumnOptDepth.pdf')
     compare_single_level(refds, refstr, devds, devstr,
-                         varlist=newvarlist, ilev=0, pdfname=pdfname)
+                         varlist=newvarlist, ilev=0, pdfname=pdfname,
+                         log_color_scale=log_color_scale)
     add_bookmarks_to_pdf(pdfname, newvarlist,
                          remove_prefix='Column_AOD_', verbose=verbose)
 
