@@ -552,44 +552,63 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 [vmin0, vmax0] = [vmin_abs, vmax_abs]
 
-        if verbose: print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(vmin0, vmax0))
-        # Normalize the Ref data to the [0..1] range for the plot,
-        # for either log or linear color scales.  For log scale, the
-        # min value will be 3 orders of magnitude less than the max.
-        if log_color_scale:
-            norm0 = mpl.colors.LogNorm(vmin=vmax0/1e3, vmax=vmax0)
-        else:
-            norm0 = mpl.colors.Normalize(vmin=vmin0, vmax=vmax0)
+        if verbose: print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(
+                vmin0, vmax0))
 
         # Plot data for either lat-lon or cubed-sphere grids.
         ax0.coastlines()
         if refgridtype == 'll':
+            # Set top title for lat-lon plot
+            ax0.set_title('{} (Ref){}\n{}'.format(
+                refstr, subtitle_extra, refres))
+
+            # Check if the reference data is all zeroes
+            ref_is_all_zeroes = np.all(ds_ref == 0)
+
+            # Normalize colors for the plot
+            norm0 = normalize_colors(vmin0, vmax0,
+                                     is_all_zeroes=ref_is_all_zeroes,
+                                     log_color_scale=log_color_scale)
+
+            # Plot the data
             plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon,
                                                refminlat, refmaxlat),
                                cmap=cmap1, norm=norm0)
-            ax0.set_title('{} (Ref){}\n{}'.format(
-                refstr, subtitle_extra, refres)) 
         else:
+            # Set top title for cubed-sphere plot
+            ax0.set_title('{} (Ref){}\nc{}'.format(
+                refstr, subtitle_extra, refres))
+
+            # Mask the reference data
             masked_refdata = np.ma.masked_where(
                 np.abs(refgrid['lon'] - 180) < 2, ds_ref_reshaped)
+
+            # Check if the reference data is all zeroes
+            ref_is_all_zeroes = np.all(masked_refdata == 0)
+
+            # Normalize colors (put in range [0..1]) for the plot
+            norm0 = normalize_colors(vmin0, vmax0,
+                                     is_all_zeroes=ref_is_all_zeroes,
+                                     log_color_scale=log_color_scale)
+
+            # Plot each face of the cubed-sphere
             for i in range(6):
                 plot0 = ax0.pcolormesh(refgrid['lon_b'][i,:,:],
                                        refgrid['lat_b'][i,:,:],
                                        masked_refdata[i,:,:],
                                        cmap=cmap1, norm=norm0)
-            ax0.set_title('{} (Ref){}\nc{}'.format(
-                refstr, subtitle_extra, refres)) 
 
         # Define the colorbar for log or linear color scales
-        # If all values of Ref = 0, then manually set tickmarks.
+        # If all values of Ref = 0, then manually set a tickmark at 0.
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if log_color_scale:
-            cb.formatter = mpl.ticker.LogFormatter(base=10)
+        if ref_is_all_zeroes:
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
         else:
-            if (vmax0-vmin0) < 0.1 or (vmax0-vmin0) > 100:
-                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            if vmin0 == 0 and vmax0 == 0:
-                cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+            if log_color_scale:
+                cb.formatter = mpl.ticker.LogFormatter(base=10)
+            else:
+                if (vmax0-vmin0) < 0.1 or (vmax0-vmin0) > 100:
+                    cb.locator = mpl.ticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units_ref)
 
@@ -616,40 +635,61 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 [vmin1, vmax1] = [vmin_abs, vmax_abs]
 
         if verbose: print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1,vmax1))
-        # Normalize the Dev data to the [0..1] range for the plot,
-        # for either log or linear color scales.  For log scale, the
-        # the minimum will be 3 orders of magnitude less than the max.
-        if log_color_scale:
-            norm1 = mpl.colors.LogNorm(vmin=vmax1/1e3, vmax=vmax1)
-        else:
-            norm1 = mpl.colors.Normalize(vmin=vmin1, vmax=vmax1)
 
         # Plot for either lat-lon or cubed-sphere
         ax1.coastlines()
         if devgridtype == 'll':
+            # Set top title for lat-lon plot
+            ax1.set_title('{} (Dev){}\n{}'.format(
+                devstr,subtitle_extra,devres))
+
+            # Check if Dev is all zeroes
+            dev_is_all_zeroes = np.all(ds_dev == 0)
+
+            # Normalize colors (put in range [0..1]) for the plot
+            norm1 = normalize_colors(vmin1, vmax1,
+                                     is_all_zeroes=dev_is_all_zeroes,
+                                     log_color_scale=log_color_scale)
+
+            # Plot the data!
             plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon,
                                                devminlat, devmaxlat),
                                cmap=cmap1, norm=norm1)
-            ax1.set_title('{} (Dev){}\n{}'.format(devstr,subtitle_extra,devres)) 
         else:
-            masked_devdata = np.ma.masked_where(np.abs(devgrid['lon'] - 180) < 2, ds_dev_reshaped)
+            # Set top title for cubed-sphere plot
+            ax1.set_title('{} (Dev){}\nc{}'.format(
+                devstr,subtitle_extra,devres))
+
+            # Mask the data
+            masked_devdata = np.ma.masked_where(
+                np.abs(devgrid['lon'] - 180) < 2, ds_dev_reshaped)
+
+            # Check if Dev is all zereos
+            dev_is_all_zeroes = np.all(masked_devdata == 0)
+
+            # Normalize colors (put in range [0..1]) for the plot
+            norm1 = normalize_colors(vmin1, vmax1,
+                                     is_all_zeroes=dev_is_all_zeroes,
+                                     log_color_scale=log_color_scale)
+
+            # Plot each face of the cubed-sphere
             for i in range(6):
                 plot1 = ax1.pcolormesh(devgrid['lon_b'][i,:,:],
                                        devgrid['lat_b'][i,:,:],
                                        masked_devdata[i,:,:],
                                        cmap=cmap1, norm=norm1)
 
-            ax1.set_title('{} (Dev){}\nc{}'.format(devstr,subtitle_extra,devres))
-
         # Define the colorbar for log or linear color scales
+        # If all values of Dev = 0, then manually set a tickmark at 0.
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if log_color_scale:
-            cb.formatter = mpl.ticker.LogFormatter(base=10)
+        if dev_is_all_zeroes:
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
         else:
-            if (vmax1-vmin1) < 0.1 or (vmax1-vmin1) > 100:
-                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            if vmin1 == 0 and vmax1 == 0:
-                cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
+            if log_color_scale:
+                cb.formatter = mpl.ticker.LogFormatter(base=10)
+            else:
+                if (vmax1-vmin1) < 0.1 or (vmax1-vmin1) > 100:
+                    cb.locator = mpl.ticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units_dev)
 
@@ -682,23 +722,32 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
         ax2.coastlines()
         if cmpgridtype == 'll':
-            plot2 = ax2.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
+            plot2 = ax2.imshow(absdiff, extent=(cmpminlon, cmpmaxlon,
+                                                cmpminlat, cmpmaxlat),
                                cmap=cmap_gray, vmin=vmin, vmax=vmax)
         else:
             for i in range(6):
-                plot2 = ax2.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                       absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                plot2 = ax2.pcolormesh(cmpgrid['lon_b'][i,:,:],
+                                       cmpgrid['lat_b'][i,:,:],
+                                       absdiff[i,:,:],
+                                       cmap=cmap_nongray,
+                                       vmin=vmin, vmax=vmax)
         if regridany:
-            ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(cmpres))
+            ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(
+                cmpres))
         else:
             ax2.set_title('Difference\nDev - Ref, Dynamic Range')
+
+        # Define the colorbar for the plot
+        # If all values of absdiff = 0, manually set a tickmark at 0.
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-        cb.set_label(units)
         if np.all(absdiff==0): 
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0']) 
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+        else:
+            if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
+        cb.set_label(units)
 
         ################################################################
         # Subplot (1,1): Difference, restricted range
@@ -713,23 +762,31 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
         ax3.coastlines()
         if cmpgridtype == 'll':
-            plot3 = ax3.imshow(absdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat), 
+            plot3 = ax3.imshow(absdiff, extent=(cmpminlon, cmpmaxlon,
+                                                cmpminlat, cmpmaxlat),
                                cmap=cmap_gray, vmin=vmin, vmax=vmax)
         else:
             for i in range(6):
-                plot3 = ax3.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                       absdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                plot3 = ax3.pcolormesh(cmpgrid['lon_b'][i,:,:],
+                                       cmpgrid['lat_b'][i,:,:],
+                                       absdiff[i,:,:],
+                                       cmap=cmap_nongray,
+                                       vmin=vmin, vmax=vmax)
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
         else:
-            ax3.set_title('Difference\nDev - Ref, Restricted Range [5%,95%]')            
+            ax3.set_title('Difference\nDev - Ref, Restricted Range [5%,95%]')
+
+        # Define the colorbar for the plot.
+        # If all values of absdiff = 0, then manually set a tick at 0.
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
+        if np.all(absdiff==0):
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+        else:
+            if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
         cb.set_label(units)
-        if np.all(absdiff==0): 
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
 
         ################################################################
         # Calculate fractional difference, set divides by zero to Nan
@@ -753,22 +810,30 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
   
         ax4.coastlines()
         if cmpgridtype == 'll':
-            plot4 = ax4.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
+            plot4 = ax4.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon,
+                                                 cmpminlat, cmpmaxlat),
                                vmin=vmin, vmax=vmax, cmap=cmap_gray)
         else:
             for i in range(6):
-                plot4 = ax4.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                   fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                plot4 = ax4.pcolormesh(cmpgrid['lon_b'][i,:,:],
+                                       cmpgrid['lat_b'][i,:,:],
+                                       fracdiff[i,:,:],
+                                       cmap=cmap_nongray,
+                                       vmin=vmin, vmax=vmax)
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres)) 
         else:
-            ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range') 
+            ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range')
+
+        # Define the colorbar for the plot.
+        # If all values of absdiff = 0, then manually set a tick at 0.
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-            if np.all(absdiff==0): 
-                cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+        if np.all(absdiff==0):
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+        else:
+            if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
         cb.set_label('unitless')  
 
         ################################################################
@@ -780,21 +845,24 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
         ax5.coastlines()
         if cmpgridtype == 'll':
-            plot5 = ax5.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
+            plot5 = ax5.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon,
+                                                 cmpminlat, cmpmaxlat),
                                cmap=cmap_gray, vmin=vmin, vmax=vmax)
         else:
             for i in range(6):
-                plot5 = ax5.pcolormesh(cmpgrid['lon_b'][i,:,:], cmpgrid['lat_b'][i,:,:], 
-                                   fracdiff[i,:,:], cmap=cmap_nongray, vmin=vmin, vmax=vmax)
+                plot5 = ax5.pcolormesh(cmpgrid['lon_b'][i,:,:],
+                                       cmpgrid['lat_b'][i,:,:],
+                                       fracdiff[i,:,:],
+                                       cmap=cmap_nongray,
+                                       vmin=vmin, vmax=vmax)
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
         else:
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range') 
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
-        if np.all(absdiff==0): 
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+        if np.all(absdiff==0):
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+        cb.update_ticks()
         cb.set_label('unitless') 
             
         if savepdf:    
@@ -1320,23 +1388,27 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                 [vmin0, vmax0] = [vmin_abs, vmax_abs]
         if verbose: print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(vmin0, vmax0))
 
-        # Normalize the Dev data to the [0..1] range for the plot,
-        # for either log or linear color scales.  For log scale, the
-        # the minimum will be 3 orders of magnitude less than the max.
-        if log_color_scale:
-            norm0 = mpl.colors.LogNorm(vmin=vmax0/1e3, vmax=vmax0)
-        else:
-            norm0 = mpl.colors.Normalize(vmin=vmin0, vmax=vmax0)
+        # Check if all elements of Ref are zero
+        ref_is_all_zeroes = np.all(zm_ref == 0)
 
-        # Plot data ffor either lat-lon or cubed-sphere grids
+        # Normalize colors (put in range [0..1]) for the plot
+        norm0 = normalize_colors(vmin0, vmax0,
+                                 is_all_zeroes=ref_is_all_zeroes,
+                                 log_color_scale=log_color_scale)
+
+        # Plot data for either lat-lon or cubed-sphere grids
         if refgridtype == 'll':
-            plot0 = ax0.pcolormesh(refgrid['lat_b'], pedge[pedge_ind],
-                                   zm_ref, cmap=cmap1, norm=norm0)
+            plot0 = ax0.pcolormesh(refgrid['lat_b'],
+                                   pedge[pedge_ind],
+                                   zm_ref,
+                                   cmap=cmap1, norm=norm0)
             ax0.set_title('{} (Ref){}\n{}'.format(
                 refstr, subtitle_extra, refres))
         else:
-            plot0 = ax0.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                                   zm_ref, cmap=cmap1, norm=norm0)
+            plot0 = ax0.pcolormesh(cmpgrid['lat_b'],
+                                   pedge[pedge_ind],
+                                   zm_ref,
+                                   cmap=cmap1, norm=norm0)
             ax0.set_title('{} (Ref){}\n{} regridded from c{}'.format(
                 refstr, subtitle_extra, cmpres, refres))
         ax0.invert_yaxis()
@@ -1346,11 +1418,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax0.set_xticklabels(xticklabels)
 
         # Define the colorbar for log or linear color scales.
-        # If all values of zm_ref = 0, then manually set tickmarks.
+        # If all values of zm_ref = 0, then manually set a tick at zero.
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
-        if np.all(zm_ref == 0): 
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+        if ref_is_all_zeroes:
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
         else:
             if log_color_scale:
                 cb.formatter = mpl.ticker.LogFormatter(base=10)
@@ -1383,13 +1454,13 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                 [vmin1, vmax1] = [vmin_abs, vmax_abs]
         if verbose: print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1, vmax1))
 
-        # Normalize the Dev data to the [0..1] range for the plot,
-        # for either log or linear color scales.  For log scale, the
-        # the minimum will be 3 orders of magnitude less than the max.
-        if log_color_scale:
-            norm1 = mpl.colors.LogNorm(vmin=vmax1/1e3, vmax=vmax1)
-        else:
-            norm1 = mpl.colors.Normalize(vmin=vmin1, vmax=vmax1)
+        # Check if all elements of Ref are zero
+        dev_is_all_zeroes = np.all(zm_dev == 0)
+
+        # Normalize colors (put in range [0..1]) for the plot
+        norm1 = normalize_colors(vmin1, vmax1,
+                                 is_all_zeroes=dev_is_all_zeroes,
+                                 log_color_scale=log_color_scale)
 
         # Plot data for either lat-lon or cubed-sphere grids.
         if devgridtype == 'll':
@@ -1409,11 +1480,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax1.set_xticklabels(xticklabels)
 
         # Define the colorbar for log or linear color scales.
-        # If all values of zm_dev = 0, then manually set tickmarks.
+        # If all values of zm_dev = 0, then manually set a tick at 0
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
-        if np.all(zm_dev == 0): 
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+        if dev_is_all_zeroes:
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
         else:
             if log_color_scale:
                 cb.formatter = mpl.ticker.LogFormatter(base=10)
@@ -1445,7 +1515,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         if verbose: print('Subplot (1,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         plot2 = ax2.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                               zm_diff, cmap=cmap_plot, vmin=vmin, vmax=vmax)
+                               zm_diff, cmap=cmap_plot,
+                               vmin=vmin, vmax=vmax)
         ax2.invert_yaxis()
         if regridany:
             ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(
@@ -1456,12 +1527,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax2.set_aspect('auto')
         ax2.set_xticks(xtick_positions)
         ax2.set_xticklabels(xticklabels)
+
+        # Define the colorbar for the plot.
+        # If all values of zm_diff = 0, then manually set a tick at 0
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_diff==0):
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
         if np.all(zm_diff==0): 
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+        else:
+            if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
         cb.set_label(units)
 
         ################################################################
@@ -1485,12 +1560,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax3.set_aspect('auto')
         ax3.set_xticks(xtick_positions)
         ax3.set_xticklabels(xticklabels)
+
+        # Define the colorbar for the plot.
+        # If all values of zm_diff = 0, then manually set a tick at 0
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000 or np.all(zm_diff==0):
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
         if np.all(zm_diff==0): 
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+        else:
+            if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
         cb.set_label(units)
 
         ################################################################
@@ -1524,12 +1603,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax4.set_aspect('auto')
         ax4.set_xticks(xtick_positions)
         ax4.set_xticklabels(xticklabels)
+
+        # Define the colorbar for the plot.
+        # If all values of zm_diff = 0, then manually set a tick at 0
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or np.all(zm_fracdiff==0):
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
         if np.all(zm_fracdiff==0): 
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+        else:
+            if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
         cb.set_clim(vmin=vmin, vmax=vmax)
         cb.set_label('unitless')   
 
@@ -1552,12 +1635,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax5.set_aspect('auto')
         ax5.set_xticks(xtick_positions)
         ax5.set_xticklabels(xticklabels)
+
+        # Define the colorbar for the plot.
+        # If all values of zm_diff = 0, then manually set a tick at 0
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
-        if (vmax-vmin) < 0.1 or (vmax-vmin) > 100 or np.all(zm_fracdiff==0):
-            cb.locator = mpl.ticker.MaxNLocator(nbins=4)
-            cb.update_ticks()
         if np.all(zm_fracdiff==0): 
-            cb.ax.set_xticklabels(['0.0', '0.0', '0.0', '0.0', '0.0'])
+            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+        else:
+            if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
         cb.set_clim(vmin=vmin, vmax=vmax)
         cb.set_label('unitless') 
             
@@ -3159,6 +3246,59 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
 
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
+
+
+def normalize_colors(vmin, vmax,
+                     is_all_zeroes=False,
+                     log_color_scale=False):
+    '''
+    Normalizes colors to the range of 0..1 for input to
+    matplotlib-based plotting functions, given the max & min values.
+
+    For log-color scales, special handling is done to prevent
+    taking the log of data that is all zeroes.
+
+    Args:
+    -----
+    vmin, vmax : float
+        Minimum and maximum values of a data array.
+
+    Keyword Args:
+    -------------
+    is_all_zeroes : boolean
+        Logical flag to denote if the data array is all zeroes.
+        Default value: False
+
+    log_color_scale : boolean
+        Logical flag to denote that we are using a logarithmic
+        color scale instead of a linear color scale.
+        Default value: False:
+
+    Returns:
+    --------
+    norm : matplotlib Norm
+        The normalized colors, in a matplotlib Norm object.
+
+    Remarks:
+    --------
+    (1) This is an internal routine, called from compare_single_level,
+        and compare_zonal_mean.
+
+    (2) For log scale, the min value will be 3 orders of magnitude
+        less than the max.  But if the data is all zeroes, then we
+        will revert to a linear scale (to avoid a math error of
+        taking a log of zero).
+    '''
+    if is_all_zeroes:
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+    else:
+        if log_color_scale:
+            norm = mpl.colors.LogNorm(vmin=vmax/1e3, vmax=vmax)
+        else:
+            norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+
+    return norm
+
 
 # =============================================================================
 # The rest of this file contains legacy code that may be deleted in the future
