@@ -59,6 +59,9 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # =====================================================================
 
 # Benchmark information (*MUST EDIT*)
+# Note: When doing GCHP vs GCC comparisions gchp_dev will be compared to
+#  gcc_dev (not gcc_ref!). This ensures consistency in version names when
+#  doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
 maindir  = '/path/to/main/directory'
 gcc_ref_version = 'gcc_ref_version_string'
 gcc_dev_version = 'gcc_dev_version_string'
@@ -89,9 +92,10 @@ gcc_hourstr  = '0000'
 gchp_hourstr = '1200'
 
 # Data directories (edit as needed)
+# For gchp_vs_gcc_refdir use gcc_dev_version, not ref (mps, 6/27/19)
 gcc_vs_gcc_refdir   = os.path.join(maindir, gcc_ref_version)
 gcc_vs_gcc_devdir   = os.path.join(maindir, gcc_dev_version)
-gchp_vs_gcc_refdir  = os.path.join(maindir, gcc_ref_version)
+gchp_vs_gcc_refdir  = os.path.join(maindir, gcc_dev_version)
 gchp_vs_gcc_devdir  = os.path.join(maindir, gchp_dev_version, 'OutputDir')
 gchp_vs_gchp_refdir = os.path.join(maindir, gchp_ref_version, 'OutputDir')
 gchp_vs_gchp_devdir = os.path.join(maindir, gchp_dev_version, 'OutputDir')
@@ -106,15 +110,17 @@ diff_of_diffs_plotsdir = os.path.join(maindir, gchp_dev_version,
                                       'output/GCHP_GCC_diff_of_diffs')
 
 # Plot title strings (edit as needed)
+# For gchp_vs_gcc_refstr use gcc_dev_version, not ref (mps, 6/27/19)
 gcc_vs_gcc_refstr    = '{}'.format(gcc_ref_version)
 gcc_vs_gcc_devstr    = '{}'.format(gcc_dev_version)
-gchp_vs_gcc_refstr   = 'GCC {}'.format(gcc_ref_version)
+gchp_vs_gcc_refstr   = 'GCC {}'.format(gcc_dev_version)
 gchp_vs_gcc_devstr   = 'GCHP {}'.format(gchp_dev_version)
 gchp_vs_gchp_refstr  = 'GCHP {}'.format(gchp_ref_version)
 gchp_vs_gchp_devstr  = 'GCHP {}'.format(gchp_dev_version)
-diff_of_diffs_refstr = 'GCC {} vs {}'.format(gcc_dev_version, gcc_ref_version)
-diff_of_diffs_devstr = 'GCHP {} vs {}'.format(gchp_dev_version,
-                                              gchp_ref_version)
+diff_of_diffs_refstr = 'GCC {} - {}'.format(gcc_dev_version,
+                                            gcc_ref_version)
+diff_of_diffs_devstr = 'GCHP {} - {}'.format(gchp_dev_version,
+                                             gchp_ref_version)
 
 # =====================================================================
 # The rest of these settings should not need to be changed
