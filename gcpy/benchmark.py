@@ -828,13 +828,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Define the colorbar for the plot.
         # If all values of absdiff = 0, then manually set a tick at 0.
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
-        if np.all(absdiff==0):
+        if np.all(absdiff == 0):
             cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
                 cb.locator = mpl.ticker.MaxNLocator(nbins=4)
         cb.update_ticks()
-        cb.set_label('unitless')  
+        cb.set_label('unitless')
 
         ################################################################
         # Subplot (2,1): Fractional Difference, restricted range
@@ -860,11 +860,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range') 
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
-        if np.all(absdiff==0):
+        if np.all(absdiff == 0):
             cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
         cb.update_ticks()
-        cb.set_label('unitless') 
-            
+        cb.set_label('unitless')
+
+        # Add page to PDF
         if savepdf:    
             pdf.savefig(figs)
             plt.close(figs)
