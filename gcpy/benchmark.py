@@ -827,6 +827,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
         # Define the colorbar for the plot.
         # If all values of absdiff = 0, then manually set a tick at 0.
+        # Use absdiff in the test for all zeroes, because fracdiff may
+        # have NaN's due to div by zero when both Dev and Ref are zero.
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
         if np.all(absdiff == 0):
             cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
@@ -859,6 +861,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
         else:
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range') 
+
+        # Define the colorbar for the plot.
+        # If all values of absdiff = 0, then manually set a tick at 0.
+        # Use absdiff in the test for all zeroes, because fracdiff may
+        # have NaN's due to div by zero when both Dev and Ref are zero.
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
         if np.all(absdiff == 0):
             cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
@@ -1606,9 +1613,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax4.set_xticklabels(xticklabels)
 
         # Define the colorbar for the plot.
-        # If all values of zm_diff = 0, then manually set a tick at 0
+        # If all values of absdiff = 0, then manually set a tick at 0.
+        # Use zm_diff in the test for all zeroes, because fracdiff may
+        # have NaN's due to div by zero when both Dev and Ref are zero.
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
-        if np.all(zm_fracdiff==0): 
+        if np.all(zm_diff == 0):
             cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
@@ -1638,9 +1647,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax5.set_xticklabels(xticklabels)
 
         # Define the colorbar for the plot.
-        # If all values of zm_diff = 0, then manually set a tick at 0
+        # If all values of zm_diff = 0, then manually set a tick at 0.
+        # Use zm_diff in the test for all zeroes, because fracdiff may
+        # have NaN's due to div by zero when both Dev and Ref are zero.
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
-        if np.all(zm_fracdiff==0): 
+        if np.all(zm_diff == 0): 
             cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
