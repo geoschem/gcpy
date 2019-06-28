@@ -136,11 +136,9 @@ gchp_spcfile = 'GCHP.SpeciesConc.{}_{}z.nc4'.format(gchp_datestr,
 gcc_hcofile  = 'HEMCO_diagnostics.{}{}.nc'.format(gcc_datestr, gcc_hourstr)
 gchp_hcofile = 'GCHP.Emissions.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
 
-# Local noon J-value diagnostic filenames
-gcc_jvfile  = 'GEOSChem.JValuesLocalNoon.{}_{}z.nc4'.format(gcc_datestr,
-                                                            gcc_hourstr)
-gchp_jvfile = 'GCHP.JValuesLocalNoon.{}_{}z.nc4'.format(gchp_datestr,
-                                                        gchp_hourstr)
+# 24-hr avg J-value diagnostic filenames
+gcc_jvfile  = 'GEOSChem.JValues.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
+gchp_jvfile = 'GCHP.JValues.{}_{}z.nc4'.format(gchp_datestr, gchp_hourstr)
 
 # Aerosol optical depth diagnostic filenames
 gcc_aodfile  = 'GEOSChem.Aerosols.{}_{}z.nc4'.format(gcc_datestr, gcc_hourstr)
@@ -252,7 +250,6 @@ if gcc_vs_gcc:
                                               gcc_vs_gcc_devjv,
                                               gcc_vs_gcc_devstr,
                                               dst=gcc_vs_gcc_plotsdir,
-                                              local_noon_jvalues=True,
                                               overwrite=True)
     if plot_aod:
         # Column AOD plots
@@ -321,7 +318,6 @@ if gchp_vs_gcc:
                                               gchp_vs_gcc_devjv,
                                               gchp_vs_gcc_devstr,
                                               dst=gchp_vs_gcc_plotsdir,
-                                              local_noon_jvalues=True,
                                               overwrite=True)
     if plot_aod:
         # Column AOD plots
@@ -384,7 +380,6 @@ if gchp_vs_gchp:
                                               gchp_vs_gchp_devjv,
                                               gchp_vs_gchp_devstr,
                                               dst=gchp_vs_gchp_plotsdir,
-                                              local_noon_jvalues=True,
                                               overwrite=True)
 
     if plot_aod:
