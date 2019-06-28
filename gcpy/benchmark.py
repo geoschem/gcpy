@@ -35,7 +35,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          cmpres=None, match_cbar=True, normalize_by_area=False,
                          enforce_units=True, flip_ref=False, flip_dev=False,
                          use_cmap_RdBu=False, verbose=False, 
-                         log_color_scale=False):
+                         log_color_scale=False, sig_diff_list=[]):
     '''
     Create single-level 3x2 comparison map plots for variables common in two xarray
     datasets. Optionally save to PDF. 
@@ -111,6 +111,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
 
+        sig_diff_list: list of str
+            Returns a list of all quantities having significant differences.
+            The criteria is: |max(fractional difference)| > 0.1
+            Default value: None
+
     Returns:
         Nothing
 
@@ -149,7 +154,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     savepdf = True
     if pdfname == '':
         savepdf = False
-    
+
     ####################################################################
     # Determine input grid resolutions and types
     ####################################################################
@@ -872,7 +877,16 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         cb.update_ticks()
         cb.set_label('unitless')
 
-        # Add page to PDF
+        ################################################################
+        # Update the list of variables with significant differences.
+        # Criterion: abs(max(fracdiff)) > 0.1
+        ################################################################
+        if np.abs(np.max(fracdiff)) > 0.1:
+            sig_diff_list.append(varname)
+
+        ################################################################
+        # Add this page of 6-panel plots to the PDF file
+        ################################################################
         if savepdf:    
             pdf.savefig(figs)
             plt.close(figs)
@@ -888,7 +902,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                        match_cbar=True, pres_range=[0,2000],
                        normalize_by_area=False, enforce_units=True,
                        flip_ref=False, flip_dev=False, use_cmap_RdBu=False,
-                       verbose=False, log_color_scale=False):
+                       verbose=False, log_color_scale=False,
+                       sig_diff_list=[]):
 
     '''
     Create single-level 3x2 comparison map plots for variables common in two xarray
@@ -965,6 +980,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         log_color_scale: boolean         
             Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
+
+        sig_diff_list: list of str
+            Returns a list of all quantities having significant differences.
+            The criteria is: |max(fractional difference)| > 0.1
+            Default value: None
 
     Returns:
         Nothing
@@ -1659,7 +1679,17 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         cb.update_ticks()
         cb.set_clim(vmin=vmin, vmax=vmax)
         cb.set_label('unitless') 
-            
+
+        ################################################################
+        # Update the list of variables with significant differences.
+        # Criterion: abs(max(zm_fracdiff)) > 0.1
+        ################################################################
+        if np.abs(np.max(zm_fracdiff)) > 0.1:
+            sig_diff_list.append(varname)
+
+        ################################################################
+        # Add this page of 6-panel plots to the PDF file
+        ################################################################
         if savepdf:    
             pdf.savefig(figs)
             plt.close(figs)
@@ -2084,7 +2114,8 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
             Default value: False
     '''
 
-    # NOTE: this function could use some refactoring; abstract processing per category?
+    # NOTE: this function could use some refactoring; 
+    # abstract processing per category?
     
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
@@ -2113,6 +2144,11 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
     archive_species_categories(dst)
     core.archive_lumped_species_definitions(dst)
     
+    # Define the significant difference lists
+    sig_diff_sfc = []
+    sig_diff_500 = []
+    sig_diff_zm = []
+
     for i, filecat in enumerate(catdict):
 
         # If restrict_cats list is passed, skip all categories except those in the list
@@ -2139,8 +2175,10 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
             pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
             compare_single_level(refds, refstr, devds, devstr, 
                                  varlist=varlist, ilev=0,
-                                 pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
-                                 log_color_scale=log_color_scale)
+                                 pdfname=pdfname,
+                                 use_cmap_RdBu=use_cmap_RdBu,
+                                 log_color_scale=log_color_scale,
+                                 sig_diff_list=sig_diff_sfc)
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
@@ -2150,8 +2188,10 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                                    '{}_500hPa.pdf'.format(filecat))        
             compare_single_level(refds, refstr, devds, devstr, 
                                  varlist=varlist, ilev=22,
-                                 pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
-                                 log_color_scale=log_color_scale)
+                                 pdfname=pdfname, 
+                                 use_cmap_RdBu=use_cmap_RdBu,
+                                 log_color_scale=log_color_scale,
+                                 sig_diff_list=sig_diff_500)
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
@@ -2161,7 +2201,8 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                 filecat))        
             compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
                                pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
-                               log_color_scale=log_color_scale)
+                               log_color_scale=log_color_scale,
+                               sig_diff_list=sig_diff_zm)
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
@@ -2175,6 +2216,19 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
+
+        # Strip the "SpeciesConc_" from the lists
+        prefix = 'SpeciesConc_'
+        for v in sig_diff_sfc:
+            v.replace(prefix, '')
+        for v in sig_diff_500:
+            v.replace(prefix, '')
+        for v in sig_diff_zm:
+            v.replace(prefix,'')
+
+        print( 'sfc:     {}'.format(sig_diff_sfc))
+        print( '500 hpa: {}'.format(sig_diff_500))
+        print( 'zonal:   {}'.format(sig_diff_zm))
 
 
 def make_benchmark_emis_plots(ref, refstr, dev, devstr,
