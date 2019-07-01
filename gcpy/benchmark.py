@@ -35,7 +35,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          cmpres=None, match_cbar=True, normalize_by_area=False,
                          enforce_units=True, flip_ref=False, flip_dev=False,
                          use_cmap_RdBu=False, verbose=False, 
-                         log_color_scale=False, sig_diff_list=[]):
+                         log_color_scale=False, sigdiff_list=None):
     '''
     Create single-level 3x2 comparison map plots for variables common in two xarray
     datasets. Optionally save to PDF. 
@@ -111,7 +111,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
 
-        sig_diff_list: list of str
+        sigdiff_list: list of str
             Returns a list of all quantities having significant differences.
             The criteria is: |max(fractional difference)| > 0.1
             Default value: None
@@ -397,7 +397,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Area normalization, if any
         ################################################################
 
-        # if normalizing by area, adjust units to be per m2, and adjust title string
+        # if normalizing by area, adjust units to be per m2,
+        # and adjust title string
         units = units_ref
         subtitle_extra = ''
         varndim = varndim_ref
@@ -880,9 +881,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ################################################################
         # Update the list of variables with significant differences.
         # Criterion: abs(max(fracdiff)) > 0.1
+        # Do not include NaNs in the criterion, because these indicate
+        # places where fracdiff could not be computed (div-by-zero).
         ################################################################
-        if np.abs(np.max(fracdiff)) > 0.1:
-            sig_diff_list.append(varname)
+        if np.abs(np.nanmax(fracdiff)) > 0.1:
+            sigdiff_list.append(varname)
 
         ################################################################
         # Add this page of 6-panel plots to the PDF file
@@ -894,8 +897,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     ####################################################################
     # Finish
     ####################################################################
-
-    if savepdf: pdf.close()
+    if savepdf:
+        pdf.close()
 
 def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                        itime=0, weightsdir=None, pdfname='', cmpres=None,
@@ -903,7 +906,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                        normalize_by_area=False, enforce_units=True,
                        flip_ref=False, flip_dev=False, use_cmap_RdBu=False,
                        verbose=False, log_color_scale=False,
-                       sig_diff_list=[]):
+                       sigdiff_list=[]):
 
     '''
     Create single-level 3x2 comparison map plots for variables common in two xarray
@@ -981,7 +984,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
 
-        sig_diff_list: list of str
+        sigdiff_list: list of str
             Returns a list of all quantities having significant differences.
             The criteria is: |max(fractional difference)| > 0.1
             Default value: None
@@ -1682,10 +1685,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
         ################################################################
         # Update the list of variables with significant differences.
-        # Criterion: abs(max(zm_fracdiff)) > 0.1
+        # Criterion: abs(max(fracdiff)) > 0.1
+        # Do not include NaNs in the criterion, because these indicate
+        # places where fracdiff could not be computed (div-by-zero).
         ################################################################
-        if np.abs(np.max(zm_fracdiff)) > 0.1:
-            sig_diff_list.append(varname)
+        if np.abs(np.nanmax(zm_fracdiff)) > 0.1:
+            sigdiff_list.append(varname)
 
         ################################################################
         # Add this page of 6-panel plots to the PDF file
@@ -1697,7 +1702,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
     ####################################################################
     # Finish
     ####################################################################
-    if savepdf: pdf.close()
+    if savepdf:
+        pdf.close()
 
 
 def get_emissions_varnames(commonvars, template=None):
@@ -2065,7 +2071,8 @@ def archive_species_categories(dst):
 def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                               overwrite=False, verbose=False, restrict_cats=[],
                               plots=['sfc', '500hpa', 'zonalmean'], 
-                              use_cmap_RdBu=False, log_color_scale=False):
+                              use_cmap_RdBu=False, log_color_scale=False,
+                              sigdiff_files=None):
     '''
     Creates PDF files containing plots of species concentration
     for model benchmarking purposes.
@@ -2112,11 +2119,21 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
         log_color_scale: boolean         
             Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
+
+        sigdiff_files : list of str
+            Filenames that will contain the lists of species having
+            significant differences in the 'sfc', '500hpa', and
+            'zonalmean' plots.  These lists are needed in order to
+            fill out the benchmark approval forms.
+            Default value: None
     '''
 
     # NOTE: this function could use some refactoring; 
     # abstract processing per category?
-    
+
+    # ==================================================================
+    # Initialization and data read
+    # ==================================================================
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
         return
@@ -2143,15 +2160,14 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
     
     archive_species_categories(dst)
     core.archive_lumped_species_definitions(dst)
-    
-    # Define the significant difference lists
-    sig_diff_sfc = []
-    sig_diff_500 = []
-    sig_diff_zm = []
 
+    # ==================================================================
+    # Create the plots!
+    # ==================================================================
     for i, filecat in enumerate(catdict):
 
-        # If restrict_cats list is passed, skip all categories except those in the list
+        # If restrict_cats list is passed,
+        # skip all categories except those in the list
         if restrict_cats and filecat not in restrict_cats:
             continue
 
@@ -2173,12 +2189,14 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
         # Surface plots
         if 'sfc' in plots:
             pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
+            diff_sfc = []
             compare_single_level(refds, refstr, devds, devstr, 
                                  varlist=varlist, ilev=0,
                                  pdfname=pdfname,
                                  use_cmap_RdBu=use_cmap_RdBu,
                                  log_color_scale=log_color_scale,
-                                 sig_diff_list=sig_diff_sfc)
+                                 sigdiff_list=diff_sfc)
+            diff_sfc[:] = [v.replace('SpeciesConc_', '') for v in diff_sfc]
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
@@ -2186,23 +2204,27 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
         if '500hpa' in plots:
             pdfname = os.path.join(catdir,
                                    '{}_500hPa.pdf'.format(filecat))        
+            diff_500 = []
             compare_single_level(refds, refstr, devds, devstr, 
                                  varlist=varlist, ilev=22,
                                  pdfname=pdfname, 
                                  use_cmap_RdBu=use_cmap_RdBu,
                                  log_color_scale=log_color_scale,
-                                 sig_diff_list=sig_diff_500)
+                                 sigdiff_list=diff_500)
+            diff_500[:] = [v.replace('SpeciesConc_', '') for v in diff_500]
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
 
-        if 'zonalmean' in plots:
+        if 'zonalmean' in plots or 'zm' in plots:
             pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(
-                filecat))        
+                filecat))
+            diff_zm = []
             compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
                                pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
                                log_color_scale=log_color_scale,
-                               sig_diff_list=sig_diff_zm)
+                               sigdiff_list=diff_zm)
+            diff_zm[:] = [v.replace('SpeciesConc_', '') for v in diff_zm]
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
@@ -2217,18 +2239,35 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
 
-        # Strip the "SpeciesConc_" from the lists
-        prefix = 'SpeciesConc_'
-        for v in sig_diff_sfc:
-            v.replace(prefix, '')
-        for v in sig_diff_500:
-            v.replace(prefix, '')
-        for v in sig_diff_zm:
-            v.replace(prefix,'')
+        # ==============================================================
+        # Write the list of species having significant differences,
+        # which we need to fill out the benchmark approval forms.
+        # ==============================================================
+        if sigdiff_files != None:
+            for filename in sigdiff_files:
+                if 'sfc' in filename:
+                    with open(filename, 'a+') as f:
+                        print('{}: '.format(filecat), file=f, end='')
+                        for v in diff_sfc:
+                            print('{} '.format(v), file=f, end='')
+                        print(file=f)
+                        f.close()
 
-        print( 'sfc:     {}'.format(sig_diff_sfc))
-        print( '500 hpa: {}'.format(sig_diff_500))
-        print( 'zonal:   {}'.format(sig_diff_zm))
+                if '500' in filename:
+                    with open(filename, 'a_') as f:
+                        print('{}: '.format(filecat), file=f, end='')
+                        for v in diff_500:
+                            print('{} '.format(v), file=f, end='')
+                        print(file=f)
+                        f.close()
+
+                if 'zonalmean' in filename or 'zm' in filename:
+                    with open(filename, 'a+') as f:
+                        print('{}: '.format(filecat), file=f, end='')
+                        for v in diff_zm:
+                            print('{} '.format(v), file=f, end='')
+                        print(file=f)
+                        f.close()
 
 
 def make_benchmark_emis_plots(ref, refstr, dev, devstr,
@@ -2237,7 +2276,8 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                               plot_by_hco_cat=False,
                               overwrite=False, verbose=False,
                               flip_ref=False, flip_dev=False,
-                              log_color_scale=False):
+                              log_color_scale=False,
+                              sigdiff_files=None):
     '''
     Creates PDF files containing plots of emissions for model
     benchmarking purposes. This function is compatiblity with benchmark 
@@ -2302,7 +2342,14 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
         log_color_scale: boolean         
             Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
- 
+
+         sigdiff_files : list of str
+            Filenames that will contain the lists of species having
+            significant differences in the 'sfc', '500hpa', and
+            'zonalmean' plots.  These lists are needed in order to
+            fill out the benchmark approval forms.
+            Default value: None
+
     Remarks:
         (1) If both plot_by_benchmark_cat and plot_by_hco_cat are
             False, then all emission plots will be placed into the
@@ -2311,7 +2358,9 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
         (2) Emissions that are 3-dimensional will be plotted as
             column sums.
     '''
-
+    # =================================================================
+    # Initialization and data read
+    # =================================================================
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
         return
@@ -2338,7 +2387,6 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     # Find common variables
     quiet = not verbose
     vars, varsOther, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
-
 
     # Combine 2D and 3D variables into an overall list
     varlist = vars2D + vars3D
@@ -2381,13 +2429,16 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     # =================================================================
     # if plot_by_hco_cat is true, make a file for each HEMCO emissions
     # category that is in the diagnostics file
+    #
+    # Also write the list of emission quantities that have significant
+    # diffs.  We'll need that to fill out the benchmark forms.
     # =================================================================
     if plot_by_hco_cat:
-
         emisspcdir = os.path.join(dst,'Emissions')
         if not os.path.isdir(emisspcdir):
             os.mkdir(emisspcdir)   
 
+        diff_dict = {}
         for c in emis_cats:
             # Handle cases of bioburn and bioBurn (temporary until 12.3.1)
             if c == 'Bioburn':
@@ -2395,11 +2446,34 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
             else:
                 varnames = [k for k in emis_vars if c in k]
             pdfname = os.path.join(emisspcdir,'{}_Emissions.pdf'.format(c))
+            diff_emis = []
             compare_single_level(refds, refstr, devds, devstr,
                                  varlist=varnames, ilev=0, pdfname=pdfname,
-                                 log_color_scale=log_color_scale)
+                                 log_color_scale=log_color_scale,
+                                 sigdiff_list=diff_emis)
             add_bookmarks_to_pdf(pdfname, varnames,
                                  remove_prefix='Emis', verbose=verbose)
+
+            # Save the list of quantities with significant differences for
+            # this category into the diff_dict dictionary for use below
+            diff_emis[:] = [v.replace('Emis', '') for v in diff_emis]
+            diff_emis[:] = [v.replace('_' + c, '') for v in diff_emis]
+            diff_dict[c] = diff_emis
+
+        # -------------------------------------------------------------
+        # Write the list of species having significant differences,
+        # which we need to fill out the benchmark approval forms.
+        # -------------------------------------------------------------
+        if sigdiff_files != None:
+            for filename in sigdiff_files:
+                if 'emis' in filename:
+                    with open(filename, 'w+') as f:
+                        for c, diff_list in diff_dict.items():
+                            print('{}: '.format(c), file=f, end='')
+                            for v in diff_list:
+                                print('{} '.format(v), file=f, end='')
+                            print(file=f)
+                        f.close()
 
     # =================================================================
     # if plot_by_benchmark_cat is true, make a file for each benchmark
@@ -2608,7 +2682,8 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 plots=['sfc', '500hpa', 'zonalmean'],
                                 overwrite=False, verbose=False,
                                 flip_ref=False, flip_dev=False,
-                                log_color_scale=False):
+                                log_color_scale=False,
+                                sigdiff_files=[]):
     '''
     Creates PDF files containing plots of J-values for model
     benchmarking purposes.
@@ -2677,6 +2752,13 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         log_color_scale: boolean         
             Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
+
+        sigdiff_files : list of str
+            Filenames that will contain the lists of J-values having
+            significant differences in the 'sfc', '500hpa', and
+            'zonalmean' plots.  These lists are needed in order to
+            fill out the benchmark approval forms.
+            Default value: None
 
     Remarks:
          Will create 4 files containing J-value plots:
@@ -2771,20 +2853,24 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     # Surface plots
     if 'sfc' in plots:
         pdfname = os.path.join(jvdir, '{}Surface.pdf'.format(prefix))
+        diff_sfc = []
         compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist, ilev=0, pdfname=pdfname,
                              flip_ref=flip_ref, flip_dev=flip_dev,
-                             log_color_scale=log_color_scale)
+                             log_color_scale=log_color_scale,
+                             sigdiff_list=diff_sfc)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
     # 500hPa plots
     if '500hpa' in plots:
         pdfname = os.path.join(jvdir, '{}500hPa.pdf'.format(prefix))
+        diff_500 = []
         compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist, ilev=22, pdfname=pdfname,
                              flip_ref=flip_ref, flip_dev=flip_dev,
-                             log_color_scale=log_color_scale)
+                             log_color_scale=log_color_scale,
+                             sigdiff_list=diff_500)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
@@ -2792,10 +2878,12 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     if 'zonalmean' in plots:
         pdfname = os.path.join(jvdir,
                                '{}FullColumn_ZonalMean.pdf'.format(prefix))
+        diff_zm = []
         compare_zonal_mean(refds, refstr, devds, devstr,
                            varlist=varlist, pdfname=pdfname,
                            flip_ref=flip_ref, flip_dev=flip_dev,
-                           log_color_scale=log_color_scale)
+                           log_color_scale=log_color_scale,
+                           sigdiff_list=diff_zm)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
@@ -2808,11 +2896,42 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
+        # =================================================================
+        # Write the lists of J-values that have significant differences,
+        # which we need to fill out the benchmark approval forms.
+        # =================================================================
+        if sigdiff_files != None:
+            for filename in sigdiff_files:
+                if 'sfc' in filename:
+                    with open(filename, 'a+') as f:
+                        print('Jvalues: ', file=f, end='')
+                        for v in diff_sfc:
+                            print('{} '.format(v), file=f, end='')
+                        print(file=f)
+                        f.close()
+
+                if '500' in filename:
+                    with open(filename, 'a+') as f:
+                        print('Jvalues: ', file=f, end='')
+                        for v in diff_500:
+                            print('{} '.format(v), file=f, end='')
+                        print(file=f)
+                        f.close()
+
+                if 'zonalmean' in filename or 'zm' in filename:
+                    with open(filename, 'a+') as f:
+                        print('Jvalues: ', file=f, end='')
+                        for v in diff_zm:
+                            print('{} '.format(v), file=f, end='')
+                        print(file=f)
+                        f.close()
+
 
 def make_benchmark_aod_plots(ref, refstr, dev, devstr,
                              varlist=None, dst='./1mo_benchmark',
                              overwrite=False, verbose=False,
-                             log_color_scale=False):
+                             log_color_scale=False,
+                             sigdiff_files=[]):
     '''
     Creates PDF files containing plots of column aerosol optical
     depths (AODs) for model benchmarking purposes.
@@ -2858,6 +2977,13 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
         log_color_scale: boolean         
             Logical to enable plotting data (not diffs) on a log color scale.
             Default value: False
+
+        sigdiff_files : list of str
+            Filenames that will contain the list of quantities having
+            having significant differences in the column AOD plots.
+            These lists are needed in order to fill out the benchmark
+            approval forms.
+            Default value: []
     '''
     # =================================================================
     # Initialization and also read data
@@ -3001,13 +3127,29 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # Create the plots
     # =================================================================
     pdfname = os.path.join(aoddir, 'Aerosols_ColumnOptDepth.pdf')
+    diff_aod = []
     compare_single_level(refds, refstr, devds, devstr,
                          varlist=newvarlist, ilev=0, pdfname=pdfname,
-                         log_color_scale=log_color_scale)
+                         log_color_scale=log_color_scale,
+                         sigdiff_list=diff_aod)
+    diff_aod[:] = [v.replace('Column_AOD_', '') for v in diff_aod]
     add_bookmarks_to_pdf(pdfname, newvarlist,
                          remove_prefix='Column_AOD_', verbose=verbose)
 
-    
+    # =================================================================
+    # Write the list of AOD quantities having significant differences,
+    # which we will need to fill out the benchmark forms.
+    # =================================================================
+    for filename in sigdiff_files:
+        if 'aod' in filename:
+            with open(filename, 'w+') as f:
+                print('Column AOD: ', file=f, end='')
+                for v in diff_aod:
+                    print('{} '.format(v), file=f, end='')
+                print(file=f)
+                f.close()
+
+
 def create_budget_table(devdata, devstr, region, species, varnames,
                         outfilename, interval=2678400.0, template="Budget_{}"):
     '''
