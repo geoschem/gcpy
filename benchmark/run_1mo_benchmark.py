@@ -43,8 +43,9 @@ Remarks:
 # =====================================================================
 
 import os
+from os.path import join
 import xarray as xr
-from gcpy import benchmark
+from gcpy import benchmark as bmk
 import warnings
 
 # Tell matplotlib not to look for an X-window
@@ -93,21 +94,21 @@ gchp_hourstr = '1200'
 
 # Data directories (edit as needed)
 # For gchp_vs_gcc_refdir use gcc_dev_version, not ref (mps, 6/27/19)
-gcc_vs_gcc_refdir   = os.path.join(maindir, gcc_ref_version)
-gcc_vs_gcc_devdir   = os.path.join(maindir, gcc_dev_version)
-gchp_vs_gcc_refdir  = os.path.join(maindir, gcc_dev_version)
-gchp_vs_gcc_devdir  = os.path.join(maindir, gchp_dev_version, 'OutputDir')
-gchp_vs_gchp_refdir = os.path.join(maindir, gchp_ref_version, 'OutputDir')
-gchp_vs_gchp_devdir = os.path.join(maindir, gchp_dev_version, 'OutputDir')
+gcc_vs_gcc_refdir   = join(maindir, gcc_ref_version)
+gcc_vs_gcc_devdir   = join(maindir, gcc_dev_version)
+gchp_vs_gcc_refdir  = join(maindir, gcc_dev_version)
+gchp_vs_gcc_devdir  = join(maindir, gchp_dev_version, 'OutputDir')
+gchp_vs_gchp_refdir = join(maindir, gchp_ref_version, 'OutputDir')
+gchp_vs_gchp_devdir = join(maindir, gchp_dev_version, 'OutputDir')
 
 # Plots directories (edit as needed)
-gcc_vs_gcc_plotsdir    = os.path.join(maindir, gcc_dev_version, 'output')
-gchp_vs_gchp_plotsdir  = os.path.join(maindir, gchp_dev_version,
-                                      'output/GCHP_version_comparison')
-gchp_vs_gcc_plotsdir   = os.path.join(maindir, gchp_dev_version,
-                                      'output/GCHP_GCC_comparison')
-diff_of_diffs_plotsdir = os.path.join(maindir, gchp_dev_version,
-                                      'output/GCHP_GCC_diff_of_diffs')
+gcc_vs_gcc_plotsdir    = join(maindir, 'output')
+gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_version,
+                              'output/GCHP_version_comparison')
+gchp_vs_gcc_plotsdir   = join(maindir, gchp_dev_version,
+                              'output/GCHP_GCC_comparison')
+diff_of_diffs_plotsdir = join(maindir, gchp_dev_version,
+                              'output/GCHP_GCC_diff_of_diffs')
 
 # Plot title strings (edit as needed)
 # For gchp_vs_gcc_refstr use gcc_dev_version, not ref (mps, 6/27/19)
@@ -121,6 +122,32 @@ diff_of_diffs_refstr = 'GCC {} - {}'.format(gcc_dev_version,
                                             gcc_ref_version)
 diff_of_diffs_devstr = 'GCHP {} - {}'.format(gchp_dev_version,
                                              gchp_ref_version)
+
+# Files that will contain lists of quantities that have significant
+# differences -- we need these for the benchmark approval forms.
+gcc_vs_gcc_sigdiff = [
+    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_sfc.txt'),
+    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_500hpa.txt'),
+    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_zonalmean.txt'),
+    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_emissions.txt'),
+    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_jvalues.txt'),
+    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_aod.txt')]
+
+gchp_vs_gcc_sigdiff = [
+    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_sfc.txt'),
+    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_500hpa.txt'),
+    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_zonalmean.txt'),
+    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_emissions.txt'),
+    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_jvalues.txt'),
+    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_aod.txt')]
+
+gchp_vs_gchp_sigdiff = [
+    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_sfc.txt'),
+    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_500hpa.txt'),
+    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_zonalmean.txt'),
+    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_emissions.txt'),
+    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_jvalues.txt'),
+    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_aod.txt')]
 
 # =====================================================================
 # The rest of these settings should not need to be changed
@@ -157,49 +184,49 @@ gchp_bgtfile = 'GCHP.Budget.{}_{}z.nc4'.format(gchp_datestr,
                                                gchp_hourstr)
 
 # Paths to species concentration data
-gcc_vs_gcc_refspc   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_spcfile)
-gcc_vs_gcc_devspc   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_spcfile)
-gchp_vs_gcc_refspc  = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_spcfile)
-gchp_vs_gcc_devspc  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_spcfile)
-gchp_vs_gchp_refspc = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_spcfile)
-gchp_vs_gchp_devspc = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_spcfile)
+gcc_vs_gcc_refspc   = join(maindir, gcc_vs_gcc_refdir,   gcc_spcfile)
+gcc_vs_gcc_devspc   = join(maindir, gcc_vs_gcc_devdir,   gcc_spcfile)
+gchp_vs_gcc_refspc  = join(maindir, gchp_vs_gcc_refdir,  gcc_spcfile)
+gchp_vs_gcc_devspc  = join(maindir, gchp_vs_gcc_devdir,  gchp_spcfile)
+gchp_vs_gchp_refspc = join(maindir, gchp_vs_gchp_refdir, gchp_spcfile)
+gchp_vs_gchp_devspc = join(maindir, gchp_vs_gchp_devdir, gchp_spcfile)
 
 # Paths to HEMCO diagnostics data
-gcc_vs_gcc_refhco   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_hcofile)
-gcc_vs_gcc_devhco   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_hcofile)
-gchp_vs_gcc_refhco  = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_hcofile)
-gchp_vs_gcc_devhco  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_hcofile)
-gchp_vs_gchp_refhco = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_hcofile)
-gchp_vs_gchp_devhco = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_hcofile)
+gcc_vs_gcc_refhco   = join(maindir, gcc_vs_gcc_refdir,   gcc_hcofile)
+gcc_vs_gcc_devhco   = join(maindir, gcc_vs_gcc_devdir,   gcc_hcofile)
+gchp_vs_gcc_refhco  = join(maindir, gchp_vs_gcc_refdir,  gcc_hcofile)
+gchp_vs_gcc_devhco  = join(maindir, gchp_vs_gcc_devdir,  gchp_hcofile)
+gchp_vs_gchp_refhco = join(maindir, gchp_vs_gchp_refdir, gchp_hcofile)
+gchp_vs_gchp_devhco = join(maindir, gchp_vs_gchp_devdir, gchp_hcofile)
 
 # Paths to local noon J-value data
-gcc_vs_gcc_refjv    = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_jvfile)
-gcc_vs_gcc_devjv    = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_jvfile)
-gchp_vs_gcc_refjv   = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_jvfile)
-gchp_vs_gcc_devjv   = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_jvfile)
-gchp_vs_gchp_refjv  = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_jvfile)
-gchp_vs_gchp_devjv  = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_jvfile)
+gcc_vs_gcc_refjv    = join(maindir, gcc_vs_gcc_refdir,   gcc_jvfile)
+gcc_vs_gcc_devjv    = join(maindir, gcc_vs_gcc_devdir,   gcc_jvfile)
+gchp_vs_gcc_refjv   = join(maindir, gchp_vs_gcc_refdir,  gcc_jvfile)
+gchp_vs_gcc_devjv   = join(maindir, gchp_vs_gcc_devdir,  gchp_jvfile)
+gchp_vs_gchp_refjv  = join(maindir, gchp_vs_gchp_refdir, gchp_jvfile)
+gchp_vs_gchp_devjv  = join(maindir, gchp_vs_gchp_devdir, gchp_jvfile)
 
 # Paths to aerosol optical depth data
-gcc_vs_gcc_refaod   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_aodfile)
-gcc_vs_gcc_devaod   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_aodfile)
-gchp_vs_gcc_refaod  = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_aodfile)
-gchp_vs_gcc_devaod  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_aodfile)
-gchp_vs_gchp_refaod = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_aodfile)
-gchp_vs_gchp_devaod = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_aodfile)
+gcc_vs_gcc_refaod   = join(maindir, gcc_vs_gcc_refdir,   gcc_aodfile)
+gcc_vs_gcc_devaod   = join(maindir, gcc_vs_gcc_devdir,   gcc_aodfile)
+gchp_vs_gcc_refaod  = join(maindir, gchp_vs_gcc_refdir,  gcc_aodfile)
+gchp_vs_gcc_devaod  = join(maindir, gchp_vs_gcc_devdir,  gchp_aodfile)
+gchp_vs_gchp_refaod = join(maindir, gchp_vs_gchp_refdir, gchp_aodfile)
+gchp_vs_gchp_devaod = join(maindir, gchp_vs_gchp_devdir, gchp_aodfile)
 
 # Paths to StateMet data
-gcc_vs_gcc_refmet   = os.path.join(maindir, gcc_vs_gcc_refdir,   gcc_metfile)
-gcc_vs_gcc_devmet   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_metfile)
-gchp_vs_gcc_refmet  = os.path.join(maindir, gchp_vs_gcc_refdir,  gcc_metfile)
-gchp_vs_gcc_devmet  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_metfile)
-gchp_vs_gchp_refmet = os.path.join(maindir, gchp_vs_gchp_refdir, gchp_metfile)
-gchp_vs_gchp_devmet = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_metfile)
+gcc_vs_gcc_refmet   = join(maindir, gcc_vs_gcc_refdir,   gcc_metfile)
+gcc_vs_gcc_devmet   = join(maindir, gcc_vs_gcc_devdir,   gcc_metfile)
+gchp_vs_gcc_refmet  = join(maindir, gchp_vs_gcc_refdir,  gcc_metfile)
+gchp_vs_gcc_devmet  = join(maindir, gchp_vs_gcc_devdir,  gchp_metfile)
+gchp_vs_gchp_refmet = join(maindir, gchp_vs_gchp_refdir, gchp_metfile)
+gchp_vs_gchp_devmet = join(maindir, gchp_vs_gchp_devdir, gchp_metfile)
 
 # Paths to budget data
-gcc_vs_gcc_devbgt   = os.path.join(maindir, gcc_vs_gcc_devdir,   gcc_bgtfile)
-gchp_vs_gcc_devbgt  = os.path.join(maindir, gchp_vs_gcc_devdir,  gchp_bgtfile)
-gchp_vs_gchp_devbgt = os.path.join(maindir, gchp_vs_gchp_devdir, gchp_bgtfile)
+gcc_vs_gcc_devbgt   = join(maindir, gcc_vs_gcc_devdir,   gcc_bgtfile)
+gchp_vs_gcc_devbgt  = join(maindir, gchp_vs_gcc_devdir,  gchp_bgtfile)
+gchp_vs_gchp_devbgt = join(maindir, gchp_vs_gchp_devdir, gchp_bgtfile)
 
 # =====================================================================
 # Create GCC vs GCC benchmark plots and tables
@@ -211,63 +238,68 @@ if gcc_vs_gcc:
         # Concentration plots
         # (includes lumped species and separates by category)
         print('%%% Creating GCC vs. GCC concentration plots %%%')
-        benchmark.make_benchmark_conc_plots(gcc_vs_gcc_refspc,
-                                            gcc_vs_gcc_refstr,
-                                            gcc_vs_gcc_devspc,
-                                            gcc_vs_gcc_devstr,
-                                            dst=gcc_vs_gcc_plotsdir,
-                                            overwrite=True)
+        bmk.make_benchmark_conc_plots(gcc_vs_gcc_refspc,
+                                      gcc_vs_gcc_refstr,
+                                      gcc_vs_gcc_devspc,
+                                      gcc_vs_gcc_devstr,
+                                      dst=gcc_vs_gcc_plotsdir,
+                                      overwrite=True,
+                                      sigdiff_files=gcc_vs_gcc_sigdiff)
 
     if plot_emis:
         # Emissions plots
         print('%%% Creating GCC vs. GCC emissions plots %%%')
-        benchmark.make_benchmark_emis_plots(gcc_vs_gcc_refhco,
-                                            gcc_vs_gcc_refstr,
-                                            gcc_vs_gcc_devhco,
-                                            gcc_vs_gcc_devstr,
-                                            dst=gcc_vs_gcc_plotsdir,
-                                            plot_by_benchmark_cat=True,
-                                            plot_by_hco_cat=True,
-                                            overwrite=True)
+        bmk.make_benchmark_emis_plots(gcc_vs_gcc_refhco,
+                                      gcc_vs_gcc_refstr,
+                                      gcc_vs_gcc_devhco,
+                                      gcc_vs_gcc_devstr,
+                                      dst=gcc_vs_gcc_plotsdir,
+                                      plot_by_benchmark_cat=True,
+                                      plot_by_hco_cat=True,
+                                      overwrite=True,
+                                      sigdiff_files=gcc_vs_gcc_sigdiff)
 
     if emis_table:
         # Table of emission and inventory totals
         print('%%% Creating GCC vs. GCC emissions and inventory tables %%%')
         gcc_vs_gcc_reflist = [gcc_vs_gcc_refhco]
         gcc_vs_gcc_devlist = [gcc_vs_gcc_devhco]
-        benchmark.make_benchmark_emis_tables(gcc_vs_gcc_reflist,
-                                             gcc_vs_gcc_refstr,
-                                             gcc_vs_gcc_devlist,
-                                             gcc_vs_gcc_devstr,
-                                             dst=gcc_vs_gcc_plotsdir,
-                                             overwrite=True)
+        bmk.make_benchmark_emis_tables(gcc_vs_gcc_reflist,
+                                       gcc_vs_gcc_refstr,
+                                       gcc_vs_gcc_devlist,
+                                       gcc_vs_gcc_devstr,
+                                       dst=gcc_vs_gcc_plotsdir,
+                                       overwrite=True)
 
     if plot_jvalues:
         # Local noon J-values plots
         print('%%% Creating GCC vs. GCC J-value plots %%%')
-        benchmark.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv,
-                                              gcc_vs_gcc_refstr,
-                                              gcc_vs_gcc_devjv,
-                                              gcc_vs_gcc_devstr,
-                                              dst=gcc_vs_gcc_plotsdir,
-                                              overwrite=True)
+        bmk.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv,
+                                        gcc_vs_gcc_refstr,
+                                        gcc_vs_gcc_devjv,
+                                        gcc_vs_gcc_devstr,
+                                        dst=gcc_vs_gcc_plotsdir,
+                                        overwrite=True,
+                                        sigdiff_files=gcc_vs_gcc_sigdiff)
+
     if plot_aod:
         # Column AOD plots
         print('%%% Creating GCC vs. GCC column AOD plots %%%')
-        benchmark.make_benchmark_aod_plots(gcc_vs_gcc_refaod,
-                                           gcc_vs_gcc_refstr,
-                                           gcc_vs_gcc_devaod,
-                                           gcc_vs_gcc_devstr,
-                                           dst=gcc_vs_gcc_plotsdir,
-                                           overwrite=True)
+        bmk.make_benchmark_aod_plots(gcc_vs_gcc_refaod,
+                                     gcc_vs_gcc_refstr,
+                                     gcc_vs_gcc_devaod,
+                                     gcc_vs_gcc_devstr,
+                                     dst=gcc_vs_gcc_plotsdir,
+                                     overwrite=True,
+                                     sigdiff_files=gcc_vs_gcc_sigdiff)
 
     if budget_table:
         # Bugets tables
         print('%%% Creating GCC vs. GCC budget tables %%%')
-        benchmark.make_benchmark_budget_tables(gcc_vs_gcc_devbgt,
-                                               gcc_vs_gcc_devstr,
-                                               dst=gcc_vs_gcc_plotsdir,
-                                               overwrite=True)
+        bmk.make_benchmark_budget_tables(gcc_vs_gcc_devbgt,
+                                         gcc_vs_gcc_devstr,
+                                         dst=gcc_vs_gcc_plotsdir,
+                                         overwrite=True)
         
 # =====================================================================
 # Create GCHP vs GCC benchmark plots and tables
@@ -278,56 +310,62 @@ if gchp_vs_gcc:
         # Concentration plots
         # (includes lumped species and separates by category)
         print('%%% Creating GCHP vs. GCC J-value plots %%%')
-        benchmark.make_benchmark_conc_plots(gchp_vs_gcc_refspc,
-                                            gchp_vs_gcc_refstr,
-                                            gchp_vs_gcc_devspc,
-                                            gchp_vs_gcc_devstr,
-                                            dst=gchp_vs_gcc_plotsdir,
-                                            overwrite=True)
+        bmk.make_benchmark_conc_plots(gchp_vs_gcc_refspc,
+                                      gchp_vs_gcc_refstr,
+                                      gchp_vs_gcc_devspc,
+                                      gchp_vs_gcc_devstr,
+                                      dst=gchp_vs_gcc_plotsdir,
+                                      overwrite=True,
+                                      sigdiff_files=gchp_vs_gcc_sigdiff)
 
     if plot_emis:
         # Emissions plots
         print('%%% Creating GCHP vs. GCC emissions plots %%%')
-        benchmark.make_benchmark_emis_plots(gchp_vs_gcc_refhco,
-                                            gchp_vs_gcc_refstr,
-                                            gchp_vs_gcc_devhco,
-                                            gchp_vs_gcc_devstr,
-                                            dst=gchp_vs_gcc_plotsdir,
-                                            plot_by_benchmark_cat=True,
-                                            plot_by_hco_cat=True,
-                                            overwrite=True,
-                                            flip_dev=True)
+        bmk.make_benchmark_emis_plots(gchp_vs_gcc_refhco,
+                                      gchp_vs_gcc_refstr,
+                                      gchp_vs_gcc_devhco,
+                                      gchp_vs_gcc_devstr,
+                                      dst=gchp_vs_gcc_plotsdir,
+                                      plot_by_benchmark_cat=True,
+                                      plot_by_hco_cat=True,
+                                      overwrite=True,
+                                      flip_dev=True,
+                                      sigdiff_files=gchp_vs_gcc_sigdiff)
 
     if emis_table:
         # Tables of emissions and inventory totals
         print('%%% Creating GCHP vs. GCC emissions and inventory tables %%%')
         gchp_vs_gcc_reflist = [gchp_vs_gcc_refhco]
         gchp_vs_gcc_devlist = [gchp_vs_gcc_devhco, gchp_vs_gcc_devmet]
-        benchmark.make_benchmark_emis_tables(gchp_vs_gcc_reflist,
-                                             gchp_vs_gcc_refstr,
-                                             gchp_vs_gcc_devlist,
-                                             gchp_vs_gcc_devstr,
-                                             dst=gchp_vs_gcc_plotsdir,
-                                             overwrite=True)
+        bmk.make_benchmark_emis_tables(gchp_vs_gcc_reflist,
+                                       gchp_vs_gcc_refstr,
+                                       gchp_vs_gcc_devlist,
+                                       gchp_vs_gcc_devstr,
+                                       dst=gchp_vs_gcc_plotsdir,
+                                       overwrite=True)
 
     if plot_jvalues:
         # Local noon J-values plots
         print('%%% Creating GCHP vs. GCC J-value plots %%%')
-        benchmark.make_benchmark_jvalue_plots(gchp_vs_gcc_refjv,
-                                              gchp_vs_gcc_refstr,
-                                              gchp_vs_gcc_devjv,
-                                              gchp_vs_gcc_devstr,
-                                              dst=gchp_vs_gcc_plotsdir,
-                                              overwrite=True)
+        bmk.make_benchmark_jvalue_plots(gchp_vs_gcc_refjv,
+                                        gchp_vs_gcc_refstr,
+                                        gchp_vs_gcc_devjv,
+                                        gchp_vs_gcc_devstr,
+                                        dst=gchp_vs_gcc_plotsdir,
+                                        overwrite=True,
+                                        sigdiff_files=gchp_vs_gcc_sigdiff)
+
     if plot_aod:
         # Column AOD plots
         print('%%% Creating GCHP vs. GCC column AOD plots %%%')
-        benchmark.make_benchmark_aod_plots(gchp_vs_gcc_refaod,
-                                           gchp_vs_gcc_refstr,
-                                           gchp_vs_gcc_devaod,
-                                           gchp_vs_gcc_devstr,
-                                           dst=gchp_vs_gcc_plotsdir,
-                                           overwrite=True)
+        bmk.make_benchmark_aod_plots(gchp_vs_gcc_refaod,
+                                     gchp_vs_gcc_refstr,
+                                     gchp_vs_gcc_devaod,
+                                     gchp_vs_gcc_devstr,
+                                     dst=gchp_vs_gcc_plotsdir,
+                                     overwrite=True,
+                                     sigdiff_files=gchp_vs_gcc_sigdiff)
+
 
 # =====================================================================
 # Create GCHP vs GCHP benchmark plots and tables
@@ -339,58 +377,62 @@ if gchp_vs_gchp:
         # Concentration plots
         # (includes lumped species and separates by category)
         print('%%% Creating GCHP vs. GCHP concentration plots %%%')
-        benchmark.make_benchmark_conc_plots(gchp_vs_gchp_refspc,
-                                            gchp_vs_gchp_refstr,
-                                            gchp_vs_gchp_devspc,
-                                            gchp_vs_gchp_devstr,
-                                            dst=gchp_vs_gchp_plotsdir,
-                                            overwrite=True)
+        bmk.make_benchmark_conc_plots(gchp_vs_gchp_refspc,
+                                      gchp_vs_gchp_refstr,
+                                      gchp_vs_gchp_devspc,
+                                      gchp_vs_gchp_devstr,
+                                      dst=gchp_vs_gchp_plotsdir,
+                                      overwrite=True,
+                                      sigdiff_files=gchp_vs_gchp_sigdiff)
 
     if plot_emis:
         # Emissions plots
         print('%%% Creating GCHP vs. GCHP emissions plots %%%')
-        benchmark.make_benchmark_emis_plots(gchp_vs_gchp_refhco,
-                                            gchp_vs_gchp_refstr,
-                                            gchp_vs_gchp_devhco,
-                                            gchp_vs_gchp_devstr,
-                                            dst=gchp_vs_gchp_plotsdir,
-                                            plot_by_benchmark_cat=True,
-                                            plot_by_hco_cat=True,
-                                            overwrite=True,
-                                            flip_ref=True,
-                                            flip_dev=True)
+        bmk.make_benchmark_emis_plots(gchp_vs_gchp_refhco,
+                                      gchp_vs_gchp_refstr,
+                                      gchp_vs_gchp_devhco,
+                                      gchp_vs_gchp_devstr,
+                                      dst=gchp_vs_gchp_plotsdir,
+                                      plot_by_benchmark_cat=True,
+                                      plot_by_hco_cat=True,
+                                      overwrite=True,
+                                      flip_ref=True,
+                                      flip_dev=True,
+                                      sigdiff_files=gchp_vs_gchp_sigdiff)
 
     if emis_table:
         # Tables of emissions and inventory totals
         print('%%% Creating GCHP vs. GCHP emissions and inventory tables %%%')
         gchp_vs_gchp_reflist = [gchp_vs_gchp_refhco, gchp_vs_gchp_refmet]
         gchp_vs_gchp_devlist = [gchp_vs_gchp_devhco, gchp_vs_gchp_devmet]
-        benchmark.make_benchmark_emis_tables(gchp_vs_gchp_reflist,
-                                             gchp_vs_gchp_refstr,
-                                             gchp_vs_gchp_devlist,
-                                             gchp_vs_gchp_devstr,
-                                             dst=gchp_vs_gchp_plotsdir,
-                                             overwrite=True)
+        bmk.make_benchmark_emis_tables(gchp_vs_gchp_reflist,
+                                       gchp_vs_gchp_refstr,
+                                       gchp_vs_gchp_devlist,
+                                       gchp_vs_gchp_devstr,
+                                       dst=gchp_vs_gchp_plotsdir,
+                                       overwrite=True)
 
     if plot_jvalues:
         # Local noon J-values plots
         print('%%% Creating GCHP vs. GCHP J-value plots %%%')
-        benchmark.make_benchmark_jvalue_plots(gchp_vs_gchp_refjv,
-                                              gchp_vs_gchp_refstr,
-                                              gchp_vs_gchp_devjv,
-                                              gchp_vs_gchp_devstr,
-                                              dst=gchp_vs_gchp_plotsdir,
-                                              overwrite=True)
+        bmk.make_benchmark_jvalue_plots(gchp_vs_gchp_refjv,
+                                        gchp_vs_gchp_refstr,
+                                        gchp_vs_gchp_devjv,
+                                        gchp_vs_gchp_devstr,
+                                        dst=gchp_vs_gchp_plotsdir,
+                                        overwrite=True,
+                                        sigdiff_files=gchp_vs_gchp_sigdiff)
 
     if plot_aod:
         # Column AOD plots
         print('%%% Creating GCHP vs. GCHP column AOD plots %%%')
-        benchmark.make_benchmark_aod_plots(gchp_vs_gchp_refaod,
-                                           gchp_vs_gchp_refstr,
-                                           gchp_vs_gchp_devaod,
-                                           gchp_vs_gchp_devstr,
-                                           dst=gchp_vs_gchp_plotsdir,
-                                           overwrite=True)
+        bmk.make_benchmark_aod_plots(gchp_vs_gchp_refaod,
+                                     gchp_vs_gchp_refstr,
+                                     gchp_vs_gchp_devaod,
+                                     gchp_vs_gchp_devstr,
+                                     dst=gchp_vs_gchp_plotsdir,
+                                     overwrite=True,
+                                     sigdiff_files=gchp_vs_gchp_sigdiff)
 
 # =====================================================================
 # Create GCHP vs GCC difference of differences benchmark plots
@@ -437,10 +479,10 @@ if gchp_vs_gcc_diff_of_diffs:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
-        benchmark.make_benchmark_conc_plots(diff_of_diffs_refspc,
-                                            diff_of_diffs_refstr,
-                                            diff_of_diffs_devspc,
-                                            diff_of_diffs_devstr,
-                                            dst=diff_of_diffs_plotsdir,
-                                            overwrite=True,
-                                            use_cmap_RdBu=True)
+        bmk.make_benchmark_conc_plots(diff_of_diffs_refspc,
+                                      diff_of_diffs_refstr,
+                                      diff_of_diffs_devspc,
+                                      diff_of_diffs_devstr,
+                                      dst=diff_of_diffs_plotsdir,
+                                      overwrite=True,
+                                      use_cmap_RdBu=True)
