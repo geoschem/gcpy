@@ -2859,6 +2859,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                              flip_ref=flip_ref, flip_dev=flip_dev,
                              log_color_scale=log_color_scale,
                              sigdiff_list=diff_sfc)
+        diff_sfc[:] = [v.replace(prefix, '') for v in diff_sfc]
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
@@ -2871,6 +2872,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                              flip_ref=flip_ref, flip_dev=flip_dev,
                              log_color_scale=log_color_scale,
                              sigdiff_list=diff_500)
+        diff_500[:] = [v.replace(prefix, '') for v in diff_500]
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
@@ -2884,6 +2886,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                            flip_ref=flip_ref, flip_dev=flip_dev,
                            log_color_scale=log_color_scale,
                            sigdiff_list=diff_zm)
+        diff_zm[:] = [v.replace(prefix, '') for v in diff_zm]
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
