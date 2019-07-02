@@ -129,25 +129,19 @@ gcc_vs_gcc_sigdiff = [
     join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_sfc.txt'),
     join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_500hpa.txt'),
     join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_zonalmean.txt'),
-    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_emissions.txt'),
-    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_jvalues.txt'),
-    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_aod.txt')]
+    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_emissions.txt')]
 
 gchp_vs_gcc_sigdiff = [
     join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_sfc.txt'),
     join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_500hpa.txt'),
     join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_zonalmean.txt'),
-    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_emissions.txt'),
-    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_jvalues.txt'),
-    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_aod.txt')]
+    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_emissions.txt')]
 
 gchp_vs_gchp_sigdiff = [
     join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_sfc.txt'),
     join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_500hpa.txt'),
     join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_zonalmean.txt'),
-    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_emissions.txt'),
-    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_jvalues.txt'),
-    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_aod.txt')]
+    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_emissions.txt')]
 
 # =====================================================================
 # The rest of these settings should not need to be changed
