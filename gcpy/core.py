@@ -353,21 +353,20 @@ def get_gchp_collection_data(datadir, collection, day, time):
     return data_ds
 
 
-def convert_bpch_names_to_netcdf_names(ds, inplace=False, verbose=False):
+def convert_bpch_names_to_netcdf_names(ds, verbose=False):
 
     '''
     Function to convert the non-standard bpch diagnostic names
     to names used in the GEOS-Chem netCDF diagnostic outputs.
     
-    Arguments:
-    ds      : The xarray Dataset object whose names are to be replaced.
-    
-    inplace : If inplace=True, then the variable names in ds will be 
-              renamed in-place.  Otherwise a copy of ds will be created.
-              NOTE: inPlace=False is now the default setting, because
-              this invokes an xarray method that will become deprecated.
+    Args:
+        ds : xarray Dataset
+            The xarray Dataset object whose names are to be replaced.
 
-    verbose : Turns on verbose print output
+    Keyword Args (optional):
+        verbose : boolean
+            Turn on extra output.
+            Default value: False
 
     NOTE: Only the diagnostic names needed for the 1-month benchmark
     plots have been added at this time.  To make this a truly general
@@ -437,13 +436,16 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=False, verbose=False):
             varstr = linearr[-1]
             oldvar = oldid + varstr
 
-            # Most append cases just append with underscore
-            if oldid in ['IJ_AVG_S_', 'RN_DECAY_', 'WETDCV_S_', 'WETDLS_S_',
-                         'BXHGHT_S_', 'DAO_FLDS_', 'DAO_3D_S_', 'PL_SUL_',
-                         'CV_FLX_S_', 'EW_FLX_S_', 'NS_FLX_S_', 'UP_FLX_S_',
-                         'MC_FRC_S_', 'JV_MAP_S_' ]:
-     
-                # Skip certain fields that will cause conflicts w/ netCDF
+            # These categories use append
+            if oldid in ['IJ_AVG_S_', 'RN_DECAY_', 'WETDCV_S_',
+                         'WETDLS_S_', 'BXHGHT_S_', 'DAO_3D_S_',
+                         'PL_SUL_',   'CV_FLX_S_', 'EW_FLX_S_',
+                         'NS_FLX_S_', 'UP_FLX_S_', 'MC_FRC_S_']:
+                newvar = newid + '_' +varstr
+
+            # DAO_FLDS
+            # Skip certain fields that will cause conflicts w/ netCDF
+            elif oldid in 'DAO_FLDS_':
                 if oldid in [ 'DAO_FLDS_PS_PBL', 'DAO_FLDS_TROPPRAW' ]:
 
                     # Verbose output
@@ -455,7 +457,7 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=False, verbose=False):
             # Special handling for J-values: The bpch variable names all
             # begin with "J" (e.g. JNO, JACET), so we need to strip the first
             # character of the variable name manually (bmy, 4/8/19)
-            if oldid == 'JV_MAP_S_':
+            elif oldid == 'JV_MAP_S_':
                 newvar = newid + '_' + varstr[1:]
 
             # IJ_SOA_S_
@@ -467,8 +469,8 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=False, verbose=False):
                 newvar = newid + '_' + varstr[:-2]
 
             # BIOBSRCE_, BIOFSRCE_, BIOGSRCE_. ANTHSRCE_
-            elif oldid in ['BIOBSRCE_', 'BIOFSRCE_', 'BIOGSRCE_', 
-                           'ANTHSRCE_' ]:
+            elif oldid in ['BIOBSRCE_', 'BIOFSRCE_',
+                           'BIOGSRCE_', 'ANTHSRCE_']:
                 newvar = 'Emis' + varstr +'_' + newid
             
             # If nothing found...
@@ -480,7 +482,7 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=False, verbose=False):
                           format(variable_name))
                 continue
 
-          # Overwrite certain variable names
+            # Overwrite certain variable names
             if newvar in special_vars:
                 newvar = special_vars[newvar]
 
@@ -496,7 +498,8 @@ def convert_bpch_names_to_netcdf_names(ds, inplace=False, verbose=False):
     # Rename the variables in the dataset
     if verbose:
         print( "\nRenaming variables in the data...")
-    ds = ds.rename(name_dict=old_to_new, inplace=inplace)
+    with xr.set_options(keep_attrs=True):
+        ds = ds.rename(name_dict=old_to_new)
     
     # Return the dataset
     return ds
