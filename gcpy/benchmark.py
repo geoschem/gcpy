@@ -35,7 +35,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          cmpres=None, match_cbar=True, normalize_by_area=False,
                          enforce_units=True, flip_ref=False, flip_dev=False,
                          use_cmap_RdBu=False, verbose=False, 
-                         log_color_scale=False, sigdiff_list=None):
+                         log_color_scale=False, sigdiff_list=[]):
     '''
     Create single-level 3x2 comparison map plots for variables common in two xarray
     datasets. Optionally save to PDF. 
@@ -114,7 +114,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         sigdiff_list: list of str
             Returns a list of all quantities having significant differences.
             The criteria is: |max(fractional difference)| > 0.1
-            Default value: None
+            Default value: []
 
     Returns:
         Nothing
@@ -987,7 +987,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         sigdiff_list: list of str
             Returns a list of all quantities having significant differences.
             The criteria is: |max(fractional difference)| > 0.1
-            Default value: None
+            Default value: []
 
     Returns:
         Nothing
@@ -2247,15 +2247,15 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
             for filename in sigdiff_files:
                 if 'sfc' in filename:
                     with open(filename, 'a+') as f:
-                        print('{}: '.format(filecat), file=f, end='')
+                        print('* {}: '.format(filecat), file=f, end='')
                         for v in diff_sfc:
                             print('{} '.format(v), file=f, end='')
                         print(file=f)
                         f.close()
 
                 if '500' in filename:
-                    with open(filename, 'a_') as f:
-                        print('{}: '.format(filecat), file=f, end='')
+                    with open(filename, 'a+') as f:
+                        print('* {}: '.format(filecat), file=f, end='')
                         for v in diff_500:
                             print('{} '.format(v), file=f, end='')
                         print(file=f)
@@ -2263,7 +2263,7 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
 
                 if 'zonalmean' in filename or 'zm' in filename:
                     with open(filename, 'a+') as f:
-                        print('{}: '.format(filecat), file=f, end='')
+                        print('* {}: '.format(filecat), file=f, end='')
                         for v in diff_zm:
                             print('{} '.format(v), file=f, end='')
                         print(file=f)
@@ -2469,7 +2469,7 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                 if 'emis' in filename:
                     with open(filename, 'w+') as f:
                         for c, diff_list in diff_dict.items():
-                            print('{}: '.format(c), file=f, end='')
+                            print('* {}: '.format(c), file=f, end='')
                             for v in diff_list:
                                 print('{} '.format(v), file=f, end='')
                             print(file=f)
@@ -2683,7 +2683,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 overwrite=False, verbose=False,
                                 flip_ref=False, flip_dev=False,
                                 log_color_scale=False,
-                                sigdiff_files=[]):
+                                sigdiff_files=None):
     '''
     Creates PDF files containing plots of J-values for model
     benchmarking purposes.
@@ -2904,7 +2904,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
             for filename in sigdiff_files:
                 if 'sfc' in filename:
                     with open(filename, 'a+') as f:
-                        print('Jvalues: ', file=f, end='')
+                        print('* J-Values: ', file=f, end='')
                         for v in diff_sfc:
                             print('{} '.format(v), file=f, end='')
                         print(file=f)
@@ -2912,7 +2912,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
                 if '500' in filename:
                     with open(filename, 'a+') as f:
-                        print('Jvalues: ', file=f, end='')
+                        print('* J-Values: ', file=f, end='')
                         for v in diff_500:
                             print('{} '.format(v), file=f, end='')
                         print(file=f)
@@ -2920,7 +2920,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
                 if 'zonalmean' in filename or 'zm' in filename:
                     with open(filename, 'a+') as f:
-                        print('Jvalues: ', file=f, end='')
+                        print('* J-Values: ', file=f, end='')
                         for v in diff_zm:
                             print('{} '.format(v), file=f, end='')
                         print(file=f)
@@ -2931,7 +2931,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
                              varlist=None, dst='./1mo_benchmark',
                              overwrite=False, verbose=False,
                              log_color_scale=False,
-                             sigdiff_files=[]):
+                             sigdiff_files=None):
     '''
     Creates PDF files containing plots of column aerosol optical
     depths (AODs) for model benchmarking purposes.
@@ -2983,7 +2983,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
             having significant differences in the column AOD plots.
             These lists are needed in order to fill out the benchmark
             approval forms.
-            Default value: []
+            Default value: None
     '''
     # =================================================================
     # Initialization and also read data
@@ -3141,9 +3141,9 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # which we will need to fill out the benchmark forms.
     # =================================================================
     for filename in sigdiff_files:
-        if 'aod' in filename:
-            with open(filename, 'w+') as f:
-                print('Column AOD: ', file=f, end='')
+        if 'sfc' in filename:
+            with open(filename, 'a+') as f:
+                print('* Column AOD: ', file=f, end='')
                 for v in diff_aod:
                     print('{} '.format(v), file=f, end='')
                 print(file=f)
@@ -3211,7 +3211,6 @@ def create_budget_table(devdata, devstr, region, species, varnames,
         f.write('#'*79)
         f.write('\n{}{}\n'.format(title.ljust(76), '###'))
         f.write('#'*79)
-        f.write('\n')
 
         # Get variable names for this species
         spc_vars = [ v for v in varnames if v.endswith("_"+spc_name) ]
