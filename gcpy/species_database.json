@@ -512,6 +512,36 @@
               "EmMW_g":     31.4000,
               "MolecRatio":      1.0000
           },
+  "BC" :
+          {
+              "Fullname": "Black carbon aerosol",
+              "Is_Advected": true,
+              "Is_Aero": true,
+              "Is_DryDep": true,
+              "Is_Gas": true,
+              "Is_HygroGrowth": true,
+              "Is_Photolysis": false,
+              "Is_WetDep": true,
+              "Density":   1800.0000,
+              "MW_g":     12.0100,
+              "EmMW_g":     12.0000,
+              "MolecRatio":      1.0000
+          },
+  "OC" :
+          {
+              "Fullname": "Organic carbon aerosol",
+              "Is_Advected": true,
+              "Is_Aero": true,
+              "Is_DryDep": true,
+              "Is_Gas": true,
+              "Is_HygroGrowth": true,
+              "Is_Photolysis": false,
+              "Is_WetDep": true,
+              "Density":   1300.0000,
+              "MW_g":     12.0100,
+              "EmMW_g":     12.0000,
+              "MolecRatio":      1.0000
+          },
   "BCPI" : 
           {
               "Fullname": "Hydrophilic black carbon aerosol",

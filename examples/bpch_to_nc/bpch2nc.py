@@ -32,6 +32,12 @@ ds = gcpy.convert_bpch_names_to_netcdf_names(ds)
 # If you are using xarray 0.12.1, then delete the following
 # variable attributes to avoid problems writing to netCDF.
 for v in ds.data_vars.keys():
+
+    # Add long_name attribute for COARDS netCDF compliance
+    ds[v].attrs['long_name'] = ds[v].attrs['full_name']
+
+    # Remove some extraneous attributes
+    del ds[v].attrs['full_name']
     del ds[v].attrs['scale_factor']
     del ds[v].attrs['hydrocarbon']
     del ds[v].attrs['tracer']
