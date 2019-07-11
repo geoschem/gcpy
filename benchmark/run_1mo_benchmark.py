@@ -125,23 +125,26 @@ diff_of_diffs_devstr = 'GCHP {} - {}'.format(gchp_dev_version,
 
 # Files that will contain lists of quantities that have significant
 # differences -- we need these for the benchmark approval forms.
+vstr = '{}_vs_{}'.format(gcc_vs_gcc_refstr, gcc_vs_gcc_devstr)
 gcc_vs_gcc_sigdiff = [
-    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_sfc.txt'),
-    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_500hpa.txt'),
-    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_zonalmean.txt'),
-    join(gcc_vs_gcc_plotsdir, 'GCC_vs_GCC_sig_diffs_emissions.txt')]
+    join(gcc_vs_gcc_plotsdir, '{}_sig_diffs_sfc.txt'.format(vstr)),
+    join(gcc_vs_gcc_plotsdir, '{}_sig_diffs_500hpa.txt'.format(vstr)),
+    join(gcc_vs_gcc_plotsdir, '{}_sig_diffs_zonalmean.txt'.format(vstr)),
+    join(gcc_vs_gcc_plotsdir, '{}_sig_diffs_emissions.txt'.format(vstr))]
 
+vstr = '{}_vs_{}'.format(gchp_vs_gcc_refstr, gchp_vs_gcc_devstr)
 gchp_vs_gcc_sigdiff = [
-    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_sfc.txt'),
-    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_500hpa.txt'),
-    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_zonalmean.txt'),
-    join(gchp_vs_gcc_plotsdir, 'GCHP_vs_GCC_sig_diffs_emissions.txt')]
+    join(gchp_vs_gcc_plotsdir, '{}_sig_diffs_sfc.txt'.format(vstr)),
+    join(gchp_vs_gcc_plotsdir, '{}_sig_diffs_500hpa.txt'.format(vstr)),
+    join(gchp_vs_gcc_plotsdir, '{}_sig_diffs_zonalmean.txt'.format(vstr)),
+    join(gchp_vs_gcc_plotsdir, '{}_sig_diffs_emissions.txt'.format(vstr))]
 
+vstr = '{}_vs_{}'.format(gchp_vs_gchp_refstr, gchp_vs_gchp_devstr)
 gchp_vs_gchp_sigdiff = [
-    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_sfc.txt'),
-    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_500hpa.txt'),
-    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_zonalmean.txt'),
-    join(gchp_vs_gchp_plotsdir, 'GCHP_vs_GCHP_sig_diffs_emissions.txt')]
+    join(gchp_vs_gchp_plotsdir, '{}_sig_diffs_sfc.txt'.format(vstr)),
+    join(gchp_vs_gchp_plotsdir, '{}_sig_diffs_500hpa.txt'.format(vstr)),
+    join(gchp_vs_gchp_plotsdir, '{}_sig_diffs_zonalmean.txt'.format(vstr)),
+    join(gchp_vs_gchp_plotsdir, '{}_sig_diffs_emissions.txt').format(vstr)]
 
 # =====================================================================
 # The rest of these settings should not need to be changed
