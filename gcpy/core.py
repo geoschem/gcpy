@@ -400,7 +400,17 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
     old_to_new = {}
 
     # Loop over all variable names in the data set
-    for variable_name in ds.data_vars:
+    for variable_name in ds.data_vars.keys():
+
+        # Save the original variable name, since this is the name
+        # that we actually need to replace in the dataset.
+        original_variable_name = variable_name
+
+        # Replace "__" with "_", in variable name (which will get tested
+        # against the name sin the JSON file.  This will allow us to
+        # replace variable names in files created with BPCH2COARDS.
+        if '__' in variable_name:
+            variable_name = variable_name.replace('__', '_')
 
         # Check if name matches anything in dictionary. Give warning if not.
         oldid = ''
@@ -428,7 +438,8 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
             newvar = newid
 
             # Update the dictionary of names with this pair
-            old_to_new.update({variable_name : newvar})
+            # Use the original variable name.
+            old_to_new.update({original_variable_name : newvar})
 
         # For all the rest:
         else:
@@ -487,7 +498,7 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
                 newvar = special_vars[newvar]
 
             # Update the dictionary of names with this pair
-            old_to_new.update({variable_name : newvar})
+            old_to_new.update({original_variable_name : newvar})
 
     # Verbose output
     if verbose:
