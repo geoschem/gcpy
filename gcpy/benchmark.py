@@ -1781,14 +1781,14 @@ def create_emission_display_name(diagnostic_name):
 
     # Special handling for Inventory totals
     if 'INV' in display_name.upper():
-        display_name = display_name.replace("_", " ")
+        display_name = display_name.replace('_', ' ')
 
     # Replace text
     for v in ['Emis', 'EMIS', 'emis', 'Inv', 'INV', 'inv']:
-        display_name = display_name.replace(v, "")
+        display_name = display_name.replace(v, '')
 
     # Replace underscores
-    display_name = display_name.replace("_", " ")
+    display_name = display_name.replace('_', ' ')
 
     # Return
     return display_name
@@ -1833,8 +1833,7 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
 
     # Special handling for totals
     if '_TOTAL' in diagnostic_name.upper():
-        f.write("-" * 79)
-        f.write("\n")
+        print("-" * 79, file=f)
 
     # Compute sums and difference
     total_ref = np.sum(ref.values)
@@ -1842,8 +1841,9 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
     diff = total_dev - total_ref
 
     # Write output
-    f.write("{} : {:13.6f}  {:13.6f}  {:13.6f} {}\n".format(
-        display_name.ljust(25), total_ref, total_dev, diff, dev.units))
+    print('{} : {:13.6f}  {:13.6f}  {:13.6f} {}'.format(
+        display_name.ljust(25), total_ref,
+        total_dev, diff, dev.units), file=f)
 
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
@@ -1979,13 +1979,12 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
 
         # Write header to file
-        f.write("#"*79)
-        f.write("\n{}{}\n".format(title1.ljust(76), "###"))
-        f.write("{}{}\n".format(title2.ljust(76), "###"))
-        f.write("#"*79)
-        f.write("\n")
-        f.write("{}{}{}{}\n".format(" ".ljust(33), "Ref".ljust(15),
-                                  "Dev".ljust(15), "Dev - Ref"))
+        print('#'*79, file=f)
+        print('{}{}'.format(title1.ljust(76), '###'), file=f)
+        print('{}{}'.format(title2.ljust(76), '###'), file=f)
+        print('#'*79, file=f)
+        print('{}{}{}{}'.format(' '.ljust(33), 'Ref'.ljust(15),
+                                'Dev'.ljust(15), 'Dev - Ref'), file=f)
 
         # Get a list of emission variable names for each species
         diagnostic_template = template.format(species_name)
@@ -2025,7 +2024,8 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
             print_emission_totals(refarray, refstr, devarray, devstr, f)
 
         # Add newlines before going to the next species
-        f.write("\n\n")
+        print(file=f)
+        print(file=f)
 
     # Close file
     f.close()
@@ -3211,9 +3211,9 @@ def create_budget_table(devdata, devstr, region, species, varnames,
         title = '### {} budget totals for species {}'.format(devstr,spc_name)
     
         # Write header to file
-        f.write('#'*79)
-        f.write('\n{}{}\n'.format(title.ljust(76), '###'))
-        f.write('#'*79)
+        print('#'*79, file=f)
+        print('{}{}'.format(title.ljust(76), '###'), file=f)
+        print('#'*79, file=f)
 
         # Get variable names for this species
         spc_vars = [ v for v in varnames if v.endswith("_"+spc_name) ]
@@ -3233,11 +3233,12 @@ def create_budget_table(devdata, devstr, region, species, varnames,
             total_dev = np.sum(devarray.values)
 
             # Write output
-            f.write('{} : {:13.6e} {}\n'.format(comp_name.ljust(12), total_dev,
-                                                units))
+            print('{} : {:13.6e} {}'.format(comp_name.ljust(12),
+                                            total_dev, units), file=f)
 
         # Add new lines before going to the next species
-        f.write("\n\n")
+        print(file=f)
+        print(file=f)
 
     # Close file
     f.close()
