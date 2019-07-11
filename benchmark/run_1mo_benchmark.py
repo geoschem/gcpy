@@ -52,8 +52,8 @@ import warnings
 os.environ['QT_QPA_PLATFORM']='offscreen'
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
-warnings.filterwarnings("ignore", category=RuntimeWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings('ignore', category=RuntimeWarning)
+warnings.filterwarnings('ignore', category=UserWarning)
 
 # =====================================================================
 # Configurables
