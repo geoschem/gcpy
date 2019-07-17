@@ -3547,7 +3547,7 @@ def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
            'Input axis must be cartopy GeoAxes! '
            'Can be created by: \n'
            'plt.axes(projection=ccrs.PlateCarree()) \n or \n'
-           'plt.subplots(n, m, subplot_kw={'projection': ccrs.PlateCarree()})'
+           'plt.subplots(n, m, subplot_kw={"projection": ccrs.PlateCarree()})'
            )
     assert ax.projection == ccrs.PlateCarree(), (
            'must use PlateCarree projection'

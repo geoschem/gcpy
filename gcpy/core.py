@@ -68,9 +68,9 @@ def open_dataset(filename, **kwargs):
     elif file_extension == '.nc':
         _opener = xr.open_dataset
     else:
-        raise ValueError('Found unknown file extension ({}); please pass a '
-                         'BPCH or netCDF file with extension 'bpch' or 'nc'.'
-                         .format(file_extension))
+        raise ValueError('Found unknown file extension ({}); please '
+                         'pass a BPCH or netCDF file with extension '
+                         '"bpch" or "nc"!'.format(file_extension))
 
     return _opener(filename, **kwargs)
 
@@ -139,9 +139,9 @@ def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
     elif file_extension == '.nc4':
         _opener = xr.open_mfdataset
     else:
-        raise ValueError('Found unknown file extension ({}); please pass a '
-                         'BPCH or netCDF file with extension 'bpch' or 'nc' or 'nc4'.'
-                         .format(file_extension))
+        raise ValueError('Found unknown file extension ({}); please ' \
+                         'pass a BPCH or netCDF file with extension ' \
+                         '"bpch" or "nc" or "nc4"'.format(file_extension))
         
     return _opener(filenames, concat_dim=concat_dim, compat=compat,
                    preprocess=preprocess, lock=lock, **kwargs)
@@ -652,16 +652,15 @@ def divide_dataset_by_dataarray(ds, dr, varlist=None):
     # -----------------------------
     # Do the division
     # -----------------------------
-    for v in varlist:
 
-        # Save attributes from each element of the Dataset object
-        attrs = ds[v].attrs
+    # Keep all Dataset attributes
+    with xr.set_options(keep_attrs=True):
 
-        # Divide each variable of ds by dr
-        ds[v] = ds[v] / dr
+        # Loop over variables
+        for v in varlist:
 
-        # Save the original attributes back to the DataArray
-        ds[v].attrs = attrs
+            # Divide each variable of ds by dr
+            ds[v] = ds[v] / dr
 
     # -----------------------------
     # Return the modified Dataset
