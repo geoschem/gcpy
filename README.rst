@@ -1,5 +1,6 @@
 GCPy: Python toolkit for GEOS-Chem
 ==================================
+|docs| |license|
 
 .. |license| image:: https://img.shields.io/badge/License-MIT-blue.svg
    :target: https://github.com/geoschem/gcpy/blob/master/LICENSE.txt
