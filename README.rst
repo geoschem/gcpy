@@ -1,14 +1,11 @@
 GCPy: Python toolkit for GEOS-Chem
 ==================================
-|docs| |license|
+|license|
 
 .. |license| image:: https://img.shields.io/badge/License-MIT-blue.svg
    :target: https://github.com/geoschem/gcpy/blob/master/LICENSE.txt
    :alt: License
 
-.. image:: https://readthedocs.org/projects/gcpy/badge/?version=latest
-    :target: http://gcpy.readthedocs.io/en/latest/?badge=latest
-    :alt: Documentation Status
 
 **GCPy** is a Python-based toolkit containing useful functions and routines for
 working with GEOS-Chem_, meant to update and replace the IDL-based
