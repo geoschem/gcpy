@@ -57,10 +57,9 @@ eventually.
 License
 -------
 
-GCPy is licensed under the MIT license.  The license description may
-be found in the  LICENSE.txt file in the root folder.  The list of
-develpers may be found in the AUTHORS.txt file, also located in the
-root folder.
+GCPy is distributed under the MIT license.  Please read the license
+documents LICENSE.txt and AUTHORS.txt, which are located in the root
+folder.
 
 
 Contact
