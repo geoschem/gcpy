@@ -142,7 +142,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
-        [varlist, commonvars2D, commonvars3D] = core.compare_varnames(refdata, devdata)
+        [commonvars, commonvarsOther, commonvars2D, commonvars3D] = core.compare_varnames(refdata, devdata)
+        varlist = commonvars3D+commonvars2D
         print('Plotting all common variables (surface only if 3D)')
     n_var = len(varlist)
 
