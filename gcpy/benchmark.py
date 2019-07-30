@@ -1020,6 +1020,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         print('Plotting all 3D variables')
     n_var = len(varlist)
 
+    # Exit out if there are no 3D variables
+    if not n_var: 
+        print('WARNING: no 3D variables to plot zonal mean for!')
+        return
+
     # If no weightsdir is passed, set to current directory in case it is needed
     if weightsdir == None:
         weightsdir = '.'
