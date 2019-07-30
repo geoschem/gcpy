@@ -241,6 +241,7 @@ def compare_varnames(refdata, devdata, quiet=False):
     
     # Print information on common and mismatching variables, as well as dimensions
     if quiet == False:
+        print('\nComparing variable names in compare_varnames')
         print('{} common variables'.format(len(commonvars)))
         if len(refonly) > 0:
             print('{} variables in ref only (skip)'.format(len(refonly)))
