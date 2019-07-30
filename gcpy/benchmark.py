@@ -1735,11 +1735,11 @@ def get_emissions_varnames(commonvars, template=None):
 
     # Make sure the commonvars list has at least one element
     if len(commonvars) == 0:
-        raise ValueError("No valid variable names were passed!")
+        raise ValueError('No valid variable names were passed!')
 
     # Define template for emission diagnostics by sector
     if template is None:
-        raise ValueError("The template argument was not passed!")
+        raise ValueError('The template argument was not passed!')
 
     # Find all emission diagnostics for the given species
     varnames = core.filter_names(commonvars, template)
@@ -1781,14 +1781,14 @@ def create_emission_display_name(diagnostic_name):
 
     # Special handling for Inventory totals
     if 'INV' in display_name.upper():
-        display_name = display_name.replace("_", " ")
+        display_name = display_name.replace('_', ' ')
 
     # Replace text
     for v in ['Emis', 'EMIS', 'emis', 'Inv', 'INV', 'inv']:
-        display_name = display_name.replace(v, "")
+        display_name = display_name.replace(v, '')
 
     # Replace underscores
-    display_name = display_name.replace("_", " ")
+    display_name = display_name.replace('_', ' ')
 
     # Return
     return display_name
@@ -1833,8 +1833,7 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
 
     # Special handling for totals
     if '_TOTAL' in diagnostic_name.upper():
-        f.write("-" * 79)
-        f.write("\n")
+        print('-' * 79, file=f)
 
     # Compute sums and difference
     total_ref = np.sum(ref.values)
@@ -1842,13 +1841,14 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
     diff = total_dev - total_ref
 
     # Write output
-    f.write("{} : {:13.6f}  {:13.6f}  {:13.6f} {}\n".format(
-        display_name.ljust(25), total_ref, total_dev, diff, dev.units))
+    print('{} : {:13.6f}  {:13.6f}  {:13.6f} {}'.format(
+        display_name.ljust(25), total_ref,
+        total_dev, diff, dev.units), file=f)
 
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                  species, outfilename,
-                                 interval=2678400.0, template="Emis{}_",
+                                 interval=2678400.0, template='Emis{}_',
                                  ref_area_varname='AREA',
                                  dev_area_varname='AREA'):
     '''
@@ -1943,11 +1943,11 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         raise ValueError('The devdata argument must be an xarray Dataset!')
 
     if ref_area_varname not in refdata.data_vars.keys():
-        raise ValueError("Area variable {} is not in the ref Dataset!".format(
+        raise ValueError('Area variable {} is not in the ref Dataset!'.format(
             ref_area_varname))
 
     if dev_area_varname not in devdata.data_vars.keys():
-        raise ValueError("Area variable {} is not in the dev Dataset!".format(
+        raise ValueError('Area variable {} is not in the dev Dataset!'.format(
             dev_area_varname))
 
 
@@ -1955,7 +1955,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
     properties_path = os.path.join(os.path.dirname(__file__),
-                                   "species_database.json")
+                                   'species_database.json')
     properties = json_load_file(open(properties_path))
 
     # Find all common variables between the two datasets
@@ -1964,46 +1964,51 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                                                quiet=True)
 
     # Open file for output
-    f = open(outfilename, "w")
+    f = open(outfilename, 'w')
 
     # Loop through all of the species are in species_dict
     for species_name, target_units in species.items():
-
-        # Title strings
-        if "Inv" in template:
-            print("Computing inventory totals for {}".format(species_name))
-            title1 = "### Inventory totals for species {}".format(species_name)
-        else:
-            print("Computing emissions totals for {}".format(species_name))
-            title1 = "### Emissions totals for species {}".format(species_name)
-
-        title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
-
-        # Write header to file
-        f.write("#"*79)
-        f.write("\n{}{}\n".format(title1.ljust(76), "###"))
-        f.write("{}{}\n".format(title2.ljust(76), "###"))
-        f.write("#"*79)
-        f.write("\n")
-        f.write("{}{}{}{}\n".format(" ".ljust(33), "Ref".ljust(15),
-                                  "Dev".ljust(15), "Dev - Ref"))
 
         # Get a list of emission variable names for each species
         diagnostic_template = template.format(species_name)
         varnames = get_emissions_varnames(cvars, diagnostic_template)
 
+        # If no emissions are found, then skip to next species
+        if len(varnames) == 0:
+            print('No emissions found for {} ... skippping'.format(
+                species_name))
+            continue
+
         # Check if there is a total emissions variable in the list
-        vartot = [v for v in varnames if "_TOTAL" in v.upper()]
+        vartot = [v for v in varnames if '_TOTAL' in v.upper()]
 
         # Push the total variable to the last list element
         # so that it will be printed last of all
         if len(vartot) == 1:
-            varnames.append(varnames.pop(varnames.index(vartot[0])))
+            varnames.append(varnames.pop(varnames.index(vartot[0])))   
+
+        # Title strings
+        if 'Inv' in template:
+            print('Computing inventory totals for {}'.format(species_name))
+            title1 = '### Inventory totals for species {}'.format(species_name)
+        else:
+            print('Computing emissions totals for {}'.format(species_name))
+            title1 = '### Emissions totals for species {}'.format(species_name)
+
+        title2 = '### Ref = {}; Dev = {}'.format(refstr, devstr)
+
+        # Print header to file
+        print('#'*79, file=f)
+        print('{}{}'.format(title1.ljust(76), '###'), file=f)
+        print('{}{}'.format(title2.ljust(76), '###'), file=f)
+        print('#'*79, file=f)
+        print('{}{}{}{}'.format(' '.ljust(33), 'Ref'.ljust(15),
+                                'Dev'.ljust(15), 'Dev - Ref'), file=f)
 
         # Loop over all emissions variable names
         for v in varnames:
 
-            if "Inv" in template:
+            if 'Inv' in template:
                 spc_name = v.split('_')[1]
             else:
                 spc_name = species_name
@@ -2021,12 +2026,12 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                      species_properties, target_units,
                                      interval, devdata[dev_area_varname])
 
-
             # Print emission totals for Ref and Dev
             print_emission_totals(refarray, refstr, devarray, devstr, f)
 
         # Add newlines before going to the next species
-        f.write("\n\n")
+        print(file=f)
+        print(file=f)
 
     # Close file
     f.close()
@@ -2525,8 +2530,7 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
 
 def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
                                dst='./1mo_benchmark', overwrite=False,
-                               interval=None, ref_area_varname=None,
-                               dev_area_varname=None):
+                               interval=None):
     '''
     Creates a text file containing emission totals by species and
     category for benchmarking purposes.
@@ -2566,13 +2570,6 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
              Specifies the averaging period in seconds, which is used
              to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
              Default value : None
-
-        ref_area_varname : str
-            Name of the variable containing the grid box surface areas
-            (in m2) in the ref dataset.  If not specified, then this
-            will be set to "Met_AREAM2" if the ref dataset is on the
-            cubed-sphere grid, or "AREA" if ref is on the lat-lon grid.
-            Default value: None
 
         dev_area_varname : str
             Name of the variable containing the grid box surface areas
@@ -2653,7 +2650,6 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     create_total_emissions_table(refds, refstr, devds, devstr, 
                                  inventories, file_inv_totals,
                                  interval, template="Inv{}_")
-
 
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 varlist=None, 
@@ -3134,7 +3130,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
 
 
 def create_budget_table(devdata, devstr, region, species, varnames,
-                        outfilename, interval=2678400.0, template="Budget_{}"):
+                        outfilename, interval=2678400.0, template='Budget_{}'):
     '''
     Creates a table of budgets by species and component for a data set.
 
@@ -3183,7 +3179,7 @@ def create_budget_table(devdata, devstr, region, species, varnames,
         raise ValueError('The devdata argument must be an xarray Dataset!')
 
     # Open file for output
-    f = open(outfilename, "w")
+    f = open(outfilename, 'w')
 
     for spc_name in species:
 
@@ -3191,12 +3187,12 @@ def create_budget_table(devdata, devstr, region, species, varnames,
         title = '### {} budget totals for species {}'.format(devstr,spc_name)
     
         # Write header to file
-        f.write('#'*79)
-        f.write('\n{}{}\n'.format(title.ljust(76), '###'))
-        f.write('#'*79)
+        print('#'*79, file=f)
+        print('{}{}'.format(title.ljust(76), '###'), file=f)
+        print('#'*79, file=f)
 
         # Get variable names for this species
-        spc_vars = [ v for v in varnames if v.endswith("_"+spc_name) ]
+        spc_vars = [ v for v in varnames if v.endswith('_'+spc_name) ]
 
         for v in spc_vars:
 
@@ -3213,11 +3209,12 @@ def create_budget_table(devdata, devstr, region, species, varnames,
             total_dev = np.sum(devarray.values)
 
             # Write output
-            f.write('{} : {:13.6e} {}\n'.format(comp_name.ljust(12), total_dev,
-                                                units))
+            print('{} : {:13.6e} {}'.format(comp_name.ljust(12),
+                                            total_dev, units), file=f)
 
         # Add new lines before going to the next species
-        f.write("\n\n")
+        print(file=f)
+        print(file=f)
 
     # Close file
     f.close()
@@ -3304,7 +3301,7 @@ def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
         
         # Write to file
         create_budget_table(devds, devstr, region, region_spc, region_vars,
-                            file_budget, interval, template="Budget_{}")
+                            file_budget, interval, template='Budget_{}')
                 
 
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
@@ -3334,7 +3331,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
     '''
 
     # Setup
-    pdfobj = open(pdfname,"rb")
+    pdfobj = open(pdfname,'rb')
     input = PdfFileReader(pdfobj)
     output = PdfFileWriter()
     
@@ -3385,7 +3382,7 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
     '''
     
     # Setup
-    pdfobj = open(pdfname,"rb")
+    pdfobj = open(pdfname,'rb')
     input = PdfFileReader(pdfobj)
     output = PdfFileWriter()
     warninglist = [k.replace(remove_prefix,'') for k in warninglist]
@@ -3518,10 +3515,10 @@ def plot_layer(dr, ax, title='', unit='', diff=False, vmin=None, vmax=None):
     '''
 
     assert isinstance(ax, GeoAxes), (
-           "Input axis must be cartopy GeoAxes! "
-           "Can be created by: \n"
-           "plt.axes(projection=ccrs.PlateCarree()) \n or \n"
-           "plt.subplots(n, m, subplot_kw={'projection': ccrs.PlateCarree()})"
+           'Input axis must be cartopy GeoAxes! '
+           'Can be created by: \n'
+           'plt.axes(projection=ccrs.PlateCarree()) \n or \n'
+           'plt.subplots(n, m, subplot_kw={"projection": ccrs.PlateCarree()})'
            )
     assert ax.projection == ccrs.PlateCarree(), (
            'must use PlateCarree projection'
