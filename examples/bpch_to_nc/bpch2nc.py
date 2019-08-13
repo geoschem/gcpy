@@ -17,16 +17,27 @@ warnings.filterwarnings('ignore', category=RuntimeWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
 
 # ----------------------------------------------------------------------
-# Set file names (EDIT THESE ACCORDINGLY)
+# User configurable settings (EDIT THESE ACCORDINGLY)
 # ----------------------------------------------------------------------
-bpch_file = '/path/to/my/bpch_file.bpch'
-tinfo_file = '/path/to/my/tracerinfo.dat'
-dinfo_file = '/path_to_my/diaginfo.dat'
-ncfile = '/path/to/my/netcdf_file.nc'
 
+# Name of Bpch file
+bpchfile = '/path/to/bpch/file'
+
+# tracerinfo.dat and diaginfo,dat fiels
+tinfo_file = '/path/to/tracerinfo.dat'
+dinfo_file = '/path/to/diaginfo.dat'
+
+# Name of netCDF file
+ncfile = '/path/to/netcdf/file'
+
+# Date string for the time:units attribute
+datestr = 'YYYY-MM-DD'
+
+# ----------------------------------------------------------------------
 # Open the bpch file and save it into an xarray Dataset object
 # NOTE: For best results, also specify the corresponding
 # tracerinfo.dat diaginfo.dat metadata files.
+# ----------------------------------------------------------------------
 try:
     ds = xb.open_bpchdataset(filename=bpchfile,
                              tracerinfo_file=tinfo_file,
@@ -83,7 +94,7 @@ for v in ds.data_vars.keys():
 # Time
 ds['time'].attrs['long_name'] = 'time'
 ds['time'].attrs['units'] = \
-    'hours since 2016-{}-01 00:00:00.00 UTC'.format(mstr)
+    'hours since {} 00:00:00.00 UTC'.format(datestr)
 ds['time'].attrs['calendar'] = 'standard'
 ds['time'].attrs['axis'] = 'T'
 
