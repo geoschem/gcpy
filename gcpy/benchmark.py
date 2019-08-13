@@ -1489,6 +1489,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax0.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax0.set_yscale('log')
+            ax0.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
 
@@ -1553,6 +1554,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax1.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax1.set_yscale('log')
+            ax1.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
 
@@ -1604,6 +1606,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax2.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax2.set_yscale('log')
+            ax2.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         ax2.set_xticks(xtick_positions)
         ax2.set_xticklabels(xticklabels)
 
@@ -1639,6 +1642,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax3.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax3.set_yscale('log')
+            ax3.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         ax3.set_xticks(xtick_positions)
         ax3.set_xticklabels(xticklabels)
 
@@ -1683,6 +1687,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax4.set_aspect('auto')
         if log_yaxis: 
             ax4.set_yscale('log')
+            ax4.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         ax4.set_ylabel('Pressure (hPa)')
         ax4.set_xticks(xtick_positions)
         ax4.set_xticklabels(xticklabels)
@@ -1720,6 +1725,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax5.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax5.set_yscale('log')
+            ax5.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
         ax5.set_xticks(xtick_positions)
         ax5.set_xticklabels(xticklabels)
 
