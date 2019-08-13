@@ -94,34 +94,34 @@ gchp_hourstr = '1200'
 
 # Data directories (edit as needed)
 # For gchp_vs_gcc_refdir use gcc_dev_version, not ref (mps, 6/27/19)
-gcc_vs_gcc_refdir   = join(maindir, gcc_ref_version)
-gcc_vs_gcc_devdir   = join(maindir, gcc_dev_version)
-gchp_vs_gcc_refdir  = join(maindir, gcc_dev_version)
+gcc_vs_gcc_refdir   = join(maindir, gcc_ref_version,  'OutputDir')
+gcc_vs_gcc_devdir   = join(maindir, gcc_dev_version,  'OutputDir')
+gchp_vs_gcc_refdir  = join(maindir, gcc_dev_version,  'OutputDir')
 gchp_vs_gcc_devdir  = join(maindir, gchp_dev_version, 'OutputDir')
 gchp_vs_gchp_refdir = join(maindir, gchp_ref_version, 'OutputDir')
 gchp_vs_gchp_devdir = join(maindir, gchp_dev_version, 'OutputDir')
 
 # Plots directories (edit as needed)
-gcc_vs_gcc_plotsdir    = join(maindir, 'output')
+gcc_vs_gcc_plotsdir    = join(maindir, 'Plots')
 gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_version,
-                              'output/GCHP_version_comparison')
+                              'Plots/GCHP_version_comparison')
 gchp_vs_gcc_plotsdir   = join(maindir, gchp_dev_version,
-                              'output/GCHP_GCC_comparison')
+                              'Plots/GCHP_GCC_comparison')
 diff_of_diffs_plotsdir = join(maindir, gchp_dev_version,
-                              'output/GCHP_GCC_diff_of_diffs')
+                              'Plots/GCHP_GCC_diff_of_diffs')
 
 # Plot title strings (edit as needed)
 # For gchp_vs_gcc_refstr use gcc_dev_version, not ref (mps, 6/27/19)
 gcc_vs_gcc_refstr    = '{}'.format(gcc_ref_version)
 gcc_vs_gcc_devstr    = '{}'.format(gcc_dev_version)
-gchp_vs_gcc_refstr   = 'GCC {}'.format(gcc_dev_version)
-gchp_vs_gcc_devstr   = 'GCHP {}'.format(gchp_dev_version)
-gchp_vs_gchp_refstr  = 'GCHP {}'.format(gchp_ref_version)
-gchp_vs_gchp_devstr  = 'GCHP {}'.format(gchp_dev_version)
-diff_of_diffs_refstr = 'GCC {} - {}'.format(gcc_dev_version,
-                                            gcc_ref_version)
-diff_of_diffs_devstr = 'GCHP {} - {}'.format(gchp_dev_version,
-                                             gchp_ref_version)
+gchp_vs_gcc_refstr   = '{}'.format(gcc_dev_version)
+gchp_vs_gcc_devstr   = '{}'.format(gchp_dev_version)
+gchp_vs_gchp_refstr  = '{}'.format(gchp_ref_version)
+gchp_vs_gchp_devstr  = '{}'.format(gchp_dev_version)
+diff_of_diffs_refstr = '{} - {}'.format(gcc_dev_version,
+                                        gcc_ref_version)
+diff_of_diffs_devstr = '{} - {}'.format(gchp_dev_version,
+                                        gchp_ref_version)
 
 # Files that will contain lists of quantities that have significant
 # differences -- we need these for the benchmark approval forms.
