@@ -1,4 +1,6 @@
-""" Specific utilities re-factored from the benchmarking utilities. """
+'''
+Specific utilities for creating plots from GEOS-Chem benchmark simulations.
+'''
 
 import os
 import shutil
@@ -30,6 +32,7 @@ spc_categories = 'benchmark_categories.json'
 emission_spc = 'emission_species.json' 
 emission_inv = 'emission_inventories.json' 
 
+
 def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          ilev=0, itime=0,  weightsdir=None, pdfname='',
                          cmpres=None, match_cbar=True, normalize_by_area=False,
@@ -37,10 +40,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          use_cmap_RdBu=False, verbose=False, 
                          log_color_scale=False, sigdiff_list=[]):
     '''
-    Create single-level 3x2 comparison map plots for variables common in two xarray
-    datasets. Optionally save to PDF. 
+    Create single-level 3x2 comparison map plots for variables common 
+    in two xarray Datasets. Optionally save to PDF. 
 
     Args:
+    -----
         refdata : xarray dataset
             Dataset used as reference in comparison
 
@@ -54,6 +58,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             String description for development data to be used in plots
  
     Keyword Args (optional):
+    ------------------------
         varlist : list of strings
             List of xarray dataset variable names to make plots for
             Default value: None (will compare all common variables)
@@ -68,58 +73,69 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
         weightsdir : str
             Directory path for storing regridding weights
-            Default value: None (will create/store weights in current directory)
+            Default value: None (will create/store weights in 
+            current directory)
 
         pdfname : str
             File path to save plots as PDF
             Default value: Empty string (will not create PDF)
 
         cmpres : str
-            String description of grid resolution at which to compare datasets
-            Default value: None (will compare at highest resolution of ref and dev)
+            String description of grid resolution at which 
+            to compare datasets
+            Default value: None (will compare at highest resolution 
+            of ref and dev)
 
         match_cbar : boolean
-            Logical indicating whether to use same colorbar bounds across plots
+            Set this flag to True if you wish to use the same colorbar
+            bounds for the Ref and Dev plots.
             Default value: True
 
         normalize_by_area : boolean
-            Logical indicating whether to normalize raw data by grid area
+            Set this flag to True if you wish to normalize the Ref and Dev
+            raw data by grid area.
             Default value: False
 
         enforce_units : boolean
-            Logical to force an error if reference and development variables units differ
+            Set this flag to True to force an error if Ref and Dev
+            variables have different units.
             Default value: True
 
         flip_ref : boolean
-            Logical to flip the vertical dimension of reference dataset 3D variables
+            Set this flag to True to flip the vertical dimension of 
+            3D variables in the Ref dataset.
             Default value: False
 
         flip_dev : boolean
-            Logical to flip the vertical dimension of development dataset 3D variables
+            Set this flag to True to flip the vertical dimension of
+            3D variables in the Dev dataset.
             Default value: False
 
         use_cmap_RdBu : boolean
-            Logical to used a blue-white-red colormap for plotting raw reference and
-            development datasets.
+            Set this flag to True to use a blue-white-red colormap 
+            for plotting the raw data in both the Ref and Dev datasets.
             Default value: False
 
         verbose : boolean
-            Logical to enable informative prints
+            Set this flag to True to enable informative printout.
             Default value: False
 
         log_color_scale: boolean         
-            Logical to enable plotting data (not diffs) on a log color scale.
+            Set this flag to True to plot data (not diffs)
+            on a log color scale.
             Default value: False
 
         sigdiff_list: list of str
-            Returns a list of all quantities having significant differences.
-            The criteria is: |max(fractional difference)| > 0.1
+            Returns a list of all quantities having significant 
+            differences (where |max(fractional difference)| > 0.1).
             Default value: []
 
     Returns:
+    --------
         Nothing
 
     Example:
+    --------
         >>> import matplotlib.pyplot as plt
         >>> import xarray as xr
         >>> from gcpy import benchmark
@@ -906,14 +922,15 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                        match_cbar=True, pres_range=[0,2000],
                        normalize_by_area=False, enforce_units=True,
                        flip_ref=False, flip_dev=False, use_cmap_RdBu=False,
-                       verbose=False, log_color_scale=False,
+                       verbose=False, log_color_scale=False, log_yaxis=False,
                        sigdiff_list=[]):
 
     '''
-    Create single-level 3x2 comparison map plots for variables common in two xarray
-    datasets. Optionally save to PDF. 
+    Create single-level 3x2 comparison zonal-mean plots for variables
+    common in two xarray Daatasets. Optionally save to PDF. 
 
     Args:
+    -----
         refdata : xarray dataset
             Dataset used as reference in comparison
 
@@ -927,6 +944,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             String description for development data to be used in plots
  
     Keyword Args (optional):
+    ------------------------
         varlist : list of strings
             List of xarray dataset variable names to make plots for
             Default value: None (will compare all common 3D variables)
@@ -937,63 +955,80 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
         weightsdir : str
             Directory path for storing regridding weights
-            Default value: None (will create/store weights in current directory)
+            Default value: None (will create/store weights in 
+            current directory)
 
         pdfname : str
             File path to save plots as PDF
             Default value: Empty string (will not create PDF)
 
         cmpres : str
-            String description of grid resolution at which to compare datasets
-            Default value: None (will compare at highest resolution of ref and dev)
+            String description of grid resolution at which
+            to compare datasets
+            Default value: None (will compare at highest resolution 
+            of Ref and Dev)
 
         match_cbar : boolean
-            Logical indicating whether to use same colorbar bounds across plots
+            Set this flag to True to use same the colorbar bounds
+            for both Ref and Dev plots.
             Default value: True
 
         pres_range : list of two integers
-            Pressure range of levels to plot [hPa]. Vertical axis will span outer
-            pressure edges of levels that contain pres_range endpoints.
+            Pressure range of levels to plot [hPa]. The vertical axis will
+            span the outer pressure edges of levels that contain pres_range 
+            endpoints.
             Default value: [0,2000]
 
         normalize_by_area : boolean
-            Logical indicating whether to normalize raw data by grid area
+            Set this flag to True to to normalize raw data in both
+            Ref and Dev datasets by grid area.
             Default value: False
 
         enforce_units : boolean
-            Logical to force an error if reference and development variables units differ
+            Set this flag to True force an error if the variables in
+            the Ref and Dev datasets have different units.
             Default value: True
 
         flip_ref : boolean
-            Logical to flip the vertical dimension of reference dataset 3D variables
+            Set this flag to True to flip the vertical dimension of
+            3D variables in the Ref dataset.
             Default value: False
 
         flip_dev : boolean
-            Logical to flip the vertical dimension of development dataset 3D variables
+            Set this flag to True to flip the vertical dimension of
+            3D variables in the Dev dataset.
             Default value: False
 
         use_cmap_RdBu : boolean
-            Logical to used a blue-white-red colormap for plotting raw reference and
-            development datasets.
+            Set this flag to True to use a blue-white-red colormap for
+            plotting raw reference and development datasets.
             Default value: False
 
         verbose : logical
-            Logical to enable informative prints
+            Set this flag to True to enable informative printout.
             Default value: False
 
         log_color_scale: boolean         
-            Logical to enable plotting data (not diffs) on a log color scale.
+            Set this flag to True to enable plotting data (not diffs)
+            on a log color scale.
+            Default value: False
+
+        log_yaxis : boolean
+            Set this flag to True if you wish to create zonal mean
+            plots with a log-pressure Y-axis.
             Default value: False
 
         sigdiff_list: list of str
-            Returns a list of all quantities having significant differences.
-            The criteria is: |max(fractional difference)| > 0.1
+            Returns a list of all quantities having significant 
+            differences (where |max(fractional difference)| > 0.1).
             Default value: []
 
     Returns:
+    --------
         Nothing
 
     Example:
+    --------
         >>> import matplotlib.pyplot as plt
         >>> import xarray as xr
         >>> from gcpy import benchmark
@@ -1439,6 +1474,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                                    pedge[pedge_ind],
                                    zm_ref,
                                    cmap=cmap1, norm=norm0)
+            
             ax0.set_title('{} (Ref){}\n{}'.format(
                 refstr, subtitle_extra, refres))
         else:
@@ -1448,9 +1484,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                                    cmap=cmap1, norm=norm0)
             ax0.set_title('{} (Ref){}\n{} regridded from c{}'.format(
                 refstr, subtitle_extra, cmpres, refres))
+        ax0.set_aspect('auto')
         ax0.invert_yaxis()
         ax0.set_ylabel('Pressure (hPa)')
-        ax0.set_aspect('auto')
+        if log_yaxis: 
+            ax0.set_yscale('log')
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
 
@@ -1510,9 +1548,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                                    zm_dev, cmap=cmap1, norm=norm1)
             ax1.set_title('{} (Dev){}\n{} regridded from c{}'.format(
                 devstr, subtitle_extra, cmpres, devres))
+        ax1.set_aspect('auto')
         ax1.invert_yaxis()
         ax1.set_ylabel('Pressure (hPa)')
-        ax1.set_aspect('auto')
+        if log_yaxis: 
+            ax1.set_yscale('log')
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
 
@@ -1554,14 +1594,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         plot2 = ax2.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
                                zm_diff, cmap=cmap_plot,
                                vmin=vmin, vmax=vmax)
-        ax2.invert_yaxis()
         if regridany:
             ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(
                 cmpres))
         else:
             ax2.set_title('Difference\nDev - Ref, Dynamic Range')
-        ax2.set_ylabel('Pressure (hPa)')
         ax2.set_aspect('auto')
+        ax2.invert_yaxis()
+        ax2.set_ylabel('Pressure (hPa)')
+        if log_yaxis: 
+            ax2.set_yscale('log')
         ax2.set_xticks(xtick_positions)
         ax2.set_xticklabels(xticklabels)
 
@@ -1588,13 +1630,15 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
   
         plot3 = ax3.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
                                zm_diff, cmap=cmap_plot, vmin=vmin, vmax=vmax)
-        ax3.invert_yaxis()
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
         else:
             ax3.set_title('Difference\nDev - Ref, Restriced Range [5%,95%]')
-        ax3.set_ylabel('Pressure (hPa)')
         ax3.set_aspect('auto')
+        ax3.invert_yaxis()
+        ax3.set_ylabel('Pressure (hPa)')
+        if log_yaxis: 
+            ax3.set_yscale('log')
         ax3.set_xticks(xtick_positions)
         ax3.set_xticklabels(xticklabels)
 
@@ -1631,13 +1675,15 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         plot4 = ax4.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
                                zm_fracdiff, cmap=cmap_plot, 
                                vmin=vmin, vmax=vmax)
-        ax4.invert_yaxis()
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres))
         else:
             ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range')
-        ax4.set_ylabel('Pressure (hPa)')
+        ax4.invert_yaxis()
         ax4.set_aspect('auto')
+        if log_yaxis: 
+            ax4.set_yscale('log')
+        ax4.set_ylabel('Pressure (hPa)')
         ax4.set_xticks(xtick_positions)
         ax4.set_xticklabels(xticklabels)
 
@@ -1665,13 +1711,15 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         plot5 = ax5.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
                                zm_fracdiff, cmap=cmap_plot, 
                                vmin=vmin, vmax=vmax)
-        ax5.invert_yaxis()
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
         else:
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range')
-        ax5.set_ylabel('Pressure (hPa)')
         ax5.set_aspect('auto')
+        ax5.invert_yaxis()
+        ax5.set_ylabel('Pressure (hPa)')
+        if log_yaxis: 
+            ax5.set_yscale('log')
         ax5.set_xticks(xtick_positions)
         ax5.set_xticklabels(xticklabels)
 
@@ -1718,6 +1766,7 @@ def get_emissions_varnames(commonvars, template=None):
     contain a particular search string.
 
     Args:
+    -----
         commonvars : list of strs
             A list of commmon variable names from two data sets.
             (This can be obtained with method gcpy.core.compare_varnames)
@@ -1727,11 +1776,13 @@ def get_emissions_varnames(commonvars, template=None):
             to emission diagnostics by sector.
 
     Returns:
+    --------
         varnames : list of strs
-           A list of variable names corresponding to emission
-           diagnostics for a given species and sector.
+            A list of variable names corresponding to emission
+            diagnostics for a given species and sector.
 
     Example:
+    --------
         >>> import gcpy
         >>> commonvars = ['EmisCO_Anthro', 'EmisNO_Anthro', 'AREA']
         >>> varnames = gcpy.get_emissions_varnames(commonvars, "Emis")
@@ -1760,21 +1811,25 @@ def create_emission_display_name(diagnostic_name):
     that can be used as a plot title or in a table of emissions totals.
 
     Args:
+    -----
         diagnostic_name : str
             Name of the diagnostic to be formatted
 
     Returns:
+    --------
         display_name : str
             Formatted name that can be used as plot titles or in tables
             of emissions totals.
 
     Remarks:
+    --------
         Assumes that diagnostic names will start with either "Emis"
         (for emissions by category) or "Inv" (for emissions by inventory).
         This should be an OK assumption to make since this routine is
         specifically geared towards model benchmarking.
 
     Example:
+    --------
         >>> import gcpy
         >>> diag_name = "EmisCO_Anthro"
         >>> display_name = gcpy.create_emission_display_name(diag_name)
@@ -1805,6 +1860,7 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
     Computes and prints emission totals for two xarray DataArray objects.
 
     Args:
+    -----
         ref : xarray DataArray
             The first DataArray to be compared (aka "Reference")
 
@@ -1819,10 +1875,11 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
             A string that can be used to identify devdata
             (e.g. a model version number or other identifier).
 
-         f : file
+        f : file
             File object denoting a text file where output will be directed.
 
     Remarks:
+    --------
         This is an internal method.  It is meant to be called from method
         create_total_emissions_table instead of being called directly.
     '''
@@ -1864,6 +1921,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     are usually contained in netCDF data files.
 
     Args:
+    -----
         refdata : xarray Dataset
             The first data set to be compared (aka "Reference").
 
@@ -1892,6 +1950,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
             emissions totals.
 
     Keyword Args (optional):
+    ------------------------
         interval : float
             The length of the data interval in seconds. By default, interval
             is set to the number of seconds in a 31-day month (86400 * 31),
@@ -1913,10 +1972,8 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
             (in m2) in the dev dataset.
             Default value: 'AREA'
 
-    Returns:
-        None.  Writes to a text file specified by the "outfilename" argument.
-
     Remarks:
+    --------
         This method is mainly intended for model benchmarking purposes,
         rather than as a general-purpose tool.
 
@@ -1924,6 +1981,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         JSON file called "species_database.json".
 
     Example:
+    --------
         Print the total of CO and ACET emissions in two different
         data sets, which represent different model versions:
 
@@ -2068,6 +2126,7 @@ def archive_species_categories(dst):
     named "benchmark_species.json".
 
     Args:
+    -----
         dst : str
             Name of the folder where the JSON file containing
             benchmark categories ("benchmark_species.json")
@@ -2089,46 +2148,49 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
     for model benchmarking purposes.
 
     Args:
+    -----
         ref: str
-             Path name for the "Ref" (aka "Reference") data set.
+            Path name for the "Ref" (aka "Reference") data set.
 
         refstr : str
-             A string to describe ref (e.g. version number)
+            A string to describe ref (e.g. version number)
 
         dev : str
-             Path name for the "Dev" (aka "Development") data set.
-             This data set will be compared against the "Reference"
-             data set.
+            Path name for the "Dev" (aka "Development") data set.
+            This data set will be compared against the "Reference"
+            data set.
 
         devstr : str
-             A string to describe dev (e.g. version number)
+            A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
+    ------------------------
         dst : str
-             A string denoting the destination folder where a PDF
-             file containing plots will be written.
-             Default value: ./1mo_benchmark
+            A string denoting the destination folder where a PDF
+            file containing plots will be written.
+            Default value: ./1mo_benchmark
 
         overwrite : boolean
-             Set this flag to True to overwrite files in the
-             destination folder (specified by the dst argument).
-             Default value: False.
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False.
 
         verbose : boolean
-             Set this flag to True to print extra informational output.
-             Default value: False.
+            Set this flag to True to print extra informational output.
+            Default value: False.
 
         restrict_cats : list of strings
-             List of benchmark categories in benchmark_categories.json to make
-             plots for. If empty, plots are made for all categories.
-             Default value: empty
+            List of benchmark categories in benchmark_categories.json to make
+            plots for. If empty, plots are made for all categories.
+            Default value: empty
 
         plots : list of strings
-             List of plot types to create.
-             Default value: ['sfc', '500hpa', 'zonalmean']
+            List of plot types to create.
+            Default value: ['sfc', '500hpa', 'zonalmean']
 
         log_color_scale: boolean         
-            Logical to enable plotting data (not diffs) on a log color scale.
+            Set this flag to True to enable plotting data (not diffs)
+            on a log color scale.
             Default value: False
 
         sigdiff_files : list of str
@@ -2240,11 +2302,13 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
 
+            # Strat_ZonalMean plots will use a log-pressure Y-axis, with
+            # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
             pdfname = os.path.join(catdir,'{}_Strat_ZonalMean.pdf'.format(
                 filecat))        
             compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
-                               pdfname=pdfname, pres_range=[0,100], 
-                               use_cmap_RdBu=use_cmap_RdBu,
+                               pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
+                               pres_range=[1,100], log_yaxis=True, 
                                log_color_scale=log_color_scale)
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
@@ -2296,62 +2360,65 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     emissions diagnostics.
 
     Args:
+    -----
         ref: str
-             Path name for the "Ref" (aka "Reference") data set.
+            Path name for the "Ref" (aka "Reference") data set.
 
         refstr : str
-             A string to describe ref (e.g. version number)
+            A string to describe ref (e.g. version number)
 
         dev : str
-             Path name for the "Dev" (aka "Development") data set.
-             This data set will be compared against the "Reference"
-             data set.
+            Path name for the "Dev" (aka "Development") data set.
+            This data set will be compared against the "Reference"
+            data set.
 
         devstr : str
-             A string to describe dev (e.g. version number)
+            A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
+    ------------------------
         dst : str
-             A string denoting the destination folder where a
-             PDF file containing plots will be written.
-             Default value: './1mo_benchmark
+            A string denoting the destination folder where a
+            PDF file containing plots will be written.
+            Default value: './1mo_benchmark
 
         plot_by_benchmark_cat : boolean
-             Set this flag to True to separate plots into PDF files
-             according to the benchmark categories (e.g. Primary,
-             Aerosols, Nitrogen, etc.)  These categories are specified
-             in the JSON file benchmark_species.json.
-             Default value: False
+            Set this flag to True to separate plots into PDF files
+            according to the benchmark categories (e.g. Primary,
+            Aerosols, Nitrogen, etc.)  These categories are specified
+            in the JSON file benchmark_species.json.
+            Default value: False
 
         plot_by_hco_cat : boolean
-             Set this flag to True to separate plots into PDF files
-             according to HEMCO emissions categories (e.g. Anthro,
-             Aircraft, Bioburn, etc.)
-             Default value: False
+            Set this flag to True to separate plots into PDF files
+            according to HEMCO emissions categories (e.g. Anthro,
+            Aircraft, Bioburn, etc.)
+            Default value: False
 
         overwrite : boolean
-             Set this flag to True to overwrite files in the
-             destination folder (specified by the dst argument).
-             Default value: False
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False
 
         verbose : boolean
-             Set this flag to True to print extra informational output.
-             Default value: False
+            Set this flag to True to print extra informational output.
+            Default value: False
 
         flip_ref : boolean
-             Set this flag to True to reverse the vertical level
-             ordering in the "Ref" dataset (in case "Ref" starts
-             from the top of atmosphere instead of the surface).
-             Default value: False
+            Set this flag to True to reverse the vertical level
+            ordering in the "Ref" dataset (in case "Ref" starts
+            from the top of atmosphere instead of the surface).
+            Default value: False
 
         flip_dev : boolean
-             Set this flag to True to reverse the vertical level
-             ordering in the "Dev" dataset (in case "Dev" starts
-             from the top of atmosphere instead of the surface).
-             Default value: False
+            Set this flag to True to reverse the vertical level
+            ordering in the "Dev" dataset (in case "Dev" starts
+            from the top of atmosphere instead of the surface).
+            Default value: False
 
         log_color_scale: boolean         
-            Logical to enable plotting data (not diffs) on a log color scale.
+            Set this flag to True to enable plotting data (not diffs)
+            on a log color scale.
             Default value: False
 
          sigdiff_files : list of str
@@ -2362,6 +2429,7 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
             Default value: None
 
     Remarks:
+    --------
         (1) If both plot_by_benchmark_cat and plot_by_hco_cat are
             False, then all emission plots will be placed into the
             same PDF file.
@@ -2542,38 +2610,40 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     category for benchmarking purposes.
 
     Args:
+    -----
         reflist: list of str
-             List with the path names of the emissions and/or met field
-             files that will constitute the "Ref" (aka "Reference")
-             data set.
+            List with the path names of the emissions and/or met field
+            files that will constitute the "Ref" (aka "Reference")
+            data set.
 
         refstr : str
-             A string to describe ref (e.g. version number)
+            A string to describe ref (e.g. version number)
 
         devlist : list of str
-             List with the path names of the emissions and/or met field
-             files that will constitute the "Dev" (aka "Development") 
-             data set.  The "Dev" data set will be compared against the
-             "Ref" data set.
+            List with the path names of the emissions and/or met field
+            files that will constitute the "Dev" (aka "Development") 
+            data set.  The "Dev" data set will be compared against the
+            "Ref" data set.
 
         devstr : str
-             A string to describe dev (e.g. version number)
+            A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
+    ------------------------
         dst : str
-             A string denoting the destination folder where the file
-             containing emissions totals will be written.
-             Default value: ./1mo_benchmark
+            A string denoting the destination folder where the file
+            containing emissions totals will be written.
+            Default value: ./1mo_benchmark
 
         overwrite : boolean
-             Set this flag to True to overwrite files in the
-             destination folder (specified by the dst argument).
-             Default value : False
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value : False
 
         interval : float
-             Specifies the averaging period in seconds, which is used
-             to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
-             Default value : None
+            Specifies the averaging period in seconds, which is used
+            to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
+            Default value : None
 
         ref_area_varname : str
             Name of the variable containing the grid box surface areas
@@ -2700,68 +2770,71 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     benchmarking purposes.
 
     Args:
+    -----
         ref: str
-             Path name for the "Ref" (aka "Reference") data set.
+            Path name for the "Ref" (aka "Reference") data set.
 
         refstr : str
-             A string to describe ref (e.g. version number)
+            A string to describe ref (e.g. version number)
     
         dev : str
-             Path name for the "Dev" (aka "Development") data set.
-             This data set will be compared against the "Reference"
-             data set.
+            Path name for the "Dev" (aka "Development") data set.
+            This data set will be compared against the "Reference"
+            data set.
 
         devstr : str
-             A string to describe dev (e.g. version number)
+            A string to describe dev (e.g. version number)
     
     Keyword Args (optional):
-        varlist : list
-             List of J-value variables to plot.  If not passed, 
-             then all J-value variables common to both dev 
-             and ref will be plotted.  The varlist argument can be
-             a useful way of restricting the number of variables
-             plotted to the pdf file when debugging.
-             Default value: None
+    ------------------------
+        varlist : list of str
+            List of J-value variables to plot.  If not passed, 
+            then all J-value variables common to both dev 
+            and ref will be plotted.  The varlist argument can be
+            a useful way of restricting the number of variables
+            plotted to the pdf file when debugging.
+            Default value: None
 
         dst : str
-             A string denoting the destination folder where a
-             PDF file  containing plots will be written.
-             Default value: ./1mo_benchmark.
+            A string denoting the destination folder where a
+            PDF file  containing plots will be written.
+            Default value: ./1mo_benchmark.
     
         local_noon_jvalues : boolean
-             Set this switch to plot local noon J-values.  This will
-             divide all J-value variables by the JNoonFrac counter,
-             which is the fraction of the time that it was local noon
-             at each location.
-             Default value : False
+            Set this flag to plot local noon J-values.  This will
+            divide all J-value variables by the JNoonFrac counter,
+            which is the fraction of the time that it was local noon
+            at each location.
+            Default value : False
 
         plots : list of strings
-             List of plot types to create.
-             Default value: ['sfc', '500hpa', 'zonalmean']
+            List of plot types to create.
+            Default value: ['sfc', '500hpa', 'zonalmean']
 
         overwrite : boolean
-             Set this flag to True to overwrite files in the
-             destination folder (specified by the dst argument).
-             Default value: False.
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False.
 
         verbose : boolean
-             Set this flag to True to print extra informational output.
-             Default value: False
+            Set this flag to True to print extra informational output.
+            Default value: False
 
         flip_ref : boolean
-             Set this flag to True to reverse the vertical level
-             ordering in the "Ref" dataset (in case "Ref" starts
-             from the top of atmosphere instead of the surface).
-             Default value: False
+            Set this flag to True to reverse the vertical level
+            ordering in the "Ref" dataset (in case "Ref" starts
+            from the top of atmosphere instead of the surface).
+            Default value: False
 
         flip_dev : boolean
-             Set this flag to True to reverse the vertical level
-             ordering in the "Dev" dataset (in case "Dev" starts
-             from the top of atmosphere instead of the surface).
-             Default value: False
+            Set this flag to True to reverse the vertical level
+            ordering in the "Dev" dataset (in case "Dev" starts
+            from the top of atmosphere instead of the surface).
+            Default value: False
 
         log_color_scale: boolean         
-            Logical to enable plotting data (not diffs) on a log color scale.
+            Set this flag to True if you wish to enable plotting data 
+            (not diffs) on a log color scale.
             Default value: False
 
         sigdiff_files : list of str
@@ -2772,6 +2845,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
             Default value: None
 
     Remarks:
+    --------
          Will create 4 files containing J-value plots:
             (1 ) Surface values
             (2 ) 500 hPa values
@@ -2901,10 +2975,12 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
 
-        # Stratospheric zonal mean plots
+        # Strat_ZonalMean plots will use a log-pressure Y-axis, with
+        # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
         pdfname = os.path.join(jvdir,'{}Strat_ZonalMean.pdf'.format(prefix))
         compare_zonal_mean(refds, refstr, devds, devstr,
-                           varlist=varlist, pdfname=pdfname, pres_range=[0,100],
+                           varlist=varlist, pdfname=pdfname,
+                           pres_range=[0,100], log_yaxis=True,
                            flip_ref=flip_ref, flip_dev=flip_dev,
                            log_color_scale=log_color_scale)
         add_bookmarks_to_pdf(pdfname, varlist,
@@ -2951,45 +3027,48 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     depths (AODs) for model benchmarking purposes.
 
     Args:
+    -----
         ref: str
-             Path name for the "Ref" (aka "Reference") data set.
+            Path name for the "Ref" (aka "Reference") data set.
 
         refstr : str
-             A string to describe ref (e.g. version number)
+            A string to describe ref (e.g. version number)
 
         dev : str
-             Path name for the "Dev" (aka "Development") data set.
-             This data set will be compared against the "Reference"
-             data set.
+            Path name for the "Dev" (aka "Development") data set.
+            This data set will be compared against the "Reference"
+            data set.
 
         devstr : str
-             A string to describe dev (e.g. version number)
+            A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
-        varlist : list
-             List of AOD variables to plot.  If not passed, 
-             then all AOD variables common to both dev 
-             and ref will be plotted.  The varlist argument can be
-             a useful way of restricting the number of variables
-             plotted to the pdf file when debugging.
-             Default value: None
+    ------------------------
+        varlist : list of str
+            List of AOD variables to plot.  If not passed, 
+            then all AOD variables common to both dev 
+            and ref will be plotted.  The varlist argument can be
+            a useful way of restricting the number of variables
+            plotted to the pdf file when debugging.
+            Default value: None
 
         dst : str
-             A string denoting the destination folder where a
-             PDF file  containing plots will be written.
-             Default value: ./1mo_benchmark.
+            A string denoting the destination folder where a
+            PDF file  containing plots will be written.
+            Default value: ./1mo_benchmark.
 
         overwrite : boolean
-             Set this flag to True to overwrite files in the
-             destination folder (specified by the dst argument).
-             Default value: False.
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False.
 
         verbose : boolean
-             Set this flag to True to print extra informational output.
-             Default value: False
+            Set this flag to True to print extra informational output.
+            Default value: False
 
         log_color_scale: boolean         
-            Logical to enable plotting data (not diffs) on a log color scale.
+            Set this flag to True to enable plotting data (not diffs)
+            on a log color scale.
             Default value: False
 
         sigdiff_files : list of str
@@ -3170,6 +3249,7 @@ def create_budget_table(devdata, devstr, region, species, varnames,
     Creates a table of budgets by species and component for a data set.
 
     Args:
+    -----
         devdata : xarray Dataset
             The second data set to be compared (aka "Development").
 
@@ -3191,6 +3271,7 @@ def create_budget_table(devdata, devstr, region, species, varnames,
             emissions totals.
 
     Keyword Args (optional):
+    ------------------------
         interval : float
             The length of the data interval in seconds. By default, interval
             is set to the number of seconds in a 31-day month (86400 * 31),
@@ -3201,10 +3282,8 @@ def create_budget_table(devdata, devstr, region, species, varnames,
             data set. If not specified, template will be set to "Budget_{}",
             where {} will be replaced by the species name.
 
-    Returns:
-        None.  Writes to a text file specified by the "outfilename" argument.
-
     Remarks:
+    --------
         This method is mainly intended for model benchmarking purposes,
         rather than as a general-purpose tool.
     '''
@@ -3262,30 +3341,32 @@ def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
     purposes.
 
     Args:
+    -----
         devlist : list of str
-             List with the path names of the emissions and/or met field
-             files that will constitute the "Dev" (aka "Development") 
-             data set.  The "Dev" data set will be compared against the
-             "Ref" data set.
+            List with the path names of the emissions and/or met field
+            files that will constitute the "Dev" (aka "Development") 
+            data set.  The "Dev" data set will be compared against the
+            "Ref" data set.
 
         devstr : str
-             A string to describe dev (e.g. version number)
+            A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
+    ------------------------
         dst : str
-             A string denoting the destination folder where the file
-             containing emissions totals will be written.
-             Default value: ./1mo_benchmark
+            A string denoting the destination folder where the file
+            containing emissions totals will be written.
+            Default value: ./1mo_benchmark
 
         overwrite : boolean
-             Set this flag to True to overwrite files in the
-             destination folder (specified by the dst argument).
-             Default value : False
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value : False
 
         interval : float
-             Specifies the averaging period in seconds, which is used
-             to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
-             Default value : None
+            Specifies the averaging period in seconds, which is used
+            to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
+            Default value : None
     '''
 
     # ===============================================================
@@ -3344,6 +3425,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
     Adds bookmarks to an existing PDF file.
 
     Args:
+    -----
         pdfname : str
             Name of an existing PDF file of species or emission plots
             to which bookmarks will be attached.
@@ -3353,6 +3435,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
             PDF bookmark names.
 
     Keyword Args (optional):
+    ------------------------
         remove_prefix : str
             Specifies a prefix to remove from each entry in varlist
             when creating bookmarks.  For example, if varlist has
@@ -3361,8 +3444,8 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
             that variable will be just "NO", etc.
 
          verbose : boolean
-             Set this flag to True to print extra informational output.
-             Default value: False
+            Set this flag to True to print extra informational output.
+            Default value: False
     '''
 
     # Setup
@@ -3393,27 +3476,31 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
     Add nested bookmarks to PDF.
 
     Args:
+    -----
         pdfname : str
-             Path of PDF to add bookmarks to
+            Path of PDF to add bookmarks to
 
         category : str
-             Top-level key name in catdict that maps to contents of PDF
+            Top-level key name in catdict that maps to contents of PDF
 
         catdict : dictionary
-             Dictionary containing key-value pairs where one top-level key matches
-             category and has value fully describing pages in PDF. The value is a 
-             dictionary where keys are level 1 bookmark names, and values are
-             lists of level 2 bookmark names, with one level 2 name per PDF page. 
-             Level 2 names must appear in catdict in the same order as in the PDF.
+            Dictionary containing key-value pairs where one top-level
+            key matches category and has value fully describing pages
+            in PDF. The value is a dictionary where keys are level 1
+            bookmark names, and values are lists of level 2 bookmark
+            names, with one level 2 name per PDF page.  Level 2 names
+            must appear in catdict in the same order as in the PDF.
 
         warninglist : list of strings
-             Level 2 bookmark names to skip since not present in PDF.
+            Level 2 bookmark names to skip since not present in PDF.
 
     Keyword Args (optional):
+    ------------------------
         remove_prefix : str
-             Prefix to be remove from warninglist names before comparing with 
-             level 2 bookmark names in catdict.
-             Default value: empty string (warninglist names match names in catdict) 
+            Prefix to be remove from warninglist names before comparing with 
+            level 2 bookmark names in catdict.
+            Default value: empty string (warninglist names match names 
+            in catdict) 
     '''
     
     # Setup
@@ -3482,34 +3569,34 @@ def normalize_colors(vmin, vmax,
 
     Args:
     -----
-    vmin, vmax : float
-        Minimum and maximum values of a data array.
+        vmin, vmax : float
+            Minimum and maximum values of a data array.
 
     Keyword Args:
     -------------
-    is_all_zeroes : boolean
-        Logical flag to denote if the data array is all zeroes.
-        Default value: False
+        is_all_zeroes : boolean
+            Logical flag to denote if the data array is all zeroes.
+            Default value: False
 
-    log_color_scale : boolean
-        Logical flag to denote that we are using a logarithmic
-        color scale instead of a linear color scale.
-        Default value: False:
+        log_color_scale : boolean
+            Logical flag to denote that we are using a logarithmic
+            color scale instead of a linear color scale.
+            Default value: False:
 
     Returns:
     --------
-    norm : matplotlib Norm
-        The normalized colors, in a matplotlib Norm object.
+        norm : matplotlib Norm
+            The normalized colors, in a matplotlib Norm object.
 
     Remarks:
     --------
-    (1) This is an internal routine, called from compare_single_level,
-        and compare_zonal_mean.
+        (1) This is an internal routine, called from compare_single_level,
+            and compare_zonal_mean.
 
-    (2) For log scale, the min value will be 3 orders of magnitude
-        less than the max.  But if the data is all zeroes, then we
-        will revert to a linear scale (to avoid a math error of
-        taking a log of zero).
+        (2) For log scale, the min value will be 3 orders of magnitude
+            less than the max.  But if the data is all zeroes, then we
+            will revert to a linear scale (to avoid a math error of
+            taking a log of zero).
     '''
     if is_all_zeroes:
         norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
