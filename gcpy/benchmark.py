@@ -2020,6 +2020,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         raise ValueError('Area variable {} is not in the dev Dataset!'.format(
             dev_area_varname))
 
+
     # Load a JSON file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
@@ -2609,8 +2610,7 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
 
 def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
                                dst='./1mo_benchmark', overwrite=False,
-                               interval=None, ref_area_varname=None,
-                               dev_area_varname=None):
+                               interval=None):
     '''
     Creates a text file containing emission totals by species and
     category for benchmarking purposes.
@@ -2618,18 +2618,20 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     Args:
     -----
         reflist: list of str
-            List with the path names of the emissions and/or met field
-            files that will constitute the "Ref" (aka "Reference")
-            data set.
+             List with the path names of the emissions file, or emissions
+             and met field files, that will constitute the "Ref" (aka 
+             "Reference") data set. If two files are passed in the list,
+             the met field file must be second.
 
         refstr : str
             A string to describe ref (e.g. version number)
 
         devlist : list of str
-            List with the path names of the emissions and/or met field
-            files that will constitute the "Dev" (aka "Development") 
-            data set.  The "Dev" data set will be compared against the
-            "Ref" data set.
+             List with the path names of the emissions file, or emissions
+             and met field files, that will constitute the "Dev" (aka
+             "Development") data set. If two files are passed in the list,
+             the met field file must be second. The "Dev" data set will
+             be compared against the "Ref" data set.
 
         devstr : str
             A string to describe dev (e.g. version number)
@@ -2651,19 +2653,6 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
             to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
             Default value : None
 
-        ref_area_varname : str
-            Name of the variable containing the grid box surface areas
-            (in m2) in the ref dataset.  If not specified, then this
-            will be set to "Met_AREAM2" if the ref dataset is on the
-            cubed-sphere grid, or "AREA" if ref is on the lat-lon grid.
-            Default value: None
-
-        dev_area_varname : str
-            Name of the variable containing the grid box surface areas
-            (in m2) in the dev dataset.  If not specified, then this
-            will be set to "Met_AREAM2" if the dev dataset is on the
-            cubed-sphere grid, or "AREA" if dev is on the lat-lon grid.
-            Default value: None
     '''
 
     # ===============================================================
@@ -2682,53 +2671,34 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     # Read data from netCDF into Dataset objects
     # ===============================================================
 
-    # Ref
-    try:
-        refds = xr.open_mfdataset(reflist)
-    except FileNotFoundError:
-        print('Could not find one of the Ref files: {}'.format(reflist))
-        raise
-
-    # Dev
-    try:
-        devds = xr.open_mfdataset(devlist)
-    except FileNotFoundError:
-        print('Could not find one of the Dev files: {}'.format(devlist))
-        raise
-
-    # ===============================================================
-    # Get the surface area variable name
-    # by default, for lat-lon grids this is "AREA"
-    # and for cubed-sphere grids, this is "Met_AREAM2"
-    # ===============================================================
+    # GEOS-Chem Classic files all contain surface area as variable AREA.
+    # GCHP files do not and area must be retrieved from the met-field
+    # collection from variable Met_AREAM2. To simplify comparisons,
+    # the area will be appended to GCHP DataSets using the GCC area name. 
+    gcc_area_name = 'AREA'
+    gchp_area_name = 'Met_AREAM2'
 
     # Ref
-    if ref_area_varname == None:
-        nlat = refds.sizes['lat']
-        nlon = refds.sizes['lon']
-        if nlat/6 == nlon:
-            ref_area_varname = 'Met_AREAM2'
-        else:
-            ref_area_varname = 'AREA'
+    if len(reflist) == 1:
+        refds = xr.open_dataset(reflist[0])
+        assert gcc_area_name in list(refds.keys()),'Ref file {} does not contain area variable {}'.format(reflist[0], gcc_area_name)
 
-    # Error-check Ref
-    if ref_area_varname not in refds.data_vars.keys():
-        raise ValueError('Area variable {} is not in the ref dataset!'.format(
-            ref_area_varname))
+    elif len(reflist) == 2:
+        refds = xr.open_dataset(reflist[0])
+        metrefds = xr.open_dataset(reflist[1])
+        assert gchp_area_name in list(metrefds.keys()),'Ref met file {} does not contain area variable {}'.format(reflist[1], gchp_area_name)
+        refds[gcc_area_name] = metrefds[gchp_area_name]
 
     # Dev
-    if dev_area_varname == None:
-        nlat = devds.sizes['lat']
-        nlon = devds.sizes['lon']
-        if nlat/6 == nlon:
-            dev_area_varname = 'Met_AREAM2'
-        else:
-            dev_area_varname = 'AREA'
+    if len(devlist) == 1:
+        devds = xr.open_dataset(devlist[0])
+        assert gcc_area_name in list(refds.keys()),'Dev file {} does not contain area variable {}'.format(devlist[0], gcc_area_name)
 
-    # Error-check Dev
-    if dev_area_varname not in devds.data_vars.keys():
-        raise ValueError('Area variable {} is not in the dev dataset!'.format(
-            dev_area_varname))
+    elif len(devlist) == 2:
+        devds = xr.open_dataset(devlist[0])
+        metdevds = xr.open_dataset(devlist[1])
+        assert gchp_area_name in list(metdevds.keys()),'Dev met file {} does not contain area variable {}'.format(devlist[1], gchp_area_name)
+        devds[gcc_area_name] = metdevds[gchp_area_name]
 
     # ===============================================================
     # Create table of emissions
@@ -2752,15 +2722,10 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     # Write to file
     create_total_emissions_table(refds, refstr, devds, devstr, 
                                  species, file_emis_totals,
-                                 interval, template='Emis{}_',
-                                 ref_area_varname=ref_area_varname,
-                                 dev_area_varname=dev_area_varname)
+                                 interval, template="Emis{}_")
     create_total_emissions_table(refds, refstr, devds, devstr, 
                                  inventories, file_inv_totals,
-                                 interval, template='Inv{}_',
-                                 ref_area_varname=ref_area_varname,
-                                 dev_area_varname=dev_area_varname)
-
+                                 interval, template="Inv{}_")
 
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 varlist=None, 
@@ -3863,4 +3828,3 @@ def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
         plt.close(fig)  # don't show in notebook!
     pdf.close()  # close it to save the pdf
     print('done!')
-
