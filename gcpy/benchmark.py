@@ -3051,11 +3051,10 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     Keyword Args (optional):
     ------------------------
         varlist : list of str
-            List of AOD variables to plot.  If not passed, 
-            then all AOD variables common to both dev 
-            and ref will be plotted.  The varlist argument can be
-            a useful way of restricting the number of variables
-            plotted to the pdf file when debugging.
+            List of AOD variables to plot.  If not passed, then all
+            AOD variables common to both Dev and Ref will be plotted.
+            Use the varlist argument to restrict the number of
+            variables plotted to the pdf file when debugging.
             Default value: None
 
         dst : str
@@ -3215,11 +3214,13 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
             # Add column AOD of newname to Ref
             array = refds[v].sum(dim='lev')
             array.name = newname
+            array.attrs['units'] = "1"
             refds = xr.merge([refds, array])
 
             # Add column AOD of newname to Dev
             array = devds[v].sum(dim='lev')
             array.name = newname
+            array.attrs['units'] = "1"
             devds = xr.merge([devds, array])
 
     # =================================================================
