@@ -102,7 +102,7 @@ gchp_vs_gchp_refdir = join(maindir, gchp_ref_version, 'OutputDir')
 gchp_vs_gchp_devdir = join(maindir, gchp_dev_version, 'OutputDir')
 
 # Plots directories (edit as needed)
-gcc_vs_gcc_plotsdir    = join(maindir, 'Plots')
+gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_version, 'Plots')
 gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_version,
                               'Plots/GCHP_version_comparison')
 gchp_vs_gcc_plotsdir   = join(maindir, gchp_dev_version,
@@ -450,6 +450,9 @@ if gchp_vs_gcc_diff_of_diffs:
     gcc_dev  = xr.open_dataset(gcc_vs_gcc_devspc)
     with xr.set_options(keep_attrs=True):
         gcc_diffs = gcc_dev - gcc_ref
+        for v in gcc_dev.data_vars.keys():
+            # Ensure the gcc_diffs Dataset includes attributes
+            gcc_diffs[v].attrs = gcc_dev[v].attrs
     gcc_diffs.to_netcdf(diff_of_diffs_refspc)
 
     # Create a dev file that contains GCHP differences. Include special
@@ -471,6 +474,9 @@ if gchp_vs_gcc_diff_of_diffs:
         for v in gchp_dev.data_vars.keys():
             if 'Xdim' in gchp_dev[v].dims or 'lat' in gchp_dev[v].dims:
                 gchp_diffs[v] = gchp_dev[v] - gchp_ref[v]
+                # NOTE: The gchp_diffs Dataset is created without variable
+                # attributes; we have to reattach them
+                gchp_diffs[v].attrs = gchp_dev[v].attrs
     gchp_diffs.to_netcdf(diff_of_diffs_devspc)
 
     if plot_conc:
