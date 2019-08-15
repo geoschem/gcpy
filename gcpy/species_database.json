@@ -309,6 +309,36 @@
               "EmMW_g":     30.0000,
               "MolecRatio":      1.0000
           },
+  "C2H2" : 
+          {
+              "Fullname": "Acetylene",
+              "Formula": "C2H2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":     24.0600,
+              "EmMW_g":     12.0000,
+              "MolecRatio":      2.0000
+          },
+  "C2H4" : 
+          {
+              "Fullname": "Ethylene",
+              "Formula": "C2H4",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":     28.0500,
+              "EmMW_g":     12.0000,
+              "MolecRatio":      2.0000
+          },
   "C2H6" : 
           {
               "Fullname": "Ethane",
@@ -598,6 +628,34 @@
               "Is_Photolysis": false,
               "Is_WetDep": true,
               "Density":   1300.0000,
+              "MW_g":     12.0100,
+              "EmMW_g":     12.0000,
+              "MolecRatio":      1.0000
+          },
+  "POG1" : 
+          {
+              "Fullname": "Lumped gas primary SVOCs",
+              "Is_Advected": true,
+              "Is_Aero": false,
+              "Is_DryDep": true,
+              "Is_Gas": true,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": true,
+              "MW_g":     12.0100,
+              "EmMW_g":     12.0000,
+              "MolecRatio":      1.0000
+          },
+  "POG2" : 
+          {
+              "Fullname": "Lumped gas primary SVOCs",
+              "Is_Advected": true,
+              "Is_Aero": false,
+              "Is_DryDep": true,
+              "Is_Gas": true,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": true,
               "MW_g":     12.0100,
               "EmMW_g":     12.0000,
               "MolecRatio":      1.0000
@@ -1066,6 +1124,21 @@
               "EmMW_g":     47.0000,
               "MolecRatio":      1.0000
           },
+  "HONO" : 
+          {
+              "Fullname": "Nitrous acid",
+              "Formula": "HNO2",
+              "Is_Advected": true,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": true,
+              "Is_WetDep": false,
+              "MW_g":     47.0000,
+              "EmMW_g":     47.0000,
+              "MolecRatio":      1.0000
+          },
   "BENZ" : 
           {
               "Fullname": "Benzene",
@@ -1515,6 +1588,21 @@
               "MW_g":     46.0700,
               "EmMW_g":     12.0000,
               "MolecRatio":      2.0000
+          },
+  "MOH" : 
+          {
+              "Fullname": "Methanol",
+              "Formula": "CH3OH",
+              "Is_Advected": true,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": true,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":     32.0400,
+              "EmMW_g":     12.0000,
+              "MolecRatio":      1.0000
           },
   "MGLY" : 
           {
@@ -4005,18 +4093,6 @@
           {
               "Fullname": "Molecular hydrogen",
               "Formula": "H2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "MOH" : 
-          {
-              "Fullname": "MOH",
               "Is_Advected": false,
               "Is_Aero": false,
               "Is_DryDep": false,

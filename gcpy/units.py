@@ -203,7 +203,7 @@ def convert_units(dr, species_name, species_properties,
 #    elif units == 'atomsC/cm2/s':
 #         implement later
     else:
-        raise ValueError('Units ({}) in variable {} are not supported'.format(units, spc_name))
+        raise ValueError('Units ({}) in variable {} are not supported'.format(units, species_name))
 
     # ===============================
     # Then compute to target units

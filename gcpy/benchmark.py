@@ -2086,6 +2086,12 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
             # Get a list of properties for the given species
             species_properties = properties.get(spc_name)
 
+            # If no properties are found, then skip to next species
+            if species_properties is None:
+                print('No properties found for {} ... skippping'.format(
+                      spc_name))
+                continue
+
             # Convert units of Ref, and save to DataArray
             refarray = convert_units(refdata[v], spc_name,
                                      species_properties, target_units,
