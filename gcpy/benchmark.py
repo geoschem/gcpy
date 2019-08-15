@@ -2397,7 +2397,7 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
 
         plot_by_benchmark_cat : boolean
             Set this flag to True to separate plots into PDF files
-            according to the benchmark categories (e.g. Primary,
+            according to the benchmark categories (e.g. Oxidants,
             Aerosols, Nitrogen, etc.)  These categories are specified
             in the JSON file benchmark_species.json.
             Default value: False
@@ -2831,7 +2831,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
          These can be toggled on/off with the plots keyword argument.
 
          At present, we do not yet have the capability to split the
-         plots up into separate files per category (e.g. Primary,
+         plots up into separate files per category (e.g. Oxidants,
          Aerosols, etc.).  This is primarily due to the fact that 
          we archive J-values from GEOS-Chem for individual species
          but not family species.  We could attempt to add this 
