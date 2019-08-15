@@ -24,7 +24,7 @@
     "CO__SRCE_CObf":       ["EmisCO_Biofuel",                "skip"   ],
     "CO__SRCE_COmono":     ["EmisCO_Monoterp",               "replace"],
     "CO__SRCE_COship":     ["EmisCO_Ship",                   "replace"],
-    "CV_FLUX_":            ["CloudConvFlux",                 "append" ],
+    "CV_FLX_S_":           ["CloudConvFlux",                 "append" ],
     "DAO_3D_S_":           ["Met",                           "append" ],
     "DAO_FLDS_PS_PBL":     ["Met_PBLH",                      "skip"   ],
     "DAO_FLDS_":           ["Met",                           "append" ],
