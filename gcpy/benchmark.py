@@ -2060,7 +2060,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         # Title strings
         if 'Inv' in template:
             print('Computing inventory totals for {}'.format(species_name))
-            title1 = '### Inventory totals for species {}'.format(species_name)
+            title1 = '### Emissions totals for inventory {}'.format(species_name)
         else:
             print('Computing emissions totals for {}'.format(species_name))
             title1 = '### Emissions totals for species {}'.format(species_name)
