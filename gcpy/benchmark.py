@@ -244,7 +244,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         cmpgridtype = 'll'
     else:
         cmpgridtype = 'cs'
-        
+
     # Determine what, if any, need regridding.
     regridref = refres != cmpres
     regriddev = devres != cmpres
@@ -280,12 +280,20 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         if refgridtype == 'll':
             refregridder = make_regridder_L2L(refres, cmpres, weightsdir=weightsdir, reuse_weights=True)
         else:
-            refregridder_list = make_regridder_C2L(refres, cmpres, weightsdir=weightsdir, reuse_weights=True)
+            if cmpgridtype == 'cs':
+                print('ERROR: CS to CS regridding is not yet implemented in gcpy. Ref and dev cubed sphere grids must be the same resolution, or pass cmpres to compare_single_level as a lat-lon grid resolution.')
+                return
+            else:
+                refregridder_list = make_regridder_C2L(refres, cmpres, weightsdir=weightsdir, reuse_weights=True)
     if regriddev:
         if devgridtype == 'll':
             devregridder = make_regridder_L2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
         else:
-            devregridder_list = make_regridder_C2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
+            if cmpgridtype == 'cs':
+                print('ERROR: CS to CS regridding is not yet implemented in gcpy. Ref and dev cubed sphere grids must be the same resolution, or pass cmpres to compare_single_level as a lat-lon grid resolution.')
+                return
+            else:
+                devregridder_list = make_regridder_C2L(devres, cmpres, weightsdir=weightsdir, reuse_weights=True)
 
     ####################################################################
     # Get lat/lon extents, if applicable
