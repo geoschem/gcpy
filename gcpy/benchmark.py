@@ -630,10 +630,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                                        cmap=cmap1, norm=norm0)
 
         # Define the colorbar for log or linear color scales
-        # If all values of Ref = 0, then manually set a tickmark at 0.
+        # If Ref is zero everywhere, set a tick in the middle of
+        # the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
         if ref_is_all_zeroes:
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.5])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if log_color_scale:
                 cb.formatter = mpl.ticker.LogFormatter(base=10)
@@ -711,10 +713,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                                        cmap=cmap1, norm=norm1)
 
         # Define the colorbar for log or linear color scales
-        # If all values of Dev = 0, then manually set a tickmark at 0.
+        # If Dev is zero everywhere, set a tick in the middle of
+        # the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
         if dev_is_all_zeroes:
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.5])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if log_color_scale:
                 cb.formatter = mpl.ticker.LogFormatter(base=10)
@@ -770,10 +774,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax2.set_title('Difference\nDev - Ref, Dynamic Range')
 
         # Define the colorbar for the plot
-        # If all values of absdiff = 0, manually set a tickmark at 0.
+        # If all values of absdiff = 0, manually set a single tickmark at 0.
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
         if np.all(absdiff==0): 
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.0])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
                 cb.locator = mpl.ticker.MaxNLocator(nbins=4)
@@ -809,10 +814,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax3.set_title('Difference\nDev - Ref, Restricted Range [5%,95%]')
 
         # Define the colorbar for the plot.
-        # If all values of absdiff = 0, then manually set a tick at 0.
+        # If all values of absdiff = 0, then set a tick at 0.
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
         if np.all(absdiff==0):
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.0])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
                 cb.locator = mpl.ticker.MaxNLocator(nbins=4)
@@ -857,12 +863,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range')
 
         # Define the colorbar for the plot.
-        # If all values of absdiff = 0, then manually set a tick at 0.
+        # If all values of absdiff = 0, then set a tick at 0.
         # Use absdiff in the test for all zeroes, because fracdiff may
         # have NaN's due to div by zero when both Dev and Ref are zero.
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
         if np.all(absdiff == 0):
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.0])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
                 cb.locator = mpl.ticker.MaxNLocator(nbins=4)
@@ -894,12 +901,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range') 
 
         # Define the colorbar for the plot.
-        # If all values of absdiff = 0, then manually set a tick at 0.
+        # If all values of absdiff = 0, then set a tick at 0.
         # Use absdiff in the test for all zeroes, because fracdiff may
         # have NaN's due to div by zero when both Dev and Ref are zero.
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
         if np.all(absdiff == 0):
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.0])
+            cb.set_ticklabels(['Zero throughout domain'])
         cb.update_ticks()
         cb.set_label('unitless')
 
@@ -1502,10 +1510,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax0.set_xticklabels(xticklabels)
 
         # Define the colorbar for log or linear color scales.
-        # If all values of zm_ref = 0, then manually set a tick at zero.
+        # If zm_ref is zero everywhere, set a tick in the middle of
+        # the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
         if ref_is_all_zeroes:
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.5])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if log_color_scale:
                 cb.formatter = mpl.ticker.LogFormatter(base=10)
@@ -1567,10 +1577,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax1.set_xticklabels(xticklabels)
 
         # Define the colorbar for log or linear color scales.
-        # If all values of zm_dev = 0, then manually set a tick at 0
+        # If zm_ref is zero everywhere, set a tick in the middle of
+        # the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
         if dev_is_all_zeroes:
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.5])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if log_color_scale:
                 cb.formatter = mpl.ticker.LogFormatter(base=10)
@@ -1619,10 +1631,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax2.set_xticklabels(xticklabels)
 
         # Define the colorbar for the plot.
-        # If all values of zm_diff = 0, then manually set a tick at 0
+        # If all values of zm_diff = 0, then set a tick at 0.
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
         if np.all(zm_diff==0): 
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.0])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
                 cb.locator = mpl.ticker.MaxNLocator(nbins=4)
@@ -1655,10 +1668,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax3.set_xticklabels(xticklabels)
 
         # Define the colorbar for the plot.
-        # If all values of zm_diff = 0, then manually set a tick at 0
+        # If all values of zm_diff = 0, then manually set a tick at 0.
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
         if np.all(zm_diff==0): 
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.0])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
                 cb.locator = mpl.ticker.MaxNLocator(nbins=4)
@@ -1701,12 +1715,13 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax4.set_xticklabels(xticklabels)
 
         # Define the colorbar for the plot.
-        # If all values of absdiff = 0, then manually set a tick at 0.
+        # If all values of absdiff = 0, then set a tick at 0.
         # Use zm_diff in the test for all zeroes, because fracdiff may
         # have NaN's due to div by zero when both Dev and Ref are zero.
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
         if np.all(zm_diff == 0):
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.0])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
                 cb.locator = mpl.ticker.MaxNLocator(nbins=4)
@@ -1738,12 +1753,13 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax5.set_xticklabels(xticklabels)
 
         # Define the colorbar for the plot.
-        # If all values of zm_diff = 0, then manually set a tick at 0.
+        # If all values of zm_diff = 0, then set a tick at 0.
         # Use zm_diff in the test for all zeroes, because fracdiff may
         # have NaN's due to div by zero when both Dev and Ref are zero.
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
         if np.all(zm_diff == 0): 
-            cb.locator = mpl.ticker.FixedLocator(locs=[0.0])
+            cb.set_ticks([0.0])
+            cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
                 cb.locator = mpl.ticker.MaxNLocator(nbins=4)
@@ -3583,9 +3599,14 @@ def normalize_colors(vmin, vmax,
             less than the max.  But if the data is all zeroes, then we
             will revert to a linear scale (to avoid a math error of
             taking a log of zero).
+
+       (3) If is_all_zeroes is set to True, then the normalized color
+           range will be set from 0..1.  This will make the zero color
+           be displayed as white.  This also makes it easy to put a
+           tick mark at in the center of the range (at 0.5).
     '''
     if is_all_zeroes:
-        norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+        norm = mpl.colors.Normalize(vmin=vmin, vmax=1.0)
     else:
         if log_color_scale:
             norm = mpl.colors.LogNorm(vmin=vmax/1e3, vmax=vmax)
