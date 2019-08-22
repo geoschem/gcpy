@@ -1891,15 +1891,17 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
 
     Args:
     -----
-        ref : xarray DataArray
+        ref : xarray DataArray or np.nan
             The first DataArray to be compared (aka "Reference")
+            NOTE: To denote a missing variable in ref, use np.nan.
 
         refstr : str
             A string that can be used to identify refdata.
             (e.g. a model version number or other identifier).
 
-        dev : xarray DatArray
+        dev : xarray DatArray or np.nan
             The second DataArray to be compared (aka "Development")
+            NOTE: To denote a missing variable in ref, use np.nan.
 
         devstr : str
             A string that can be used to identify devdata
@@ -1914,29 +1916,55 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
         create_total_emissions_table instead of being called directly.
     '''
 
-    # Throw an error if the two DataArray objects have different units
-    if ref.units != dev.units:
-        msg = 'Ref has units "{}", but Dev array has units "{}"'.format(
-            ref.units, dev.units)
-        raise ValueError(msg)
+    # Determine if Ref and Dev are DataArray objects,
+    # or if they have been set to NaN to indicate a missing variable
+    ref_is_dr = isinstance(ref, xr.DataArray)
+    dev_is_dr = isinstance(dev, xr.DataArray)
 
-    # Create the emissions display name from the diagnostic name
-    diagnostic_name = dev.name
+    # Throw an error if the two DataArray objects have different units
+    if ref_is_dr and dev_is_dr:
+        if ref.units != dev.units:
+            msg = 'Ref has units "{}", but Dev array has units "{}"'.format(
+                ref.units, dev.units)
+            raise ValueError(msg)
+
+    # Get the diagnostic name and units
+    if dev_is_dr:
+        diagnostic_name = dev.name
+        units = dev.units
+    else:
+        diagnostic_name = ref.name
+        units = ref.units
+
+    # Create the display name by editing the diagnostic name
     display_name = create_emission_display_name(diagnostic_name)
 
     # Special handling for totals
     if '_TOTAL' in diagnostic_name.upper():
         print('-' * 79, file=f)
 
-    # Compute sums and difference
-    total_ref = np.sum(ref.values)
-    total_dev = np.sum(dev.values)
-    diff = total_dev - total_ref
+    # Sum the Ref array (or set to NaN if missing)
+    if ref_is_dr:
+        total_ref = np.sum(ref.values)
+    else:
+        total_ref = np.nan
+
+    # Sum the Dev array (or set to NaN if missing)
+    if dev_is_dr:
+        total_dev = np.sum(dev.values)
+    else:
+        total_dev = np.nan
+
+    # Compute differences (or set to NaN if missing)
+    if ref_is_dr and dev_is_dr:
+        diff = total_dev - total_ref
+    else:
+        diff = np.nan
 
     # Write output
     print('{} : {:13.6f}  {:13.6f}  {:13.6f} {}'.format(
         display_name.ljust(25), total_ref,
-        total_dev, diff, dev.units), file=f)
+        total_dev, diff, units), file=f)
 
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
@@ -2053,10 +2081,10 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     properties = json_load_file(open(properties_path))
 
     # Find all common variables between the two datasets
-    [cvars, cvarsOther, cvars2D, cvars3D] = core.compare_varnames(refdata,
-                                                               devdata,
-                                                               quiet=True)
-
+    # and get the lists of variables only in Ref and only in Dev,
+    [cvars, cvarsOther, cvars2D, cvars3D, refonly, devonly] = \
+        core.compare_varnames(refdata, devdata, quiet=True)
+    
     # Open file for output
     f = open(outfilename, 'w')
 
@@ -2067,6 +2095,19 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         diagnostic_template = template.format(species_name)
         varnames = get_emissions_varnames(cvars, diagnostic_template)
 
+        # Also add variables that might be in either Ref or Dev
+        # but not the other.  This will allow us to print totals 
+        # for all species (and print NaN for the missing ones).
+        if len(refonly) > 0:
+            matching = [v for v in refonly if diagnostic_template in v] 
+            varnames = varnames + matching
+        if len(devonly) > 0:
+            matching = [v for v in devonly if diagnostic_template in v]
+            varnames = varnames + matching
+
+        # Sort the list again  to account for new variables added above
+        varnames.sort()
+            
         # If no emissions are found, then skip to next species
         if len(varnames) == 0:
             print('No emissions found for {} ... skippping'.format(
@@ -2101,7 +2142,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
 
         # Loop over all emissions variable names
         for v in varnames:
-
+            
             if 'Inv' in template:
                 spc_name = v.split('_')[1]
             else:
@@ -2116,15 +2157,27 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                       spc_name))
                 continue
 
-            # Convert units of Ref, and save to DataArray
-            refarray = convert_units(refdata[v], spc_name,
-                                     species_properties, target_units,
-                                     interval, refdata[ref_area_varname])
+            # Convert units of Ref and Dev and save to DataArray objects
+            # (or set to NaN if the variable is not found in Ref or Dev)
+            if v in refonly and v not in devonly:
+                refarray = convert_units(refdata[v], spc_name,
+                                         species_properties, target_units,
+                                         interval, refdata[ref_area_varname])
+                devarray = np.nan
 
-            # Convert units of Dev, and save to DataArray
-            devarray = convert_units(devdata[v], spc_name,
-                                     species_properties, target_units,
-                                     interval, devdata[dev_area_varname])
+            elif v in devonly and v not in refonly:
+                refarray = np.nan
+                devarray = convert_units(devdata[v], spc_name,
+                                         species_properties, target_units,
+                                         interval, devdata[dev_area_varname])
+
+            else:
+                refarray = convert_units(refdata[v], spc_name,
+                                         species_properties, target_units,
+                                         interval, refdata[ref_area_varname])
+                devarray = convert_units(devdata[v], spc_name,
+                                         species_properties, target_units,
+                                         interval, devdata[dev_area_varname])
 
             # Print emission totals for Ref and Dev
             print_emission_totals(refarray, refstr, devarray, devstr, f)
