@@ -194,7 +194,7 @@ def check_paths(refpath, devpath):
         print('Path 2 exists: {}'.format(devpath))
 
         
-def compare_varnames(refdata, devdata, quiet=False):
+def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
     '''
     Finds variables that are common to two xarray Dataset objects.
 
@@ -207,6 +207,16 @@ def compare_varnames(refdata, devdata, quiet=False):
         devdata : xarray Dataset
             The second Dataset to be compared.
             (This is often referred to as the "Development" Dataset.)
+
+    Keyword Args (optional):
+    ------------------------
+        refonly : list of str
+            Returns a list of variables that are only found
+            in the Ref dataset.
+
+        devonly : list of str
+            Returns a list of variable names that are only found
+            in the Dev dataset.
 
         quiet : boolean
             Set this flag to True if you wish to suppress printing
@@ -275,7 +285,8 @@ def compare_varnames(refdata, devdata, quiet=False):
                 else:
                     print('All variables have same dimensions in ref and dev')
 
-    return [commonvars, commonvarsOther, commonvars2D, commonvars3D]
+    return [commonvars, commonvarsOther, commonvars2D, commonvars3D,
+            refonly, devonly]
 
 
 def compare_stats(refdata, refstr, devdata, devstr, varname):
