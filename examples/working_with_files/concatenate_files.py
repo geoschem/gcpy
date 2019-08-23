@@ -17,7 +17,7 @@ Remarks:
 '''
 
 # Imports
-from os.path import join
+import os
 import xarray as xr
 from xarray.coding.variables import SerializationWarning
 import numpy as np
@@ -28,38 +28,118 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=SerializationWarning)
 
-# Use  open_mfdataset to open all files into a single Dataset
-# (Edit file path accordingly for your setup)
-indir = '/path/to/my/netcdf/files/'
-infiles = join(indir, '.nc*')
-ds = xr.open_mfdataset(infiles) 
 
-# Keep all netCDF attributes
-with xr.set_options(keep_attrs=True):
-    
-    # Loop over all variables in the Dataset
-    for v in ds.data_vars.keys():
-        
-        # OPTIONAL STEP:
-        # Xarray will try convert missing values to NaN's,
-        # so you may need to replace these with zeroes.
-        #
-        # If your netCDF files represent e.g. emissions, 
-        # or other physical quantities, you may want to 
-        # replace these with zeros, so that NaNs won't 
-        # get read into atmospheric models, etc.
-        #
-        # NOTE: ds[v].values converts to a numpy ndarray,
-        # so that you can use numpy functions.
-        ds[v].where(np.isnan(ds[v].values), other=0.0, drop=False)
-        
-        # OPTIONAL: Print min & max for each variable
-        # Comment out if you wish
-        print('{} : {} {}'.format(
-            v, np.min(ds[v].values), np.max(ds[v].values)))
+def find_files_in_dir(path, substrs):
+    '''
+    Returns a list of all files in a directory that match one or more
+    substrings.
 
-# Write to the output file to the main path
-# (Edit file path and file name accordingly for your setup)
-outdir = '/path/to/my/output/file'
-outfile = join(outdir, 'my_concatenated_output_file.nc')
-ds.to_netcdf(outfile)
+    Args:
+    -----
+        path : str
+            Path to the directory in which to search for files.
+
+        substrs : list of str
+            List of substrings used in the search for files.
+
+    Returns:
+    --------
+        file_list : list of str
+            List of files in the directory (specified by path)
+            that match all substrings (specified in substrs).
+    '''
+
+    # Initialize
+    file_list = []
+
+    # Walk through the given data directory.  Then for each file found,
+    # add it to file_list if it matches text in search_list.
+    for root, directory, files in os.walk(path):
+        for f in files:
+            for s in substrs:
+                if s in f:
+                    file_list.append(os.path.join(root, f))
+
+    # Return an alphabetically sorted list of files
+    file_list.sort()
+    return file_list
+
+
+def replace_nans_with_zeroes(ds, verbose=True):
+    '''
+    Replaces NaN values with zeroes for each variable
+    within an an xarray Dataset.
+
+    Args:
+    ----
+        ds : xarray Dataset
+            The input dataset, containing one or more data variables.
+
+    Keyword Args (optional):
+    ------------------------
+        verbose : boolean
+            Set this switch to print out the variable name, as well
+            as the min and max of the variable.  This will illustrate
+            the replacement of NaNs with zeroes.
+    '''
+
+    # Keep all netCDF attributes
+    with xr.set_options(keep_attrs=True):
+
+        # Loop over all variables in the Dataset
+        for v in ds.data_vars.keys():
+
+            # OPTIONAL STEP:
+            # Xarray will try convert missing values to NaN's,
+            # so you may need to replace these with zeroes.
+            #
+            # If your netCDF files represent e.g. emissions,
+            # or other physical quantities, you may want to
+            # replace these with zeros, so that NaNs won't
+            # get read into atmospheric models, etc.
+            #
+            # NOTE: ds[v].values converts to a numpy ndarray,
+            # so that you can use numpy functions.
+            ds[v].where(np.isnan(ds[v].values), other=0.0, drop=False)
+
+            # OPTIONAL: Print min & max for each variable
+            # Comment out if you wish
+            if verbose:
+                print('{} : {} {}'.format(
+                    v, np.min(ds[v].values), np.max(ds[v].values)))
+
+    # Return the modified Datast
+    return ds
+
+
+def main():
+    '''
+    Main program.
+    '''
+
+    # File path containing data files
+    # (YOU CAN EDIT THIS)
+    path_to_dir = '/path/to/my/netcdf/files/'
+
+    # List of search strings that each file must contain
+    # (YOU CAN EDIT THIS)
+    substrs = ['SpeciesConc']
+
+    # Look for all the netCDF files in the path
+    file_list = find_files_in_dir(path_to_dir, substrs)
+    ds = xr.open_mfdataset(file_list)
+
+    # Replace NaN values with zeroes
+    ds = replace_nans_with_zeroes(ds, verbose=True)
+
+    # Specify the path and filename for the concatenated data
+    # (YOU CAN EDIT THIS)
+    outdir = '/path/to/my/output/file'
+    outfile = os.path.join(outdir, 'my_concatenated_output_file.nc')
+
+    # Write concatenated data to a netCDF file
+    ds.to_netcdf(outfile)
+
+
+if __name__ == "__main__":
+    main()
