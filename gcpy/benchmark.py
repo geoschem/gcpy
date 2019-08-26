@@ -12,6 +12,8 @@ import json
 import copy
 from json import load as json_load_file
 import matplotlib as mpl
+import matplotlib.colors as mcolors
+import matplotlib.ticker as mticker
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.colors import ListedColormap
 from cartopy import crs
@@ -428,9 +430,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         subtitle_extra = ''
         varndim = varndim_ref
 
-        # if regridding then normalization by area may be necessary depending on units. Either pass
-        # normalize_by_area=True to normalize all, or include units that should always be normalized
-        # by area below. GEOS-Chem Classic output files include area and so do not need to be passed.
+        # if regridding then normalization by area may be necessary
+        # depending on units. Either pass normalize_by_area=True to
+        # normalize all, or include units that should always be normalized
+        # by area below. GEOS-Chem Classic output files include area and so
+        # do not need to be passed.
         exclude_list = ['WetLossConvFrac','Prod_','Loss_']
         if regridany and ( ( units == 'kg' or units == 'kgC' ) or normalize_by_area ):
             if not any(s in varname for s in exclude_list):
@@ -586,6 +590,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         if verbose: print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(
                 vmin0, vmax0))
 
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin0, vmax0,
+                                log_color_scale=log_color_scale)
+
         # Plot data for either lat-lon or cubed-sphere grids.
         ax0.coastlines()
         if refgridtype == 'll':
@@ -593,18 +601,16 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax0.set_title('{} (Ref){}\n{}'.format(
                 refstr, subtitle_extra, refres))
 
-            # Check if the reference data is all zeroes
+            # If the reference data is all zeroes, then we need to set
+            # the range for normalization to (0,1).  This will force the
+            # white color to be at the start of the color range (0 value).
+            # Otherwise, use the min and max of the data.
             ref_is_all_zeroes = np.all(ds_ref == 0)
 
-            # Normalize colors for the plot
-            norm0 = normalize_colors(vmin0, vmax0,
-                                     is_all_zeroes=ref_is_all_zeroes,
-                                     log_color_scale=log_color_scale)
-
-            # Plot the data
+            # Plot the lon/lat data
             plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon,
                                                refminlat, refmaxlat),
-                               cmap=cmap1, norm=norm0)
+                               cmap=cmap1, norm=norm)
         else:
             # Set top title for cubed-sphere plot
             ax0.set_title('{} (Ref){}\nc{}'.format(
@@ -617,17 +623,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             # Check if the reference data is all zeroes
             ref_is_all_zeroes = np.all(masked_refdata == 0)
 
-            # Normalize colors (put in range [0..1]) for the plot
-            norm0 = normalize_colors(vmin0, vmax0,
-                                     is_all_zeroes=ref_is_all_zeroes,
-                                     log_color_scale=log_color_scale)
-
             # Plot each face of the cubed-sphere
             for i in range(6):
                 plot0 = ax0.pcolormesh(refgrid['lon_b'][i,:,:],
                                        refgrid['lat_b'][i,:,:],
                                        masked_refdata[i,:,:],
-                                       cmap=cmap1, norm=norm0)
+                                       cmap=cmap1, norm=norm)
 
         # Define the colorbar for log or linear color scales
         # If Ref is zero everywhere, set a tick in the middle of
@@ -638,10 +639,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if log_color_scale:
-                cb.formatter = mpl.ticker.LogFormatter(base=10)
+                cb.formatter = mticker.LogFormatter(base=10)
             else:
                 if (vmax0-vmin0) < 0.1 or (vmax0-vmin0) > 100:
-                    cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                    cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units_ref)
 
@@ -669,6 +670,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
         if verbose: print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1,vmax1))
 
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin1, vmax1,
+                                log_color_scale=log_color_scale)
+
         # Plot for either lat-lon or cubed-sphere
         ax1.coastlines()
         if devgridtype == 'll':
@@ -679,15 +684,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             # Check if Dev is all zeroes
             dev_is_all_zeroes = np.all(ds_dev == 0)
 
-            # Normalize colors (put in range [0..1]) for the plot
-            norm1 = normalize_colors(vmin1, vmax1,
-                                     is_all_zeroes=dev_is_all_zeroes,
-                                     log_color_scale=log_color_scale)
-
             # Plot the data!
             plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon,
                                                devminlat, devmaxlat),
-                               cmap=cmap1, norm=norm1)
+                               cmap=cmap1, norm=norm)
         else:
             # Set top title for cubed-sphere plot
             ax1.set_title('{} (Dev){}\nc{}'.format(
@@ -700,17 +700,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             # Check if Dev is all zereos
             dev_is_all_zeroes = np.all(masked_devdata == 0)
 
-            # Normalize colors (put in range [0..1]) for the plot
-            norm1 = normalize_colors(vmin1, vmax1,
-                                     is_all_zeroes=dev_is_all_zeroes,
-                                     log_color_scale=log_color_scale)
-
             # Plot each face of the cubed-sphere
             for i in range(6):
                 plot1 = ax1.pcolormesh(devgrid['lon_b'][i,:,:],
                                        devgrid['lat_b'][i,:,:],
                                        masked_devdata[i,:,:],
-                                       cmap=cmap1, norm=norm1)
+                                       cmap=cmap1, norm=norm)
 
         # Define the colorbar for log or linear color scales
         # If Dev is zero everywhere, set a tick in the middle of
@@ -721,10 +716,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if log_color_scale:
-                cb.formatter = mpl.ticker.LogFormatter(base=10)
+                cb.formatter = mticker.LogFormatter(base=10)
             else:
                 if (vmax1-vmin1) < 0.1 or (vmax1-vmin1) > 100:
-                    cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                    cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units_dev)
 
@@ -755,18 +750,26 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         [vmin, vmax] = [-diffabsmax, diffabsmax]
         if verbose: print('Subplot (1,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin, vmax, is_difference=True)
+
+        # Create plots
         ax2.coastlines()
         if cmpgridtype == 'll':
+
+            # Create the lon/lat plot
             plot2 = ax2.imshow(absdiff, extent=(cmpminlon, cmpmaxlon,
                                                 cmpminlat, cmpmaxlat),
-                               cmap=cmap_gray, vmin=vmin, vmax=vmax)
+                               cmap=cmap_gray, norm=norm)
         else:
+
+            # Plot each face of the cubed sphere
             for i in range(6):
                 plot2 = ax2.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
                                        absdiff[i,:,:],
-                                       cmap=cmap_nongray,
-                                       vmin=vmin, vmax=vmax)
+                                       norm=norm,
+                                       cmap=cmap_nongray)
         if regridany:
             ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(
                 cmpres))
@@ -781,7 +784,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
 
@@ -796,18 +799,26 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         [vmin,vmax] = [-abspctmax, abspctmax]
         if verbose: print('Subplot (1,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin, vmax, is_difference=True)
+
+        # Create plots
         ax3.coastlines()
         if cmpgridtype == 'll':
+
+            # Create the lat/lon plot
             plot3 = ax3.imshow(absdiff, extent=(cmpminlon, cmpmaxlon,
                                                 cmpminlat, cmpmaxlat),
-                               cmap=cmap_gray, vmin=vmin, vmax=vmax)
+                               cmap=cmap_gray, norm=norm)
         else:
+
+            # Plot each face of the cubed-sphere
             for i in range(6):
                 plot3 = ax3.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
                                        absdiff[i,:,:],
                                        cmap=cmap_nongray,
-                                       vmin=vmin, vmax=vmax)
+                                       norm=norm)
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
         else:
@@ -821,7 +832,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
 
@@ -844,19 +855,27 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         
         [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
         if verbose: print('Subplot (2,0) vmin, vmax: {}, {}'.format(vmin, vmax))
-  
+
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin, vmax, is_difference=True)
+
+        # Create plots
         ax4.coastlines()
         if cmpgridtype == 'll':
+
+            # Create the lon/lat plot
             plot4 = ax4.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon,
                                                  cmpminlat, cmpmaxlat),
-                               vmin=vmin, vmax=vmax, cmap=cmap_gray)
+                               cmap=cmap_gray, norm=norm)
         else:
+
+            # Plot each face of the cubed-sphere
             for i in range(6):
                 plot4 = ax4.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
                                        fracdiff[i,:,:],
                                        cmap=cmap_nongray,
-                                       vmin=vmin, vmax=vmax)
+                                       norm=norm)
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres)) 
         else:
@@ -872,7 +891,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label('unitless')
 
@@ -883,18 +902,26 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         [vmin, vmax] = [-2, 2]
         if verbose: print('Subplot (2,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin, vmax, is_difference=True)
+
+        # Create plots
         ax5.coastlines()
         if cmpgridtype == 'll':
+
+            # Create the lon/lat plot
             plot5 = ax5.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon,
                                                  cmpminlat, cmpmaxlat),
-                               cmap=cmap_gray, vmin=vmin, vmax=vmax)
+                               cmap=cmap_gray, norm=norm)
         else:
+
+            # Plot each face of the cubed-sphere
             for i in range(6):
                 plot5 = ax5.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
                                        fracdiff[i,:,:],
                                        cmap=cmap_nongray,
-                                       vmin=vmin, vmax=vmax)
+                                       norm=norm)
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
         else:
@@ -1479,17 +1506,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Check if all elements of Ref are zero
         ref_is_all_zeroes = np.all(zm_ref == 0)
 
-        # Normalize colors (put in range [0..1]) for the plot
-        norm0 = normalize_colors(vmin0, vmax0,
-                                 is_all_zeroes=ref_is_all_zeroes,
-                                 log_color_scale=log_color_scale)
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin0, vmax0,
+                                log_color_scale=log_color_scale)
 
         # Plot data for either lat-lon or cubed-sphere grids
         if refgridtype == 'll':
             plot0 = ax0.pcolormesh(refgrid['lat_b'],
                                    pedge[pedge_ind],
                                    zm_ref,
-                                   cmap=cmap1, norm=norm0)
+                                   cmap=cmap1, norm=norm)
             
             ax0.set_title('{} (Ref){}\n{}'.format(
                 refstr, subtitle_extra, refres))
@@ -1497,7 +1523,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             plot0 = ax0.pcolormesh(cmpgrid['lat_b'],
                                    pedge[pedge_ind],
                                    zm_ref,
-                                   cmap=cmap1, norm=norm0)
+                                   cmap=cmap1, norm=norm)
             ax0.set_title('{} (Ref){}\n{} regridded from c{}'.format(
                 refstr, subtitle_extra, cmpres, refres))
         ax0.set_aspect('auto')
@@ -1505,7 +1531,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax0.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax0.set_yscale('log')
-            ax0.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+            ax0.yaxis.set_major_formatter(mticker.ScalarFormatter())
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
 
@@ -1518,10 +1544,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if log_color_scale:
-                cb.formatter = mpl.ticker.LogFormatter(base=10)
+                cb.formatter = mticker.LogFormatter(base=10)
             else:
                 if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-                    cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                    cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
 
@@ -1551,20 +1577,19 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Check if all elements of Ref are zero
         dev_is_all_zeroes = np.all(zm_dev == 0)
 
-        # Normalize colors (put in range [0..1]) for the plot
-        norm1 = normalize_colors(vmin1, vmax1,
-                                 is_all_zeroes=dev_is_all_zeroes,
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin1, vmax1,
                                  log_color_scale=log_color_scale)
 
         # Plot data for either lat-lon or cubed-sphere grids.
         if devgridtype == 'll':
             plot1 = ax1.pcolormesh(devgrid['lat_b'], pedge[pedge_ind], 
-                                   zm_dev, cmap=cmap1, norm=norm1)
+                                   zm_dev, cmap=cmap1, norm=norm)
             ax1.set_title('{} (Dev){}\n{}'.format(
                 devstr, subtitle_extra, devres ))
         else:
             plot1 = ax1.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind], 
-                                   zm_dev, cmap=cmap1, norm=norm1)
+                                   zm_dev, cmap=cmap1, norm=norm)
             ax1.set_title('{} (Dev){}\n{} regridded from c{}'.format(
                 devstr, subtitle_extra, cmpres, devres))
         ax1.set_aspect('auto')
@@ -1572,7 +1597,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax1.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax1.set_yscale('log')
-            ax1.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+            ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
 
@@ -1585,10 +1610,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if log_color_scale:
-                cb.formatter = mpl.ticker.LogFormatter(base=10)
+                cb.formatter = mticker.LogFormatter(base=10)
             else:
                 if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-                    cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                    cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
 
@@ -1613,9 +1638,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         [vmin, vmax] = [-diffabsmax, diffabsmax]
         if verbose: print('Subplot (1,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin, vmax, is_difference=True)
+
+        # Create the plot
         plot2 = ax2.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                               zm_diff, cmap=cmap_plot,
-                               vmin=vmin, vmax=vmax)
+                               zm_diff, cmap=cmap_plot, norm=norm)
         if regridany:
             ax2.set_title('Difference ({})\nDev - Ref, Dynamic Range'.format(
                 cmpres))
@@ -1626,7 +1654,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax2.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax2.set_yscale('log')
-            ax2.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+            ax2.yaxis.set_major_formatter(mticker.ScalarFormatter())
         ax2.set_xticks(xtick_positions)
         ax2.set_xticklabels(xticklabels)
 
@@ -1638,7 +1666,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
 
@@ -1651,9 +1679,13 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
         [vmin,vmax] = [-abspctmax, abspctmax]
         if verbose: print('Subplot (1,1) vmin, vmax: {}, {}'.format(vmin, vmax))
-  
+
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin, vmax, is_difference=True)
+
+        # Create the plot
         plot3 = ax3.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                               zm_diff, cmap=cmap_plot, vmin=vmin, vmax=vmax)
+                               zm_diff, cmap=cmap_plot, norm=norm)
         if regridany:
             ax3.set_title('Difference ({})\nDev - Ref, Restricted Range [5%,95%]'.format(cmpres))
         else:
@@ -1663,7 +1695,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax3.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax3.set_yscale('log')
-            ax3.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+            ax3.yaxis.set_major_formatter(mticker.ScalarFormatter())
         ax3.set_xticks(xtick_positions)
         ax3.set_xticklabels(xticklabels)
 
@@ -1675,7 +1707,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
-                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
 
@@ -1698,9 +1730,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
         if verbose: print('Subplot (2,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin, vmax, is_difference=True)
+
+        # Create the plot
         plot4 = ax4.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                               zm_fracdiff, cmap=cmap_plot, 
-                               vmin=vmin, vmax=vmax)
+                               zm_fracdiff, cmap=cmap_plot, norm=norm)
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres))
         else:
@@ -1709,7 +1744,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax4.set_aspect('auto')
         if log_yaxis: 
             ax4.set_yscale('log')
-            ax4.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+            ax4.yaxis.set_major_formatter(mticker.ScalarFormatter())
         ax4.set_ylabel('Pressure (hPa)')
         ax4.set_xticks(xtick_positions)
         ax4.set_xticklabels(xticklabels)
@@ -1724,7 +1759,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_clim(vmin=vmin, vmax=vmax)
         cb.set_label('unitless')   
@@ -1736,9 +1771,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         [vmin, vmax] = [-2, 2]
         if verbose: print('Subplot (2,1) vmin, vmax: {}, {}'.format(vmin, vmax))
   
+        # Normalize colors (put into range [0..1] for matplotlib methods)
+        norm = normalize_colors(vmin, vmax, is_difference=True)
+
+        # Create the plot
         plot5 = ax5.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
-                               zm_fracdiff, cmap=cmap_plot, 
-                               vmin=vmin, vmax=vmax)
+                               zm_fracdiff, cmap=cmap_plot, norm=norm)
         if regridany:
             ax5.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range'.format(cmpres))
         else:
@@ -1748,7 +1786,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax5.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax5.set_yscale('log')
-            ax5.yaxis.set_major_formatter(mpl.ticker.ScalarFormatter())
+            ax5.yaxis.set_major_formatter(mticker.ScalarFormatter())
         ax5.set_xticks(xtick_positions)
         ax5.set_xticklabels(xticklabels)
 
@@ -1762,7 +1800,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             cb.set_ticklabels(['Zero throughout domain'])
         else:
             if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
-                cb.locator = mpl.ticker.MaxNLocator(nbins=4)
+                cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_clim(vmin=vmin, vmax=vmax)
         cb.set_label('unitless') 
@@ -3612,59 +3650,62 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict, warninglist, remove
     os.rename(pdfname_tmp, pdfname)
 
 
-def normalize_colors(vmin, vmax,
-                     is_all_zeroes=False,
-                     log_color_scale=False):
+def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
     '''
-    Normalizes colors to the range of 0..1 for input to
-    matplotlib-based plotting functions, given the max & min values.
+    Normalizes colors to the range of 0..1 for input to matplotlib-based
+    plotting functions, given the max & min values of a data range.
 
     For log-color scales, special handling is done to prevent
     taking the log of data that is all zeroes.
 
     Args:
     -----
-        vmin, vmax : float
-            Minimum and maximum values of a data array.
+        vmin : float
+            Minimum value of the data range.
+
+        vmax : float
+            Maximum value of the data range.
 
     Keyword Args:
     -------------
-        is_all_zeroes : boolean
-            Logical flag to denote if the data array is all zeroes.
+        is_difference : boolean
+            Set this switch to denote that we are using a difference
+            color scale (i.e. with zero in the middle of the range).
             Default value: False
 
         log_color_scale : boolean
             Logical flag to denote that we are using a logarithmic
             color scale instead of a linear color scale.
-            Default value: False:
+            Default value: False
 
     Returns:
     --------
         norm : matplotlib Norm
-            The normalized colors, in a matplotlib Norm object.
+            The normalized colors (with range 0..1), stored in
+            a matplotlib Norm object.
 
     Remarks:
     --------
-        (1) This is an internal routine, called from compare_single_level,
-            and compare_zonal_mean.
-
-        (2) For log scale, the min value will be 3 orders of magnitude
-            less than the max.  But if the data is all zeroes, then we
-            will revert to a linear scale (to avoid a math error of
-            taking a log of zero).
-
-       (3) If is_all_zeroes is set to True, then the normalized color
-           range will be set from 0..1.  This will make the zero color
-           be displayed as white.  This also makes it easy to put a
-           tick mark at in the center of the range (at 0.5).
+         For log color scales, we will use a range of 3 orders of
+         magnitude (i.e. from vmax/1e3 to vmax).
     '''
-    if is_all_zeroes:
-        norm = mpl.colors.Normalize(vmin=vmin, vmax=1.0)
-    else:
-        if log_color_scale:
-            norm = mpl.colors.LogNorm(vmin=vmax/1e3, vmax=vmax)
+    if vmin == 0 and vmax == 0:
+
+        # If the min and max of the data are both zero, then normalize
+        # the data range so that the zero color is placed appropriately
+        # (i.e. at 0.5 for difference colorscales and at 0.0 otherwise).
+        if is_difference:
+            norm = mcolors.Normalize(vmin=-1.0, vmax=1.0)
         else:
-            norm = mpl.colors.Normalize(vmin=vmin, vmax=vmax)
+            norm = mcolors.Normalize(vmin=0.0, vmax=1.0)
+    else:
+
+        # For log color scales, assume a range 3 orders of magnitude
+        # below the maximum value.  Otherwise use a linear scale.
+        if log_color_scale:
+            norm = mcolors.LogNorm(vmin=vmax/1e3, vmax=vmax)
+        else:
+            norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
 
     return norm
 
