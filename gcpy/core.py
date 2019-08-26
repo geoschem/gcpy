@@ -210,14 +210,6 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
 
     Keyword Args (optional):
     ------------------------
-        refonly : list of str
-            Returns a list of variables that are only found
-            in the Ref dataset.
-
-        devonly : list of str
-            Returns a list of variable names that are only found
-            in the Dev dataset.
-
         quiet : boolean
             Set this flag to True if you wish to suppress printing
             informational output to stdout.
@@ -241,13 +233,21 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
             Variables that are common to refdata and devdata,
             and that have lat, lon, and level dimensions.
 
+        refonly: list of strs
+            Plottable variables (i.e. 2D or 3D) that are only
+            present in the Ref dataset.
+
+        devonly: list of strs
+            Plottable variables (i.e. 2D or 3D) that are only
+            present in the Dev dataset.
+
     Examples:
     ---------
         >>> import gcpy
         >>> import xarray as xr
         >>> refdata = xr.open_dataset("ref_data_file.nc")
         >>> devdata = xr.open_dataset("dev_data_file.nc")
-        >>> [commonvars, commonvarsOther, commonvars2D, commonvars3D ] = gcpy.compare_varnames(refdata, devdata)
+        >>> [commonvars, commonvarsOther, commonvars2D, commonvars3D, refonly, devonly ] = gcpy.compare_varnames(refdata, devdata)
     '''
     refvars = [k for k in refdata.data_vars.keys()]
     devvars= [k for k in devdata.data_vars.keys()]
@@ -255,17 +255,27 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
     refonly = [v for v in refvars if v not in devvars]
     devonly = [v for v in devvars if v not in refvars]
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
-    commonvarsOther = [v for v in commonvars if (('lat' not in refdata[v].dims or 'Xdim' not in refdata[v].dims) and
-                                                 ('lon' not in refdata[v].dims or 'Ydim' not in refdata[v].dims) and
-                                                 ('lev' not in refdata[v].dims))]
-    commonvars2D = [v for v in commonvars if (('lat' in refdata[v].dims or 'Xdim' in refdata[v].dims) and
-                                              ('lon' in refdata[v].dims or 'Ydim' in refdata[v].dims) and
-                                              ('lev' not in refdata[v].dims))]
-    commonvars3D = [v for v in commonvars if (('lat' in refdata[v].dims or 'Xdim' in refdata[v].dims) and
-                                              ('lon' in refdata[v].dims or 'Ydim' in refdata[v].dims) and
-                                              ('lev' in refdata[v].dims))]
-    
-    # Print information on common and mismatching variables, as well as dimensions
+    commonvarsOther = [v for v in commonvars if \
+                       (('lat' not in refdata[v].dims or
+                         'Xdim' not in refdata[v].dims) and
+                        ('lon' not in refdata[v].dims or
+                         'Ydim' not in refdata[v].dims) and
+                        ('lev' not in refdata[v].dims))]
+    commonvars2D = [v for v in commonvars if \
+                    (('lat' in refdata[v].dims or
+                      'Xdim' in refdata[v].dims) and
+                     ('lon' in refdata[v].dims or
+                      'Ydim' in refdata[v].dims) and
+                     ('lev' not in refdata[v].dims))]
+    commonvars3D = [v for v in commonvars if \
+                    (('lat' in refdata[v].dims or
+                      'Xdim' in refdata[v].dims) and
+                     ('lon' in refdata[v].dims or
+                      'Ydim' in refdata[v].dims) and
+                     ('lev' in refdata[v].dims))]
+
+    # Print information on common and mismatching variables,
+    # as well as dimensions
     if quiet == False:
         print('\nComparing variable names in compare_varnames')
         print('{} common variables'.format(len(commonvars)))
@@ -285,8 +295,14 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
                 else:
                     print('All variables have same dimensions in ref and dev')
 
-    return [commonvars, commonvarsOther, commonvars2D, commonvars3D,
-            refonly, devonly]
+    # For safety's sake, remove the 0-D and 1-D variables from
+    # refonly and devonly.  This will ensure that refonly and
+    # devonly will only contain variables that can be plotted.
+    refonly = [v for v in refonly if v not in commonvarsOther]
+    devonly = [v for v in devonly if v not in commonvarsOther]
+
+    return [commonvars, commonvarsOther, commonvars2D,
+            commonvars3D, refonly, devonly]
 
 
 def compare_stats(refdata, refstr, devdata, devstr, varname):
