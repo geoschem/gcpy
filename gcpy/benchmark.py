@@ -160,7 +160,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
-        [commonvars, commonvarsOther, commonvars2D, commonvars3D] = core.compare_varnames(refdata, devdata)
+        [commonvars, commonvarsOther,
+         commonvars2D, commonvars3D,
+         refonly, devonly] = core.compare_varnames(refdata, devdata)
         varlist = commonvars3D+commonvars2D
         print('Plotting all common variables (surface only if 3D)')
     n_var = len(varlist)
@@ -1093,7 +1095,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
-        [commonvars, commonvarsOther, commonvars2D, commonvars3D] = core.compare_varnames(refdata, devdata)
+        [commonvars, commonvarsOther,
+         commonvars2D, commonvars3D,
+         refonly, devonly] = core.compare_varnames(refdata, devdata)
         varlist = commonvars3D
         print('Plotting all 3D variables')
     n_var = len(varlist)
@@ -2593,7 +2597,8 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
 
     # Find common variables
     quiet = not verbose
-    vars, varsOther, vars2D, vars3D = core.compare_varnames(refds, devds, quiet)
+    [vars, varsOther, vars2D,
+     vars3D, refonly, devonly] = core.compare_varnames(refds, devds, quiet)
 
     # Combine 2D and 3D variables into an overall list
     varlist = vars2D + vars3D
@@ -2976,7 +2981,8 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     # Find common variables in both datasets
     if varlist == None:
         quiet = not verbose
-        [cmn, cmnOther, cmn2D, cmn3D] = core.compare_varnames(refds, devds, quiet)
+        [cmn, cmnOther, cmn2D,
+         cmn3D, refonly, devonly] = core.compare_varnames(refds, devds, quiet)
 
     # =================================================================
     # Local noon or continuously-averaged J-values?
@@ -3222,8 +3228,8 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # (or use the varlist passed via keyword argument)
     if varlist == None:
         quiet = not verbose
-        [cmn, cmnOther, cmn2D, cmn3D] = core.compare_varnames(refds, 
-                                                           devds, quiet)
+        [cmn, cmnOther, cmn2D, cmn3D,
+         refonly, devonly] = core.compare_varnames(refds, devds, quiet)
         varlist = [v for v in cmn3D if 'AOD' in v and '_bin' not in v]
 
     # Dictionary and list for new display names
