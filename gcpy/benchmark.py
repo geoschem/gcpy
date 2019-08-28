@@ -570,22 +570,25 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
         ################################################################
         # Set colormap for raw data plots (first row)
+        #
+        # Use shallow copy (copy.copy() to create color map objects,
+        # in order to avoid set_bad() from being applied to the base
+        # color table. See: https://docs.python.org/3/library/copy.html
         ################################################################
-
         if use_cmap_RdBu:
-            # Copy to avoid application of cmap.set_bad used later on
             cmap1 = copy.copy(mpl.cm.RdBu_r) 
             cmap2 = cmap1
         else:
             cmap1 = WhGrYlRd
-            cmap2 = cmap1
+            cmap2 = copy.copy(WhGrYlRd)
             cmap2.set_bad(color='gray')
             
         ################################################################
         # Use gray for NaNs if plotting on lat-lon grid 
         # (has strange effect for cubed-sphere)
+        #
+        # Use shallow copy as explained above.
         ################################################################
-
         cmap_nongray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray.set_bad(color='gray')
@@ -595,8 +598,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ################################################################
 
         # Test if Ref is zero everywhere or NaN everywhere
-        is_all_zero = not np.any(ds_ref)
-        is_all_nan = np.isnan(ds_ref).all()
+        is_all_zero = not np.any(ds_ref.values)
+        is_all_nan = np.isnan(ds_ref.values).all()
         
         # Set colorbar min/max
         if is_all_zero or is_all_nan:
@@ -647,6 +650,16 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             # Mask the reference data
             masked_refdata = np.ma.masked_where(
                 np.abs(refgrid['lon'] - 180) < 2, ds_ref_reshaped)
+
+            
+            
+            print('Ref: {} {}'.format(np.min(masked_refdata),
+                                      np.max(masked_refdata)))
+                        
+            # Normalize colors (put into range [0..1] for matplotlib methods)
+            norm = normalize_colors(vmin0, vmax0,
+                                    log_color_scale=log_color_scale)
+
             
             # Plot each face of the cubed-sphere
             for i in range(6):
@@ -679,8 +692,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ################################################################
 
         # Test if Dev is zero everywhere or NaN everywhere
-        is_all_zero = not np.any(ds_dev)
-        is_all_nan = np.isnan(ds_dev).all()
+        is_all_zero = not np.any(ds_dev.values)
+        is_all_nan = np.isnan(ds_dev.values).all()
     
         # Set colorbar min/max
         if is_all_zero or is_all_nan:
@@ -1715,8 +1728,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
         ################################################################
         # Configure colorbar for difference plots, use gray for NaNs
+        #
+        # Use shallow copy (copy.copy() to create color map objects,
+        # in order to avoid set_bad() from being applied to the base
+        # color table. See: https://docs.python.org/3/library/copy.html
         ################################################################
-
         cmap_plot = copy.copy(mpl.cm.RdBu_r)
         cmap_plot.set_bad(color='gray')
 
