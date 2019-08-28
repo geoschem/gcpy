@@ -569,23 +569,22 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             print('Incorrect dimensions for {}!'.format(varname))   
 
         ################################################################
-        # Set colormap for raw data plots (first row)
+        # Set colormaps for raw data plots (1st row)
         #
         # Use shallow copy (copy.copy() to create color map objects,
         # in order to avoid set_bad() from being applied to the base
         # color table. See: https://docs.python.org/3/library/copy.html
         ################################################################
         if use_cmap_RdBu:
-            cmap1 = copy.copy(mpl.cm.RdBu_r) 
-            cmap2 = cmap1
+            cmap_toprow_nongray = copy.copy(mpl.cm.RdBu_r) 
+            cmap_toprow_gray = copy.copy(mpl.cm.RdBu_r)
         else:
-            cmap1 = WhGrYlRd
-            cmap2 = copy.copy(WhGrYlRd)
-            cmap2.set_bad(color='gray')
+            cmap_toprow_nongray = copy.copy(WhGrYlRd)
+            cmap_toprow_gray = copy.copy(WhGrYlRd)
+        cmap_toprow_gray.set_bad(color='gray')
             
         ################################################################
-        # Use gray for NaNs if plotting on lat-lon grid 
-        # (has strange effect for cubed-sphere)
+        # Set colormaps for difference plots (2nd and 3rd rows)
         #
         # Use shallow copy as explained above.
         ################################################################
@@ -634,9 +633,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             
             # If all of the data is NaN, then plot as gray
             if is_all_nan:
-                cmap = cmap2
+                cmap = cmap_toprow_gray
             else:
-                cmap = cmap1
+                cmap = cmap_toprow_nongray
             
             # Plot the lon/lat data
             plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon,
@@ -662,11 +661,14 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
             
             # Plot each face of the cubed-sphere
+            # Do not use color map with gray values for NaN's,
+            # as this causes some weird behavior for cubed-sphere.
             for i in range(6):
                 plot0 = ax0.pcolormesh(refgrid['lon_b'][i,:,:],
                                        refgrid['lat_b'][i,:,:],
                                        masked_refdata[i,:,:],
-                                       cmap=cmap1, norm=norm)
+                                       cmap=cmap_toprow_nongray,
+                                       norm=norm)
 
         # Define the colorbar for log or linear color scales
         # If Ref is zero or NaN everywhere, set a tick in the middle
@@ -727,9 +729,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
             # If all of the data is NaN, then plot as gray
             if is_all_nan:
-                cmap = cmap2
+                cmap = cmap_toprow_gray
             else:
-                cmap = cmap1
+                cmap = cmap_toprow_nongray
              
             # Plot the data!
             plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon,
@@ -745,11 +747,14 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 np.abs(devgrid['lon'] - 180) < 2, ds_dev_reshaped)
 
             # Plot each face of the cubed-sphere
+            # Do not use color map with gray values for NaN's,
+            # as this causes some weird behavior for cubed-sphere.
             for i in range(6):
                 plot1 = ax1.pcolormesh(devgrid['lon_b'][i,:,:],
                                        devgrid['lat_b'][i,:,:],
                                        masked_devdata[i,:,:],
-                                       cmap=cmap1, norm=norm)
+                                       cmap=cmap_toprow_nongray,
+                                       norm=norm)
 
         # Define the colorbar for log or linear color scales
         # If Dev is zero or NaN everywhere, set a tick in the middle of
@@ -814,6 +819,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
 
             # Plot each face of the cubed sphere
+            # Do not use color map with gray values for NaN's,
+            # as this causes some weird behavior for cubed-sphere.
             for i in range(6):
                 plot2 = ax2.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
@@ -868,6 +875,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
 
             # Plot each face of the cubed-sphere
+            # Do not use color map with gray values for NaN's,
+            # as this causes some weird behavior for cubed-sphere.
             for i in range(6):
                 plot3 = ax3.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
@@ -947,6 +956,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
 
             # Plot each face of the cubed-sphere
+            # Do not use color map with gray values for NaN's,
+            # as this causes some weird behavior for cubed-sphere.
             for i in range(6):
                 plot4 = ax4.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
@@ -1007,6 +1018,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
 
             # Plot each face of the cubed-sphere
+            # Do not use color map with gray values for NaN's,
+            # as this causes some weird behavior for cubed-sphere.
             for i in range(6):
                 plot5 = ax5.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
@@ -1571,14 +1584,17 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                       fontsize=fontsize, y=offset)
 
         ###############################################################
-        # Set colormap for raw data plots (first row)
-        # Use gray for NaNs
+        # Set color map objects.  Use gray for NaNs (no worries,
+        # because zonal means are always plotted on lat-alt grids).
+        #
+        # Use shallow copy (copy.copy() to create color map objects,
+        # in order to avoid set_bad() from being applied to the base
+        # color table. See: https://docs.python.org/3/library/copy.html
         ###############################################################
-
         if use_cmap_RdBu:
-            cmap1 = 'RdBu_r'
+            cmap1 = copy.copy(mpl.cm.RdBu_r) 
         else:
-            cmap1 = WhGrYlRd
+            cmap1 = copy.copy(WhGrYlRd)
         cmap1.set_bad('gray')
             
         ###############################################################
