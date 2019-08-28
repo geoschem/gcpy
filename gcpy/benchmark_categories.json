@@ -195,7 +195,11 @@
         ],
       "Alcohols":
         [ "EOH",
-        "MOH"
+          "MOH"
+        ],
+      "Precursors":
+        [ "SOAIE",
+          "LVOCOA"
         ]
     }
 }
