@@ -697,7 +697,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             if match_cbar and (not ref_is_all_nan):
                 absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
             else:
-                absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
+                absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
             [vmin1, vmax1] = [-absmax, absmax]
         else:
             if match_cbar and (not ref_is_all_nan):
