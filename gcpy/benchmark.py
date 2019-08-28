@@ -594,9 +594,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (0,0): Ref, plotted on ref input grid
         ################################################################
 
-        # Test if the data is zero everywhere or NaN everywhere
-        is_all_zero = vmin_ref == 0 and vmax_ref == 0
-        is_all_nan = np.isnan(vmin_ref) and np.isnan(vmax_ref)
+        # Test if Ref is zero everywhere or NaN everywhere
+        is_all_zero = not np.any(ds_ref)
+        is_all_nan = np.isnan(ds_ref).all()
         
         # Set colorbar min/max
         if is_all_zero or is_all_nan:
@@ -678,9 +678,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (0,1): Dev, plotted on dev input grid
         ################################################################
 
-        # Test if the data is zero everywhere or NaN everywhere
-        is_all_zero = vmin_dev == 0 and vmax_dev == 0
-        is_all_nan = np.isnan(vmin_dev) and np.isnan(vmax_dev)
+        # Test if Dev is zero everywhere or NaN everywhere
+        is_all_zero = not np.any(ds_dev)
+        is_all_nan = np.isnan(ds_dev).all()
     
         # Set colorbar min/max
         if is_all_zero or is_all_nan:
@@ -758,7 +758,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         cb.set_label(units_dev)
 
         ################################################################
-        # Calculate difference
+        # Calculate absolute difference
         ################################################################
 
         if cmpgridtype == 'll':
@@ -768,22 +768,18 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             absdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2,
                                          absdiff_raw)
 
-        # Min and max of abs. diff, including NaNs
-        absdiff_raw_min = np.min(absdiff)
-        absdiff_raw_max = np.max(absdiff)
-            
         # Min and max of abs. diff, excluding NaNs
         diffabsmax = max([np.abs(np.nanmin(absdiff)),
                           np.abs(np.nanmax(absdiff))])            
 
+        # Test if the abs. diff. is zero everywhere or NaN everywhere
+        is_all_zero = not np.any(absdiff)
+        is_all_nan = np.isnan(absdiff).all()
+        is_absdiff_all_zero = is_all_zero
+
         ################################################################
         # Subplot (1,0): Difference, dynamic range
         ################################################################
-
-        # Test if the abs. diff. is zero everywhere or NaN everywhere
-        [vmin, vmax] = [absdiff_raw_min, absdiff_raw_max]
-        is_all_zero = vmin == 0 and vmax == 0
-        is_all_nan = np.isnan(vmin) and np.isnan(vmax)
 
         # Reset the min and max range to be symmetric
         # around the absolute min & max
@@ -845,10 +841,6 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         if verbose:
             print('Subplot (1,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
-        # Test if the abs. diff. is zero everywhere or NaN everywhere
-        is_all_zero = vmin == 0 and vmax == 0
-        is_all_nan = np.isnan(vmin) and np.isnan(vmax)
-        
         # Normalize colors (put into range [0..1] for matplotlib methods)
         norm = normalize_colors(vmin, vmax, is_difference=True)
 
@@ -900,31 +892,30 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             fracdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2,
                                           fracdiff_raw)
 
-        # Min and max of fracdiff, including NaNs
-        fracdiff_raw_min = np.min(fracdiff)
-        fracdiff_raw_max = np.max(fracdiff)
-
         # Absolute max value of fracdiff, excluding NaNs
         fracdiff = np.where(fracdiff==np.inf, np.nan, fracdiff)
         fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)),
                               np.abs(np.nanmax(fracdiff))])
         
+        # Test if the frac. diff. is zero everywhere or NaN everywhere
+        is_all_zero = not np.any(fracdiff)
+        is_all_nan = np.isnan(fracdiff).all()
+
         ################################################################
         # Subplot (2,0): Fractional Difference, full dynamic range
         ################################################################
 
-        # Min and max of fracdiff, inlcuding NaNs
-        [vmin, vmax] = [fracdiff_raw_min, fracdiff_raw_max]
-
-        # Test if the frac.diff. is NaN everywhere
-        is_all_zero = vmin == 0 and vmax == 0
-        is_all_nan = np.isnan(vmin) and np.isnan(vmax)
-
         # If the frac. diff. is zero everywhere or NaN everywhere,
-        # then do nothing.  Otherwise set the min and max of the
-        # data range to [-fracdiffabsmax, +fracdiffabsmax]
-        # (which excludes NaNs).
-        if (not is_all_zero) or (not is_all_nan):
+        # then set the min and max of the data range to zero (or Nan)
+        # which will cause normalize_colors to place the white color
+        # in the middle of the color range for the difference color
+        # scale.  Otherwise, set the min and max of the data range to
+        # [-2, +2] (i.e. -200% to +200% differences).
+        if is_all_zero:
+            [vmin, vmax] = [0, 0]
+        elif is_all_nan:
+            [vmin, vmax] = [np.nan, np.nan]
+        else:
             [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
         if verbose:
             print('Subplot (2,0) vmin, vmax: {}, {}'.format(vmin, vmax))
@@ -955,11 +946,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range')
 
         # Define the colorbar for the plot.
-        # If all values of absdiff = 0, then set a tick at 0.
-        # Use absdiff in the test for all zeroes, because fracdiff may
-        # have NaN's due to div by zero when both Dev and Ref are zero.
+        # Use is_absdiff_all_zero to force the plot to show as all gray
+        # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
-        if np.all(absdiff == 0) or is_all_nan:
+        if is_absdiff_all_zero or is_all_nan:
             cb.set_ticks([0.0])
             if is_all_nan:
                 cb.set_ticklabels(['Undefined throughout domain'])
@@ -975,19 +965,16 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (2,1): Fractional Difference, restricted range
         ################################################################
 
-        # Test if the frac.diff. is zero everywhere or NaN everywhere
-        [vmin, vmax] = [fracdiff_raw_min, fracdiff_raw_max]
-        is_all_zero = vmin == 0 and vmax == 0
-        is_all_nan = np.isnan(vmin) and np.isnan(vmax)
-
         # If the frac. diff. is zero everywhere or NaN everywhere,
-        # then set the min and max of the data range both to zero,
+        # then set the min and max of the data range to zero (or Nan)
         # which will cause normalize_colors to place the white color
         # in the middle of the color range for the difference color
         # scale.  Otherwise, set the min and max of the data range to
         # [-2, +2] (i.e. -200% to +200% differences).
-        if is_all_zero or is_all_nan:
+        if is_all_zero:
             [vmin, vmax] = [0, 0]
+        elif is_all_nan:
+            [vmin, vmax] = [np.nan, np.nan]
         else:
             [vmin, vmax] = [-2, 2]
         if verbose:
@@ -1019,11 +1006,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range') 
 
         # Define the colorbar for the plot.
-        # If all values of absdiff = 0, then set a tick at 0.
-        # Use absdiff in the test for all zeroes, because fracdiff may
-        # have NaN's due to div by zero when both Dev and Ref are zero.
+        # Use is_absdiff_all_zero to force the plot to show as all gray
+        # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
-        if np.all(absdiff == 0) or is_all_nan:
+        if is_absdiff_all_zero or is_all_nan:
             cb.set_ticks([0.0])
             if is_all_nan:
                 cb.set_ticklabels(['Undefined throughout domain'])
@@ -1586,9 +1572,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (0,0): Ref
         ###############################################################
 
-        # Test if data is zero everywhere or NaN everywhere
-        is_all_zero = vmin_ref == 0 and vmax_ref == 0
-        is_all_nan = np.isnan(vmin_ref) and np.isnan(vmax_ref)
+        # Test if Ref is zero everywhere or NaN everywhere
+        is_all_zero = not np.any(ds_ref)
+        is_all_nan = np.isnan(ds_ref).all()
         
         # Set colorbar min/max
         if is_all_zero or is_all_nan:
@@ -1661,9 +1647,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (0,1): Dev
         ###############################################################
 
-        # Test if data is zero everywhere or NaN everywhere
-        is_all_zero = vmin_dev == 0 and vmax_dev == 0
-        is_all_nan = np.isnan(vmin_dev) and np.isnan(vmax_dev)
+        # Test if Dev is zero everywhere or NaN everywhere
+        is_all_zero = not np.any(ds_dev)
+        is_all_nan = np.isnan(ds_dev).all()
 
         # Set colorbar min/max
         if is_all_zero or is_all_nan:
@@ -1740,19 +1726,33 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
         zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
 
+        # Test if abs. diff is zero everywhere or NaN everywhere
+        is_all_zero = not np.any(zm_diff)
+        is_all_nan = np.isnan(zm_diff).all()
+        is_absdiff_all_zero = is_all_zero
+
+        # Absolute maximum difference value
+        diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
+
         ################################################################
         # Subplot (1,0): Difference, dynamic range
         ################################################################
 
-        diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
-        [vmin, vmax] = [-diffabsmax, diffabsmax]
+        # If the abs. diff. is zero everywhere or NaN everywhere,
+        # then set the min and max of the data range to zero (or Nan)
+        # which will cause normalize_colors to place the white color
+        # in the middle of the color range for the difference color
+        # scale.  Otherwise, set the min and max of the data range to
+        # [-2, +2] (i.e. -200% to +200% differences).
+        if is_all_zero:
+            [vmin, vmax] = [0, 0]
+        elif is_all_nan:
+            [vmin, vmax] = [np.nan, np.nan]
+        else:
+            [vmin, vmax] = [-diffabsmax, diffabsmax]
         if verbose:
             print('Subplot (1,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
-        # Test if abs. diff is zero everywhere or NaN everywhere
-        is_all_zero = vmin == 0 and vmax == 0
-        is_all_nan = np.isnan(vmin) and np.isnan(vmax)
-        
         # Normalize colors (put into range [0..1] for matplotlib methods)
         norm = normalize_colors(vmin, vmax, is_difference=True)
 
@@ -1793,17 +1793,25 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (1,1): Difference, restricted range
         ################################################################
 
-         # placeholder: use 5 and 95 percentiles as bounds
+        # Use the 5th and 95th percentiles as bounds for the data range
         [pct5, pct95] = [np.percentile(zm_diff,5), np.percentile(zm_diff, 95)]
-        abspctmax = np.max([np.abs(pct5),np.abs(pct95)])
-        [vmin,vmax] = [-abspctmax, abspctmax]
+        abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
+
+        # If the abs. diff. is zero everywhere or NaN everywhere,
+        # then set the min and max of the data range to zero (or Nan)
+        # which will cause normalize_colors to place the white color
+        # in the middle of the color range for the difference color
+        # scale.  Otherwise, set the min and max of the data range to
+        # [-2, +2] (i.e. -200% to +200% differences).
+        if is_all_zero:
+            [vmin, vmax] = [0, 0]
+        elif is_all_nan:
+            [vmin, vmax] = [np.nan, np.nan]
+        else:
+            [vmin, vmax] = [-abspctmax, abspctmax]
         if verbose:
             print('Subplot (1,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
-        # Test if abs. diff is zero everywhere or NaN everywhere
-        is_all_zero = vmin == 0 and vmax == 0
-        is_all_nan = np.isnan(vmin) and np.isnan(vmax)
-         
         # Normalize colors (put into range [0..1] for matplotlib methods)
         norm = normalize_colors(vmin, vmax, is_difference=True)
 
@@ -1846,27 +1854,24 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(zm_ref_cmp)
         zm_fracdiff = np.where(zm_fracdiff==np.inf, np.nan, zm_fracdiff)
 
-        # Min and max of zm_fracdiff, including NaNs
-        zm_fracdiff_raw_min = np.min(zm_fracdiff)
-        zm_fracdiff_raw_max = np.min(zm_fracdiff)
+
+        # Test if the frac. diff is zero everywhere or NaN everywhere
+        is_all_zero = not np.any(zm_fracdiff)
+        is_all_nan = np.isnan(zm_fracdiff).all()
         
         ################################################################
         # Subplot (2,0): Fractional Difference, dynamic range
         ################################################################
 
-        # Test if the frac. diff is zero everywhere or NaN everywhere
-        [vmin, vmax] = [zm_fracdiff_raw_min, zm_fracdiff_raw_max]
-        is_all_zero = vmin == 0 and vmax == 0
-        is_all_nan = np.isnan(vmin) and np.isnan(vmax)
-        
-        # Exclude NaN's in the fracdiffabsmax
-        fracdiffabsmax = np.max([np.abs(np.nanmin(zm_fracdiff)),
-                                 np.abs(np.nanmax(zm_fracdiff))])
-
         # Set the min and max range for the data normalization
+        # If the data is all zero or all NaN, then set up a symmetric
+        # range.  Otherwise use the dynamic range of the zm_fracdiff
+        # array (excluding NaN values).
         if is_all_zero or is_all_nan:
             [vmin, vmax] = [-2, 2]
         else:
+            fracdiffabsmax = np.max([np.abs(np.nanmin(zm_fracdiff)),
+                                     np.abs(np.nanmax(zm_fracdiff))])
             [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
         if verbose:
             print('Subplot (2,0) vmin, vmax: {}, {}'.format(vmin, vmax))
@@ -1890,13 +1895,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax4.set_xticks(xtick_positions)
         ax4.set_xticklabels(xticklabels)
 
-        # Define the colorbar for log or linear color scales.  If
-        # zm_fracdiff is zero everywhere or NaN everywhere, set a tick
-        # in the middle of the normalized color range (which will be 0..1).
-        # Use zm_diff in the test for all zeroes, because fracdiff may
-        # have NaN's due to div by zero when both Dev and Ref are zero.
+        # Define the colorbar for log or linear color scales.
+        # Use is_absdiff_all_zero to force the plot to show as all gray
+        # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
-        if np.all(zm_diff == 0) or is_all_nan:
+        if is_absdiff_all_zero or is_all_nan:
             cb.set_ticks([0.0])
             if is_all_nan:
                 cb.set_ticklabels(['Undefined throughout domain'])
@@ -1913,12 +1916,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (2,1): Fractional Difference, restricted range
         ################################################################
 
-        # Test if the frac. diff is zero everywhere or NaN everywhere
-        [vmin, vmax] = [zm_fracdiff_raw_min, zm_fracdiff_raw_max]
-        is_all_zero = vmin == 0 and vmax == 0
-        is_all_nan = np.isnan(vmin) and np.isnan(vmax)
-
-        # Reset the data range for the normalization
+        # Set up a symmetric data range with frac. diff from -2 to 2
+        # (i.e. -200% change to 200% change).
         [vmin, vmax] = [-2, 2]
         if verbose:
             print('Subplot (2,1) vmin, vmax: {}, {}'.format(vmin, vmax))
@@ -1942,13 +1941,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax5.set_xticks(xtick_positions)
         ax5.set_xticklabels(xticklabels)
 
-        # Define the colorbar for log or linear color scales.  If
-        # zm_fracdiff is zero everywhere or NaN everywhere, set a tick
-        # in the middle of the normalized color range (which will be 0..1).
-        # Use zm_diff in the test for all zeroes, because fracdiff may
-        # have NaN's due to div by zero when both Dev and Ref are zero.
+        # Define the colorbar for log or linear color scales.
+        # Use is_absdiff_all_zero to force the plot to show as all gray
+        # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
-        if np.all(zm_diff == 0) or is_all_nan:
+        if is_absdiff_all_zero or is_all_nan:
             cb.set_ticks([0.0])
             if is_all_nan:
                 cb.set_ticklabels(['Undefined throughout domain'])
@@ -2110,20 +2107,25 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
         create_total_emissions_table instead of being called directly.
     '''
 
-    # Determine if Ref and Dev are DataArray objects,
-    # or if they have been set to NaN to indicate a missing variable
-    ref_is_dr = isinstance(ref, xr.DataArray)
-    dev_is_dr = isinstance(dev, xr.DataArray)
+    # Error check the ref and dev arguments
+    if not isinstance(ref, xr.DataArray):
+        raise ValueError('The ref argument must be an xarray DataArray!')
+    if not isinstance(ref, xr.DataArray):
+        raise ValueError('The ref argument must be an xarray DataArray!')
+
+    # Determine if either Ref or Dev have all NaN values:
+    ref_is_all_nan = np.isnan(ref.values).all()
+    dev_is_all_nan = np.isnan(dev.values).all()
 
     # Throw an error if the two DataArray objects have different units
-    if ref_is_dr and dev_is_dr:
+    if (not ref_is_all_nan) and (not dev_is_all_nan):
         if ref.units != dev.units:
             msg = 'Ref has units "{}", but Dev array has units "{}"'.format(
                 ref.units, dev.units)
             raise ValueError(msg)
 
     # Get the diagnostic name and units
-    if dev_is_dr:
+    if dev_is_all_nan:
         diagnostic_name = dev.name
         units = dev.units
     else:
@@ -2138,22 +2140,22 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
         print('-' * 79, file=f)
 
     # Sum the Ref array (or set to NaN if missing)
-    if ref_is_dr:
-        total_ref = np.sum(ref.values)
-    else:
+    if ref_is_all_nan:
         total_ref = np.nan
+    else:
+        total_ref = np.sum(ref.values)
 
     # Sum the Dev array (or set to NaN if missing)
-    if dev_is_dr:
-        total_dev = np.sum(dev.values)
-    else:
+    if dev_is_all_nan:
         total_dev = np.nan
+    else:
+        total_dev = np.sum(dev.values)
 
     # Compute differences (or set to NaN if missing)
-    if ref_is_dr and dev_is_dr:
-        diff = total_dev - total_ref
-    else:
+    if ref_is_all_nan and dev_is_all_nan:
         diff = np.nan
+    else:
+        diff = total_dev - total_ref
 
     # Write output
     print('{} : {:13.6f}  {:13.6f}  {:13.6f} {}'.format(
