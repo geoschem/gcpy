@@ -213,11 +213,11 @@
       "SO2": 1,
       "SO4": 1
     },
-  "SOA_Simple":
+  "Simple_SOA":
     { "SOAP": 1,
       "SOAS": 1
     },
-  "SOA_Complex":
+  "Complex_SOA":
     { "TSOA0": 1,
       "TSOA1": 1,
       "TSOA2": 1,
@@ -228,17 +228,7 @@
       "ASOA1": 1,
       "ASOA2": 1,
       "ASOA3": 1,
-      "ASOAN": 1,
-      "TSOG0": 1,
-      "TSOG1": 1,
-      "TSOG2": 1,
-      "TSOG3": 1,
-      "ISOG1": 1,
-      "ISOG2": 1,
-      "ISOG3": 1,
-      "ASOG1": 1,
-      "ASOG2": 1,
-      "ASOG3": 1
+      "ASOAN": 1
     },
   "NHx":
     { "NH3": 1,
