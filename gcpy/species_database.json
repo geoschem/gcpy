@@ -1230,6 +1230,21 @@
               "EmMW_g":    136.2300,
               "MolecRatio":      1.0000
           },
+  "SESQ" : 
+          {
+              "Fullname": "a-farnesene, b-carophyllene, other sesquiterpenes",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": true,
+              "Is_Gas": true,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": true,
+              "Henry_K0":  4.900000E-02,
+              "MW_g":    136.2300,
+              "EmMW_g":    136.2300,
+              "MolecRatio":      1.0000
+          },
   "TSOG1" : 
           {
               "Fullname": "Lumped semivolatile gas products of monoterpene + sesquiterpene oxidation",

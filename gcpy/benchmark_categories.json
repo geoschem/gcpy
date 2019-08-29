@@ -36,8 +36,8 @@
           "SO4s"
         ],
       "SOA":
-        [ "SOA_Complex",
-          "SOA_Simple"
+        [ "Complex_SOA",
+          "Simple_SOA"
         ]
     },
   "Nitrogen":
@@ -196,10 +196,44 @@
       "Alcohols":
         [ "EOH",
           "MOH"
+        ]
+    },
+  "Secondary_Organic_Aerosols":
+    { "Simple_SOA":
+        [ "SOAP",
+          "SOAS"
         ],
-      "Precursors":
-        [ "SOAIE",
-          "LVOCOA"
+      "Complex_SOA":
+        [ "TSOA0",
+          "TSOA1",
+          "TSOA2",
+          "TSOA3",
+          "ISOA1",
+          "ISOA2",
+          "ISOA3",
+          "ASOA1",
+          "ASOA2",
+          "ASOA3",
+          "ASOAN",
+          "TSOG0",
+          "TSOG1",
+          "TSOG2",
+          "TSOG3",
+          "ISOG1",
+          "ISOG2",
+          "ISOG3",
+          "ASOG1",
+          "ASOG2",
+          "ASOG3"
+	],
+      "Isoprene_SOA":
+        [ "INDIOL",
+	  "ISN1OA"
+          "LVOCOA",
+          "SOAIE",
+          "SOAGX",
+          "SOAME",
+          "SOAMG",
         ]
     }
 }
