@@ -8,16 +8,16 @@ import numpy as np
 import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
+from cartopy.mpl.geoaxes import GeoAxes  # for assertion
+from cartopy.util import add_cyclic_point
 import json
-import copy
 from json import load as json_load_file
+import copy
 import matplotlib as mpl
 import matplotlib.colors as mcolors
 import matplotlib.ticker as mticker
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.colors import ListedColormap
-from cartopy import crs
-from cartopy.mpl.geoaxes import GeoAxes  # for assertion
 from PyPDF2 import PdfFileWriter, PdfFileReader
 from .plot import WhGrYlRd, add_latlon_ticks
 from .grid.horiz import make_grid_LL, make_grid_CS
@@ -26,9 +26,11 @@ from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .units import convert_units
 
-cmap_abs = WhGrYlRd  # for plotting absolute magnitude
+# NOTE: These are only used in obsolete functions, we can take them out.
+cmap_abs = WhGrYlRd   # for plotting absolute magnitude
 cmap_diff = 'RdBu_r'  # for plotting difference
 
+# JSON files
 aod_spc = 'aod_species.json'
 spc_categories = 'benchmark_categories.json'
 emission_spc = 'emission_species.json' 
@@ -559,12 +561,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ################################################################
 
         # Create figures and axes objects
+        # Also define the map projection that will be shown
         figs, ((ax0, ax1),
                (ax2, ax3),
                (ax4, ax5)) = plt.subplots(3, 2,
                                           figsize=[12,14],
                                           subplot_kw={'projection':
-                                                      crs.PlateCarree()})
+                                                      ccrs.PlateCarree()})
         # Give the figure a title
         offset = 0.96
         fontsize=25
@@ -610,23 +613,24 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # NOTE: If Dev contains all NaN's, then just use the min and
         # max of Ref to set the data range, even if match_cbar=True.
         if ref_is_all_zero or ref_is_all_nan:
-            [vmin0, vmax0] = [vmin_ref, vmax_ref]
+            [vmin, vmax] = [vmin_ref, vmax_ref]
         elif use_cmap_RdBu:
             if match_cbar and (not dev_is_all_nan):
                 absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
             else:
                 absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
-            [vmin0, vmax0] = [-absmax, absmax]
+            [vmin, vmax] = [-absmax, absmax]
         else:
             if match_cbar and (not dev_is_all_nan):
-                [vmin0, vmax0] = [vmin_abs, vmax_abs]
+                [vmin, vmax] = [vmin_abs, vmax_abs]
             else:
-                [vmin0, vmax0] = [vmin_ref, vmax_ref]
-        if verbose: print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(
-                vmin0, vmax0))
+                [vmin, vmax] = [vmin_ref, vmax_ref]
+        if verbose:
+            print('Subplot (0,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin0, vmax0,
+        norm = normalize_colors(vmin, vmax,
+                                is_difference=use_cmap_RdBu,
                                 log_color_scale=log_color_scale)
 
         # Plot data for either lat-lon or cubed-sphere grids.
@@ -645,6 +649,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             # Plot the lon/lat data
             plot0 = ax0.imshow(ds_ref, extent=(refminlon, refmaxlon,
                                                refminlat, refmaxlat),
+                               transform=ccrs.PlateCarree(),
                                cmap=cmap, norm=norm)
         else:
             # Set top title for cubed-sphere plot
@@ -662,6 +667,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 plot0 = ax0.pcolormesh(refgrid['lon_b'][i,:,:],
                                        refgrid['lat_b'][i,:,:],
                                        masked_refdata[i,:,:],
+                                       transform=ccrs.PlateCarree(),
                                        cmap=cmap_toprow_nongray,
                                        norm=norm)
 
@@ -679,7 +685,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             if log_color_scale:
                 cb.formatter = mticker.LogFormatter(base=10)
             else:
-                if (vmax0-vmin0) < 0.1 or (vmax0-vmin0) > 100:
+                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                     cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units_ref)
@@ -692,23 +698,24 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # NOTE: If Ref contains all NaN's, then just use the min and
         # max of Dev to set the data range, even if match_cbar=True.
         if dev_is_all_zero or dev_is_all_nan:
-            [vmin1, vmax1] = [vmin_dev, vmax_dev]
+            [vmin, vmax] = [vmin_dev, vmax_dev]
         elif use_cmap_RdBu:
             if match_cbar and (not ref_is_all_nan):
                 absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
             else:
                 absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
-            [vmin1, vmax1] = [-absmax, absmax]
+            [vmin, vmax] = [-absmax, absmax]
         else:
             if match_cbar and (not ref_is_all_nan):
-                [vmin1, vmax1] = [vmin_abs, vmax_abs]
+                [vmin, vmax] = [vmin_abs, vmax_abs]
             else:
-                [vmin1, vmax1] = [vmin_dev, vmax_dev]
+                [vmin, vmax] = [vmin_dev, vmax_dev]
         if verbose:
-            print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1,vmax1))
+            print('Subplot (0,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin1, vmax1,
+        norm = normalize_colors(vmin, vmax,
+                                is_difference=use_cmap_RdBu,
                                 log_color_scale=log_color_scale)
 
         # Plot for either lat-lon or cubed-sphere
@@ -727,6 +734,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             # Plot the data!
             plot1 = ax1.imshow(ds_dev, extent=(devminlon, devmaxlon,
                                                devminlat, devmaxlat),
+                               transform=ccrs.PlateCarree(),
                                cmap=cmap, norm=norm)
         else:
             # Set top title for cubed-sphere plot
@@ -744,6 +752,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 plot1 = ax1.pcolormesh(devgrid['lon_b'][i,:,:],
                                        devgrid['lat_b'][i,:,:],
                                        masked_devdata[i,:,:],
+                                       transform=ccrs.PlateCarree(),
                                        cmap=cmap_toprow_nongray,
                                        norm=norm)
 
@@ -761,7 +770,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             if log_color_scale:
                 cb.formatter = mticker.LogFormatter(base=10)
             else:
-                if (vmax1-vmin1) < 0.1 or (vmax1-vmin1) > 100:
+                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                     cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units_dev)
@@ -821,6 +830,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 plot2 = ax2.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
                                        absdiff[i,:,:],
+                                       transform=ccrs.PlateCarree(),
                                        norm=norm,
                                        cmap=cmap_nongray)
         if regridany:
@@ -874,6 +884,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             # Create the lat/lon plot
             plot3 = ax3.imshow(absdiff, extent=(cmpminlon, cmpmaxlon,
                                                 cmpminlat, cmpmaxlat),
+                               transform=ccrs.PlateCarree(),
                                cmap=cmap_gray, norm=norm)
         else:
 
@@ -884,6 +895,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 plot3 = ax3.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
                                        absdiff[i,:,:],
+                                       transform=ccrs.PlateCarree(),
                                        cmap=cmap_nongray,
                                        norm=norm)
         if regridany:
@@ -901,7 +913,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 cb.set_ticklabels(['Zero throughout domain'])                
         else:
-            if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
@@ -911,20 +923,28 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         ################################################################
         
         if cmpgridtype == 'll':
-            fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(ds_ref_cmp)
+            fracdiff = (np.array(ds_dev_cmp) - \
+                        np.array(ds_ref_cmp)) / np.array(ds_ref_cmp)
         else:
-            fracdiff_raw = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
-            fracdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2,
-                                          fracdiff_raw)
+            fracdiff = (ds_dev_cmp_reshaped - \
+                        ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
 
-        # Absolute max value of fracdiff, excluding NaNs
+        # Replace Infinity values with NaN
         fracdiff = np.where(fracdiff==np.inf, np.nan, fracdiff)
-        fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)),
-                              np.abs(np.nanmax(fracdiff))])
 
         # Test if the frac. diff. is zero everywhere or NaN everywhere
         fracdiff_is_all_zero = not np.any(fracdiff)
         fracdiff_is_all_nan = np.isnan(fracdiff).all()
+
+        # Absolute max value of fracdiff, excluding NaNs
+        fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)),
+                              np.abs(np.nanmax(fracdiff))])
+
+        # For cubed-sphere, take special care to avoid a spurious
+        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
+        if cmpgridtype == 'cs':
+            fracdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2,
+                                          fracdiff)
 
         ################################################################
         # Subplot (2,0): Fractional Difference, full dynamic range
@@ -952,6 +972,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             # Create the lon/lat plot
             plot4 = ax4.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon,
                                                  cmpminlat, cmpmaxlat),
+                               transform=ccrs.PlateCarree(),
                                cmap=cmap_gray, norm=norm)
         else:
 
@@ -962,8 +983,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 plot4 = ax4.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
                                        fracdiff[i,:,:],
+                                       transform=ccrs.PlateCarree(),
                                        cmap=cmap_nongray,
                                        norm=norm)
+
         if regridany:
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres)) 
         else:
@@ -980,7 +1003,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
         else:
-            if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label('unitless')
@@ -1014,6 +1037,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             # Create the lon/lat plot
             plot5 = ax5.imshow(fracdiff, extent=(cmpminlon, cmpmaxlon,
                                                  cmpminlat, cmpmaxlat),
+                               transform=ccrs.PlateCarree(),
                                cmap=cmap_gray, norm=norm)
         else:
 
@@ -1024,6 +1048,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 plot5 = ax5.pcolormesh(cmpgrid['lon_b'][i,:,:],
                                        cmpgrid['lat_b'][i,:,:],
                                        fracdiff[i,:,:],
+                                       transform=ccrs.PlateCarree(),
                                        cmap=cmap_nongray,
                                        norm=norm)
         if regridany:
@@ -1621,23 +1646,24 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # NOTE: If Dev contains all NaN's, then just use the min and
         # max of Ref to set the data range, even if match_cbar=True.
         if ref_is_all_zero or ref_is_all_nan:
-            [vmin0, vmax0] = [vmin_ref, vmax_ref]
+            [vmin, vmax] = [vmin_ref, vmax_ref]
         elif use_cmap_RdBu:
             if match_cbar and (not dev_is_all_nan):
                 absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
             else:
                 absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
-            [vmin0, vmax0] = [-absmax, absmax]
+            [vmin, vmax] = [-absmax, absmax]
         else:
             if match_cbar and (not dev_is_all_nan):
-                [vmin0, vmax0] = [vmin_abs, vmax_abs]
+                [vmin, vmax] = [vmin_abs, vmax_abs]
             else:
-                [vmin0, vmax0] = [vmin_ref, vmax_ref]
+                [vmin, vmax] = [vmin_ref, vmax_ref]
         if verbose:
-            print('Subplot (0,0) vmin0, vmax0: {}, {}'.format(vmin0, vmax0))
+            print('Subplot (0,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin0, vmax0,
+        norm = normalize_colors(vmin, vmax,
+                                is_difference=use_cmap_RdBu,
                                 log_color_scale=log_color_scale)
 
         # Plot data for either lat-lon or cubed-sphere grids
@@ -1679,7 +1705,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             if log_color_scale:
                 cb.formatter = mticker.LogFormatter(base=10)
             else:
-                if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+                if (vmax - vmin) < 0.001 or (vmax - vmin) > 1000:
                     cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
@@ -1692,20 +1718,20 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # NOTE: If Ref contains all NaN's, then just use the min and
         # max of Dev to set the data range, even if match_cbar=True.
         if dev_is_all_zero or dev_is_all_nan:
-            [vmin1, vmax1] = [vmin_dev, vmax_dev]
+            [vmin, vmax] = [vmin_dev, vmax_dev]
         elif use_cmap_RdBu:
             if match_cbar and (not ref_is_all_nan):
                 absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
             else:
                 absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
-            [vmin1, vmax1] = [-absmax, absmax]
+            [vmin, vmax] = [-absmax, absmax]
         else:
             if match_cbar and (not ref_is_all_nan):   
-                [vmin1, vmax1] = [vmin_abs, vmax_abs]
+                [vmin, vmax] = [vmin_abs, vmax_abs]
             else:
-                [vmin1, vmax1] = [vmin_dev, vmax_dev]
+                [vmin, vmax] = [vmin_dev, vmax_dev]
         if verbose:
-            print('Subplot (0,1) vmin1, vmax1: {}, {}'.format(vmin1, vmax1))
+            print('Subplot (0,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
         norm = normalize_colors(vmin1, vmax1,
@@ -1745,7 +1771,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             if log_color_scale:
                 cb.formatter = mticker.LogFormatter(base=10)
             else:
-                if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+                if (vmax - vmin) < 0.001 or (vmax - vmin) > 1000:
                     cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
@@ -1823,7 +1849,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
         else:
-            if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+            if (vmax - vmin) < 0.001 or (vmax - vmin) > 1000:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
@@ -1880,7 +1906,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
         else:
-            if (vmax-vmin) < 0.001 or (vmax-vmin) > 1000:
+            if (vmax - vmin) < 0.001 or (vmax - vmin) > 1000:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
@@ -1948,7 +1974,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
         else:
-            if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_clim(vmin=vmin, vmax=vmax)
@@ -2004,7 +2030,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
         else:
-            if (vmax-vmin) < 0.1 or (vmax-vmin) > 100:
+            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_clim(vmin=vmin, vmax=vmax)
@@ -3928,8 +3954,9 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
     if (vmin == 0 and vmax == 0) or (np.isnan(vmin) and np.isnan(vmax)):
 
         # If the min and max of the data are both zero, then normalize
-        # the data range so that the zero color is placed appropriately
-        # (i.e. at 0.5 for difference colorscales and at 0.0 otherwise).
+        # the data range so that the color corresponding to zero (i.e.
+        # white) is placed at 0.5 for difference colormaps (like RdBu)
+        # and at 0.0 for non-difference colormaps (like WhGrYlRd).
         if is_difference:
             norm = mcolors.Normalize(vmin=-1.0, vmax=1.0)
         else:
