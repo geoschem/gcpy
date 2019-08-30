@@ -228,12 +228,12 @@
 	],
       "Isoprene_SOA":
         [ "INDIOL",
-	  "ISN1OA"
+	  "ISN1OA",
           "LVOCOA",
           "SOAIE",
           "SOAGX",
           "SOAME",
-          "SOAMG",
+          "SOAMG"
         ]
     }
 }
