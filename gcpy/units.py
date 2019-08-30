@@ -108,10 +108,9 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
         data = data_kg * kg_to_kgC
 
     elif target_unit == 'g':
-
         data = data_kg * 1e3
-    elif target_unit == 'g C':
 
+    elif target_unit == 'g C':
         data = data_kg * kg_to_kgC * 1.0e3
 
     else:
@@ -122,13 +121,14 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
     return data
 
 
-def convert_units(dr, species_name, species_properties,
-                  target_units, interval, area_m2):
+def convert_units(dr, species_name, species_properties, target_units,
+                  interval=None, area_m2=None, delta_p=None):
     '''
     Converts data stored in an xarray DataArray object from its native
     units to a target unit.
 
     Args:
+    -----
         dr : xarray DataArray
             Data to be converted from native units to target units.
 
@@ -142,22 +142,31 @@ def convert_units(dr, species_name, species_properties,
         target_units : str
             Units to which the data will be converted.
 
+    Keyword Args (optional):
+    ------------------------
         interval : float
             The length of the averaging period in seconds.
 
         area_m2 : xarray DataArray
             Surface area in square meters
 
+        delta_p: xarray DataArray
+            Delta-pressure between top and bottom edges of grid box (dry air)
+            in hPa
+
     Returns:
+    --------
         dr_new : xarray DataArray
             Data converted to target units.
 
     Remarks:
+    --------
         At present, only certain types of unit conversions have been
         implemented (corresponding to the most commonly used unit
         conversions for model benchmark output).
 
     Example:
+    --------
         >>> import.gcpy
         >>> import xarray as xr
         >>> import json
@@ -170,47 +179,81 @@ def convert_units(dr, species_name, species_properties,
     '''
 
     # Get species molecular weight information
-    mol_wt_g = species_properties.get('MW_g')
-    emitted_mol_wt_g = species_properties.get('EmMW_g')
+    mw_g = species_properties.get('MW_g')
+    emitted_mw_g = species_properties.get('EmMW_g')
     moles_C_per_mole_species = species_properties.get('MolecRatio')
 
-    # Ratio for converting kg species to kg C
-    kg_to_kgC = (emitted_mol_wt_g * moles_C_per_mole_species) / mol_wt_g
+    # ==============================
+    # Compute conversion factors
+    # ==============================
 
+    # Physical constants
+    Avo = 6.022140857e+23  # molec/mol
+    mw_air = 28.97         # g/mole dry air
+    g0 = 9.80665           # m/s2
+
+    # Mass of dry air in kg
+    air_mass = delta_p * 100.0 / g0 * area_m2
+
+    if 'g' in target_units and emitted_mw_g is None:
+        raise ValueError('Conversion to {} for {} requires MW_g definition in species_database.json'.format(target_unit,species_name))
+    
+    # Conversion factor for kg species to kg C
+    if emitted_mw_g is not None and moles_C_per_mole_species is not None :
+         kg_to_kgC = (emitted_mw_g * moles_C_per_mole_species) / mw_g
+    else:
+         kg_to_kgC = 1.0
+         
+    # Conversion factor for v/v to kg
+    # v/v * kg dry air / g/mol dry air * g/mol species = kg species
+    if emitted_mw_g is not None:
+        vv_to_kg = air_mass / mw_air * mw_g  
+        
+    # Conversion factor for v/v to molec/cm3
+    # v/v * kg dry air * mol/g dry air * molec/mol dry air * 1m3/10^6cm3 = molec/cm3 
+    vv_to_MND = air_mass / mw_air * Avo / 1e6
+    
     # Get a consistent value for the units string
     # (ignoring minor differences in formatting)
     units = adjust_units(dr.units)
 
     # ==============================
-    # First compute units to kg
+    # Compute target units
     # ==============================
 
     if units == 'kg/m2/s':
         data_kg = dr.values * area_m2.values * interval
+        data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     elif units == 'kgC/m2/s':
         data_kg = dr.values * area_m2.values * interval / kg_to_kgC
+        data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     elif units == 'kg':
         data_kg = dr.values
+        data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     elif units == 'kgC':
         data_kg = dr.values / kg_to_kgC
+        data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
 #    elif units == 'molec/cm2/s':
 #        # Implement later
 
 #    elif units == 'atomsC/cm2/s':
 #         implement later
+
+    elif units == 'molmol-1dry':
+
+        if 'g' in target_units:
+            data_kg = dr.values * vv_to_kg
+            data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
+
+        elif 'molec' in target_units:
+            data = dr.values * vv_to_MND
+
     else:
         raise ValueError('Units ({}) in variable {} are not supported'.format(units, species_name))
-
-    # ===============================
-    # Then compute to target units
-    # ===============================
-
-    # Convert
-    data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     # ==============================
     # Return result
@@ -222,7 +265,7 @@ def convert_units(dr, species_name, species_properties,
     dr_new = xr.DataArray(data, name=dr.name, coords=dr.coords,
                           dims=dr.dims, attrs=dr.attrs)
     dr_new.attrs['units'] = target_units
-
+    
     # Return to calling routine
     return dr_new
 

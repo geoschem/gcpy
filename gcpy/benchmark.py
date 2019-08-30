@@ -2104,10 +2104,10 @@ def get_emissions_varnames(commonvars, template=None):
     return varnames
 
 
-def create_emission_display_name(diagnostic_name):
+def create_display_name(diagnostic_name):
     '''
-    Converts an emissions diagnostic name to a more easily digestible name
-    that can be used as a plot title or in a table of emissions totals.
+    Converts a diagnostic name to a more easily digestible name
+    that can be used as a plot title or in a table of totals.
 
     Args:
     -----
@@ -2131,13 +2131,16 @@ def create_emission_display_name(diagnostic_name):
     --------
         >>> import gcpy
         >>> diag_name = "EmisCO_Anthro"
-        >>> display_name = gcpy.create_emission_display_name(diag_name)
+        >>> display_name = gcpy.create_display_name(diag_name)
         >>> print(display_name)
         CO Anthro
     '''
 
     # Initialize
     display_name = diagnostic_name
+
+    if 'SpeciesRst' in display_name:
+        display_name = display_name.split('_')[1]
 
     # Special handling for Inventory totals
     if 'INV' in display_name.upper():
@@ -2154,9 +2157,9 @@ def create_emission_display_name(diagnostic_name):
     return display_name
 
 
-def print_emission_totals(ref, refstr, dev, devstr, f):
+def print_totals(ref, refstr, dev, devstr, f):
     '''
-    Computes and prints emission totals for two xarray DataArray objects.
+    Computes and prints Ref and Dev totals for two xarray DataArray objects.
 
     Args:
     -----
@@ -2182,7 +2185,8 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
     Remarks:
     --------
         This is an internal method.  It is meant to be called from method
-        create_total_emissions_table instead of being called directly.
+        create_total_emissions_table or create_global_mass_table instead of
+        being called directly.
     '''
 
     # Error check the ref and dev arguments
@@ -2204,14 +2208,14 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
 
     # Get the diagnostic name and units
     if dev_is_all_nan:
-        diagnostic_name = dev.name
-        units = dev.units
-    else:
         diagnostic_name = ref.name
         units = ref.units
+    else:
+        diagnostic_name = dev.name
+        units = dev.units
 
     # Create the display name by editing the diagnostic name
-    display_name = create_emission_display_name(diagnostic_name)
+    display_name = create_display_name(diagnostic_name)
 
     # Special handling for totals
     if '_TOTAL' in diagnostic_name.upper():
@@ -2237,8 +2241,7 @@ def print_emission_totals(ref, refstr, dev, devstr, f):
 
     # Write output
     print('{} : {:13.6f}  {:13.6f}  {:13.6f} {}'.format(
-        display_name.ljust(25), total_ref,
-        total_dev, diff, units), file=f)
+        display_name.ljust(12), total_ref, total_dev, diff, units), file=f)
 
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
@@ -2458,9 +2461,250 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                          interval, devdata[dev_area_varname])
 
             # Print emission totals for Ref and Dev
-            print_emission_totals(refarray, refstr, devarray, devstr, f)
+            print_totals(refarray, refstr, devarray, devstr, f)
 
         # Add newlines before going to the next species
+        print(file=f)
+        print(file=f)
+
+    # Close file
+    f.close()
+
+
+def create_global_mass_table(refdata, refstr, devdata, devstr,
+                             varlist=None, outfilename='GlobalMass.txt'):
+    '''
+    Creates a table of global masses for a list of species in contained in
+    two data sets.  The data sets,  which typically represent output from two
+    differnet model versions, are usually contained in netCDF data files.
+
+    Args:
+    -----
+        refdata : xarray Dataset
+            The first data set to be compared (aka "Reference").
+
+        refstr : str
+            A string that can be used to identify refdata
+            (e.g. a model version number or other identifier).
+
+        devdata : xarray Dataset
+            The second data set to be compared (aka "Development").
+
+        devstr: str
+            A string that can be used to identify the data set specified
+            by devfile (e.g. a model version number or other identifier).
+
+    Keyword Args (optional):
+    ------------------------
+       varlist : list of strings
+            List of xarray dataset variable names to make plots for
+            Default value: None (will compare all common variables)
+
+        outfilename : str
+            Name of the text file which will contain the table of
+            emissions totals.
+
+    Remarks:
+    --------
+        This method is mainly intended for model benchmarking purposes,
+        rather than as a general-purpose tool.
+
+        Species properties (such as molecular weights) are read from a
+        JSON file called "species_database.json".
+
+    Example:
+    --------
+        Print the global mass of CO and ACET in two different
+        data sets, which represent different model versions:
+
+        >>> include gcpy
+        >>> include xarray as xr
+        >>> reffile = '~/output/12.1.1/GEOSChem.Restart.20160801_0000z.nc'
+        >>> refstr = '12.1.1'
+        >>> refdata = xr.open_dataset(reffile)
+        >>> devfile = '~/output/12.2.0/GEOSChem.Restart.20160801_0000z.nc'
+        >>> devstr = '12.2.0'
+        >>> devdata = xr.open_dataset(devfile)
+        >>> outfilename = '12.2.0_global_mass.txt'
+        >>> species = [ 'SpeciesRst_CO', 'SpeciesRst_ACET' ]
+        >>> create_global_mass_table(refdata, refstr, devdata, devstr,
+            varlist=species, outfilename=outfilename)
+    '''
+
+    # Error check arguments
+    if not isinstance(refdata, xr.Dataset):
+        raise ValueError('The refdata argument must be an xarray Dataset!')
+
+    if not isinstance(devdata, xr.Dataset):
+        raise ValueError('The devdata argument must be an xarray Dataset!')
+
+    # Find all common variables between the two datasets
+    # and get the lists of variables only in Ref and only in Dev,
+    [cvars, cvarsOther, cvars2D, cvars3D, refonly, devonly] = \
+        core.compare_varnames(refdata, devdata, quiet=True)
+    
+    # If no varlist is passed, include all common variables plus ones
+    # that might be in either Ref or Dev only
+    if varlist == None:
+        varlist = cvars3D + refonly + devonly
+    
+    # Load a JSON file containing species properties (such as
+    # molecular weights), which we will need for unit conversions.
+    # This is located in the "data" subfolder of this current directory.2
+    properties_path = os.path.join(os.path.dirname(__file__),
+                                   'species_database.json')
+    properties = json_load_file(open(properties_path))
+    
+    # Open file for output
+    f = open(outfilename, 'w')
+
+    # Print header to file
+    title = '### Global mass at end of simulation'
+    print('#'*79, file=f)
+    print('{}{}'.format(title.ljust(76), '###'), file=f)
+    print('#'*79, file=f)
+    print('{}{}{}{}'.format(' '.ljust(14), refstr.ljust(15),
+                          devstr.ljust(15), 'Dev - Ref'), file=f)
+    
+    for v in varlist:
+        spc_name = v.split('_')[1]
+        
+        # Get a list of properties for the given species
+        species_properties = properties.get(spc_name)
+
+        # If no properties are found, then skip to next species
+        if species_properties is None:
+            print('No properties found for {} ... skippping'.format(
+                  spc_name))
+            continue
+
+        mol_wt_g = species_properties.get('MW_g')
+        if mol_wt_g is not None:
+            target_units = 'Tg'
+        else:
+            target_units = 'molec/cm3'
+            
+        # Convert units of Ref and Dev and save to DataArray objects
+        # (or set to NaN if the variable is not found in Ref or Dev)
+        if v in refonly and v not in devonly:
+          refarray = convert_units(refdata[v], spc_name,
+                                   species_properties, target_units,
+                                   area_m2=refdata['AREA'],
+                                   delta_p=refdata['Met_DELPDRY'])
+          devarray = np.nan
+
+        elif v in devonly and v not in refonly:
+          refarray = np.nan
+          devarray = convert_units(devdata[v], spc_name,
+                                   species_properties, target_units,
+                                   area_m2=devdata['AREA'],
+                                   delta_p=devdata['Met_DELPDRY'])
+
+        else:
+          refarray = convert_units(refdata[v], spc_name,
+                                   species_properties, target_units,
+                                   area_m2=refdata['AREA'],
+                                   delta_p=refdata['Met_DELPDRY'])
+          devarray = convert_units(devdata[v], spc_name,
+                                   species_properties, target_units,
+                                   area_m2=devdata['AREA'],
+                                   delta_p=devdata['Met_DELPDRY'])
+
+        # Print global masses for Ref and Dev
+        print_totals(refarray, refstr, devarray, devstr, f)
+
+        # Add newlines before going to the next species
+        print(file=f)
+        print(file=f)
+
+    # Close file
+    f.close()
+    
+
+def create_budget_table(devdata, devstr, region, species, varnames,
+                        outfilename, interval=2678400.0, template='Budget_{}'):
+    '''
+    Creates a table of budgets by species and component for a data set.
+
+    Args:
+    -----
+        devdata : xarray Dataset
+            The second data set to be compared (aka "Development").
+
+        devstr: str
+            A string that can be used to identify the data set specified
+            by devfile (e.g. a model version number or other identifier).
+
+        region : str
+            Name of region for which budget will be computed.
+
+        species : List of strings
+            List of species  to include in budget tables.
+
+        varnames : List of strings
+            List of variable names in the budget diagnostics.
+
+        outfilename : str
+            Name of the text file which will contain the table of
+            emissions totals.
+
+    Keyword Args (optional):
+    ------------------------
+        interval : float
+            The length of the data interval in seconds. By default, interval
+            is set to the number of seconds in a 31-day month (86400 * 31),
+            which corresponds to typical benchmark simulation output.
+
+        template : str
+            Template for the diagnostic names that are contained in the
+            data set. If not specified, template will be set to "Budget_{}",
+            where {} will be replaced by the species name.
+
+    Remarks:
+    --------
+        This method is mainly intended for model benchmarking purposes,
+        rather than as a general-purpose tool.
+    '''
+
+    # Error check arguments
+    if not isinstance(devdata, xr.Dataset):
+        raise ValueError('The devdata argument must be an xarray Dataset!')
+
+    # Open file for output
+    f = open(outfilename, 'w')
+
+    for spc_name in species:
+
+        # Title string
+        title = '### {} budget totals for species {}'.format(devstr,spc_name)
+    
+        # Write header to file
+        print('#'*79, file=f)
+        print('{}{}'.format(title.ljust(76), '###'), file=f)
+        print('#'*79, file=f)
+
+        # Get variable names for this species
+        spc_vars = [ v for v in varnames if v.endswith('_'+spc_name) ]
+
+        for v in spc_vars:
+
+            # Component name
+            comp_name = v.replace('Budget', '')
+            comp_name = comp_name.replace('_'+spc_name, '')
+            comp_name = comp_name.replace(region, '')
+        
+            # Convert from kg/s to Tg
+            devarray = devdata[v] * interval * 1e-9
+            units    = 'Tg'
+        
+            # Compute sum
+            total_dev = np.sum(devarray.values)
+
+            # Write output
+            print('{} : {:13.6e} {}'.format(comp_name.ljust(12),
+                                            total_dev, units), file=f)
+
+        # Add new lines before going to the next species
         print(file=f)
         print(file=f)
 
@@ -3597,96 +3841,134 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
                 print(file=f)
                 f.close()
 
-
-def create_budget_table(devdata, devstr, region, species, varnames,
-                        outfilename, interval=2678400.0, template='Budget_{}'):
+def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
+                               varlist=None,
+                               dst='./1mo_benchmark',
+                               overwrite=False, verbose=False,
+                               restrict_cats=[] ):
     '''
-    Creates a table of budgets by species and component for a data set.
+    Creates a text file containing global mass totals by species and
+    category for benchmarking purposes.
 
     Args:
     -----
-        devdata : xarray Dataset
-            The second data set to be compared (aka "Development").
+        reflist:  list of str
+             List with the path names of the restart file and met field file
+             that will constitute the "Ref" (aka "Reference") data set.
 
-        devstr: str
-            A string that can be used to identify the data set specified
-            by devfile (e.g. a model version number or other identifier).
+        refstr : str
+            A string to describe ref (e.g. version number)
 
-        region : str
-            Name of region for which budget will be computed.
+        devlist : str
+            List with the path names of the restart file and met field file
+            that will constitute the "Dev" (aka "Development") data set.
+            The "Dev" data set will be compared against the "Ref" data set.
 
-        species : List of strings
-            List of species  to include in budget tables.
-
-        varnames : List of strings
-            List of variable names in the budget diagnostics.
-
-        outfilename : str
-            Name of the text file which will contain the table of
-            emissions totals.
+        devstr : str
+            A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
     ------------------------
-        interval : float
-            The length of the data interval in seconds. By default, interval
-            is set to the number of seconds in a 31-day month (86400 * 31),
-            which corresponds to typical benchmark simulation output.
+        varlist : list of str
+            List of J-value variables to plot.  If not passed, 
+            then all J-value variables common to both dev 
+            and ref will be plotted.  The varlist argument can be
+            a useful way of restricting the number of variables
+            plotted to the pdf file when debugging.
+            Default value: None
 
-        template : str
-            Template for the diagnostic names that are contained in the
-            data set. If not specified, template will be set to "Budget_{}",
-            where {} will be replaced by the species name.
+        dst : str
+            A string denoting the destination folder where the file
+            containing emissions totals will be written.
+            Default value: ./1mo_benchmark
 
-    Remarks:
-    --------
-        This method is mainly intended for model benchmarking purposes,
-        rather than as a general-purpose tool.
+        overwrite : boolean
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value : False
+
+        verbose : boolean
+            Set this flag to True to print extra informational output.
+            Default value: False.
+
+        restrict_cats : list of strings
+            List of benchmark categories in benchmark_categories.json to make
+            plots for. If empty, plots are made for all categories.
+            Default value: empty
     '''
 
-    # Error check arguments
-    if not isinstance(devdata, xr.Dataset):
-        raise ValueError('The devdata argument must be an xarray Dataset!')
+    # ===============================================================
+    # Define destination directory
+    # ===============================================================
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
 
-    # Open file for output
-    f = open(outfilename, 'w')
-
-    for spc_name in species:
-
-        # Title string
-        title = '### {} budget totals for species {}'.format(devstr,spc_name)
+    # ===============================================================
+    # Read data from netCDF into Dataset objects
+    # ===============================================================
     
-        # Write header to file
-        print('#'*79, file=f)
-        print('{}{}'.format(title.ljust(76), '###'), file=f)
-        print('#'*79, file=f)
+    # Ref
+    try:
+        refds = xr.open_dataset(reflist[0])
+    except FileNotFoundError:
+        print('Could not find Ref file: {}'.format(reflist[0]))
+        raise
+    refds = core.add_lumped_species_to_dataset(refds, verbose=verbose,
+                                               prefix='SpeciesRst_')
+    
+    # Dev dataset
+    try:
+        devds = xr.open_dataset(devlist[0])
+    except FileNotFoundError:
+        print('Could not find Dev file: {}!'.format(devlist[0]))
+        raise
+    devds = core.add_lumped_species_to_dataset(devds, verbose=verbose,
+                                               prefix='SpeciesRst_')
 
-        # Get variable names for this species
-        spc_vars = [ v for v in varnames if v.endswith('_'+spc_name) ]
+    catdict = get_species_categories()
+    
+    archive_species_categories(dst)
+    core.archive_lumped_species_definitions(dst)
 
-        for v in spc_vars:
+    # Make sure that Ref and Dev datasets have the same variables.
+    # Variables that are in Ref but not in Dev will be added to Dev
+    # with all missing values (NaNs). And vice-versa.
+    [refds, devds] = add_missing_variables(refds, devds)
+    
+    # ===============================================================
+    # Create the tables
+    # ===============================================================
+    for i, filecat in enumerate(catdict):
 
-            # Component name
-            comp_name = v.replace('Budget', '')
-            comp_name = comp_name.replace('_'+spc_name, '')
-            comp_name = comp_name.replace(region, '')
-        
-            # Convert from kg/s to Tg
-            devarray = devdata[v] * interval * 1e-9
-            units    = 'Tg'
-        
-            # Compute sum
-            total_dev = np.sum(devarray.values)
+        # If restrict_cats list is passed,
+        # skip all categories except those in the list
+        if restrict_cats and filecat not in restrict_cats:
+            continue
 
-            # Write output
-            print('{} : {:13.6e} {}'.format(comp_name.ljust(12),
-                                            total_dev, units), file=f)
+        catdir = os.path.join(dst,filecat)
+        if not os.path.isdir(catdir):
+            os.mkdir(catdir)
+        varlist = []
+        warninglist = []
+        for subcat in catdict[filecat]:
+            for spc in catdict[filecat][subcat]:
+                varname = 'SpeciesRst_'+spc
+                if varname not in refds.data_vars or varname not in devds.data_vars:
+                    warninglist.append(varname)
+                    continue
+                varlist.append(varname)
+        if warninglist != []:
+            print('\n\nWarning: variables in {} category not in dataset: {}'.format(filecat,warninglist))
+    
+        # Destination files
+        mass_file = os.path.join(catdir, '{}_GlobalMass.txt').format(filecat)
 
-        # Add new lines before going to the next species
-        print(file=f)
-        print(file=f)
-
-    # Close file
-    f.close()
+        # Write to file
+        create_global_mass_table(refds, refstr, devds, devstr, 
+                                 varlist=varlist, outfilename=mass_file)
 
     
 def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
