@@ -1967,7 +1967,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Use is_absdiff_all_zero to force the plot to show as all gray
         # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
-        if is_absdiff_all_zero or fracdiff_is_all_nan:
+        if absdiff_is_all_zero or fracdiff_is_all_nan:
             cb.set_ticks([0.0])
             if fracdiff_is_all_nan:
                 cb.set_ticklabels(['Undefined throughout domain'])
@@ -2023,7 +2023,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Use is_absdiff_all_zero to force the plot to show as all gray
         # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
-        if is_absdiff_all_zero or fracdiff_is_all_nan:
+        if absdiff_is_all_zero or fracdiff_is_all_nan:
             cb.set_ticks([0.0])
             if fracdiff_is_all_nan:
                 cb.set_ticklabels(['Undefined throughout domain'])
