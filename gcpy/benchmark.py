@@ -1734,8 +1734,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (0,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin1, vmax1,
-                                 log_color_scale=log_color_scale)
+        norm = normalize_colors(vmin, vmax,
+                                log_color_scale=log_color_scale)
 
         # Plot data for either lat-lon or cubed-sphere grids.
         if devgridtype == 'll':
