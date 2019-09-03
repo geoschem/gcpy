@@ -378,12 +378,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 ds_ref = refdata[varname].isel(time=itime,lev=71-ilev)
             else:
                 ds_ref = refdata[varname].isel(time=itime,lev=ilev)
-        elif 'lev' in vdims:
+        elif 'time' not in vdims and 'lev' in vdims:
             if flip_ref:
                 ds_ref = refdata[varname].isel(lev=71-ilev)
             else:
                 ds_ref = refdata[varname].isel(lev=ilev)
-        elif 'time' in vdims: 
+        elif 'time' in vdims and 'lev' not in vdims:
             ds_ref = refdata[varname].isel(time=itime)
         else:
             ds_ref = refdata[varname]
@@ -395,12 +395,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                 ds_dev = devdata[varname].isel(time=itime,lev=71-ilev)
             else:
                 ds_dev = devdata[varname].isel(time=itime,lev=ilev)
-        elif 'lev' in vdims:
+        elif 'time' not in vdims and 'lev' in vdims:
             if flip_dev:
                 ds_dev = devdata[varname].isel(lev=71-ilev)
             else:
                 ds_dev = devdata[varname].isel(lev=ilev)
-        elif 'time' in vdims: 
+        elif 'time' in vdims and 'lev' not in vdims:
             ds_dev = devdata[varname].isel(time=itime)
         else:
             ds_dev = devdata[varname]
@@ -1506,12 +1506,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Get comparison data sets, regridding input slices if needed
         ###############################################################
 
-        # Flip in the veritical if applicable
+        # Flip in the vertical if applicable
         if flip_ref:
             ds_ref.data = ds_ref.data[::-1,:,:]
         if flip_dev:
-            ds_ref.data = ds_ref.data[::-1,:,:]
-            
+            ds_dev.data = ds_dev.data[::-1,:,:]
+
         # Reshape ref/dev cubed sphere data, if any
         if refgridtype == 'cs':
             ds_ref_reshaped = ds_ref.data.reshape(nlev,6,refres,refres).swapaxes(0,1)
