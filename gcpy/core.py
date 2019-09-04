@@ -724,3 +724,47 @@ def divide_dataset_by_dataarray(ds, dr, varlist=None):
     # Return the modified Dataset
     # -----------------------------
     return ds
+
+
+def get_dataarray_shape(dr):
+    '''
+    Convenience routine to return the shape of an xarray DataArray
+    object.  Returns the size of each dimension in the preferred
+    netCDF ordering (time, lev|ilev, lat, lon).
+
+    Args:
+    -----
+    dr : xarray DataArray
+        The input DataArray object.
+
+    Returns:
+    --------
+    sizes : tuple of int
+        Tuple containing the sizes of each dimension of dr in order:
+        (time, lev|ilev, lat, lon).
+    '''
+
+    # Make sure that dr is an xarray Dataarray
+    if not isinstance(dr, xr.DataArray):
+        raise ValueError('dr must be of type xarray DataArray!')
+    
+    # Initialize
+    sizes = ()
+
+    # Add the size of each dimension to the return value
+    if 'time' in dr.sizes:
+        nT = dr.sizes['time']
+        sizes += (nT,)
+    if 'lev' in dr.sizes or 'ilev' in dr.sizes:
+        nZ = dr.sizes['lev']
+        sizes += (nZ,) 
+    if 'lat' in dr.sizes:
+        nY = dr.sizes['lat']
+        sizes += (nY,)
+    if 'lon' in dr.sizes:
+        nX = dr.sizes['lon']
+        sizes += (nX,)
+
+    # Return the result
+    return sizes
+    
