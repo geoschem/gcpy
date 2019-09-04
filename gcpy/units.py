@@ -122,7 +122,7 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
 
 
 def convert_units(dr, species_name, species_properties, target_units,
-                  interval=None, area_m2=None, delta_p=None):
+                  interval=None, area_m2=None, delta_p=None, box_height=None):
     '''
     Converts data stored in an xarray DataArray object from its native
     units to a target unit.
@@ -150,9 +150,12 @@ def convert_units(dr, species_name, species_properties, target_units,
         area_m2 : xarray DataArray
             Surface area in square meters
 
-        delta_p: xarray DataArray
+        delta_p : xarray DataArray
             Delta-pressure between top and bottom edges of grid box (dry air)
             in hPa
+
+        box_height : xarray DataArray
+            Grid box height in meters
 
     Returns:
     --------
@@ -210,8 +213,9 @@ def convert_units(dr, species_name, species_properties, target_units,
         vv_to_kg = air_mass / mw_air * mw_g  
         
     # Conversion factor for v/v to molec/cm3
-    # v/v * kg dry air * mol/g dry air * molec/mol dry air * 1m3/10^6cm3 = molec/cm3 
-    vv_to_MND = air_mass / mw_air * Avo / 1e6
+    # v/v * kg dry air * mol/g dry air * molec/mol dry air /
+    #  (area_m2 * box_height ) * 1m3/10^6cm3 = molec/cm3 
+    vv_to_MND = air_mass / mw_air * Avo / ( area_m2 * box_height) / 1e6
     
     # Get a consistent value for the units string
     # (ignoring minor differences in formatting)

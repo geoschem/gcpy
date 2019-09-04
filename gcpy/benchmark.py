@@ -2157,7 +2157,7 @@ def create_display_name(diagnostic_name):
     return display_name
 
 
-def print_totals(ref, refstr, dev, devstr, f):
+def print_totals(ref, refstr, dev, devstr, f, trop_only=False, trop_lev=None):
     '''
     Computes and prints Ref and Dev totals for two xarray DataArray objects.
 
@@ -2171,7 +2171,7 @@ def print_totals(ref, refstr, dev, devstr, f):
             A string that can be used to identify refdata.
             (e.g. a model version number or other identifier).
 
-        dev : xarray DatArray or np.nan
+        dev : xarray DataArray or np.nan
             The second DataArray to be compared (aka "Development")
             NOTE: To denote a missing variable in ref, use np.nan.
 
@@ -2181,6 +2181,16 @@ def print_totals(ref, refstr, dev, devstr, f):
 
         f : file
             File object denoting a text file where output will be directed.
+
+    Keyword Args (optional):
+    ------------------------
+        trop_only : boolean
+            Set this flag to True to compute totals in the troposphere only
+            Default value : False
+
+        trop_lev : xarray DataArray
+            Tropopause level
+            Default value : None
 
     Remarks:
     --------
@@ -2195,6 +2205,10 @@ def print_totals(ref, refstr, dev, devstr, f):
     if not isinstance(ref, xr.DataArray):
         raise ValueError('The ref argument must be an xarray DataArray!')
 
+    # Error check troposphere only arguments
+    if trop_only and trop_lev is None:
+        raise ValueError('Trop_lev must be passed to use trop_only option')
+    
     # Determine if either Ref or Dev have all NaN values:
     ref_is_all_nan = np.isnan(ref.values).all()
     dev_is_all_nan = np.isnan(dev.values).all()
@@ -2225,13 +2239,29 @@ def print_totals(ref, refstr, dev, devstr, f):
     if ref_is_all_nan:
         total_ref = np.nan
     else:
-        total_ref = np.sum(ref.values)
+        if trop_only:
+          total_ref = 0.0
+          for x in range(len(ref.lon)):
+            for y in range(len(ref.lat)):
+              maxlev=int(trop_lev[0,y,x].values)
+              for z in range(maxlev):
+                total_ref = total_ref + ref[0,z,y,x].values
+        else:
+            total_ref = np.sum(ref.values)
 
     # Sum the Dev array (or set to NaN if missing)
     if dev_is_all_nan:
         total_dev = np.nan
     else:
-        total_dev = np.sum(dev.values)
+        if trop_only:
+          total_dev = 0.0
+          for x in range(len(dev.lon)):
+            for y in range(len(dev.lat)):
+              maxlev=int(trop_lev[0,y,x].values)
+              for z in range(maxlev):
+                total_dev = total_dev + dev[0,z,y,x].values
+        else:
+          total_dev = np.sum(dev.values)
 
     # Compute differences (or set to NaN if missing)
     if ref_is_all_nan and dev_is_all_nan:
@@ -2240,9 +2270,14 @@ def print_totals(ref, refstr, dev, devstr, f):
         diff = total_dev - total_ref
 
     # Write output
-    print('{} : {:13.6f}  {:13.6f}  {:13.6f} {}'.format(
-        display_name.ljust(12), total_ref, total_dev, diff, units), file=f)
-
+    if ( total_ref > 1e3 or total_ref < 1e-3 or
+         total_dev > 1e3 or total_dev < 1e-3 ):
+       # Use scientific notation
+       print('{} : {:13.6e}  {:13.6e}  {:13.6e} {}'.format(
+           display_name.ljust(12), total_ref, total_dev, diff, units), file=f)
+    else:
+        print('{} : {:13.6f}  {:13.6f}  {:13.6f} {}'.format(
+           display_name.ljust(12), total_ref, total_dev, diff, units), file=f)
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                  species, outfilename,
@@ -2459,7 +2494,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                 devarray = convert_units(devdata[v], spc_name,
                                          species_properties, target_units,
                                          interval, devdata[dev_area_varname])
-
+                
             # Print emission totals for Ref and Dev
             print_totals(refarray, refstr, devarray, devstr, f)
 
@@ -2574,23 +2609,25 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
 
         # If no properties are found, then skip to next species
         if species_properties is None:
-            print('No properties found for {} ... skippping'.format(
-                  spc_name))
+            print('No properties found for {} ... skippping'.format(spc_name))
             continue
 
+        # Specify target units
+        target_units = 'Tg'
         mol_wt_g = species_properties.get('MW_g')
-        if mol_wt_g is not None:
-            target_units = 'Tg'
-        else:
-            target_units = 'molec/cm3'
-            
+        if mol_wt_g is None:
+#            print('No molecular weight found for {} ... skippping'.format(
+#                  spc_name))
+            continue
+        
         # Convert units of Ref and Dev and save to DataArray objects
         # (or set to NaN if the variable is not found in Ref or Dev)
         if v in refonly and v not in devonly:
           refarray = convert_units(refdata[v], spc_name,
                                    species_properties, target_units,
                                    area_m2=refdata['AREA'],
-                                   delta_p=refdata['Met_DELPDRY'])
+                                   delta_p=refdata['Met_DELPDRY'],
+                                   box_height=refdata['Met_BXHEIGHT'])
           devarray = np.nan
 
         elif v in devonly and v not in refonly:
@@ -2598,24 +2635,24 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
           devarray = convert_units(devdata[v], spc_name,
                                    species_properties, target_units,
                                    area_m2=devdata['AREA'],
-                                   delta_p=devdata['Met_DELPDRY'])
+                                   delta_p=devdata['Met_DELPDRY'],
+                                   box_height=devdata['Met_BXHEIGHT'])
 
         else:
           refarray = convert_units(refdata[v], spc_name,
                                    species_properties, target_units,
                                    area_m2=refdata['AREA'],
-                                   delta_p=refdata['Met_DELPDRY'])
+                                   delta_p=refdata['Met_DELPDRY'],
+                                   box_height=refdata['Met_BXHEIGHT'])
           devarray = convert_units(devdata[v], spc_name,
                                    species_properties, target_units,
                                    area_m2=devdata['AREA'],
-                                   delta_p=devdata['Met_DELPDRY'])
+                                   delta_p=devdata['Met_DELPDRY'],
+                                   box_height=devdata['Met_BXHEIGHT'])
 
         # Print global masses for Ref and Dev
-        print_totals(refarray, refstr, devarray, devstr, f)
-
-        # Add newlines before going to the next species
-        print(file=f)
-        print(file=f)
+        print_totals(refarray, refstr, devarray, devstr, f,
+                     trop_only=True, trop_lev=devdata['Met_TropLev'])
 
     # Close file
     f.close()
@@ -3844,8 +3881,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
 def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
                                varlist=None,
                                dst='./1mo_benchmark',
-                               overwrite=False, verbose=False,
-                               restrict_cats=[] ):
+                               overwrite=False, verbose=False):
     '''
     Creates a text file containing global mass totals by species and
     category for benchmarking purposes.
@@ -3890,11 +3926,6 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
         verbose : boolean
             Set this flag to True to print extra informational output.
             Default value: False.
-
-        restrict_cats : list of strings
-            List of benchmark categories in benchmark_categories.json to make
-            plots for. If empty, plots are made for all categories.
-            Default value: empty
     '''
 
     # ===============================================================
@@ -3916,8 +3947,6 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(reflist[0]))
         raise
-    refds = core.add_lumped_species_to_dataset(refds, verbose=verbose,
-                                               prefix='SpeciesRst_')
     
     # Dev dataset
     try:
@@ -3925,50 +3954,30 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     except FileNotFoundError:
         print('Could not find Dev file: {}!'.format(devlist[0]))
         raise
-    devds = core.add_lumped_species_to_dataset(devds, verbose=verbose,
-                                               prefix='SpeciesRst_')
-
-    catdict = get_species_categories()
-    
-    archive_species_categories(dst)
-    core.archive_lumped_species_definitions(dst)
 
     # Make sure that Ref and Dev datasets have the same variables.
     # Variables that are in Ref but not in Dev will be added to Dev
     # with all missing values (NaNs). And vice-versa.
     [refds, devds] = add_missing_variables(refds, devds)
-    
+
+    # Create list of variables
+    varlist = []
+    for v in devds.data_vars:
+        if 'SpeciesRst_' not in v:
+            continue
+        varlist.append(v)
+    varlist.sort()
+
     # ===============================================================
     # Create the tables
     # ===============================================================
-    for i, filecat in enumerate(catdict):
 
-        # If restrict_cats list is passed,
-        # skip all categories except those in the list
-        if restrict_cats and filecat not in restrict_cats:
-            continue
+    # Destination file
+    mass_file = os.path.join(dst, '{}_GlobalMass.txt').format(devstr)
 
-        catdir = os.path.join(dst,filecat)
-        if not os.path.isdir(catdir):
-            os.mkdir(catdir)
-        varlist = []
-        warninglist = []
-        for subcat in catdict[filecat]:
-            for spc in catdict[filecat][subcat]:
-                varname = 'SpeciesRst_'+spc
-                if varname not in refds.data_vars or varname not in devds.data_vars:
-                    warninglist.append(varname)
-                    continue
-                varlist.append(varname)
-        if warninglist != []:
-            print('\n\nWarning: variables in {} category not in dataset: {}'.format(filecat,warninglist))
-    
-        # Destination files
-        mass_file = os.path.join(catdir, '{}_GlobalMass.txt').format(filecat)
-
-        # Write to file
-        create_global_mass_table(refds, refstr, devds, devstr, 
-                                 varlist=varlist, outfilename=mass_file)
+    # Write to file
+    create_global_mass_table(refds, refstr, devds, devstr, 
+                             varlist=varlist, outfilename=mass_file)
 
     
 def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
@@ -4378,7 +4387,7 @@ def add_missing_variables(refdata, devdata):
         name = refdata[v].name
         dims = refdata[v].dims
         attrs = refdata[v].attrs
-        
+
         # Create a new DataArray of NaN's so and add it to devdata,
         # but use the same name and attributes as in refdata.
         dr = xr.DataArray(dev_nan, name=name, dims=dev_dict,
