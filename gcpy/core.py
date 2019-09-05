@@ -11,6 +11,7 @@ import xbpch
 import numpy as np
 import json
 import shutil
+import matplotlib.colors as mcolors
 
 # JSON files to read
 lumped_spc = 'lumped_species.json'
@@ -581,11 +582,14 @@ def archive_lumped_species_definitions(dst):
 
     
 def add_lumped_species_to_dataset(ds, lspc_dict={}, lspc_json='',
-                                  verbose=False, overwrite=False, prefix='SpeciesConc_'):
+                                  verbose=False, overwrite=False,
+                                  prefix='SpeciesConc_'):
 
-    # Default is to add all benchmark lumped species. Can overwrite by passing a dictionary
+    # Default is to add all benchmark lumped species.
+    # Can overwrite by passing a dictionary
     # or a json file path containing one
-    assert not (lspc_dict != {} and lspc_json != ''), 'Cannot pass both lspc_dict and lspc_json. Choose one only.'
+    assert not (lspc_dict != {} and lspc_json != ''), \
+        'Cannot pass both lspc_dict and lspc_json. Choose one only.'
     if lspc_dict == {} and lspc_json == '':
         lspc_dict = get_lumped_species_definitions()
     elif lspc_dict == {} and lspc_json != '':
@@ -720,9 +724,6 @@ def divide_dataset_by_dataarray(ds, dr, varlist=None):
             # Divide each variable of ds by dr
             ds[v] = ds[v] / dr
 
-    # -----------------------------
-    # Return the modified Dataset
-    # -----------------------------
     return ds
 
 
@@ -741,7 +742,7 @@ def get_dataarray_shape(dr):
     --------
     sizes : tuple of int
         Tuple containing the sizes of each dimension of dr in order:
-        (time, lev|ilev, lat, lon).
+        (time, lev|ilev, lat|YDim, lon|XDim).
     '''
 
     # Make sure that dr is an xarray Dataarray
@@ -750,21 +751,129 @@ def get_dataarray_shape(dr):
     
     # Initialize
     sizes = ()
+    dims = ['time', 'lev', 'ilev', 'lat', 'YDim', 'lon', 'XDim']
 
-    # Add the size of each dimension to the return value
-    if 'time' in dr.sizes:
-        nT = dr.sizes['time']
-        sizes += (nT,)
-    if 'lev' in dr.sizes or 'ilev' in dr.sizes:
-        nZ = dr.sizes['lev']
-        sizes += (nZ,) 
-    if 'lat' in dr.sizes:
-        nY = dr.sizes['lat']
-        sizes += (nY,)
-    if 'lon' in dr.sizes:
-        nX = dr.sizes['lon']
-        sizes += (nX,)
+    # Return a tuple with the size of each found dimension
+    for d in dims:
+        if d in dr.sizes:
+            sizes += (dr.sizes[d],)
 
-    # Return the result
     return sizes
+
+
+def get_area_from_dataset(ds):
+    '''
+    Convenience routine to return the area variable (which is
+    usually called "AREA" for GEOS-Chem "Classic" or "Met_AREAM2"
+    for GCHP) from an xarray Dataset object.
+
+    Args:
+    -----
+        ds : xarray Dataset
+            The input dataset.
+
+    Returns:
+    --------
+        area_m2 : xarray DataArray
+            The surface area in m2, as found in ds.
+    '''
     
+    if 'Met_AREAM2' in ds.data_vars.keys():
+        return ds['Met_AREAM2']
+    elif 'AREA' in ds.data_vars.keys():
+        return ds['AREA']
+    else:
+        msg = 'An area variable ("AREA" or "Met_AREAM2" is missing' + \
+              ' from this dataset!'
+        raise ValueError(msg)
+
+
+def get_variables_from_dataset(ds, varlist):
+    '''
+    Convenience routine to return selected DataArray variables
+    from an xarray Dataset.  All variables must be found in the
+    Dataset, or else an error will be raised.
+
+    Args:
+    -----
+        ds : xarray Dataset
+            The input dataset.
+
+        varlist : list of str
+            List of DataArray variables to extract from ds.
+
+    Returns:
+    --------
+        data_arrays : list of xarray DataArray
+            The DataArray variables corr
+    '''
+
+    data_arrays = []
+    for v in varlist:
+        if v in ds.data_vars.keys():
+            data_arrays.append(ds[v])
+        else:
+            msg = '{} was not found in this dataset!'.format(v)
+            raise ValueError(msg)
+
+    return data_arrays
+
+
+def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
+    '''
+    Normalizes colors to the range of 0..1 for input to matplotlib-based
+    plotting functions, given the max & min values of a data range.
+
+    For log-color scales, special handling is done to prevent
+    taking the log of data that is all zeroes.
+
+    Args:
+    -----
+        vmin : float
+            Minimum value of the data range.
+
+        vmax : float
+            Maximum value of the data range.
+
+    Keyword Args:
+    -------------
+        is_difference : boolean
+            Set this switch to denote that we are using a difference
+            color scale (i.e. with zero in the middle of the range).
+            Default value: False
+
+        log_color_scale : boolean
+            Logical flag to denote that we are using a logarithmic
+            color scale instead of a linear color scale.
+            Default value: False
+
+    Returns:
+    --------
+        norm : matplotlib Norm
+            The normalized colors (with range 0..1), stored in
+            a matplotlib Norm object.
+
+    Remarks:
+    --------
+         For log color scales, we will use a range of 3 orders of
+         magnitude (i.e. from vmax/1e3 to vmax).
+    '''
+    if (vmin == 0 and vmax == 0) or (np.isnan(vmin) and np.isnan(vmax)):
+
+        # If the min and max of the data are both zero, then normalize
+        # the data range so that the color corresponding to zero (i.e.
+        # white) is placed at 0.5 for difference colormaps (like RdBu)
+        # and at 0.0 for non-difference colormaps (like WhGrYlRd).
+        if is_difference:
+            return mcolors.Normalize(vmin=-1.0, vmax=1.0)
+        else:
+            return mcolors.Normalize(vmin=0.0, vmax=1.0)
+            
+    else:
+
+        # For log color scales, assume a range 3 orders of magnitude
+        # below the maximum value.  Otherwise use a linear scale.
+        if log_color_scale:
+            return mcolors.LogNorm(vmin=vmax/1e3, vmax=vmax)
+        else:
+            return mcolors.Normalize(vmin=vmin, vmax=vmax)

@@ -636,9 +636,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (0,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax,
-                                is_difference=use_cmap_RdBu,
-                                log_color_scale=log_color_scale)
+        norm = core.normalize_colors(vmin, vmax,
+                                     is_difference=use_cmap_RdBu,
+                                     log_color_scale=log_color_scale)
 
         # Plot data for either lat-lon or cubed-sphere grids.
         ax0.coastlines()
@@ -721,9 +721,9 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (0,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax,
-                                is_difference=use_cmap_RdBu,
-                                log_color_scale=log_color_scale)
+        norm = core.normalize_colors(vmin, vmax,
+                                     is_difference=use_cmap_RdBu,
+                                     log_color_scale=log_color_scale)
 
         # Plot for either lat-lon or cubed-sphere
         ax1.coastlines()
@@ -818,7 +818,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (1,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax, is_difference=True)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
         # Create plots
         ax2.coastlines()
@@ -882,7 +882,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (1,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax, is_difference=True)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
         # Create plots
         ax3.coastlines()
@@ -970,7 +970,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (2,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax, is_difference=True)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
         # Create plots
         ax4.coastlines()
@@ -1035,7 +1035,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (2,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax, is_difference=True)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
         # Create plots
         ax5.coastlines()
@@ -1680,9 +1680,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (0,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax,
-                                is_difference=use_cmap_RdBu,
-                                log_color_scale=log_color_scale)
+        norm = core.normalize_colors(vmin, vmax,
+                                     is_difference=use_cmap_RdBu,
+                                     log_color_scale=log_color_scale)
 
         # Plot data for either lat-lon or cubed-sphere grids
         if refgridtype == 'll':
@@ -1752,8 +1752,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (0,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax,
-                                log_color_scale=log_color_scale)
+        norm = core.normalize_colors(vmin, vmax,
+                                     log_color_scale=log_color_scale)
 
         # Plot data for either lat-lon or cubed-sphere grids.
         if devgridtype == 'll':
@@ -1837,7 +1837,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (1,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax, is_difference=True)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
         # Create the plot
         plot2 = ax2.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
@@ -1895,7 +1895,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (1,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax, is_difference=True)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
         # Create the plot
         plot3 = ax3.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
@@ -1963,7 +1963,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (2,0) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax, is_difference=True)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
         # Create the plot
         plot4 = ax4.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
@@ -2019,7 +2019,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             print('Subplot (2,1) vmin, vmax: {}, {}'.format(vmin, vmax))
 
         # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = normalize_colors(vmin, vmax, is_difference=True)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
         # Create the plot
         plot5 = ax5.pcolormesh(cmpgrid['lat_b'], pedge[pedge_ind],
@@ -2173,23 +2173,22 @@ def create_display_name(diagnostic_name):
     return display_name
 
 
-def print_totals(ref, refstr, dev, devstr, f):
+def print_totals(ref, refstr, dev, devstr, f, met_and_masks=None):
     '''
-    Computes and prints Ref and Dev totals for two xarray DataArray objects.
+    Computes and prints Ref and Dev totals (as well as the difference
+    Dev - Ref) for two xarray DataArray objects.
 
     Args:
     -----
-        ref : xarray DataArray or np.nan
+        ref : xarray DataArray
             The first DataArray to be compared (aka "Reference")
-            NOTE: To denote a missing variable in ref, use np.nan.
 
         refstr : str
             A string that can be used to identify refdata.
             (e.g. a model version number or other identifier).
 
-        dev : xarray DataArray or np.nan
+        dev : xarray DataArray
             The second DataArray to be compared (aka "Development")
-            NOTE: To denote a missing variable in ref, use np.nan.
 
         devstr : str
             A string that can be used to identify devdata
@@ -2197,6 +2196,14 @@ def print_totals(ref, refstr, dev, devstr, f):
 
         f : file
             File object denoting a text file where output will be directed.
+
+    Keyword Arguments (optional):
+    -----------------------------
+        met_and_masks : dict of xarray DataArray
+            Dictionary containing the tropospheric mask arrays
+            for Ref and Dev.  If this keyword argument is passed,
+            then print_totals will print tropospheric totals
+            Default value: None (i.e. print whole-atmosphere totals)
 
     Remarks:
     --------
@@ -2206,7 +2213,7 @@ def print_totals(ref, refstr, dev, devstr, f):
     '''
 
     # ==================================================================
-    # Initialization
+    # Initialization and error checks
     # ==================================================================
 
     # Make sure that both Ref and Dev are xarray DataArray objects
@@ -2236,7 +2243,9 @@ def print_totals(ref, refstr, dev, devstr, f):
                 ref_shape, dev_shape)
             raise ValueError(msg)
 
+    # ==================================================================
     # Get the diagnostic name and units
+    # ==================================================================
     if dev_is_all_nan:
         diagnostic_name = ref.name
         units = ref.units
@@ -2257,7 +2266,11 @@ def print_totals(ref, refstr, dev, devstr, f):
     if ref_is_all_nan:
         total_ref = np.nan
     else:
-        total_ref = np.sum(ref.values)
+        if met_and_masks is None:
+            total_ref = np.sum(ref.values)
+        else:
+            arr = np.ma.masked_array(ref.values, met_and_masks['Ref_TropMask'])
+            total_ref = np.sum(arr)
 
     # ==================================================================
     # Sum the Dev array (or set to NaN if missing)
@@ -2265,7 +2278,11 @@ def print_totals(ref, refstr, dev, devstr, f):
     if dev_is_all_nan:
         total_dev = np.nan
     else:
-        total_dev = np.sum(dev.values)
+        if met_and_masks is None:
+            total_dev = np.sum(dev.values)
+        else:
+            arr = np.ma.masked_array(dev.values, met_and_masks['Dev_TropMask'])
+            total_dev = np.sum(arr)
 
     # ==================================================================
     # Compute differences (or set to NaN if missing)
@@ -2491,29 +2508,45 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                       spc_name))
                 continue
 
-            # Convert units of Ref and Dev and save to DataArray objects
+            # Convert units of Ref and Dev and save to nuypy ndarray objects
             # (or set to NaN if the variable is not found in Ref or Dev)
             if v in refonly and v not in devonly:
+
+                # Convert units of Ref
                 refarray = convert_units(refdata[v], spc_name,
                                          species_properties, target_units,
                                          interval, refdata[ref_area_varname])
-                devarray = np.nan
+
+                # Set Dev to NaN everywhere (quick way: copy Ref first)
+                with xr.set_options(keep_attrs=True):
+                    devarray = refarray
+                    devarray.values = np.nan
 
             elif v in devonly and v not in refonly:
-                refarray = np.nan
+
+                # Convert units of Dev
                 devarray = convert_units(devdata[v], spc_name,
                                          species_properties, target_units,
                                          interval, devdata[dev_area_varname])
 
+                # Set Ref to NaN everywhere (quick way: copy Dev First)
+                with xr.set_options(keep_attrs=True):
+                    refarray = devarray
+                    refarray.values = np.nan
+
             else:
+
+                # Convert units of both Ref and Dev
                 refarray = convert_units(refdata[v], spc_name,
                                          species_properties, target_units,
                                          interval, refdata[ref_area_varname])
                 devarray = convert_units(devdata[v], spc_name,
                                          species_properties, target_units,
                                          interval, devdata[dev_area_varname])
-                
+
+            # ==========================================================
             # Print emission totals for Ref and Dev
+            # ==========================================================
             print_totals(refarray, refstr, devarray, devstr, f)
 
         # Add newlines before going to the next species
@@ -2527,10 +2560,9 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
 
 
 def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
-                             area_list, delta_p_list, bxheight_list,
-                             verbose=False,
+                             met_and_masks, trop_only=False,
                              outfilename='GlobalMass_TropStrat.txt',
-                             trop_only=False):
+                             verbose=False):
     '''
     Creates a table of global masses for a list of species in contained in
     two data sets.  The data sets,  which typically represent output from two
@@ -2556,34 +2588,16 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
             List of species concentation variable names to include
             in the list of global totals.
 
-        area_list : list of xarray DataArray
-            List containing the area variables for the Ref and Dev
-            datasets.  (NOTE: For GEOS-Chem "Classic" this will be
-            "AREA" but for GCHP this will be "Met_AREAM2".)
-            Default value: None (will compare all common variables)
-
-        delta_p_list : list of xarray DataArray
-            List containing the area variables for the Ref and Dev
-            datasets.  (NOTE: For GEOS-Chem "Classic" this will be
-            "AREA" but for GCHP this will be "Met_AREAM2".)
-            Default value: None (will compare all common variables)
-
-        area_list : list of xarray DataArray
-            List containing the area variables for the Ref and Dev
-            datasets.  (NOTE: For GEOS-Chem "Classic" this will be
-            "AREA" but for GCHP this will be "Met_AREAM2".)
-            Default value: None (will compare all common variables)
-
-        varlist : list of strings
-            List of xarray dataset variable names to make plots for
-            Default value: None (will compare all common variables)
-
+        met_and_masks : dict of xarray DataArray
+            Dictionary containing the meterological variables and
+            masks for the Ref and Dev datasets.
 
     Keyword Args (optional):
     ------------------------
-        varlist : list of strings
-            List of xarray dataset variable names to make plots for
-            Default value: None (will compare all common variables)
+        trop_only : book
+            Set this switch to True if you wish to print totals
+            only for the troposphere.
+            Default value: False (i.e. print whole-atmosphere totals).
 
         outfilename : str
             Name of the text file which will contain the table of
@@ -2595,11 +2609,6 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
             informational messages.
             Default value: False
 
-        trop_only : bool
-            Set this switch to True if you wish to restrict the
-            computation of global masses to the troposphere.
-            Default value: False (i.e. print whole-atmosphere mass)
-
     Remarks:
     --------
         This method is mainly intended for model benchmarking purposes,
@@ -2607,6 +2616,9 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
 
         Species properties (such as molecular weights) are read from a
         JSON file called "species_database.json".
+
+        The area variable for GEOS-Chem "Classic" will be "AREA",
+        but for GCHP it will be "Met_AREAM2".
 
     Example:
     --------
@@ -2631,10 +2643,6 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
     # Initialization
     # ==================================================================
 
-    if trop_only:
-        print('Skipping trop only for now during development')
-        return
-    
     # Make sure refdata and devdata are xarray Dataset objects
     if not isinstance(refdata, xr.Dataset):
         raise ValueError('The refdata argument must be an xarray Dataset!')
@@ -2644,14 +2652,8 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
     # Make sure required arguments are passed
     if varlist is None:
         raise ValueError('The "varlist" argument was not passed!')
-    if area_list is None:
-        raise ValueError('The "area_list" argument was not passed!')
-    if delta_p_list is None:
-        raise ValueError('The "delta_p_list" argument was not passed!')
-    if bxheight_list is None:
-        raise ValueError('The "bxheight_list" argument was not passed!')
-    if trop_only and (trop_mask_list is None):
-        raise ValueError('The "trop_mask_list" argument was not passed!')
+    if met_and_masks is None:
+        raise ValueError('The "met_and_masks" argument was not passed!')
     
     # Load a JSON file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
@@ -2660,17 +2662,6 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
                                    'species_database.json')
     properties = json_load_file(open(properties_path))
     
-    # ==================================================================
-    # Get the meterological variables from the various lists
-    # ==================================================================
-    ref_area = area_list[0]
-    ref_delta_p = delta_p_list[0]
-    ref_bxheight = bxheight_list[0]
-
-    dev_area = area_list[1]
-    dev_delta_p = delta_p_list[1]
-    dev_bxheight = bxheight_list[1]
-        
     # ==================================================================
     # Open file for output
     # ==================================================================
@@ -2695,6 +2686,9 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
 
     # ==================================================================
     # Print global masses for all species
+    #
+    # NOTE: By this point, all species will be in both Ref and Dev'
+    # because we have added them in the calling routine
     # ==================================================================
     for v in varlist:
 
@@ -2717,38 +2711,37 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
 #                  spc_name))
             continue
         
+        # ==============================================================
         # Convert units of Ref and save to a DataArray
-        # (or set to NaN if it is not found in Ref)
-        if np.isnan(refdata[v].values).all():
-            refarray = np.nan
-        else:
+        # (or skip if Ref contains NaNs everywhere)
+        # ==============================================================
+        if not np.isnan(refdata[v].values).all():
             refarray = convert_units(refdata[v], spc_name,
                                      species_properties, target_units,
-                                     area_m2=ref_area,
-                                     delta_p=ref_delta_p,
-                                     box_height=ref_bxheight)
+                                     area_m2=met_and_masks['Ref_Area'],
+                                     delta_p=met_and_masks['Ref_Delta_P'],
+                                     box_height=met_and_masks['Ref_BxHeight'])
 
+        # ==============================================================
         # Convert units of Dev and save to a DataArray
-        # (or set to NaN if it is not found in Dev)
-        if np.isnan(devdata[v].values).all():
-            devarray = np.nan
-        else:
+        # (or skip if Dev contains NaNs everywhere)
+        # ==============================================================
+        if not np.isnan(devdata[v].values).all():
             devarray = convert_units(devdata[v], spc_name,
                                      species_properties, target_units,
-                                     area_m2=dev_area,
-                                     delta_p=dev_delta_p,
-                                     box_height=dev_bxheight)
+                                     area_m2=met_and_masks['Dev_Area'],
+                                     delta_p=met_and_masks['Dev_Delta_P'],
+                                     box_height=met_and_masks['Dev_BxHeight'])
 
         # ==============================================================
-        # Mask the Ref and Dev arrays if necessary
+        # Print global masses for Ref and Dev
+        # (we will mask out tropospheric boxes in print_totals)
         # ==============================================================
         if trop_only:
-            pass
-            
-        # ==============================================================
-        # Print global masses for Ref and Dev
-        # ==============================================================
-        print_totals(refarray, refstr, devarray, devstr, f)
+            print_totals(refarray, refstr, devarray, devstr, f,
+                         met_and_masks=met_and_masks)
+        else:
+            print_totals(refarray, refstr, devarray, devstr, f)
 
     # ==================================================================
     # Close files
@@ -2813,7 +2806,8 @@ def create_budget_table(devdata, devstr, region, species, varnames,
     f = open(outfilename, 'w')
 
     # ==================================================================
-    
+    # Loop over species
+    # ==================================================================
     for spc_name in species:
 
         # Title string
@@ -3476,10 +3470,12 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     if interval == None:
         interval = 86400.0 * 31.0
 
-    # Write to file
+    # Create table of emissions by species
     create_total_emissions_table(refds, refstr, devds, devstr, 
                                  species, file_emis_totals,
                                  interval, template="Emis{}_")
+
+    # Create table of emissions by inventory
     create_total_emissions_table(refds, refstr, devds, devstr, 
                                  inventories, file_inv_totals,
                                  interval, template="Inv{}_")
@@ -4064,67 +4060,16 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # Make sure that all necessary variables are present
     # ==================================================================
 
-    # Find the area variables in Ref
-    if 'AREA' in refds.data_vars.keys():
-        ref_area = refds['AREA']
-    elif 'Met_AREAM2' in refds.data_vars.keys():
-        ref_area = refds['Met_AREAM2']
-    else:
-        msg = 'An area variable ("AREA" or "Met_AREAM2" is missing' + \
-              ' from the "Ref" dataset!'
-        raise ValueError(msg)
+    # Find the area variables in Ref and Dev
+    ref_area = core.get_area_from_dataset(refds)
+    dev_area = core.get_area_from_dataset(devds)
 
-    # Find the dry delta-pressure variable in Ref 
-    if 'Met_DELPDRY' in refds.data_vars.keys():
-        ref_delta_p = refds['Met_DELPDRY']
-    else:
-        msg = 'The Met_DELPDRY variable is missing from the Ref dataset!'
-        raise ValueError(msg)
-   
-    # Find the boxheight variable in Ref
-    if 'Met_BXHEIGHT' in refds.data_vars.keys():
-        ref_bxheight = refds['Met_BXHEIGHT']
-    else:
-        msg = 'The Met_DELPDRY variable is missing from the Ref dataset!'
-        raise ValueError(msg)
-
-    # Find the trop levels variable in Ref
-    if 'Met_TropLev' in refds.data_vars.keys():
-        ref_troplev = refds['Met_TropLev']
-    else:
-        msg = 'The Met_TropLev variable is missing from the Ref dataset!'
-        raise ValueError(msg)
-
-    # Find the area variables in Dev
-    if 'AREA' in devds.data_vars.keys():
-        dev_area = devds['AREA']
-    elif 'Met_AREAM2' in devds.data_vars.keys():
-        dev_area = devds['Met_AREAM2']
-    else:
-        msg = 'An area variable ("AREA" or "Met_AREAM2" is missing' + \
-              ' from the "Dev" dataset!'
-        raise ValueError(msg)
-
-    # Find the dry delta-pressure variable in Dev 
-    if 'Met_DELPDRY' in devds.data_vars.keys():
-        dev_delta_p = devds['Met_DELPDRY']
-    else:
-        msg = 'The Met_DELPDRY variable is missing from the Dev dataset!'
-        raise ValueError(msg)
-   
-    # Find the boxheight variable in Dev
-    if 'Met_BXHEIGHT' in devds.data_vars.keys():
-        dev_bxheight = devds['Met_BXHEIGHT']
-    else:
-        msg = 'The Met_DELPDRY variable is missing from the Dev dataset!'
-        raise ValueError(msg)
-
-    # Find the trop levels variable in Dev
-    if 'Met_TropLev' in devds.data_vars.keys():
-        dev_troplev = devds['Met_TropLev']
-    else:
-        msg = 'The Met_TropLev variable is missing from the Ref dataset!'
-        raise ValueError(msg)
+    # Find required meteorological variables in Ref
+    metvar_list = ['Met_DELPDRY', 'Met_BXHEIGHT', 'Met_TropLev']
+    [ref_delta_p, ref_bxheight, ref_troplev] = \
+        core.get_variables_from_dataset(refds, metvar_list)
+    [dev_delta_p, dev_bxheight, dev_troplev] = \
+        core.get_variables_from_dataset(devds, metvar_list)
 
     # If varlist has not been passed as an argument, then use all
     # species concentration variables that are present in Ref or Dev.
@@ -4141,25 +4086,48 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     varlist.sort()
 
     # ==================================================================
-    # Create the tables
+    # Create the mask arrays for the troposphere for Ref and Dev
+    #
+    # NOTE: This algorithm uses looping, which maybe is not the most
+    # efficient method.  But at least we compute the masks only once
+    # per call to make_benchmark_mass_tables in order to avoid
+    # incurring extra CPU cycles.
     # ==================================================================
 
-#    # Populate the mask array of tropospheric 
-#   if trop_only: 
-#        refsizes = core.
-#
-#        
-#        trop_lev = devdata['Met_TropLev']
-#
-#        refX = refdata.sizes['lon']
-#        refY = refdata.sizes['lat']
-#        refZ = refdata.sizes['lon']
-#        refT = refdata.sizes['time']
-#        
-#        for x in range(refX):
-#            for y in range(refY):
-#                refmask[0,:,x,y,0:trop_lev[0,x,y]] = True
+    # Convert the Met_TropLev DataArray objects to numpy ndarrays of
+    # integer.  Also subtract 1 to convert from Fortran to Python
+    # array index notation.
+    ref_lev = np.int_(np.squeeze(ref_troplev) - 1)
+    dev_lev = np.int_(np.squeeze(dev_troplev) - 1)
 
+    # Mask of tropospheric grid boxes in the Ref dataset
+    # (Maybe not the most efficient method but it works)
+    refshape = core.get_dataarray_shape(ref_bxheight)
+    ref_tropmask = np.squeeze(np.zeros(refshape, bool))
+    for y in range(refshape[2]):
+        for x in range(refshape[3]):
+            ref_tropmask[0:ref_lev[y,x],y,x] = True
+
+    # Mask of tropospheric grid boxes in the Dev dataset
+    # (Maybe not the most efficient method but it works)
+    devshape = core.get_dataarray_shape(dev_bxheight)
+    dev_tropmask = np.squeeze(np.zeros(devshape, bool))
+    for y in range(devshape[2]):
+        for x in range(devshape[3]):
+            dev_tropmask[0:dev_lev[y,x],y,x] = True
+
+    # ==================================================================
+    # Create a dictionary to hold all of the meterological
+    # variables and mask variables that we need to pass down
+    # ==================================================================
+    met_and_masks = {'Ref_Area'     : ref_area,
+                     'Dev_Area'     : dev_area,
+                     'Ref_Delta_P'  : ref_delta_p,
+                     'Dev_Delta_P'  : dev_delta_p,
+                     'Ref_BxHeight' : ref_bxheight,
+                     'Dev_BxHeight' : dev_bxheight,
+                     'Ref_TropMask' : ref_tropmask,
+                     'Dev_TropMask' : dev_tropmask}
     
     # ==================================================================
     # Create the tables
@@ -4167,21 +4135,17 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
 
     # Global mass
     mass_file = os.path.join(dst, '{}_GlobalMass_TropStrat.txt'.format(devstr))
-    create_global_mass_table(refds, refstr, devds, devstr, varlist,
-                             [ref_area, dev_area],
-                             [ref_delta_p, dev_delta_p],
-                             [ref_bxheight, dev_bxheight],
-                             outfilename=mass_file, verbose=verbose)
+    create_global_mass_table(refds, refstr, devds, devstr,
+                             varlist, met_and_masks,
+                             outfilename=mass_file, trop_only=False,
+                             verbose=verbose)
 
     # Tropospheric mass
     mass_file = os.path.join(dst, '{}_GlobalMass_Trop.txt'.format(devstr))
-    create_global_mass_table(refds, refstr, devds, devstr, varlist,
-                             [ref_area, dev_area],
-                             [ref_delta_p, dev_delta_p],
-                             [ref_bxheight, dev_bxheight],
-#                             [ref_tropmask, dev_tropmask],
-                             outfilename=mass_file,
-                             trop_only=True, verbose=verbose)
+    create_global_mass_table(refds, refstr, devds, devstr,
+                             varlist, met_and_masks,
+                             outfilename=mass_file, trop_only=True,
+                             verbose=verbose)
 
 
 def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
@@ -4414,68 +4378,6 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict,
 
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
-
-
-def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
-    '''
-    Normalizes colors to the range of 0..1 for input to matplotlib-based
-    plotting functions, given the max & min values of a data range.
-
-    For log-color scales, special handling is done to prevent
-    taking the log of data that is all zeroes.
-
-    Args:
-    -----
-        vmin : float
-            Minimum value of the data range.
-
-        vmax : float
-            Maximum value of the data range.
-
-    Keyword Args:
-    -------------
-        is_difference : boolean
-            Set this switch to denote that we are using a difference
-            color scale (i.e. with zero in the middle of the range).
-            Default value: False
-
-        log_color_scale : boolean
-            Logical flag to denote that we are using a logarithmic
-            color scale instead of a linear color scale.
-            Default value: False
-
-    Returns:
-    --------
-        norm : matplotlib Norm
-            The normalized colors (with range 0..1), stored in
-            a matplotlib Norm object.
-
-    Remarks:
-    --------
-         For log color scales, we will use a range of 3 orders of
-         magnitude (i.e. from vmax/1e3 to vmax).
-    '''
-    if (vmin == 0 and vmax == 0) or (np.isnan(vmin) and np.isnan(vmax)):
-
-        # If the min and max of the data are both zero, then normalize
-        # the data range so that the color corresponding to zero (i.e.
-        # white) is placed at 0.5 for difference colormaps (like RdBu)
-        # and at 0.0 for non-difference colormaps (like WhGrYlRd).
-        if is_difference:
-            norm = mcolors.Normalize(vmin=-1.0, vmax=1.0)
-        else:
-            norm = mcolors.Normalize(vmin=0.0, vmax=1.0)
-            
-    else:
-
-        # For log color scales, assume a range 3 orders of magnitude
-        # below the maximum value.  Otherwise use a linear scale.
-        if log_color_scale:
-            norm = mcolors.LogNorm(vmin=vmax/1e3, vmax=vmax)
-        else:
-            norm = mcolors.Normalize(vmin=vmin, vmax=vmax)
-
-    return norm
 
 
 def add_missing_variables(refdata, devdata):
