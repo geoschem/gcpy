@@ -751,7 +751,7 @@ def get_dataarray_shape(dr):
     
     # Initialize
     sizes = ()
-    dims = ['time', 'lev', 'ilev', 'lat', 'YDim', 'lon', 'XDim']
+    dims = ['time', 'lev', 'ilev', 'lat', 'Ydim', 'lon', 'Xdim']
 
     # Return a tuple with the size of each found dimension
     for d in dims:
