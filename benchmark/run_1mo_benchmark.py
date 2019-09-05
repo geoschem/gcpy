@@ -82,11 +82,13 @@ plot_emis    = True
 emis_table   = True
 plot_jvalues = True
 plot_aod     = True
+mass_table   = True
 budget_table = True
 
 # Filename date strings (edit as needed)
 gcc_datestr  = '20160701'
 gchp_datestr = '20160716'
+end_datestr  = '20160801'
 
 # Filename hour strings (edit as needed)
 gcc_hourstr  = '0000'
@@ -173,6 +175,13 @@ gcc_metfile  = 'GEOSChem.StateMet.{}_{}z.nc4'.format(gcc_datestr,
                                                      gcc_hourstr)
 gchp_metfile = 'GCHP.StateMet_avg.{}_{}z.nc4'.format(gchp_datestr,
                                                      gchp_hourstr)
+gchp_metfileinst = 'GCHP.StateMet_inst.{}_{}z.nc4'.format(end_datestr,
+                                                          gcc_hourstr)
+
+# Restart filenames
+gcc_rstfile  = 'GEOSChem.Restart.{}_{}z.nc4'.format(end_datestr,
+                                                    gcc_hourstr)
+gchp_rstfile = 'gcchem_internal_checkpoint.restart.{}_000000.nc4'.format(end_datestr)
 
 # Budget diagnostic filenames
 gcc_bgtfile = 'GEOSChem.Budget.{}_{}z.nc4'.format(gcc_datestr,
@@ -213,12 +222,24 @@ gchp_vs_gchp_refaod = join(maindir, gchp_vs_gchp_refdir, gchp_aodfile)
 gchp_vs_gchp_devaod = join(maindir, gchp_vs_gchp_devdir, gchp_aodfile)
 
 # Paths to StateMet data
-gcc_vs_gcc_refmet   = join(maindir, gcc_vs_gcc_refdir,   gcc_metfile)
-gcc_vs_gcc_devmet   = join(maindir, gcc_vs_gcc_devdir,   gcc_metfile)
-gchp_vs_gcc_refmet  = join(maindir, gchp_vs_gcc_refdir,  gcc_metfile)
-gchp_vs_gcc_devmet  = join(maindir, gchp_vs_gcc_devdir,  gchp_metfile)
-gchp_vs_gchp_refmet = join(maindir, gchp_vs_gchp_refdir, gchp_metfile)
-gchp_vs_gchp_devmet = join(maindir, gchp_vs_gchp_devdir, gchp_metfile)
+gcc_vs_gcc_refmet       = join(maindir, gcc_vs_gcc_refdir,   gcc_metfile)
+gcc_vs_gcc_devmet       = join(maindir, gcc_vs_gcc_devdir,   gcc_metfile)
+gchp_vs_gcc_refmet      = join(maindir, gchp_vs_gcc_refdir,  gcc_metfile)
+gchp_vs_gcc_refmetinst  = join(maindir, gchp_vs_gcc_refdir,  gcc_metfileinst)
+gchp_vs_gcc_devmet      = join(maindir, gchp_vs_gcc_devdir,  gchp_metfile)
+gchp_vs_gcc_devmetinst  = join(maindir, gchp_vs_gcc_devdir,  gchp_metfileinst)
+gchp_vs_gchp_refmet     = join(maindir, gchp_vs_gchp_refdir, gchp_metfile)
+gchp_vs_gchp_refmetinst = join(maindir, gchp_vs_gchp_refdir, gchp_metfileinst)
+gchp_vs_gchp_devmet     = join(maindir, gchp_vs_gchp_devdir, gchp_metfile)
+gchp_vs_gchp_devmetinst = join(maindir, gchp_vs_gchp_devdir, gchp_metfileinst)
+
+# Paths to restart files
+gcc_vs_gcc_refrst   = join(maindir, gcc_ref_version,  gcc_rstfile)
+gcc_vs_gcc_devrst   = join(maindir, gcc_dev_version,  gcc_rstfile)
+gchp_vs_gcc_refrst  = join(maindir, gcc_dev_version,  gcc_rstfile)
+gchp_vs_gcc_devrst  = join(maindir, gchp_dev_version, gchp_rstfile)
+gchp_vs_gchp_refrst = join(maindir, gchp_ref_version, gchp_rstfile)
+gchp_vs_gchp_devrst = join(maindir, gchp_dev_version, gchp_rstfile)
 
 # Paths to budget data
 gcc_vs_gcc_devbgt   = join(maindir, gcc_vs_gcc_devdir,   gcc_bgtfile)
@@ -290,6 +311,16 @@ if gcc_vs_gcc:
                                      overwrite=True,
                                      sigdiff_files=gcc_vs_gcc_sigdiff)
 
+    if mass_table:
+        # Global mass tables
+        print('%%% Creating GCC vs. GCC global mass tables %%%')
+        bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst,
+                                       gcc_vs_gcc_refstr,
+                                       gcc_vs_gcc_devrst,
+                                       gcc_vs_gcc_devstr,
+                                       dst=gcc_vs_gcc_plotsdir,
+                                       overwrite=True)
+        
     if budget_table:
         # Bugets tables
         print('%%% Creating GCC vs. GCC budget tables %%%')
@@ -363,7 +394,6 @@ if gchp_vs_gcc:
                                      overwrite=True,
                                      sigdiff_files=gchp_vs_gcc_sigdiff)
 
-
 # =====================================================================
 # Create GCHP vs GCHP benchmark plots and tables
 # =====================================================================
@@ -431,6 +461,19 @@ if gchp_vs_gchp:
                                      overwrite=True,
                                      sigdiff_files=gchp_vs_gchp_sigdiff)
 
+# Under development, leave commented out for now (bmy, 9/5/19)
+#    if mass_table:
+#        # Global mass tables
+#        print('%%% Creating GCHP vs. GCHP global mass tables %%%')
+#        gchp_vs_gchp_reflist = [gchp_vs_gchp_refrst, gchp_vs_gchp_refmetinst]
+#        gchp_vs_gchp_devlist = [gchp_vs_gchp_devrst, gchp_vs_gchp_devmetinst]
+#        bmk.make_benchmark_mass_tables(gchp_vs_gchp_reflist,
+#                                       gchp_vs_gchp_refstr,
+#                                       gchp_vs_gchp_devlist,
+#                                       gchp_vs_gchp_devstr,
+#                                       dst=gchp_vs_gchp_plotsdir,
+#                                       overwrite=True)
+        
 # =====================================================================
 # Create GCHP vs GCC difference of differences benchmark plots
 # =====================================================================
