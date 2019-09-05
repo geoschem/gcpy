@@ -26,10 +26,6 @@ from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .units import convert_units
 
-# NOTE: These are only used in obsolete functions, we can take them out.
-cmap_abs = WhGrYlRd   # for plotting absolute magnitude
-cmap_diff = 'RdBu_r'  # for plotting difference
-
 # JSON files
 aod_spc = 'aod_species.json'
 spc_categories = 'benchmark_categories.json'
@@ -2530,9 +2526,10 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     f.close()
 
 
-def create_global_mass_table(refdata, refstr, devdata, devstr,
-                             varlist=None, verbose=False,
-                             outfilename='GlobalMass.txt',
+def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
+                             area_list, delta_p_list, bxheight_list,
+                             verbose=False,
+                             outfilename='GlobalMass_TropStrat.txt',
                              trop_only=False):
     '''
     Creates a table of global masses for a list of species in contained in
@@ -2555,15 +2552,53 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
             A string that can be used to identify the data set specified
             by devfile (e.g. a model version number or other identifier).
 
+        varlist : list of strings
+            List of species concentation variable names to include
+            in the list of global totals.
+
+        area_list : list of xarray DataArray
+            List containing the area variables for the Ref and Dev
+            datasets.  (NOTE: For GEOS-Chem "Classic" this will be
+            "AREA" but for GCHP this will be "Met_AREAM2".)
+            Default value: None (will compare all common variables)
+
+        delta_p_list : list of xarray DataArray
+            List containing the area variables for the Ref and Dev
+            datasets.  (NOTE: For GEOS-Chem "Classic" this will be
+            "AREA" but for GCHP this will be "Met_AREAM2".)
+            Default value: None (will compare all common variables)
+
+        area_list : list of xarray DataArray
+            List containing the area variables for the Ref and Dev
+            datasets.  (NOTE: For GEOS-Chem "Classic" this will be
+            "AREA" but for GCHP this will be "Met_AREAM2".)
+            Default value: None (will compare all common variables)
+
+        varlist : list of strings
+            List of xarray dataset variable names to make plots for
+            Default value: None (will compare all common variables)
+
+
     Keyword Args (optional):
     ------------------------
-       varlist : list of strings
+        varlist : list of strings
             List of xarray dataset variable names to make plots for
             Default value: None (will compare all common variables)
 
         outfilename : str
             Name of the text file which will contain the table of
             emissions totals.
+            Default value: "GlobalMass_TropStrat.txt"
+
+        verbose : bool
+            Set this switch to True if you wish to print out extra
+            informational messages.
+            Default value: False
+
+        trop_only : bool
+            Set this switch to True if you wish to restrict the
+            computation of global masses to the troposphere.
+            Default value: False (i.e. print whole-atmosphere mass)
 
     Remarks:
     --------
@@ -2596,12 +2631,28 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
     # Initialization
     # ==================================================================
 
+    if trop_only:
+        print('Skipping trop only for now during development')
+        return
+    
     # Make sure refdata and devdata are xarray Dataset objects
     if not isinstance(refdata, xr.Dataset):
         raise ValueError('The refdata argument must be an xarray Dataset!')
     if not isinstance(devdata, xr.Dataset):
         raise ValueError('The devdata argument must be an xarray Dataset!')
 
+    # Make sure required arguments are passed
+    if varlist is None:
+        raise ValueError('The "varlist" argument was not passed!')
+    if area_list is None:
+        raise ValueError('The "area_list" argument was not passed!')
+    if delta_p_list is None:
+        raise ValueError('The "delta_p_list" argument was not passed!')
+    if bxheight_list is None:
+        raise ValueError('The "bxheight_list" argument was not passed!')
+    if trop_only and (trop_mask_list is None):
+        raise ValueError('The "trop_mask_list" argument was not passed!')
+    
     # Load a JSON file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
@@ -2609,33 +2660,17 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
                                    'species_database.json')
     properties = json_load_file(open(properties_path))
     
-    # Populate the mask array of tropospheric 
-#    if trop_only: 
-#        trop_lev = devdata['Met_TropLev']
-#
-#        refX = refdata.sizes['lon']
-#        refY = refdata.sizes['lat']
-#        refZ = refdata.sizes['lon']
-#        refT = refdata.sizes['time']
-#        
-#        for x in range(refX):
-#            for y in range(refY):
-#                refmask[0,:,x,y,0:trop_lev[0,x,y]] = True
-    
     # ==================================================================
-    # Get a list of species concentration variables in Ref and Dev
+    # Get the meterological variables from the various lists
     # ==================================================================
-    
-    # Find all common variables between the two datasets
-    # and get the lists of variables only in Ref and only in Dev,
-    [cvars, cvarsOther, cvars2D, cvars3D, refonly, devonly] = \
-        core.compare_varnames(refdata, devdata, quiet=True)
-    
-    # If no varlist is passed, include all common variables plus ones
-    # that might be in either Ref or Dev only
-    if varlist == None:
-        varlist = cvars3D + refonly + devonly
+    ref_area = area_list[0]
+    ref_delta_p = delta_p_list[0]
+    ref_bxheight = bxheight_list[0]
 
+    dev_area = area_list[1]
+    dev_delta_p = delta_p_list[1]
+    dev_bxheight = bxheight_list[1]
+        
     # ==================================================================
     # Open file for output
     # ==================================================================
@@ -2682,36 +2717,27 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
 #                  spc_name))
             continue
         
-        # Convert units of Ref and Dev and save to DataArray objects
-        # (or set to NaN if the variable is not found in Ref or Dev)
-        if v in refonly and v not in devonly:
-            refarray = convert_units(refdata[v], spc_name,
-                                     species_properties, target_units,
-                                     area_m2=refdata['AREA'],
-                                     delta_p=refdata['Met_DELPDRY'],
-                                     box_height=refdata['Met_BXHEIGHT'])
-            devarray = np.nan
-
-        elif v in devonly and v not in refonly:
+        # Convert units of Ref and save to a DataArray
+        # (or set to NaN if it is not found in Ref)
+        if np.isnan(refdata[v].values).all():
             refarray = np.nan
-            devarray = convert_units(devdata[v], spc_name,
-                                     species_properties, target_units,
-                                     area_m2=devdata['AREA'],
-                                     delta_p=devdata['Met_DELPDRY'],
-                                     box_height=devdata['Met_BXHEIGHT'])
-
         else:
             refarray = convert_units(refdata[v], spc_name,
                                      species_properties, target_units,
-                                     area_m2=refdata['AREA'],
-                                     delta_p=refdata['Met_DELPDRY'],
-                                     box_height=refdata['Met_BXHEIGHT'])
+                                     area_m2=ref_area,
+                                     delta_p=ref_delta_p,
+                                     box_height=ref_bxheight)
+
+        # Convert units of Dev and save to a DataArray
+        # (or set to NaN if it is not found in Dev)
+        if np.isnan(devdata[v].values).all():
+            devarray = np.nan
+        else:
             devarray = convert_units(devdata[v], spc_name,
                                      species_properties, target_units,
-                                     area_m2=devdata['AREA'],
-                                     delta_p=devdata['Met_DELPDRY'],
-                                     box_height=devdata['Met_BXHEIGHT'])
-
+                                     area_m2=dev_area,
+                                     delta_p=dev_delta_p,
+                                     box_height=dev_bxheight)
 
         # ==============================================================
         # Mask the Ref and Dev arrays if necessary
@@ -2727,7 +2753,6 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
     # ==================================================================
     # Close files
     # ==================================================================
-    f.close()
     f.close()
     
 
@@ -3459,6 +3484,7 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
                                  inventories, file_inv_totals,
                                  interval, template="Inv{}_")
 
+
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 varlist=None, 
                                 dst='./1mo_benchmark',
@@ -3959,8 +3985,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
 
                 
 def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
-                               varlist=None,
-                               dst='./1mo_benchmark',
+                               varlist=None, dst='./1mo_benchmark',
                                overwrite=False, verbose=False):
     '''
     Creates a text file containing global mass totals by species and
@@ -3968,17 +3993,17 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
 
     Args:
     -----
-        reflist:  list of str
-             List with the path names of the restart file and met field file
-             that will constitute the "Ref" (aka "Reference") data set.
+        reflist : list of str
+            List of files (i.e. pathnames) that will constitute
+            the "Ref" (aka "Reference") data set.
 
         refstr : str
             A string to describe ref (e.g. version number)
 
-        devlist : str
-            List with the path names of the restart file and met field file
-            that will constitute the "Dev" (aka "Development") data set.
-            The "Dev" data set will be compared against the "Ref" data set.
+        dev : list of str
+            List of files (i.e. pathnames) that will constitute
+            the "Dev" (aka "Development") data set.  The "Dev"
+            data set will be compared against the "Ref" data set.
 
         devstr : str
             A string to describe dev (e.g. version number)
@@ -3986,11 +4011,11 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     Keyword Args (optional):
     ------------------------
         varlist : list of str
-            List of J-value variables to plot.  If not passed, 
-            then all J-value variables common to both dev 
-            and ref will be plotted.  The varlist argument can be
-            a useful way of restricting the number of variables
-            plotted to the pdf file when debugging.
+            List of variables to include in the list of totals.
+            If omitted, then all variables that are found in either
+            "Ref" or "Dev" will be included.  The varlist argument
+            can be a useful way of reducing the number of
+            variables during debugging and testing.
             Default value: None
 
         dst : str
@@ -4023,45 +4048,140 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     
     # Ref
     try:
-        refds = xr.open_dataset(reflist[0])
+        refds = xr.open_mfdataset(reflist)
     except FileNotFoundError:
-        print('Could not find Ref file: {}'.format(reflist[0]))
+        print('Error opening Ref files: {}'.format(reflist))
         raise
     
     # Dev dataset
     try:
-        devds = xr.open_dataset(devlist[0])
+        devds = xr.open_mfdataset(devlist)
     except FileNotFoundError:
-        print('Could not find Dev file: {}!'.format(devlist[0]))
+        print('Error opening Dev files: {}!'.format(devlist))
         raise
 
-    # Make sure that Ref and Dev datasets have the same variables.
-    # Variables that are in Ref but not in Dev will be added to Dev
-    # with all missing values (NaNs). And vice-versa.
-    [refds, devds] = add_missing_variables(refds, devds)
+    # ==================================================================
+    # Make sure that all necessary variables are present
+    # ==================================================================
 
-    # Create list of variables
-    varlist = []
-    for v in devds.data_vars:
-        if 'SpeciesRst_' not in v:
-            continue
-        varlist.append(v)
+    # Find the area variables in Ref
+    if 'AREA' in refds.data_vars.keys():
+        ref_area = refds['AREA']
+    elif 'Met_AREAM2' in refds.data_vars.keys():
+        ref_area = refds['Met_AREAM2']
+    else:
+        msg = 'An area variable ("AREA" or "Met_AREAM2" is missing' + \
+              ' from the "Ref" dataset!'
+        raise ValueError(msg)
+
+    # Find the dry delta-pressure variable in Ref 
+    if 'Met_DELPDRY' in refds.data_vars.keys():
+        ref_delta_p = refds['Met_DELPDRY']
+    else:
+        msg = 'The Met_DELPDRY variable is missing from the Ref dataset!'
+        raise ValueError(msg)
+   
+    # Find the boxheight variable in Ref
+    if 'Met_BXHEIGHT' in refds.data_vars.keys():
+        ref_bxheight = refds['Met_BXHEIGHT']
+    else:
+        msg = 'The Met_DELPDRY variable is missing from the Ref dataset!'
+        raise ValueError(msg)
+
+    # Find the trop levels variable in Ref
+    if 'Met_TropLev' in refds.data_vars.keys():
+        ref_troplev = refds['Met_TropLev']
+    else:
+        msg = 'The Met_TropLev variable is missing from the Ref dataset!'
+        raise ValueError(msg)
+
+    # Find the area variables in Dev
+    if 'AREA' in devds.data_vars.keys():
+        dev_area = devds['AREA']
+    elif 'Met_AREAM2' in devds.data_vars.keys():
+        dev_area = devds['Met_AREAM2']
+    else:
+        msg = 'An area variable ("AREA" or "Met_AREAM2" is missing' + \
+              ' from the "Dev" dataset!'
+        raise ValueError(msg)
+
+    # Find the dry delta-pressure variable in Dev 
+    if 'Met_DELPDRY' in devds.data_vars.keys():
+        dev_delta_p = devds['Met_DELPDRY']
+    else:
+        msg = 'The Met_DELPDRY variable is missing from the Dev dataset!'
+        raise ValueError(msg)
+   
+    # Find the boxheight variable in Dev
+    if 'Met_BXHEIGHT' in devds.data_vars.keys():
+        dev_bxheight = devds['Met_BXHEIGHT']
+    else:
+        msg = 'The Met_DELPDRY variable is missing from the Dev dataset!'
+        raise ValueError(msg)
+
+    # Find the trop levels variable in Dev
+    if 'Met_TropLev' in devds.data_vars.keys():
+        dev_troplev = devds['Met_TropLev']
+    else:
+        msg = 'The Met_TropLev variable is missing from the Ref dataset!'
+        raise ValueError(msg)
+
+    # If varlist has not been passed as an argument, then use all
+    # species concentration variables that are present in Ref or Dev.
+    # For species that are in Ref but not in Dev, create a
+    # variable of missing values (NaNs). in Dev.  Ditto for Ref.
+    if varlist is None:
+        [refds, devds] = add_missing_variables(refds, devds)
+        varlist = devds.data_vars.keys()
+        
+    # Only use the species concentration variables in the restart
+    # file, as we will pass the meteorology variables separately
+    # to routine create_global_mass_table.
+    varlist = [v for v in varlist if 'SpeciesRst_' in v] 
     varlist.sort()
 
     # ==================================================================
     # Create the tables
     # ==================================================================
 
+#    # Populate the mask array of tropospheric 
+#   if trop_only: 
+#        refsizes = core.
+#
+#        
+#        trop_lev = devdata['Met_TropLev']
+#
+#        refX = refdata.sizes['lon']
+#        refY = refdata.sizes['lat']
+#        refZ = refdata.sizes['lon']
+#        refT = refdata.sizes['time']
+#        
+#        for x in range(refX):
+#            for y in range(refY):
+#                refmask[0,:,x,y,0:trop_lev[0,x,y]] = True
+
+    
+    # ==================================================================
+    # Create the tables
+    # ==================================================================
+
     # Global mass
     mass_file = os.path.join(dst, '{}_GlobalMass_TropStrat.txt'.format(devstr))
-    create_global_mass_table(refds, refstr, devds, devstr, 
-                             varlist=varlist, outfilename=mass_file)
+    create_global_mass_table(refds, refstr, devds, devstr, varlist,
+                             [ref_area, dev_area],
+                             [ref_delta_p, dev_delta_p],
+                             [ref_bxheight, dev_bxheight],
+                             outfilename=mass_file, verbose=verbose)
 
-#    # Tropospheric mass
-#    mass_file = os.path.join(dst, '{}_GlobalMass_Trop.txt'.format(devstr))
-#    create_global_mass_table(refds, refstr, devds, devstr, 
-#                             varlist=varlist, outfilename=mass_file,
-#                             trop_only=True)
+    # Tropospheric mass
+    mass_file = os.path.join(dst, '{}_GlobalMass_Trop.txt'.format(devstr))
+    create_global_mass_table(refds, refstr, devds, devstr, varlist,
+                             [ref_area, dev_area],
+                             [ref_delta_p, dev_delta_p],
+                             [ref_bxheight, dev_bxheight],
+#                             [ref_tropmask, dev_tropmask],
+                             outfilename=mass_file,
+                             trop_only=True, verbose=verbose)
 
 
 def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
@@ -4506,252 +4626,3 @@ def add_missing_variables(refdata, devdata):
         refdata = xr.merge([refdata,dr])
 
     return refdata, devdata
-
-
-# =============================================================================
-# The rest of this file contains legacy code that may be deleted in the future
-# =============================================================================
-
-def plot_layer(dr, ax='', unit='', diff=False, vmin=None, vmax=None):
-    '''Plot 2D DataArray as a lat-lon layer
-
-    Parameters
-    ----------
-    dr : xarray.DataArray
-        Dimension should be [lat, lon]
-
-    ax : Cartopy GeoAxes object with PlateCarree projection
-        Axis on which to plot this figure
-
-    title : string, optional
-        Title of the figure
-
-    unit : string, optional
-        Unit shown near the colorbar
-
-    diff : Boolean, optional
-        Switch to the color scale for difference plot
-
-    NOTE: This is deprecated and will be removed in the future.
-    '''
-
-    assert isinstance(ax, GeoAxes), (
-           'Input axis must be cartopy GeoAxes! '
-           'Can be created by: \n'
-           'plt.axes(projection=ccrs.PlateCarree()) \n or \n'
-           'plt.subplots(n, m, subplot_kw={"projection": ccrs.PlateCarree()})'
-           )
-    assert ax.projection == ccrs.PlateCarree(), (
-           'must use PlateCarree projection'
-           )
-
-    fig = ax.figure  # get parent figure
-
-    if vmax == None and vmin == None:
-        if diff:
-            vmax = np.max(np.abs(dr.values))
-            vmin = -vmax
-            cmap = cmap_diff
-        else:
-            vmax = np.max(dr.values)
-            vmin = 0
-            cmap = cmap_abs
-
-    if diff:
-        cmap = cmap_diff
-    else:
-        cmap = cmap_abs
-
-    # imshow() is 6x faster than pcolormesh(), but with some limitations:
-    # - only works with PlateCarree projection
-    # - the left map boundary can't be smaller than -180,
-    #   so the leftmost box (-182.5 for 4x5 grid) is slightly out of the map
-    im = dr.plot.imshow(ax=ax, vmin=vmin, vmax=vmax, cmap=cmap,
-                        transform=ccrs.PlateCarree(),
-                        add_colorbar=False)
-
-    # can also pass cbar_kwargs to dr.plot() to add colorbar,
-    # but it is easier to tweak colorbar afterwards
-    cb = fig.colorbar(im, ax=ax, shrink=0.6, orientation='horizontal', pad=0.1)
-    cb.set_label(unit)
-
-    # xarray automatically sets a title which might contain dimension info.
-    # surpress it or use user-provided title
-    ax.set_title(title)
-
-    ax.coastlines()
-    add_latlon_ticks(ax)  # add ticks and gridlines
-
-
-def plot_zonal(dr, ax, title='', unit='', diff=False):
-    '''Plot 2D DataArray as a zonal profile
-
-    Parameters
-    ----------
-    dr : xarray.DataArray
-        dimension should be [lev, lat]
-
-    ax : matplotlib axes object
-        Axis on which to plot this figure
-
-    title : string, optional
-        Title of the figure
-
-    unit : string, optional
-        Unit shown near the colorbar
-
-    diff : Boolean, optional
-        Switch to the color scale for difference plot
-
-    NOTE: This is deprecated and will be removed in the future.
-    '''
-
-    # assume global field from 90S to 90N
-    xtick_positions = np.array([-90, -60, -30, 0, 30, 60, 90])
-    xticklabels = ['90$\degree$S',
-                   '60$\degree$S',
-                   '30$\degree$S',
-                   '0$\degree$',
-                   '30$\degree$N',
-                   '60$\degree$N',
-                   '90$\degree$N'
-                   ]
-
-    fig = ax.figure  # get parent figure
-
-    # this code block largely duplicates plot_layer()
-    # TODO: remove duplication
-    if diff:
-        vmax = np.max(np.abs(dr.values))
-        vmin = -vmax
-        cmap = cmap_diff
-    else:
-        vmax = np.max(dr.values)
-        vmin = 0
-        cmap = cmap_abs
-
-    im = dr.plot.imshow(ax=ax, vmin=vmin, vmax=vmax, cmap=cmap,
-                        add_colorbar=False)
-
-    # the ratio of x-unit/y-unit in screen-space
-    # 'auto' fills current figure with data without changing the figrue size
-    ax.set_aspect('auto')
-
-    ax.set_xticks(xtick_positions)
-    ax.set_xticklabels(xticklabels)
-    ax.set_xlabel('')
-    ax.set_ylabel('Level')
-
-    # NOTE: The surface has a hybrid eta coordinate of 1.0 and the
-    # atmosphere top has a hybrid eta coordinate of 0.0.  If we don't
-    # flip the Y-axis, then the surface will be plotted at the top
-    # of the plot. (bmy, 3/7/18)
-    ax.invert_yaxis()
-
-    # can also pass cbar_kwargs to dr.plot() to add colorbar
-    # but it is easier to tweak colorbar afterwards
-    cb = fig.colorbar(im, ax=ax, shrink=0.6, orientation='horizontal', pad=0.1)
-    cb.set_label(unit)
-
-    ax.set_title(title)
-
-
-def make_pdf(ds1, ds2, filename, on_map=True, diff=False,
-             title1='DataSet 1', title2='DataSet 2', unit='',
-             matchcbar=False):
-    '''Plot all variables in two 2D DataSets, and create a pdf.
-
-    ds1 : xarray.DataSet
-        shown on the left column
-
-    ds2 : xarray.DataSet
-        shown on the right column
-
-    filename : string
-        Name of the pdf file
-
-    on_map : Boolean, optional
-        If True (default), use plot_layer() to plot
-        If False, use plot_zonal() to plot
-
-    diff : Boolean, optional
-        Switch to the color scale for difference plot
-
-    title1, title2 : string, optional
-        Title for each DataSet
-
-    unit : string, optional
-        Unit shown near the colorbar
-
-    NOTE: This is deprecated and will be removed in the future.
-    '''
-
-    if on_map:
-        plot_func = plot_layer
-        subplot_kw = {'projection': ccrs.PlateCarree()}
-    else:
-        plot_func = plot_zonal
-        subplot_kw = None
-
-    # get a list of all variable names in ds1
-    # assume ds2 also has those variables
-    varname_list = list(ds1.data_vars.keys())
-
-    n_var = len(varname_list)
-    print('Benchmarking {} variables'.format(n_var))
-
-    n_row = 3  # how many rows per page. TODO: should this be input argument?
-    n_page = (n_var-1) // n_row + 1  # how many pages
-
-    print('generating a {}-page pdf'.format(n_page))
-    print('Page: ', end='')
-
-    pdf = PdfPages(filename)
-
-    for ipage in range(n_page):
-        print(ipage, end=' ')
-        fig, axes = plt.subplots(n_row, 2, figsize=[16, 16],
-                                 subplot_kw=subplot_kw)
-
-        # a list of 3 (n_row) variables names
-        sub_varname_list = varname_list[n_row*ipage:n_row*(ipage+1)]
-
-        for i, varname in enumerate(sub_varname_list):
-
-            # Get min/max for both datasets to have same colorbar (ewl)
-            unitmatch = False
-            if matchcbar:
-                vmin = min([ds1[varname].data.min(), ds2[varname].data.min()])
-                vmax = max([ds1[varname].data.max(), ds2[varname].data.max()])
-                unitmatch = ds1[varname].units == ds2[varname].units
-
-            for j, ds in enumerate([ds1, ds2]):
-                if on_map:
-                    if matchcbar and unitmatch:
-                        plot_func(ds[varname], axes[i][j], 
-                                  unit=ds[varname].units, diff=diff,
-                                  vmin=vmin, vmax=vmax)
-                    else:
-                        plot_func(ds[varname], axes[i][j], 
-                                  unit=ds[varname].units, diff=diff)
-                else:
-                    # For now, assume zonal mean if plotting zonal (ewl)
-                    if matchcbar and unitmatch:
-                        plot_func(ds[varname].mean(axis=2), axes[i][j], 
-                                  unit=ds[varname].units, diff=diff,
-                                  vmin=vmin, vmax=vmax)
-                    else:
-                        plot_func(ds[varname].mean(axis=2), axes[i][j], 
-                                  unit=ds[varname].units, diff=diff)
-
-            # TODO: tweak varname, e.g. Trim "TRC_O3" to "O3"
-            axes[i][0].set_title(varname+'; '+title1)
-            axes[i][1].set_title(varname+'; '+title2)
-
-            # TODO: unit conversion according to data range of each variable,
-            # e.g. mol/mol -> ppmv, ppbv, etc...
-
-        pdf.savefig(fig)
-        plt.close(fig)  # don't show in notebook!
-    pdf.close()  # close it to save the pdf
-    print('done!')
