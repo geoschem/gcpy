@@ -2283,7 +2283,7 @@ def print_totals(ref, refstr, dev, devstr, f):
     # Write output to file
     # ==================================================================
     print('{} : {:18.6f}  {:18.6f}  {:13.6f} {}'.format(
-           display_name.ljust(12), total_ref, total_dev, diff, units), file=f)
+           display_name.ljust(21), total_ref, total_dev, diff, units), file=f)
 
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
@@ -2472,8 +2472,8 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         print('{}{}'.format(title1.ljust(76), '###'), file=f)
         print('{}{}'.format(title2.ljust(76), '###'), file=f)
         print('#'*79, file=f)
-        print('{}{}{}{}'.format(' '.ljust(13), 'Ref'.ljust(20),
-                                'Dev'.ljust(20), 'Dev - Ref'), file=f)
+        print('{}{}{}{}'.format(' '.ljust(22), 'Ref'.rjust(20), 'Dev'.rjust(20),
+                                'Dev - Ref'.rjust(15)), file=f)
 
         # =============================================================
         # Loop over all emissions variables corresponding to this
@@ -2655,8 +2655,7 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
     print('{}{}'.format(title1.ljust(76), '###'), file=f)
     print('{}{}'.format(title2.ljust(76), '###'), file=f)
     print('#'*79, file=f)
-    print('{}{}{}{}'.format(' '.ljust(13), 'Ref'.rjust(20),
-                            'Dev'.rjust(20),
+    print('{}{}{}{}'.format(' '.ljust(22), 'Ref'.rjust(20), 'Dev'.rjust(20),
                             'Dev - Ref'.rjust(15)), file=f)
 
     # ==================================================================
