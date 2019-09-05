@@ -2177,7 +2177,7 @@ def create_display_name(diagnostic_name):
     return display_name
 
 
-def print_totals(ref, refstr, dev, devstr, f, trop_only=False, trop_lev=None):
+def print_totals(ref, refstr, dev, devstr, f):
     '''
     Computes and prints Ref and Dev totals for two xarray DataArray objects.
 
@@ -2202,16 +2202,6 @@ def print_totals(ref, refstr, dev, devstr, f, trop_only=False, trop_lev=None):
         f : file
             File object denoting a text file where output will be directed.
 
-    Keyword Args (optional):
-    ------------------------
-        trop_only : boolean
-            Set this flag to True to compute totals in the troposphere only
-            Default value : False
-
-        trop_lev : xarray DataArray
-            Tropopause level
-            Default value : None
-
     Remarks:
     --------
         This is an internal method.  It is meant to be called from method
@@ -2229,10 +2219,6 @@ def print_totals(ref, refstr, dev, devstr, f, trop_only=False, trop_lev=None):
     if not isinstance(dev, xr.DataArray):
         raise ValueError('The dev argument must be an xarray DataArray!')
 
-    # Error check troposphere only arguments
-    if trop_only and trop_lev is None:
-        raise ValueError('Trop_lev must be passed to use trop_only option')
-    
     # Determine if either Ref or Dev have all NaN values:
     ref_is_all_nan = np.isnan(ref.values).all()
     dev_is_all_nan = np.isnan(dev.values).all()
@@ -2275,24 +2261,7 @@ def print_totals(ref, refstr, dev, devstr, f, trop_only=False, trop_lev=None):
     if ref_is_all_nan:
         total_ref = np.nan
     else:
-        if trop_only:
-            total_ref = 0.0
-
-            # Sizes of 
-            #ref_sizes = core.get_dataarray_shape(ref)
-            #ref_arr = ref.values
-            #ref_arr_reshaped = np.reshape(ref_arr, ref_sizes)
-            #
-            #print('Trop_arr: {}'.format(trop_arr_reshaped.shape))
-            #print('Ref_arr: {}'.format(ref_arr_reshaped.shape))
-
-            for x in range(len(ref.lon)):
-                for y in range(len(ref.lat)):
-                    maxlev = int(trop_lev[0,y,x].values)
-                    for z in range(maxlev):
-                        total_ref += ref[0,z,y,x].values
-        else:
-            total_ref = np.sum(ref.values)
+        total_ref = np.sum(ref.values)
 
     # ==================================================================
     # Sum the Dev array (or set to NaN if missing)
@@ -2300,15 +2269,7 @@ def print_totals(ref, refstr, dev, devstr, f, trop_only=False, trop_lev=None):
     if dev_is_all_nan:
         total_dev = np.nan
     else:
-        if trop_only:
-            total_dev = 0.0
-            for x in range(len(dev.lon)):
-                for y in range(len(dev.lat)):
-                    maxlev=int(trop_lev[0,y,x].values)
-                    for z in range(maxlev):
-                        total_dev += dev[0,z,y,x].values
-        else:
-            total_dev = np.sum(dev.values)
+        total_dev = np.sum(dev.values)
 
     # ==================================================================
     # Compute differences (or set to NaN if missing)
@@ -2321,13 +2282,7 @@ def print_totals(ref, refstr, dev, devstr, f, trop_only=False, trop_lev=None):
     # ==================================================================
     # Write output to file
     # ==================================================================
-    if ( total_ref > 1e3 or total_ref < 1e-3 or
-         total_dev > 1e3 or total_dev < 1e-3 ):
-       # Use scientific notation
-       print('{} : {:13.6e}  {:13.6e}  {:13.6e} {}'.format(
-           display_name.ljust(12), total_ref, total_dev, diff, units), file=f)
-    else:
-        print('{} : {:13.6f}  {:13.6f}  {:13.6f} {}'.format(
+    print('{} : {:18.6f}  {:18.6f}  {:13.6f} {}'.format(
            display_name.ljust(12), total_ref, total_dev, diff, units), file=f)
 
 
@@ -2517,8 +2472,8 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         print('{}{}'.format(title1.ljust(76), '###'), file=f)
         print('{}{}'.format(title2.ljust(76), '###'), file=f)
         print('#'*79, file=f)
-        print('{}{}{}{}'.format(' '.ljust(33), 'Ref'.ljust(15),
-                                'Dev'.ljust(15), 'Dev - Ref'), file=f)
+        print('{}{}{}{}'.format(' '.ljust(13), 'Ref'.ljust(20),
+                                'Dev'.ljust(20), 'Dev - Ref'), file=f)
 
         # =============================================================
         # Loop over all emissions variables corresponding to this
@@ -2655,17 +2610,17 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
     properties = json_load_file(open(properties_path))
     
     # Populate the mask array of tropospheric 
-    if trop_only: 
-        trop_lev = devdata['Met_TropLev']
-
-        refX = refdata.sizes['lon']
-        refY = refdata.sizes['lat']
-        refZ = refdata.sizes['lon']
-        refT = refdata.sizes['time']
-        
-        for x in range(len(dev.lon)):
-            for y in range(len(dev.lat)):
-                refmask[0,:,x,y,0:trop_lev[0,x,y]] = True
+#    if trop_only: 
+#        trop_lev = devdata['Met_TropLev']
+#
+#        refX = refdata.sizes['lon']
+#        refY = refdata.sizes['lat']
+#        refZ = refdata.sizes['lon']
+#        refT = refdata.sizes['time']
+#        
+#        for x in range(refX):
+#            for y in range(refY):
+#                refmask[0,:,x,y,0:trop_lev[0,x,y]] = True
     
     # ==================================================================
     # Get a list of species concentration variables in Ref and Dev
@@ -2688,16 +2643,20 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
     # Create file
     f = open(outfilename, 'w')
 
-    # Create top-of-file header
+    # Title strings
     if trop_only:
-        title = '### Tropospheric mass at end of simulation'
+        title1 = '### Global mass at end of simulation (Trop only)'
     else:
-        title = '### Global mass at end of simulation'
+        title1 = '### Global mass at end of simulation (Trop + Strat)'
+    title2 = '### Ref = {}; Dev = {}'.format(refstr, devstr) 
+
+    # Print header to file
     print('#'*79, file=f) 
-    print('{}{}'.format(title.ljust(76), '###'), file=f)
+    print('{}{}'.format(title1.ljust(76), '###'), file=f)
+    print('{}{}'.format(title2.ljust(76), '###'), file=f)
     print('#'*79, file=f)
-    print('{}{}{}{}'.format(' '.ljust(13), refstr.rjust(15),
-                            devstr.rjust(15),
+    print('{}{}{}{}'.format(' '.ljust(13), 'Ref'.rjust(20),
+                            'Dev'.rjust(20),
                             'Dev - Ref'.rjust(15)), file=f)
 
     # ==================================================================
@@ -2717,7 +2676,7 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
             continue
 
         # Specify target units
-        target_units = 'Tg'
+        target_units = 'Gg'
         mol_wt_g = species_properties.get('MW_g')
         if mol_wt_g is None:
 #            print('No molecular weight found for {} ... skippping'.format(
@@ -2764,12 +2723,7 @@ def create_global_mass_table(refdata, refstr, devdata, devstr,
         # ==============================================================
         # Print global masses for Ref and Dev
         # ==============================================================
-
         print_totals(refarray, refstr, devarray, devstr, f)
-        
-        # Print tropopheric-only masses for Ref and Dev
-        #print_totals(refarray, refstr, devarray, devstr, f,
-        #             trop_only=True, trop_lev=trop_lev)
 
     # ==================================================================
     # Close files
@@ -4100,14 +4054,15 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # ==================================================================
 
     # Global mass
-    mass_file = os.path.join(dst, '{}_GlobalMass.txt'.format(devstr))
+    mass_file = os.path.join(dst, '{}_GlobalMass_TropStrat.txt'.format(devstr))
     create_global_mass_table(refds, refstr, devds, devstr, 
                              varlist=varlist, outfilename=mass_file)
 
-    # Tropospheric mass
-    mass_file = os.path.join(dst, '{}_TroposphericMass.txt'.format(devstr))
-    create_global_mass_table(refds, refstr, devds, devstr, 
-                             varlist=varlist, outfilename=mass_file)
+#    # Tropospheric mass
+#    mass_file = os.path.join(dst, '{}_GlobalMass_Trop.txt'.format(devstr))
+#    create_global_mass_table(refds, refstr, devds, devstr, 
+#                             varlist=varlist, outfilename=mass_file,
+#                             trop_only=True)
 
 
 def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
