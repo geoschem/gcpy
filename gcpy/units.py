@@ -195,31 +195,35 @@ def convert_units(dr, species_name, species_properties, target_units,
     mw_air = 28.97         # g/mole dry air
     g0 = 9.80665           # m/s2
 
-    # Mass of dry air in kg
-    air_mass = delta_p * 100.0 / g0 * area_m2
+    # Get a consistent value for the units string
+    # (ignoring minor differences in formatting)
+    units = adjust_units(dr.units)
 
-    if 'g' in target_units and emitted_mw_g is None:
-        raise ValueError('Conversion to {} for {} requires MW_g definition in species_database.json'.format(target_unit,species_name))
+    # Error checks
+    if units == 'molmol-1dry' and area_m2 is None:
+        raise ValueError('Conversion from {} to () for {} requires area_m2 as input'.format(unit,target_unit,species_name))
+    if units == 'molmol-1dry' and delta_p is None:
+        raise ValueError('Conversion from {} to () for {} requires delta_p as input'.format(unit,target_unit,species_name))
+    if 'g' in target_units and mw_g is None:
+        raise ValueError('Conversion from () to {} for {} requires MW_g definition in species_database.json'.format(unit,target_unit,species_name))
     
     # Conversion factor for kg species to kg C
-    if emitted_mw_g is not None and moles_C_per_mole_species is not None :
-         kg_to_kgC = (emitted_mw_g * moles_C_per_mole_species) / mw_g
-    else:
-         kg_to_kgC = 1.0
+    kg_to_kgC = (emitted_mw_g * moles_C_per_mole_species) / mw_g
          
+    # Mass of dry air in kg (required when converting from v/v)
+    if units == 'molmol-1dry':
+        air_mass = delta_p * 100.0 / g0 * area_m2
+
     # Conversion factor for v/v to kg
     # v/v * kg dry air / g/mol dry air * g/mol species = kg species
-    if emitted_mw_g is not None:
+    if units == 'molmol-1dry' and 'g' in target_units:
         vv_to_kg = air_mass / mw_air * mw_g  
         
     # Conversion factor for v/v to molec/cm3
     # v/v * kg dry air * mol/g dry air * molec/mol dry air /
     #  (area_m2 * box_height ) * 1m3/10^6cm3 = molec/cm3 
-    vv_to_MND = air_mass / mw_air * Avo / ( area_m2 * box_height) / 1e6
-    
-    # Get a consistent value for the units string
-    # (ignoring minor differences in formatting)
-    units = adjust_units(dr.units)
+    if units == 'molmol-1dry' and 'molec' in target_units:
+        vv_to_MND = air_mass / mw_air * Avo / ( area_m2 * box_height) / 1e6
 
     # ==============================
     # Compute target units
