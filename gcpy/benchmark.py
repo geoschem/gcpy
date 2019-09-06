@@ -161,10 +161,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
-        [commonvars, commonvarsOther,
-         commonvars2D, commonvars3D,
-         refonly, devonly] = core.compare_varnames(refdata, devdata)
-        varlist = commonvars3D+commonvars2D
+        vardict = core.compare_varnames(refdata, devdata)
+        varlist = vardict['commonvars3D'] + vardict['commonvars2D']
         print('Plotting all common variables (surface only if 3D)')
     n_var = len(varlist)
 
@@ -1243,10 +1241,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
-        [commonvars, commonvarsOther,
-         commonvars2D, commonvars3D,
-         refonly, devonly] = core.compare_varnames(refdata, devdata)
-        varlist = commonvars3D
+        vardict = core.compare_varnames(refdata, devdata)
+        varlist = vardict['commonvars3D']
         print('Plotting all 3D variables')
     n_var = len(varlist)
 
@@ -2446,8 +2442,10 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     
     # Find all common variables between the two datasets
     # and get the lists of variables only in Ref and only in Dev,
-    [cvars, cvarsOther, cvars2D, cvars3D, refonly, devonly] = \
-        core.compare_varnames(refdata, devdata, quiet=True)
+    vardict = core.compare_varnames(refdata, devdata, quiet=True)
+    cvars = vardict['commonvars']
+    refonly = vardict['refonly']
+    devonly = vardict['devonly']
 
     # =================================================================
     # Open the file for output
@@ -3240,12 +3238,11 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     # with all missing values (NaNs). And vice-versa.
     [refds, devds] = add_missing_variables(refds, devds)
      
-    # Find common variables
-    quiet = not verbose
-    [vars, varsOther, vars2D,
-     vars3D, refonly, devonly] = core.compare_varnames(refds, devds, quiet)
-
     # Combine 2D and 3D variables into an overall list
+    quiet = not verbose
+    vardict = core.compare_varnames(refds, devds, quiet=quiet)
+    vars2D = vardict['commonvars2D']
+    vars3D = vardict['commonvars3D']
     varlist = vars2D + vars3D
 
     # ==================================================================
@@ -3630,12 +3627,12 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     # Variables that are in Ref but not in Dev will be added to Dev
     # with all missing values (NaNs). And vice-versa.
     [refds, devds] = add_missing_variables(refds, devds)
-    
-    # Find common variables in both datasets
+
+    # Get a list of the 3D variables in both datasets
     if varlist == None:
         quiet = not verbose
-        [cmn, cmnOther, cmn2D,
-         cmn3D, refonly, devonly] = core.compare_varnames(refds, devds, quiet)
+        vardict = core.compare_varnames(refds, devds, quiet)
+        cmn = vardict['commonvars3D']
 
     # ==================================================================
     # Local noon or continuously-averaged J-values?
@@ -3886,8 +3883,8 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # (or use the varlist passed via keyword argument)
     if varlist == None:
         quiet = not verbose
-        [cmn, cmnOther, cmn2D, cmn3D,
-         refonly, devonly] = core.compare_varnames(refds, devds, quiet)
+        vardict = core.compare_varnames(refds, devds, quiet)
+        cmn3D = vardict['commonvars3D']
         varlist = [v for v in cmn3D if 'AOD' in v and '_bin' not in v]
 
     # Dictionary and list for new display names
@@ -4100,7 +4097,9 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # variable of missing values (NaNs). in Dev.  Ditto for Ref.
     if varlist is None:
         [refds, devds] = add_missing_variables(refds, devds)
-        varlist = devds.data_vars.keys()
+        quiet = not verbose
+        vardict = core.compare_varnames(refds, devds, quiet=quiet)
+        varlist = vardict['commonvars3D']
         
     # Only use the species concentration variables in the restart
     # file, as we will pass the meteorology variables separately
@@ -4404,12 +4403,11 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict,
 
 def add_missing_variables(refdata, devdata):
     '''
-    Compares two xarray Datasets, refdata, and devdata.  For each
-    variable that is present  in refdata but not in devdata, a
-    DataArray of missing values (i.e. NaN) will be added to devdata.
-    Similarly, for each variable that is present in devdata but not
-    in refdata, a DataArray of missing values will be added to
-    refdata.
+    Compares two xarray Datasets, "Ref", and "Dev".  For each variable
+    that is present  in "Ref" but not in "Dev", a DataArray of missing
+    values (i.e. NaN) will be added to "Dev".  Similarly, for each
+    variable that is present in "Dev" but not in "Ref", a DataArray
+    of missing values will be added to "Ref".
 
     This routine is mostly intended for benchmark purposes, so that we
     can represent variables that were removed from a new GEOS-Chem
@@ -4440,8 +4438,9 @@ def add_missing_variables(refdata, devdata):
         raise ValueError('The refdata object must be an xarray DataArray!')
 
     # Find common variables as well as variables only in one or the other
-    [cvars, cother, cvars2D, cvars3D,
-     refonly, devonly] = core.compare_varnames(refdata, devdata, quiet=True)
+    vardict = core.compare_varnames(refdata, devdata, quiet=True)
+    refonly = vardict['refonly']
+    devonly = vardict['devonly']
 
     # Don't clobber any netCDF attributes
     with xr.set_options(keep_attrs=True):
