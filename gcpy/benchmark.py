@@ -4126,18 +4126,18 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # Mask of tropospheric grid boxes in the Ref dataset
     # (Maybe not the most efficient method but it works)
     refshape = core.get_dataarray_shape(refmet['Met_BXHEIGHT'])
-    ref_tropmask = np.squeeze(np.zeros(refshape, bool))
+    ref_tropmask = np.squeeze(np.ones(refshape, bool))
     for y in range(refshape[2]):
         for x in range(refshape[3]):
-            ref_tropmask[0:ref_lev[y,x],y,x] = True
+            ref_tropmask[0:ref_lev[y,x],y,x] = False
 
     # Mask of tropospheric grid boxes in the Dev dataset
     # (Maybe not the most efficient method but it works)
     devshape = core.get_dataarray_shape(devmet['Met_BXHEIGHT'])
-    dev_tropmask = np.squeeze(np.zeros(devshape, bool))
+    dev_tropmask = np.squeeze(np.ones(devshape, bool))
     for y in range(devshape[2]):
         for x in range(devshape[3]):
-            dev_tropmask[0:dev_lev[y,x],y,x] = True
+            dev_tropmask[0:dev_lev[y,x],y,x] = False
 
     # ==================================================================
     # Create a dictionary to hold all of the meterological
@@ -4160,8 +4160,7 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     mass_file = os.path.join(dst, '{}_GlobalMass_TropStrat.txt'.format(devstr))
     create_global_mass_table(refds, refstr, devds, devstr,
                              varlist, met_and_masks,
-                             outfilename=mass_file, trop_only=False,
-                             verbose=verbose)
+                             outfilename=mass_file, verbose=verbose)
 
     # Tropospheric mass
     mass_file = os.path.join(dst, '{}_GlobalMass_Trop.txt'.format(devstr))
