@@ -2528,7 +2528,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                       spc_name))
                 continue
 
-            # Convert units of Ref and Dev and save to nuypy ndarray objects
+            # Convert units of Ref and Dev and save to numpy ndarray objects
             # (or set to NaN if the variable is not found in Ref or Dev)
             if v in refonly and v not in devonly:
 
@@ -2539,7 +2539,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
 
                 # Set Dev to NaN everywhere (quick way: copy Ref first)
                 with xr.set_options(keep_attrs=True):
-                    devarray = refarray
+                    devarray = copy.copy(refarray)
                     devarray.values = np.nan
 
             elif v in devonly and v not in refonly:
@@ -2551,7 +2551,7 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
 
                 # Set Ref to NaN everywhere (quick way: copy Dev First)
                 with xr.set_options(keep_attrs=True):
-                    refarray = devarray
+                    refarray = copy.copy(devarray)
                     refarray.values = np.nan
 
             else:
@@ -4404,11 +4404,12 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict,
 
 def add_missing_variables(refdata, devdata):
     '''
-    Compares two xarray Datasets, "Ref", and "Dev".  For each variable
-    that is present  in "Ref" but not in "Dev", a DataArray of missing
-    values (i.e. NaN) will be added to "Dev".  Similarly, for each
-    variable that is present in "Dev" but not in "Ref", a DataArray
-    of missing values will be added to "Ref".
+    Compares two xarray Datasets, refdata, and devdata.  For each
+    variable that is present  in refdata but not in devdata, a
+    DataArray of missing values (i.e. NaN) will be added to devdata.
+    Similarly, for each variable that is present in devdata but not
+    in refdata, a DataArray of missing values will be added to
+    refdata.
 
     This routine is mostly intended for benchmark purposes, so that we
     can represent variables that were removed from a new GEOS-Chem
@@ -4425,9 +4426,8 @@ def add_missing_variables(refdata, devdata):
     Returns:
     --------
         refdata, devdata : xarray Datasets
-            The "Ref" and "Dev" datasets with missing value
-            variables added.  The "Ref" and "Dev" datasets
-            will now have the same list of variables.
+            The returned "Ref" and "Dev" datasets, with
+            placeholder missing value variables added.
     '''
     # ==================================================================
     # Initialize
@@ -4443,110 +4443,47 @@ def add_missing_variables(refdata, devdata):
     [cvars, cother, cvars2D, cvars3D,
      refonly, devonly] = core.compare_varnames(refdata, devdata, quiet=True)
 
-    # ==================================================================
-    # Ref dataset parameters
-    # ==================================================================
-    ref_dims = refdata.dims
-    ref_coords = refdata.coords
-    ref_shape = list(ref_dims.values())
+    # Don't clobber any netCDF attributes
+    with xr.set_options(keep_attrs=True):
 
-    # Create a tuple of the dimensions in Ref so that
-    # we can use it to create an array of NaN's.
-    ref_size = []
-    ref_dict = {}
-    if 'time' in ref_dims:
-        ref_size.append(ref_dims['time'])
-        ref_dict['time'] = ref_dims['time']
-    if 'lev' in ref_dims:
-        ref_size.append(ref_dims['lev'])
-        ref_dict['lev'] = ref_dims['lev']
-    if 'lat' in ref_dims:
-        ref_size.append(ref_dims['lat'])
-        ref_dict['lat'] = ref_dims['lat']
-    if 'YDim' in ref_dims:
-        ref_size.append(ref_dims['YDim'])
-        ref_dict['YDim'] = ref_dims['YDim']
-    if 'lon' in ref_dims:
-        ref_size.append(ref_dims['lon'])
-        ref_dict['lon'] = ref_dims['lon']
-    if 'XDim' in ref_dims:
-        ref_size.append(ref_dims['XDim'])
-        ref_dict['XDim'] = ref_dims['XDim']
-    ref_size_tuple = tuple(ref_size)
+        # ==============================================================
+        # For each variable that is in refdata but not in devdata,
+        # add a new DataArray to devdata with the same sizes but
+        # containing all NaN's.  This will allow us to represent those
+        # variables as missing values # when we plot against refdata.
+        # ==============================================================
+        for v in refonly:
 
-    # Create an array of NaNs with the dimensions of Dev
-    ref_nan = np.zeros(ref_size_tuple) * np.nan
-    
-    # ==================================================================
-    # Dev dataset parameters
-    # ==================================================================
-    dev_dims = devdata.dims
-    dev_coords = devdata.coords
-    dev_shape = list(dev_dims.values())
+            # Make a shallow-copy of the variable from refdata
+            dr = copy.copy(refdata[v])
 
-    # Create a tuple of the dimensions in Dev so that
-    # we can use it to create an array of NaN's.
-    dev_size = []
-    dev_dict = {}
-    if 'time' in dev_dims:
-        dev_size.append(dev_dims['time'])
-        dev_dict['time'] = dev_dims['time']
-    if 'lev' in dev_dims:
-        dev_size.append(dev_dims['lev'])
-        dev_dict['lev'] = dev_dims['lev']
-    if 'lat' in dev_dims:
-        dev_size.append(dev_dims['lat'])
-        dev_dict['lat'] = dev_dims['lat']
-    if 'YDim' in dev_dims:
-        dev_size.append(dev_dims['YDim'])
-        dev_dict['YDim'] = dev_dims['YDim']
-    if 'lon' in dev_dims:
-        dev_size.append(dev_dims['lon'])
-        dev_dict['lon'] = dev_dims['lon']
-    if 'XDim' in dev_dims:
-        dev_size.append(dev_dims['XDim'])
-        dev_dict['XDim'] = dev_dims['XDim']
-    dev_size_tuple = tuple(dev_size)
+            # Replace the values of dr with NaNs.
+            # dr will now represent missing data
+            shape = core.get_dataarray_shape(dr)
+            nan_arr = np.ones(shape, np.float) * np.nan
+            dr.values = nan_arr
 
-    # Create an array of NaNs with the dimensions of Dev
-    dev_nan = np.zeros(dev_size_tuple) * np.nan
+            # Merge dr into devdata
+            devdata = xr.merge([devdata,dr])
 
-    # ==================================================================
-    # For each variable that are in Ref but not in Dev, add a new
-    # DataArray to Dev with the same sizes but with NaN's.  This will
-    # allow us to represent those variables as missing values when
-    # we plot Dev against Ref.
-    # ==================================================================
-    for v in refonly:
-        name = refdata[v].name
-        dims = refdata[v].dims
-        attrs = refdata[v].attrs
+        # ==============================================================
+        # For each variable that is in devdata but not in refdata,
+        # add a new DataArray to refdata with the same sizes but
+        # containing all NaN's.  This will allow us to represent those
+        # variables as missing values # when we plot against devdata.
+        # ==================================================================
+        for v in devonly:
 
-        # Create a new DataArray of NaN's so and add it to devdata,
-        # but use the same name and attributes as in refdata.
-        dr = xr.DataArray(dev_nan, name=name, dims=dev_dict,
-                          coords=dev_coords, attrs=attrs)
+            # Make a shallow-copy of the variable from refdata
+            dr = copy.copy(devdata[v])
 
-        # Add to devdata
-        devdata = xr.merge([devdata,dr])
+            # Replace the values of dr with NaNs.
+            # dr will now represent missing data
+            shape = core.get_dataarray_shape(dr)
+            nan_arr = np.ones(shape, np.float) * np.nan
+            dr.values = nan_arr
 
-    # ==================================================================
-    # For each variable that are in Dev but not in Ref, add a new
-    # DataArray to Ref with the same sizes but with NaN's.  This will
-    # allow us to represent those variables as missing values when
-    # we plot Dev against Ref.
-    # ==================================================================
-    for v in devonly:
-        name = devdata[v].name
-        dims = devdata[v].dims
-        attrs = devdata[v].attrs
-
-        # Create a new DataArray of NaN's so and add it to devdata,
-        # but use the same name and attributes as in refdata.
-        dr = xr.DataArray(ref_nan, name=name, dims=ref_dict,
-                          coords=ref_coords, attrs=attrs)
-
-        # Add to refdata
-        refdata = xr.merge([refdata,dr])
+            # Merge dr into refdata
+            refdata = xr.merge([refdata,dr])
 
     return refdata, devdata
