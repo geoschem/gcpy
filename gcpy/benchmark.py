@@ -33,7 +33,7 @@ emission_spc = 'emission_species.json'
 emission_inv = 'emission_inventories.json' 
 
 # List of variables that should not be read by xarray
-drop_varlist = ['anchor']
+dropvars = ['anchor']
 
 
 def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
