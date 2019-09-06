@@ -17,6 +17,9 @@ import matplotlib.colors as mcolors
 lumped_spc = 'lumped_species.json'
 bpch_to_nc_names = 'bpch_to_nc_names.json'
 
+# List of variables that should not be read by xarray
+dropvars = ['anchor']
+
 
 def open_dataset(filename, **kwargs):
     '''
@@ -74,7 +77,7 @@ def open_dataset(filename, **kwargs):
                          'pass a BPCH or netCDF file with extension '
                          '"bpch" or "nc"!'.format(file_extension))
 
-    return _opener(filename, **kwargs)
+    return _opener(filename, **kwargs, drop_variables=dropvars)
 
 
 def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
@@ -156,19 +159,23 @@ def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
                          '"bpch" or "nc" or "nc4"'.format(file_extension))
         
     return _opener(filenames, concat_dim=concat_dim, compat=compat,
-                   preprocess=preprocess, lock=lock, **kwargs)
+                   preprocess=preprocess, lock=lock,
+                   drop_variables=dropvars, **kwargs)
 
 
 def get_gcc_filepath(outputdir, collection, day, time):
     if collection == 'Emissions':
-        filepath = os.path.join(outputdir, 'HEMCO_diagnostics.{}{}.nc'.format(day,time))
+        filepath = os.path.join(outputdir,
+                                'HEMCO_diagnostics.{}{}.nc'.format(day,time))
     else:
-        filepath = os.path.join(outputdir, 'GEOSChem.{}.{}_{}z.nc4'.format(collection,day,time))
+        filepath = os.path.join(outputdir,
+                                'GEOSChem.{}.{}_{}z.nc4'.format(collection,day,time))
     return filepath
 
 
 def get_gchp_filepath(outputdir, collection, day, time):
-    filepath = os.path.join(outputdir, 'GCHP.{}.{}_{}z.nc4'.format(collection,day,time))
+    filepath = os.path.join(outputdir,
+                            'GCHP.{}.{}_{}z.nc4'.format(collection,day,time))
     return filepath
 
 
