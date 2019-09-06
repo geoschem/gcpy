@@ -32,6 +32,9 @@ spc_categories = 'benchmark_categories.json'
 emission_spc = 'emission_species.json' 
 emission_inv = 'emission_inventories.json' 
 
+# List of variables that should not be read by xarray
+drop_varlist = ['anchor']
+
 
 def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          ilev=0, itime=0,  weightsdir=None, pdfname='',
@@ -2972,7 +2975,7 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
 
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref)
+        refds = xr.open_dataset(ref, drop_variables=dropvars)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
@@ -2980,7 +2983,7 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
     
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev)
+        devds = xr.open_dataset(dev, drop_variables=dropvars)
     except FileNotFoundError:
         print('Could not find Dev file: {}!'.format(dev))
         raise
@@ -3213,14 +3216,14 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
 
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref)
+        refds = xr.open_dataset(ref, drop_variables=dropvars)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev)
+        devds = xr.open_dataset(dev, drop_variables=dropvars)
     except FileNotFoundError:
         print('Could not find Dev file: {}'.format(dev))
         raise
@@ -3441,23 +3444,23 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
 
     # Ref
     if len(reflist) == 1:
-        refds = xr.open_dataset(reflist[0])
+        refds = xr.open_dataset(reflist[0], drop_variables=dropvars)
         assert gcc_area_name in list(refds.keys()),'Ref file {} does not contain area variable {}'.format(reflist[0], gcc_area_name)
 
     elif len(reflist) == 2:
-        refds = xr.open_dataset(reflist[0])
-        metrefds = xr.open_dataset(reflist[1])
+        refds = xr.open_dataset(reflist[0], drop_variables=dropvars)
+        metrefds = xr.open_dataset(reflist[1], drop_variables=dropvars)
         assert gchp_area_name in list(metrefds.keys()),'Ref met file {} does not contain area variable {}'.format(reflist[1], gchp_area_name)
         refds[gcc_area_name] = metrefds[gchp_area_name]
 
     # Dev
     if len(devlist) == 1:
-        devds = xr.open_dataset(devlist[0])
+        devds = xr.open_dataset(devlist[0], drop_variables=dropvars)
         assert gcc_area_name in list(refds.keys()),'Dev file {} does not contain area variable {}'.format(devlist[0], gcc_area_name)
 
     elif len(devlist) == 2:
-        devds = xr.open_dataset(devlist[0])
-        metdevds = xr.open_dataset(devlist[1])
+        devds = xr.open_dataset(devlist[0], drop_variables=dropvars)
+        metdevds = xr.open_dataset(devlist[1], drop_variables=dropvars)
         assert gchp_area_name in list(metdevds.keys()),'Dev met file {} does not contain area variable {}'.format(devlist[1], gchp_area_name)
         devds[gcc_area_name] = metdevds[gchp_area_name]
 
@@ -3604,14 +3607,14 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref)
+        refds = xr.open_dataset(ref, drop_variables=dropvars)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev)
+        devds = xr.open_dataset(dev, drop_variables=dropvars)
     except FileNotFoundError:
         print('Could not find Dev file: {}'.format(dev))
         raise
@@ -3832,14 +3835,14 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
 
     # Read the Ref dataset
     try:
-        refds = xr.open_dataset(ref)
+        refds = xr.open_dataset(ref, drop_variables=dropvars)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
 
     # Read the Dev dataset
     try:
-        devds = xr.open_dataset(dev)
+        devds = xr.open_dataset(dev, drop_variables=dropvars)
     except FileNotFoundError:
         print('Could not find Dev file: {}'.format(dev))
         raise
@@ -4054,14 +4057,14 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     
     # Ref
     try:
-        refds = xr.open_mfdataset(reflist)
+        refds = xr.open_mfdataset(reflist, drop_variables=dropvars)
     except FileNotFoundError:
         print('Error opening Ref files: {}'.format(reflist))
         raise
     
     # Dev dataset
     try:
-        devds = xr.open_mfdataset(devlist)
+        devds = xr.open_mfdataset(devlist, drop_variables=dropvars)
     except FileNotFoundError:
         print('Error opening Dev files: {}!'.format(devlist))
         raise
@@ -4214,7 +4217,7 @@ def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
 
     # Dev
     try:
-        devds = xr.open_mfdataset(devlist)
+        devds = xr.open_mfdataset(devlist, drop_variables=dropvars)
     except FileNotFoundError:
         print('Could not find one of the Dev files: {}'.format(devlist))
         raise
