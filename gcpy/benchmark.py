@@ -4057,7 +4057,7 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
         raise
 
     # ==================================================================
-    # Make sure that all necessary variables are present
+    # Make sure that all necessary meteorological variables are found
     # ==================================================================
 
     # Find the area variables in Ref and Dev
@@ -4065,11 +4065,14 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     dev_area = core.get_area_from_dataset(devds)
 
     # Find required meteorological variables in Ref
+    # (or exit with an error if we can't find them)
     metvar_list = ['Met_DELPDRY', 'Met_BXHEIGHT', 'Met_TropLev']
-    [ref_delta_p, ref_bxheight, ref_troplev] = \
-        core.get_variables_from_dataset(refds, metvar_list)
-    [dev_delta_p, dev_bxheight, dev_troplev] = \
-        core.get_variables_from_dataset(devds, metvar_list)
+    refmet = core.get_variables_from_dataset(refds, metvar_list)
+    devmet = core.get_variables_from_dataset(devds, metvar_list)
+
+    # ==================================================================
+    # Make sure that all necessary species are found
+    # ==================================================================
 
     # If varlist has not been passed as an argument, then use all
     # species concentration variables that are present in Ref or Dev.
@@ -4097,12 +4100,12 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # Convert the Met_TropLev DataArray objects to numpy ndarrays of
     # integer.  Also subtract 1 to convert from Fortran to Python
     # array index notation.
-    ref_lev = np.int_(np.squeeze(ref_troplev) - 1)
-    dev_lev = np.int_(np.squeeze(dev_troplev) - 1)
+    ref_lev = np.int_(np.squeeze(refmet['Met_TropLev'].values) - 1)
+    dev_lev = np.int_(np.squeeze(devmet['Met_TropLev'].values) - 1)
 
     # Mask of tropospheric grid boxes in the Ref dataset
     # (Maybe not the most efficient method but it works)
-    refshape = core.get_dataarray_shape(ref_bxheight)
+    refshape = core.get_dataarray_shape(refmet['Met_BXHEIGHT'])
     ref_tropmask = np.squeeze(np.zeros(refshape, bool))
     for y in range(refshape[2]):
         for x in range(refshape[3]):
@@ -4110,7 +4113,7 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
 
     # Mask of tropospheric grid boxes in the Dev dataset
     # (Maybe not the most efficient method but it works)
-    devshape = core.get_dataarray_shape(dev_bxheight)
+    devshape = core.get_dataarray_shape(devmet['Met_BXHEIGHT'])
     dev_tropmask = np.squeeze(np.zeros(devshape, bool))
     for y in range(devshape[2]):
         for x in range(devshape[3]):
@@ -4122,13 +4125,13 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # ==================================================================
     met_and_masks = {'Ref_Area'     : ref_area,
                      'Dev_Area'     : dev_area,
-                     'Ref_Delta_P'  : ref_delta_p,
-                     'Dev_Delta_P'  : dev_delta_p,
-                     'Ref_BxHeight' : ref_bxheight,
-                     'Dev_BxHeight' : dev_bxheight,
+                     'Ref_Delta_P'  : refmet['Met_DELPDRY'],
+                     'Dev_Delta_P'  : devmet['Met_DELPDRY'],
+                     'Ref_BxHeight' : refmet['Met_BXHEIGHT'],
+                     'Dev_BxHeight' : devmet['Met_BXHEIGHT'],
                      'Ref_TropMask' : ref_tropmask,
                      'Dev_TropMask' : dev_tropmask}
-    
+
     # ==================================================================
     # Create the tables
     # ==================================================================

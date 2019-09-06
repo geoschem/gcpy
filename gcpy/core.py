@@ -790,9 +790,9 @@ def get_area_from_dataset(ds):
 
 def get_variables_from_dataset(ds, varlist):
     '''
-    Convenience routine to return selected DataArray variables
-    from an xarray Dataset.  All variables must be found in the
-    Dataset, or else an error will be raised.
+    Convenience routine to return multiple selected DataArray
+    variables from an xarray Dataset.  All variables must be
+    found in the Dataset, or else an error will be raised.
 
     Args:
     -----
@@ -804,19 +804,25 @@ def get_variables_from_dataset(ds, varlist):
 
     Returns:
     --------
-        data_arrays : list of xarray DataArray
-            The DataArray variables corr
+        ds_subset : xarray Dataset
+            A new data set containing only the variables
+            that were requested.
+
+    Remarks:
+    -------
+    Use this routine if you absolutely need all of the requested
+    variables to be returned.  Otherwise
     '''
 
-    data_arrays = []
+    ds_subset = xr.Dataset()
     for v in varlist:
         if v in ds.data_vars.keys():
-            data_arrays.append(ds[v])
+            ds_subset = xr.merge([ds_subset, ds[v]])
         else:
             msg = '{} was not found in this dataset!'.format(v)
             raise ValueError(msg)
 
-    return data_arrays
+    return ds_subset
 
 
 def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
