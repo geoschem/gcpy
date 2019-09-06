@@ -231,11 +231,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     # =================================================================
 
     # If no cmpres is passed then choose highest resolution between ref and dev.
-    # If both datasets are cubed sphere then default to 1x1.25 for comparison.
+    # If one dataset is lat-lon and the other cubed sphere, and no 
+    # comparison grid resolution is passed, then default to 1x1.25
     if cmpres == None:
         if refres == devres and refgridtype == 'll':
             cmpres = refres
-            cmpgridtype = 'll'
+            cmpgridtype = refgridtype
         elif refgridtype == 'll' and devgridtype == 'll':
             cmpres = min([refres, devres])
             cmpgridtype = 'll'
@@ -249,6 +250,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         cmpgridtype = 'll'
     else:
         cmpgridtype = 'cs'
+        cmpres = int(cmpres) # must cast to integer for cubed-sphere
 
     # Determine what, if any, need regridding.
     regridref = refres != cmpres
@@ -614,7 +616,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         cmap_nongray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray.set_bad(color='gray')
-            
+
         # ==============================================================
         # Subplot (0,0): Ref, plotted on ref input grid
         # ==============================================================
@@ -1362,6 +1364,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
     # If no cmpres is passed then choose highest resolution between ref and dev.
     # If both datasets are cubed sphere then default to 1x1.25 for comparison.
+    # If cmpres pass as cubed-sphere, over-ride to be 1x1.25 lat-lon with
+    # a warning.
     cmpgridtype = 'll'
     if cmpres == None:
         if refres == devres and refgridtype == 'll':
@@ -1370,6 +1374,9 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             cmpres = min([refres, devres])
         else:
             cmpres = '1x1.25'
+    elif 'x' not in cmpres:
+        print('WARNING: zonal mean comparison grid must be lat-lon. Defaulting to 1x1.25')
+        cmpres = '1x1.25'
         
     # Determine what, if any, need regridding.
     regridref = refres != cmpres
