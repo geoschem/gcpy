@@ -682,6 +682,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # If Ref is zero or NaN everywhere, set a tick in the middle
         # of the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if ref_is_all_zero or ref_is_all_nan:
             cb.set_ticks([0.5])
             if ref_is_all_nan:
@@ -767,6 +768,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # If Dev is zero or NaN everywhere, set a tick in the middle of
         # the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if dev_is_all_zero or dev_is_all_nan:
             cb.set_ticks([0.5])
             if dev_is_all_nan:
@@ -850,6 +852,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # If all values of absdiff = 0, manually set a single tickmark at 0,
         # which falls into the center of the blue-white-red color scale.
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if absdiff_is_all_zero or absdiff_is_all_nan:
             cb.set_ticks([0.0])
             if absdiff_is_all_nan:
@@ -913,6 +916,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Define the colorbar for the plot.
         # If all values of absdiff = 0, then set a tick at 0.
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if absdiff_is_all_zero or absdiff_is_all_nan:
             cb.set_ticks([0.0])
             if absdiff_is_all_nan:
@@ -1003,6 +1007,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Use is_absdiff_all_zero to force the plot to show as all gray
         # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if absdiff_is_all_zero or fracdiff_is_all_nan:
             cb.set_ticks([0.0])
             if fracdiff_is_all_nan:
@@ -1067,6 +1072,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Use is_absdiff_all_zero to force the plot to show as all gray
         # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if absdiff_is_all_zero or fracdiff_is_all_nan:
             cb.set_ticks([0.0])
             if fracdiff_is_all_nan:
@@ -1713,6 +1719,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # is zero everywhere or NaN everywhere, set a tick in the middle
         # of the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if ref_is_all_zero or ref_is_all_nan:
             cb.set_ticks([0.5])
             if ref_is_all_nan:
@@ -1779,6 +1786,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # is zero everywhere or NaN everywhere, set a tick in the middle
         # of the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if dev_is_all_zero or dev_is_all_nan:
             cb.set_ticks([0.5])
             if dev_is_all_nan:
@@ -1860,6 +1868,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # is zero everywhere or NaN everywhere, set a tick in the middle
         # of the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if absdiff_is_all_zero or absdiff_is_all_nan:
             cb.set_ticks([0.0])
             if absdiff_is_all_nan:
@@ -1917,6 +1926,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # is zero everywhere or NaN everywhere, set a tick in the middle
         # of the normalized color range (which will be 0..1).
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if absdiff_is_all_zero or absdiff_is_all_nan:
             cb.set_ticks([0.0])
             if absdiff_is_all_nan:
@@ -1985,6 +1995,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Use is_absdiff_all_zero to force the plot to show as all gray
         # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if absdiff_is_all_zero or fracdiff_is_all_nan:
             cb.set_ticks([0.0])
             if fracdiff_is_all_nan:
@@ -1995,7 +2006,6 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
-        cb.set_clim(vmin=vmin, vmax=vmax)
         cb.set_label('unitless')   
 
         # ==============================================================
@@ -2041,6 +2051,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Use is_absdiff_all_zero to force the plot to show as all gray
         # when both Dev is zero and Ref is zero (since 0/0 = undefined).
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
+        cb.mappable.set_norm(norm)
         if absdiff_is_all_zero or fracdiff_is_all_nan:
             cb.set_ticks([0.0])
             if fracdiff_is_all_nan:
@@ -2051,7 +2062,6 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
-        cb.set_clim(vmin=vmin, vmax=vmax)
         cb.set_label('unitless') 
 
         # ==============================================================
