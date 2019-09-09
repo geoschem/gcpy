@@ -5,13 +5,14 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-
-import xarray as xr
-import xbpch
-import numpy as np
+from copy import copy as shallow_copy
 import json
-import shutil
 import matplotlib.colors as mcolors
+import numpy as np
+import shutil
+import xbpch
+import xarray as xr
+
 
 # JSON files to read
 lumped_spc = 'lumped_species.json'
@@ -890,3 +891,44 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
             return mcolors.LogNorm(vmin=vmax/1e3, vmax=vmax)
         else:
             return mcolors.Normalize(vmin=vmin, vmax=vmax)
+
+
+def create_dataarray_of_nan(dr):
+    '''
+    Given an xarray DataArray dr, returns a DataArray object with
+    the same dimensions, coordinates, attributes, and name, but
+    with its data set to missing values (NaN) everywhere.
+
+    This is useful if you need to plot or compare two DataArray
+    variables, and need to represent one as missing or undefined.
+
+    Args:
+    -----
+    dr : xarray DataArray
+        The input DataArray object.
+
+    Returns:
+    --------
+    dr_nan : xarray DataArray
+        The output DataArray object, which will be identical to
+        dr except that all of its data will be NaN (missing values).
+    '''
+
+    # Error checks
+    if not isinstance(dr, xr.DataArray):
+        raise ValueError('dr must be of type xarray DataArray!')
+
+    # Do not clobber any DataArray attributes
+    with xr.set_options(keep_attrs=True):
+    
+        # Make a shallow-copy of dr and get its shape
+        dr_nan = shallow_copy(dr)
+        shape = core.get_dataarray_shape(dr_nan)
+
+        # Create a numpy ndarray of NaN values and
+        # use it to reset the values of dr_nan         
+        nan_arr = np.empty(shape, np.float)
+        nan_arr.fill(np.nan)
+        dr_nan.values = nan_arr
+
+    return dr_nan
