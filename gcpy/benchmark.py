@@ -2196,7 +2196,7 @@ def create_display_name(diagnostic_name):
     return display_name
 
 
-def print_totals(ref, refstr, dev, devstr, f, met_and_masks=None):
+def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
     '''
     Computes and prints Ref and Dev totals (as well as the difference
     Dev - Ref) for two xarray DataArray objects.
@@ -2222,10 +2222,16 @@ def print_totals(ref, refstr, dev, devstr, f, met_and_masks=None):
 
     Keyword Arguments (optional):
     -----------------------------
-        met_and_masks : dict of xarray DataArray
+        mass_tables : bool
+            Set this switch to True if you would like to print out
+            totals of global mass.
+            Default value: False (i.e. print out emissions totals)
+
+        masks : dict of xarray DataArray
             Dictionary containing the tropospheric mask arrays
             for Ref and Dev.  If this keyword argument is passed,
             then print_totals will print tropospheric totals
+            NOTE: This option is only used if mass_tables=True.
             Default value: None (i.e. print whole-atmosphere totals)
 
     Remarks:
@@ -2289,10 +2295,10 @@ def print_totals(ref, refstr, dev, devstr, f, met_and_masks=None):
     if ref_is_all_nan:
         total_ref = np.nan
     else:
-        if met_and_masks is None:
+        if masks is None:
             total_ref = np.sum(ref.values)
         else:
-            arr = np.ma.masked_array(ref.values, met_and_masks['Ref_TropMask'])
+            arr = np.ma.masked_array(ref.values, masks['Ref_TropMask'])
             total_ref = np.sum(arr)
 
     # ==================================================================
@@ -2301,25 +2307,43 @@ def print_totals(ref, refstr, dev, devstr, f, met_and_masks=None):
     if dev_is_all_nan:
         total_dev = np.nan
     else:
-        if met_and_masks is None:
+        if masks is None:
             total_dev = np.sum(dev.values)
         else:
-            arr = np.ma.masked_array(dev.values, met_and_masks['Dev_TropMask'])
+            arr = np.ma.masked_array(dev.values, masks['Dev_TropMask'])
             total_dev = np.sum(arr)
 
     # ==================================================================
     # Compute differences (or set to NaN if missing)
     # ==================================================================
-    if ref_is_all_nan and dev_is_all_nan:
+    if ref_is_all_nan or dev_is_all_nan:
         diff = np.nan
     else:
         diff = total_dev - total_ref
 
     # ==================================================================
+    # Compute % differences (or set to NaN if missing)
+    # If ref is very small, near zero, also set the % diff to NaN
+    # ==================================================================
+    if mass_tables:
+        if np.isnan(total_ref) or np.isnan(total_dev):
+            pctdiff = np.nan
+        else:
+            pctdiff = ((total_dev - total_ref) / total_ref) * 100.0
+            if total_ref < 1.0e-15:
+                pctdiff = np.nan
+
+    # ==================================================================
     # Write output to file
     # ==================================================================
-    print('{} : {:18.6f}  {:18.6f}  {:13.6f} {}'.format(
-           display_name.ljust(21), total_ref, total_dev, diff, units), file=f)
+    if mass_tables: 
+        print('{} : {:18.6f}  {:18.6f}  {:13.6f}  {:8.3f}'.format(
+            display_name.ljust(12), total_ref,
+            total_dev, diff, pctdiff), file=f)
+    else:
+        print('{} : {:18.6f}  {:18.6f}  {:13.6f} {}'.format(
+            display_name.ljust(21), total_ref, total_dev,
+            diff, units), file=f)
 
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
@@ -2441,12 +2465,12 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     # ==================================================================
     # Get the list of emission variables for which we will print totals
     # ==================================================================
-    
+
     # Make sure that Ref and Dev datasets have the same variables.
     # Variables that are in Ref but not in Dev will be added to Dev
     # with all missing values (NaNs). And vice-versa.
     [refdata, devdata] = add_missing_variables(refdata, devdata)
-    
+
     # Find all common variables between the two datasets
     # and get the lists of variables only in Ref and only in Dev,
     [cvars, cvarsOther, cvars2D, cvars3D, refonly, devonly] = \
@@ -2496,10 +2520,12 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
         # Title strings
         if 'Inv' in template:
             print('Computing inventory totals for {}'.format(species_name))
-            title1 = '### Emissions totals for inventory {}'.format(species_name)
+            title1 = '### Emissions totals for inventory {}'.format(
+                species_name)
         else:
             print('Computing emissions totals for {}'.format(species_name))
-            title1 = '### Emissions totals for species {}'.format(species_name)
+            title1 = '### Emissions totals for species {}'.format(
+                species_name)
 
         title2 = '### Ref = {}; Dev = {}'.format(refstr, devstr)
 
@@ -2540,10 +2566,8 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                          species_properties, target_units,
                                          interval, refdata[ref_area_varname])
 
-                # Set Dev to NaN everywhere (quick way: copy Ref first)
-                with xr.set_options(keep_attrs=True):
-                    devarray = copy.copy(refarray)
-                    devarray.values = np.nan
+                # Set Dev to NaN (missing values) everywhere
+                devarray = core.create_dataarray_of_nan(refarray)
 
             elif v in devonly and v not in refonly:
 
@@ -2552,10 +2576,8 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                          species_properties, target_units,
                                          interval, devdata[dev_area_varname])
 
-                # Set Ref to NaN everywhere (quick way: copy Dev First)
-                with xr.set_options(keep_attrs=True):
-                    refarray = copy.copy(devarray)
-                    refarray.values = np.nan
+                # Set Ref to NaN (missing values) everywhere
+                refarray = core.create_dataarray_of_nan(devarray)
 
             else:
 
@@ -2694,9 +2716,9 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
 
     # Title strings
     if trop_only:
-        title1 = '### Global mass at end of simulation (Trop only)'
+        title1 = '### Global mass (Gg) at end of simulation (Trop only)'
     else:
-        title1 = '### Global mass at end of simulation (Trop + Strat)'
+        title1 = '### Global mass (Gg) at end of simulation (Trop + Strat)'
     title2 = '### Ref = {}; Dev = {}'.format(refstr, devstr) 
 
     # Print header to file
@@ -2704,8 +2726,9 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
     print('{}{}'.format(title1.ljust(76), '###'), file=f)
     print('{}{}'.format(title2.ljust(76), '###'), file=f)
     print('#'*79, file=f)
-    print('{}{}{}{}'.format(' '.ljust(22), 'Ref'.rjust(20), 'Dev'.rjust(20),
-                            'Dev - Ref'.rjust(15)), file=f)
+    print('{}{}{}{}{}'.format(' '.ljust(13), 'Ref'.rjust(20),
+                              'Dev'.rjust(20), 'Dev - Ref'.rjust(15),
+                              '% diff'.rjust(10)), file=f)
 
     # ==================================================================
     # Print global masses for all species
@@ -2762,9 +2785,10 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
         # ==============================================================
         if trop_only:
             print_totals(refarray, refstr, devarray, devstr, f,
-                         met_and_masks=met_and_masks)
+                         mass_tables=True, masks=met_and_masks)
         else:
-            print_totals(refarray, refstr, devarray, devstr, f)
+            print_totals(refarray, refstr, devarray, devstr, f,
+                         mass_tables=True)
 
     # ==================================================================
     # Close files
@@ -4452,7 +4476,7 @@ def add_missing_variables(refdata, devdata):
     [cvars, cother, cvars2D, cvars3D,
      refonly, devonly] = core.compare_varnames(refdata, devdata, quiet=True)
 
-    # Don't clobber any netCDF attributes
+    # Don't clobber any DataArray attributes
     with xr.set_options(keep_attrs=True):
 
         # ==============================================================
@@ -4462,17 +4486,7 @@ def add_missing_variables(refdata, devdata):
         # variables as missing values # when we plot against refdata.
         # ==============================================================
         for v in refonly:
-
-            # Make a shallow-copy of the variable from refdata
-            dr = copy.copy(refdata[v])
-
-            # Replace the values of dr with NaNs.
-            # dr will now represent missing data
-            shape = core.get_dataarray_shape(dr)
-            nan_arr = np.ones(shape, np.float) * np.nan
-            dr.values = nan_arr
-
-            # Merge dr into devdata
+            dr = core.create_dataarray_of_nan(refdata[v])
             devdata = xr.merge([devdata,dr])
 
         # ==============================================================
@@ -4482,17 +4496,7 @@ def add_missing_variables(refdata, devdata):
         # variables as missing values # when we plot against devdata.
         # ==================================================================
         for v in devonly:
-
-            # Make a shallow-copy of the variable from refdata
-            dr = copy.copy(devdata[v])
-
-            # Replace the values of dr with NaNs.
-            # dr will now represent missing data
-            shape = core.get_dataarray_shape(dr)
-            nan_arr = np.ones(shape, np.float) * np.nan
-            dr.values = nan_arr
-
-            # Merge dr into refdata
+            dr = core.create_dataarray_of_nan(refdata[v])
             refdata = xr.merge([refdata,dr])
 
     return refdata, devdata
