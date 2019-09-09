@@ -7,4 +7,4 @@ assignees: ''
 
 ---
 
-**Ask your question here**
+## Type your question below:
