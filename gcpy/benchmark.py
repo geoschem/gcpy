@@ -1717,11 +1717,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             ax0.set_title('{} (Ref){}\n{} regridded from c{}'.format(
                 refstr, subtitle_extra, cmpres, refres))
         ax0.set_aspect('auto')
-        ax0.invert_yaxis()
         ax0.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax0.set_yscale('log')
             ax0.yaxis.set_major_formatter(mticker.ScalarFormatter())
+        ax0.invert_yaxis()
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
 
@@ -1784,11 +1784,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             ax1.set_title('{} (Dev){}\n{} regridded from c{}'.format(
                 devstr, subtitle_extra, cmpres, devres))
         ax1.set_aspect('auto')
-        ax1.invert_yaxis()
         ax1.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax1.set_yscale('log')
             ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
+        ax1.invert_yaxis()
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
 
@@ -1866,11 +1866,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         else:
             ax2.set_title('Difference\nDev - Ref, Dynamic Range')
         ax2.set_aspect('auto')
-        ax2.invert_yaxis()
         ax2.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax2.set_yscale('log')
             ax2.yaxis.set_major_formatter(mticker.ScalarFormatter())
+        ax2.invert_yaxis()
         ax2.set_xticks(xtick_positions)
         ax2.set_xticklabels(xticklabels)
 
@@ -1924,11 +1924,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         else:
             ax3.set_title('Difference\nDev - Ref, Restriced Range [5%,95%]')
         ax3.set_aspect('auto')
-        ax3.invert_yaxis()
         ax3.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax3.set_yscale('log')
             ax3.yaxis.set_major_formatter(mticker.ScalarFormatter())
+        ax3.invert_yaxis()
         ax3.set_xticks(xtick_positions)
         ax3.set_xticklabels(xticklabels)
 
@@ -1992,12 +1992,12 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             ax4.set_title('Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range'.format(cmpres))
         else:
             ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range')
-        ax4.invert_yaxis()
         ax4.set_aspect('auto')
         if log_yaxis: 
             ax4.set_yscale('log')
             ax4.yaxis.set_major_formatter(mticker.ScalarFormatter())
         ax4.set_ylabel('Pressure (hPa)')
+        ax4.invert_yaxis()
         ax4.set_xticks(xtick_positions)
         ax4.set_xticklabels(xticklabels)
 
@@ -2049,11 +2049,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         else:
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range')
         ax5.set_aspect('auto')
-        ax5.invert_yaxis()
         ax5.set_ylabel('Pressure (hPa)')
         if log_yaxis: 
             ax5.set_yscale('log')
             ax5.yaxis.set_major_formatter(mticker.ScalarFormatter())
+        ax5.invert_yaxis()
         ax5.set_xticks(xtick_positions)
         ax5.set_xticklabels(xticklabels)
 
