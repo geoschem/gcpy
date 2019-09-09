@@ -3092,29 +3092,32 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
         # ==============================================================
         if sigdiff_files != None:
             for filename in sigdiff_files:
-                if 'sfc' in filename:
-                    with open(filename, 'a+') as f:
-                        print('* {}: '.format(filecat), file=f, end='')
-                        for v in diff_sfc:
-                            print('{} '.format(v), file=f, end='')
-                        print(file=f)
-                        f.close()
+                if 'sfc' in plots:
+                    if 'sfc' in filename:
+                        with open(filename, 'a+') as f:
+                            print('* {}: '.format(filecat), file=f, end='')
+                            for v in diff_sfc:
+                                print('{} '.format(v), file=f, end='')
+                            print(file=f)
+                            f.close()
 
-                if '500' in filename:
-                    with open(filename, 'a+') as f:
-                        print('* {}: '.format(filecat), file=f, end='')
-                        for v in diff_500:
-                            print('{} '.format(v), file=f, end='')
-                        print(file=f)
-                        f.close()
+                if '500' in plots:
+                    if '500' in filename:
+                        with open(filename, 'a+') as f:
+                            print('* {}: '.format(filecat), file=f, end='')
+                            for v in diff_500:
+                                print('{} '.format(v), file=f, end='')
+                            print(file=f)
+                            f.close()
 
-                if 'zonalmean' in filename or 'zm' in filename:
-                    with open(filename, 'a+') as f:
-                        print('* {}: '.format(filecat), file=f, end='')
-                        for v in diff_zm:
-                            print('{} '.format(v), file=f, end='')
-                        print(file=f)
-                        f.close()
+                if 'zonalmean' in plots or zm in plots:
+                    if 'zonalmean' in filename or 'zm' in filename:
+                        with open(filename, 'a+') as f:
+                            print('* {}: '.format(filecat), file=f, end='')
+                            for v in diff_zm:
+                                print('{} '.format(v), file=f, end='')
+                            print(file=f)
+                            f.close()
 
 
 def make_benchmark_emis_plots(ref, refstr, dev, devstr,
@@ -3743,29 +3746,32 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
         # ==============================================================
         if sigdiff_files != None:
             for filename in sigdiff_files:
-                if 'sfc' in filename:
-                    with open(filename, 'a+') as f:
-                        print('* J-Values: ', file=f, end='')
-                        for v in diff_sfc:
-                            print('{} '.format(v), file=f, end='')
-                        print(file=f)
-                        f.close()
+                if 'sfc' in plots:
+                    if 'sfc' in filename:
+                        with open(filename, 'a+') as f:
+                            print('* J-Values: ', file=f, end='')
+                            for v in diff_sfc:
+                                print('{} '.format(v), file=f, end='')
+                            print(file=f)
+                            f.close()
 
-                if '500' in filename:
-                    with open(filename, 'a+') as f:
-                        print('* J-Values: ', file=f, end='')
-                        for v in diff_500:
-                            print('{} '.format(v), file=f, end='')
-                        print(file=f)
-                        f.close()
+                if '500' in plots:
+                    if '500' in filename:
+                        with open(filename, 'a+') as f:
+                            print('* J-Values: ', file=f, end='')
+                            for v in diff_500:
+                                print('{} '.format(v), file=f, end='')
+                            print(file=f)
+                            f.close()
 
-                if 'zonalmean' in filename or 'zm' in filename:
-                    with open(filename, 'a+') as f:
-                        print('* J-Values: ', file=f, end='')
-                        for v in diff_zm:
-                            print('{} '.format(v), file=f, end='')
-                        print(file=f)
-                        f.close()
+                if 'zonalmean' in plots or zm in plots:
+                    if 'zonalmean' in filename or 'zm' in filename:
+                        with open(filename, 'a+') as f:
+                            print('* J-Values: ', file=f, end='')
+                            for v in diff_zm:
+                                print('{} '.format(v), file=f, end='')
+                            print(file=f)
+                            f.close()
 
 
 def make_benchmark_aod_plots(ref, refstr, dev, devstr,
