@@ -32,9 +32,6 @@ spc_categories = 'benchmark_categories.json'
 emission_spc = 'emission_species.json' 
 emission_inv = 'emission_inventories.json' 
 
-# List of variables that should not be read by xarray
-dropvars = ['anchor']
-
 
 def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          ilev=0, itime=0,  weightsdir=None, pdfname='',
@@ -2265,12 +2262,17 @@ def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
             raise ValueError(msg)
 
         # (2) Make sure that Ref and Dev have the same shape
-        ref_shape = core.get_dataarray_shape(ref)
-        dev_shape = core.get_dataarray_shape(dev)
+        # NOTE: In MAPL v1.0.0, the data has 5 dimensions (time, lev,
+        # # of faces, YDim, Xdim) whereas older GCHP outputs only have
+        # 4 dimensions (time, lev, 6*NY, NX).  If the shapes don't
+        # match, then also check if the total number of elements match.
+        ref_shape = core.get_shape_of_data(ref)
+        dev_shape = core.get_shape_of_data(dev)
         if ref_shape != dev_shape:
-            msg = 'Ref has shape {}, but Dev has shape {}!'.format(
-                ref_shape, dev_shape)
-            raise ValueError(msg)
+            if not (np.product(ref_shape) == np.product(dev_shape)):
+                msg = 'Ref has shape {}, but Dev has shape {}!'.format(
+                    ref_shape, dev_shape)
+                raise ValueError(msg)
 
     # ==================================================================
     # Get the diagnostic name and units
@@ -2567,7 +2569,9 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                          interval, refdata[ref_area_varname])
 
                 # Set Dev to NaN (missing values) everywhere
-                devarray = core.create_dataarray_of_nan(refarray)
+                devarray = core.create_dataarray_of_nan(
+                    name=refdata[v].name, sizes=devdata.sizes,
+                    coords=devdata.coords, attrs=refdata[v].attrs)
 
             elif v in devonly and v not in refonly:
 
@@ -2577,7 +2581,9 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                          interval, devdata[dev_area_varname])
 
                 # Set Ref to NaN (missing values) everywhere
-                refarray = core.create_dataarray_of_nan(devarray)
+                refarray = core.create_dataarray_of_nan(
+                    name=devdata[v].name, sizes=refdata.sizes,
+                    coords=refdata.coords, attrs=devdata[v].attrs)
 
             else:
 
@@ -3007,9 +3013,12 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
+    # Get a list of variables that GCPy should not read
+    skip_vars = core.skip_these_vars()
+
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=dropvars)
+        refds = xr.open_dataset(ref, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
@@ -3017,7 +3026,7 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
     
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=dropvars)
+        devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Could not find Dev file: {}!'.format(dev))
         raise
@@ -3251,16 +3260,19 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir)   
 
+    # Get a list of variables that GCPy should not read
+    skip_vars = core.skip_these_vars()
+
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=dropvars)
+        refds = xr.open_dataset(ref, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=dropvars)
+        devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Could not find Dev file: {}'.format(dev))
         raise
@@ -3472,6 +3484,9 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
+    # Get a list of variables that GCPy should not read
+    skip_vars = core.skip_these_vars()
+
     # GEOS-Chem Classic files all contain surface area as variable AREA.
     # GCHP files do not and area must be retrieved from the met-field
     # collection from variable Met_AREAM2. To simplify comparisons,
@@ -3481,24 +3496,32 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
 
     # Ref
     if len(reflist) == 1:
-        refds = xr.open_dataset(reflist[0], drop_variables=dropvars)
-        assert gcc_area_name in list(refds.keys()),'Ref file {} does not contain area variable {}'.format(reflist[0], gcc_area_name)
+        refds = xr.open_dataset(reflist[0], drop_variables=skip_vars)
+        assert gcc_area_name in list(refds.keys()), \
+        'Ref file {} does not contain area variable {}'.format(
+            reflist[0], gcc_area_name)
 
     elif len(reflist) == 2:
-        refds = xr.open_dataset(reflist[0], drop_variables=dropvars)
-        metrefds = xr.open_dataset(reflist[1], drop_variables=dropvars)
-        assert gchp_area_name in list(metrefds.keys()),'Ref met file {} does not contain area variable {}'.format(reflist[1], gchp_area_name)
+        refds = xr.open_dataset(reflist[0], drop_variables=skip_vars)
+        metrefds = xr.open_dataset(reflist[1], drop_variables=skip_vars)
+        assert gchp_area_name in list(metrefds.keys()), \
+        'Ref met file {} does not contain area variable {}'.format(
+            reflist[1], gchp_area_name)
         refds[gcc_area_name] = metrefds[gchp_area_name]
 
     # Dev
     if len(devlist) == 1:
-        devds = xr.open_dataset(devlist[0], drop_variables=dropvars)
-        assert gcc_area_name in list(refds.keys()),'Dev file {} does not contain area variable {}'.format(devlist[0], gcc_area_name)
+        devds = xr.open_dataset(devlist[0], drop_variables=skip_vars)
+        assert gcc_area_name in list(refds.keys()), \
+        'Dev file {} does not contain area variable {}'.format(
+            devlist[0], gcc_area_name)
 
     elif len(devlist) == 2:
-        devds = xr.open_dataset(devlist[0], drop_variables=dropvars)
-        metdevds = xr.open_dataset(devlist[1], drop_variables=dropvars)
-        assert gchp_area_name in list(metdevds.keys()),'Dev met file {} does not contain area variable {}'.format(devlist[1], gchp_area_name)
+        devds = xr.open_dataset(devlist[0], drop_variables=skip_vars)
+        metdevds = xr.open_dataset(devlist[1], drop_variables=skip_vars)
+        assert gchp_area_name in list(metdevds.keys()), \
+        'Dev met file {} does not contain area variable {}'.format(
+            devlist[1], gchp_area_name)
         devds[gcc_area_name] = metdevds[gchp_area_name]
 
     # ==================================================================
@@ -3642,16 +3665,19 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
+    # Get a list of variables that GCPy should not read
+    skip_vars = core.skip_these_vars()
+
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=dropvars)
+        refds = xr.open_dataset(ref, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=dropvars)
+        devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Could not find Dev file: {}'.format(dev))
         raise
@@ -3873,16 +3899,19 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     if not os.path.isdir(aoddir):
         os.mkdir(aoddir)
 
+    # Get a list of variables that GCPy should not read
+    skip_vars = core.skip_these_vars()
+
     # Read the Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=dropvars)
+        refds = xr.open_dataset(ref, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Could not find Ref file: {}'.format(ref))
         raise
 
     # Read the Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=dropvars)
+        devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Could not find Dev file: {}'.format(dev))
         raise
@@ -4094,17 +4123,20 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # ==================================================================
     # Read data from netCDF into Dataset objects
     # ==================================================================
-    
+
+    # Get a list of variables that GCPy should not read
+    skip_vars = core.skip_these_vars()
+
     # Ref
     try:
-        refds = xr.open_mfdataset(reflist, drop_variables=dropvars)
+        refds = xr.open_mfdataset(reflist, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Error opening Ref files: {}'.format(reflist))
         raise
     
     # Dev dataset
     try:
-        devds = xr.open_mfdataset(devlist, drop_variables=dropvars)
+        devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Error opening Dev files: {}!'.format(devlist))
         raise
@@ -4158,7 +4190,7 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
 
     # Mask of tropospheric grid boxes in the Ref dataset
     # (Maybe not the most efficient method but it works)
-    refshape = core.get_dataarray_shape(refmet['Met_BXHEIGHT'])
+    refshape = core.get_shape_of_data(refmet['Met_BXHEIGHT'])
     ref_tropmask = np.squeeze(np.ones(refshape, bool))
     for y in range(refshape[2]):
         for x in range(refshape[3]):
@@ -4166,7 +4198,7 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
 
     # Mask of tropospheric grid boxes in the Dev dataset
     # (Maybe not the most efficient method but it works)
-    devshape = core.get_dataarray_shape(devmet['Met_BXHEIGHT'])
+    devshape = core.get_shape_of_data(devmet['Met_BXHEIGHT'])
     dev_tropmask = np.squeeze(np.ones(devshape, bool))
     for y in range(devshape[2]):
         for x in range(devshape[3]):
@@ -4254,9 +4286,12 @@ def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
+    # Get a list of variables that GCPy should not read
+    skip_vars = core.skip_these_vars()
+
     # Dev
     try:
-        devds = xr.open_mfdataset(devlist, drop_variables=dropvars)
+        devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
     except FileNotFoundError:
         print('Could not find one of the Dev files: {}'.format(devlist))
         raise
@@ -4435,7 +4470,7 @@ def add_nested_bookmarks_to_pdf( pdfname, category, catdict,
     os.rename(pdfname_tmp, pdfname)
 
 
-def add_missing_variables(refdata, devdata):
+def add_missing_variables(refdata, devdata, **kwargs):
     '''
     Compares two xarray Datasets, refdata, and devdata.  For each
     variable that is present  in refdata but not in devdata, a
@@ -4486,7 +4521,11 @@ def add_missing_variables(refdata, devdata):
         # variables as missing values # when we plot against refdata.
         # ==============================================================
         for v in refonly:
-            dr = core.create_dataarray_of_nan(refdata[v])
+            dr = core.create_dataarray_of_nan(name=refdata[v].name,
+                                              sizes=devdata.sizes,
+                                              coords=devdata.coords,
+                                              attrs=refdata[v].attrs,
+                                              **kwargs)
             devdata = xr.merge([devdata,dr])
 
         # ==============================================================
@@ -4496,7 +4535,11 @@ def add_missing_variables(refdata, devdata):
         # variables as missing values # when we plot against devdata.
         # ==================================================================
         for v in devonly:
-            dr = core.create_dataarray_of_nan(refdata[v])
+            dr = core.create_dataarray_of_nan(name=devdata[v].name,
+                                              sizes=refdata.sizes,
+                                              coords=refdata.coords,
+                                              attrs=devdata[v].attrs,
+                                              **kwargs)
             refdata = xr.merge([refdata,dr])
 
     return refdata, devdata

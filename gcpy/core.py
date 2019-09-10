@@ -10,16 +10,29 @@ import json
 import matplotlib.colors as mcolors
 import numpy as np
 import shutil
-import xbpch
 import xarray as xr
+import xbpch
 
 
 # JSON files to read
 lumped_spc = 'lumped_species.json'
 bpch_to_nc_names = 'bpch_to_nc_names.json'
 
-# List of variables that should not be read by xarray
-dropvars = ['anchor']
+
+def skip_these_vars():
+    '''
+    Returns a list of variables that should not be read by GCPy.
+    These are mostly from the MAPL v1.0.0 cubed-sphere files,
+    which introduce extra dimensions that are not easily handled
+    by xarray and/or GCPy.
+
+    Example:
+    --------
+    >>> from gcpy import core
+    >>> import xarray as xr
+    >>> ds = xr.open_dataset('myfile.nc', drop_variables=skip_these_vars())
+    '''
+    return ['anchor', 'ncontact', 'orientation']
 
 
 def open_dataset(filename, **kwargs):
@@ -78,7 +91,7 @@ def open_dataset(filename, **kwargs):
                          'pass a BPCH or netCDF file with extension '
                          '"bpch" or "nc"!'.format(file_extension))
 
-    return _opener(filename, **kwargs, drop_variables=dropvars)
+    return _opener(filename, **kwargs, drop_variables=skip_these_vars())
 
 
 def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
@@ -161,7 +174,7 @@ def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
         
     return _opener(filenames, concat_dim=concat_dim, compat=compat,
                    preprocess=preprocess, lock=lock,
-                   drop_variables=dropvars, **kwargs)
+                   drop_variables=skip_these_vars(), **kwargs)
 
 
 def get_gcc_filepath(outputdir, collection, day, time):
@@ -735,38 +748,71 @@ def divide_dataset_by_dataarray(ds, dr, varlist=None):
     return ds
 
 
-def get_dataarray_shape(dr):
+def get_shape_of_data(data, vertical_dim='lev', return_dims=False):
     '''
-    Convenience routine to return the shape of an xarray DataArray
-    object.  Returns the size of each dimension in the preferred
-    netCDF ordering (time, lev|ilev, lat, lon).
+    Convenience routine to return a the shape (and dimensions, if
+    requested) of an xarray Dataset, or xarray DataArray.  Can also
+    also take as input a dictionary of sizes (i.e. {'time': 1,
+    'lev': 72, ...} from an xarray Dataset or xarray Datarray object.
 
     Args:
     -----
-    dr : xarray DataArray
-        The input DataArray object.
+    data : xarray Dataset, xarray DataArray, or dict
+        The data for which the size is requested.
+
+    Keyword Args (optional):
+    -------------------------
+    vertical_dim : str
+        Specify the vertical dimension that you wish to
+        return: lev or ilev.
+        Default value: 'lev'
+
+    return_dims : bool
+        Set this switch to True if you also wish to return a list of
+        dimensions in the same order as the tuple of dimension sizes.
+        Default value: False
 
     Returns:
     --------
-    sizes : tuple of int
+    shape : tuple of int
         Tuple containing the sizes of each dimension of dr in order:
-        (time, lev|ilev, lat|YDim, lon|XDim).
+        (time, lev|ilev, nf, lat|YDim, lon|XDim).
+
+    dims : list of str
+        If return_dims is True, then dims will contain a list of
+        dimension names in the same order as shape
+        (['time', 'lev', 'lat', 'lon'] for GEOS-Chem "Classic",
+         or ['time', 'lev', 'nf', 'Ydim', 'Xdim'] for GCHP.
     '''
 
-    # Make sure that dr is an xarray Dataarray
-    if not isinstance(dr, xr.DataArray):
-        raise ValueError('dr must be of type xarray DataArray!')
+    # Validate the data argument
+    if isinstance(data, xr.Dataset) or isinstance(data, xr.DataArray):
+        sizelist = data.sizes
+    elif isinstance(data, dict):
+        sizelist = data
+    else:
+        msg = 'The "dataset" argument must be either an xarray Dataset, ' + \
+              ' xarray DataArray, or a dictionary!'
+        raise ValueError(msg)
     
     # Initialize
-    sizes = ()
-    dims = ['time', 'lev', 'ilev', 'lat', 'Ydim', 'lon', 'Xdim']
+    dimlist = ['time', vertical_dim, 'lat', 'nf', 'Ydim', 'lon', 'Xdim']
+    shape = ()
+    dims = []
 
-    # Return a tuple with the size of each found dimension
-    for d in dims:
-        if d in dr.sizes:
-            sizes += (dr.sizes[d],)
-
-    return sizes
+    # Return a tuple with the shape of each dimension (and also a
+    # list of each dimension if return_dims is True).
+    if return_dims:
+        for d in dimlist:
+            if d in sizelist:
+                shape += (sizelist[d],)
+                dims.append(d)
+        return shape, dims
+    else:
+        for d in dimlist:
+            if d in sizelist:
+                shape += (sizelist[d],)
+        return shape
 
 
 def get_area_from_dataset(ds):
@@ -833,6 +879,74 @@ def get_variables_from_dataset(ds, varlist):
     return ds_subset
 
 
+def create_dataarray_of_nan(name, sizes, coords, attrs, vertical_dim='lev'):
+    '''
+    Given an xarray DataArray dr, returns a DataArray object with
+    the same dimensions, coordinates, attributes, and name, but
+    with its data set to missing values (NaN) everywhere.
+
+    This is useful if you need to plot or compare two DataArray
+    variables, and need to represent one as missing or undefined.
+
+    Args:
+    -----
+    name : str
+        The name for the DataArray object that will contain NaNs.
+
+    sizes : dict of int
+        Dictionary of the dimension names and their sizes (e.g.
+        {'time' : 1 ', 'lev': 72, ...} that will be used to create
+        the DataArray of NaNs.  This can be obtained from an
+        xarray Dataset as ds.sizes.
+
+    coords : dict of lists of float
+        Dictionary containing the coordinate variables that will
+        be used to create the DataArray of NaNs.  This can be obtained
+        from an xarray Dataset with ds.coords.
+
+    attrs : dict of str
+        Dictionary containing the DataArray variable attributes
+        (such as "units", "long_name", etc.).  This can be obtained
+        from an xarray Dataset with dr.attrs.
+
+    Returns:
+    --------
+    dr : xarray DataArray
+        The output DataArray object, which will contain NaN values
+        everywhere.  This will denote missing data.
+    '''
+
+    # Save dims and coords into local variables
+    # NOTE: Cast to type dict so that we can delete keys and values
+    new_sizes = dict(sizes)
+    new_coords = dict(coords)
+
+    # Only keep one of the vertical dimensions (lev or ilev)
+    if vertical_dim == 'lev':
+        if 'ilev' in new_sizes:
+            del new_sizes['ilev']
+            del new_coords['ilev']
+    elif vertical_dim == 'ilev':
+        if 'lev' in new_sizes:
+            del new_sizes['lev']
+            del new_coords['lev']
+    else:
+        msg = 'The "vertical_lev" argument must be either "lev" or "ilev"!'
+        raise ValueError(msg)
+
+    # Get the names and sizes of the dimensions
+    # after discarding one of "lev" or "ilev"
+    [new_shape, new_dims] = get_shape_of_data(new_sizes, return_dims=True)
+
+    # Create an array full of NaNs of the required size
+    nan_arr = np.empty(new_shape, np.float)
+    nan_arr.fill(np.nan)
+
+    # Create a DataArray of NaN's
+    return xr.DataArray(nan_arr, name=name, dims=new_dims,
+                        coords=new_coords, attrs=attrs)
+
+
 def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
     '''
     Normalizes colors to the range of 0..1 for input to matplotlib-based
@@ -893,42 +1007,3 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
             return mcolors.Normalize(vmin=vmin, vmax=vmax)
 
 
-def create_dataarray_of_nan(dr):
-    '''
-    Given an xarray DataArray dr, returns a DataArray object with
-    the same dimensions, coordinates, attributes, and name, but
-    with its data set to missing values (NaN) everywhere.
-
-    This is useful if you need to plot or compare two DataArray
-    variables, and need to represent one as missing or undefined.
-
-    Args:
-    -----
-    dr : xarray DataArray
-        The input DataArray object.
-
-    Returns:
-    --------
-    dr_nan : xarray DataArray
-        The output DataArray object, which will be identical to
-        dr except that all of its data will be NaN (missing values).
-    '''
-
-    # Error checks
-    if not isinstance(dr, xr.DataArray):
-        raise ValueError('dr must be of type xarray DataArray!')
-
-    # Do not clobber any DataArray attributes
-    with xr.set_options(keep_attrs=True):
-    
-        # Make a shallow-copy of dr and get its shape
-        dr_nan = shallow_copy(dr)
-        shape = core.get_dataarray_shape(dr_nan)
-
-        # Create a numpy ndarray of NaN values and
-        # use it to reset the values of dr_nan         
-        nan_arr = np.empty(shape, np.float)
-        nan_arr.fill(np.nan)
-        dr_nan.values = nan_arr
-
-    return dr_nan
