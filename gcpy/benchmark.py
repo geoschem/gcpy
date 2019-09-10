@@ -241,8 +241,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             cmpres = min([refres, devres])
             cmpgridtype = 'll'
         elif refgridtype == 'cs' and devgridtype == 'cs':
-            cmpres = max([refres, devres])
-            cmpgridtype = 'cs'
+            # CS to CS regridding is not enabled yet, so default to 1x1.25
+            #cmpres = max([refres, devres])
+            #cmpgridtype = 'cs'
+            cmpres = '1x1.25'
+            cmpgridtype = 'll'
         else:
             cmpres = '1x1.25'
             cmpgridtype = 'll'
