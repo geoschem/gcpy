@@ -621,10 +621,16 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (0,0): Ref, plotted on ref input grid
         # ==============================================================
 
-        # Set colorbar min/max
+        # Set local flags to denote if Ref is zero or NaN everywhere
+        # (these will eventually be passed to a plotting routine,
+        # once we abstract the plotting code below).
+        all_zero = ref_is_all_zero
+        all_undefined = ref_is_all_nan
+
+        # Set min and max of the data range.
         # NOTE: If Dev contains all NaN's, then just use the min and
         # max of Ref to set the data range, even if match_cbar=True.
-        if ref_is_all_zero or ref_is_all_nan:
+        if all_zero or all_undefined:
             [vmin, vmax] = [vmin_ref, vmax_ref]
         elif use_cmap_RdBu:
             if match_cbar and (not dev_is_all_nan):
@@ -683,14 +689,14 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                                        cmap=cmap_toprow_nongray,
                                        norm=norm)
 
-        # Define the colorbar for log or linear color scales
-        # If Ref is zero or NaN everywhere, set a tick in the middle
-        # of the normalized color range (which will be 0..1).
+        # Define the colorbar for the plot.  If Ref is zero everywhere
+        # or NaN everywhere, set a single tick in the middle of the
+        # colorbar with the appopriate label.
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if ref_is_all_zero or ref_is_all_nan:
-            cb.set_ticks([0.5])
-            if ref_is_all_nan:
+        if all_zero or all_undefined:
+            cb.set_ticks(core.one_cb_tick_in_center())
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
@@ -707,10 +713,16 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (0,1): Dev, plotted on dev input grid
         # ==============================================================
 
-        # Set colorbar min/max
+        # Set local flags to denote if Dev is zero or NaN everywhere
+        # (these will eventually be passed to a plotting routine,
+        # once we abstract the plotting code below).
+        all_zero = dev_is_all_zero
+        all_undefined = dev_is_all_nan
+
+        # Set min and max of the data range.
         # NOTE: If Ref contains all NaN's, then just use the min and
         # max of Dev to set the data range, even if match_cbar=True.
-        if dev_is_all_zero or dev_is_all_nan:
+        if all_zero or all_undefined:
             [vmin, vmax] = [vmin_dev, vmax_dev]
         elif use_cmap_RdBu:
             if match_cbar and (not ref_is_all_nan):
@@ -770,13 +782,13 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                                        norm=norm)
 
         # Define the colorbar for log or linear color scales
-        # If Dev is zero or NaN everywhere, set a tick in the middle of
-        # the normalized color range (which will be 0..1).
+        # If Dev is zero or NaN everywhere, set a single tick
+        # in the middle of the colorbar with the appopriate label.
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if dev_is_all_zero or dev_is_all_nan:
-            cb.set_ticks([0.5])
-            if dev_is_all_nan:
+        if all_zero or all_undefined:
+            cb.set_ticks(core.one_cb_tick_in_center())
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
@@ -792,13 +804,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # ==============================================================
         # Calculate absolute difference
         # ==============================================================
-
         if cmpgridtype == 'll':
             absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
         else:
-            absdiff_raw = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
-            absdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2,
-                                         absdiff_raw)
+            absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
 
         # Test if the abs. diff. is zero everywhere or NaN everywhere
         absdiff_is_all_zero = not np.any(absdiff)
@@ -808,16 +817,28 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         diffabsmax = max([np.abs(np.nanmin(absdiff)),
                           np.abs(np.nanmax(absdiff))])            
 
+        # For cubed-sphere, take special care to avoid a spurious
+        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
+        if cmpgridtype == 'cs':
+            absdiff = np.ma.masked_where(np.abs(cmpgrid['lon'] - 180) < 2,
+                                         absdiff)
+
         # ==============================================================
         # Subplot (1,0): Difference, dynamic range
         # ==============================================================
 
+        # Set local flags to denote if Abs. Diff. is zero or NaN
+        # everywhere (these will eventually be passed to a plotting
+        # routine, once we abstract the plotting code below).
+        all_zero = absdiff_is_all_zero
+        all_undefined = absdiff_is_all_nan
+
         # Set data range.  If absdiff is not all zeroes or all NaN,
         # then set the data range to be symmetric around the dynamic
         # range of the data.
-        if absdiff_is_all_zero:
+        if all_zero:
             [vmin, vmax] = [0, 0]
-        elif absdiff_is_all_nan:
+        elif all_undefined:
             [vmin, vmax] = [np.nan, np.nan]
         else:
             [vmin, vmax] = [-diffabsmax, diffabsmax]
@@ -853,14 +874,14 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             ax2.set_title('Difference\nDev - Ref, Dynamic Range')
 
-        # Define the colorbar for the plot
-        # If all values of absdiff = 0, manually set a single tickmark at 0,
-        # which falls into the center of the blue-white-red color scale.
+        # Define the colorbar for the plot.  If absdiff is zero
+        # everywhere or NaN everywhere, set a single tick in
+        # the middle of the colorbar with the appopriate label.
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if absdiff_is_all_zero or absdiff_is_all_nan:
+        if all_zero or all_undefined:
             cb.set_ticks([0.0])
-            if absdiff_is_all_nan:
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
@@ -874,12 +895,18 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (1,1): Difference, restricted range
         # ==============================================================
 
+        # Set local flags to denote if Abs. Diff is zero or NaN
+        # everywhere (these will eventually be passed to a plotting
+        # routine, once we abstract the plotting code below).
+        all_zero = absdiff_is_all_zero
+        all_undefined = absdiff_is_all_nan
+
         # Set data range.  If absdiff is not all zeroes or all NaN,
         # then set the data range to be symmetric around the larger
         # of the 5th and 95th percentiles.
-        if absdiff_is_all_zero:
+        if all_zero:
             [vmin, vmax] = [0, 0]
-        elif absdiff_is_all_nan:
+        elif all_undefined:
             [vmin, vmax] = [np.nan, np.nan]
         else:
             [pct5, pct95] = [np.percentile(absdiff,5),
@@ -918,11 +945,12 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             ax3.set_title('Difference\nDev - Ref, Restricted Range [5%,95%]')
 
-        # Define the colorbar for the plot.
-        # If all values of absdiff = 0, then set a tick at 0.
+        # Define the colorbar for the plot.  If absdiff is zero
+        # everywhere or NaN everywhere, set a single tick in
+        # the middle of the colorbar with the appopriate label.
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if absdiff_is_all_zero or absdiff_is_all_nan:
+        if all_zero or all_undefined:
             cb.set_ticks([0.0])
             if absdiff_is_all_nan:
                 cb.set_ticklabels(['Undefined throughout domain'])
@@ -966,12 +994,23 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (2,0): Fractional Difference, full dynamic range
         # ==============================================================
 
-        # Set data range.  If absdiff is not all zeroes or all NaN,
-        # then set the data range to be symmetric around the dynamic
-        # range of the fractional differences.
-        if fracdiff_is_all_zero:
+        # Set local flags to denote if Frac. Diff. is zero or NaN
+        # everywhere (these will eventually be passed to a
+        # plotting routine, once we abstract the plotting code below).
+        all_zero = absdiff_is_all_zero or \
+                   (fracdiff_is_all_zero and not ref_is_all_zero)
+        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
+
+        # Set the min and max of the data range.  If fracdiff is
+        # zero everywhere, then set the data range to [0,0].
+        # If fracdiff is NaN everywhere, or if Ref (the denominator
+        # of the expression that computes fracdiff) is zero
+        # everywhere, set the data range to undefined (NaN).
+        # Otherwise set the data range to be symmetric around
+        # the dynamic range of fracdiff.
+        if all_zero:
             [vmin, vmax] = [0, 0]
-        elif fracdiff_is_all_nan:
+        elif all_undefined:
             [vmin, vmax] = [np.nan, np.nan]
         else:
             [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
@@ -1008,14 +1047,14 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             ax4.set_title('Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range')
 
-        # Define the colorbar for the plot.
-        # Use is_absdiff_all_zero to force the plot to show as all gray
-        # when both Dev is zero and Ref is zero (since 0/0 = undefined).
+        # Define the colorbar If fracdiff will be zero everywhere
+        # or undefined everywhere, put a single tick at the middle
+        # of the colorbar with the appropriate label.
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if absdiff_is_all_zero or fracdiff_is_all_nan:
+        if all_zero or all_undefined:
             cb.set_ticks([0.0])
-            if fracdiff_is_all_nan:
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
@@ -1029,15 +1068,22 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (2,1): Fractional Difference, restricted range
         # ==============================================================
 
-        # If the frac. diff. is zero everywhere or NaN everywhere,
-        # then set the min and max of the data range to zero (or Nan)
-        # which will cause normalize_colors to place the white color
-        # in the middle of the color range for the difference color
-        # scale.  Otherwise, set the min and max of the data range to
-        # [-2, +2] (i.e. show differences from -200% to +200%).
-        if fracdiff_is_all_zero:
+        # Set local flags to denote if Frac. Diff. is zero or NaN
+        # everywhere (these will eventually be passed to a plotting
+        # routine, once we abstract the plotting code below).
+        all_zero = absdiff_is_all_zero or \
+                   (fracdiff_is_all_zero and not ref_is_all_zero)
+        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
+
+        # Set the min and max of the data range.  If fracdiff is
+        # zero everywhere, then set the data range to [0,0].
+        # If fracdiff is NaN everywhere, or if Ref (the denominator
+        # of the expression that computes fracdiff) is zero
+        # everywhere, set the data range to undefined [NaN, Nan].
+        # Otherwise set the data range to [-2, 2] (+/- 200% change).
+        if all_zero:
             [vmin, vmax] = [0, 0]
-        elif fracdiff_is_all_nan:
+        elif all_undefined:
             [vmin, vmax] = [np.nan, np.nan]
         else:
             [vmin, vmax] = [-2, 2]
@@ -1073,14 +1119,14 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         else:
             ax5.set_title('Fractional Difference\n(Dev-Ref)/Ref, Fixed Range') 
 
-        # Define the colorbar for the plot.
-        # Use is_absdiff_all_zero to force the plot to show as all gray
-        # when both Dev is zero and Ref is zero (since 0/0 = undefined).
+        # Define the colorbar for the plot.  If fracdiff will be zero
+        # everywhere or undefined everywhere, put a single tick at the
+        # middle of the colorbar with the appropriate label.
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if absdiff_is_all_zero or fracdiff_is_all_nan:
+        if all_zero or all_undefined:
             cb.set_ticks([0.0])
-            if fracdiff_is_all_nan:
+            if fracdiff_is_all_nan or ref_is_all_zero:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])                
@@ -1676,10 +1722,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (0,0): Ref
         # ==============================================================
 
-        # Set colorbar min/max
+        # Set local flags to denote if Ref is zero or NaN everywhere
+        # (these will eventually be passed to a plotting routine,
+        # once we abstract the plotting code below).
+        all_zero = ref_is_all_zero
+        all_undefined = ref_is_all_nan
+
+        # Set the min and max of the data range for Ref.
         # NOTE: If Dev contains all NaN's, then just use the min and
         # max of Ref to set the data range, even if match_cbar=True.
-        if ref_is_all_zero or ref_is_all_nan:
+        if all_zero or all_undefined:
             [vmin, vmax] = [vmin_ref, vmax_ref]
         elif use_cmap_RdBu:
             if match_cbar and (not dev_is_all_nan):
@@ -1725,14 +1777,14 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax0.set_xticks(xtick_positions)
         ax0.set_xticklabels(xticklabels)
 
-        # Define the colorbar for log or linear color scales.  If zm_ref
-        # is zero everywhere or NaN everywhere, set a tick in the middle
-        # of the normalized color range (which will be 0..1).
+        # Define the colorbar for the plot.  If Ref is zero everywhere
+        # or NaN everywhere, set a single tick in the middle of the
+        # colorbar with the appopriate label.
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if ref_is_all_zero or ref_is_all_nan:
-            cb.set_ticks([0.5])
-            if ref_is_all_nan:
+        if all_zero or all_undefined:
+            cb.set_ticks(core.one_cb_tick_in_center())
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
@@ -1749,10 +1801,16 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (0,1): Dev
         # ==============================================================
 
-        # Set colorbar min/max
+        # Set local flags to denote if Dev is zero or NaN everywhere
+        # (these will eventually be passed to a plotting routine,
+        # once we abstract the plotting code below).
+        all_zero = dev_is_all_zero
+        all_undefined = dev_is_all_nan
+
+        # Set the min and max of the data range for Dev.
         # NOTE: If Ref contains all NaN's, then just use the min and
         # max of Dev to set the data range, even if match_cbar=True.
-        if dev_is_all_zero or dev_is_all_nan:
+        if all_zero or all_undefined:
             [vmin, vmax] = [vmin_dev, vmax_dev]
         elif use_cmap_RdBu:
             if match_cbar and (not ref_is_all_nan):
@@ -1792,14 +1850,14 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax1.set_xticks(xtick_positions)
         ax1.set_xticklabels(xticklabels)
 
-        # Define the colorbar for log or linear color scales.  If zm_dev
-        # is zero everywhere or NaN everywhere, set a tick in the middle
-        # of the normalized color range (which will be 0..1).
+        # Define the colorbar for the plot.  If Ref is zero everywhere
+        # or NaN everywhere, set a single tick in the middle of the
+        # colorbar with the appopriate label.
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if dev_is_all_zero or dev_is_all_nan:
-            cb.set_ticks([0.5])
-            if dev_is_all_nan:
+        if all_zero or all_undefined:
+            cb.set_ticks(core.one_cb_tick_in_center())
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
@@ -1839,15 +1897,21 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (1,0): Difference, dynamic range
         # ==============================================================
 
+        # Set local flags to denote if Abs. Diff. is zero or NaN
+        # everywhere (these will eventually be passed to a plotting
+        # routine, once we abstract the plotting code below).
+        all_zero = absdiff_is_all_zero
+        all_undefined = absdiff_is_all_nan
+
         # If the abs. diff. is zero everywhere or NaN everywhere,
         # then set the min and max of the data range to zero (or Nan),
         # which will cause normalize_colors to place the white color
         # in the middle of RdBu difference color scale.  Otherwise,
         # set the data range to be symmetric around the dynamic range
         # of the zm_diff array.
-        if absdiff_is_all_zero:
+        if all_zero:
             [vmin, vmax] = [0, 0]
-        elif absdiff_is_all_nan:
+        elif all_undefined:
             [vmin, vmax] = [np.nan, np.nan]
         else:
             [vmin, vmax] = [-diffabsmax, diffabsmax]
@@ -1874,14 +1938,14 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax2.set_xticks(xtick_positions)
         ax2.set_xticklabels(xticklabels)
 
-        # Define the colorbar for log or linear color scales.  If zm_diff
-        # is zero everywhere or NaN everywhere, set a tick in the middle
-        # of the normalized color range (which will be 0..1).
+        # Define the colorbar for the plot.  If absdiff is zero
+        # everywhere or NaN everywhere, set a single tick in the
+        # middle of the colorbar with the appopriate label.
         cb = plt.colorbar(plot2, ax=ax2, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if absdiff_is_all_zero or absdiff_is_all_nan:
+        if all_zero or all_undefined:
             cb.set_ticks([0.0])
-            if absdiff_is_all_nan:
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
@@ -1895,15 +1959,21 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (1,1): Difference, restricted range
         # ==============================================================
 
+        # Set local flags to denote if Abs. Diff. is zero or NaN
+        # everywhere (these will eventually be passed to a plotting
+        # routine, once we abstract the plotting code below).
+        all_zero = absdiff_is_all_zero
+        all_undefined = absdiff_is_all_nan
+
         # If the abs. diff. is zero everywhere or NaN everywhere,
         # then set the min and max of the data range to zero (or Nan),
         # which will cause normalize_colors to place the white color
         # in the middle of the color range for the difference color
         # scale.  Otherwise, set the data range to be symmetric with
         # the extremes being the maximum of the 5th and 95th percentiles.
-        if absdiff_is_all_zero:
+        if all_zero:
             [vmin, vmax] = [0, 0]
-        elif absdiff_is_all_nan:
+        elif all_undefined:
             [vmin, vmax] = [np.nan, np.nan]
         else:
             [pct5, pct95] = [np.percentile(zm_diff, 5),
@@ -1932,14 +2002,14 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax3.set_xticks(xtick_positions)
         ax3.set_xticklabels(xticklabels)
 
-        # Define the colorbar for log or linear color scales.  If zm_diff
-        # is zero everywhere or NaN everywhere, set a tick in the middle
-        # of the normalized color range (which will be 0..1).
+        # Define the colorbar for the plot.  If absdiff is zero
+        # everywhere or NaN everywhere, set a single tick in the
+        # middle of the colorbar with the appopriate label.
         cb = plt.colorbar(plot3, ax=ax3, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if absdiff_is_all_zero or absdiff_is_all_nan:
+        if all_zero or all_undefined:
             cb.set_ticks([0.0])
-            if absdiff_is_all_nan:
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
@@ -1965,15 +2035,23 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (2,0): Fractional Difference, dynamic range
         # ==============================================================
 
-        # If the abs. diff. is zero everywhere or NaN everywhere,
-        # then set the min and max of the data range to zero (or Nan),
-        # which will cause normalize_colors to place the white color
-        # in the middle of the color range for the difference color
-        # scale.  Otherwise, set the data range to be the symmetric
-        # dynamic range of the zm_fracdiff array.
-        if fracdiff_is_all_zero:
+        # Set local flags to denote if Frac. Diff. is zero or NaN
+        # everywhere (these will eventually be passed to a plotting
+        # routine, once we abstract the plotting code below).
+        all_zero = absdiff_is_all_zero or \
+                   (fracdiff_is_all_zero and not ref_is_all_zero)
+        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
+
+        # Set the min and max of the data range.  If fracdiff is
+        # zero everywhere, then set the data range to [0,0].
+        # If fracdiff is NaN everywhere, or if Ref (the denominator
+        # of the expression that computes fracdiff) is zero
+        # everywhere, set the data range to undefined (NaN).
+        # Otherwise set the data range to be symmetric around
+        # the dynamic range of fracdiff.
+        if all_zero:
             [vmin, vmax] = [0, 0]
-        elif fracdiff_is_all_nan:
+        elif all_undefined:
             [vmin, vmax] = [np.nan, np.nan]
         else:
             fracdiffabsmax = np.max([np.abs(np.nanmin(zm_fracdiff)),
@@ -2001,14 +2079,14 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax4.set_xticks(xtick_positions)
         ax4.set_xticklabels(xticklabels)
 
-        # Define the colorbar for log or linear color scales.
-        # Use is_absdiff_all_zero to force the plot to show as all gray
-        # when both Dev is zero and Ref is zero (since 0/0 = undefined).
+        # Define the colorbar If fracdiff will be zero everywhere
+        # or undefined everywhere, put a single tick at the middle
+        # of the colorbar with the appropriate label.
         cb = plt.colorbar(plot4, ax=ax4, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if absdiff_is_all_zero or fracdiff_is_all_nan:
+        if all_zero or all_undefined:
             cb.set_ticks([0.0])
-            if fracdiff_is_all_nan:
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
@@ -2022,16 +2100,22 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Subplot (2,1): Fractional Difference, restricted range
         # ==============================================================
 
-        # If the abs. diff. is zero everywhere or NaN everywhere,
-        # then set the min and max of the data range to zero (or Nan),
-        # which will cause normalize_colors to place the white color
-        # in the middle of the color range for the difference color
-        # scale.  Otherwise, set up a symmetric data range with
-        # fractional differences between -2 and 2 (which shows percent
-        # changes between -200% and +200%).
-        if fracdiff_is_all_zero:
+        # Set local flags to denote if Frac. Diff. is zero or NaN
+        # everywhere (these will eventually be passed to a plotting
+        # routine, once we abstract the plotting code below).
+        all_zero = absdiff_is_all_zero or \
+                   (fracdiff_is_all_zero and not ref_is_all_zero)
+        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
+
+        # Set the min and max of the data range.  If fracdiff is
+        # zero everywhere, then set the data range to [0,0].
+        # If fracdiff is NaN everywhere, or if Ref (the denominator
+        # of the expression that computes fracdiff) is zero
+        # everywhere, set the data range to undefined [NaN, Nan].
+        # Otherwise set the data range to [-2, 2] (+/- 200% change).
+        if all_zero:
             [vmin, vmax] = [0,0]
-        elif fracdiff_is_all_nan:
+        elif all_undefined:
             [vmin, vmax] = [np.nan, np.nan]
         else:
             [vmin, vmax] = [-2, 2]
@@ -2057,14 +2141,14 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         ax5.set_xticks(xtick_positions)
         ax5.set_xticklabels(xticklabels)
 
-        # Define the colorbar for log or linear color scales.
-        # Use is_absdiff_all_zero to force the plot to show as all gray
-        # when both Dev is zero and Ref is zero (since 0/0 = undefined).
+        # Define the colorbar for the plot.  If fracdiff will be zero
+        # everywhere or undefined everywhere, put a single tick at the
+        # middle of the colorbar with the appropriate label.
         cb = plt.colorbar(plot5, ax=ax5, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
-        if absdiff_is_all_zero or fracdiff_is_all_nan:
+        if all_zero or all_undefined:
             cb.set_ticks([0.0])
-            if fracdiff_is_all_nan:
+            if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
                 cb.set_ticklabels(['Zero throughout domain'])
