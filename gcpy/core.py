@@ -20,8 +20,8 @@ import xbpch
 lumped_spc = 'lumped_species.json'
 bpch_to_nc_names = 'bpch_to_nc_names.json'
 
-# Check if matplotlib is version 3.0 or higher
-is_mpl_v3 = parse_version(mpl_version) > parse_version("3.0")
+# Check if matplotlib is version 3.1.0 or higher
+is_mpl_v31 = parse_version(mpl_version) >= parse_version("3.1.0")
 
 
 def skip_these_vars():
@@ -993,12 +993,13 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
     '''
     if (vmin == 0 and vmax == 0) or (np.isnan(vmin) and np.isnan(vmax)):
 
-        # If the min and max of the data are both zero, then normalize
-        # the data range so that the color corresponding to zero (i.e.
-        # white) is placed at 0.5 for difference colormaps (like RdBu)
-        # and at 0.0 for non-difference colormaps (like WhGrYlRd).
+        # If the data is zero everywhere (vmin=vmax=0) or undefined
+        # everywhere (vmin=vmax=NaN), then normalize the data range
+        # so that the color corresponding to zero (white) will be
+        # placed in the middle of the colorbar, where we will
+        # add a single tick.
         #
-        # NOTE: matplotlib 3.0 and higher seems to use a different
+        # NOTE: matplotlib 3.1.0 and higher seems to use a different
         # normalization than earlier versions.  For the case of zero
         # or NaN everywhere, we need to normalize the data range
         # [-1, 1] so that the zero color (white) will be placed at
@@ -1006,7 +1007,7 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
         # versions, we had to normalize data range [0,1], which
         # would place the zero color (white) at 0.5.
         #   -- Bob Yantosca (10 Sep 2019)
-        if is_difference or is_mpl_v3:
+        if is_difference or is_mpl_v31:
             return mcolors.Normalize(vmin=-1.0, vmax=1.0)
         else:
             return mcolors.Normalize(vmin=0.0, vmax=1.0)
@@ -1026,10 +1027,10 @@ def one_cb_tick_in_center():
     Returns the value at which we should place a colorbar tickmark
     for data that is either zero everywhere or NaN everywhere.
 
-    For matplotlib 3.0 and higher, returns [0.0].
+    For matplotlib 3.1.0 and higher, returns [0.0].
     For earlier versions, returns [0.5].
     '''
-    if is_mpl_v3:
+    if is_mpl_v31:
         return [0.0]
     else:
         return [0.5]

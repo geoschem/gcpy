@@ -2336,27 +2336,13 @@ def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
     ref_is_all_nan = np.isnan(ref.values).all()
     dev_is_all_nan = np.isnan(dev.values).all()
 
-    # If Ref and Dev do not contain all NaNs, perform extra error checks:
+    # If Ref and Dev do not contain all NaNs, then make sure
+    # that Ref and Dev have the same units before proceeding.
     if (not ref_is_all_nan) and (not dev_is_all_nan):
-
-        # (1) Make sure Ref and Dev have the same units
         if ref.units != dev.units:
             msg = 'Ref has units "{}", but Dev array has units "{}"'.format(
                 ref.units, dev.units)
             raise ValueError(msg)
-
-        # (2) Make sure that Ref and Dev have the same shape
-        # NOTE: In MAPL v1.0.0, the data has 5 dimensions (time, lev,
-        # # of faces, YDim, Xdim) whereas older GCHP outputs only have
-        # 4 dimensions (time, lev, 6*NY, NX).  If the shapes don't
-        # match, then also check if the total number of elements match.
-        ref_shape = core.get_shape_of_data(ref)
-        dev_shape = core.get_shape_of_data(dev)
-        if ref_shape != dev_shape:
-            if not (np.product(ref_shape) == np.product(dev_shape)):
-                msg = 'Ref has shape {}, but Dev has shape {}!'.format(
-                    ref_shape, dev_shape)
-                raise ValueError(msg)
 
     # ==================================================================
     # Get the diagnostic name and units
@@ -3230,7 +3216,7 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                             print(file=f)
                             f.close()
 
-                if 'zonalmean' in plots or zm in plots:
+                if 'zonalmean' in plots or 'zm' in plots:
                     if 'zonalmean' in filename or 'zm' in filename:
                         with open(filename, 'a+') as f:
                             print('* {}: '.format(filecat), file=f, end='')
@@ -3619,8 +3605,10 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
                                                    emission_inv)))
 
     # Destination files
-    file_emis_totals = os.path.join(dst, emisdir, 'Emission_totals.txt')
-    file_inv_totals = os.path.join(dst, emisdir, 'Inventory_totals.txt')
+#    file_emis_totals = os.path.join(dst, emisdir, 'Emission_totals.txt')
+#    file_inv_totals = os.path.join(dst, emisdir, 'Inventory_totals.txt')
+    file_emis_totals = os.path.join(emisdir, 'Emission_totals.txt')
+    file_inv_totals = os.path.join(emisdir, 'Inventory_totals.txt')
 
     # If the averaging interval (in seconds) is not specified,
     # then assume July 2016 = 86400 seconds * 31 days
@@ -4396,8 +4384,7 @@ def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
     for region in budget_regions:
     
         # Destination file
-        file_budget = os.path.join( dst, budgetdir,
-                                        'Budget_'+region+'.txt')
+        file_budget = os.path.join(budgetdir, 'Budget_'+region+'.txt')
 
         # Get variable names and species for this region
         region_vars = [ k for k in budget_vars if region in k ]
