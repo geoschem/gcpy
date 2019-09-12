@@ -25,30 +25,42 @@ def show_versions(as_json=False):
     >>> import gcpy
     >>> gcpy.show_versions()
     '''
+    
     # List of dependent packages
-    deps = ['bottleneck', 'cartopy', 'cython', 'dask',
-            'esmf', 'esmpy', 'graphviz', 'future', 'gcpy',
+    deps = ['platform', 'python', 'bottleneck', 'cartopy', 'cython',
+            'dask', 'esmf', 'esmpy', 'graphviz', 'future', 'gcpy',
             'h5netcdf', 'h5py', 'h5pyd', 'IPython', 'jupyter',
             'matplotlib', 'netCDF4', 'notebook', 'numpy', 'pandas',
-            'pip', 'pycodestyle', 'pyresample', 'pytest', 'python',
+            'pip', 'pycodestyle', 'pyresample', 'pytest',
             'scipy', 'seaborn', 'setuptools', 'six', 'sphinx',
             'xbpch', 'xarray', 'xesmf']
-
+    
     # Make a directory of version numbers for each module
+    # Skip packages for which we cannot get 
     versions = {}
     for modname in deps:
         versions[modname] = get_version_number(modname)
+        if versions[modname] is None:
+            del versions[modname]
 
     # If as_json is True, return a JSON of the version numbers
     # of each module.  Otherwise print this info to stdout.
     if as_json:
         return json.dumps(versions)
     else:
-        print('\nINSTALLED VERSIONS')
+        print('\nSYSTEM INFORMATION')
         print('------------------')
+        for mod in ['platform', 'python']:
+            print('{}: {}'.format(mod.ljust(16), versions[mod]))
+
+        del versions['python']
+        del versions['platform']
+            
+        print('\nVERSION NUMBERS FOR GCPy DEPENDENCIES')
+        print('-------------------------------------')
         print('')
         for mod, ver in versions.items():
-            print('%s: %s' % (mod.ljust(16), ver))
+            print('{}: {}'.format(mod.ljust(16), ver))
 
 
 def get_version_number(modname):
@@ -75,6 +87,8 @@ def get_version_number(modname):
     # Search in this order: Python, system modules, imported modules
     if modname.strip() == 'python':
         return platform.python_version()
+    elif modname.strip() == 'platform':
+        return platform.platform()
     elif modname in sys.modules:
         try:
             mod = sys.modules[modname]
