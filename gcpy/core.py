@@ -5,12 +5,9 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-from copy import copy as shallow_copy
 import json
-from matplotlib import __version__ as mpl_version
 import matplotlib.colors as mcolors
 import numpy as np
-from packaging.version import parse as parse_version
 import shutil
 import xarray as xr
 import xbpch
@@ -19,9 +16,6 @@ import xbpch
 # JSON files to read
 lumped_spc = 'lumped_species.json'
 bpch_to_nc_names = 'bpch_to_nc_names.json'
-
-# Check if matplotlib is version 3.1.0 or higher
-is_mpl_v31 = parse_version(mpl_version) >= parse_version("3.1.0")
 
 
 def skip_these_vars():
@@ -1003,16 +997,7 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
         # so that the color corresponding to zero (white) will be
         # placed in the middle of the colorbar, where we will
         # add a single tick.
-        #
-        # NOTE: matplotlib 3.1.0 and higher seems to use a different
-        # normalization than earlier versions.  For the case of zero
-        # or NaN everywhere, we need to normalize the data range
-        # [-1, 1] so that the zero color (white) will be placed at
-        # in the middle of the colorbar range (at 0).  In earlier
-        # versions, we had to normalize data range [0,1], which
-        # would place the zero color (white) at 0.5.
-        #   -- Bob Yantosca (10 Sep 2019)
-        if is_difference or is_mpl_v31:
+        if is_difference:
             return mcolors.Normalize(vmin=-1.0, vmax=1.0)
         else:
             return mcolors.Normalize(vmin=0.0, vmax=1.0)
@@ -1025,17 +1010,3 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
             return mcolors.LogNorm(vmin=vmax/1e3, vmax=vmax)
         else:
             return mcolors.Normalize(vmin=vmin, vmax=vmax)
-
-
-def one_cb_tick_in_center():
-    '''
-    Returns the value at which we should place a colorbar tickmark
-    for data that is either zero everywhere or NaN everywhere.
-
-    For matplotlib 3.1.0 and higher, returns [0.0].
-    For earlier versions, returns [0.5].
-    '''
-    if is_mpl_v31:
-        return [0.0]
-    else:
-        return [0.5]

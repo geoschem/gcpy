@@ -255,7 +255,7 @@ if gcc_vs_gcc:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
-        print('%%% Creating GCC vs. GCC concentration plots %%%')
+        print('\n%%% Creating GCC vs. GCC concentration plots %%%')
         bmk.make_benchmark_conc_plots(gcc_vs_gcc_refspc,
                                       gcc_vs_gcc_refstr,
                                       gcc_vs_gcc_devspc,
@@ -266,7 +266,7 @@ if gcc_vs_gcc:
 
     if plot_emis:
         # Emissions plots
-        print('%%% Creating GCC vs. GCC emissions plots %%%')
+        print('\n%%% Creating GCC vs. GCC emissions plots %%%')
         bmk.make_benchmark_emis_plots(gcc_vs_gcc_refhco,
                                       gcc_vs_gcc_refstr,
                                       gcc_vs_gcc_devhco,
@@ -279,7 +279,7 @@ if gcc_vs_gcc:
 
     if emis_table:
         # Table of emission and inventory totals
-        print('%%% Creating GCC vs. GCC emissions and inventory tables %%%')
+        print('\n%%% Creating GCC vs. GCC emissions and inventory tables %%%')
         gcc_vs_gcc_reflist = [gcc_vs_gcc_refhco]
         gcc_vs_gcc_devlist = [gcc_vs_gcc_devhco]
         bmk.make_benchmark_emis_tables(gcc_vs_gcc_reflist,
@@ -291,7 +291,7 @@ if gcc_vs_gcc:
 
     if plot_jvalues:
         # Local noon J-values plots
-        print('%%% Creating GCC vs. GCC J-value plots %%%')
+        print('\n%%% Creating GCC vs. GCC J-value plots %%%')
         bmk.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv,
                                         gcc_vs_gcc_refstr,
                                         gcc_vs_gcc_devjv,
@@ -302,7 +302,7 @@ if gcc_vs_gcc:
 
     if plot_aod:
         # Column AOD plots
-        print('%%% Creating GCC vs. GCC column AOD plots %%%')
+        print('\n%%% Creating GCC vs. GCC column AOD plots %%%')
         bmk.make_benchmark_aod_plots(gcc_vs_gcc_refaod,
                                      gcc_vs_gcc_refstr,
                                      gcc_vs_gcc_devaod,
@@ -313,7 +313,7 @@ if gcc_vs_gcc:
 
     if mass_table:
         # Global mass tables
-        print('%%% Creating GCC vs. GCC global mass tables %%%')
+        print('\n%%% Creating GCC vs. GCC global mass tables %%%')
         bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst,
                                        gcc_vs_gcc_refstr,
                                        gcc_vs_gcc_devrst,
@@ -322,8 +322,8 @@ if gcc_vs_gcc:
                                        overwrite=True)
         
     if budget_table:
-        # Bugets tables
-        print('%%% Creating GCC vs. GCC budget tables %%%')
+        # Budgets tables
+        print('\n%%% Creating GCC vs. GCC budget tables %%%')
         bmk.make_benchmark_budget_tables(gcc_vs_gcc_devbgt,
                                          gcc_vs_gcc_devstr,
                                          dst=gcc_vs_gcc_plotsdir,
@@ -337,7 +337,7 @@ if gchp_vs_gcc:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
-        print('%%% Creating GCHP vs. GCC concentration plots %%%')
+        print('\n%%% Creating GCHP vs. GCC concentration plots %%%')
         bmk.make_benchmark_conc_plots(gchp_vs_gcc_refspc,
                                       gchp_vs_gcc_refstr,
                                       gchp_vs_gcc_devspc,
@@ -348,7 +348,7 @@ if gchp_vs_gcc:
 
     if plot_emis:
         # Emissions plots
-        print('%%% Creating GCHP vs. GCC emissions plots %%%')
+        print('\n%%% Creating GCHP vs. GCC emissions plots %%%')
         bmk.make_benchmark_emis_plots(gchp_vs_gcc_refhco,
                                       gchp_vs_gcc_refstr,
                                       gchp_vs_gcc_devhco,
@@ -362,7 +362,7 @@ if gchp_vs_gcc:
 
     if emis_table:
         # Tables of emissions and inventory totals
-        print('%%% Creating GCHP vs. GCC emissions and inventory tables %%%')
+        print('\n%%% Creating GCHP vs. GCC emissions and inventory tables %%%')
         gchp_vs_gcc_reflist = [gchp_vs_gcc_refhco]
         gchp_vs_gcc_devlist = [gchp_vs_gcc_devhco, gchp_vs_gcc_devmet]
         bmk.make_benchmark_emis_tables(gchp_vs_gcc_reflist,
@@ -374,7 +374,7 @@ if gchp_vs_gcc:
 
     if plot_jvalues:
         # Local noon J-values plots
-        print('%%% Creating GCHP vs. GCC J-value plots %%%')
+        print('\n%%% Creating GCHP vs. GCC J-value plots %%%')
         bmk.make_benchmark_jvalue_plots(gchp_vs_gcc_refjv,
                                         gchp_vs_gcc_refstr,
                                         gchp_vs_gcc_devjv,
@@ -385,7 +385,7 @@ if gchp_vs_gcc:
 
     if plot_aod:
         # Column AOD plots
-        print('%%% Creating GCHP vs. GCC column AOD plots %%%')
+        print('\n%%% Creating GCHP vs. GCC column AOD plots %%%')
         bmk.make_benchmark_aod_plots(gchp_vs_gcc_refaod,
                                      gchp_vs_gcc_refstr,
                                      gchp_vs_gcc_devaod,
@@ -403,7 +403,7 @@ if gchp_vs_gchp:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
-        print('%%% Creating GCHP vs. GCHP concentration plots %%%')
+        print('\n%%% Creating GCHP vs. GCHP concentration plots %%%')
         bmk.make_benchmark_conc_plots(gchp_vs_gchp_refspc,
                                       gchp_vs_gchp_refstr,
                                       gchp_vs_gchp_devspc,
@@ -414,7 +414,7 @@ if gchp_vs_gchp:
 
     if plot_emis:
         # Emissions plots
-        print('%%% Creating GCHP vs. GCHP emissions plots %%%')
+        print('\n%%% Creating GCHP vs. GCHP emissions plots %%%')
         bmk.make_benchmark_emis_plots(gchp_vs_gchp_refhco,
                                       gchp_vs_gchp_refstr,
                                       gchp_vs_gchp_devhco,
@@ -429,7 +429,7 @@ if gchp_vs_gchp:
 
     if emis_table:
         # Tables of emissions and inventory totals
-        print('%%% Creating GCHP vs. GCHP emissions and inventory tables %%%')
+        print('\n%%% Creating GCHP vs. GCHP emissions and inventory tables %%%')
         gchp_vs_gchp_reflist = [gchp_vs_gchp_refhco, gchp_vs_gchp_refmet]
         gchp_vs_gchp_devlist = [gchp_vs_gchp_devhco, gchp_vs_gchp_devmet]
         bmk.make_benchmark_emis_tables(gchp_vs_gchp_reflist,
@@ -441,7 +441,7 @@ if gchp_vs_gchp:
 
     if plot_jvalues:
         # Local noon J-values plots
-        print('%%% Creating GCHP vs. GCHP J-value plots %%%')
+        print('\n%%% Creating GCHP vs. GCHP J-value plots %%%')
         bmk.make_benchmark_jvalue_plots(gchp_vs_gchp_refjv,
                                         gchp_vs_gchp_refstr,
                                         gchp_vs_gchp_devjv,
@@ -452,7 +452,7 @@ if gchp_vs_gchp:
 
     if plot_aod:
         # Column AOD plots
-        print('%%% Creating GCHP vs. GCHP column AOD plots %%%')
+        print('\n%%% Creating GCHP vs. GCHP column AOD plots %%%')
         bmk.make_benchmark_aod_plots(gchp_vs_gchp_refaod,
                                      gchp_vs_gchp_refstr,
                                      gchp_vs_gchp_devaod,
@@ -464,7 +464,7 @@ if gchp_vs_gchp:
 # Under development, leave commented out for now (bmy, 9/5/19)
 #    if mass_table:
 #        # Global mass tables
-#        print('%%% Creating GCHP vs. GCHP global mass tables %%%')
+#        print('\n%%% Creating GCHP vs. GCHP global mass tables %%%')
 #        gchp_vs_gchp_reflist = [gchp_vs_gchp_refrst, gchp_vs_gchp_refmetinst]
 #        gchp_vs_gchp_devlist = [gchp_vs_gchp_devrst, gchp_vs_gchp_devmetinst]
 #        bmk.make_benchmark_mass_tables(gchp_vs_gchp_reflist,
@@ -482,7 +482,7 @@ if gchp_vs_gcc_diff_of_diffs:
 
     # NOTE: This can be expanded to differences beyond species
     # concentrations by following how this is done for conc plots.
-    print('%%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%')
+    print('%\n%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%')
 
     # Get a list of variables that GCPy should not read
     skip_vars = skip_these_vars()
@@ -526,13 +526,17 @@ if gchp_vs_gcc_diff_of_diffs:
                 gchp_diffs[v].attrs = gchp_dev[v].attrs
     gchp_diffs.to_netcdf(diff_of_diffs_devspc)
 
-    if plot_conc:
-        # Concentration plots
-        # (includes lumped species and separates by category)
-        bmk.make_benchmark_conc_plots(diff_of_diffs_refspc,
-                                      diff_of_diffs_refstr,
-                                      diff_of_diffs_devspc,
-                                      diff_of_diffs_devstr,
-                                      dst=diff_of_diffs_plotsdir,
-                                      overwrite=True,
-                                      use_cmap_RdBu=True)
+
+    # Create diff-of-diff plots for species concentrations
+    # (includes lumped species and separates by category)
+    #
+    # NOTE: Since at the present time we are only printing out
+    # diff-of-diffs for concentration plots, we can take this
+    # call out of the "if plot_conc:" block.
+    bmk.make_benchmark_conc_plots(diff_of_diffs_refspc,
+                                  diff_of_diffs_refstr,
+                                  diff_of_diffs_devspc,
+                                  diff_of_diffs_devstr,
+                                  dst=diff_of_diffs_plotsdir,
+                                  overwrite=True,
+                                  use_cmap_RdBu=True)
