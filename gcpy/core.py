@@ -244,37 +244,40 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
 
     Returns:
     --------
-        commonvars: list of strs
-            Variables that are common to both refdata and devdata,
-            regardless of dimension.
+        vardict : dict of lists of str
+            Dictionary containing several lists of variable names:
 
-        commonvarsOther: list of strs
-            Variables that are common to refdata and devdata,
-            and that do not have lat, lon, and level dimensions.
+            Key              Value
+            -----            -----
+            commonvars       List of variables that are common to
+                             both refdata and devdata
 
-        commonvars2D: list of strs
-            Variables that are common to refdata and devdata,
-            and that have lat and lon dimensions, but not level.
+            commonvarsOther  List of variables that are common
+                             to both refdata and devdata, but do
+                             not have lat, lon, and/or level
+                             dimensions (e.g. index variables).
 
-        commonvars3D: list of strs
-            Variables that are common to refdata and devdata,
-            and that have lat, lon, and level dimensions.
+            commonvars2D     List of variables that are common to
+                             common to refdata and devdata, and that
+                             have lat and lon dimensions, but not level.
 
-        refonly: list of strs
-            Plottable variables (i.e. 2D or 3D) that are only
-            present in the Ref dataset.
+            commonvars3D     List of variables that are common to
+                             refdata and devdata, and that have lat,
+                             lon, and level dimensions.
 
-        devonly: list of strs
-            Plottable variables (i.e. 2D or 3D) that are only
-            present in the Dev dataset.
+            refonly          List of 2D or 3D variables that are only
+                             present in refdata.
+
+            devonly          List of 2D or 3D variables that are only
+                             present in devdata
 
     Examples:
     ---------
-        >>> import gcpy
+        >>> from gcpy import core
         >>> import xarray as xr
         >>> refdata = xr.open_dataset("ref_data_file.nc")
         >>> devdata = xr.open_dataset("dev_data_file.nc")
-        >>> [commonvars, commonvarsOther, commonvars2D, commonvars3D, refonly, devonly ] = gcpy.compare_varnames(refdata, devdata)
+        >>> vardict = core.compare_varnames(refdata, devdata)
     '''
     refvars = [k for k in refdata.data_vars.keys()]
     devvars= [k for k in devdata.data_vars.keys()]
@@ -328,8 +331,12 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
     refonly = [v for v in refonly if v not in commonvarsOther]
     devonly = [v for v in devonly if v not in commonvarsOther]
 
-    return [commonvars, commonvarsOther, commonvars2D,
-            commonvars3D, refonly, devonly]
+    return {'commonvars'     : commonvars,      \
+            'commonvarsOther': commonvarsOther, \
+            'commonvars2D'   : commonvars2D,    \
+            'commonvars3D'   : commonvars3D,    \
+            'refonly'        : refonly,         \
+            'devonly'        : devonly}
 
 
 def compare_stats(refdata, refstr, devdata, devstr, varname):
@@ -678,10 +685,10 @@ def filter_names(names, text=''):
         >>> import xarray as xr
         >>> refdata = xr.open_dataset("ref_data_file.nc")
         >>> devdata = xr.open_dataset("dev_data_file.nc")
-        >>> [var, varOther, var2D, var3D] = gcpy.compare_varnames(refdata, devdata)
-        >>> var_CO = gcpy.filter_names(var, "CO")
-        >>> var_NO = gcpy.filter_names(var, "NO")
-        >>> var_O3 = gcpy.filter_names(var, "O3")
+        >>> vardict = gcpy.compare_varnames(refdata, devdata)
+        >>> var_CO = gcpy.filter_names(vardict['commonvars'], "CO")
+        >>> var_NO = gcpy.filter_names(vardict['commonvars'], "NO")
+        >>> var_O3 = gcpy.filter_names(vardict['commonvars'], "O3")
     '''
 
     if text != '':
@@ -807,16 +814,14 @@ def get_shape_of_data(data, vertical_dim='lev', return_dims=False):
 
     # Return a tuple with the shape of each dimension (and also a
     # list of each dimension if return_dims is True).
+    for d in dimlist:
+        if d in sizelist:
+            shape += (sizelist[d],)
+            dims.append(d)
+
     if return_dims:
-        for d in dimlist:
-            if d in sizelist:
-                shape += (sizelist[d],)
-                dims.append(d)
         return shape, dims
     else:
-        for d in dimlist:
-            if d in sizelist:
-                shape += (sizelist[d],)
         return shape
 
 
