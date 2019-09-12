@@ -337,7 +337,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
     print_units_warning = True
     for ivar in range(n_var):
-        if savepdf: print('{} '.format(ivar), end='')
+        if savepdf:
+            print('{} '.format(ivar), end='')
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim      
@@ -693,7 +694,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
         if all_zero or all_undefined:
-            cb.set_ticks(core.one_cb_tick_in_center())
+            if use_cmap_RdBu:
+                cb.set_ticks([0.0])
+            else:
+                cb.set_ticks([0.5])
             if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
@@ -785,7 +789,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
         if all_zero or all_undefined:
-            cb.set_ticks(core.one_cb_tick_in_center())
+            if use_cmap_RdBu:
+                cb.set_ticks([0.0])
+            else:
+                cb.set_ticks([0.5])
             if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
@@ -1152,6 +1159,7 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
     # ==================================================================
     if savepdf:
         pdf.close()
+        print('')
 
 
 def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
@@ -1487,7 +1495,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
     # Loop over variables
     print_units_warning = True
     for ivar in range(n_var):
-        if savepdf: print('{} '.format(ivar), end='')
+        if savepdf:
+            print('{} '.format(ivar), end='')
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
@@ -1779,7 +1788,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         cb = plt.colorbar(plot0, ax=ax0, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
         if all_zero or all_undefined:
-            cb.set_ticks(core.one_cb_tick_in_center())
+            if use_cmap_RdBu:
+                cb.set_ticks([0.0])
+            else:
+                cb.set_ticks([0.5])
             if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
@@ -1852,7 +1864,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         cb = plt.colorbar(plot1, ax=ax1, orientation='horizontal', pad=0.10)
         cb.mappable.set_norm(norm)
         if all_zero or all_undefined:
-            cb.set_ticks(core.one_cb_tick_in_center())
+            if use_cmap_RdBu:
+                cb.set_ticks([0.0])
+            else:
+                cb.set_ticks([0.5])
             if all_undefined:
                 cb.set_ticklabels(['Undefined throughout domain'])
             else:
@@ -2175,6 +2190,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
     # ==================================================================
     if savepdf:
         pdf.close()
+        print('')
 
 
 def get_emissions_varnames(commonvars, template=None):
