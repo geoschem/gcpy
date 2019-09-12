@@ -8,10 +8,10 @@ assignees: ''
 ---
 
 ## Describe the bug
-A clear and concise description of the bug.
+Provide a clear and concise description of the bug.
 
 ## To Reproduce
-List steps to reproduce the behavior below: 
+List the steps to reproduce the bug or issue below:
 
 ```python
 ...add your python code snippets here
@@ -20,23 +20,17 @@ List steps to reproduce the behavior below:
 ## Expected behavior
 A clear and concise description of what you expected to happen.
 
-## Screenshots
-If applicable, add screenshots to help explain your problem.
-(You can drag a gif, png, jpg, etc. file from your computer and drop it here.)
-
 ## Required information:
- - OS: [e.g. Linux, MacOS]
- - Python version that you are using [e.g. 3.6]
- - Version numbers of dependent packages [e.g. use "conda list"]
-   - cartopy
-   - dask
-   - matplotlib
-   - jupyter
-   - numpy
-   - pypdf2
-   - scipy
-   - xarray
-   - xbpch 
+Run the following commands from an interactive Python session:
+```python
+>>> import gcpy
+>>> gcpy.show_versions()
+```
+and
+```
+...paste the output from gcpy.show_versions() here ...
+```
+This will display information about your system and the versions of Python packages that GCPy depends on.
 
 ## Additional context
-Add any other context about the problem here.
+Provide any other context about the problem here.
