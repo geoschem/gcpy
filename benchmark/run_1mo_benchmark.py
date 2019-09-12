@@ -46,6 +46,7 @@ import os
 from os.path import join
 import xarray as xr
 from gcpy import benchmark as bmk
+from gcpy.core import skip_these_vars
 import warnings
 
 # Tell matplotlib not to look for an X-window
@@ -336,7 +337,7 @@ if gchp_vs_gcc:
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
-        print('%%% Creating GCHP vs. GCC J-value plots %%%')
+        print('%%% Creating GCHP vs. GCC concentration plots %%%')
         bmk.make_benchmark_conc_plots(gchp_vs_gcc_refspc,
                                       gchp_vs_gcc_refstr,
                                       gchp_vs_gcc_devspc,
@@ -483,13 +484,16 @@ if gchp_vs_gcc_diff_of_diffs:
     # concentrations by following how this is done for conc plots.
     print('%%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%')
 
+    # Get a list of variables that GCPy should not read
+    skip_vars = skip_these_vars()
+
     # Target output files
     diff_of_diffs_refspc = './gcc_diffs_spc.nc4'
     diff_of_diffs_devspc = './gchp_diffs_spc.nc4'
 
     # Create a ref file that contains GCC differences
-    gcc_ref  = xr.open_dataset(gcc_vs_gcc_refspc)
-    gcc_dev  = xr.open_dataset(gcc_vs_gcc_devspc)
+    gcc_ref  = xr.open_dataset(gcc_vs_gcc_refspc, drop_variables=skip_vars)
+    gcc_dev  = xr.open_dataset(gcc_vs_gcc_devspc, drop_variables=skip_vars)
     with xr.set_options(keep_attrs=True):
         gcc_diffs = gcc_dev - gcc_ref
         for v in gcc_dev.data_vars.keys():
@@ -500,15 +504,16 @@ if gchp_vs_gcc_diff_of_diffs:
     # Create a dev file that contains GCHP differences. Include special
     # handling if cubed sphere grid dimension names are different since they
     # changed in MAPL v1.0.0.
-    gchp_ref = xr.open_dataset(gchp_vs_gchp_refspc)
-    gchp_dev = xr.open_dataset(gchp_vs_gchp_devspc)
+    gchp_ref = xr.open_dataset(gchp_vs_gchp_refspc, drop_variables=skip_vars)
+    gchp_dev = xr.open_dataset(gchp_vs_gchp_devspc, drop_variables=skip_vars)
     refdims = gchp_ref.dims
     devdims = gchp_dev.dims
     if 'lat' in refdims and 'Xdim' in devdims:
         gchp_ref_newdimnames = gchp_dev.copy()
         for v in gchp_dev.data_vars.keys():
             if 'Xdim' in gchp_dev[v].dims:
-                gchp_ref_newdimnames[v].values = gchp_ref[v].values.reshape(gchp_dev[v].values.shape)
+                gchp_ref_newdimnames[v].values = gchp_ref[v].values.reshape(
+                    gchp_dev[v].values.shape)
                 # NOTE: the reverse conversion is gchp_dev[v].stack(lat=('nf','Ydim')).transpose('time','lev','lat','Xdim').values
         gchp_ref = gchp_ref_newdimnames.copy()
     with xr.set_options(keep_attrs=True):
