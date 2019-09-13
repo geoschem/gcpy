@@ -85,6 +85,7 @@ plot_jvalues = True
 plot_aod     = True
 mass_table   = True
 budget_table = True
+OH_metrics   = True
 
 # Filename date strings (edit as needed)
 gcc_datestr  = '20160701'
@@ -190,6 +191,12 @@ gcc_bgtfile = 'GEOSChem.Budget.{}_{}z.nc4'.format(gcc_datestr,
 gchp_bgtfile = 'GCHP.Budget.{}_{}z.nc4'.format(gchp_datestr,
                                                gchp_hourstr)
 
+# Concentration after chemistry filename (for OH metrics)
+gcc_cacfile = 'GEOSChem.ConcAfterChem.{}_{}z.nc4'.format(gcc_datestr,
+                                                         gcc_hourstr)
+gchp_cacfile = 'GCHP.ConcAfterChem.{}_{}z.nc4'.format(gchp_datestr,
+                                                      gchp_hourstr)
+
 # Paths to species concentration data
 gcc_vs_gcc_refspc   = join(maindir, gcc_vs_gcc_refdir,   gcc_spcfile)
 gcc_vs_gcc_devspc   = join(maindir, gcc_vs_gcc_devdir,   gcc_spcfile)
@@ -245,6 +252,14 @@ gchp_vs_gchp_devrst = join(maindir, gchp_dev_version, gchp_rstfile)
 gcc_vs_gcc_devbgt   = join(maindir, gcc_vs_gcc_devdir,   gcc_bgtfile)
 gchp_vs_gcc_devbgt  = join(maindir, gchp_vs_gcc_devdir,  gchp_bgtfile)
 gchp_vs_gchp_devbgt = join(maindir, gchp_vs_gchp_devdir, gchp_bgtfile)
+
+# Paths to concentration after chemistry files
+gcc_vs_gcc_refcac   = join(maindir, gcc_vs_gcc_refdir,   gcc_cacfile)
+gcc_vs_gcc_devcac   = join(maindir, gcc_vs_gcc_devdir,   gcc_cacfile)
+gchp_vs_gcc_refcac  = join(maindir, gchp_vs_gcc_refdir,  gcc_cacfile)
+gchp_vs_gcc_devcac  = join(maindir, gchp_vs_gcc_devdir,  gchp_cacfile)
+gchp_vs_gchp_refcac = join(maindir, gchp_vs_gchp_refdir, gchp_cacfile)
+gchp_vs_gchp_devcac = join(maindir, gchp_vs_gchp_devdir, gchp_cacfile)
 
 # =====================================================================
 # Create GCC vs GCC benchmark plots and tables
@@ -328,6 +343,18 @@ if gcc_vs_gcc:
                                          gcc_vs_gcc_devstr,
                                          dst=gcc_vs_gcc_plotsdir,
                                          overwrite=True)
+
+    if OH_metrics:
+        # Global mean OH, MCF Lifetime, CH4 Lifetime
+        print('\n%%% Creating GCC vs. GCC OH metrics %%%')
+        gcc_vs_gcc_reflist = [gcc_vs_gcc_refcac, gcc_vs_gcc_refmet]
+        gcc_vs_gcc_devlist = [gcc_vs_gcc_devcac, gcc_vs_gcc_devmet]
+        bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
+                                      gcc_vs_gcc_refstr,
+                                      gcc_vs_gcc_devlist,
+                                      gcc_vs_gcc_devstr,
+                                      dst=gcc_vs_gcc_plotsdir,
+                                      overwrite=True)
         
 # =====================================================================
 # Create GCHP vs GCC benchmark plots and tables
@@ -394,6 +421,31 @@ if gchp_vs_gcc:
                                      overwrite=True,
                                      sigdiff_files=gchp_vs_gcc_sigdiff)
 
+# Under development, leave commented out for now (bmy, 9/5/19)
+#    if mass_table:
+#        # Global mass tables
+#        print('\n%%% Creating GCHP vs. GCC global mass tables %%%')
+#        gchp_vs_gcc_reflist = [gchp_vs_gcc_refrst]
+#        gchp_vs_gcc_devlist = [gchp_vs_gcc_devrst, gchp_vs_gcc_devmetinst]
+#        bmk.make_benchmark_mass_tables(gchp_vs_gcc_reflist,
+#                                       gchp_vs_gcc_refstr,
+#                                       gchp_vs_gcc_devlist,
+#                                       gchp_vs_gcc_devstr,
+#                                       dst=gchp_vs_gcc_plotsdir,
+#                                       overwrite=True)
+        
+    if OH_metrics:
+        # Global mean OH, MCF Lifetime, CH4 Lifetime
+        print('\n%%% Creating GCHP vs. GCC OH metrics %%%')
+        gchp_vs_gcc_reflist = [gchp_vs_gcc_refcac, gchp_vs_gcc_refmet]
+        gchp_vs_gcc_devlist = [gchp_vs_gcc_devcac, gchp_vs_gcc_devmet]
+        bmk.make_benchmark_oh_metrics(gchp_vs_gcc_reflist,
+                                      gchp_vs_gcc_refstr,
+                                      gchp_vs_gcc_devlist,
+                                      gchp_vs_gcc_devstr,
+                                      dst=gchp_vs_gcc_plotsdir,
+                                      overwrite=True)
+        
 # =====================================================================
 # Create GCHP vs GCHP benchmark plots and tables
 # =====================================================================
@@ -473,7 +525,19 @@ if gchp_vs_gchp:
 #                                       gchp_vs_gchp_devstr,
 #                                       dst=gchp_vs_gchp_plotsdir,
 #                                       overwrite=True)
-        
+
+    if OH_metrics:
+        # Global mean OH, MCF Lifetime, CH4 Lifetime
+        print('\n%%% Creating GCHP vs. GCHP OH metrics %%%')
+        gchp_vs_gcc_reflist = [gchp_vs_gchp_refcac, gchp_vs_gchp_refmet]
+        gchp_vs_gcc_devlist = [gchp_vs_gchp_devcac, gchp_vs_gchp_devmet]
+        bmk.make_benchmark_oh_metrics(gchp_vs_gchp_reflist,
+                                      gchp_vs_gchp_refstr,
+                                      gchp_vs_gchp_devlist,
+                                      gchp_vs_gchp_devstr,
+                                      dst=gchp_vs_gchp_plotsdir,
+                                      overwrite=True)
+
 # =====================================================================
 # Create GCHP vs GCC difference of differences benchmark plots
 # =====================================================================
