@@ -162,7 +162,7 @@
     "SF_EMIS_":            ["TBD",                           "skip"   ],
     "SS_EMIS_":            ["TBD",                           "skip"   ],
     "THETA_S_THETA":       ["Met_THETA",                     "replace"],
-    "TIME_TPS_TIMETROP":   ["TBD",                           "skip"   ],
+    "TIME_TPS_TIMETROP":   ["FracOfTimeInTrop",              "replace"],
     "TMS_COND_":           ["TBD",                           "skip"   ],
     "TMS_COAG_":           ["TBD",                           "skip"   ],
     "TMS_NUCL_":           ["TBD",                           "skip"   ],
