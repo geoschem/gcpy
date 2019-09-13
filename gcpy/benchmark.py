@@ -4322,7 +4322,7 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
                              verbose=verbose)
 
 
-def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
+def make_benchmark_budget_tables(dev, devstr, dst='./1mo_benchmark',
                                  overwrite=False, interval=None):
     '''
     Creates a text file containing budgets by species for benchmarking
@@ -4330,11 +4330,8 @@ def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
 
     Args:
     -----
-        devlist : list of str
-            List with the path names of the emissions and/or met field
-            files that will constitute the "Dev" (aka "Development") 
-            data set.  The "Dev" data set will be compared against the
-            "Ref" data set.
+        dev : str
+            Path names for the "Dev" (aka "Development") data set.
 
         devstr : str
             A string to describe dev (e.g. version number)
@@ -4378,9 +4375,9 @@ def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
 
     # Dev
     try:
-        devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
+        devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find one of the Dev files: {}'.format(devlist))
+        print('Could not find Dev file: {}'.format(dev))
         raise
 
     # ==================================================================
@@ -4409,7 +4406,280 @@ def make_benchmark_budget_tables(devlist, devstr, dst='./1mo_benchmark',
         create_budget_table(devds, devstr, region, region_spc, region_vars,
                             file_budget, interval, template='Budget_{}')
                 
+def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
+                              dst='./1mo_benchmark',
+                              overwrite=False, interval=None):
+    '''
+    Creates a text file containing metrics of global mean OH, MCF lifetime,
+    and CH4 lifetime for benchmarking purposes.
 
+    Args:
+    -----
+        reflist: list of str
+            List with the path names of files that will constitute the
+            "Ref" (aka "Reference") data set.
+
+        refstr : str
+            A string to describe ref (e.g. version number)
+
+        devlist : list of str
+            List with the path names of files that will constitute the
+            "Dev" (aka "Development") data set.  The "Dev" data set will be
+            compared against the "Ref" data set.
+
+        devstr : str
+            A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str
+            A string denoting the destination folder where the file
+            containing emissions totals will be written.
+            Default value: ./1mo_benchmark
+
+        overwrite : boolean
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value : False
+
+        interval : float
+            Specifies the averaging period in seconds, which is used
+            to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
+            Default value : None
+    '''
+
+    # ==================================================================
+    # Define destination directory
+    # ==================================================================
+    if os.path.isdir(dst) and not overwrite:
+        print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+
+    # ==================================================================
+    # Read data from netCDF into Dataset objects
+    # ==================================================================
+
+    # Get a list of variables that GCPy should not read
+    skip_vars = core.skip_these_vars()
+
+    # Ref
+    try:
+        refds = xr.open_mfdataset(reflist, drop_variables=skip_vars)
+    except FileNotFoundError:
+        print('Could not find one of the Ref files: {}'.format(reflist))
+        raise
+    
+    # Dev
+    try:
+        devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
+    except FileNotFoundError:
+        print('Could not find one of the Dev files: {}'.format(devlist))
+        raise
+
+    # ==================================================================
+    # Make sure that all necessary meteorological variables are found
+    # ==================================================================
+
+    # Find the area variables in Ref and Dev
+    ref_area = core.get_area_from_dataset(refds)
+    dev_area = core.get_area_from_dataset(devds)
+
+    # Find required meteorological variables in Ref
+    # (or exit with an error if we can't find them)
+    metvar_list = ['Met_AD', 'Met_AIRDEN', 'Met_BXHEIGHT', 'Met_T',
+                   'Met_TropLev']
+    refmet = core.get_variables_from_dataset(refds, metvar_list)
+    devmet = core.get_variables_from_dataset(devds, metvar_list)
+
+    # ==================================================================
+    # Make sure that all necessary species are found
+    # ==================================================================
+
+    # Get the OH concentration
+    ref_oh = refds['OHconcAfterChem']
+    dev_oh = devds['OHconcAfterChem']
+
+    # ==================================================================
+    # Create the mask arrays for the troposphere for Ref and Dev
+    #
+    # NOTE: This algorithm uses looping, which maybe is not the most
+    # efficient method.  But at least we compute the masks only once
+    # per call to make_benchmark_mass_tables in order to avoid
+    # incurring extra CPU cycles.
+    # ==================================================================
+
+    # Convert the Met_TropLev DataArray objects to numpy ndarrays of
+    # integer.  Also subtract 1 to convert from Fortran to Python
+    # array index notation.
+    ref_lev = np.int_(np.squeeze(refmet['Met_TropLev'].values) - 1)
+    dev_lev = np.int_(np.squeeze(devmet['Met_TropLev'].values) - 1)
+
+    # Mask of tropospheric grid boxes in the Ref dataset
+    # (Maybe not the most efficient method but it works)
+    refshape = core.get_shape_of_data(refmet['Met_BXHEIGHT'])
+    ref_tropmask = np.squeeze(np.ones(refshape, bool))
+    for y in range(refshape[2]):
+        for x in range(refshape[3]):
+            ref_tropmask[0:ref_lev[y,x],y,x] = False
+
+    # Mask of tropospheric grid boxes in the Dev dataset
+    # (Maybe not the most efficient method but it works)
+    devshape = core.get_shape_of_data(devmet['Met_BXHEIGHT'])
+    dev_tropmask = np.squeeze(np.ones(devshape, bool))
+    for y in range(devshape[2]):
+        for x in range(devshape[3]):
+            dev_tropmask[0:dev_lev[y,x],y,x] = False
+
+    # ==================================================================
+    # Open file for output
+    # ==================================================================
+
+    # Create file
+    outfilename = os.path.join(dst, '{}_OH_metrics.txt'.format(devstr))
+    f = open(outfilename, 'w')
+              
+    # ==================================================================
+    # Compute mass-weighted OH in the troposphere
+    # ==================================================================
+
+    # Physical constants
+    Avo = 6.022140857e+23  # molec/mol
+    mw_air = 28.97         # g/mole dry air
+    g0 = 9.80665           # m/s2
+    
+    # Ref
+    ref_oh_trop       = np.ma.masked_array(ref_oh.values, ref_tropmask)
+    ref_airmass_trop  = np.ma.masked_array(refmet['Met_AD'].values,ref_tropmask)
+    ref_oh_mass       = ref_oh_trop * ref_airmass_trop
+    ref_total_ohmass  = np.sum(ref_oh_mass)
+    ref_total_airmass = np.sum(ref_airmass_trop)
+    ref_mean_oh       = ( ref_total_ohmass / ref_total_airmass ) / 1e5
+
+    # Dev
+    dev_oh_trop       = np.ma.masked_array(dev_oh.values, dev_tropmask)
+    dev_airmass_trop  = np.ma.masked_array(devmet['Met_AD'].values,dev_tropmask)
+    dev_oh_mass       = dev_oh_trop * dev_airmass_trop
+    dev_total_ohmass  = np.sum(dev_oh_mass)
+    dev_total_airmass = np.sum(dev_airmass_trop)
+    dev_mean_oh       = ( dev_total_ohmass / dev_total_airmass ) / 1e5
+
+    oh_diff = dev_mean_oh - ref_mean_oh
+    oh_pctdiff = ((dev_mean_oh - ref_mean_oh) / ref_mean_oh) * 100.0
+
+    # Title strings
+    title1 = '### Global mass-weighted OH concentration [1e5 molec/cm3]'
+    title2 = '### Ref = {}; Dev = {}'.format(refstr, devstr)
+    
+    # Print header to file
+    print('#'*79, file=f) 
+    print('{}{}'.format(title1.ljust(76), '###'), file=f)
+    print('{}{}'.format(title2.ljust(76), '###'), file=f)
+    print('#'*79, file=f)
+    
+    # Write results to file
+    print('{}{}{}{}'.format('  Ref'.ljust(15), 'Dev'.ljust(13),
+                            'Dev - Ref'.ljust(13),
+                            '% diff'.ljust(11)), file=f)
+    print('{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}'.format(
+        ref_mean_oh, dev_mean_oh, oh_diff, oh_pctdiff), file=f)
+    
+    # ==================================================================
+    # Compute MCF and CH4 lifetimes
+    # ==================================================================
+
+    # Get grid box volumes [cm3] (trop + strat)
+    ref_vol = ( refmet['Met_BXHEIGHT'] * ref_area ) * 1e6
+    dev_vol = ( devmet['Met_BXHEIGHT'] * dev_area ) * 1e6
+
+    # Get grid box volumes [cm3] (trop only)
+    ref_vol_trop = np.ma.masked_array( ref_vol.values, ref_tropmask)
+    dev_vol_trop = np.ma.masked_array( dev_vol.values, dev_tropmask)
+
+    # Get MCF and CH4 density [molec/cm3] (trop + strat)
+    # Assume that species is evenly distributed in air, with
+    # a mixing ratio of 1. Thus species density = air density.
+    ref_dens = refmet['Met_AIRDEN'] / 1e6
+    dev_dens = devmet['Met_AIRDEN'] / 1e6
+
+    # Get MCF and CH4 density [molec/cm3] (trop only)
+    ref_dens_trop = np.ma.masked_array( ref_dens.values, ref_tropmask )
+    dev_dens_trop = np.ma.masked_array( dev_dens.values, dev_tropmask )
+
+    # Get temperature [K] (trop only)
+    ref_temp = np.ma.masked_array( refmet['Met_T'].values, ref_tropmask )
+    dev_temp = np.ma.masked_array( devmet['Met_T'].values, ref_tropmask )
+
+    # Compute Arrhenius parameter K [cm3/molec/s]
+    ref_mcf_k = 1.64e-12 * np.exp( -1520e0 / ref_temp )
+    dev_mcf_k = 1.64e-12 * np.exp( -1520e0 / dev_temp )
+    ref_ch4_k = 2.45e-12 * np.exp( -1775e0 / ref_temp )
+    dev_ch4_k = 2.45e-12 * np.exp( -1775e0 / dev_temp )
+
+    # Numerator: Total atmospheric (trop+strat) burden
+    ref_num = np.sum(ref_dens.values * ref_vol.values )
+    dev_num = np.sum(dev_dens.values * dev_vol.values )
+
+    # Denominator: Loss rate in troposphere
+    ref_mcf_denom = np.sum( ref_mcf_k * ref_oh_trop * ref_dens_trop * ref_vol_trop )
+    
+    dev_mcf_denom = np.sum( dev_mcf_k * dev_oh_trop * dev_dens_trop * dev_vol_trop )
+    ref_ch4_denom = np.sum( ref_ch4_k * ref_oh_trop * ref_dens_trop * ref_vol_trop )
+    dev_ch4_denom = np.sum( dev_ch4_k * dev_oh_trop * dev_dens_trop * dev_vol_trop )
+
+    # Compute lifetimes [years]
+    sec_to_year = 365.25 * 86400.0
+    ref_mcf_lifetime = (ref_num / ref_mcf_denom) / sec_to_year
+    dev_mcf_lifetime = (dev_num / dev_mcf_denom) / sec_to_year
+    ref_ch4_lifetime = (ref_num / ref_ch4_denom) / sec_to_year
+    dev_ch4_lifetime = (dev_num / dev_ch4_denom) / sec_to_year
+
+    # Compute differences
+    mcf_diff = dev_mcf_lifetime - ref_mcf_lifetime
+    ch4_diff = dev_ch4_lifetime - ref_ch4_lifetime
+
+    mcf_pctdiff = ((dev_mcf_lifetime - ref_mcf_lifetime) / ref_mcf_lifetime ) * 100.0
+    ch4_pctdiff = ((dev_ch4_lifetime - ref_ch4_lifetime) / ref_ch4_lifetime ) * 100.0
+
+    # Title strings
+    title1 = '### MCF lifetime w/r/t tropospheric OH [years]'
+    title2 = '### Ref = {}; Dev = {}'.format(refstr, devstr)
+    
+    # Print header to file
+    print('',file=f)
+    print('#'*79, file=f) 
+    print('{}{}'.format(title1.ljust(76), '###'), file=f)
+    print('{}{}'.format(title2.ljust(76), '###'), file=f)
+    print('#'*79, file=f)
+    
+    # Write results to file
+    print('{}{}{}{}'.format('  Ref'.ljust(15), 'Dev'.ljust(13),
+                            'Dev - Ref'.ljust(13),
+                            '% diff'.ljust(11)), file=f)
+    print('{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}'.format(
+        ref_mcf_lifetime, dev_mcf_lifetime, mcf_diff, mcf_pctdiff), file=f)
+
+
+    # Title strings
+    title1 = '### CH4 lifetime w/r/t tropospheric OH [years]'
+    title2 = '### Ref = {}; Dev = {}'.format(refstr, devstr)
+    
+    # Print header to file
+    print('',file=f)
+    print('#'*79, file=f) 
+    print('{}{}'.format(title1.ljust(76), '###'), file=f)
+    print('{}{}'.format(title2.ljust(76), '###'), file=f)
+    print('#'*79, file=f)
+
+    # Write results to file
+    print('{}{}{}{}'.format('  Ref'.ljust(15), 'Dev'.ljust(13),
+                            'Dev - Ref'.ljust(13),
+                            '% diff'.ljust(11)), file=f)
+    print('{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}'.format(
+        ref_ch4_lifetime, dev_ch4_lifetime, ch4_diff, ch4_pctdiff), file=f)
+
+    
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix='', verbose=False ):
     '''
     Adds bookmarks to an existing PDF file.
