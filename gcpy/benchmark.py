@@ -4489,7 +4489,7 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
     # Find required meteorological variables in Ref
     # (or exit with an error if we can't find them)
     metvar_list = ['Met_AD', 'Met_AIRDEN', 'Met_BXHEIGHT', 'Met_T',
-                   'Met_TropLev']
+                   'Met_TropLev', 'FracOfTimeInTrop']
     refmet = core.get_variables_from_dataset(refds, metvar_list)
     devmet = core.get_variables_from_dataset(devds, metvar_list)
 
@@ -4589,13 +4589,18 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
     # Compute MCF and CH4 lifetimes
     # ==================================================================
 
+    # Select only boxes that are purely tropospheric
+    # This excludes influence from the stratosphere
+    ref_timetrop_mask = refmet['FracOfTimeInTrop'].values != 1.0
+    dev_timetrop_mask = devmet['FracOfTimeInTrop'].values != 1.0
+    
     # Get grid box volumes [cm3] (trop + strat)
     ref_vol = ( refmet['Met_BXHEIGHT'] * ref_area ) * 1e6
     dev_vol = ( devmet['Met_BXHEIGHT'] * dev_area ) * 1e6
 
     # Get grid box volumes [cm3] (trop only)
-    ref_vol_trop = np.ma.masked_array( ref_vol.values, ref_tropmask)
-    dev_vol_trop = np.ma.masked_array( dev_vol.values, dev_tropmask)
+    ref_vol_trop = np.ma.masked_array( ref_vol.values, ref_timetrop_mask)
+    dev_vol_trop = np.ma.masked_array( dev_vol.values, dev_timetrop_mask)
 
     # Get MCF and CH4 density [molec/cm3] (trop + strat)
     # Assume that species is evenly distributed in air, with
@@ -4604,12 +4609,12 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
     dev_dens = devmet['Met_AIRDEN'] / 1e6
 
     # Get MCF and CH4 density [molec/cm3] (trop only)
-    ref_dens_trop = np.ma.masked_array( ref_dens.values, ref_tropmask )
-    dev_dens_trop = np.ma.masked_array( dev_dens.values, dev_tropmask )
+    ref_dens_trop = np.ma.masked_array( ref_dens.values, ref_timetrop_mask )
+    dev_dens_trop = np.ma.masked_array( dev_dens.values, dev_timetrop_mask )
 
     # Get temperature [K] (trop only)
-    ref_temp = np.ma.masked_array( refmet['Met_T'].values, ref_tropmask )
-    dev_temp = np.ma.masked_array( devmet['Met_T'].values, ref_tropmask )
+    ref_temp = np.ma.masked_array( refmet['Met_T'].values, ref_timetrop_mask )
+    dev_temp = np.ma.masked_array( devmet['Met_T'].values, dev_timetrop_mask )
 
     # Compute Arrhenius parameter K [cm3/molec/s]
     ref_mcf_k = 1.64e-12 * np.exp( -1520e0 / ref_temp )
