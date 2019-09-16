@@ -17,14 +17,14 @@ GCPy aims to build on the well-established scientific Python technical stack, le
 
 1. NetCDF file modification: (crop a domain, extract some variables):
     * Use [xarray](http://xarray.pydata.org) instead.
-    * Also see [our *Working with netCDF data files* wiki page](https://wiki.geos-chem.org/Working_with_netCDF_data_files).
+    * Also see [our *Working with netCDF data files* wiki page](http://wiki.geos-chem.org/Working_with_netCDF_data_files).
 2. Simple plotting on lat-lon grids:
     * Can be done directly with [cartopy](https://scitools.org.uk/cartopy/docs/latest/), [matplotlib](https://matplotlib.org/), etc.
     * See our [GEOS-Chem Python tutorial](https://github.com/geoschem/GEOSChem-python-tutorial) for more examples!
 3. Statistical analysis:
-    * Use SciPy/sklearn tools instead
+    * Use [scipy](http://www.scipy.org)/[scikit-learn](https://scikit-learn.org) tools instead
 4. Machine Learning:
-    * Use the standard machine learning utilities (pytorch, tensorflow, chapel, etc.)
+    * Use the standard machine learning utilities ([pytorch](https://pytorch.org), [tensorflow](https://www.tensorflow.org), [julia](https://julialang.org), etc.)
 
 ## Requirements:
 **GCPy** is built on top of Python 3 and the scientific Python / NumPy
