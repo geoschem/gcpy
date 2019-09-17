@@ -17,10 +17,11 @@ Remarks:
 '''
 
 # Imports
+from gcpy import core
 import os
+import numpy as np
 import xarray as xr
 from xarray.coding.variables import SerializationWarning
-import numpy as np
 import warnings
 
 # Suppress harmless run-time warnings (mostly about underflow or NaNs)
@@ -125,9 +126,15 @@ def main():
     # (YOU CAN EDIT THIS)
     substrs = ['SpeciesConc']
 
+    # Get a list of variables that GCPy should not read.
+    # These are mostly variables introduced into GCHP with the MAPL v1.0.0
+    # update.  These variables contain either repeated or non-standard
+    # dimensions that can cause problems in xarray when combining datasets.
+    skip_vars = core.skip_these_vars()
+    
     # Look for all the netCDF files in the path
     file_list = find_files_in_dir(path_to_dir, substrs)
-    ds = xr.open_mfdataset(file_list)
+    ds = xr.open_mfdataset(file_list, drop_variables=skip_vars)
 
     # Replace NaN values with zeroes
     ds = replace_nans_with_zeroes(ds, verbose=True)
