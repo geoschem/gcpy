@@ -563,6 +563,11 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
                            'BIOGSRCE_', 'ANTHSRCE_']:
                 newvar = 'Emis' + varstr +'_' + newid
             
+            # Special handling for UV radiative flux diagnostics:
+            # We need to append the bin descriptor to the new name.
+            elif 'FJX_FLXS' in oldid:
+                newvar = newid + '_bin' + original_variable_name[-2:]
+
             # If nothing found...
             else:
                 
@@ -590,7 +595,7 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
         print( '\nRenaming variables in the data...')
     with xr.set_options(keep_attrs=True):
         ds = ds.rename(name_dict=old_to_new)
-    
+
     # Return the dataset
     return ds
 
