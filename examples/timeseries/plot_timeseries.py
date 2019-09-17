@@ -32,13 +32,14 @@ yantosca@seas.harvard.edu
 '''
 
 # Imports
+from gcpy import core
 import os
 import numpy as np
-import xarray as xr
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
+import xarray as xr
 import warnings
 
 # Tell matplotlib not to look for an X-window, as we are plotting to
@@ -140,11 +141,17 @@ def read_geoschem_data(path, collections):
             specified.
     '''
 
+    # Get a list of variables that GCPy should not read.
+    # These are mostly variables introduced into GCHP with the MAPL v1.0.0
+    # update.  These variables contain either repeated or non-standard
+    # dimensions that can cause problems in xarray when combining datasets.
+    skip_vars = core.skip_these_vars()
+    
     # Find all files in the given 
     file_list = find_files_in_dir(path, collections) 
 
     # Return a single xarray Dataset containing data from all files
-    return xr.open_mfdataset(file_list)
+    return xr.open_mfdataset(file_list, drop_variables=skip_vars)
 
 
 def plot_timeseries_data(ds, site_coords):
