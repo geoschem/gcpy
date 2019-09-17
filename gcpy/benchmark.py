@@ -4001,11 +4001,6 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
         print('Could not find Dev file: {}'.format(dev))
         raise
 
-    # Make sure that Ref and Dev datasets have the same variables.
-    # Variables that are in Ref but not in Dev will be added to Dev
-    # with all missing values (NaNs). And vice-versa.
-    [refds, devds] = add_missing_variables(refds, devds)
-    
     # NOTE: GCHP diagnostic variable exports are defined before the
     # input.geos file is read.  This means "WL1" will not have been
     # replaced with "550nm" in the variable names.  Do this string
@@ -4019,6 +4014,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
             if 'WL1' in v:
                 newname = v.replace('WL1', '550nm')
                 old2new[v] = newname
+                print('old {} new {}'.format(v, old2new[v]))
         refds = refds.rename(old2new)
 
         # Rename variables in the Dev dataset
@@ -4029,6 +4025,11 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
                 old2new[v] = newname
         devds = devds.rename(old2new)
 
+    # Make sure that Ref and Dev datasets have the same variables.
+    # Variables that are in Ref but not in Dev will be added to Dev
+    # with all missing values (NaNs). And vice-versa.
+    [refds, devds] = add_missing_variables(refds, devds)
+    
     # Find common AOD variables in both datasets
     # (or use the varlist passed via keyword argument)
     if varlist == None:

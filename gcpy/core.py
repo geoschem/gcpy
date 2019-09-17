@@ -31,7 +31,7 @@ def skip_these_vars():
     >>> import xarray as xr
     >>> ds = xr.open_dataset('myfile.nc', drop_variables=skip_these_vars())
     '''
-    return ['anchor', 'ncontact', 'orientation']
+    return ['anchor', 'ncontact', 'orientation', 'contacts', 'cubed_sphere']
 
 
 def open_dataset(filename, **kwargs):
