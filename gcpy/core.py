@@ -475,6 +475,11 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
                     'Met_PREACC'   : 'Met_PRECTOT',
                     'Met_PBL'      : 'Met_PBLH' }
 
+    # Tags for the UVFlux* diagnostics
+    uvflux_tags = ['187nm', '191nm', '193nm', '196nm', '202nm', '208nm',
+                   '211nm', '214nm', '261nm', '267nm', '277nm', '295nm',
+                   '303nm', '310nm', '316nm', '333nm', '380nm', '574nm']
+
     # Python dictionary for variable name replacement
     old_to_new = {}
 
@@ -566,7 +571,8 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
             # Special handling for UV radiative flux diagnostics:
             # We need to append the bin descriptor to the new name.
             elif 'FJX_FLXS' in oldid:
-                newvar = newid + '_bin' + original_variable_name[-2:]
+                uvind = int(original_variable_name[-2:]) - 1
+                newvar = newid + '_' + uvflux_tags[uvind]
 
             # If nothing found...
             else:
