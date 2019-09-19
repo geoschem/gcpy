@@ -153,13 +153,18 @@ def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
         open_dataset
     '''
 
-    try:
-        test_fn = filenames[0]
-    except:
-        raise ValueError('Must pass a list with at least one filename')
+    # If filenames is a single string, then make it a list of length 1
+    if isinstance(filenames, str):
+        filenames = [filenames]
 
+    # Make sure that filenames is a list before proceeding
+    if not isinstance(filenames, list):
+        raise ValueError('The filenames argument must be a list of str!')
+        
+    # Get the file extension
+    test_fn = filenames[0]
     basename, file_extension = os.path.splitext(test_fn)
-
+    
     if file_extension == '.bpch':
         _opener = xbpch.open_mfbpchdataset
     elif file_extension == '.nc':
@@ -167,13 +172,16 @@ def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
     elif file_extension == '.nc4':
         _opener = xr.open_mfdataset
     else:
-        raise ValueError('Found unknown file extension ({}); please ' \
-                         'pass a BPCH or netCDF file with extension ' \
+        raise ValueError('Found unknown file extension ({}); please ' +
+                         'pass a BPCH or netCDF file with extension ' +
                          '"bpch" or "nc" or "nc4"'.format(file_extension))
-        
+
+    # Get a list of
+    skip_vars = skip_these_vars()
+    
     return _opener(filenames, concat_dim=concat_dim, compat=compat,
                    preprocess=preprocess, lock=lock,
-                   drop_variables=skip_these_vars(), **kwargs)
+                   drop_variables=skip_vars, **kwargs)
 
 
 def get_gcc_filepath(outputdir, collection, day, time):
