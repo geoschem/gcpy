@@ -3221,8 +3221,8 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
                             print(file=f)
                             f.close()
 
-                if '500' in plots:
-                    if '500' in filename:
+                if '500hpa' in plots:
+                    if '500hpa' in filename:
                         with open(filename, 'a+') as f:
                             print('* {}: '.format(filecat), file=f, end='')
                             for v in diff_500:
@@ -4014,7 +4014,6 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
             if 'WL1' in v:
                 newname = v.replace('WL1', '550nm')
                 old2new[v] = newname
-                print('old {} new {}'.format(v, old2new[v]))
         refds = refds.rename(old2new)
 
         # Rename variables in the Dev dataset
