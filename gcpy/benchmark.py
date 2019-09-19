@@ -4274,22 +4274,22 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # array index notation.
     ref_lev = np.int_(np.squeeze(refmet['Met_TropLev'].values) - 1)
     dev_lev = np.int_(np.squeeze(devmet['Met_TropLev'].values) - 1)
+    ref_lev_1d = ref_lev.flatten()
+    dev_lev_1d = dev_lev.flatten()
 
     # Mask of tropospheric grid boxes in the Ref dataset
-    # (Maybe not the most efficient method but it works)
-    refshape = core.get_shape_of_data(refmet['Met_BXHEIGHT'])
-    ref_tropmask = np.squeeze(np.ones(refshape, bool))
-    for y in range(refshape[2]):
-        for x in range(refshape[3]):
-            ref_tropmask[0:ref_lev[y,x],y,x] = False
+    refshape = core.get_shape_of_data(np.squeeze(refmet['Met_BXHEIGHT']))
+    ref_tropmask = np.ones((refshape[0], np.prod(np.array(refshape[1:]))), bool)
+    for x in range(ref_tropmask.shape[1]):
+        ref_tropmask[0:ref_lev_1d[x],x] = False
+    ref_tropmask = ref_tropmask.reshape(refshape)
 
     # Mask of tropospheric grid boxes in the Dev dataset
-    # (Maybe not the most efficient method but it works)
-    devshape = core.get_shape_of_data(devmet['Met_BXHEIGHT'])
-    dev_tropmask = np.squeeze(np.ones(devshape, bool))
-    for y in range(devshape[2]):
-        for x in range(devshape[3]):
-            dev_tropmask[0:dev_lev[y,x],y,x] = False
+    devshape = core.get_shape_of_data(np.squeeze(devmet['Met_BXHEIGHT']))
+    dev_tropmask = np.ones((devshape[0], np.prod(np.array(devshape[1:]))), bool)
+    for x in range(dev_tropmask.shape[1]):
+        dev_tropmask[0:dev_lev_1d[x],x] = False
+    dev_tropmask = dev_tropmask.reshape(devshape)
 
     # ==================================================================
     # Create a dictionary to hold all of the meterological
@@ -4515,22 +4515,22 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
     # array index notation.
     ref_lev = np.int_(np.squeeze(refmet['Met_TropLev'].values) - 1)
     dev_lev = np.int_(np.squeeze(devmet['Met_TropLev'].values) - 1)
+    ref_lev_1d = ref_lev.flatten()
+    dev_lev_1d = dev_lev.flatten()
 
     # Mask of tropospheric grid boxes in the Ref dataset
-    # (Maybe not the most efficient method but it works)
-    refshape = core.get_shape_of_data(refmet['Met_BXHEIGHT'])
-    ref_tropmask = np.squeeze(np.ones(refshape, bool))
-    for y in range(refshape[2]):
-        for x in range(refshape[3]):
-            ref_tropmask[0:ref_lev[y,x],y,x] = False
+    refshape = core.get_shape_of_data(np.squeeze(refmet['Met_BXHEIGHT']))
+    ref_tropmask = np.ones((refshape[0], np.prod(np.array(refshape[1:]))), bool)
+    for x in range(ref_tropmask.shape[1]):
+        ref_tropmask[0:ref_lev_1d[x],x] = False
+    ref_tropmask = ref_tropmask.reshape(refshape)
 
     # Mask of tropospheric grid boxes in the Dev dataset
-    # (Maybe not the most efficient method but it works)
-    devshape = core.get_shape_of_data(devmet['Met_BXHEIGHT'])
-    dev_tropmask = np.squeeze(np.ones(devshape, bool))
-    for y in range(devshape[2]):
-        for x in range(devshape[3]):
-            dev_tropmask[0:dev_lev[y,x],y,x] = False
+    devshape = core.get_shape_of_data(np.squeeze(devmet['Met_BXHEIGHT']))
+    dev_tropmask = np.ones((devshape[0], np.prod(np.array(devshape[1:]))), bool)
+    for x in range(dev_tropmask.shape[1]):
+        dev_tropmask[0:dev_lev_1d[x],x] = False
+    dev_tropmask = dev_tropmask.reshape(devshape)
 
     # ==================================================================
     # Open file for output
