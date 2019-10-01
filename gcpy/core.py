@@ -81,9 +81,13 @@ def open_dataset(filename, **kwargs):
 
     basename, file_extension = os.path.splitext(filename)
 
+    # Modify the search so that we account for file names
+    # such as ".nc4.Ref", ".nc4.Dev", etc. (bmy, 10/1/19)
     if file_extension == '.bpch':
         _opener = xbpch.open_bpchdataset
-    elif file_extension == '.nc':
+    elif '.nc' in file_extension:
+        _opener = xr.open_dataset
+    elif '.nc' in basename:
         _opener = xr.open_dataset
     else:
         raise ValueError('Found unknown file extension ({}); please '
@@ -161,22 +165,27 @@ def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
     if not isinstance(filenames, list):
         raise ValueError('The filenames argument must be a list of str!')
         
-    # Get the file extension
+    # Get the file name and file extension
     test_fn = filenames[0]
     basename, file_extension = os.path.splitext(test_fn)
     
+    # Modify the search so that we account for file names
+    # such as ".nc4.Ref", ".nc4.Dev", etc. (bmy, 10/1/19)
     if file_extension == '.bpch':
         _opener = xbpch.open_mfbpchdataset
-    elif file_extension == '.nc':
+    elif '.nc' in file_extension:
         _opener = xr.open_mfdataset
-    elif file_extension == '.nc4':
+    elif '.nc' in basename:
         _opener = xr.open_mfdataset
     else:
         raise ValueError('Found unknown file extension ({}); please ' +
                          'pass a BPCH or netCDF file with extension ' +
                          '"bpch" or "nc" or "nc4"'.format(file_extension))
 
-    # Get a list of
+    # Get a list of variables that GCPy should not read.  These are
+    # mostly variables from GCHP files created with MAPL v1.0.0+
+    # that have repeated dimensions or non-standard dimensions.
+    # These can cause issues when concatenating files.
     skip_vars = skip_these_vars()
     
     return _opener(filenames, concat_dim=concat_dim, compat=compat,
