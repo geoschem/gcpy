@@ -140,6 +140,8 @@ for v in ds.data_vars.keys():
         ds[v].attrs['units'] = 'vol vol-1'
     if v.strip() in 'Met_AIRNUMDEN':
         ds[v].attrs['units'] = 'molec cm-3'
+    if v.strip() in ['ProdCOfromCH4', 'ProdCOfromNMVOC']:
+        ds[v].attrs['units'] = 'molec cm-3 s-1'
 
     # Convert these prodloss diagnostics from kg (bpch) to kg/s
     # to be consistent with the GEOS-Chem History diagnostics
