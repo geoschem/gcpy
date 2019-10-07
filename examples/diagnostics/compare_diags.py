@@ -134,7 +134,11 @@ def compare_data(refdata, devdata):
     # Print totals for each quantity
     # ==================================================================
     if print_totals_and_diffs:
-        for v in varlist_level:
+        print('{} Ref={} Dev={} {}'.format('Variable'.ljust(22),
+                                           refstr.ljust(20),
+                                           devstr.ljust(20),
+                                           'Dev-Ref'))
+         for v in varlist_level:
             refsum = np.sum(refdata[v].values)
             devsum = np.sum(devdata[v].values)
             diff = devsum - refsum
