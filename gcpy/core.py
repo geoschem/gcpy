@@ -193,19 +193,66 @@ def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
                    drop_variables=skip_vars, **kwargs)
 
 
-def get_gcc_filepath(outputdir, collection, day, time):
+def get_gcc_filepath(outputdir, collection,
+                     year=2016, month=None, day=1, time=0):
+    '''
+    Returns
+    '''
+
+    # Create the filename template
     if collection == 'Emissions':
-        filepath = os.path.join(outputdir,
-                                'HEMCO_diagnostics.{}{}.nc'.format(day,time))
+        file_tmpl = os.path.join(outputdir, 'HEMCO_diagnostics.{}{}{}{}.nc')
     else:
-        filepath = os.path.join(outputdir,
-                                'GEOSChem.{}.{}_{}z.nc4'.format(collection,day,time))
+        file_tmpl = os.path.join(outputdir, 'GEOSChem.{}'.format(collection))
+        file_tmpl = file_tmpl + '.{}{}{}_{}z.nc4'
+
+    # Create strings for year, day, and time (pad zeroes)
+    year_str = str(year).zfill(2)
+    day_str = str(day).zfill(2)
+    time_str = str(time).zfill(4)
+
+    # If month is specified as a list of months, then return a list of
+    # corresponding file paths.  Otherwise return a single file path
+    # for the requested year/month/day/time.
+    if isinstance(month, list):
+        filepath = []
+        for m in month:
+            mon_str = str(m).zfill(2)
+            filepath.append(file_tmpl.format(year_str, mon_str, 
+                                             day_str, time_str))
+    elif month is not None:
+        mon_str = str(month).zfill(2)
+        filepath = file_tmpl.format(year_str, mon_str, day_str, time_str)
+
     return filepath
 
 
-def get_gchp_filepath(outputdir, collection, day, time):
-    filepath = os.path.join(outputdir,
-                            'GCHP.{}.{}_{}z.nc4'.format(collection,day,time))
+def get_gchp_filepath(outputdir, collection,
+                      year=2016, month=1, day=1, time=0):
+    '''
+    '''
+
+    # Create the filename template
+    file_tmpl = os.path.join(outputdir, 'GCHP.{}'.format(collection))
+    file_tmpl = file_tmpl + '.{}{}{}_{}z.nc4'
+
+    # Create strings for year, day, and time (pad zeroes)
+    year_str = str(year).zfill(2)
+    day_str = str(day).zfill(2)
+    time_str = str(time).zfill(4)
+
+    # If month is specified as a list of months, then return a list of
+    # corresponding file paths.  Otherwise return a single file path
+    # for the requested year/month/day/time.
+    if isinstance(month, list):
+        filepath = []
+        for m in month:
+            mon_str = str(m).zfill(2)
+            filepath.append(file_tmpl.format(year_str, m, day_str, time_str))
+    elif month is not None:
+        mon_str = str(month).zfill(2)
+        filepath = file_tmpl.format(year_str, mon_str, day_str, time_str)
+
     return filepath
 
 
@@ -1038,3 +1085,50 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
             return mcolors.LogNorm(vmin=vmax/1e3, vmax=vmax)
         else:
             return mcolors.Normalize(vmin=vmin, vmax=vmax)
+
+
+def check_for_area(ds, gcc_area_name='AREA', gchp_area_name='Met_AREAM2'):
+    '''
+    Makes sure that a dataset has a surface area variable contained
+    within it.  
+
+    GEOS-Chem Classic files all contain surface area as variable AREA.
+    GCHP files do not and area must be retrieved from the met-field
+    collection from variable Met_AREAM2. To simplify comparisons,
+    the GCHP area name will be appended to the dataset under the
+    GEOS-Chem "Classic" area name if it is present.
+
+    Args:
+    -----
+        ds : xarray Dataset
+            The Dataset object that will be checked.
+ 
+    Keyword Args (optional):
+    ------------------------
+        gcc_area_name : str
+            Specifies the name of the GEOS-Chem "Classic" surface
+            area varaible
+            Default value: "AREA"
+
+        gchp_area_name : str
+            Specifies the name of the GCHP surface area variable.
+            Default value: "Met_AREAM2"
+
+    Returns:
+    --------
+        ds : xarray Dataset
+            The modified Dataset object
+    '''
+
+    found_gcc = gcc_area_name in ds.data_vars.keys()
+    found_gchp = gchp_area_name in ds.data_vars.keys()
+
+    if (not found_gcc) and (not found_gchp):
+        msg = 'Could not find {} or {} in the dataset!'.format(
+            gcc_area_name, gchp_area_name)
+        raise ValueError(msg)
+
+    if found_gchp:
+        ds[gcc_area_name] = ds[gchp_area_name]
+
+    return ds

@@ -3506,7 +3506,7 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
 
 def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
                                dst='./1mo_benchmark', overwrite=False,
-                               interval=None):
+                               interval=2678400.0):
     '''
     Creates a text file containing emission totals by species and
     category for benchmarking purposes.
@@ -3570,42 +3570,17 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     # Get a list of variables that GCPy should not read
     skip_vars = core.skip_these_vars()
 
-    # GEOS-Chem Classic files all contain surface area as variable AREA.
-    # GCHP files do not and area must be retrieved from the met-field
-    # collection from variable Met_AREAM2. To simplify comparisons,
-    # the area will be appended to GCHP DataSets using the GCC area name. 
-    gcc_area_name = 'AREA'
-    gchp_area_name = 'Met_AREAM2'
-
-    # Ref
+    # Read the Ref dataset and make sure that the area variables are present
     if len(reflist) == 1:
-        refds = xr.open_dataset(reflist[0], drop_variables=skip_vars)
-        assert gcc_area_name in list(refds.keys()), \
-        'Ref file {} does not contain area variable {}'.format(
-            reflist[0], gcc_area_name)
-
-    elif len(reflist) == 2:
-        refds = xr.open_dataset(reflist[0], drop_variables=skip_vars)
-        metrefds = xr.open_dataset(reflist[1], drop_variables=skip_vars)
-        assert gchp_area_name in list(metrefds.keys()), \
-        'Ref met file {} does not contain area variable {}'.format(
-            reflist[1], gchp_area_name)
-        refds[gcc_area_name] = metrefds[gchp_area_name]
-
-    # Dev
+        reflist = [reflist]
+    refds = xr.open_mfdataset(reflist, drop_variables=skip_vars)
+    refds = core.check_for_area(refds)
+    
+    # Read the Dev dataset and make sure that area variables are present
     if len(devlist) == 1:
-        devds = xr.open_dataset(devlist[0], drop_variables=skip_vars)
-        assert gcc_area_name in list(refds.keys()), \
-        'Dev file {} does not contain area variable {}'.format(
-            devlist[0], gcc_area_name)
-
-    elif len(devlist) == 2:
-        devds = xr.open_dataset(devlist[0], drop_variables=skip_vars)
-        metdevds = xr.open_dataset(devlist[1], drop_variables=skip_vars)
-        assert gchp_area_name in list(metdevds.keys()), \
-        'Dev met file {} does not contain area variable {}'.format(
-            devlist[1], gchp_area_name)
-        devds[gcc_area_name] = metdevds[gchp_area_name]
+        devlist = [devlist]
+    devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
+    devds = core.check_for_area(devds)
 
     # ==================================================================
     # Create table of emissions
@@ -3618,15 +3593,8 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
                                                    emission_inv)))
 
     # Destination files
-#    file_emis_totals = os.path.join(dst, emisdir, 'Emission_totals.txt')
-#    file_inv_totals = os.path.join(dst, emisdir, 'Inventory_totals.txt')
     file_emis_totals = os.path.join(emisdir, 'Emission_totals.txt')
     file_inv_totals = os.path.join(emisdir, 'Inventory_totals.txt')
-
-    # If the averaging interval (in seconds) is not specified,
-    # then assume July 2016 = 86400 seconds * 31 days
-    if interval == None:
-        interval = 86400.0 * 31.0
 
     # Create table of emissions by species
     create_total_emissions_table(refds, refstr, devds, devstr, 
@@ -4386,8 +4354,8 @@ def make_benchmark_budget_tables(dev, devstr, dst='./1mo_benchmark',
 
     # If the averaging interval (in seconds) is not specified,
     # then assume July 2016 = 86400 seconds * 31 days
-    if interval == None:
-        interval = 86400.0 * 31.0
+#    if interval == None:
+#        interval = 86400.0 * 31.0
     
     # Get budget variable and regions
     budget_vars    = [ k for k in devds.data_vars.keys() if k[:6] == 'Budget' ]
