@@ -3,6 +3,7 @@ Contains methods for converting the units of data.
 Mainly used for model benchmarking purposes.
 '''
 
+from copy import copy as shallow_copy
 import numpy as np
 import xarray as xr
 
@@ -229,12 +230,26 @@ def convert_units(dr, species_name, species_properties, target_units,
     # Compute target units
     # ==============================
 
+    # Create an array for the number of seconds for braodcasting
+    # (This is klunky, maybe there is a better way to do this)
+    seconds = np.zeros(dr.shape)
+    if len(dr.shape) == 3:
+        for t in range(dr.shape[0]):
+            seconds[t,:,:] = interval[t]
+    elif len(dr.shape) == 4:
+        for t in range(dr.shape[0]):
+            seconds[t,:,:,:] = interval[t]
+
     if units == 'kg/m2/s':
-        data_kg = dr.values * area_m2.values * interval
+        # Note: multiplying data arrays will broadcast dimensions properly
+        data_kg = dr * area_m2
+        data_kg = data_kg.values * seconds
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     elif units == 'kgC/m2/s':
-        data_kg = dr.values * area_m2.values * interval / kg_to_kgC
+        # Note: multiplying data arrays will broadcast dimensions properly
+        data_kg = dr * area / kg_to_kgC
+        data_kg = data_kg.values * seconds
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     elif units == 'kg':
