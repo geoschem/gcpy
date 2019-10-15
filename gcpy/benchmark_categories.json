@@ -161,13 +161,12 @@
           "MTPO",
           "LIMO"
         ],
+      "Alcohols":
+        [ "EOH",
+          "MOH"
+        ]
       "Other":
-        [ "GLYX",
-          "HCOOH",
-          "MAP",
-          "MBO",
-          "MOH",
-          "RCHO"
+        [ "MBO",
         ]
     },
   "Secondary_Organics":
@@ -193,9 +192,11 @@
       "Acids":
         [ "ACTA"
         ],
-      "Alcohols":
-        [ "EOH",
-          "MOH"
+      "Other":
+        [ "GLYX",
+          "HCOOH",
+          "MAP",
+          "RCHO"
         ]
     },
   "Secondary_Organic_Aerosols":
