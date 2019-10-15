@@ -38,7 +38,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
                          cmpres=None, match_cbar=True, normalize_by_area=False,
                          enforce_units=True, flip_ref=False, flip_dev=False,
                          use_cmap_RdBu=False, verbose=False, 
-                         log_color_scale=False, sigdiff_list=[]):
+                         log_color_scale=False, extra_title_txt=None,
+                         sigdiff_list=[]):
     '''
     Create single-level 3x2 comparison map plots for variables common 
     in two xarray Datasets. Optionally save to PDF. 
@@ -124,6 +125,11 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             Set this flag to True to plot data (not diffs)
             on a log color scale.
             Default value: False
+
+        extra_title_txt : str
+            Specifies extra text (e.g. a date string such as "Jan2016")
+            for the top-of-plot title.
+            Default value: None
 
         sigdiff_list: list of str
             Returns a list of all quantities having significant 
@@ -586,11 +592,21 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
             if ilev == 0: levstr = 'Surface'
             elif ilev == 22: levstr = '500 hPa'
             else: levstr = 'Level ' +  str(ilev-1)
-            figs.suptitle('{}, {}'.format(varname,levstr),
-                          fontsize=fontsize, y=offset)
+            if extra_title_txt is not None:
+                figs.suptitle('{}, {} ({})'.format(
+                    varname, levstr, extra_title_txt),
+                              fontsize=fontsize, y=offset)
+            else:
+                figs.suptitle('{}, {}'.format(varname,levstr),
+                              fontsize=fontsize, y=offset)
         elif 'lat' in ds_ref.dims and 'lat' in ds_dev.dims and \
              'lon' in ds_ref.dims and 'lon' in ds_dev.dims:
-            figs.suptitle('{}'.format(varname), fontsize=fontsize, y=offset)
+            if extra_title_txt is not None:
+                figs.suptitle('{} ({})'.format(varname, extra_title_txt),
+                              fontsize=fontsize, y=offset)
+            else:
+                figs.suptitle('{}'.format(varname),
+                              fontsize=fontsize, y=offset)
         else:
             print('Incorrect dimensions for {}!'.format(varname))   
 
@@ -1168,7 +1184,7 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
                        normalize_by_area=False, enforce_units=True,
                        flip_ref=False, flip_dev=False, use_cmap_RdBu=False,
                        verbose=False, log_color_scale=False, log_yaxis=False,
-                       sigdiff_list=[]):
+                       extra_title_txt=None, sigdiff_list=[]):
 
     '''
     Create single-level 3x2 comparison zonal-mean plots for variables
@@ -1262,6 +1278,11 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
             Set this flag to True if you wish to create zonal mean
             plots with a log-pressure Y-axis.
             Default value: False
+
+        extra_title_txt : str
+            Specifies extra text (e.g. a date string such as "Jan2016")
+            for the top-of-plot title.
+            Default value: None
 
         sigdiff_list: list of str
             Returns a list of all quantities having significant 
@@ -1706,8 +1727,13 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
         # Give the plot a title
         offset = 0.96
         fontsize=25
-        figs.suptitle('{}, Zonal Mean'.format(varname),
-                      fontsize=fontsize, y=offset)
+        if extra_title_txt is not None:
+            figs.suptitle('{}, Zonal Mean ({})'.format(varname,
+                                                       extra_title_txt),
+                          fontsize=fontsize, y=offset)
+        else:
+            figs.suptitle('{}, Zonal Mean'.format(varname),
+                          fontsize=fontsize, y=offset)
 
         # ==============================================================
         # Set color map objects.  Use gray for NaNs (no worries,
@@ -3022,7 +3048,8 @@ def archive_species_categories(dst):
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
 
-def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
+def make_benchmark_conc_plots(ref, refstr, dev, devstr,
+                              dst='./1mo_benchmark', subdir=None,
                               overwrite=False, verbose=False, restrict_cats=[],
                               plots=['sfc', '500hpa', 'zonalmean'], 
                               use_cmap_RdBu=False, log_color_scale=False,
@@ -3053,6 +3080,12 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
             A string denoting the destination folder where a PDF
             file containing plots will be written.
             Default value: ./1mo_benchmark
+
+        subdir : str
+            A string denoting the sub-directory of dst where PDF
+            files containing plots will be written.  In practice,
+            subdir is only needed for the 1-year benchmark output.
+            Default value: None
 
         overwrite : boolean
             Set this flag to True to overwrite files in the
@@ -3097,6 +3130,13 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
+    # Define extra title text (usually a date string)
+    # for the top-title of the plot
+    if subdir is not None:
+        extra_title_txt = subdir
+    else:
+        extra_title_txt = None
+
     # Get a list of variables that GCPy should not read
     skip_vars = core.skip_these_vars()
 
@@ -3136,58 +3176,97 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
         if restrict_cats and filecat not in restrict_cats:
             continue
 
+        # Create a directory for each category.
+        # If subdir is passed, then create subdirectories in each
+        # category directory (e.g. as for the 1-year benchmark).
         catdir = os.path.join(dst,filecat)
         if not os.path.isdir(catdir):
             os.mkdir(catdir)
+        if subdir is not None:
+            catdir = os.path.join(catdir, subdir)
+            if not os.path.isdir(catdir):
+                os.mkdir(catdir)
+
         varlist = []
         warninglist = []
         for subcat in catdict[filecat]:
             for spc in catdict[filecat][subcat]:
                 varname = 'SpeciesConc_'+spc
-                if varname not in refds.data_vars or varname not in devds.data_vars:
+                if varname not in refds.data_vars or \
+                   varname not in devds.data_vars:
                     warninglist.append(varname)
                     continue
                 varlist.append(varname)
         if warninglist != []:
             print('\n\nWarning: variables in {} category not in dataset: {}'.format(filecat,warninglist))
 
+        # -----------------------
         # Surface plots
+        # -----------------------
         if 'sfc' in plots:
-            pdfname = os.path.join(catdir,'{}_Surface.pdf'.format(filecat))
+
+            if subdir is not None:
+                pdfname = os.path.join(
+                    catdir,'{}_Surface_{}.pdf'.format(filecat, subdir))
+            else:
+                pdfname = os.path.join(
+                    catdir, '{}_Surface.pdf'.format(filecat))
+
             diff_sfc = []
             compare_single_level(refds, refstr, devds, devstr, 
                                  varlist=varlist, ilev=0,
                                  pdfname=pdfname,
                                  use_cmap_RdBu=use_cmap_RdBu,
                                  log_color_scale=log_color_scale,
+                                 extra_title_txt=extra_title_txt,
                                  sigdiff_list=diff_sfc)
             diff_sfc[:] = [v.replace('SpeciesConc_', '') for v in diff_sfc]
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
-
+        # -----------------------
+        # 500 hPa plots
+        # -----------------------
         if '500hpa' in plots:
-            pdfname = os.path.join(catdir,
-                                   '{}_500hPa.pdf'.format(filecat))        
+
+            if subdir is not None:
+                pdfname = os.path.join(
+                    catdir, '{}_500hPa_{}.pdf'.format(filecat, subdir))
+            else:
+                pdfname = os.path.join(catdir,
+                                       '{}_500hPa.pdf'.format(filecat))
+
             diff_500 = []
             compare_single_level(refds, refstr, devds, devstr, 
                                  varlist=varlist, ilev=22,
                                  pdfname=pdfname, 
                                  use_cmap_RdBu=use_cmap_RdBu,
                                  log_color_scale=log_color_scale,
+                                 extra_title_txt=extra_title_txt,
                                  sigdiff_list=diff_500)
             diff_500[:] = [v.replace('SpeciesConc_', '') for v in diff_500]
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
                                         remove_prefix='SpeciesConc_')
 
+        # -----------------------
+        # Zonal mean plots
+        # -----------------------
         if 'zonalmean' in plots or 'zm' in plots:
-            pdfname = os.path.join(catdir,'{}_FullColumn_ZonalMean.pdf'.format(
-                filecat))
+
+            if subdir is not None:
+                pdfname = os.path.join(
+                    catdir, '{}_FullColumn_ZonalMean_{}.pdf'.format(
+                        filecat, subdir))
+            else:
+                pdfname = os.path.join(
+                    catdir, '{}_FullColumn_ZonalMean.pdf'.format(filecat))
+
             diff_zm = []
             compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
                                pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
                                log_color_scale=log_color_scale,
+                               extra_title_txt=extra_title_txt,
                                sigdiff_list=diff_zm)
             diff_zm[:] = [v.replace('SpeciesConc_', '') for v in diff_zm]
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
@@ -3196,11 +3275,17 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
 
             # Strat_ZonalMean plots will use a log-pressure Y-axis, with
             # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
-            pdfname = os.path.join(catdir,'{}_Strat_ZonalMean.pdf'.format(
-                filecat))        
+            if subdir is not None:
+                pdfname = os.path.join(
+                    catdir, '{}_Strat_ZonalMean_{}.pdf'.format(filecat, subdir))
+            else:
+                pdfname = os.path.join(
+                    catdir,'{}_Strat_ZonalMean.pdf'.format(filecat))
+
             compare_zonal_mean(refds, refstr, devds, devstr, varlist=varlist,
                                pdfname=pdfname, use_cmap_RdBu=use_cmap_RdBu,
-                               pres_range=[1,100], log_yaxis=True, 
+                               pres_range=[1,100], log_yaxis=True,
+                               extra_title_txt=extra_title_txt,
                                log_color_scale=log_color_scale)
             add_nested_bookmarks_to_pdf(pdfname, filecat, 
                                         catdict, warninglist, 
@@ -3242,6 +3327,7 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr, dst='./1mo_benchmark',
 
 def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                               dst='./1mo_benchmark',
+                              subdir=None,
                               plot_by_benchmark_cat=False,
                               plot_by_hco_cat=False,
                               overwrite=False, verbose=False,
@@ -3273,9 +3359,16 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     Keyword Args (optional):
     ------------------------
         dst : str
-            A string denoting the destination folder where a
-            PDF file containing plots will be written.
+            A string denoting the destination folder where
+            PDF files containing plots will be written.
             Default value: './1mo_benchmark
+
+        subdir : str
+            A string denoting the sub-directory of dst where PDF
+            files containing plots will be written.  In practice,
+            subdir is almost always a date string (e.g. "Jan2016"),
+            and is only needed for the 1-year benchmark output.
+            Default value: None
 
         plot_by_benchmark_cat : boolean
             Set this flag to True to separate plots into PDF files
@@ -3335,14 +3428,26 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     # =================================================================
     # Initialization and data read
     # =================================================================
+
+    # Create destination folder if it does not exist
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
         return
     elif not os.path.isdir(dst):
         os.mkdir(dst)
-    emisdir = os.path.join(dst,'Emissions')
+
+    # Create the "Emissions" category folder.  If subdir is passed,
+    # then create a sub-folder (needed for the 1-year benchmarks).
+    emisdir = os.path.join(dst, 'Emissions')
     if not os.path.isdir(emisdir):
-        os.mkdir(emisdir)   
+        os.mkdir(emisdir)
+    if subdir is not None:
+        emisdir = os.path.join(emisdir, subdir)
+        if not os.path.isdir(emisdir):
+            os.mkdir(emisdir)
+        extra_title_txt = subdir
+    else:
+        extra_title_txt = None
 
     # Get a list of variables that GCPy should not read
     skip_vars = core.skip_these_vars()
@@ -3388,10 +3493,15 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     # If inputs plot_by* are both false, plot all emissions in same file
     # ==================================================================
     if not plot_by_benchmark_cat and not plot_by_hco_cat:
-        pdfname = os.path.join(emisdir,'Emissions.pdf')
+        if subdir is not None:
+            pdfname = os.path.join(emisdir, 'Emissions_{}.pdf'.format(subdir))
+        else:
+            pdfname = os.path.join(emisdir, 'Emissions.pdf')
+
         compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist, pdfname=pdfname,
-                             log_color_scale=log_color_scale)
+                             log_color_scale=log_color_scale,
+                             extra_title_txt=extra_title_txt)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix='Emis', verbose=verbose)
         return
@@ -3416,9 +3526,13 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     # diffs.  We'll need that to fill out the benchmark forms.
     # ==================================================================
     if plot_by_hco_cat:
-        emisspcdir = os.path.join(dst,'Emissions')
+        emisspcdir = os.path.join(dst, 'Emissions')
         if not os.path.isdir(emisspcdir):
-            os.mkdir(emisspcdir)   
+            os.mkdir(emisspcdir)
+        if subdir is not None:
+            emisspcdir = os.path.join(emisspcdir, subdir)
+            if not os.path.isdir(emisspcdir):
+                os.mkdir(emisspcdir)
 
         diff_dict = {}
         for c in emis_cats:
@@ -3427,11 +3541,21 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                 varnames = [k for k in emis_vars if any(b in k for b in ['Bioburn','BioBurn'])]
             else:
                 varnames = [k for k in emis_vars if c in k]
-            pdfname = os.path.join(emisspcdir,'{}_Emissions.pdf'.format(c))
+
+            # Create the PDF name.  If subdir is passed, then also add
+            # subdir to the file name (e.g. as for 1-year benchmarks).
+            if subdir is not None:
+                pdfname = os.path.join(emisspcdir,
+                                       '{}_Emissions_{}.pdf'.format(c, subdir))
+            else:
+                pdfname = os.path.join(emisspcdir,
+                                       '{}_Emissions.pdf'.format(c))
+
             diff_emis = []
             compare_single_level(refds, refstr, devds, devstr,
                                  varlist=varnames, ilev=0, pdfname=pdfname,
                                  log_color_scale=log_color_scale,
+                                 extra_title_txt=extra_title_txt,
                                  sigdiff_list=diff_emis)
             add_bookmarks_to_pdf(pdfname, varnames,
                                  remove_prefix='Emis', verbose=verbose)
@@ -3486,16 +3610,30 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                 continue        
 
             # Use same directory structure as for concentration plots
-            catdir = os.path.join(dst,filecat)
+            catdir = os.path.join(dst, filecat)
             if not os.path.isdir(catdir):
                 os.mkdir(catdir)
+            if subdir is not None:
+                catdir = os.path.join(catdir, subdir)
+                if not os.path.isdir(catdir):
+                    os.mkdir(catdir)
 
             # Create emissions file for this benchmark species category
-            pdfname = os.path.join(catdir,'{}_Emissions.pdf'.format(filecat))
+            # If subdir is passed, add it to the pdf name (e.g. as
+            # is needed for the 1-year benchmarks).
+            if subdir is not None:
+                pdfname = os.path.join(
+                    catdir, '{}_Emissions_{}.pdf'.format(filecat, subdir))
+            else:
+                pdfname = os.path.join(
+                    catdir, '{}_Emissions.pdf'.format(filecat))
+
+            # Create the PDF
             compare_single_level(refds, refstr, devds, devstr, 
                                  varlist=varlist, ilev=0, pdfname=pdfname, 
                                  flip_ref=flip_ref, flip_dev=flip_dev,
-                                 log_color_scale=log_color_scale)
+                                 log_color_scale=log_color_scale,
+                                 extra_title_txt=extra_title_txt)
             add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
 
         # Give warning if emissions species is not assigned a benchmark category
@@ -3552,14 +3690,18 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
     '''
 
     # ==================================================================
-    # Define destination directory
+    # Initialization
     # ==================================================================
+
+    # Create destination folder
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.'.format(dst))
         return
     elif not os.path.isdir(dst):
         os.mkdir(dst)
-    emisdir = os.path.join(dst,'Emissions')
+
+    # Create the "Emissions" category folder if it does not exist
+    emisdir = os.path.join(dst, 'Emissions')
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir)
 
@@ -3610,6 +3752,7 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 varlist=None, 
                                 dst='./1mo_benchmark',
+                                subdir=None,
                                 local_noon_jvalues=False,
                                 plots=['sfc', '500hpa', 'zonalmean'],
                                 overwrite=False, verbose=False,
@@ -3650,7 +3793,14 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
             A string denoting the destination folder where a
             PDF file  containing plots will be written.
             Default value: ./1mo_benchmark.
-    
+
+        subdir : str
+            A string denoting the sub-directory of dst where PDF
+            files containing plots will be written.  In practice,
+            subdir is almost always a date string (e.g. "Jan2016"),
+            and is only needed for the 1-year benchmark output.
+            Default value: None
+
         local_noon_jvalues : boolean
             Set this flag to plot local noon J-values.  This will
             divide all J-value variables by the JNoonFrac counter,
@@ -3711,7 +3861,12 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
          but not family species.  We could attempt to add this 
          functionality later if there is sufficient demand. 
     '''
-    
+
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
+    # Create the destination folder if it does not exist
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in tht directory, if any.'.format(dst))
         return
@@ -3773,7 +3928,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                                  varlist)
 
         # Subfolder of dst where PDF files will be printed
-        subdir= 'JValuesLocalNoon'
+        catdir= 'JValuesLocalNoon'
 
     else:
 
@@ -3784,25 +3939,40 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
             varlist = [v for v in cmn if prefix in v]
 
         # Subfolder of dst where PDF files will be printed
-        subdir = 'JValues'
+        catdir = 'JValues'
 
     # ==================================================================
     # Create the plots
     # ==================================================================
 
-    # Make the folder to contain plots if it doesn't exist
-    jvdir = os.path.join(dst, subdir)
+    # Make the output folder if it doesn't exist.  If subdir is passed,
+    # then create a sub-folder of this directory (e.g. which is needed
+    # for the 1-year benchmarks)
+    jvdir = os.path.join(dst, catdir)
     if not os.path.isdir(jvdir):
         os.mkdir(jvdir)
-    
+    if subdir is not None:
+        jvdir = os.path.join(dst, subdir)
+        if not os.path.isdir(jvdir):
+            os.mkdir(jvdir)
+        extra_title_txt = subdir
+    else:
+        extra_title_txt = None
+
     # Surface plots
     if 'sfc' in plots:
-        pdfname = os.path.join(jvdir, '{}Surface.pdf'.format(prefix))
+        if subdir is not None:
+            pdfname = os.path.join(
+                jvdir, '{}Surface_().pdf'.format(prefix, subdir))
+        else:
+            pdfname = os.path.join(jvdir, '{}Surface.pdf'.format(prefix))
+
         diff_sfc = []
         compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist, ilev=0, pdfname=pdfname,
                              flip_ref=flip_ref, flip_dev=flip_dev,
                              log_color_scale=log_color_scale,
+                             extra_title_txt=extra_title_txt,
                              sigdiff_list=diff_sfc)
         diff_sfc[:] = [v.replace(prefix, '') for v in diff_sfc]
         add_bookmarks_to_pdf(pdfname, varlist,
@@ -3810,12 +3980,18 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
     # 500hPa plots
     if '500hpa' in plots:
-        pdfname = os.path.join(jvdir, '{}500hPa.pdf'.format(prefix))
+        if subdir is not None:
+            pdfname = os.path.join(
+                jvdir, '{}500hPa_{}.pdf'.format(prefix, subdir))
+        else:
+            pdfname = os.path.join(jvdir, '{}500hPa.pdf'.format(prefix))
+
         diff_500 = []
         compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist, ilev=22, pdfname=pdfname,
                              flip_ref=flip_ref, flip_dev=flip_dev,
                              log_color_scale=log_color_scale,
+                             extra_title_txt=extra_title_txt,
                              sigdiff_list=diff_500)
         diff_500[:] = [v.replace(prefix, '') for v in diff_500]
         add_bookmarks_to_pdf(pdfname, varlist,
@@ -3823,13 +3999,19 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
     # Full-column zonal mean plots
     if 'zonalmean' in plots:
-        pdfname = os.path.join(jvdir,
-                               '{}FullColumn_ZonalMean.pdf'.format(prefix))
+        if subdir is not None:
+            pdfname = os.path.join(
+                jvdir, '{}FullColumn_ZonalMean_().pdf'.format(prefix, subdir))
+        else:
+            pdfname = os.path.join(
+                jvdir, '{}FullColumn_ZonalMean.pdf'.format(prefix))
+
         diff_zm = []
         compare_zonal_mean(refds, refstr, devds, devstr,
                            varlist=varlist, pdfname=pdfname,
                            flip_ref=flip_ref, flip_dev=flip_dev,
                            log_color_scale=log_color_scale,
+                           extra_title_txt=extra_title_txt,
                            sigdiff_list=diff_zm)
         diff_zm[:] = [v.replace(prefix, '') for v in diff_zm]
         add_bookmarks_to_pdf(pdfname, varlist,
@@ -3837,11 +4019,17 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
         # Strat_ZonalMean plots will use a log-pressure Y-axis, with
         # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
-        pdfname = os.path.join(jvdir,'{}Strat_ZonalMean.pdf'.format(prefix))
+        if subdir is not None:
+            pdfname = os.path.join(
+                jvdir,'{}Strat_ZonalMean_{}.pdf'.format(prefix, subdir))
+        else:
+            pdfname = os.path.join(jvdir,'{}Strat_ZonalMean.pdf'.format(prefix))
+
         compare_zonal_mean(refds, refstr, devds, devstr,
                            varlist=varlist, pdfname=pdfname,
                            pres_range=[0,100], log_yaxis=True,
                            flip_ref=flip_ref, flip_dev=flip_dev,
+                           extra_title_txt=extra_title_txt,
                            log_color_scale=log_color_scale)
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
@@ -3882,8 +4070,8 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
 def make_benchmark_aod_plots(ref, refstr, dev, devstr,
                              varlist=None, dst='./1mo_benchmark',
-                             overwrite=False, verbose=False,
-                             log_color_scale=False,
+                             subdir=None, overwrite=False,
+                             verbose=False, log_color_scale=False,
                              sigdiff_files=None):
     '''
     Creates PDF files containing plots of column aerosol optical
@@ -3919,6 +4107,13 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
             PDF file  containing plots will be written.
             Default value: ./1mo_benchmark.
 
+        subdir : str
+            A string denoting the sub-directory of dst where PDF
+            files containing plots will be written.  In practice,
+            subdir is almost always a date string (e.g. "Jan2016"),
+            and is only needed for the 1-year benchmark output.
+            Default value: None
+
         overwrite : boolean
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
@@ -3943,14 +4138,27 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # ==================================================================
     # Initialization and also read data
     # ==================================================================
+
+    # Create the destination directory if it does not exist
     if os.path.isdir(dst) and not overwrite:
         print('Directory {} exists. Pass overwrite=True to overwrite files in tht directory, if any.'.format(dst))
         return
     elif not os.path.isdir(dst):
         os.mkdir(dst)
+
+    # Create the "Aerosols" directory as a subfolder of dst.
+    # If subdir is passed, then create a subdirectory of the "Aerosols"
+    # directory (e.g. which is needed for the 1-year benchmarks).
     aoddir = os.path.join(dst, 'Aerosols')
     if not os.path.isdir(aoddir):
         os.mkdir(aoddir)
+    if subdir is not None:
+        aoddir = os.path.join(aoddir, subdir)
+        if not os.path.isdir(aoddir):
+            os.mkdir(aoddir)
+        extra_title_txt = subdir
+    else:
+        extra_title_txt = None
 
     # Get a list of variables that GCPy should not read
     skip_vars = core.skip_these_vars()
@@ -4091,7 +4299,12 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # ==================================================================
     # Create the plots
     # ==================================================================
-    pdfname = os.path.join(aoddir, 'Aerosols_ColumnOptDepth.pdf')
+    if subdir is not None:
+        pdfname = os.path.join(
+            aoddir, 'Aerosols_ColumnOptDepth_{}.pdf'.format(subdir))
+    else:
+        pdfname = os.path.join(aoddir, 'Aerosols_ColumnOptDepth.pdf')
+
     diff_aod = []
     compare_single_level(refds, refstr, devds, devstr,
                          varlist=newvarlist, ilev=0, pdfname=pdfname,
@@ -4273,20 +4486,32 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
                      'Dev_TropMask' : dev_tropmask}
 
     # ==================================================================
-    # Create the tables
+    # Create global mass table
     # ==================================================================
+    if subdir is not None:
+        mass_file = os.path.join(
+            dst, '{}_GlobalMass_TropStrat_{}.txt'.format(devstr, subdir))
+    else:
+        mass_file = os.path.join(
+            dst, '{}_GlobalMass_TropStrat.txt'.format(devstr))
 
-    # Global mass
-    mass_file = os.path.join(dst, '{}_GlobalMass_TropStrat.txt'.format(devstr))
     create_global_mass_table(refds, refstr, devds, devstr,
                              varlist, met_and_masks,
                              outfilename=mass_file, verbose=verbose)
 
-    # Tropospheric mass
-    mass_file = os.path.join(dst, '{}_GlobalMass_Trop.txt'.format(devstr))
+    # ==================================================================
+    # Create tropospheric mass table
+    # ==================================================================
+    if subdir is not None:
+        mass_file = os.path.join(
+            dst, '{}_GlobalMass_Trop_{}.txt'.format(devstr, subdir))
+    else:
+        mass_file = os.path.join(dst, '{}_GlobalMass_Trop.txt'.format(devstr))
+
     create_global_mass_table(refds, refstr, devds, devstr,
                              varlist, met_and_masks,
-                             outfilename=mass_file, trop_only=True,
+                             outfilename=mass_file,
+                             trop_only=True,
                              verbose=verbose)
 
 
