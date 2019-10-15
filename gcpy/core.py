@@ -193,69 +193,6 @@ def open_mfdataset(filenames, concat_dim='time', compat='no_conflicts',
                    drop_variables=skip_vars, **kwargs)
 
 
-def get_gcc_filepath(outputdir, collection,
-                     year=2016, month=None, day=1, time=0):
-    '''
-    Returns
-    '''
-
-    # Create the filename template
-    if collection == 'Emissions':
-        file_tmpl = os.path.join(outputdir, 'HEMCO_diagnostics.{}{}{}{}.nc')
-    else:
-        file_tmpl = os.path.join(outputdir, 'GEOSChem.{}'.format(collection))
-        file_tmpl = file_tmpl + '.{}{}{}_{}z.nc4'
-
-    # Create strings for year, day, and time (pad zeroes)
-    year_str = str(year).zfill(2)
-    day_str = str(day).zfill(2)
-    time_str = str(time).zfill(4)
-
-    # If month is specified as a list of months, then return a list of
-    # corresponding file paths.  Otherwise return a single file path
-    # for the requested year/month/day/time.
-    if isinstance(month, list):
-        filepath = []
-        for m in month:
-            mon_str = str(m).zfill(2)
-            filepath.append(file_tmpl.format(year_str, mon_str, 
-                                             day_str, time_str))
-    elif month is not None:
-        mon_str = str(month).zfill(2)
-        filepath = file_tmpl.format(year_str, mon_str, day_str, time_str)
-
-    return filepath
-
-
-def get_gchp_filepath(outputdir, collection,
-                      year=2016, month=1, day=1, time=0):
-    '''
-    '''
-
-    # Create the filename template
-    file_tmpl = os.path.join(outputdir, 'GCHP.{}'.format(collection))
-    file_tmpl = file_tmpl + '.{}{}{}_{}z.nc4'
-
-    # Create strings for year, day, and time (pad zeroes)
-    year_str = str(year).zfill(2)
-    day_str = str(day).zfill(2)
-    time_str = str(time).zfill(4)
-
-    # If month is specified as a list of months, then return a list of
-    # corresponding file paths.  Otherwise return a single file path
-    # for the requested year/month/day/time.
-    if isinstance(month, list):
-        filepath = []
-        for m in month:
-            mon_str = str(m).zfill(2)
-            filepath.append(file_tmpl.format(year_str, m, day_str, time_str))
-    elif month is not None:
-        mon_str = str(month).zfill(2)
-        filepath = file_tmpl.format(year_str, mon_str, day_str, time_str)
-
-    return filepath
-
-
 def check_paths(refpath, devpath):
     '''
     Checks to see if paths to data files exist.
@@ -1132,3 +1069,101 @@ def check_for_area(ds, gcc_area_name='AREA', gchp_area_name='Met_AREAM2'):
         ds[gcc_area_name] = ds[gchp_area_name]
 
     return ds
+
+
+def get_filepaths(outputdir, collection, dates, is_gcc=True, is_gchp=False):
+    '''
+    Routine to return filepaths for a given GEOS-Chem "Classic"
+    (aka "GCC") or GCHP diagnostic collection.
+
+    Args:
+    -----
+        outputdir : str
+            Path name of the directory containing GCC or GCHP data
+            files.
+
+        collection : str
+            Name of the collection (e.g. Emissions, SpeciesConc, etc.)
+
+        dates : array of numpy.datetime64
+            Array of dates for which file paths are requested.
+
+    Keyword Args (optional):
+    ------------------------
+        is_gcc : bool
+            Set this switch to True to obtain file pathnames to
+            GEOS-Chem "Classic" diagnostic data files.
+
+        is_gchp : bool
+            Set this switch to True to obtain file pathnames to
+            GCHP diagnostic data files.
+
+    Returns:
+    --------
+    '''
+
+    if is_gcc:
+        # ---------------------------------------
+        # Get the file path template for GCC
+        # ---------------------------------------
+        if collection == 'Emissions':
+            file_tmpl = os.path.join(outputdir, 'HEMCO_diagnostics.')
+            separator = ''
+            extension = '.nc'
+            
+        else:
+            file_tmpl = os.path.join(outputdir,
+                                     'GEOSChem.{}.'.format(collection))
+            separator = '_'
+            extension = 'z.nc4'
+        
+    elif is_gchp:
+        # ---------------------------------------
+        # Get the file path template for GCHP
+        # ---------------------------------------
+        file_tmpl = os.path.join(outputdir, 'GCHP.{}.'.format(collection))
+        separator = '_'
+        extension = 'z.nc4'
+        
+    else:
+        # ---------------------------------------
+        # Otherwise throw an error
+        # (we can add more models later)
+        # ---------------------------------------
+        msg = 'Both is_gcc=False and is_gchp=False!  At present, ' + \
+              'get_filepaths only works with GCC or GCHP data!'
+        raise ValueError(msg)
+
+    # --------------------------------------------
+    # Create a list of files for each date/time
+    # --------------------------------------------
+    files = []
+    for date in dates:
+        date_time = np.datetime_as_string(date, unit='m')
+        date_time = date_time.replace('T', separator)
+        date_time = date_time.replace('-', '')
+        date_time = date_time.replace(':', '')
+        files.append(file_tmpl + date_time + extension)
+
+    return files
+
+###############################################################################
+# The following routines are deprecated, place here for now.
+# These will be removed in a future version
+###############################################################################
+
+
+def get_gcc_filepath(outputdir, collection, day, time):
+    if collection == 'Emissions':
+        filepath = os.path.join(outputdir,
+                                'HEMCO_diagnostics.{}{}.nc'.format(day,time))
+    else:
+        filepath = os.path.join(outputdir,
+                                'GEOSChem.{}.{}_{}z.nc4'.format(collection,day,time))
+    return filepath
+
+
+def get_gchp_filepath(outputdir, collection, day, time):
+    filepath = os.path.join(outputdir,
+                            'GCHP.{}.{}_{}z.nc4'.format(collection,day,time))
+    return filepath
