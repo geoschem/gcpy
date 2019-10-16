@@ -129,6 +129,7 @@ diff_of_diffs_devstr = '{} - {}'.format(gchp_dev_version,
 # The rest of these settings should not need to be changed
 # =====================================================================
 
+###############################################################################
 # Under development, comment these out for now
 ## Paths to restart files
 #gcc_vs_gcc_refrst = core.get_gcc_filepath(gcc_vs_gcc_refdir, 'Restart',
@@ -146,6 +147,7 @@ diff_of_diffs_devstr = '{} - {}'.format(gchp_dev_version,
 #
 #gcc_vs_gcc_devcac = core.get_gcc_filepath(gcc_vs_gcc_devdir, 'ConcAfterChem',
 #                                          year=bmk_year, month=bmk_months)
+###############################################################################
 
 # Monthly array of dates
 bmk_delta_1m = np.timedelta64(1, 'M')
@@ -232,7 +234,7 @@ if gcc_vs_gcc:
                                           gcc_vs_gcc_devspc[s],
                                           gcc_vs_gcc_devstr,
                                           dst=gcc_vs_gcc_plotsdir,
-                                          subdir=mon_yr_str,
+                                          subdst=mon_yr_str,
                                           overwrite=True,
                                           sigdiff_files=sigdiff_files)
 
@@ -257,7 +259,7 @@ if gcc_vs_gcc:
                                           gcc_vs_gcc_devhco[s],
                                           gcc_vs_gcc_devstr,
                                           dst=gcc_vs_gcc_plotsdir,
-                                          subdir=mon_yr_str,
+                                          subdst=mon_yr_str,
                                           plot_by_benchmark_cat=True,
                                           plot_by_hco_cat=True,
                                           overwrite=True,
@@ -275,12 +277,12 @@ if gcc_vs_gcc:
         gcc_vs_gcc_devhco = get_filepaths(gcc_vs_gcc_devdir, 'Emissions',
                                           bmk_months, is_gcc=True)
 
+        # Create emission tables
         bmk.make_benchmark_emis_tables(gcc_vs_gcc_refhco,
                                        gcc_vs_gcc_refstr,
                                        gcc_vs_gcc_devhco,
                                        gcc_vs_gcc_devstr,
                                        dst=gcc_vs_gcc_plotsdir,
-                                       subdir=mon_yr_str,
                                        interval=sec_per_month,
                                        overwrite=True)
 
@@ -291,9 +293,9 @@ if gcc_vs_gcc:
         print('\n%%% Creating GCC vs. GCC J-value plots %%%')
 
         # Paths to J-value data (seasonal)
-        gcc_vs_gcc_refspc = get_filepaths(gcc_vs_gcc_refdir, 'JValues',
+        gcc_vs_gcc_refjv = get_filepaths(gcc_vs_gcc_refdir, 'JValues',
                                           bmk_seasons, is_gcc=True)
-        gcc_vs_gcc_devspc = get_filepaths(gcc_vs_gcc_devdir, 'JValues',
+        gcc_vs_gcc_devjv = get_filepaths(gcc_vs_gcc_devdir, 'JValues',
                                           bmk_seasons, is_gcc=True)
 
         # Create seasonal J-values plots
@@ -303,9 +305,9 @@ if gcc_vs_gcc:
             bmk.make_benchmark_jvalue_plots(gcc_vs_gcc_refjv[s],
                                             gcc_vs_gcc_refstr,
                                             gcc_vs_gcc_devjv[s],
-                                            gac_vs_gcc_devstr,
+                                            gcc_vs_gcc_devstr,
                                             dst=gcc_vs_gcc_plotsdir,
-                                            subdir=mon_yr_str,
+                                            subdst=mon_yr_str,
                                             overwrite=True,
                                             sigdiff_files=sigdiff_files)
 
@@ -318,7 +320,6 @@ if gcc_vs_gcc:
         ## Paths to aerosol optical depth data
         gcc_vs_gcc_refaod = get_filepaths(gcc_vs_gcc_refdir, 'Aerosols',
                                           bmk_seasons, is_gcc=True)
-
         gcc_vs_gcc_devaod = get_filepaths(gcc_vs_gcc_devdir, 'Aerosols',
                                           bmk_seasons, is_gcc=True)
 
@@ -331,12 +332,14 @@ if gcc_vs_gcc:
                                          gcc_vs_gcc_devaod[s],
                                          gcc_vs_gcc_devstr,
                                          dst=gcc_vs_gcc_plotsdir,
-                                         subdir=mon_yr_str,
+                                         subdst=mon_yr_str,
                                          overwrite=True,
                                          sigdiff_files=sigdiff_files)
 
     if mass_table:
-        # Global mass tables
+        # --------------------------------------------------------------
+        # GCC vs. GCC global mass tables
+        # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC global mass tables %%%')
         bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst,
                                        gcc_vs_gcc_refstr,
@@ -346,7 +349,9 @@ if gcc_vs_gcc:
                                        overwrite=True)
         
     if budget_table:
-        # Budgets tables
+        # --------------------------------------------------------------
+        # GCC vs GCC budgets tables
+        # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC budget tables %%%')
         bmk.make_benchmark_budget_tables(gcc_vs_gcc_devbgt,
                                          gcc_vs_gcc_devstr,
@@ -354,7 +359,9 @@ if gcc_vs_gcc:
                                          overwrite=True)
 
     if OH_metrics:
-        # Global mean OH, MCF Lifetime, CH4 Lifetime
+        # --------------------------------------------------------------
+        # GCC vs GCC Global mean OH, MCF Lifetime, CH4 Lifetime
+        # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC OH metrics %%%')
         gcc_vs_gcc_reflist = [gcc_vs_gcc_refcac, gcc_vs_gcc_refmet]
         gcc_vs_gcc_devlist = [gcc_vs_gcc_devcac, gcc_vs_gcc_devmet]

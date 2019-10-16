@@ -164,7 +164,8 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
-        vardict = core.compare_varnames(refdata, devdata)
+        quiet = not verbose
+        vardict = core.compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict['commonvars3D'] + vardict['commonvars2D']
         print('Plotting all common variables (surface only if 3D)')
     n_var = len(varlist)
@@ -1316,7 +1317,8 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
 
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
-        vardict = core.compare_varnames(refdata, devdata)
+        quiet = not verbose
+        vardict = core.compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict['commonvars3D']
         print('Plotting all 3D variables')
     n_var = len(varlist)
@@ -3049,7 +3051,7 @@ def archive_species_categories(dst):
 
 
 def make_benchmark_conc_plots(ref, refstr, dev, devstr,
-                              dst='./1mo_benchmark', subdir=None,
+                              dst='./1mo_benchmark', subdst=None,
                               overwrite=False, verbose=False, restrict_cats=[],
                               plots=['sfc', '500hpa', 'zonalmean'], 
                               use_cmap_RdBu=False, log_color_scale=False,
@@ -3081,10 +3083,12 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
             file containing plots will be written.
             Default value: ./1mo_benchmark
 
-        subdir : str
+        subdst : str
             A string denoting the sub-directory of dst where PDF
             files containing plots will be written.  In practice,
-            subdir is only needed for the 1-year benchmark output.
+            subdst is only needed for the 1-year benchmark output,
+            and denotes a date string (such as "Jan2016") that
+            corresponds to the month that is being plotted.
             Default value: None
 
         overwrite : boolean
@@ -3132,8 +3136,8 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
 
     # Define extra title text (usually a date string)
     # for the top-title of the plot
-    if subdir is not None:
-        extra_title_txt = subdir
+    if subdst is not None:
+        extra_title_txt = subdst
     else:
         extra_title_txt = None
 
@@ -3177,13 +3181,13 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
             continue
 
         # Create a directory for each category.
-        # If subdir is passed, then create subdirectories in each
+        # If subdst is passed, then create a subdirectory in each
         # category directory (e.g. as for the 1-year benchmark).
         catdir = os.path.join(dst,filecat)
         if not os.path.isdir(catdir):
             os.mkdir(catdir)
-        if subdir is not None:
-            catdir = os.path.join(catdir, subdir)
+        if subdst is not None:
+            catdir = os.path.join(catdir, subdst)
             if not os.path.isdir(catdir):
                 os.mkdir(catdir)
 
@@ -3205,9 +3209,9 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
         # -----------------------
         if 'sfc' in plots:
 
-            if subdir is not None:
+            if subdst is not None:
                 pdfname = os.path.join(
-                    catdir,'{}_Surface_{}.pdf'.format(filecat, subdir))
+                    catdir,'{}_Surface_{}.pdf'.format(filecat, subdst))
             else:
                 pdfname = os.path.join(
                     catdir, '{}_Surface.pdf'.format(filecat))
@@ -3229,9 +3233,9 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
         # -----------------------
         if '500hpa' in plots:
 
-            if subdir is not None:
+            if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, '{}_500hPa_{}.pdf'.format(filecat, subdir))
+                    catdir, '{}_500hPa_{}.pdf'.format(filecat, subdst))
             else:
                 pdfname = os.path.join(catdir,
                                        '{}_500hPa.pdf'.format(filecat))
@@ -3254,10 +3258,10 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
         # -----------------------
         if 'zonalmean' in plots or 'zm' in plots:
 
-            if subdir is not None:
+            if subdst is not None:
                 pdfname = os.path.join(
                     catdir, '{}_FullColumn_ZonalMean_{}.pdf'.format(
-                        filecat, subdir))
+                        filecat, subdst))
             else:
                 pdfname = os.path.join(
                     catdir, '{}_FullColumn_ZonalMean.pdf'.format(filecat))
@@ -3275,9 +3279,9 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
 
             # Strat_ZonalMean plots will use a log-pressure Y-axis, with
             # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
-            if subdir is not None:
+            if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, '{}_Strat_ZonalMean_{}.pdf'.format(filecat, subdir))
+                    catdir, '{}_Strat_ZonalMean_{}.pdf'.format(filecat, subdst))
             else:
                 pdfname = os.path.join(
                     catdir,'{}_Strat_ZonalMean.pdf'.format(filecat))
@@ -3327,7 +3331,7 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
 
 def make_benchmark_emis_plots(ref, refstr, dev, devstr,
                               dst='./1mo_benchmark',
-                              subdir=None,
+                              subdst=None,
                               plot_by_benchmark_cat=False,
                               plot_by_hco_cat=False,
                               overwrite=False, verbose=False,
@@ -3363,11 +3367,11 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
             PDF files containing plots will be written.
             Default value: './1mo_benchmark
 
-        subdir : str
+        subdst : str
             A string denoting the sub-directory of dst where PDF
             files containing plots will be written.  In practice,
-            subdir is almost always a date string (e.g. "Jan2016"),
-            and is only needed for the 1-year benchmark output.
+            and denotes a date string (such as "Jan2016") that
+            corresponds to the month that is being plotted.
             Default value: None
 
         plot_by_benchmark_cat : boolean
@@ -3436,16 +3440,16 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
-    # Create the "Emissions" category folder.  If subdir is passed,
+    # Create the "Emissions" category folder.  If subdst is passed,
     # then create a sub-folder (needed for the 1-year benchmarks).
     emisdir = os.path.join(dst, 'Emissions')
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir)
-    if subdir is not None:
-        emisdir = os.path.join(emisdir, subdir)
+    if subdst is not None:
+        emisdir = os.path.join(emisdir, subdst)
         if not os.path.isdir(emisdir):
             os.mkdir(emisdir)
-        extra_title_txt = subdir
+        extra_title_txt = subdst
     else:
         extra_title_txt = None
 
@@ -3493,8 +3497,8 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     # If inputs plot_by* are both false, plot all emissions in same file
     # ==================================================================
     if not plot_by_benchmark_cat and not plot_by_hco_cat:
-        if subdir is not None:
-            pdfname = os.path.join(emisdir, 'Emissions_{}.pdf'.format(subdir))
+        if subdst is not None:
+            pdfname = os.path.join(emisdir, 'Emissions_{}.pdf'.format(subdst))
         else:
             pdfname = os.path.join(emisdir, 'Emissions.pdf')
 
@@ -3529,8 +3533,8 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
         emisspcdir = os.path.join(dst, 'Emissions')
         if not os.path.isdir(emisspcdir):
             os.mkdir(emisspcdir)
-        if subdir is not None:
-            emisspcdir = os.path.join(emisspcdir, subdir)
+        if subdst is not None:
+            emisspcdir = os.path.join(emisspcdir, subdst)
             if not os.path.isdir(emisspcdir):
                 os.mkdir(emisspcdir)
 
@@ -3542,11 +3546,11 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
             else:
                 varnames = [k for k in emis_vars if c in k]
 
-            # Create the PDF name.  If subdir is passed, then also add
-            # subdir to the file name (e.g. as for 1-year benchmarks).
-            if subdir is not None:
+            # Create the PDF name.  If subdst is passed, then also add
+            # subdst to the file name (e.g. as for 1-year benchmarks).
+            if subdst is not None:
                 pdfname = os.path.join(emisspcdir,
-                                       '{}_Emissions_{}.pdf'.format(c, subdir))
+                                       '{}_Emissions_{}.pdf'.format(c, subdst))
             else:
                 pdfname = os.path.join(emisspcdir,
                                        '{}_Emissions.pdf'.format(c))
@@ -3613,17 +3617,17 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
             catdir = os.path.join(dst, filecat)
             if not os.path.isdir(catdir):
                 os.mkdir(catdir)
-            if subdir is not None:
-                catdir = os.path.join(catdir, subdir)
+            if subdst is not None:
+                catdir = os.path.join(catdir, subdst)
                 if not os.path.isdir(catdir):
                     os.mkdir(catdir)
 
             # Create emissions file for this benchmark species category
-            # If subdir is passed, add it to the pdf name (e.g. as
+            # If subdst is passed, add it to the pdf name (e.g. as
             # is needed for the 1-year benchmarks).
-            if subdir is not None:
+            if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, '{}_Emissions_{}.pdf'.format(filecat, subdir))
+                    catdir, '{}_Emissions_{}.pdf'.format(filecat, subdst))
             else:
                 pdfname = os.path.join(
                     catdir, '{}_Emissions.pdf'.format(filecat))
@@ -3752,7 +3756,7 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
 def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
                                 varlist=None, 
                                 dst='./1mo_benchmark',
-                                subdir=None,
+                                subdst=None,
                                 local_noon_jvalues=False,
                                 plots=['sfc', '500hpa', 'zonalmean'],
                                 overwrite=False, verbose=False,
@@ -3794,11 +3798,12 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
             PDF file  containing plots will be written.
             Default value: ./1mo_benchmark.
 
-        subdir : str
+        subdst : str
             A string denoting the sub-directory of dst where PDF
             files containing plots will be written.  In practice,
-            subdir is almost always a date string (e.g. "Jan2016"),
-            and is only needed for the 1-year benchmark output.
+            subdst is only needed for the 1-year benchmark output,
+            and denotes a date string (such as "Jan2016") that
+            corresponds to the month that is being plotted.
             Default value: None
 
         local_noon_jvalues : boolean
@@ -3898,7 +3903,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     # Get a list of the 3D variables in both datasets
     if varlist == None:
         quiet = not verbose
-        vardict = core.compare_varnames(refds, devds, quiet)
+        vardict = core.compare_varnames(refds, devds, quiet=quiet)
         cmn = vardict['commonvars3D']
 
     # ==================================================================
@@ -3945,25 +3950,25 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     # Create the plots
     # ==================================================================
 
-    # Make the output folder if it doesn't exist.  If subdir is passed,
+    # Make the output folder if it doesn't exist.  If subdst is passed,
     # then create a sub-folder of this directory (e.g. which is needed
     # for the 1-year benchmarks)
     jvdir = os.path.join(dst, catdir)
     if not os.path.isdir(jvdir):
         os.mkdir(jvdir)
-    if subdir is not None:
-        jvdir = os.path.join(dst, subdir)
+    if subdst is not None:
+        jvdir = os.path.join(jvdir, subdst)
         if not os.path.isdir(jvdir):
             os.mkdir(jvdir)
-        extra_title_txt = subdir
+        extra_title_txt = subdst
     else:
         extra_title_txt = None
 
     # Surface plots
     if 'sfc' in plots:
-        if subdir is not None:
+        if subdst is not None:
             pdfname = os.path.join(
-                jvdir, '{}Surface_().pdf'.format(prefix, subdir))
+                jvdir, '{}Surface_{}.pdf'.format(prefix, subdst))
         else:
             pdfname = os.path.join(jvdir, '{}Surface.pdf'.format(prefix))
 
@@ -3980,9 +3985,9 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
     # 500hPa plots
     if '500hpa' in plots:
-        if subdir is not None:
+        if subdst is not None:
             pdfname = os.path.join(
-                jvdir, '{}500hPa_{}.pdf'.format(prefix, subdir))
+                jvdir, '{}500hPa_{}.pdf'.format(prefix, subdst))
         else:
             pdfname = os.path.join(jvdir, '{}500hPa.pdf'.format(prefix))
 
@@ -3999,9 +4004,9 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
     # Full-column zonal mean plots
     if 'zonalmean' in plots:
-        if subdir is not None:
+        if subdst is not None:
             pdfname = os.path.join(
-                jvdir, '{}FullColumn_ZonalMean_().pdf'.format(prefix, subdir))
+                jvdir, '{}FullColumn_ZonalMean_{}.pdf'.format(prefix, subdst))
         else:
             pdfname = os.path.join(
                 jvdir, '{}FullColumn_ZonalMean.pdf'.format(prefix))
@@ -4019,9 +4024,9 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
         # Strat_ZonalMean plots will use a log-pressure Y-axis, with
         # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
-        if subdir is not None:
+        if subdst is not None:
             pdfname = os.path.join(
-                jvdir,'{}Strat_ZonalMean_{}.pdf'.format(prefix, subdir))
+                jvdir,'{}Strat_ZonalMean_{}.pdf'.format(prefix, subdst))
         else:
             pdfname = os.path.join(jvdir,'{}Strat_ZonalMean.pdf'.format(prefix))
 
@@ -4070,7 +4075,7 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
 
 def make_benchmark_aod_plots(ref, refstr, dev, devstr,
                              varlist=None, dst='./1mo_benchmark',
-                             subdir=None, overwrite=False,
+                             subdst=None, overwrite=False,
                              verbose=False, log_color_scale=False,
                              sigdiff_files=None):
     '''
@@ -4107,11 +4112,12 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
             PDF file  containing plots will be written.
             Default value: ./1mo_benchmark.
 
-        subdir : str
+        subdst : str
             A string denoting the sub-directory of dst where PDF
             files containing plots will be written.  In practice,
-            subdir is almost always a date string (e.g. "Jan2016"),
-            and is only needed for the 1-year benchmark output.
+            subdst is only needed for the 1-year benchmark output,
+            and denotes a date string (such as "Jan2016") that
+            corresponds to the month that is being plotted.
             Default value: None
 
         overwrite : boolean
@@ -4147,16 +4153,16 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
         os.mkdir(dst)
 
     # Create the "Aerosols" directory as a subfolder of dst.
-    # If subdir is passed, then create a subdirectory of the "Aerosols"
+    # If subdst is passed, then create a subdirectory of the "Aerosols"
     # directory (e.g. which is needed for the 1-year benchmarks).
     aoddir = os.path.join(dst, 'Aerosols')
     if not os.path.isdir(aoddir):
         os.mkdir(aoddir)
-    if subdir is not None:
-        aoddir = os.path.join(aoddir, subdir)
+    if subdst is not None:
+        aoddir = os.path.join(aoddir, subdst)
         if not os.path.isdir(aoddir):
             os.mkdir(aoddir)
-        extra_title_txt = subdir
+        extra_title_txt = subdst
     else:
         extra_title_txt = None
 
@@ -4299,9 +4305,9 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     # ==================================================================
     # Create the plots
     # ==================================================================
-    if subdir is not None:
+    if subdst is not None:
         pdfname = os.path.join(
-            aoddir, 'Aerosols_ColumnOptDepth_{}.pdf'.format(subdir))
+            aoddir, 'Aerosols_ColumnOptDepth_{}.pdf'.format(subdst))
     else:
         pdfname = os.path.join(aoddir, 'Aerosols_ColumnOptDepth.pdf')
 
@@ -4309,6 +4315,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     compare_single_level(refds, refstr, devds, devstr,
                          varlist=newvarlist, ilev=0, pdfname=pdfname,
                          log_color_scale=log_color_scale,
+                         extra_title_txt=extra_title_txt,
                          sigdiff_list=diff_aod)
     diff_aod[:] = [v.replace('Column_AOD_', '') for v in diff_aod]
     add_bookmarks_to_pdf(pdfname, newvarlist,
@@ -4488,9 +4495,9 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # ==================================================================
     # Create global mass table
     # ==================================================================
-    if subdir is not None:
+    if subdst is not None:
         mass_file = os.path.join(
-            dst, '{}_GlobalMass_TropStrat_{}.txt'.format(devstr, subdir))
+            dst, '{}_GlobalMass_TropStrat_{}.txt'.format(devstr, subdst))
     else:
         mass_file = os.path.join(
             dst, '{}_GlobalMass_TropStrat.txt'.format(devstr))
@@ -4502,9 +4509,9 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     # ==================================================================
     # Create tropospheric mass table
     # ==================================================================
-    if subdir is not None:
+    if subdst is not None:
         mass_file = os.path.join(
-            dst, '{}_GlobalMass_Trop_{}.txt'.format(devstr, subdir))
+            dst, '{}_GlobalMass_Trop_{}.txt'.format(devstr, subdst))
     else:
         mass_file = os.path.join(dst, '{}_GlobalMass_Trop.txt'.format(devstr))
 
