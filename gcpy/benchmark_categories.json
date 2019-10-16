@@ -164,9 +164,9 @@
       "Alcohols":
         [ "EOH",
           "MOH"
-        ]
+        ],
       "Other":
-        [ "MBO",
+        [ "MBO"
         ]
     },
   "Secondary_Organics":
