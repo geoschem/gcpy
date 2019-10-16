@@ -1147,6 +1147,51 @@ def get_filepaths(outputdir, collection, dates, is_gcc=True, is_gchp=False):
 
     return files
 
+
+def extract_pathnames_from_log(filename, prefix_filter=''):
+    '''
+    Returns a list of pathnames from a GEOS-Chem log file.
+    This can be used to get a list of files that should be
+    downloaded from gcgrid or from Amazon S3.
+
+    Args:
+    -----
+        filename : str
+            GEOS-Chem standard log file
+
+        prefix_filter : str
+            Restricts the output to file paths starting with
+            this prefix (e.g. "/home/ubuntu/ExtData/HEMCO/")
+            Default value: ''
+
+    Returns:
+    --------
+        data list : list of str
+            List of full pathnames of data files found in
+            the log file.
+
+    Author:
+    -------
+        Jiawei Zhuang (jiaweizhuang@g.harvard.edu)
+    '''
+    prefix_len = len(prefix_filter)
+
+    data_list = set()  # only keep unique files
+    with open(filename, 'r') as f:
+        line = f.readline()
+        while(line):
+            if 'HEMCO: Opening' in line:
+                data_path = line.split()[-1]
+                # remove common prefix
+                if data_path.startswith(prefix_filter):
+                    trimmed_path = data_path[prefix_len:]
+                    data_list.add(trimmed_path)
+            line = f.readline()
+
+    data_list = sorted(list(data_list))
+    return data_list
+
+
 ###############################################################################
 # The following routines are deprecated, place here for now.
 # These will be removed in a future version
