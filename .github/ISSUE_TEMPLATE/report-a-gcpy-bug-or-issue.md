@@ -2,7 +2,7 @@
 name: Report a GCPy bug or issue
 about: Template for users to report bugs or issues with GCPy
 title: "[BUG/ISSUE]"
-labels: ''
+labels: bug
 assignees: ''
 
 ---
