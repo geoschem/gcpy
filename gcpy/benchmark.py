@@ -2915,7 +2915,8 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
     
 
 def create_budget_table(devdata, devstr, region, species, varnames,
-                        outfilename, interval=[2678400.0], template='Budget_{}'):
+                        outfilename, interval=[2678400.0],
+                        template='Budget_{}'):
     '''
     Creates a table of budgets by species and component for a data set.
 
@@ -2943,10 +2944,10 @@ def create_budget_table(devdata, devstr, region, species, varnames,
 
     Keyword Args (optional):
     ------------------------
-        interval : float
+        interval : list of float
             The length of the data interval in seconds. By default, interval
-            is set to the number of seconds in a 31-day month (86400 * 31),
-            which corresponds to typical benchmark simulation output.
+            is set to [2678400.0], which is the number of seconds in July
+            (our 1-month benchmarking month).
 
         template : str
             Template for the diagnostic names that are contained in the
@@ -3686,11 +3687,10 @@ def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
             destination folder (specified by the dst argument).
             Default value : False
 
-        interval : float
-            Specifies the averaging period in seconds, which is used
-            to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
-            Default value : None
-
+        interval : list of float
+            The length of the data interval in seconds. By default, interval
+            is set to [2678400.0], which is the number of seconds in July
+            (our 1-month benchmarking month).
     '''
 
     # ==================================================================
