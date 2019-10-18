@@ -1071,7 +1071,7 @@ def check_for_area(ds, gcc_area_name='AREA', gchp_area_name='Met_AREAM2'):
     return ds
 
 
-def get_filepaths(outputdir, collection, dates, is_gcc=True, is_gchp=False):
+def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
     '''
     Routine to return filepaths for a given GEOS-Chem "Classic"
     (aka "GCC") or GCHP diagnostic collection.
@@ -1082,8 +1082,9 @@ def get_filepaths(outputdir, collection, dates, is_gcc=True, is_gchp=False):
             Path name of the directory containing GCC or GCHP data
             files.
 
-        collection : str
-            Name of the collection (e.g. Emissions, SpeciesConc, etc.)
+        collections : list of str
+            Names of collections (e.g. Emissions, SpeciesConc, etc.)
+            for which file paths will be returned.
 
         dates : array of numpy.datetime64
             Array of dates for which file paths are requested.
@@ -1102,48 +1103,61 @@ def get_filepaths(outputdir, collection, dates, is_gcc=True, is_gchp=False):
     --------
     '''
 
-    if is_gcc:
-        # ---------------------------------------
-        # Get the file path template for GCC
-        # ---------------------------------------
-        if collection == 'Emissions':
-            file_tmpl = os.path.join(outputdir, 'HEMCO_diagnostics.')
-            separator = ''
-            extension = '.nc'
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
+    # Error check input flags
+    if (not is_gcc) and (not is_gchp):
+        msg = 'Both is_gcc=False and is_gchp=False!  At present, ' + \
+            'get_filepaths only works with GCC or GCHP data!'
+        raise ValueError(msg)    
+
+    # If collections is passed as a scalar
+    # make it a list so that we can iterate
+    if len(collections) == 1:
+        collections = [collections]
+
+    # Create the return variable
+    files = []
+        
+    # ==================================================================
+    # Create the file list
+    # ==================================================================
+    for collection in collections:
+    
+        if is_gcc:
+            # ---------------------------------------
+            # Get the file path template for GCC
+            # ---------------------------------------
+            if collection == 'Emissions':
+                file_tmpl = os.path.join(outputdir, 'HEMCO_diagnostics.')
+                separator = ''
+                extension = '.nc'
             
-        else:
-            file_tmpl = os.path.join(outputdir,
-                                     'GEOSChem.{}.'.format(collection))
+            else:
+                file_tmpl = os.path.join(outputdir,
+                                         'GEOSChem.{}.'.format(collection))
+                separator = '_'
+                extension = 'z.nc4'
+        
+        elif is_gchp:
+            # ---------------------------------------
+            # Get the file path template for GCHP
+            # ---------------------------------------
+            file_tmpl = os.path.join(outputdir, 'GCHP.{}.'.format(collection))
             separator = '_'
             extension = 'z.nc4'
-        
-    elif is_gchp:
-        # ---------------------------------------
-        # Get the file path template for GCHP
-        # ---------------------------------------
-        file_tmpl = os.path.join(outputdir, 'GCHP.{}.'.format(collection))
-        separator = '_'
-        extension = 'z.nc4'
-        
-    else:
-        # ---------------------------------------
-        # Otherwise throw an error
-        # (we can add more models later)
-        # ---------------------------------------
-        msg = 'Both is_gcc=False and is_gchp=False!  At present, ' + \
-              'get_filepaths only works with GCC or GCHP data!'
-        raise ValueError(msg)
-
-    # --------------------------------------------
-    # Create a list of files for each date/time
-    # --------------------------------------------
-    files = []
-    for date in dates:
-        date_time = np.datetime_as_string(date, unit='m')
-        date_time = date_time.replace('T', separator)
-        date_time = date_time.replace('-', '')
-        date_time = date_time.replace(':', '')
-        files.append(file_tmpl + date_time + extension)
+    
+        # --------------------------------------------
+        # Create a list of files for each date/time
+        # --------------------------------------------
+        for date in dates:
+            date_time = np.datetime_as_string(date, unit='m')
+            date_time = date_time.replace('T', separator)
+            date_time = date_time.replace('-', '')
+            date_time = date_time.replace(':', '')
+            files.append(file_tmpl + date_time + extension)
 
     return files
 
