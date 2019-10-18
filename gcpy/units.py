@@ -123,7 +123,8 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
 
 
 def convert_units(dr, species_name, species_properties, target_units,
-                  interval=None, area_m2=None, delta_p=None, box_height=None):
+                  interval=[2678400.0], area_m2=None,
+                  delta_p=None, box_height=None):
     '''
     Converts data stored in an xarray DataArray object from its native
     units to a target unit.

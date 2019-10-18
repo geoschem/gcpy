@@ -2460,7 +2460,7 @@ def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
 
 def create_total_emissions_table(refdata, refstr, devdata, devstr,
                                  species, outfilename,
-                                 interval=2678400.0, template='Emis{}_',
+                                 interval=[2678400.0], template='Emis{}_',
                                  ref_area_varname='AREA',
                                  dev_area_varname='AREA'):
     '''
@@ -2915,7 +2915,7 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
     
 
 def create_budget_table(devdata, devstr, region, species, varnames,
-                        outfilename, interval=2678400.0, template='Budget_{}'):
+                        outfilename, interval=[2678400.0], template='Budget_{}'):
     '''
     Creates a table of budgets by species and component for a data set.
 
@@ -3648,7 +3648,7 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
 
 def make_benchmark_emis_tables(reflist, refstr, devlist, devstr,
                                dst='./1mo_benchmark', overwrite=False,
-                               interval=2678400.0):
+                               interval=[2678400.0]):
     '''
     Creates a text file containing emission totals by species and
     category for benchmarking purposes.
@@ -4337,7 +4337,7 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
                 
 def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
                                varlist=None, dst='./1mo_benchmark',
-                               overwrite=False, verbose=False):
+                               subdst=None, overwrite=False, verbose=False):
     '''
     Creates a text file containing global mass totals by species and
     category for benchmarking purposes.
@@ -4373,6 +4373,14 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
             A string denoting the destination folder where the file
             containing emissions totals will be written.
             Default value: ./1mo_benchmark
+
+        subdst : str
+            A string denoting the sub-directory of dst where PDF
+            files containing plots will be written.  In practice,
+            subdst is only needed for the 1-year benchmark output,
+            and denotes a date string (such as "Jan2016") that
+            corresponds to the month that is being plotted.
+            Default value: None
 
         overwrite : boolean
             Set this flag to True to overwrite files in the
@@ -4450,35 +4458,10 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
 
     # ==================================================================
     # Create the mask arrays for the troposphere for Ref and Dev
-    #
-    # NOTE: This algorithm uses looping, which maybe is not the most
-    # efficient method.  But at least we compute the masks only once
-    # per call to make_benchmark_mass_tables in order to avoid
-    # incurring extra CPU cycles.
     # ==================================================================
-
-    # Convert the Met_TropLev DataArray objects to numpy ndarrays of
-    # integer.  Also subtract 1 to convert from Fortran to Python
-    # array index notation.
-    ref_lev = np.int_(np.squeeze(refmet['Met_TropLev'].values) - 1)
-    dev_lev = np.int_(np.squeeze(devmet['Met_TropLev'].values) - 1)
-    ref_lev_1d = ref_lev.flatten()
-    dev_lev_1d = dev_lev.flatten()
-
-    # Mask of tropospheric grid boxes in the Ref dataset
-    refshape = core.get_shape_of_data(np.squeeze(refmet['Met_BXHEIGHT']))
-    ref_tropmask = np.ones((refshape[0], np.prod(np.array(refshape[1:]))), bool)
-    for x in range(ref_tropmask.shape[1]):
-        ref_tropmask[0:ref_lev_1d[x],x] = False
-    ref_tropmask = ref_tropmask.reshape(refshape)
-
-    # Mask of tropospheric grid boxes in the Dev dataset
-    devshape = core.get_shape_of_data(np.squeeze(devmet['Met_BXHEIGHT']))
-    dev_tropmask = np.ones((devshape[0], np.prod(np.array(devshape[1:]))), bool)
-    for x in range(dev_tropmask.shape[1]):
-        dev_tropmask[0:dev_lev_1d[x],x] = False
-    dev_tropmask = dev_tropmask.reshape(devshape)
-
+    ref_tropmask = get_troposphere_mask(refmet)
+    dev_tropmask = get_troposphere_mask(devmet)
+        
     # ==================================================================
     # Create a dictionary to hold all of the meterological
     # variables and mask variables that we need to pass down
@@ -4489,6 +4472,8 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
                      'Dev_Delta_P'  : devmet['Met_DELPDRY'],
                      'Ref_BxHeight' : refmet['Met_BXHEIGHT'],
                      'Dev_BxHeight' : devmet['Met_BXHEIGHT'],
+#                     'Ref_AirVol'   : refmet['Met_AIRVOL'],
+#                     'Dev_AirVol'   : devmet['Met_AIRVOL'],
                      'Ref_TropMask' : ref_tropmask,
                      'Dev_TropMask' : dev_tropmask}
 
@@ -4523,7 +4508,7 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
 
 
 def make_benchmark_budget_tables(dev, devstr, dst='./1mo_benchmark',
-                                 overwrite=False, interval=None):
+                                 overwrite=False,  interval=[2678400.0]):
     '''
     Creates a text file containing budgets by species for benchmarking
     purposes.
@@ -4609,7 +4594,7 @@ def make_benchmark_budget_tables(dev, devstr, dst='./1mo_benchmark',
 
 def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
                               dst='./1mo_benchmark',
-                              overwrite=False, interval=None):
+                              overwrite=False, interval=[2678400.0]):
     '''
     Creates a text file containing metrics of global mean OH, MCF lifetime,
     and CH4 lifetime for benchmarking purposes.
@@ -4679,8 +4664,14 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
         print('Could not find one of the Dev files: {}'.format(devlist))
         raise
 
+    # Make sure that required variables are found
+    if 'OHconcAfterChem' not in refds.data_vars.keys():
+        raise ValueError('Could not find "OHconcAfterChem" in Ref!')
+    if 'OHconcAfterChem' not in devds.data_vars.keys():
+        raise ValueError('Could not find "OHconcAfterChem" in Dev!')
+    
     # ==================================================================
-    # Make sure that all necessary meteorological variables are found
+    # Make sure that all necessary variables are found
     # ==================================================================
 
     # Find the area variables in Ref and Dev
@@ -4694,44 +4685,13 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
     refmet = core.get_variables_from_dataset(refds, metvar_list)
     devmet = core.get_variables_from_dataset(devds, metvar_list)
 
-    # ==================================================================
-    # Make sure that all necessary species are found
-    # ==================================================================
+    # Create the mask arrays for the troposphere for Ref and Dev
+    ref_tropmask = get_troposphere_mask(refmet)
+    dev_tropmask = get_troposphere_mask(devmet)
 
     # Get the OH concentration
     ref_oh = refds['OHconcAfterChem']
     dev_oh = devds['OHconcAfterChem']
-
-    # ==================================================================
-    # Create the mask arrays for the troposphere for Ref and Dev
-    #
-    # NOTE: This algorithm uses looping, which maybe is not the most
-    # efficient method.  But at least we compute the masks only once
-    # per call to make_benchmark_mass_tables in order to avoid
-    # incurring extra CPU cycles.
-    # ==================================================================
-
-    # Convert the Met_TropLev DataArray objects to numpy ndarrays of
-    # integer.  Also subtract 1 to convert from Fortran to Python
-    # array index notation.
-    ref_lev = np.int_(np.squeeze(refmet['Met_TropLev'].values) - 1)
-    dev_lev = np.int_(np.squeeze(devmet['Met_TropLev'].values) - 1)
-    ref_lev_1d = ref_lev.flatten()
-    dev_lev_1d = dev_lev.flatten()
-
-    # Mask of tropospheric grid boxes in the Ref dataset
-    refshape = core.get_shape_of_data(np.squeeze(refmet['Met_BXHEIGHT']))
-    ref_tropmask = np.ones((refshape[0], np.prod(np.array(refshape[1:]))), bool)
-    for x in range(ref_tropmask.shape[1]):
-        ref_tropmask[0:ref_lev_1d[x],x] = False
-    ref_tropmask = ref_tropmask.reshape(refshape)
-
-    # Mask of tropospheric grid boxes in the Dev dataset
-    devshape = core.get_shape_of_data(np.squeeze(devmet['Met_BXHEIGHT']))
-    dev_tropmask = np.ones((devshape[0], np.prod(np.array(devshape[1:]))), bool)
-    for x in range(dev_tropmask.shape[1]):
-        dev_tropmask[0:dev_lev_1d[x],x] = False
-    dev_tropmask = dev_tropmask.reshape(devshape)
 
     # ==================================================================
     # Open file for output
@@ -4828,11 +4788,15 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
     dev_num = np.sum(dev_dens.values * dev_vol.values )
 
     # Denominator: Loss rate in troposphere
-    ref_mcf_denom = np.sum( ref_mcf_k * ref_oh_trop * ref_dens_trop * ref_vol_trop )
+    ref_mcf_denom = np.sum( ref_mcf_k * ref_oh_trop * \
+                            ref_dens_trop * ref_vol_trop )
     
-    dev_mcf_denom = np.sum( dev_mcf_k * dev_oh_trop * dev_dens_trop * dev_vol_trop )
-    ref_ch4_denom = np.sum( ref_ch4_k * ref_oh_trop * ref_dens_trop * ref_vol_trop )
-    dev_ch4_denom = np.sum( dev_ch4_k * dev_oh_trop * dev_dens_trop * dev_vol_trop )
+    dev_mcf_denom = np.sum( dev_mcf_k * dev_oh_trop * \
+                            dev_dens_trop * dev_vol_trop )
+    ref_ch4_denom = np.sum( ref_ch4_k * ref_oh_trop * \
+                            ref_dens_trop * ref_vol_trop )
+    dev_ch4_denom = np.sum( dev_ch4_k * dev_oh_trop * \
+                            dev_dens_trop * dev_vol_trop )
 
     # Compute lifetimes [years]
     sec_to_year = 365.25 * 86400.0
@@ -4845,8 +4809,10 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
     mcf_diff = dev_mcf_lifetime - ref_mcf_lifetime
     ch4_diff = dev_ch4_lifetime - ref_ch4_lifetime
 
-    mcf_pctdiff = ((dev_mcf_lifetime - ref_mcf_lifetime) / ref_mcf_lifetime ) * 100.0
-    ch4_pctdiff = ((dev_ch4_lifetime - ref_ch4_lifetime) / ref_ch4_lifetime ) * 100.0
+    mcf_pctdiff = ((dev_mcf_lifetime - ref_mcf_lifetime) /
+                   ref_mcf_lifetime ) * 100.0
+    ch4_pctdiff = ((dev_ch4_lifetime - ref_ch4_lifetime) /
+                   ref_ch4_lifetime ) * 100.0
 
     # Title strings
     title1 = '### MCF lifetime w/r/t tropospheric OH [years]'
@@ -5105,3 +5071,89 @@ def add_missing_variables(refdata, devdata, **kwargs):
             refdata = xr.merge([refdata,dr])
 
     return refdata, devdata
+
+
+def get_troposphere_mask(ds):
+    '''
+    Returns a mask array for picking out the tropospheric grid boxes.
+    
+    Args:
+    -----
+        ds : xarray Dataset
+            Dataset containing certain met field variables (i.e.
+            Met_TropLev, Met_BXHEIGHT).
+
+    Returns:
+    --------
+        tropmask : numpy ndarray
+            Tropospheric mask.  False denotes grid boxes that are
+            in the troposphere and True in the stratosphere
+            (as per Python masking logic).
+    '''
+
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
+    # Make sure ds is an xarray Dataset object
+    if not isinstance(ds, xr.Dataset):
+        raise ValueError('The ds argument must be an xarray Dataset!')
+
+    # Make sure certain variables are found
+    if 'Met_BXHEIGHT' not in ds.data_vars.keys():
+        raise ValueError('Met_BXHEIGHT could not be found!')
+    if 'Met_TropLev' not in ds.data_vars.keys():
+        raise ValueError('Met_TropLev could not be found!')
+
+    # Mask of tropospheric grid boxes in the Ref dataset
+    shape = core.get_shape_of_data(np.squeeze(ds['Met_BXHEIGHT']))
+
+    # ==================================================================
+    # Create the mask arrays for the troposphere
+    #
+    # Convert the Met_TropLev DataArray objects to numpy ndarrays of
+    # integer.  Also subtract 1 to convert from Fortran to Python
+    # array index notation.
+    # ==================================================================
+    
+    if len(shape) == 4:
+        # --------------------------------------------------------------
+        # There are multiple time slices
+        # --------------------------------------------------------------
+
+        # Create the tropmask array with dims (time, lev, lat*lon)
+        tropmask = np.ones((shape[0], shape[1],
+                            np.prod(np.array(shape[2:]))), bool)
+
+        # Loop over each time
+        for t in range(tropmask.shape[0]):
+
+            # Pick the tropopause level and make a 1-D array
+            values = ds['Met_TropLev'].isel(time=t).values
+            lev = np.int_(np.squeeze(values) - 1)
+            lev_1d = lev.flatten()
+
+            # Create the tropospheric mask array
+            for x in range(tropmask.shape[2]):
+                tropmask[t, 0:lev_1d[x], x] = False
+
+    elif len(shape) == 3:
+        # --------------------------------------------------------------
+        # There is only one time slice
+        # --------------------------------------------------------------
+
+        # Create the tropmask array with dims (lev, lat*lon)
+        tropmask = np.ones((shape[0],
+                            np.prod(np.array(shape[1:]))), bool)
+
+        # Pick the tropopause level and make a 1-D array
+        values = ds['Met_TropLev'].values
+        lev = np.int_(np.squeeze(values) - 1)
+        lev_1d = lev.flatten()
+
+        # Create the tropospheric mask array
+        for x in range(tropmask.shape[1]):
+            tropmask[0:lev_1d[x], x] = False
+
+    # Reshape into the same shape as Met_BxHeight
+    return tropmask.reshape(shape)
