@@ -96,6 +96,9 @@ end_datestr  = '20160801'
 gcc_hourstr  = '0000'
 gchp_hourstr = '1200'
 
+# Seconds in the month (July 2016)
+sec_per_month = [86400.0 * 31.0]
+
 # Data directories (edit as needed)
 # For gchp_vs_gcc_refdir use gcc_dev_version, not ref (mps, 6/27/19)
 gcc_vs_gcc_refdir   = join(maindir, gcc_ref_version,  'OutputDir')
@@ -302,6 +305,7 @@ if gcc_vs_gcc:
                                        gcc_vs_gcc_devlist,
                                        gcc_vs_gcc_devstr,
                                        dst=gcc_vs_gcc_plotsdir,
+                                       interval=sec_per_month,
                                        overwrite=True)
 
     if plot_jvalues:
@@ -342,6 +346,7 @@ if gcc_vs_gcc:
         bmk.make_benchmark_budget_tables(gcc_vs_gcc_devbgt,
                                          gcc_vs_gcc_devstr,
                                          dst=gcc_vs_gcc_plotsdir,
+                                         interval=sec_per_month,
                                          overwrite=True)
 
     if OH_metrics:
