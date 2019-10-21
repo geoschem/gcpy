@@ -1120,7 +1120,10 @@ def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
 
     # Create the return variable
     files = []
-        
+
+    # Alias for the join function
+    join = os.path.join
+    
     # ==================================================================
     # Create the file list
     # ==================================================================
@@ -1130,14 +1133,13 @@ def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
             # ---------------------------------------
             # Get the file path template for GCC
             # ---------------------------------------
-            if collection == 'Emissions':
-                file_tmpl = os.path.join(outputdir, 'HEMCO_diagnostics.')
+            if 'Emissions' in collection:
+                file_tmpl = join(outputdir, 'HEMCO_diagnostics.')
                 separator = ''
                 extension = '.nc'
             
             else:
-                file_tmpl = os.path.join(outputdir,
-                                         'GEOSChem.{}.'.format(collection))
+                file_tmpl = join(outputdir, 'GEOSChem.{}.'.format(collection))
                 separator = '_'
                 extension = 'z.nc4'
         
@@ -1145,9 +1147,15 @@ def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
             # ---------------------------------------
             # Get the file path template for GCHP
             # ---------------------------------------
-            file_tmpl = os.path.join(outputdir, 'GCHP.{}.'.format(collection))
-            separator = '_'
-            extension = 'z.nc4'
+            if 'Restart' in collection:
+                file_tmpl = 'gcchem_internal_checkpoint.restart.{}'
+                file_tmpl = join(outputdir, 'GCHP.{}.'.format(collection))
+                separator = '_'
+                extension = '_000000.nc4'
+            else:
+                file_tmpl = join(outputdir, 'GCHP.{}.'.format(collection))
+                separator = '_'
+                extension = 'z.nc4'
     
         # --------------------------------------------
         # Create a list of files for each date/time
