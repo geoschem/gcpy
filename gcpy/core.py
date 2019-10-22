@@ -1196,20 +1196,34 @@ def extract_pathnames_from_log(filename, prefix_filter=''):
     -------
         Jiawei Zhuang (jiaweizhuang@g.harvard.edu)
     '''
+
+    # Initialization
     prefix_len = len(prefix_filter)
-
     data_list = set()  # only keep unique files
-    with open(filename, 'r') as f:
-        line = f.readline()
-        while(line):
-            if 'HEMCO: Opening' in line:
-                data_path = line.split()[-1]
-                # remove common prefix
-                if data_path.startswith(prefix_filter):
-                    trimmed_path = data_path[prefix_len:]
-                    data_list.add(trimmed_path)
-            line = f.readline()
 
+    # Open file (or die with error)
+    try:
+        f = open(filename, 'r')
+    except FileNotFoundError:
+        print('Could not find file {}'.format(filename))
+        raise
+
+    # Read data from the file line by line.
+    # Add file paths to the data_list set.
+    line = f.readline()
+    while(line):
+        if (': Opening' in line) or (': Reading' in line):
+            data_path = line.split()[-1]
+            # remove common prefix
+            if data_path.startswith(prefix_filter):
+                trimmed_path = data_path[prefix_len:]
+                data_list.add(trimmed_path)
+
+        # Read next line
+        line = f.readline()
+
+    # Close file and return
+    f.close()
     data_list = sorted(list(data_list))
     return data_list
 

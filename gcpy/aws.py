@@ -4,7 +4,7 @@ import os
 from . import core
 
 
-def s3_download_cmds_from_log(log_file_name,
+def s3_download_cmds_from_log(log_files,
                               s3_cp_cmd='aws s3 cp --request-payer=requester',
                               s3_root='s3://gcgrid',
                               prefix_filter='/home/ubuntu/ExtData'):
@@ -16,14 +16,15 @@ def s3_download_cmds_from_log(log_file_name,
 
     Args:
     -----
-        filename : str
-            Name of the GEOS-Chem log file to read.
+        log_files : list of str | str
+            List of log files to read (e.g. from GEOS-Chem and HEMCO).
+            Can also be a single string.
 
     Keyword Args (optional):
     ------------------------
         s3_cp_cmd : str
             Command to copy files from AWS S3.
-            Default value: "aws s3 cp --request-payer=requester'
+            Default value: aws s3 cp --request-payer=requester
 
         s3_root : str
             Root folder of the GEOS-Chem S3 bucket on AWS.
@@ -41,22 +42,38 @@ def s3_download_cmds_from_log(log_file_name,
             read by GEOS-Chem, as indicated in the log file.
     '''
 
-    # Get the file names from the log
-    filelist = core.extract_pathnames_from_log(log_file_name, prefix_filter)
+    # Make sure log_files has at least one element for iterating
+    if len(log_files) == 1:
+        log_files = [log_files]
+    
+    # Get the file paths from the log files
+    paths = []
+    for log_file in log_files:
+        paths = paths + core.extract_pathnames_from_log(log_file,
+                                                        prefix_filter)
 
-    # Return a list of bash commands
+    # Return a list of bash commands to download each file from S3
     cmd_list = []
-    for f in filelist:
-        cmd = 'if [[ !(-f {}{}) ]]; then {} {}/{} {}{}; fi'.format(
-            prefix_filter, f, s3_cp_cmd, s3_root, f, prefix_filter, f)
+    for path in paths:
+
+        # Local path name and dir name
+        local_path = prefix_filter + path
+        local_dir = os.path.dirname(local_path)
+
+        # S3 path name
+        s3_path = '{}{}'.format(s3_root, path)
+
+        # Create copy command and append to the list
+        cmd = 'if [[ !(-f {}) ]]; then {} {} {}/; fi'.format(
+            local_path, s3_cp_cmd, s3_path, local_dir)
         cmd_list.append(cmd)
 
     return cmd_list
         
 
-def s3_list_cmds_from_log(log_file_name,
+def s3_list_cmds_from_log(log_files,
                           s3_ls_cmd='aws s3 ls --request-payer=requester',
-                          src='s3://gcgrid',
+                          s3_root='s3://gcgrid',
                           prefix_filter='/home/ubuntu/ExtData'):
     '''
     Reads a GEOS-Chem log file and creates a list of bash commands to
@@ -64,14 +81,15 @@ def s3_list_cmds_from_log(log_file_name,
 
     Args:
     -----
-        filename : str
-            Name of the GEOS-Chem log file to read.
+        log_files : list of str | str
+            List of log files to read (e.g. from GEOS-Chem and HEMCO).
+            Can also be a single string.
 
     Keyword Args (optional):
     ------------------------
         s3_ls_cmd : str
             Command to copy files from AWS S3.
-            Default value: aws s3 ls --request-payer=requester
+            Default value: aws s3 ls --request-payer=requester --recursive
 
         s3_root : str
             Root folder of the GEOS-Chem S3 bucket on AWS.
@@ -89,14 +107,25 @@ def s3_list_cmds_from_log(log_file_name,
             read by GEOS-Chem, as indicated in the log file.
     '''
 
-    # Get the file names from the log
-    filelist = core.extract_pathnames_from_log(log_file_name, prefix_filter)
+    # Make sure log_files has at least one element for iterating
+    if len(log_files) == 1:
+        log_files = [log_files]
+    
+    # Get the file paths from the log files
+    paths = []
+    for log_file in log_files:
+        paths = paths + core.extract_pathnames_from_log(log_file,
+                                                        prefix_filter)
 
-    # Return a list of bash commands
+    # Return a list of bash commands to download each file from S3
     cmd_list = []
-    for f in filelist:
-        cmd = 'if [[ !(-f {}{}) ]]; then {} {}/{} {}{}; fi'.format(
-            prefix_filter, f, s3_cp_cmd, src, f, prefix_filter, f)
+    for path in paths:
+
+        # S3 path name
+        s3_path = '{}{}'.format(s3_root, path)
+
+        # Populate a list of bash commands for listing files
+        cmd = '{} {}'.format(s3_ls_cmd, s3_path)
         cmd_list.append(cmd)
 
     return cmd_list
@@ -122,7 +151,11 @@ def s3_script_create(s3_cmds, script_name='aws_cmd_script.sh'):
     '''
 
     # Open the script file for writing
-    f = open(script_name, 'w+')
+    try:
+        f = open(script_name, 'w+')
+    except FileNotFoundError:
+        print('Could not open: {}'.format(script_name))
+        raise
 
     # Write the shebang line
     print('#!/bin/bash', file=f)
