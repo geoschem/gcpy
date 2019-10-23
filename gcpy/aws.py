@@ -92,7 +92,7 @@ def s3_download_cmds_from_log(log_files,
             needed_path = '{}/{}'.format(local_dir, needed_file)
             needed_s3_path = '{}/{}'.format(s3_root, needed_file)
             cmd_pref = 'if [[ !(-f {}) ]]; then'.format(needed_path)
-            cmd = '{} {} {}; fi'.format(
+            cmd = '{} {} {} {}/; fi'.format(
                 cmd_pref, s3_cp_cmd, needed_s3_path, local_dir)
             cmd_list.append(cmd)
 
@@ -113,7 +113,7 @@ def s3_download_cmds_from_log(log_files,
             needed_path = '{}/{}'.format(local_dir, needed_file)
             needed_s3_path = '{}/{}'.format(s3_root, needed_file)
             cmd_pref = 'if [[ !(-f {}) ]]; then'.format(needed_path)
-            cmd = '{} {} {}/; fi'.format(
+            cmd = '{} {} {} {}/; fi'.format(
                 cmd_pref, s3_cp_cmd, needed_s3_path, local_dir)
             cmd_list.append(cmd)
 
@@ -129,7 +129,7 @@ def s3_download_cmds_from_log(log_files,
             # No special handling needed
             # ------------------------------
             cmd_pref = 'if [[ !(-f {}) ]]; then'.format(local_path)
-            cmd = '{} {} {}/; fi'.format(
+            cmd = '{} {} {} {}/; fi'.format(
                 cmd_pref, s3_cp_cmd, s3_path, local_dir)
             cmd_list.append(cmd)
 
@@ -250,10 +250,10 @@ def s3_script_create(s3_cmds, script_name='aws_cmd_script.sh'):
     # Write the shebang line and header comments
     print('#!/bin/bash\n', file=f)
     print('#', file=f, end='')
-    print( '='*79, file=f)
+    print( '='*78, file=f)
     print('# This script was created by gcpy.aws.s3_script_create', file=f)
     print('#', file=f, end='')
-    print( '='*79 + '\n', file=f)
+    print( '='*78 + '\n', file=f)
 
     # Write the individual download commands to the file
     for cmd in s3_cmds:
