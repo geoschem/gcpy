@@ -157,10 +157,10 @@ def compare_single_level(refdata, refstr, devdata, devstr, varlist=None,
 
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
-        raise ValueError('The refdata argument must be an xarray Dataset!')
+        raise TypeError('The refdata argument must be an xarray Dataset!')
 
     if not isinstance(devdata, xr.Dataset):
-        raise ValueError('The devdata argument must be an xarray Dataset!')
+        raise TypeError('The devdata argument must be an xarray Dataset!')
 
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
@@ -1310,10 +1310,10 @@ def compare_zonal_mean(refdata, refstr, devdata, devstr, varlist=None,
     # repeated code that could be abstracted.
 
     if not isinstance(refdata, xr.Dataset):
-        raise ValueError('The refdata argument must be an xarray Dataset!')
+        raise TypeError('The refdata argument must be an xarray Dataset!')
 
     if not isinstance(devdata, xr.Dataset):
-        raise ValueError('The devdata argument must be an xarray Dataset!')
+        raise TypeError('The devdata argument must be an xarray Dataset!')
 
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
@@ -2368,9 +2368,9 @@ def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
 
     # Make sure that both Ref and Dev are xarray DataArray objects
     if not isinstance(ref, xr.DataArray):
-        raise ValueError('The ref argument must be an xarray DataArray!')
+        raise TypeError('The ref argument must be an xarray DataArray!')
     if not isinstance(dev, xr.DataArray):
-        raise ValueError('The dev argument must be an xarray DataArray!')
+        raise TypeError('The dev argument must be an xarray DataArray!')
 
     # Determine if either Ref or Dev have all NaN values:
     ref_is_all_nan = np.isnan(ref.values).all()
@@ -2554,9 +2554,9 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
 
     # Make sure refdata and devdata are both xarray Dataset objects
     if not isinstance(refdata, xr.Dataset):
-        raise ValueError('The refdata argument must be an xarray Dataset!')
+        raise TypeError('The refdata argument must be an xarray Dataset!')
     if not isinstance(devdata, xr.Dataset):
-        raise ValueError('The devdata argument must be an xarray Dataset!')
+        raise TypeError('The devdata argument must be an xarray Dataset!')
 
     # Make sure that the area variable is present in both refdata and devdata
     if ref_area_varname not in refdata.data_vars.keys():
@@ -2593,7 +2593,11 @@ def create_total_emissions_table(refdata, refstr, devdata, devstr,
     # =================================================================
     # Open the file for output
     # =================================================================
-    f = open(outfilename, 'w')
+    try:
+        f = open(outfilename, 'w')
+    except FileNotFoundError:
+        msg = 'Could not open {} for writing!'.format(outfilename)
+        raise FileNotFoundError(msg)
 
     # =================================================================
     # Loop through all of the species are in species_dict
@@ -2808,9 +2812,9 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
 
     # Make sure refdata and devdata are xarray Dataset objects
     if not isinstance(refdata, xr.Dataset):
-        raise ValueError('The refdata argument must be an xarray Dataset!')
+        raise TypeError('The refdata argument must be an xarray Dataset!')
     if not isinstance(devdata, xr.Dataset):
-        raise ValueError('The devdata argument must be an xarray Dataset!')
+        raise TypeError('The devdata argument must be an xarray Dataset!')
 
     # Make sure required arguments are passed
     if varlist is None:
@@ -2830,7 +2834,11 @@ def create_global_mass_table(refdata, refstr, devdata, devstr, varlist,
     # ==================================================================
 
     # Create file
-    f = open(outfilename, 'w')
+    try:
+        f = open(outfilename, 'w')
+    except FileNotFoundError:
+        msg = 'Could not open {} for writing!'.format(outfilename)
+        raise FileNotFoundError(msg)
 
     # Title strings
     if trop_only:
@@ -2966,10 +2974,14 @@ def create_budget_table(devdata, devstr, region, species, varnames,
 
     # Error check arguments
     if not isinstance(devdata, xr.Dataset):
-        raise ValueError('The devdata argument must be an xarray Dataset!')
+        raise TypeError('The devdata argument must be an xarray Dataset!')
 
     # Open file for output
-    f = open(outfilename, 'w')
+    try:
+        f = open(outfilename, 'w')
+    except FileNotFoundError:
+        msg = 'Could not open {} for writing!'.format(outfilename)
+        raise FileNotFoundError(msg)
 
     # ==================================================================
     # Loop over species
@@ -3149,16 +3161,14 @@ def make_benchmark_conc_plots(ref, refstr, dev, devstr,
     try:
         refds = xr.open_dataset(ref, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find Ref file: {}'.format(ref))
-        raise
+        raise FileNotFoundError('Could not find Ref file: {}'.format(ref))
     refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
     
     # Dev dataset
     try:
         devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find Dev file: {}!'.format(dev))
-        raise
+        raise FileNotFoundError('Could not find Dev file: {}!'.format(dev))
     devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
 
     catdict = get_species_categories()
@@ -3461,15 +3471,13 @@ def make_benchmark_emis_plots(ref, refstr, dev, devstr,
     try:
         refds = xr.open_dataset(ref, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find Ref file: {}'.format(ref))
-        raise
+        raise FileNotFoundError('Could not find Ref file: {}'.format(ref))
 
     # Dev dataset
     try:
         devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find Dev file: {}'.format(dev))
-        raise
+        raise FileNotFoundError('Could not find Dev file: {}'.format(dev))
 
     # Make sure that Ref and Dev datasets have the same variables.
     # Variables that are in Ref but not in Dev will be added to Dev
@@ -3885,15 +3893,13 @@ def make_benchmark_jvalue_plots(ref, refstr, dev, devstr,
     try:
         refds = xr.open_dataset(ref, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find Ref file: {}'.format(ref))
-        raise
+        raise FileNotFoundError('Could not find Ref file: {}'.format(ref))
 
     # Dev dataset
     try:
         devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find Dev file: {}'.format(dev))
-        raise
+        raise FileNotFoundError('Could not find Dev file: {}'.format(dev))
 
     # Make sure that Ref and Dev datasets have the same variables.
     # Variables that are in Ref but not in Dev will be added to Dev
@@ -4173,15 +4179,13 @@ def make_benchmark_aod_plots(ref, refstr, dev, devstr,
     try:
         refds = xr.open_dataset(ref, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find Ref file: {}'.format(ref))
-        raise
+        raise FileNotFoundError('Could not find Ref file: {}'.format(ref))
 
     # Read the Dev dataset
     try:
         devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find Dev file: {}'.format(dev))
-        raise
+        raise FileNotFoundError('Could not find Dev file: {}'.format(dev))
 
     # NOTE: GCHP diagnostic variable exports are defined before the
     # input.geos file is read.  This means "WL1" will not have been
@@ -4412,15 +4416,13 @@ def make_benchmark_mass_tables(reflist, refstr, devlist, devstr,
     try:
         refds = xr.open_mfdataset(reflist, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Error opening Ref files: {}'.format(reflist))
-        raise
+        raise FileNotFoundError('Error opening Ref files: {}'.format(reflist))
     
     # Dev dataset
     try:
         devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Error opening Dev files: {}!'.format(devlist))
-        raise
+        raise FileNotFoundError('Error opening Dev files: {}!'.format(devlist))
 
     # ==================================================================
     # Make sure that all necessary meteorological variables are found
@@ -4562,8 +4564,7 @@ def make_benchmark_budget_tables(dev, devstr, dst='./1mo_benchmark',
     try:
         devds = xr.open_dataset(dev, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find Dev file: {}'.format(dev))
-        raise
+        raise FileNotFoundError('Could not find Dev file: {}'.format(dev))
 
     # ==================================================================
     # Create budget table
@@ -4654,15 +4655,15 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
     try:
         refds = xr.open_mfdataset(reflist, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find one of the Ref files: {}'.format(reflist))
-        raise
+        raise FileNotFoundError(
+            'Could not find one of the Ref files: {}'.format(reflist))
     
     # Dev
     try:
         devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
     except FileNotFoundError:
-        print('Could not find one of the Dev files: {}'.format(devlist))
-        raise
+        raise FileNotFoundError(
+            'Could not find one of the Dev files: {}'.format(devlist))
 
     # Make sure that required variables are found
     if 'OHconcAfterChem' not in refds.data_vars.keys():
@@ -4699,7 +4700,11 @@ def make_benchmark_oh_metrics(reflist, refstr, devlist, devstr,
 
     # Create file
     outfilename = os.path.join(dst, '{}_OH_metrics.txt'.format(devstr))
-    f = open(outfilename, 'w')
+    try:
+        f = open(outfilename, 'w')
+    except FileNotFoundError:
+        raise FileNotFoundError(
+            'Could not open {} for writing!'.format(outfilename))
               
     # ==================================================================
     # Compute mass-weighted OH in the troposphere
@@ -5030,9 +5035,9 @@ def add_missing_variables(refdata, devdata, **kwargs):
 
     # Make sure that refdata and devdata are both xarray Dataset objects
     if not isinstance(refdata, xr.Dataset):
-        raise ValueError('The refdata object must be an xarray DataArray!')
+        raise TypeError('The refdata object must be an xarray DataArray!')
     if not isinstance(devdata, xr.Dataset):
-        raise ValueError('The refdata object must be an xarray DataArray!')
+        raise TypeError('The refdata object must be an xarray DataArray!')
 
     # Find common variables as well as variables only in one or the other
     vardict = core.compare_varnames(refdata, devdata, quiet=True)
@@ -5097,7 +5102,7 @@ def get_troposphere_mask(ds):
 
     # Make sure ds is an xarray Dataset object
     if not isinstance(ds, xr.Dataset):
-        raise ValueError('The ds argument must be an xarray Dataset!')
+        raise TypeError('The ds argument must be an xarray Dataset!')
 
     # Make sure certain variables are found
     if 'Met_BXHEIGHT' not in ds.data_vars.keys():

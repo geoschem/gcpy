@@ -35,6 +35,10 @@ def adjust_units(units):
         kg/m2/s
     '''
 
+    # Error check arguments
+    if not isinstance(units, str):
+        raise TypeError('Units must be of type str!')
+
     # Strip all spaces in the unit string
     units_squeezed = units.replace(' ', '')
 

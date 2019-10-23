@@ -1101,6 +1101,8 @@ def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
 
     Returns:
     --------
+        paths : list of str
+            A list of pathnames for each specified collection and date.
     '''
 
     # ==================================================================
@@ -1115,11 +1117,11 @@ def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
 
     # If collections is passed as a scalar
     # make it a list so that we can iterate
-    if len(collections) == 1:
+    if not isinstance(collections, list):
         collections = [collections]
 
     # Create the return variable
-    files = []
+    paths = []
 
     # Alias for the join function
     join = os.path.join
@@ -1165,9 +1167,9 @@ def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
             date_time = date_time.replace('T', separator)
             date_time = date_time.replace('-', '')
             date_time = date_time.replace(':', '')
-            files.append(file_tmpl + date_time + extension)
+            paths.append(file_tmpl + date_time + extension)
 
-    return files
+    return paths
 
 
 def extract_pathnames_from_log(filename, prefix_filter=''):
@@ -1205,8 +1207,7 @@ def extract_pathnames_from_log(filename, prefix_filter=''):
     try:
         f = open(filename, 'r')
     except FileNotFoundError:
-        print('Could not find file {}'.format(filename))
-        raise
+        raise FileNotFoundError('Could not find file {}'.format(filename))
 
     # Read data from the file line by line.
     # Add file paths to the data_list set.
