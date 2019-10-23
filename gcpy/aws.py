@@ -42,31 +42,96 @@ def s3_download_cmds_from_log(log_files,
             read by GEOS-Chem, as indicated in the log file.
     '''
 
-    # Make sure log_files has at least one element for iterating
-    if len(log_files) == 1:
-        log_files = [log_files]
+    # ==================================================================
+    # Initialization
+    # ==================================================================
     
-    # Get the file paths from the log files
+    # Error check arguments.  If log_files is a string, make it a
+    # list.  Then make sure log_files is a list or exit w/ error.
+    if isinstance(log_files, str):
+        log_files = [log_files]
+    if not isinstance(log_files, list):
+        raise TypeError('The log_files argument must be a list!')
+
+    # Define empty lists
     paths = []
+    cmd_list = []
+
+    # ==================================================================
+    # Parse the log files and return a list of path names
+    # ==================================================================
     for log_file in log_files:
         paths = paths + core.extract_pathnames_from_log(log_file,
                                                         prefix_filter)
 
-    # Return a list of bash commands to download each file from S3
-    cmd_list = []
+
+    # ==================================================================
+    # Create the list of bash commands to download files from S3
+    # ==================================================================
     for path in paths:
 
         # Local path name and dir name
         local_path = prefix_filter + path
         local_dir = os.path.dirname(local_path)
+        local_file = os.path.basename(local_path)
 
         # S3 path name
         s3_path = '{}{}'.format(s3_root, path)
 
-        # Create copy command and append to the list
-        cmd = 'if [[ !(-f {}) ]]; then {} {} {}/; fi'.format(
-            local_path, s3_cp_cmd, s3_path, local_dir)
-        cmd_list.append(cmd)
+        # Create the download command.  For some files we have to
+        # link to other files, because these don't usually get
+        # synced to the AWS gcgrid S3 bucket.
+        if 'gmi.clim.IPMN.geos5.2x25.nc' in local_file:
+
+            # ------------------------------
+            # PMN -> IPMN and NPMN
+            # ------------------------------
+
+            # First download the PMN file
+            needed_file = 'gmi.clim.PMN.geos5.2x25.nc'
+            needed_path = '{}/{}'.format(local_dir, needed_file)
+            needed_s3_path = '{}/{}'.format(s3_root, needed_file)
+            cmd_pref = 'if [[ !(-f {}) ]]; then'.format(needed_path)
+            cmd = '{} {} {}; fi'.format(
+                cmd_pref, s3_cp_cmd, needed_s3_path, local_dir)
+            cmd_list.append(cmd)
+
+            # Then create links for the other species
+            for species in ['IPMN', 'NPMN']:
+                cmd = 'ln -s {}/{} {}/gmi.clim.{}.geos.2x2.5.nc'.format(
+                    local_dir, needed_file, local_dir, species)
+                cmd_list.append(cmd)
+
+        elif 'gmi.clim.RIPA.geos5.2x25.nc' in local_file:
+
+            # ------------------------------
+            # RIP -> RIPA, RIPB, RIPD
+            # ------------------------------
+
+            # First download the RIP file
+            needed_file = 'gmi.clim.RIP.geos5.2x25.nc'
+            needed_path = '{}/{}'.format(local_dir, needed_file)
+            needed_s3_path = '{}/{}'.format(s3_root, needed_file)
+            cmd_pref = 'if [[ !(-f {}) ]]; then'.format(needed_path)
+            cmd = '{} {} {}/; fi'.format(
+                cmd_pref, s3_cp_cmd, needed_s3_path, local_dir)
+            cmd_list.append(cmd)
+
+            # Then create links for the other species
+            for species in ['RIPA', 'RIPB', 'RIPD']:
+                cmd = 'ln -s {}/{} {}/gmi.clim.{}.geos.2x2.5.nc'.format(
+                    local_dir, needed_file, local_dir, species)
+                cmd_list.append(cmd)
+
+        else:
+
+            # ------------------------------
+            # No special handling needed
+            # ------------------------------
+            cmd_pref = 'if [[ !(-f {}) ]]; then'.format(local_path)
+            cmd = '{} {} {}/; fi'.format(
+                cmd_pref, s3_cp_cmd, s3_path, local_dir)
+            cmd_list.append(cmd)
 
     return cmd_list
         
@@ -107,18 +172,31 @@ def s3_list_cmds_from_log(log_files,
             read by GEOS-Chem, as indicated in the log file.
     '''
 
-    # Make sure log_files has at least one element for iterating
-    if len(log_files) == 1:
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
+    # Error check arguments.  If log_files is a string, make it a
+    # list.  Then make sure log_files is a list or exit w/ error.
+    if isinstance(log_files, str):
         log_files = [log_files]
-    
-    # Get the file paths from the log files
+    if not isinstance(log_files, list):
+        raise TypeError('The log_files argument must be a list!')
+
+    # Define empty lists
     paths = []
+    cmd_list = []
+
+    # ==================================================================
+    # Parse the log files and return a list of path names
+    # ==================================================================
     for log_file in log_files:
         paths = paths + core.extract_pathnames_from_log(log_file,
                                                         prefix_filter)
 
-    # Return a list of bash commands to download each file from S3
-    cmd_list = []
+    # ==================================================================
+    # Create the list of bash commands to list files in S3
+    # ==================================================================
     for path in paths:
 
         # S3 path name
@@ -150,21 +228,36 @@ def s3_script_create(s3_cmds, script_name='aws_cmd_script.sh'):
     >>> aws.s3_script_create(s3_cmds, 's3_download_commands.sh')
     '''
 
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
+    # Error check arguments
+    if not isinstance(s3_cmds, list):
+        raise TypeError('The s3_cmds argument must be a list!')
+
+    # ==================================================================
+    # Write the script of bash commansds
+    # ==================================================================
+
     # Open the script file for writing
     try:
         f = open(script_name, 'w+')
     except FileNotFoundError:
-        print('Could not open: {}'.format(script_name))
-        raise
+        raise FileNotFoundError(
+            'Could not open {} for writing!'.format(script_name))
 
-    # Write the shebang line
-    print('#!/bin/bash', file=f)
-    print(file=f)
+    # Write the shebang line and header comments
+    print('#!/bin/bash\n', file=f)
+    print('#', file=f, end='')
+    print( '='*79, file=f)
+    print('# This script was created by gcpy.aws.s3_script_create', file=f)
+    print('#', file=f, end='')
+    print( '='*79 + '\n', file=f)
 
     # Write the individual download commands to the file
     for cmd in s3_cmds:
-        print(cmd, file=f)
-        print(file=f)
+        print('{}\n'.format(cmd), file=f)
 
     # Close the script file and make it executable
     f.close()
