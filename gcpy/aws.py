@@ -61,8 +61,8 @@ def s3_download_cmds_from_log(log_files,
     # Parse the log files and return a list of path names
     # ==================================================================
     for log_file in log_files:
-        paths = paths + core.extract_pathnames_from_log(log_file,
-                                                        prefix_filter)
+        tmp_paths = core.extract_pathnames_from_log(log_file, prefix_filter)
+        paths = paths + tmp_paths
 
 
     # ==================================================================
@@ -75,22 +75,20 @@ def s3_download_cmds_from_log(log_files,
         local_dir = os.path.dirname(local_path)
         local_file = os.path.basename(local_path)
 
-        # S3 path name
-        s3_path = '{}{}'.format(s3_root, path)
-
         # Create the download command.  For some files we have to
         # link to other files, because these don't usually get
         # synced to the AWS gcgrid S3 bucket.
-        if 'gmi.clim.IPMN.geos5.2x25.nc' in local_file:
+        if 'gmi.clim.IPMN.geos5.2x25.nc' in path:
 
             # ------------------------------
             # PMN -> IPMN and NPMN
             # ------------------------------
 
             # First download the PMN file
+            needed_dir = os.path.dirname(path)
             needed_file = 'gmi.clim.PMN.geos5.2x25.nc'
-            needed_path = '{}/{}'.format(local_dir, needed_file)
-            needed_s3_path = '{}/{}'.format(s3_root, needed_file)
+            needed_path = os.path.join(local_dir, needed_file)
+            needed_s3_path = s3_root + os.path.join(needed_dir, needed_file)
             cmd_pref = 'if [[ !(-f {}) ]]; then'.format(needed_path)
             cmd = '{} {} {} {}/; fi'.format(
                 cmd_pref, s3_cp_cmd, needed_s3_path, local_dir)
@@ -98,20 +96,21 @@ def s3_download_cmds_from_log(log_files,
 
             # Then create links for the other species
             for species in ['IPMN', 'NPMN']:
-                cmd = 'ln -s {}/{} {}/gmi.clim.{}.geos.2x2.5.nc'.format(
+                cmd = 'ln -s {}/{} {}/gmi.clim.{}.geos.2x25.nc'.format(
                     local_dir, needed_file, local_dir, species)
                 cmd_list.append(cmd)
 
-        elif 'gmi.clim.RIPA.geos5.2x25.nc' in local_file:
+        elif 'gmi.clim.RIPA.geos5.2x25.nc' in path:
 
             # ------------------------------
             # RIP -> RIPA, RIPB, RIPD
             # ------------------------------
 
             # First download the RIP file
+            needed_dir = os.path.dirname(path)
             needed_file = 'gmi.clim.RIP.geos5.2x25.nc'
-            needed_path = '{}/{}'.format(local_dir, needed_file)
-            needed_s3_path = '{}/{}'.format(s3_root, needed_file)
+            needed_path = os.path.join(local_dir, needed_file)
+            needed_s3_path = s3_root + os.path.join(needed_dir, needed_file)
             cmd_pref = 'if [[ !(-f {}) ]]; then'.format(needed_path)
             cmd = '{} {} {} {}/; fi'.format(
                 cmd_pref, s3_cp_cmd, needed_s3_path, local_dir)
@@ -119,7 +118,7 @@ def s3_download_cmds_from_log(log_files,
 
             # Then create links for the other species
             for species in ['RIPA', 'RIPB', 'RIPD']:
-                cmd = 'ln -s {}/{} {}/gmi.clim.{}.geos.2x2.5.nc'.format(
+                cmd = 'ln -s {}/{} {}/gmi.clim.{}.geos.2x25.nc'.format(
                     local_dir, needed_file, local_dir, species)
                 cmd_list.append(cmd)
 
@@ -128,6 +127,7 @@ def s3_download_cmds_from_log(log_files,
             # ------------------------------
             # No special handling needed
             # ------------------------------
+            s3_path = '{}{}'.format(s3_root, path)
             cmd_pref = 'if [[ !(-f {}) ]]; then'.format(local_path)
             cmd = '{} {} {} {}/; fi'.format(
                 cmd_pref, s3_cp_cmd, s3_path, local_dir)

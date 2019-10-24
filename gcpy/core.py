@@ -1213,7 +1213,8 @@ def extract_pathnames_from_log(filename, prefix_filter=''):
     # Add file paths to the data_list set.
     line = f.readline()
     while(line):
-        if (': Opening' in line) or (': Reading' in line):
+        upcaseline = line.upper()
+        if (': OPENING' in upcaseline) or (': READING' in upcaseline):
             data_path = line.split()[-1]
             # remove common prefix
             if data_path.startswith(prefix_filter):
