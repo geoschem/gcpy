@@ -221,7 +221,7 @@ def calc_delta_lon(lon_edge):
 
     return lon_delta
 
-def csgrid_GMAO(res):
+def csgrid_GMAO(res, offset=-10):
     """
     Return cubedsphere coordinates with GMAO face orientation
 
@@ -234,7 +234,7 @@ def csgrid_GMAO(res):
 
     """
 
-    CS = CSGrid(res, offset=-10)
+    CS = CSGrid(res, offset=offset)
 
     lon = CS.lon_center.transpose(2, 0, 1)
     lon_b = CS.lon_edge.transpose(2, 0, 1)
