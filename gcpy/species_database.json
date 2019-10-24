@@ -2981,6 +2981,66 @@
               "EmMW_g":     55.8500,
               "MolecRatio":      1.0000
           },
+  "MENO3" : 
+          {
+              "Fullname": "Methyl nitrate",
+              "Formula": "CH3ONO2",
+              "Is_Advected": true,
+              "Is_Aero": false,
+              "Is_DryDep": true,
+              "Is_Gas": true,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":     77.0400,
+              "EmMW_g":     77.0400,
+              "MolecRatio":      1.0000
+          },
+  "ETNO3" : 
+          {
+              "Fullname": "Ethyl nitrate",
+              "Formula": "C2H5ONO2",
+              "Is_Advected": true,
+              "Is_Aero": false,
+              "Is_DryDep": true,
+              "Is_Gas": true,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":     91.0700,
+              "EmMW_g":     91.0700,
+              "MolecRatio":      1.0000
+          },
+  "IPRNO3" : 
+          {
+              "Fullname": "Isopropyl nitrate",
+              "Formula": "C3H7ONO2",
+              "Is_Advected": true,
+              "Is_Aero": false,
+              "Is_DryDep": true,
+              "Is_Gas": true,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":     105.0900,
+              "EmMW_g":     105.0900,
+              "MolecRatio":      1.0000
+          },
+  "NPRNO3" : 
+          {
+              "Fullname": "n-propyl nitrate",
+              "Formula": "C3H7ONO2",
+              "Is_Advected": true,
+              "Is_Aero": false,
+              "Is_DryDep": true,
+              "Is_Gas": true,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":     105.0900,
+              "EmMW_g":     105.0900,
+              "MolecRatio":      1.0000
+          },
   "CO2" : 
           {
               "Fullname": "Carbon dioxide",
