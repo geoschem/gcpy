@@ -59,7 +59,11 @@
           "N2O",
           "NHx",
           "NH3",
-          "NH4"
+          "NH4",
+          "MENO3",
+          "ETNO3",
+          "IPRNO3",
+          "NPRNO3"
         ]
     },
   "ROy":
@@ -178,7 +182,8 @@
       "Aldehydes":
         [ "ALD2",
           "CH2O",
-          "HPALD"
+          "HPALD",
+          "MACR"
         ],
       "Peroxides":
         [ "MP"
