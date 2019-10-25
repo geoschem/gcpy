@@ -7,7 +7,8 @@ from . import core
 def s3_download_cmds_from_log(log_files,
                               s3_cp_cmd='aws s3 cp --request-payer=requester',
                               s3_root='s3://gcgrid',
-                              prefix_filter='/home/ubuntu/ExtData'):
+                              prefix_filter='/home/ubuntu/ExtData',
+                              force_download=False):
     '''
     Reads a GEOS-Chem log file and creates a list of bash commands to
     download data from the GEOS-Chem S3 bucket on AWS.  This is
@@ -35,6 +36,12 @@ def s3_download_cmds_from_log(log_files,
             this prefix.
             Default value: /home/ubuntu/ExtData
 
+        force_download : bool
+            Set this flag to True if you wish to always download data
+            from S3, regardless of whether the data is found in the
+            local folder or not.
+            Default value: False
+
     Returns:
     --------
         s3_cmds : list of str
@@ -56,6 +63,12 @@ def s3_download_cmds_from_log(log_files,
     # Define empty lists
     paths = []
     cmd_list = []
+
+    # Suffix for copy commands
+    if force_download:
+        cmd_suf = ''
+    else:
+        cmd_suf = '; fi'
 
     # ==================================================================
     # Parse the log files and return a list of path names
@@ -89,16 +102,24 @@ def s3_download_cmds_from_log(log_files,
             needed_file = 'gmi.clim.PMN.geos5.2x25.nc'
             needed_path = os.path.join(local_dir, needed_file)
             needed_s3_path = s3_root + os.path.join(needed_dir, needed_file)
-            cmd_pref = 'if [[ !(-f {}) ]]; then'.format(needed_path)
-            cmd = '{} {} {} {}/; fi'.format(
-                cmd_pref, s3_cp_cmd, needed_s3_path, local_dir)
+
+            if force_download:
+                cmd_pref = ''
+            else:
+                cmd_pref = 'if [[ !(-f {}) ]]; then '.format(needed_path)
+
+            cmd = '{}{} {} {}/{}'.format(
+                cmd_pref, s3_cp_cmd, needed_s3_path, local_dir, cmd_suf)
             cmd_list.append(cmd)
 
-            # Then create links for the other species
+            # Then make a copy for each listed species
             for species in ['IPMN', 'NPMN']:
-                cmd = 'ln -s {}/{} {}/gmi.clim.{}.geos.2x25.nc'.format(
+                cmd = 'cp {}/{} {}/gmi.clim.{}.geos5.2x25.nc'.format(
                     local_dir, needed_file, local_dir, species)
                 cmd_list.append(cmd)
+
+        elif 'gmi.clim.NPMN.geos5.2x25.nc' in path:
+            pass;
 
         elif 'gmi.clim.RIPA.geos5.2x25.nc' in path:
 
@@ -111,26 +132,40 @@ def s3_download_cmds_from_log(log_files,
             needed_file = 'gmi.clim.RIP.geos5.2x25.nc'
             needed_path = os.path.join(local_dir, needed_file)
             needed_s3_path = s3_root + os.path.join(needed_dir, needed_file)
-            cmd_pref = 'if [[ !(-f {}) ]]; then'.format(needed_path)
-            cmd = '{} {} {} {}/; fi'.format(
-                cmd_pref, s3_cp_cmd, needed_s3_path, local_dir)
+
+            if force_download:
+                cmd_pref = ''
+            else:
+                cmd_pref = 'if [[ !(-f {}) ]]; then '.format(needed_path)
+
+            cmd = '{}{} {} {}/{}'.format(
+                cmd_pref, s3_cp_cmd, needed_s3_path, local_dir, cmd_suf)
             cmd_list.append(cmd)
 
-            # Then create links for the other species
+            # Then make a copy for each listed species
             for species in ['RIPA', 'RIPB', 'RIPD']:
-                cmd = 'ln -s {}/{} {}/gmi.clim.{}.geos.2x25.nc'.format(
+                cmd = 'cp {}/{} {}/gmi.clim.{}.geos5.2x25.nc'.format(
                     local_dir, needed_file, local_dir, species)
                 cmd_list.append(cmd)
+
+        elif 'gmi.clim.RIPB.geos5.2x25.nc' in path:
+            pass
+
+        elif 'gmi.clim.RIPD.geos5.2x25.nc' in path:
+            pass
 
         else:
 
             # ------------------------------
             # No special handling needed
             # ------------------------------
+            if force_download:
+                cmd_pref = ''
+            else:
+                cmd_pref = 'if [[ !(-f {}) ]]; then '.format(local_path)
             s3_path = '{}{}'.format(s3_root, path)
-            cmd_pref = 'if [[ !(-f {}) ]]; then'.format(local_path)
-            cmd = '{} {} {} {}/; fi'.format(
-                cmd_pref, s3_cp_cmd, s3_path, local_dir)
+            cmd = '{}{} {} {}/{}'.format(
+                cmd_pref, s3_cp_cmd, s3_path, local_dir, cmd_suf)
             cmd_list.append(cmd)
 
     return cmd_list
@@ -257,7 +292,7 @@ def s3_script_create(s3_cmds, script_name='aws_cmd_script.sh'):
 
     # Write the individual download commands to the file
     for cmd in s3_cmds:
-        print('{}\n'.format(cmd), file=f)
+        print('{}'.format(cmd), file=f)
 
     # Close the script file and make it executable
     f.close()
