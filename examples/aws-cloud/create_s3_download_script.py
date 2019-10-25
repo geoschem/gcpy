@@ -16,8 +16,18 @@ import gcpy.core as core
 # renamed to /home/ubuntu/ExtData.
 log_files = ['/path/to/GEOSChem/log', '/path/to/HEMCO/log']
 
+
+# Set force_download to False if you would only like to copy those
+# files from S3 that aren't already found on your EBS volume
+# or local disk.  (This can save some time)
+#
+# Set force_download to True if you would like to download files
+# from S3 even if they are already present on your EBS volume.
+# (or local disk).
+force_download = False
+
 # Get a list of commands to download s3 data from the log file
-s3_cmds = aws.s3_download_cmds_from_log(log_files)
+s3_cmds = aws.s3_download_cmds_from_log(log_files, force_download)
 
 # Write a bash script with the proper commands
 script_name = 's3_download_script.sh'
