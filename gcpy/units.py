@@ -1,7 +1,7 @@
-'''
+"""
 Contains methods for converting the units of data.
 Mainly used for model benchmarking purposes.
-'''
+"""
 
 from copy import copy as shallow_copy
 import numpy as np
@@ -9,7 +9,7 @@ import xarray as xr
 
 
 def adjust_units(units):
-    '''
+    """
     Creates a consistent unit string that will be used in the unit
     conversion routines below.
 
@@ -33,24 +33,30 @@ def adjust_units(units):
         kg/m2/s
         >>> print(gcpy.adjust_units('kg m^-2 s^-1))
         kg/m2/s
-    '''
+    """
 
     # Error check arguments
     if not isinstance(units, str):
-        raise TypeError('Units must be of type str!')
+        raise TypeError("Units must be of type str!")
 
     # Strip all spaces in the unit string
-    units_squeezed = units.replace(' ', '')
+    units_squeezed = units.replace(" ", "")
 
-    if units_squeezed in ['kg/m2/s', 'kgm-2s-1', 'kgm^-2s^-1']:
-        unit_desc = 'kg/m2/s'
+    if units_squeezed in ["kg/m2/s", "kgm-2s-1", "kgm^-2s^-1"]:
+        unit_desc = "kg/m2/s"
 
-    elif units_squeezed in ['kgC/m2/s', 'kgCm-2s-1', 'kgCm^-2s^-1',
-                            'kgc/m2/s', 'kgcm-2s-1', 'kgcm^-2s^-1']:
-        unit_desc = 'kgC/m2/s'
+    elif units_squeezed in [
+        "kgC/m2/s",
+        "kgCm-2s-1",
+        "kgCm^-2s^-1",
+        "kgc/m2/s",
+        "kgcm-2s-1",
+        "kgcm^-2s^-1",
+    ]:
+        unit_desc = "kgC/m2/s"
 
-    elif units_squeezed in [ 'molec/cm2/s', 'moleccm-2s-1', 'moleccm^-2s^-1']:
-        unit_desc = 'molec/cm2/s'
+    elif units_squeezed in ["molec/cm2/s", "moleccm-2s-1", "moleccm^-2s^-1"]:
+        unit_desc = "molec/cm2/s"
 
     else:
         unit_desc = units_squeezed
@@ -59,7 +65,7 @@ def adjust_units(units):
 
 
 def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
-    '''
+    """
     Converts a data array from kg to one of several types of target units.
 
     Args:
@@ -85,51 +91,58 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
 
         This is an internal routine, which is meant to be called
         directly from convert_units.
-    '''
+    """
 
     # Convert to target unit
-    if target_units == 'Tg':
+    if target_units == "Tg":
         data = data_kg * 1e-9
 
-    elif target_units == 'Tg C':
+    elif target_units == "Tg C":
         data = data_kg * kg_to_kgC * 1.0e-9
 
-    elif target_units == 'Gg':
+    elif target_units == "Gg":
         data = data_kg * 1e-6
 
-    elif target_units == 'Gg C':
+    elif target_units == "Gg C":
         data = data_kg * kg_to_kgC * 1.0e-6
 
-    elif target_units == 'Mg':
+    elif target_units == "Mg":
         data = data_kg * 1e-3
 
-    elif target_units == 'Mg C':
+    elif target_units == "Mg C":
         data = data_kg * kg_to_kgC * 1.0e-3
 
-    elif target_unit == 'kg':
+    elif target_unit == "kg":
         data = data_kg
 
-    elif target_unit == 'kg C':
+    elif target_unit == "kg C":
         data = data_kg * kg_to_kgC
 
-    elif target_unit == 'g':
+    elif target_unit == "g":
         data = data_kg * 1e3
 
-    elif target_unit == 'g C':
+    elif target_unit == "g C":
         data = data_kg * kg_to_kgC * 1.0e3
 
     else:
-        msg = 'Target units {} are not yet supported! {}'.format(target_units)
+        msg = "Target units {} are not yet supported! {}".format(target_units)
         raise ValueError(msg)
 
     # Return converted data
     return data
 
 
-def convert_units(dr, species_name, species_properties, target_units,
-                  interval=[2678400.0], area_m2=None,
-                  delta_p=None, box_height=None):
-    '''
+def convert_units(
+    dr,
+    species_name,
+    species_properties,
+    target_units,
+    interval=[2678400.0],
+    area_m2=None,
+    delta_p=None,
+    box_height=None,
+):
+    """
     Converts data stored in an xarray DataArray object from its native
     units to a target unit.
 
@@ -185,51 +198,63 @@ def convert_units(dr, species_name, species_properties, target_units,
         >>> dr_new = convert_units(dr, "CO", properties.get("CO"),
                      "Tg", interval=86400.0, ds["AREA"])
 
-    '''
+    """
 
     # Get species molecular weight information
-    mw_g = species_properties.get('MW_g')
-    emitted_mw_g = species_properties.get('EmMW_g')
-    moles_C_per_mole_species = species_properties.get('MolecRatio')
+    mw_g = species_properties.get("MW_g")
+    emitted_mw_g = species_properties.get("EmMW_g")
+    moles_C_per_mole_species = species_properties.get("MolecRatio")
 
     # ==============================
     # Compute conversion factors
     # ==============================
 
     # Physical constants
-    Avo = 6.022140857e+23  # molec/mol
-    mw_air = 28.97         # g/mole dry air
-    g0 = 9.80665           # m/s2
+    Avo = 6.022140857e23  # molec/mol
+    mw_air = 28.97  # g/mole dry air
+    g0 = 9.80665  # m/s2
 
     # Get a consistent value for the units string
     # (ignoring minor differences in formatting)
     units = adjust_units(dr.units)
 
     # Error checks
-    if units == 'molmol-1dry' and area_m2 is None:
-        raise ValueError('Conversion from {} to () for {} requires area_m2 as input'.format(unit,target_unit,species_name))
-    if units == 'molmol-1dry' and delta_p is None:
-        raise ValueError('Conversion from {} to () for {} requires delta_p as input'.format(unit,target_unit,species_name))
-    if 'g' in target_units and mw_g is None:
-        raise ValueError('Conversion from () to {} for {} requires MW_g definition in species_database.json'.format(unit,target_unit,species_name))
-    
+    if units == "molmol-1dry" and area_m2 is None:
+        raise ValueError(
+            "Conversion from {} to () for {} requires area_m2 as input".format(
+                unit, target_unit, species_name
+            )
+        )
+    if units == "molmol-1dry" and delta_p is None:
+        raise ValueError(
+            "Conversion from {} to () for {} requires delta_p as input".format(
+                unit, target_unit, species_name
+            )
+        )
+    if "g" in target_units and mw_g is None:
+        raise ValueError(
+            "Conversion from () to {} for {} requires MW_g definition in species_database.json".format(
+                unit, target_unit, species_name
+            )
+        )
+
     # Conversion factor for kg species to kg C
     kg_to_kgC = (emitted_mw_g * moles_C_per_mole_species) / mw_g
-         
+
     # Mass of dry air in kg (required when converting from v/v)
-    if units == 'molmol-1dry':
+    if units == "molmol-1dry":
         air_mass = delta_p * 100.0 / g0 * area_m2
 
     # Conversion factor for v/v to kg
     # v/v * kg dry air / g/mol dry air * g/mol species = kg species
-    if units == 'molmol-1dry' and 'g' in target_units:
-        vv_to_kg = air_mass / mw_air * mw_g  
-        
+    if units == "molmol-1dry" and "g" in target_units:
+        vv_to_kg = air_mass / mw_air * mw_g
+
     # Conversion factor for v/v to molec/cm3
     # v/v * kg dry air * mol/g dry air * molec/mol dry air /
-    #  (area_m2 * box_height ) * 1m3/10^6cm3 = molec/cm3 
-    if units == 'molmol-1dry' and 'molec' in target_units:
-        vv_to_MND = air_mass / mw_air * Avo / ( area_m2 * box_height) / 1e6
+    #  (area_m2 * box_height ) * 1m3/10^6cm3 = molec/cm3
+    if units == "molmol-1dry" and "molec" in target_units:
+        vv_to_MND = air_mass / mw_air * Avo / (area_m2 * box_height) / 1e6
 
     # ==============================
     # Compute target units
@@ -240,48 +265,50 @@ def convert_units(dr, species_name, species_properties, target_units,
     seconds = np.zeros(dr.shape)
     if len(dr.shape) == 3:
         for t in range(dr.shape[0]):
-            seconds[t,:,:] = interval[t]
+            seconds[t, :, :] = interval[t]
     elif len(dr.shape) == 4:
         for t in range(dr.shape[0]):
-            seconds[t,:,:,:] = interval[t]
+            seconds[t, :, :, :] = interval[t]
 
-    if units == 'kg/m2/s':
+    if units == "kg/m2/s":
         # Note: multiplying data arrays will broadcast dimensions properly
         data_kg = dr * area_m2
         data_kg = data_kg.values * seconds
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
-    elif units == 'kgC/m2/s':
+    elif units == "kgC/m2/s":
         # Note: multiplying data arrays will broadcast dimensions properly
         data_kg = dr * area / kg_to_kgC
         data_kg = data_kg.values * seconds
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
-    elif units == 'kg':
+    elif units == "kg":
         data_kg = dr.values
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
-    elif units == 'kgC':
+    elif units == "kgC":
         data_kg = dr.values / kg_to_kgC
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
-#    elif units == 'molec/cm2/s':
-#        # Implement later
+    #    elif units == 'molec/cm2/s':
+    #        # Implement later
 
-#    elif units == 'atomsC/cm2/s':
-#         implement later
+    #    elif units == 'atomsC/cm2/s':
+    #         implement later
 
-    elif units == 'molmol-1dry':
+    elif units == "molmol-1dry":
 
-        if 'g' in target_units:
+        if "g" in target_units:
             data_kg = dr.values * vv_to_kg
             data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
-        elif 'molec' in target_units:
+        elif "molec" in target_units:
             data = dr.values * vv_to_MND
 
     else:
-        raise ValueError('Units ({}) in variable {} are not supported'.format(units, species_name))
+        raise ValueError(
+            "Units ({}) in variable {} are not supported".format(units, species_name)
+        )
 
     # ==============================
     # Return result
@@ -290,10 +317,10 @@ def convert_units(dr, species_name, species_properties, target_units,
     # Create a new DataArray.  This will be exactly the same as the old
     # DataArray, except that the data will have been converted to the
     # target_units, and the units string will have been adjusted accordingly.
-    dr_new = xr.DataArray(data, name=dr.name, coords=dr.coords,
-                          dims=dr.dims, attrs=dr.attrs)
-    dr_new.attrs['units'] = target_units
-    
+    dr_new = xr.DataArray(
+        data, name=dr.name, coords=dr.coords, dims=dr.dims, attrs=dr.attrs
+    )
+    dr_new.attrs["units"] = target_units
+
     # Return to calling routine
     return dr_new
-
