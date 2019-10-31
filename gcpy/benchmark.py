@@ -1915,7 +1915,7 @@ def compare_zonal_mean(
             if log_color_scale:
                 cb.formatter = mticker.LogFormatter(base=10)
             else:
-                if (vmax - vmin) < 0.001 or (vmax - vmin) > 1000:
+                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                     cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
@@ -1994,7 +1994,7 @@ def compare_zonal_mean(
             if log_color_scale:
                 cb.formatter = mticker.LogFormatter(base=10)
             else:
-                if (vmax - vmin) < 0.001 or (vmax - vmin) > 1000:
+                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                     cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
@@ -2079,7 +2079,7 @@ def compare_zonal_mean(
             else:
                 cb.set_ticklabels(["Zero throughout domain"])
         else:
-            if (vmax - vmin) < 0.001 or (vmax - vmin) > 1000:
+            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
@@ -2145,7 +2145,7 @@ def compare_zonal_mean(
             else:
                 cb.set_ticklabels(["Zero throughout domain"])
         else:
-            if (vmax - vmin) < 0.001 or (vmax - vmin) > 1000:
+            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
