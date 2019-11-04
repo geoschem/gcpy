@@ -1453,11 +1453,18 @@ def compare_zonal_mean(
     devdata["lev"].attrs["long_name"] = "level pressure"
 
     # ==================================================================
-    # Reduce pressure range if reduced range passed as input
+    # Reduce pressure range if reduced range passed as input. Indices
+    # must be flipped if flipping vertical axis.
     # ==================================================================
 
-    refdata = refdata.isel(lev=pmid_ind)
-    devdata = devdata.isel(lev=pmid_ind)
+    pmid_ind_ref = pmid_ind
+    pmid_ind_dev = pmid_ind
+    pmid_ind_flipped = 72 - pmid_ind[::-1] - 1
+    if flip_ref: pmid_ind_ref = pmid_ind_flipped
+    if flip_dev: pmid_ind_dev = pmid_ind_flipped
+
+    refdata = refdata.isel(lev=pmid_ind_ref)
+    devdata = devdata.isel(lev=pmid_ind_dev)
 
     # ==================================================================
     # Determine input grid resolutions and types
