@@ -1,8 +1,7 @@
 '''Unit tests for methods in units.py'''
 
-import pytest
-import numpy as np
-from gcpy.units import *
+
+from gcpy.units import adjust_units
 
 def test_adjust_units():
 

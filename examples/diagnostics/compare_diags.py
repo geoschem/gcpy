@@ -138,7 +138,7 @@ def compare_data(refdata, devdata):
                                            refstr.ljust(20),
                                            devstr.ljust(20),
                                            'Dev-Ref'))
-         for v in varlist_level:
+        for v in varlist_level:
             refsum = np.sum(refdata[v].values)
             devsum = np.sum(devdata[v].values)
             diff = devsum - refsum

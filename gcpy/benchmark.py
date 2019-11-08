@@ -12,14 +12,11 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from cartopy.mpl.geoaxes import GeoAxes  # for assertion
-from cartopy.util import add_cyclic_point
 import matplotlib as mpl
-import matplotlib.colors as mcolors
 import matplotlib.ticker as mticker
 from matplotlib.backends.backend_pdf import PdfPages
-from matplotlib.colors import ListedColormap
 from PyPDF2 import PdfFileWriter, PdfFileReader
-from .plot import WhGrYlRd, add_latlon_ticks
+from .plot import WhGrYlRd
 from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L
 from .grid.gc_vertical import GEOS_72L_grid
@@ -478,7 +475,7 @@ def compare_single_level(
         # by area below. GEOS-Chem Classic output files include area and so
         # do not need to be passed.
         exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
-        if regridany and ((units == "kg" or units == "kgC") or normalize_by_area):
+        if regridany and (units in ('kg', 'kgC') or normalize_by_area):
             if not any(s in varname for s in exclude_list):
                 if (
                     "AREAM2" in refdata.data_vars.keys()
@@ -4401,7 +4398,7 @@ def make_benchmark_jvalue_plots(
                             print(file=f)
                             f.close()
 
-                if "zonalmean" in plots or zm in plots:
+                if "zonalmean" in plots or "zm" in plots:
                     if "zonalmean" in filename or "zm" in filename:
                         with open(filename, "a+") as f:
                             print("* J-Values: ", file=f, end="")
@@ -4636,7 +4633,7 @@ def make_benchmark_aod_plots(
             newname = newvars[v]
             newvarlist.append(newname)
         else:
-            raise ValueError("Could not find a display name for".format(v))
+            raise ValueError("Could not find a display name for {}".format(v))
 
         # Don't clobber existing DataArray and Dataset attributes
         with xr.set_options(keep_attrs=True):

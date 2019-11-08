@@ -1,7 +1,6 @@
 '''Unit tests for methods in core.py.'''
 
-import pytest
-from gcpy.core import *
+from gcpy.core import filter_names
 
 def test_filter_names():
     '''Unit test for the filter_names routine.'''

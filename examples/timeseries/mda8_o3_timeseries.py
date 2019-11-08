@@ -16,8 +16,7 @@ plt.style.use(['seaborn-talk', 'seaborn-ticks'])
 
 import pandas as pd
 import xarray as xr
-import numpy as np
-from os.path import join
+
 
 # Read hourly data
 InFile = 'GEOSChem.Hourly_SfcO3.2017.nc'

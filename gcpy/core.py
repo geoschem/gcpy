@@ -187,9 +187,9 @@ def open_mfdataset(
         _opener = xr.open_mfdataset
     else:
         raise ValueError(
-            "Found unknown file extension ({}); please "
+            "Found unknown file extension ({}); please ".format(file_extension)
             + "pass a BPCH or netCDF file with extension "
-            + '"bpch" or "nc" or "nc4"'.format(file_extension)
+            + '"bpch" or "nc" or "nc4"'
         )
 
     # Get a list of variables that GCPy should not read.  These are
