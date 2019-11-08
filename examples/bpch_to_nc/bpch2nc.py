@@ -5,8 +5,6 @@ from an old GEOS-Chem binary punch ("bpch") file.
 '''
 
 # Imports
-import os
-from os.path import join
 import gcpy
 import xarray as xr
 import xbpch as xb

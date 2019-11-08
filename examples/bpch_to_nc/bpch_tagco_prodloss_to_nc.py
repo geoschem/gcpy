@@ -6,7 +6,6 @@ the ND65 bpch prod/loss diagnostic.
 '''
 
 # Imports
-import os
 from os.path import join
 import gcpy
 import xarray as xr

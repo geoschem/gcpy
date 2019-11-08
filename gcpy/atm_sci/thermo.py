@@ -57,14 +57,14 @@ def airdens(pressure, temperature=None):
         #temperature = 273.15
     temperature = asarray(temperature)
 
-    airdens = 2.69e10 * (273.15 / temperature) * (pressure / 1013.25)
-    airdens = asarray(airdens)
+    air_density = 2.69e10 * (273.15 / temperature) * (pressure / 1013.25)
+    air_density = asarray(air_density)
 
     # Mask out densities where temperature and pressure were invalid (< 0)
     mask = (temperature <= 0) | (pressure <= 0)
-    airdens[mask] = np.nan
+    air_density[mask] = np.nan
 
-    return airdens
+    return air_density
 
 
 def e_h2o(temperature, ice_ref=False, minval=-1e-3):
@@ -131,10 +131,10 @@ def e_h2o(temperature, ice_ref=False, minval=-1e-3):
         b = 2937.4
         c = 4.9283
 
-    e_h2o = np.power(10., a - (b / temperature)) * np.power(temperature, -c)
-    e_h2o[temperate < minval] = np.nan
+    wvp_h2o = np.power(10., a - (b / temperature)) * np.power(temperature, -c)
+    wvp_h2o[temperature < minval] = np.nan
 
-    return e_h2o
+    return wvp_h2o
 
 
 def hystat(alt, temp, psurf=1013.25):

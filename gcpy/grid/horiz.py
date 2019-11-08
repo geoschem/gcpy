@@ -2,7 +2,6 @@
 
 import numpy as np
 from numpy import asarray
-from .. constants import R_EARTH
 from itertools import product
 
 INV_SQRT_3 = 1.0 / np.sqrt(3.0)

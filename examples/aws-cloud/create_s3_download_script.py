@@ -9,7 +9,6 @@ This can be useful in creating a new AMI.
 
 # Imports
 import gcpy.aws as aws
-import gcpy.core as core
 
 # Specify a log file from a GEOS-Chem simulation that was done
 # elsewhere.  The file paths in this log file have all been

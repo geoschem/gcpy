@@ -1,7 +1,6 @@
 '''
 Module for obtaining version information.
 '''
-import os
 import platform
 import sys
 import json

@@ -1,4 +1,4 @@
-""" Standard atmosphere functions """
+1;95;0c1""" Standard atmosphere functions """
 
 import numpy as np
 from numpy import asarray
@@ -80,20 +80,20 @@ def isa_from_alt(z):
             # Update the pressure to the new altitude
             if np.abs(alpha_temp) > 0:
                 p_base = p_base*np.power(__T_REF_VEC[i_lo+1]/__T_REF_VEC[i_lo],
-                                    __ISA_MGR/(-1.0*alpha_temp));
+                                    __ISA_MGR/(-1.0*alpha_temp))
             else:
                 p_base = p_base * np.exp(__ISA_MGR*(zref_m[i_lo]-zref_m[i_lo+1])
-                                        /__T_REF_VEC[i_lo]);
+                                        /__T_REF_VEC[i_lo])
 
             i_lo += 1
             alpha_temp = lapse_m[i_lo]
 
         if np.abs(alpha_temp) > 0:
             p_temp = p_base*np.power(t_curr/__T_REF_VEC[i_lo],
-                                        __ISA_MGR/(-1.0*alpha_temp));
+                                        __ISA_MGR/(-1.0*alpha_temp))
         else:
             p_temp = p_base*np.exp(__ISA_MGR*(zref_m[i_lo]-z_curr)
-                                            /__T_REF_VEC[i_lo]);
+                                            /__T_REF_VEC[i_lo])
         pvec[i_point] = p_temp
 
     pressure = pvec.reshape(temperature.shape)
@@ -174,7 +174,7 @@ def isa_setup():
     gas_frac = np.array(gas_frac)
 
     # Normalize, to be 100% safe
-    gas_frac = gas_frac/np.sum(gas_frac);
+    gas_frac = gas_frac/np.sum(gas_frac)
 
     global __ISA_MGR
     __ISA_MGR = np.sum(gas_frac * MW_gas)*1.0e-3*G/R_GAS_UNIV

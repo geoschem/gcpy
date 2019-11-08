@@ -2,12 +2,6 @@
 
 from __future__ import print_function
 
-import pytest
-import numpy as np
-import pandas as pd
-
-from xarray.testing import assert_equal
-
 from gcpy.time import *
 
 

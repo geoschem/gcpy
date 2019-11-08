@@ -3,7 +3,7 @@ Contains methods for converting the units of data.
 Mainly used for model benchmarking purposes.
 """
 
-from copy import copy as shallow_copy
+
 import numpy as np
 import xarray as xr
 
@@ -112,20 +112,20 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
     elif target_units == "Mg C":
         data = data_kg * kg_to_kgC * 1.0e-3
 
-    elif target_unit == "kg":
+    elif target_units == "kg":
         data = data_kg
 
-    elif target_unit == "kg C":
+    elif target_units == "kg C":
         data = data_kg * kg_to_kgC
 
-    elif target_unit == "g":
+    elif target_units == "g":
         data = data_kg * 1e3
 
-    elif target_unit == "g C":
+    elif target_units == "g C":
         data = data_kg * kg_to_kgC * 1.0e3
 
     else:
-        msg = "Target units {} are not yet supported! {}".format(target_units)
+        msg = "Target units {} are not yet supported!".format(target_units)
         raise ValueError(msg)
 
     # Return converted data
@@ -221,20 +221,20 @@ def convert_units(
     # Error checks
     if units == "molmol-1dry" and area_m2 is None:
         raise ValueError(
-            "Conversion from {} to () for {} requires area_m2 as input".format(
-                unit, target_unit, species_name
+            "Conversion from {} to {} for {} requires area_m2 as input".format(
+                units, target_units, species_name
             )
         )
     if units == "molmol-1dry" and delta_p is None:
         raise ValueError(
-            "Conversion from {} to () for {} requires delta_p as input".format(
-                unit, target_unit, species_name
+            "Conversion from {} to {} for {} requires delta_p as input".format(
+                units, target_units, species_name
             )
         )
     if "g" in target_units and mw_g is None:
         raise ValueError(
-            "Conversion from () to {} for {} requires MW_g definition in species_database.json".format(
-                unit, target_unit, species_name
+            "Conversion from {} to {} for {} requires MW_g definition in species_database.json".format(
+                units, target_units, species_name
             )
         )
 
@@ -278,7 +278,7 @@ def convert_units(
 
     elif units == "kgC/m2/s":
         # Note: multiplying data arrays will broadcast dimensions properly
-        data_kg = dr * area / kg_to_kgC
+        data_kg = dr * area_m2 / kg_to_kgC
         data_kg = data_kg.values * seconds
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
