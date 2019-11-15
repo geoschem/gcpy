@@ -2,7 +2,7 @@
 '''
 Example script that can compare diagnostics from two different netCDF
 collections.  Similar to compute_diagnostics.ipynb, but can be used
-without having to open a Jupyter notebook.  
+without having to open a Jupyter notebook.
 '''
 
 # Imports
@@ -54,7 +54,7 @@ pdfname_zonal = join(plotsdir, 'zonal_mean_level_comparison.pdf')
 
 # Plot options
 create_single_level_plot = True
-create_zonal_mean_plot   = True    
+create_zonal_mean_plot   = True
 print_totals_and_diffs   = False
 
 # Specify the level that you wish to plot (starting from 0)
@@ -75,7 +75,7 @@ restrict_vars = None
 def compare_data(refdata, devdata):
     '''
     Compares data frwom two different xarray datasets.
-    
+
     Args:
     -----
         refdata : xarray Dataset
@@ -106,7 +106,7 @@ def compare_data(refdata, devdata):
     if restrict_vars is not None:
         varlist_level = [v for v in varlist_level if restrict_vars in v]
         varlist_zonal = [v for v in varlist_zonal if restrict_vars in v]
-    
+
     # ==================================================================
     # Generate the single level comparison plot
     # ==================================================================
@@ -115,11 +115,11 @@ def compare_data(refdata, devdata):
         # Create the plot
         bmk.compare_single_level(refdata, refstr, devdata, devstr,
                                  ilev=level_to_plot,
-                                 varlist=varlist_level, 
+                                 varlist=varlist_level,
                                  pdfname=pdfname_level,
                                  weightsdir=weightsdir,
                                  verbose=verbose)
-        
+
     # ==================================================================
     # Generate the zonal mean comparison plot
     # ==================================================================
@@ -129,7 +129,7 @@ def compare_data(refdata, devdata):
                                pdfname=pdfname_zonal,
                                weightsdir=weightsdir,
                                verbose=verbose)
-        
+
     # ==================================================================
     # Print totals for each quantity
     # ==================================================================
@@ -138,13 +138,13 @@ def compare_data(refdata, devdata):
                                            refstr.ljust(20),
                                            devstr.ljust(20),
                                            'Dev-Ref'))
-         for v in varlist_level:
+        for v in varlist_level:
             refsum = np.sum(refdata[v].values)
             devsum = np.sum(devdata[v].values)
             diff = devsum - refsum
-            print('{} : {} | {} | {} '.format(v.ljust(20), 
+            print('{} : {} | {} | {} '.format(v.ljust(20),
                                               str(refsum).ljust(22),
-                                              str(devsum).ljust(22), 
+                                              str(devsum).ljust(22),
                                               diff))
 
 
@@ -169,6 +169,6 @@ def main():
     # are seen by all functions above
     compare_data(refdata, devdata)
 
-    
+
 if __name__ == "__main__":
     main()
