@@ -41,7 +41,7 @@ stack, including
 - [pypdf2](https://pythonhosted.org/PyPDF2/)
 
 To create an environment for working with **GCPy**, we recommend using the [Anaconda Python distribution](https://www.continuum.io/downloads) or curating your own *virtualenv* or *conda* environment. Please see
-```gcpy/environment/environment.yml``` for an example.
+```gcpy/docs/environment.yml``` for an example.
 
 
 ## Installation
