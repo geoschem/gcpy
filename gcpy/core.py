@@ -1305,13 +1305,6 @@ def extract_pathnames_from_log(filename, prefix_filter=""):
     data_list = sorted(list(data_list))
     return data_list
 
-
-###############################################################################
-# The following routines are deprecated, place here for now.
-# These will be removed in a future version
-###############################################################################
-
-
 def get_gcc_filepath(outputdir, collection, day, time):
     if collection == "Emissions":
         filepath = os.path.join(
