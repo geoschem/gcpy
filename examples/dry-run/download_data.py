@@ -247,6 +247,7 @@ def write_unique_paths(paths, unique_log):
             for comment in paths["comments"]:
                 print(comment, file=f)
         f.close()
+        print("Log with unique file paths written to: {}".format(unique_log))
     except FileNotFoundError:
         raise FileNotFoundError("Could not write {}".format(unique_log))
 
@@ -460,15 +461,8 @@ def download_the_data(args):
     Args:
     -----
         args : dict
-            args["dryrun_log"]: Log file with dry-run output.
-            args["from_aws"]: Download from AWS S3? (True/False)
+            Output of runction parse_args.
     """
-
-    # Print a message
-    if args["from_aws"]:
-        print("Downloading data from AWS")
-    else:
-        print("Downloading data from ComputeCanada")
 
     # Get information about the run
     run_info = get_run_info()
@@ -481,6 +475,16 @@ def download_the_data(args):
     # Write a list of unique file paths
     write_unique_paths(paths,
                        args["dryrun_log"] + ".unique")
+
+    # Exit without downloading if skip-download lag was specified
+    if args["skip_download"]:
+        return
+
+    # Print a message
+    if args["from_aws"]:
+        print("Downloading data from AWS")
+    else:
+        print("Downloading data from ComputeCanada")
 
     # Create script to download missing files from AWS S3
     create_download_script(paths, args["from_aws"])
@@ -513,22 +517,29 @@ def parse_args():
         args : dict
             args["dryrun_log"]: Log file with dry-run output.
             args["from_aws"]: Download from AWS S3? (True/False)
+            args["skip-download"]: Skip downloading and only write
+               out the log with unique file names.
     """
     dryrun_log = ""
     from_aws = False
+    skip_download = False
 
     for i in range(1, len(sys.argv)):
         if "AWS" in sys.argv[i].upper():
             from_aws = True
         elif "CC" in sys.argv[i].upper():
             from_aws = False
+        elif "SKIP" in sys.argv[i].upper():
+            skip_download = True
         else:
             dryrun_log = sys.argv[i]
 
     if len(dryrun_log) == 0:
         raise ValueError("Need to specify the log file with dryrun output!")
 
-    return {"dryrun_log": dryrun_log, "from_aws": from_aws}
+    return {"dryrun_log": dryrun_log,
+            "from_aws": from_aws,
+            "skip_download" : skip_download}
 
 
 def main():
@@ -538,8 +549,9 @@ def main():
 
     Calling sequence:
     -----------------
-        ./download_data.py log.dryrun -aws  # from AWS
-        ./download_data.py log.dryrun -cc   # from ComputeCanada
+        ./download_data.py log -aws            # from AWS
+        ./download_data.py log -cc             # from ComputeCanada
+        ./download_data.py log -skip-download  # Print unique log & exit
     """
     download_the_data(parse_args())
 
