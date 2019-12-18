@@ -961,6 +961,7 @@ def compare_single_level(
         merge = PdfFileMerger()
         for i in range(n_var):
             merge.append(str(i) + "BENCHMARKFIGCREATION.pdf")
+            os.remove(str(i) + "BENCHMARKFIGCREATION.pdf")
         merge.write(pdfname)
 
 def compare_zonal_mean(
