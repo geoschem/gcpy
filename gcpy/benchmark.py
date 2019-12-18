@@ -15,13 +15,15 @@ from cartopy.mpl.geoaxes import GeoAxes  # for assertion
 import matplotlib as mpl
 import matplotlib.ticker as mticker
 from matplotlib.backends.backend_pdf import PdfPages
-from PyPDF2 import PdfFileWriter, PdfFileReader
+from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd
 from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .units import convert_units
+from joblib import Parallel, delayed, cpu_count
+
 
 # JSON files
 aod_spc = "aod_species.json"
@@ -166,7 +168,7 @@ def compare_single_level(
 
     # TODO: refactor this function and zonal mean plot function.
     # There is a lot of overlap and repeated code that could be abstracted.
-
+    print('here')
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
@@ -353,13 +355,15 @@ def compare_single_level(
     if savepdf:
         print("Creating {} for {} variables".format(pdfname, n_var))
         pdf = PdfPages(pdfname)
+        pdf.close()
 
     # =================================================================
     # Loop over variables
     # =================================================================
-
+    
     print_units_warning = True
-    for ivar in range(n_var):
+    
+    def createfig(ivar):
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
@@ -593,6 +597,54 @@ def compare_single_level(
         dev_is_all_nan = np.isnan(ds_dev.values).all()
 
         # ==============================================================
+        # Calculate absolute difference
+        # ==============================================================
+        if cmpgridtype == "ll":
+            absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
+        else:
+            absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
+
+        # Test if the abs. diff. is zero everywhere or NaN everywhere
+        absdiff_is_all_zero = not np.any(absdiff)
+        absdiff_is_all_nan = np.isnan(absdiff).all()
+
+        # Min and max of abs. diff, excluding NaNs
+        diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])
+
+        # For cubed-sphere, take special care to avoid a spurious
+        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
+        if cmpgridtype == "cs":
+            absdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, absdiff)
+
+        # ==============================================================
+        # Calculate fractional difference, set divides by zero to NaN
+        # ==============================================================
+
+        if cmpgridtype == "ll":
+            fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(
+                ds_ref_cmp
+            )
+            print(np.max(fracdiff))
+        else:
+            fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
+
+        # Replace Infinity values with NaN
+        fracdiff = np.where(fracdiff == np.inf, np.nan, fracdiff)
+
+        # Test if the frac. diff. is zero everywhere or NaN everywhere
+        fracdiff_is_all_zero = absdiff_is_all_zero or (not np.any(fracdiff) and not ref_is_all_zero)
+        fracdiff_is_all_nan = np.isnan(fracdiff).all() or ref_is_all_zero
+
+
+        # Absolute max value of fracdiff, excluding NaNs
+        fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
+
+        # For cubed-sphere, take special care to avoid a spurious
+        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
+        if cmpgridtype == "cs":
+            fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, fracdiff)
+        
+        # ==============================================================
         # Create 3x2 figure
         # ==============================================================
 
@@ -655,560 +707,224 @@ def compare_single_level(
             cmap_toprow_gray = copy.copy(WhGrYlRd)
         cmap_toprow_gray.set_bad(color="gray")
 
+        if refgridtype == "ll":
+            if ref_is_all_nan:
+                ref_cmap = cmap_toprow_gray
+            else:
+                ref_cmap = cmap_toprow_nongray
+
+            if dev_is_all_nan:
+                dev_cmap = cmap_toprow_gray
+            else:
+                dev_cmap = cmap_toprow_nongray
+                
         # Colormaps for 2nd row (Abs. Diff.) and 3rd row (Frac. Diff,)
         cmap_nongray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray.set_bad(color="gray")
 
         # ==============================================================
-        # Subplot (0,0): Ref, plotted on ref input grid
+        # Set plot bounds for non cubed-sphere plotting
         # ==============================================================
 
-        # Set local flags to denote if Ref is zero or NaN everywhere
-        # (these will eventually be passed to a plotting routine,
-        # once we abstract the plotting code below).
-        all_zero = ref_is_all_zero
-        all_undefined = ref_is_all_nan
-
-        # Set min and max of the data range.
-        # NOTE: If Dev contains all NaN's, then just use the min and
-        # max of Ref to set the data range, even if match_cbar=True.
-        if all_zero or all_undefined:
-            [vmin, vmax] = [vmin_ref, vmax_ref]
-        elif use_cmap_RdBu:
-            if match_cbar and (not dev_is_all_nan):
-                absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
-            else:
-                absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if match_cbar and (not dev_is_all_nan):
-                [vmin, vmax] = [vmin_abs, vmax_abs]
-            else:
-                [vmin, vmax] = [vmin_ref, vmax_ref]
-        if verbose:
-            print("Subplot (0,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(
-            vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
-        )
-
-        # Plot data for either lat-lon or cubed-sphere grids.
-        ax0.coastlines()
+        ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
+        dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
+        cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
+        
+        # ==============================================================
+        # Set titles for plots
+        # ==============================================================
+        
         if refgridtype == "ll":
-            # Set top title for lat-lon plot
-            ax0.set_title("{} (Ref){}\n{}".format(refstr, subtitle_extra, refres))
-
-            # If all of the data is NaN, then plot as gray
-            if ref_is_all_nan:
-                cmap = cmap_toprow_gray
-            else:
-                cmap = cmap_toprow_nongray
-
-            # Plot the lon/lat data
-            plot0 = ax0.imshow(
-                ds_ref,
-                extent=(refminlon, refmaxlon, refminlat, refmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap,
-                norm=norm,
-            )
+            ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
+            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
         else:
-            # Set top title for cubed-sphere plot
-            ax0.set_title("{} (Ref){}\nc{}".format(refstr, subtitle_extra, refres))
-
-            # Mask the reference data
-            masked_refdata = np.ma.masked_where(
-                np.abs(refgrid["lon"] - 180) < 2, ds_ref_reshaped
-            )
-
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot0 = ax0.pcolormesh(
-                    refgrid["lon_b"][i, :, :],
-                    refgrid["lat_b"][i, :, :],
-                    masked_refdata[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_toprow_nongray,
-                    norm=norm,
-                )
-
-        # Define the colorbar for the plot.  If Ref is zero everywhere
-        # or NaN everywhere, set a single tick in the middle of the
-        # colorbar with the appopriate label.
-        cb = plt.colorbar(plot0, ax=ax0, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
-            else:
-                cb.set_ticks([0.5])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
-            else:
-                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units_ref)
-
-        # ==============================================================
-        # Subplot (0,1): Dev, plotted on dev input grid
-        # ==============================================================
-
-        # Set local flags to denote if Dev is zero or NaN everywhere
-        # (these will eventually be passed to a plotting routine,
-        # once we abstract the plotting code below).
-        all_zero = dev_is_all_zero
-        all_undefined = dev_is_all_nan
-
-        # Set min and max of the data range.
-        # NOTE: If Ref contains all NaN's, then just use the min and
-        # max of Dev to set the data range, even if match_cbar=True.
-        if all_zero or all_undefined:
-            [vmin, vmax] = [vmin_dev, vmax_dev]
-        elif use_cmap_RdBu:
-            if match_cbar and (not ref_is_all_nan):
-                absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
-            else:
-                absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if match_cbar and (not ref_is_all_nan):
-                [vmin, vmax] = [vmin_abs, vmax_abs]
-            else:
-                [vmin, vmax] = [vmin_dev, vmax_dev]
-        if verbose:
-            print("Subplot (0,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(
-            vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
-        )
-
-        # Plot for either lat-lon or cubed-sphere
-        ax1.coastlines()
-        if devgridtype == "ll":
-            # Set top title for lat-lon plot
-            ax1.set_title("{} (Dev){}\n{}".format(devstr, subtitle_extra, devres))
-
-            # If all of the data is NaN, then plot as gray
-            if dev_is_all_nan:
-                cmap = cmap_toprow_gray
-            else:
-                cmap = cmap_toprow_nongray
-
-            # Plot the data!
-            plot1 = ax1.imshow(
-                ds_dev,
-                extent=(devminlon, devmaxlon, devminlat, devmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap,
-                norm=norm,
-            )
-        else:
-            # Set top title for cubed-sphere plot
-            ax1.set_title("{} (Dev){}\nc{}".format(devstr, subtitle_extra, devres))
-
-            # Mask the data
-            masked_devdata = np.ma.masked_where(
-                np.abs(devgrid["lon"] - 180) < 2, ds_dev_reshaped
-            )
-
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot1 = ax1.pcolormesh(
-                    devgrid["lon_b"][i, :, :],
-                    devgrid["lat_b"][i, :, :],
-                    masked_devdata[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_toprow_nongray,
-                    norm=norm,
-                )
-
-        # Define the colorbar for log or linear color scales
-        # If Dev is zero or NaN everywhere, set a single tick
-        # in the middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot1, ax=ax1, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
-            else:
-                cb.set_ticks([0.5])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
-            else:
-                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units_dev)
-
-        # ==============================================================
-        # Calculate absolute difference
-        # ==============================================================
-        if cmpgridtype == "ll":
-            absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
-        else:
-            absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
-
-        # Test if the abs. diff. is zero everywhere or NaN everywhere
-        absdiff_is_all_zero = not np.any(absdiff)
-        absdiff_is_all_nan = np.isnan(absdiff).all()
-
-        # Min and max of abs. diff, excluding NaNs
-        diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])
-
-        # For cubed-sphere, take special care to avoid a spurious
-        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
-        if cmpgridtype == "cs":
-            absdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, absdiff)
-
-        # ==============================================================
-        # Subplot (1,0): Difference, dynamic range
-        # ==============================================================
-
-        # Set local flags to denote if Abs. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero
-        all_undefined = absdiff_is_all_nan
-
-        # Set data range.  If absdiff is not all zeroes or all NaN,
-        # then set the data range to be symmetric around the dynamic
-        # range of the data.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [vmin, vmax] = [-diffabsmax, diffabsmax]
-        if verbose:
-            print("Subplot (1,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create plots
-        ax2.coastlines()
-        if cmpgridtype == "ll":
-
-            # Create the lon/lat plot
-            plot2 = ax2.imshow(
-                absdiff,
-                extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                cmap=cmap_gray,
-                norm=norm,
-            )
-        else:
-
-            # Plot each face of the cubed sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot2 = ax2.pcolormesh(
-                    cmpgrid["lon_b"][i, :, :],
-                    cmpgrid["lat_b"][i, :, :],
-                    absdiff[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    norm=norm,
-                    cmap=cmap_nongray,
-                )
-        if regridany:
-            ax2.set_title("Difference ({})\nDev - Ref, Dynamic Range".format(cmpres))
-        else:
-            ax2.set_title("Difference\nDev - Ref, Dynamic Range")
-
-        # Define the colorbar for the plot.  If absdiff is zero
-        # everywhere or NaN everywhere, set a single tick in
-        # the middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot2, ax=ax2, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-
-        # ==============================================================
-        # Subplot (1,1): Difference, restricted range
-        # ==============================================================
-
-        # Set local flags to denote if Abs. Diff is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero
-        all_undefined = absdiff_is_all_nan
-
-        # Set data range.  If absdiff is not all zeroes or all NaN,
-        # then set the data range to be symmetric around the larger
-        # of the 5th and 95th percentiles.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [pct5, pct95] = [np.percentile(absdiff, 5), np.percentile(absdiff, 95)]
-            abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
-            [vmin, vmax] = [-abspctmax, abspctmax]
-        if verbose:
-            print("Subplot (1,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create plots
-        ax3.coastlines()
-        if cmpgridtype == "ll":
-
-            # Create the lat/lon plot
-            plot3 = ax3.imshow(
-                absdiff,
-                extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap_gray,
-                norm=norm,
-            )
-        else:
-
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot3 = ax3.pcolormesh(
-                    cmpgrid["lon_b"][i, :, :],
-                    cmpgrid["lat_b"][i, :, :],
-                    absdiff[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_nongray,
-                    norm=norm,
-                )
-        if regridany:
-            ax3.set_title(
-                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
-            )
-        else:
-            ax3.set_title("Difference\nDev - Ref, Restricted Range [5%,95%]")
-
-        # Define the colorbar for the plot.  If absdiff is zero
-        # everywhere or NaN everywhere, set a single tick in
-        # the middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot3, ax=ax3, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if absdiff_is_all_nan:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-
-        # ==============================================================
-        # Calculate fractional difference, set divides by zero to NaN
-        # ==============================================================
-
-        if cmpgridtype == "ll":
-            fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(
-                ds_ref_cmp
-            )
-        else:
-            fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
-
-        # Replace Infinity values with NaN
-        fracdiff = np.where(fracdiff == np.inf, np.nan, fracdiff)
-
-        # Test if the frac. diff. is zero everywhere or NaN everywhere
-        fracdiff_is_all_zero = not np.any(fracdiff)
-        fracdiff_is_all_nan = np.isnan(fracdiff).all()
-
-        # Absolute max value of fracdiff, excluding NaNs
-        fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
-
-        # For cubed-sphere, take special care to avoid a spurious
-        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
-        if cmpgridtype == "cs":
-            fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, fracdiff)
-
-        # ==============================================================
-        # Subplot (2,0): Fractional Difference, full dynamic range
-        # ==============================================================
-
-        # Set local flags to denote if Frac. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a
-        # plotting routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero or (fracdiff_is_all_zero and not ref_is_all_zero)
-        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
-
-        # Set the min and max of the data range.  If fracdiff is
-        # zero everywhere, then set the data range to [0,0].
-        # If fracdiff is NaN everywhere, or if Ref (the denominator
-        # of the expression that computes fracdiff) is zero
-        # everywhere, set the data range to undefined (NaN).
-        # Otherwise set the data range to be symmetric around
-        # the dynamic range of fracdiff.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
-        if verbose:
-            print("Subplot (2,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create plots
-        ax4.coastlines()
-        if cmpgridtype == "ll":
-
-            # Create the lon/lat plot
-            plot4 = ax4.imshow(
-                fracdiff,
-                extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap_gray,
-                norm=norm,
-            )
-        else:
-
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot4 = ax4.pcolormesh(
-                    cmpgrid["lon_b"][i, :, :],
-                    cmpgrid["lat_b"][i, :, :],
-                    fracdiff[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_nongray,
-                    norm=norm,
-                )
+            ref_title = "{} (Ref){}\nc{}".format(refstr, subtitle_extra, refres)
+            dev_title = "{} (Dev){}\nc{}".format(devstr, subtitle_extra, devres)
 
         if regridany:
-            ax4.set_title(
-                "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
-                    cmpres
-                )
-            )
+            absdiff_dynam_title  = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title  = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
+            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(cmpres)
+            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)     
         else:
-            ax4.set_title("Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range")
+            absdiff_dynam_title  = "Difference\nDev - Ref, Dynamic Range"
+            absdiff_fixed_title  = "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            fracdiff_dynam_title = "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
+            fracdiff_fixed_title = "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
 
-        # Define the colorbar If fracdiff will be zero everywhere
-        # or undefined everywhere, put a single tick at the middle
-        # of the colorbar with the appropriate label.
-        cb = plt.colorbar(plot4, ax=ax4, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
+        
+            
+        # ==============================================================
+        # Bundle variables for 6 parallel plotting calls
+        # 0 = Ref                 1 = Dev
+        # 2 = Dynamic abs diff    3 = Restricted abs diff
+        # 4 = Dynamic frac diff   5 = Restricted frac diff
+        # ==============================================================
+        
+        all_zeros = [ref_is_all_zero,           dev_is_all_zero,
+                     absdiff_is_all_zero,   absdiff_is_all_zero,
+                     fracdiff_is_all_zero, fracdiff_is_all_zero]
+
+        all_nans  = [ref_is_all_nan,             dev_is_all_nan,
+                     absdiff_is_all_nan,     absdiff_is_all_nan,
+                     fracdiff_is_all_nan,   fracdiff_is_all_nan]
+
+        extents = [ref_extent, dev_extent,
+                   cmp_extent, cmp_extent,
+                   cmp_extent, cmp_extent]
+
+        plot_vals = [ds_ref,     ds_dev,
+                     absdiff,   absdiff,
+                     fracdiff, fracdiff]
+
+        grids = [refgrid, devgrid,
+                 cmpgrid, cmpgrid,
+                 cmpgrid, cmpgrid]
+        
+        axs = [ax0, ax1,
+               ax2, ax3,
+               ax4, ax5]
+        
+        rowcols = [(0,0), (0,1),
+                   (1,0), (1,1),
+                   (2,0), (2,1)]
+        
+        titles = [ref_title,                       dev_title,
+                  absdiff_dynam_title,   absdiff_fixed_title,
+                  fracdiff_dynam_title, fracdiff_fixed_title]
+
+        if refgridtype == "ll":
+            cmaps = [ref_cmap,   dev_cmap,
+                     cmap_gray, cmap_gray,
+                     cmap_gray, cmap_gray]
         else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label("unitless")
+            cmaps = [ref_cmap,         dev_cmap,
+                     cmap_nongray, cmap_nongray,
+                     cmap_nongray, cmap_nongray]
 
         # ==============================================================
-        # Subplot (2,1): Fractional Difference, restricted range
+        # Plot in parallel 
         # ==============================================================
 
-        # Set local flags to denote if Frac. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero or (fracdiff_is_all_zero and not ref_is_all_zero)
-        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
+        def sixplot(i, all_zero, all_nan, extent, plot_val, grid, ax, rowcol, title, comap):
 
-        # Set the min and max of the data range.  If fracdiff is
-        # zero everywhere, then set the data range to [0,0].
-        # If fracdiff is NaN everywhere, or if Ref (the denominator
-        # of the expression that computes fracdiff) is zero
-        # everywhere, set the data range to undefined [NaN, Nan].
-        # Otherwise set the data range to [-2, 2] (+/- 200% change).
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [vmin, vmax] = [-2, 2]
-        if verbose:
-            print("Subplot (2,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create plots
-        ax5.coastlines()
-        if cmpgridtype == "ll":
-
-            # Create the lon/lat plot
-            plot5 = ax5.imshow(
-                fracdiff,
-                extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap_gray,
-                norm=norm,
-            )
-        else:
-
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot5 = ax5.pcolormesh(
-                    cmpgrid["lon_b"][i, :, :],
-                    cmpgrid["lat_b"][i, :, :],
-                    fracdiff[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_nongray,
-                    norm=norm,
-                )
-        if regridany:
-            ax5.set_title(
-                "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)
-            )
-        else:
-            ax5.set_title("Fractional Difference\n(Dev-Ref)/Ref, Fixed Range")
-
-        # Define the colorbar for the plot.  If fracdiff will be zero
-        # everywhere or undefined everywhere, put a single tick at the
-        # middle of the colorbar with the appropriate label.
-        cb = plt.colorbar(plot5, ax=ax5, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if fracdiff_is_all_nan or ref_is_all_zero:
-                cb.set_ticklabels(["Undefined throughout domain"])
+            # Set min and max of the data range.
+            if i < 2:
+                if all_zero or all_nan:
+                    if i is 0:
+                        [vmin, vmax] = [vmin_ref, vmax_ref]
+                    else:
+                        [vmin, vmax] = [vmin_dev, vmax_dev]
+                elif use_cmap_RdBu:
+                    if i is 0:
+                        if match_cbar and (not all_nans[1]):
+                            absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
+                        else:
+                            absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
+                    else:
+                        if match_cbar and (not all_nans[0]):
+                            absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
+                        else:
+                            absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
+                else:
+                    if i is 0:
+                        if match_cbar and (not all_nans[1]):
+                            [vmin, vmax] = [vmin_abs, vmax_abs]
+                        else:
+                            [vmin, vmax] = [vmin_ref, vmax_ref]
+                    else:
+                        if match_cbar and (not all_nans[0]):
+                            [vmin, vmax] = [vmin_abs, vmax_abs]
+                        else:
+                            [vmin, vmax] = [vmin_dev, vmax_dev]
             else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        cb.update_ticks()
-        cb.set_label("unitless")
+                if all_zero:
+                    [vmin, vmax] = [0, 0]
+                elif all_zero:
+                    [vmin, vmax] = [np.nan, np.nan]
+                else:
+                    if i is 2:
+                        [vmin, vmax] = [-diffabsmax, diffabsmax]
+                    elif i is 3:
+                        [pct5, pct95] = [np.percentile(absdiff, 5), np.percentile(absdiff, 95)]
+                        abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
+                        [vmin, vmax] = [-abspctmax, abspctmax]
+                    elif i is 4:
+                        [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
+                    else:
+                        [vmin, vmax] = [-2, 2]
+            if verbose:
+                print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
+
+            # Normalize colors (put into range [0..1] for matplotlib methods)
+            if i < 2:
+                norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
+            else:
+                norm = core.normalize_colors(vmin, vmax, is_difference=True)
+
+            # Create plot
+            ax.coastlines()
+            ax.set_title(title)
+            if cmpgridtype == "ll":
+                # Create a lon/lat plot
+                plot = ax.imshow(plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm = norm)
+            else:
+                if i is 0:
+                    masked_data = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_ref_reshaped )
+                elif i is 1:
+                    masked_data = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_dev_reshaped )
+                else:
+                    masked_data = plot_val
+                    
+                for j in range(6):
+                    plot = ax.pcolormesh(
+                        grid["lon_b"][j, :, :],
+                        grid["lat_b"][j, :, :],
+                        masked_data[j, :, :],
+                        transform = ccrs.PlateCarree(),
+                        cmap=comap,
+                        norm = norm
+                    )
+            cb = plt.colorbar(plot, ax=ax, orientation = "horizontal", pad = 0.10)
+            cb.mappable.set_norm(norm)
+            if all_zero or all_nan:
+                if i < 2:
+                    if use_cmap_RdBu:
+                        cb.set_ticks([0.0])
+                    else:
+                        cb.set_ticks([0.5])
+                else:
+                    cb.set_ticks([0.0])
+                if all_nan:
+                    cb.set_ticklabels(["Undefined throughout domain"])
+                else:
+                    cb.set_ticklabels(["Zero throughout domain"])
+            else:
+                if log_color_scale:
+                    cb.formatter = mticker.LogFormatter(base=10)
+                else:
+                    if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
+                        cb.locator = mticker.MaxNLocator(nbins=4)
+            cb.update_ticks()
+            if i is 0:
+                cb.set_label(units_ref)
+            elif i is 1:
+                cb.set_label(units_dev)
+            elif i < 4:
+                cb.set_label(units)
+            else:
+                cb.set_label("unitless")
+         
+        for i in range(6):
+            sixplot(i, all_zeros[i], all_nans[i], extents[i], plot_vals[i],
+                    grids[i], axs[i], rowcols[i], titles[i], cmaps[i])
+        #Parallel(n_jobs = 6)(delayed(sixplot)(i, all_zeros[i], all_nans[i], 
+        #                                      extents[i], plot_vals[i], grids[i], 
+        #                                      axs[i], rowcols[i], titles[i], cmaps[i])
+        #                     for i in range(6))
+
+
 
         # ==============================================================
         # Update the list of variables with significant differences.
@@ -1220,19 +936,32 @@ def compare_single_level(
             sigdiff_list.append(varname)
 
         # ==============================================================
-        # Add this page of 6-panel plots to the PDF file
+        # Add this page of 6-panel plots to a PDF file
         # ==============================================================
         if savepdf:
+            pdf = PdfPages(str(ivar) + "BENCHMARKFIGCREATION.pdf")
             pdf.savefig(figs)
+            pdf.close()
             plt.close(figs)
+
+    #for i in range(n_var):
+    #    createfig(i)
+    Parallel(n_jobs = 10) (delayed(createfig)(i) for i in range(n_var))
+
+    #Parallel(n_jobs = 6)(delayed(sixplot)(i, all_zeros[i], all_nans[i], 
+    #                                      extents[i], plot_vals[i], grids[i], 
+    #                                      axs[i], rowcols[i], titles[i], cmaps[i])
+    #                     for i in range(6))
 
     # ==================================================================
     # Finish
     # ==================================================================
     if savepdf:
-        pdf.close()
-        print("")
-
+        print("Closed PDF")
+        merge = PdfFileMerger()
+        for i in range(n_var):
+            merge.append(str(i) + "BENCHMARKFIGCREATION.pdf")
+        merge.write(pdfname)
 
 def compare_zonal_mean(
     refdata,
