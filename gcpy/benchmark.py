@@ -946,7 +946,7 @@ def compare_single_level(
 
     #for i in range(n_var):
     #    createfig(i)
-    Parallel(n_jobs = 10) (delayed(createfig)(i) for i in range(n_var))
+    Parallel(n_jobs = 5) (delayed(createfig)(i) for i in range(n_var))
 
     #Parallel(n_jobs = 6)(delayed(sixplot)(i, all_zeros[i], all_nans[i], 
     #                                      extents[i], plot_vals[i], grids[i], 
