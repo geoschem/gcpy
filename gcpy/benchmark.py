@@ -643,7 +643,8 @@ def compare_single_level(
         # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
         if cmpgridtype == "cs":
             fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, fracdiff)
-        
+
+        print("Creating Figure")
         # ==============================================================
         # Create 3x2 figure
         # ==============================================================
@@ -939,14 +940,14 @@ def compare_single_level(
         # Add this page of 6-panel plots to a PDF file
         # ==============================================================
         if savepdf:
-            pdf = PdfPages(str(ivar) + "BENCHMARKFIGCREATION.pdf")
+            pdf = PdfPages(pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar))
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
 
-    #for i in range(n_var):
-    #    createfig(i)
-    Parallel(n_jobs = 5) (delayed(createfig)(i) for i in range(n_var))
+    for i in range(n_var):
+        createfig(i)
+    #Parallel(n_jobs = 5) (delayed(createfig)(i) for i in range(n_var))
 
     #Parallel(n_jobs = 6)(delayed(sixplot)(i, all_zeros[i], all_nans[i], 
     #                                      extents[i], plot_vals[i], grids[i], 
@@ -960,8 +961,8 @@ def compare_single_level(
         print("Closed PDF")
         merge = PdfFileMerger()
         for i in range(n_var):
-            merge.append(str(i) + "BENCHMARKFIGCREATION.pdf")
-            os.remove(str(i) + "BENCHMARKFIGCREATION.pdf")
+            merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
+            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         merge.write(pdfname)
 
 def compare_zonal_mean(
@@ -3107,12 +3108,13 @@ def make_benchmark_conc_plots(
     # ==================================================================
     # Create the plots!
     # ==================================================================
-    for i, filecat in enumerate(catdict):
+        
+    def createplots(i, filecat):
 
         # If restrict_cats list is passed,
         # skip all categories except those in the list
         if restrict_cats and filecat not in restrict_cats:
-            continue
+            return
 
         # Create a directory for each category.
         # If subdst is passed, then create a subdirectory in each
@@ -3153,6 +3155,7 @@ def make_benchmark_conc_plots(
             else:
                 pdfname = os.path.join(catdir, "{}_Surface.pdf".format(filecat))
 
+            print("Comparing Single Level")
             diff_sfc = []
             compare_single_level(
                 refds,
@@ -3294,6 +3297,10 @@ def make_benchmark_conc_plots(
                             f.close()
 
 
+    #for i, filecat in enumerate(catdict):
+    #    createplots(i, filecat)
+    Parallel(n_jobs = 5) (delayed(createplots)(i,filecast) for i, filecast in enumerate(catdict))
+                            
 def make_benchmark_emis_plots(
     ref,
     refstr,
