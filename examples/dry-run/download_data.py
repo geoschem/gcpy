@@ -316,12 +316,9 @@ def create_download_script(paths, from_aws=False):
 
                 # Then create a symbolic link from the run directory
                 # to the restart file in the local ExtData
-                if from_aws:
-                    cmd = "ln -s " + prefix + remote_rst[index1-9:] + \
-                          " " + local_rst
-                else:
-                    cmd = "ln -s " + prefix + remote_rst[index1-84:] + \
-                          " " + local_rst
+                index3 = remote_rst.find("initial")
+                cmd = "ln -s " + prefix + remote_rst[index3:] + \
+                      " " + local_rst
                 print(cmd, file=f)
                 print(file=f)
 
@@ -447,6 +444,14 @@ def create_download_script(paths, from_aws=False):
                     cmd += " " + local_dir + "/"
                 print(cmd, file=f)
                 print(file=f)
+
+        # Kludge: Create a ExtData/CHEM_INPUTS folder if it
+        # does not exist. This will prevent abnormal exits.
+        chem_inputs_dir = paths["local_prefix"] + 'ExtData/CHEM_INPUTS'
+        cmd = "if [[ ! -d {} ]]; then mkdir {}; fi".format(
+            chem_inputs_dir, chem_inputs_dir)
+        print(cmd, file=f)
+        print(file=f)
 
         # Close file and make it executable
         f.close()
