@@ -5,7 +5,6 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-from .aws import *
 from .core import *
 from .grid.horiz import *
 from .grid.regrid import *
