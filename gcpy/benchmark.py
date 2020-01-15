@@ -52,6 +52,7 @@ def compare_single_level(
     verbose=False,
     log_color_scale=False,
     extra_title_txt=None,
+    n_job=-1,
     sigdiff_list=[],
 ):
     """
@@ -947,7 +948,7 @@ def compare_single_level(
 
     #for i in range(n_var):
     #    createfig(i)
-    Parallel(n_jobs = -1) (delayed(createfig)(i) for i in range(n_var))
+    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
 
     #Parallel(n_jobs = 6)(delayed(sixplot)(i, all_zeros[i], all_nans[i], 
     #                                      extents[i], plot_vals[i], grids[i], 
