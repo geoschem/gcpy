@@ -534,8 +534,8 @@ if gchp_vs_gchp:
     if OH_metrics:
         # Global mean OH, MCF Lifetime, CH4 Lifetime
         print('\n%%% Creating GCHP vs. GCHP OH metrics %%%')
-        gchp_vs_gcc_reflist = [gchp_vs_gchp_refcac, gchp_vs_gchp_refmet]
-        gchp_vs_gcc_devlist = [gchp_vs_gchp_devcac, gchp_vs_gchp_devmet]
+        gchp_vs_gchp_reflist = [gchp_vs_gchp_refcac, gchp_vs_gchp_refmet]
+        gchp_vs_gchp_devlist = [gchp_vs_gchp_devcac, gchp_vs_gchp_devmet]
         bmk.make_benchmark_oh_metrics(gchp_vs_gchp_reflist,
                                       gchp_vs_gchp_refstr,
                                       gchp_vs_gchp_devlist,

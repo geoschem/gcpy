@@ -309,36 +309,6 @@
               "EmMW_g":     30.0000,
               "MolecRatio":      1.0000
           },
-  "C2H2" : 
-          {
-              "Fullname": "Acetylene",
-              "Formula": "C2H2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MW_g":     24.0600,
-              "EmMW_g":     12.0000,
-              "MolecRatio":      2.0000
-          },
-  "C2H4" : 
-          {
-              "Fullname": "Ethylene",
-              "Formula": "C2H4",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MW_g":     28.0500,
-              "EmMW_g":     12.0000,
-              "MolecRatio":      2.0000
-          },
   "C2H6" : 
           {
               "Fullname": "Ethane",
@@ -520,7 +490,7 @@
               "Is_DryDep": true,
               "Is_Gas": true,
               "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
+              "Is_Photolysis": true,
               "Is_WetDep": true,
               "MW_g":     62.0000,
               "EmMW_g":     62.0000,
@@ -534,42 +504,12 @@
               "Is_DryDep": true,
               "Is_Gas": true,
               "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
+              "Is_Photolysis": true,
               "Is_WetDep": true,
               "Density":   2200.0000,
               "Radius":      0.0000,
               "MW_g":     31.4000,
               "EmMW_g":     31.4000,
-              "MolecRatio":      1.0000
-          },
-  "BC" :
-          {
-              "Fullname": "Black carbon aerosol",
-              "Is_Advected": true,
-              "Is_Aero": true,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": true,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "Density":   1800.0000,
-              "MW_g":     12.0100,
-              "EmMW_g":     12.0000,
-              "MolecRatio":      1.0000
-          },
-  "OC" :
-          {
-              "Fullname": "Organic carbon aerosol",
-              "Is_Advected": true,
-              "Is_Aero": true,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": true,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "Density":   1300.0000,
-              "MW_g":     12.0100,
-              "EmMW_g":     12.0000,
               "MolecRatio":      1.0000
           },
   "BCPI" : 
@@ -628,34 +568,6 @@
               "Is_Photolysis": false,
               "Is_WetDep": true,
               "Density":   1300.0000,
-              "MW_g":     12.0100,
-              "EmMW_g":     12.0000,
-              "MolecRatio":      1.0000
-          },
-  "POG1" : 
-          {
-              "Fullname": "Lumped gas primary SVOCs",
-              "Is_Advected": true,
-              "Is_Aero": false,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "MW_g":     12.0100,
-              "EmMW_g":     12.0000,
-              "MolecRatio":      1.0000
-          },
-  "POG2" : 
-          {
-              "Fullname": "Lumped gas primary SVOCs",
-              "Is_Advected": true,
-              "Is_Aero": false,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
               "MW_g":     12.0100,
               "EmMW_g":     12.0000,
               "MolecRatio":      1.0000
@@ -726,7 +638,7 @@
           },
   "SALA" : 
           {
-              "Fullname": "Accumulation mode sea salt aerosol",
+              "Fullname": "Fine (0.01-0.05 microns) sea salt aerosol",
               "Is_Advected": true,
               "Is_Aero": true,
               "Is_DryDep": true,
@@ -742,7 +654,7 @@
           },
   "SALC" : 
           {
-              "Fullname": "Coarse mode sea salt aerosol",
+              "Fullname": "Coarse (0.5-8 microns) sea salt aerosol",
               "Is_Advected": true,
               "Is_Aero": true,
               "Is_DryDep": true,
@@ -1124,21 +1036,6 @@
               "EmMW_g":     47.0000,
               "MolecRatio":      1.0000
           },
-  "HONO" : 
-          {
-              "Fullname": "Nitrous acid",
-              "Formula": "HNO2",
-              "Is_Advected": true,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": true,
-              "Is_WetDep": false,
-              "MW_g":     47.0000,
-              "EmMW_g":     47.0000,
-              "MolecRatio":      1.0000
-          },
   "BENZ" : 
           {
               "Fullname": "Benzene",
@@ -1219,21 +1116,6 @@
           {
               "Fullname": "Terpinene, terpinolene, myrcene, ocimene, other monoterpenes",
               "Is_Advected": true,
-              "Is_Aero": false,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "Henry_K0":  4.900000E-02,
-              "MW_g":    136.2300,
-              "EmMW_g":    136.2300,
-              "MolecRatio":      1.0000
-          },
-  "SESQ" : 
-          {
-              "Fullname": "a-farnesene, b-carophyllene, other sesquiterpenes",
-              "Is_Advected": false,
               "Is_Aero": false,
               "Is_DryDep": true,
               "Is_Gas": true,
@@ -1365,96 +1247,6 @@
               "EmMW_g":    150.0000,
               "MolecRatio":      1.0000
           },
-  "ISOG1" : 
-          {
-              "Fullname": "Lumped semivolatile gas products of isoprene oxidation",
-              "Is_Advected": true,
-              "Is_Aero": false,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "Henry_K0":  1.000000E+05,
-              "Henry_CR":  6.039000E+03,
-              "MW_g":    150.0000,
-              "EmMW_g":    150.0000,
-              "MolecRatio":      1.0000
-          },
-  "ISOG2" : 
-          {
-              "Fullname": "Lumped semivolatile gas products of isoprene oxidation",
-              "Is_Advected": true,
-              "Is_Aero": false,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "Henry_K0":  1.000000E+05,
-              "Henry_CR":  6.039000E+03,
-              "MW_g":    150.0000,
-              "EmMW_g":    150.0000,
-              "MolecRatio":      1.0000
-          },
-  "ISOG3" : 
-          {
-              "Fullname": "Lumped semivolatile gas products of isoprene oxidation",
-              "Is_Advected": true,
-              "Is_Aero": false,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "Henry_K0":  1.000000E+05,
-              "Henry_CR":  6.039000E+03,
-              "MW_g":    150.0000,
-              "EmMW_g":    150.0000,
-              "MolecRatio":      1.0000
-          },
-  "ISOA1" : 
-          {
-              "Fullname": "Lumped semivolatile aer products of isoprene oxidation",
-              "Is_Advected": true,
-              "Is_Aero": true,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "MW_g":    150.0000,
-              "EmMW_g":    150.0000,
-              "MolecRatio":      1.0000
-          },
-  "ISOA2" : 
-          {
-              "Fullname": "Lumped semivolatile aer products of isoprene oxidation",
-              "Is_Advected": true,
-              "Is_Aero": true,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "MW_g":    150.0000,
-              "EmMW_g":    150.0000,
-              "MolecRatio":      1.0000
-          },
-  "ISOA3" : 
-          {
-              "Fullname": "Lumped semivolatile aer products of isoprene oxidation",
-              "Is_Advected": true,
-              "Is_Aero": true,
-              "Is_DryDep": true,
-              "Is_Gas": true,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": true,
-              "MW_g":    150.0000,
-              "EmMW_g":    150.0000,
-              "MolecRatio":      1.0000
-          },
   "ASOG1" : 
           {
               "Fullname": "Lumped non-volatile gas products of light aromatics + IVOCs",
@@ -1561,7 +1353,7 @@
           },
   "SOAP" : 
           {
-              "Fullname": "SOA Precursor - lumped species for simplified SOA paramterization",
+              "Fullname": "SOA Precursor - lumped species for simplified SOA parameterization",
               "Is_Advected": true,
               "Is_Aero": false,
               "Is_DryDep": false,
@@ -1610,13 +1402,15 @@
               "Formula": "CH3OH",
               "Is_Advected": true,
               "Is_Aero": false,
-              "Is_DryDep": false,
+              "Is_DryDep": true,
               "Is_Gas": true,
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
-              "Is_WetDep": false,
+              "Is_WetDep": true,
+              "Henry_K0":  2.030000E+02,
+              "Henry_CR":  5.600000E+03,
               "MW_g":     32.0400,
-              "EmMW_g":     12.0000,
+              "EmMW_g":     32.0400,
               "MolecRatio":      1.0000
           },
   "MGLY" : 
@@ -2636,7 +2430,7 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
-              "Henry_K0":  1.973846E-05,
+              "Henry_K0":  2.026500E-01,
               "Henry_CR":  3.600000E+03,
               "MW_g":    142.0000,
               "EmMW_g":    142.0000,
@@ -2990,8 +2784,10 @@
               "Is_DryDep": true,
               "Is_Gas": true,
               "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
+              "Is_Photolysis": true,
               "Is_WetDep": false,
+              "Henry_K0":  1.100000E+01,
+              "Henry_CR":  4.700000E+03,
               "MW_g":     77.0400,
               "EmMW_g":     77.0400,
               "MolecRatio":      1.0000
@@ -3005,8 +2801,10 @@
               "Is_DryDep": true,
               "Is_Gas": true,
               "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
+              "Is_Photolysis": true,
               "Is_WetDep": false,
+              "Henry_K0":  1.600000E+00,
+              "Henry_CR":  5.400000E+03,
               "MW_g":     91.0700,
               "EmMW_g":     91.0700,
               "MolecRatio":      1.0000
@@ -3020,10 +2818,12 @@
               "Is_DryDep": true,
               "Is_Gas": true,
               "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
+              "Is_Photolysis": true,
               "Is_WetDep": false,
-              "MW_g":     105.0900,
-              "EmMW_g":     105.0900,
+              "Henry_K0":  7.900000E-01,
+              "Henry_CR":  5.400000E+03,
+              "MW_g":    105.0900,
+              "EmMW_g":    105.0900,
               "MolecRatio":      1.0000
           },
   "NPRNO3" : 
@@ -3035,10 +2835,12 @@
               "Is_DryDep": true,
               "Is_Gas": true,
               "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
+              "Is_Photolysis": true,
               "Is_WetDep": false,
-              "MW_g":     105.0900,
-              "EmMW_g":     105.0900,
+              "Henry_K0":  1.100000E+00,
+              "Henry_CR":  5.500000E+03,
+              "MW_g":    105.0900,
+              "EmMW_g":    105.0900,
               "MolecRatio":      1.0000
           },
   "CO2" : 
@@ -3066,6 +2868,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LBRO2N" : 
@@ -3078,6 +2882,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LISOPOH" : 
@@ -3090,6 +2896,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LISOPNO3" : 
@@ -3102,6 +2910,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LTRO2H" : 
@@ -3114,6 +2924,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LTRO2N" : 
@@ -3126,6 +2938,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LXRO2H" : 
@@ -3138,6 +2952,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LXRO2N" : 
@@ -3150,6 +2966,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "PYAC" : 
@@ -3162,6 +2980,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "SO4H1" : 
@@ -3174,6 +2994,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "SO4H2" : 
@@ -3186,6 +3008,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "POX" : 
@@ -3198,6 +3022,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LOX" : 
@@ -3210,6 +3036,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "PCO" : 
@@ -3222,6 +3050,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LCO" : 
@@ -3234,6 +3064,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "PSO4" : 
@@ -3246,6 +3078,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "LCH4" : 
@@ -3258,6 +3092,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "PH2O2" : 
@@ -3270,6 +3106,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "DHDC" : 
@@ -3297,6 +3135,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "TRO2" : 
@@ -3309,6 +3149,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "BRO2" : 
@@ -3321,6 +3163,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "N" : 
@@ -3334,6 +3178,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "XRO2" : 
@@ -3346,6 +3192,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "IMAO3" : 
@@ -3358,19 +3206,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "ETP" : 
-          {
-              "Fullname": "Ethylhydroperoxide",
-              "Formula": "CH3CH2OOH",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": true,
-              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "RA3P" : 
@@ -3384,6 +3221,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "RB3P" : 
@@ -3397,6 +3236,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "RP" : 
@@ -3410,6 +3251,23 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "ETP" : 
+          {
+              "Fullname": "Ethylhydroperoxide",
+              "Formula": "CH3CH2OOH",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": true,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "PP" : 
@@ -3423,6 +3281,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "PRPN" : 
@@ -3436,6 +3296,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "PIP" : 
@@ -3448,6 +3310,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "R4P" : 
@@ -3461,6 +3325,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "DHPCARP" : 
@@ -3476,19 +3342,6 @@
               "Is_WetDep": false,
               "MW_g":    181.0000,
               "EmMW_g":    181.0000,
-              "MolecRatio":      1.0000
-          },
-  "IAP" : 
-          {
-              "Fullname": "Peroxide from IAO2",
-              "Formula": "HOCH2C(CH3)(OOH)CH(OH)CHO",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": true,
-              "Is_WetDep": false,
               "MolecRatio":      1.0000
           },
   "HPC52O2" : 
@@ -3517,6 +3370,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "ATOOH" : 
@@ -3530,6 +3385,23 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "IAP" : 
+          {
+              "Fullname": "Peroxide from IAO2",
+              "Formula": "HOCH2C(CH3)(OOH)CH(OH)CHO",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": true,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "DHMOB" : 
@@ -3542,6 +3414,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "ISNP" : 
@@ -3555,6 +3429,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MAOP" : 
@@ -3568,6 +3444,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MRP" : 
@@ -3581,6 +3459,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "INPN" : 
@@ -3594,6 +3474,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MOBAOO" : 
@@ -3606,6 +3488,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "DIBOO" : 
@@ -3618,6 +3502,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "H" : 
@@ -3630,6 +3516,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MACRNO2" : 
@@ -3642,6 +3530,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "ROH" : 
@@ -3654,18 +3544,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "ISNOHOO" : 
-          {
-              "Fullname": "ISNOHOO",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MVKOO" : 
@@ -3678,6 +3558,22 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "ISNOHOO" : 
+          {
+              "Fullname": "ISNOHOO",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "ISNOOB" : 
@@ -3690,6 +3586,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "GAOO" : 
@@ -3702,6 +3600,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "CH3CHOO" : 
@@ -3714,6 +3614,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "IEPOXOO" : 
@@ -3726,6 +3628,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MGLYOO" : 
@@ -3738,18 +3642,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "PRN1" : 
-          {
-              "Fullname": "PRN1",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MGLOO" : 
@@ -3762,11 +3656,13 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
-  "A3O2" : 
+  "PRN1" : 
           {
-              "Fullname": "A3O2",
+              "Fullname": "PRN1",
               "Is_Advected": false,
               "Is_Aero": false,
               "Is_DryDep": false,
@@ -3774,6 +3670,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MAN2" : 
@@ -3786,6 +3684,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "ISNOOA" : 
@@ -3798,18 +3698,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "PO2" : 
-          {
-              "Fullname": "PO2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "ISOPNDO2" : 
@@ -3822,18 +3712,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "B3O2" : 
-          {
-              "Fullname": "B3O2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MACROO" : 
@@ -3846,11 +3726,13 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
-  "R4N1" : 
+  "PO2" : 
           {
-              "Fullname": "R4N1",
+              "Fullname": "PO2",
               "Is_Advected": false,
               "Is_Aero": false,
               "Is_DryDep": false,
@@ -3858,6 +3740,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MAOPO2" : 
@@ -3870,6 +3754,22 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "R4N1" : 
+          {
+              "Fullname": "R4N1",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "ATO2" : 
@@ -3882,42 +3782,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "RCO3" : 
-          {
-              "Fullname": "RCO3",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "LIMO2" : 
-          {
-              "Fullname": "LIMO2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "OLND" : 
-          {
-              "Fullname": "OLND",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "OLNN" : 
@@ -3930,11 +3796,13 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
-  "KO2" : 
+  "OLND" : 
           {
-              "Fullname": "KO2",
+              "Fullname": "OLND",
               "Is_Advected": false,
               "Is_Aero": false,
               "Is_DryDep": false,
@@ -3942,102 +3810,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "ISOPNBO2" : 
-          {
-              "Fullname": "ISOPNBO2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "PIO2" : 
-          {
-              "Fullname": "PIO2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "HC5OO" : 
-          {
-              "Fullname": "HC5OO",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "NMAO3" : 
-          {
-              "Fullname": "NMAO3",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "VRO2" : 
-          {
-              "Fullname": "VRO2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "CH2OO" : 
-          {
-              "Fullname": "CH2OO",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "HC5" : 
-          {
-              "Fullname": "HC5",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "RIO2" : 
-          {
-              "Fullname": "RIO2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "ETO2" : 
@@ -4050,11 +3824,13 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
-  "INO2" : 
+  "LIMO2" : 
           {
-              "Fullname": "INO2",
+              "Fullname": "LIMO2",
               "Is_Advected": false,
               "Is_Aero": false,
               "Is_DryDep": false,
@@ -4062,6 +3838,162 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "A3O2" : 
+          {
+              "Fullname": "A3O2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "KO2" : 
+          {
+              "Fullname": "KO2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "B3O2" : 
+          {
+              "Fullname": "B3O2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "PIO2" : 
+          {
+              "Fullname": "PIO2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "ISOPNBO2" : 
+          {
+              "Fullname": "ISOPNBO2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "NMAO3" : 
+          {
+              "Fullname": "NMAO3",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "HC5OO" : 
+          {
+              "Fullname": "HC5OO",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "VRO2" : 
+          {
+              "Fullname": "VRO2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "CH2OO" : 
+          {
+              "Fullname": "CH2OO",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "OTHRO2" : 
+          {
+              "Fullname": "OTHRO2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "HC5" : 
+          {
+              "Fullname": "HC5",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "R4O2" : 
@@ -4074,6 +4006,50 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "RCO3" : 
+          {
+              "Fullname": "RCO3",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "INO2" : 
+          {
+              "Fullname": "INO2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "RIO2" : 
+          {
+              "Fullname": "RIO2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MRO2" : 
@@ -4086,6 +4062,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MCO3" : 
@@ -4098,6 +4076,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "MO2" : 
@@ -4111,44 +4091,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "O1D" : 
-          {
-              "Fullname": "Excited atomic oxygen (1D)",
-              "Formula": "O(1D)",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "O" : 
-          {
-              "Fullname": "O",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
-              "MolecRatio":      1.0000
-          },
-  "HO2" : 
-          {
-              "Fullname": "Hydroperoxyl radical",
-              "Formula": "HO2",
-              "Is_Advected": false,
-              "Is_Aero": false,
-              "Is_DryDep": false,
-              "Is_Gas": false,
-              "Is_HygroGrowth": false,
-              "Is_Photolysis": false,
-              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "OH" : 
@@ -4162,6 +4106,52 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "O1D" : 
+          {
+              "Fullname": "Excited atomic oxygen (1D)",
+              "Formula": "O(1D)",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "O" : 
+          {
+              "Fullname": "O",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
+              "MolecRatio":      1.0000
+          },
+  "HO2" : 
+          {
+              "Fullname": "Hydroperoxyl radical",
+              "Formula": "HO2",
+              "Is_Advected": false,
+              "Is_Aero": false,
+              "Is_DryDep": false,
+              "Is_Gas": false,
+              "Is_HygroGrowth": false,
+              "Is_Photolysis": false,
+              "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "H2" : 
@@ -4175,6 +4165,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "N2" : 
@@ -4188,6 +4180,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "O2" : 
@@ -4201,6 +4195,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": true,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           },
   "RCOOH" : 
@@ -4213,6 +4209,8 @@
               "Is_HygroGrowth": false,
               "Is_Photolysis": false,
               "Is_WetDep": false,
+              "MW_g":      1.0000,
+              "EmMW_g":      1.0000,
               "MolecRatio":      1.0000
           }
 }
