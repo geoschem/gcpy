@@ -601,6 +601,9 @@ def compare_single_level(
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(
             3, 2, figsize=[12, 14], subplot_kw={"projection": ccrs.PlateCarree()}
         )
+        # Ensure subplots don't overlap when invoking plt.show()
+        if not savepdf:
+            plt.subplots_adjust(hspace = 0.4)
         # Give the figure a title
         offset = 0.96
         fontsize = 25
@@ -758,7 +761,7 @@ def compare_single_level(
                     cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units_ref)
-
+        
         # ==============================================================
         # Subplot (0,1): Dev, plotted on dev input grid
         # ==============================================================
@@ -877,7 +880,7 @@ def compare_single_level(
         # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
         if cmpgridtype == "cs":
             absdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, absdiff)
-
+        
         # ==============================================================
         # Subplot (1,0): Difference, dynamic range
         # ==============================================================
@@ -949,7 +952,7 @@ def compare_single_level(
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
-
+        
         # ==============================================================
         # Subplot (1,1): Difference, restricted range
         # ==============================================================
@@ -1026,7 +1029,7 @@ def compare_single_level(
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
-
+        
         # ==============================================================
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
@@ -1134,7 +1137,7 @@ def compare_single_level(
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label("unitless")
-
+        
         # ==============================================================
         # Subplot (2,1): Fractional Difference, restricted range
         # ==============================================================
@@ -1815,7 +1818,9 @@ def compare_zonal_mean(
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(
             3, 2, figsize=[12, 15.3]
         )
-
+        # Ensure subplots don't overlap when invoking plt.show()
+        if not savepdf:
+            plt.subplots_adjust(hspace = 0.4)            
         # Give the plot a title
         offset = 0.96
         fontsize = 25
