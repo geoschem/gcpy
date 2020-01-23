@@ -50,6 +50,14 @@ def get_input_res(data):
         #GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return data.dims["Xdim"], "cs"    
 
+def call_make_grid(res, gridtype, zonal_mean, comparison):
+    
+    if gridtype == "ll" or (zonal_mean and comparison):
+        return [make_grid_LL(res), None]
+    else:
+        return make_grid_CS(res)
+
+
 def compare_single_level(
     refdata,
     refstr,
@@ -257,25 +265,11 @@ def compare_single_level(
 
     # =================================================================
     # Make grids (ref, dev, and comparison)
-    # =================================================================
+    # =================================================================        
 
-    # Ref
-    if refgridtype == "ll":
-        refgrid = make_grid_LL(refres)
-    else:
-        [refgrid, regrid_list] = make_grid_CS(refres)
-
-    # Dev
-    if devgridtype == "ll":
-        devgrid = make_grid_LL(devres)
-    else:
-        [devgrid, devgrid_list] = make_grid_CS(devres)
-
-    # Comparison
-    if cmpgridtype == "ll":
-        cmpgrid = make_grid_LL(cmpres)
-    else:
-        [cmpgrid, cmpgrid_list] = make_grid_CS(cmpres)
+    [refgrid, regrid_list]  = call_make_grid(refres, gridtype, False, False)
+    [devgrid, devgrid_list] = call_make_grid(devres, gridtype, False, False)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, gridtype, False, True)
 
     # =================================================================
     # Make regridders, if applicable
@@ -1214,20 +1208,9 @@ def compare_zonal_mean(
     # Make grids (ref, dev, and comparison)
     # ==================================================================
 
-    # Ref
-    if refgridtype == "ll":
-        refgrid = make_grid_LL(refres)
-    else:
-        [refgrid, regrid_list] = make_grid_CS(refres)
-
-    # Dev
-    if devgridtype == "ll":
-        devgrid = make_grid_LL(devres)
-    else:
-        [devgrid, devgrid_list] = make_grid_CS(devres)
-
-    # Comparison
-    cmpgrid = make_grid_LL(cmpres)
+    [refgrid, regrid_list]  = call_make_grid(refres, gridtype, True, False)
+    [devgrid, devgrid_list] = call_make_grid(devres, gridtype, True, False)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, gridtype, True, True)
 
     # ==================================================================
     # Make regridders, if applicable
