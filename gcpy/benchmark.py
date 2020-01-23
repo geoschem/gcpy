@@ -31,6 +31,24 @@ spc_categories = "benchmark_categories.json"
 emission_spc = "emission_species.json"
 emission_inv = "emission_inventories.json"
 
+def get_input_res(data):
+    
+    vdims = data.dims
+    if "lat" in vdims and "lon" in vdims:
+        lat = data.sizes["lat"]
+        lon = data.sizes["lon"]
+        if lat == 46 and lon == 72:
+            return "4x5", "ll"
+        elif lat == 91 and lon == 144:
+            return "2x2.5", "ll"
+        elif lat / 6 == lon:
+            return lon, "cs"
+        else:
+            print("Error: ref or dev {}x{} grid not defined in gpy!".format(lat, lon))
+            return
+    else:
+        #GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        return data.dims["Xdim"], "cs"    
 
 def compare_single_level(
     refdata,
@@ -200,48 +218,8 @@ def compare_single_level(
 
     # GCC output and GCHP output using pre-v1.0.0 MAPL have lat and lon dims
 
-    # ref
-    vdims = refdata.dims
-    if "lat" in vdims and "lon" in vdims:
-        refnlat = refdata.sizes["lat"]
-        refnlon = refdata.sizes["lon"]
-        if refnlat == 46 and refnlon == 72:
-            refres = "4x5"
-            refgridtype = "ll"
-        elif refnlat == 91 and refnlon == 144:
-            refres = "2x2.5"
-            refgridtype = "ll"
-        elif refnlat / 6 == refnlon:
-            refres = refnlon
-            refgridtype = "cs"
-        else:
-            print("ERROR: ref {}x{} grid not defined in gcpy!".format(refnlat, refnlon))
-            return
-    else:
-        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        refres = refdata.dims["Xdim"]
-        refgridtype = "cs"
-
-    # dev
-    vdims = devdata.dims
-    if "lat" in vdims and "lon" in vdims:
-        devnlat = devdata.sizes["lat"]
-        devnlon = devdata.sizes["lon"]
-        if devnlat == 46 and devnlon == 72:
-            devres = "4x5"
-            devgridtype = "ll"
-        elif devnlat == 91 and devnlon == 144:
-            devres = "2x2.5"
-            devgridtype = "ll"
-        elif devnlat / 6 == devnlon:
-            devres = devnlon
-            devgridtype = "cs"
-        else:
-            print("ERROR: dev {}x{} grid not defined in gcpy!".format(refnlat, refnlon))
-            return
-    else:
-        devres = devdata.dims["Xdim"]
-        devgridtype = "cs"
+    refres, refgridtype = get_input_res(refdata)
+    devres, devgridtype = get_input_res(devdata)
 
     # =================================================================
     # Determine comparison grid resolution and type (if not passed)
@@ -1202,48 +1180,8 @@ def compare_zonal_mean(
     # lon dims.  GCHP output in v1.0.0 MAPL has XDim and YDim instead.
     # ==================================================================
 
-    # ref
-    vdims = refdata.dims
-    if "lat" in vdims and "lon" in vdims:
-        refnlat = refdata.sizes["lat"]
-        refnlon = refdata.sizes["lon"]
-        if refnlat == 46 and refnlon == 72:
-            refres = "4x5"
-            refgridtype = "ll"
-        elif refnlat == 91 and refnlon == 144:
-            refres = "2x2.5"
-            refgridtype = "ll"
-        elif refnlat / 6 == refnlon:
-            refres = refnlon
-            refgridtype = "cs"
-        else:
-            print("ERROR: ref {}x{} grid not defined in gcpy!".format(refnlat, refnlon))
-            return
-    else:
-        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        refres = refdata.dims["Xdim"]
-        refgridtype = "cs"
-
-    # dev
-    vdims = devdata.dims
-    if "lat" in vdims and "lon" in vdims:
-        devnlat = devdata.sizes["lat"]
-        devnlon = devdata.sizes["lon"]
-        if devnlat == 46 and devnlon == 72:
-            devres = "4x5"
-            devgridtype = "ll"
-        elif devnlat == 91 and devnlon == 144:
-            devres = "2x2.5"
-            devgridtype = "ll"
-        elif devnlat / 6 == devnlon:
-            devres = devnlon
-            devgridtype = "cs"
-        else:
-            print("ERROR: dev {}x{} grid not defined in gcpy!".format(refnlat, refnlon))
-            return
-    else:
-        devres = devdata.dims["Xdim"]
-        devgridtype = "cs"
+    refres, refgridtype = get_input_res(refdata)
+    devres, devgridtype = get_input_res(devdata)
 
     # ==================================================================
     # Determine comparison grid resolution (if not passed)
