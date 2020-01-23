@@ -333,15 +333,23 @@ def compare_single_level(
     # =================================================================
     # Loop over variables
     # =================================================================
+
     
     print_units_warning = True
+
     
     def createfig(ivar):
+
+        #WBD MOVE TO FUNCTION
+        
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
+
+def convert_units(data, 
+
 
         # If units are mol/mol then convert to ppb
         conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
@@ -382,6 +390,8 @@ def compare_single_level(
         # Slice the data, allowing for the
         # possibility of no time dimension (bpch)
         # ==============================================================
+        
+        #WBD LEAVE
 
         # Ref
         vdims = refdata[varname].dims
@@ -422,6 +432,8 @@ def compare_single_level(
         # TODO: update function to expect data in this format
         # ==============================================================
 
+        #WBD MOVE TO FUNCTION
+
         # ref
         vdims = refdata[varname].dims
         if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
@@ -439,6 +451,8 @@ def compare_single_level(
         # ==============================================================
         # Area normalization, if any
         # ==============================================================
+
+        #WBD LEAVE
 
         # if normalizing by area, adjust units to be per m2,
         # and adjust title string
@@ -480,6 +494,8 @@ def compare_single_level(
         if devgridtype == "cs":
             ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
 
+        #WBD MOVE TO FUNCTION
+
         # Ref
         if regridref:
             if refgridtype == "ll":
@@ -508,6 +524,8 @@ def compare_single_level(
         else:
             ds_dev_cmp = ds_dev
 
+        #WBD LEAVE
+
         # Reshape comparison cubed sphere data, if any
         if cmpgridtype == "cs":
             ds_ref_cmp_reshaped = ds_ref_cmp.data.reshape(6, cmpres, cmpres)
@@ -516,6 +534,8 @@ def compare_single_level(
         # ==============================================================
         # Get min and max values for use in the colorbars
         # ==============================================================
+
+        #WBD MOVE TO FUNCTION
 
         # Ref
         vmin_ref = float(ds_ref.data.min())
