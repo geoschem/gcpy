@@ -767,6 +767,10 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         # 2 = Dynamic abs diff    3 = Restricted abs diff
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
+
+        plot_types = ['ref',                     'dev',
+                      'dyn_abs_diff',   'res_abs_diff',
+                      'dyn_frac_diff', 'frac_abs_diff']
         
         all_zeros = [ref_is_all_zero,           dev_is_all_zero,
                      absdiff_is_all_zero,   absdiff_is_all_zero,
@@ -813,17 +817,17 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         # Plot in parallel 
         # ==============================================================
 
-        def sixplot(i, all_zero, all_nan, extent, plot_val, grid, ax, rowcol, title, comap):
+        def sixplot_single_level(plot_type, all_zero, all_nan, extent, plot_val, grid, ax, rowcol, title, comap):
 
             # Set min and max of the data range.
-            if i < 2:
+            if plot_type in ('ref', 'dev'):
                 if all_zero or all_nan:
-                    if i is 0:
+                    if plot_type is 'ref':
                         [vmin, vmax] = [vmin_ref, vmax_ref]
                     else:
                         [vmin, vmax] = [vmin_dev, vmax_dev]
                 elif use_cmap_RdBu:
-                    if i is 0:
+                    if plot_type is 'ref':
                         if match_cbar and (not all_nans[1]):
                             absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
                         else:
@@ -834,7 +838,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                         else:
                             absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
                 else:
-                    if i is 0:
+                    if plot_type is 'ref':
                         if match_cbar and (not all_nans[1]):
                             [vmin, vmax] = [vmin_abs, vmax_abs]
                         else:
@@ -850,13 +854,13 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                 elif all_zero:
                     [vmin, vmax] = [np.nan, np.nan]
                 else:
-                    if i is 2:
+                    if plot_type is 'dyn_abs_diff':
                         [vmin, vmax] = [-diffabsmax, diffabsmax]
-                    elif i is 3:
+                    elif plot_type is 'res_abs_diff':
                         [pct5, pct95] = [np.percentile(absdiff, 5), np.percentile(absdiff, 95)]
                         abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
                         [vmin, vmax] = [-abspctmax, abspctmax]
-                    elif i is 4:
+                    elif plot_type is 'dyn_frac_diff':
                         [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
                     else:
                         [vmin, vmax] = [-2, 2]
@@ -864,7 +868,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                 print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
 
             # Normalize colors (put into range [0..1] for matplotlib methods)
-            if i < 2:
+            if plot_type in ('ref', 'dev'):
                 norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
             else:
                 norm = core.normalize_colors(vmin, vmax, is_difference=True)
@@ -876,9 +880,9 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                 # Create a lon/lat plot
                 plot = ax.imshow(plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm = norm)
             else:
-                if i is 0:
+                if plot_type is 'ref':
                     masked_data = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_ref_reshaped )
-                elif i is 1:
+                elif plot_type is 'dev':
                     masked_data = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_dev_reshaped )
                 else:
                     masked_data = plot_val
@@ -895,7 +899,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
             cb = plt.colorbar(plot, ax=ax, orientation = "horizontal", pad = 0.10)
             cb.mappable.set_norm(norm)
             if all_zero or all_nan:
-                if i < 2:
+                if plot_type in ('ref', 'dev'):
                     if use_cmap_RdBu:
                         cb.set_ticks([0.0])
                     else:
@@ -913,24 +917,18 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                     if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                         cb.locator = mticker.MaxNLocator(nbins=4)
             cb.update_ticks()
-            if i is 0:
+            if plot_type is 'ref':
                 cb.set_label(units_ref)
-            elif i is 1:
+            elif plot_type is 'dev':
                 cb.set_label(units_dev)
-            elif i < 4:
+            elif plot_type in ('dyn_abs_diff', 'res_abs_diff'):
                 cb.set_label(units)
             else:
                 cb.set_label("unitless")
          
         for i in range(6):
-            sixplot(i, all_zeros[i], all_nans[i], extents[i], plot_vals[i],
+            sixplot_single_level(plot_types[i], all_zeros[i], all_nans[i], extents[i], plot_vals[i],
                     grids[i], axs[i], rowcols[i], titles[i], cmaps[i])
-        #Parallel(n_jobs = 6)(delayed(sixplot)(i, all_zeros[i], all_nans[i], 
-        #                                      extents[i], plot_vals[i], grids[i], 
-        #                                      axs[i], rowcols[i], titles[i], cmaps[i])
-        #                     for i in range(6))
-
-
 
         # ==============================================================
         # Update the list of variables with significant differences.
@@ -953,11 +951,6 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
     #for i in range(n_var):
     #    createfig(i)
     Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
-
-    #Parallel(n_jobs = 6)(delayed(sixplot)(i, all_zeros[i], all_nans[i], 
-    #                                      extents[i], plot_vals[i], grids[i], 
-    #                                      axs[i], rowcols[i], titles[i], cmaps[i])
-    #                     for i in range(6))
 
     # ==================================================================
     # Finish
