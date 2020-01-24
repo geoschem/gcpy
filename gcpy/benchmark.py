@@ -57,6 +57,53 @@ def call_make_grid(res, gridtype, zonal_mean, comparison):
     else:
         return make_grid_CS(res)
 
+def check_units(refdata, devdata, varname):
+    # If units are mol/mol then convert to ppb
+    conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
+    if refdata[varname].units.strip() in conc_units:
+        refdata[varname].attrs["units"] = "ppbv"
+        refdata[varname].values = refdata[varname].values * 1e9
+    if devdata[varname].units.strip() in conc_units:
+        devdata[varname].attrs["units"] = "ppbv"
+        devdata[varname].values = devdata[varname].values * 1e9
+        
+    # Binary diagnostic concentrations have units ppbv. Change to ppb.
+    if refdata[varname].units.strip() == "ppbv":
+        refdata[varname].attrs["units"] = "ppb"
+    if devdata[varname].units.strip() == "ppbv":
+        devdata[varname].attrs["units"] = "ppb"
+        
+    # Check that units match
+    units_ref = refdata[varname].units.strip()
+    units_dev = devdata[varname].units.strip()
+    if units_ref != units_dev:
+        print_units_warning = True
+        if print_units_warning:
+            print("WARNING: ref and dev concentration units do not match!")
+            print("Ref units: {}".format(units_ref))
+            print("Dev units: {}".format(units_dev))
+        if enforce_units:
+            # if enforcing units, stop the program if
+            # units do not match
+            assert units_ref == units_dev, "Units do not match for {}!".format(
+                varname
+            )
+        else:
+            # if not enforcing units, just keep going after
+            # only printing warning once
+            print_units_warning = False
+        
+def reshape_MAPL_CS(ds, vdims):
+    #Reshape cubed sphere data if using MAPL v1.0.0+
+    if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
+        ds = ds.stack(lat=("nf", "Ydim"))
+        ds = ds.rename({"Xdim": "lon"})
+        ds = ds.transpose("lat", "lon")
+    return ds
+
+def all_zero_or_nan(ds):
+    #Return whether ds is all zeros, or all nans
+    return not np.any(ds.values), np.isnan(ds.values).all()
 
 def compare_single_level(
     refdata,
@@ -339,8 +386,6 @@ def compare_single_level(
 
     
     def createfig(ivar):
-
-        #WBD MOVE TO FUNCTION
         
         if savepdf:
             print("{} ".format(ivar), end="")
@@ -348,50 +393,13 @@ def compare_single_level(
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
 
-def convert_units(data, 
-
-
-        # If units are mol/mol then convert to ppb
-        conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
-        if refdata[varname].units.strip() in conc_units:
-            refdata[varname].attrs["units"] = "ppbv"
-            refdata[varname].values = refdata[varname].values * 1e9
-        if devdata[varname].units.strip() in conc_units:
-            devdata[varname].attrs["units"] = "ppbv"
-            devdata[varname].values = devdata[varname].values * 1e9
-
-        # Binary diagnostic concentrations have units ppbv. Change to ppb.
-        if refdata[varname].units.strip() == "ppbv":
-            refdata[varname].attrs["units"] = "ppb"
-        if devdata[varname].units.strip() == "ppbv":
-            devdata[varname].attrs["units"] = "ppb"
-
-        # Check that units match
-        units_ref = refdata[varname].units.strip()
-        units_dev = devdata[varname].units.strip()
-        if units_ref != units_dev:
-            print_units_warning = True
-            if print_units_warning:
-                print("WARNING: ref and dev concentration units do not match!")
-                print("Ref units: {}".format(units_ref))
-                print("Dev units: {}".format(units_dev))
-            if enforce_units:
-                # if enforcing units, stop the program if
-                # units do not match
-                assert units_ref == units_dev, "Units do not match for {}!".format(
-                    varname
-                )
-            else:
-                # if not enforcing units, just keep going after
-                # only printing warning once
-                print_units_warning = False
+        #Convert mol/mol units to ppb and ensure ref and dev units match
+        units_ref, units_dev = check_units(refdata, devdata, varname)
 
         # ==============================================================
         # Slice the data, allowing for the
         # possibility of no time dimension (bpch)
-        # ==============================================================
-        
-        #WBD LEAVE
+        # ==============================================================        
 
         # Ref
         vdims = refdata[varname].dims
@@ -431,28 +439,13 @@ def convert_units(data,
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
-
-        #WBD MOVE TO FUNCTION
-
-        # ref
-        vdims = refdata[varname].dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            ds_ref = ds_ref.stack(lat=("nf", "Ydim"))
-            ds_ref = ds_ref.rename({"Xdim": "lon"})
-            ds_ref = ds_ref.transpose("lat", "lon")
-
-        # dev
-        vdims = devdata[varname].dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            ds_dev = ds_dev.stack(lat=("nf", "Ydim"))
-            ds_dev = ds_dev.rename({"Xdim": "lon"})
-            ds_dev = ds_dev.transpose("lat", "lon")
+                
+        ds_ref = reshape_MAPL_CS(ds_ref, refdata[varname].dims)
+        ds_dev = reshape_MAPL_CS(ds_dev, devdata[varname].dims)
 
         # ==============================================================
         # Area normalization, if any
         # ==============================================================
-
-        #WBD LEAVE
 
         # if normalizing by area, adjust units to be per m2,
         # and adjust title string
@@ -489,12 +482,33 @@ def convert_units(data,
         # ==============================================================
 
         # Reshape ref/dev cubed sphere data, if any
+        ds_ref_reshaped = None
         if refgridtype == "cs":
             ds_ref_reshaped = ds_ref.data.reshape(6, refres, refres)
+        ds_dev_reshaped = None
         if devgridtype == "cs":
             ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
-
+            
+        '''
         #WBD MOVE TO FUNCTION
+
+def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped):
+    if regrid:
+        if gridtype == "ll":
+            #regrid ll to ll
+            return regridder(ds)
+        else:
+            #regrid cs to ll
+            ds_cmp = np.zeros([cmpgrid["lat"].size, cpmgrid["lon"].size])
+            for i in range(6):
+                regridder = ds_regridder[i]
+                ds_cmp += regridder(ds_reshaped[i])
+            return ds_cmp
+    else:
+        return ds
+
+        ds_ref_cmp = regrid_cmp_datasets(regridref, refgridtype, ds_ref, cmpgrid, ds_ref_reshaped)
+        '''
 
         # Ref
         if regridref:
@@ -583,11 +597,9 @@ def convert_units(data,
         # This will have implications as to how we set min and max
         # values for the color ranges below.
         # ==============================================================
-        ref_is_all_zero = not np.any(ds_ref.values)
-        ref_is_all_nan = np.isnan(ds_ref.values).all()
-
-        dev_is_all_zero = not np.any(ds_dev.values)
-        dev_is_all_nan = np.isnan(ds_dev.values).all()
+        
+        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref)
+        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev)
 
         # ==============================================================
         # Calculate absolute difference
@@ -1281,37 +1293,8 @@ def compare_zonal_mean(
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
 
-        # If units are mol/mol then convert to ppb
-        conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
-        if refdata[varname].units.strip() in conc_units:
-            refdata[varname].attrs["units"] = "ppbv"
-            refdata[varname].values = refdata[varname].values * 1e9
-        if devdata[varname].units.strip() in conc_units:
-            devdata[varname].attrs["units"] = "ppbv"
-            devdata[varname].values = devdata[varname].values * 1e9
-
-        # Binary diagnostic concentrations have units ppbv. Change to ppb.
-        if refdata[varname].units.strip() == "ppbv":
-            refdata[varname].attrs["units"] = "ppb"
-        if devdata[varname].units.strip() == "ppbv":
-            devdata[varname].attrs["units"] = "ppb"
-
-        # Check that units match
-        units_ref = refdata[varname].units.strip()
-        units_dev = devdata[varname].units.strip()
-        if units_ref != units_dev:
-            if print_units_warning:
-                print("WARNING: ref and dev concentration units do not match!")
-                print("Ref units: {}".format(units_ref))
-                print("Dev units: {}".format(units_dev))
-            if enforce_units:
-                # if enforcing units, stop the program if units do not match
-                assert units_ref == units_dev, "Units do not match for {}!".format(
-                    varname
-                )
-            else:
-                # if not enforcing units, just keep going after only printing warning once
-                print_units_warning = False
+        #Convert mol/mol units to ppb and ensure ref and dev units match
+        units_ref, units_dev = check_units(refdata, devdata, varname)
 
         # ==============================================================
         # Slice the data, allowing for the
@@ -1337,19 +1320,8 @@ def compare_zonal_mean(
         # TODO: update function to expect data in this format
         # ==============================================================
 
-        # ref
-        vdims = refdata[varname].dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            ds_ref = ds_ref.stack(lat=("nf", "Ydim"))
-            ds_ref = ds_ref.rename({"Xdim": "lon"})
-            ds_ref = ds_ref.transpose("lev", "lat", "lon")
-
-        # dev
-        vdims = devdata[varname].dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            ds_dev = ds_dev.stack(lat=("nf", "Ydim"))
-            ds_dev = ds_dev.rename({"Xdim": "lon"})
-            ds_dev = ds_dev.transpose("lev", "lat", "lon")
+        ds_ref = reshape_MAPL_CS(ds_ref, refdata[varname].dims)
+        ds_dev = reshape_MAPL_CS(ds_dev, devdata[varname].dims)
 
         # ==============================================================
         # Area normalization, if any
@@ -1474,11 +1446,8 @@ def compare_zonal_mean(
         # values for the color ranges below.
         # ==============================================================
 
-        ref_is_all_zero = not np.any(ds_ref.values)
-        ref_is_all_nan = np.isnan(ds_ref.values).all()
-
-        dev_is_all_zero = not np.any(ds_dev.values)
-        dev_is_all_nan = np.isnan(ds_dev.values).all()
+        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref)
+        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev)
 
         # ==============================================================
         # Create 3x2 figure
