@@ -11,27 +11,12 @@ import matplotlib.colors as mcolors
 import numpy as np
 import xarray as xr
 import xbpch
+from .constants import skip_these_vars
 
 
 # JSON files to read
 lumped_spc = "lumped_species.json"
 bpch_to_nc_names = "bpch_to_nc_names.json"
-
-
-def skip_these_vars():
-    """
-    Returns a list of variables that should not be read by GCPy.
-    These are mostly from the MAPL v1.0.0 cubed-sphere files,
-    which introduce extra dimensions that are not easily handled
-    by xarray and/or GCPy.
-
-    Example:
-    -------
-    >>> from gcpy import core
-    >>> import xarray as xr
-    >>> ds = xr.open_dataset('myfile.nc', drop_variables=skip_these_vars())
-    """
-    return ["anchor", "ncontact", "orientation", "contacts", "cubed_sphere"]
 
 
 def open_dataset(filename, **kwargs):
@@ -96,7 +81,7 @@ def open_dataset(filename, **kwargs):
             '"bpch" or "nc"!'.format(file_extension)
         )
 
-    return _opener(filename, **kwargs, drop_variables=skip_these_vars())
+    return _opener(filename, **kwargs, drop_variables=skip_these_vars)
 
 
 def open_mfdataset(
@@ -192,19 +177,13 @@ def open_mfdataset(
             + '"bpch" or "nc" or "nc4"'
         )
 
-    # Get a list of variables that GCPy should not read.  These are
-    # mostly variables from GCHP files created with MAPL v1.0.0+
-    # that have repeated dimensions or non-standard dimensions.
-    # These can cause issues when concatenating files.
-    skip_vars = skip_these_vars()
-
     return _opener(
         filenames,
         concat_dim=concat_dim,
         compat=compat,
         preprocess=preprocess,
         lock=lock,
-        drop_variables=skip_vars,
+        drop_variables=skip_these_vars,
         **kwargs
     )
 
