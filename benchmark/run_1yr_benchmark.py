@@ -137,10 +137,6 @@ diff_of_diffs_devstr = '{} - {}'.format(gchp_dev_version,
 #gcc_vs_gcc_devrst = core.get_gcc_filepath(gcc_vs_gcc_devdir, 'Restart',
 #                                          year=bmk_year, month=bmk_months)
 #
-## Paths to budget data
-#gcc_vs_gcc_devbgt = core.get_gcc_filepath(gcc_vs_gcc_devdir, 'Budget',
-#                                          year=bmk_year, month=bmk_months)
-#
 ## Paths to concentration after chemistry files
 #gcc_vs_gcc_refcac = core.get_gcc_filepath(gcc_vs_gcc_refdir, 'ConcAfterChem',
 #                                          year=bmk_year, month=bmk_months)
@@ -353,10 +349,20 @@ if gcc_vs_gcc:
         # GCC vs GCC budgets tables
         # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC budget tables %%%')
-        bmk.make_benchmark_budget_tables(gcc_vs_gcc_devbgt,
-                                         gcc_vs_gcc_devstr,
-                                         dst=gcc_vs_gcc_plotsdir,
-                                         overwrite=True)
+
+        ## Paths to budget data
+        gcc_vs_gcc_devbgt = get_filepaths(gcc_vs_gcc_devdir, 'Budget',
+                                          bmk_seasons, is_gcc=True)
+        seasons = ['Jan', 'Apr', 'Jul', 'Oct']
+        #Create seasonal budget tables (mass at end of each season month)
+        for s in range(bmk_nseasons):
+            mon_yr_str = seasons[s]
+            bmk.make_benchmark_budget_tables(gcc_vs_gcc_devbgt[s],
+                                             gcc_vs_gcc_devstr,
+                                             dst=gcc_vs_gcc_plotsdir,
+                                             overwrite=True,
+                                             interval=sec_per_month[s*3],
+                                             subdst=mon_yr_str)
 
     if OH_metrics:
         # --------------------------------------------------------------

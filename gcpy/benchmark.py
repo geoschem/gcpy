@@ -3107,7 +3107,7 @@ def create_budget_table(
     varnames,
     outfilename,
     interval=[2678400.0],
-    template="Budget_{}",
+    template="Budget_{}"
 ):
     """
     Creates a table of budgets by species and component for a data set.
@@ -3144,8 +3144,8 @@ def create_budget_table(
         template : str
             Template for the diagnostic names that are contained in the
             data set. If not specified, template will be set to "Budget_{}",
-            where {} will be replaced by the species name.
-
+            where {} will be replaced by the species name.     
+            
     Remarks:
     --------
         This method is mainly intended for model benchmarking purposes,
@@ -4894,7 +4894,12 @@ def make_benchmark_mass_tables(
 
 
 def make_benchmark_budget_tables(
-    dev, devstr, dst="./1mo_benchmark", overwrite=False, interval=[2678400.0]
+        dev,
+        devstr,
+        dst="./1mo_benchmark",
+        overwrite=False,
+        interval=[2678400.0],
+        subdst=None
 ):
     """
     Creates a text file containing budgets by species for benchmarking
@@ -4924,6 +4929,15 @@ def make_benchmark_budget_tables(
             Specifies the averaging period in seconds, which is used
             to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
             Default value : None
+
+        subdst : str
+            A string denoting the sub-directory of dst where PDF
+            files containing plots will be written.  In practice,
+            subdst is only needed for the 1-year benchmark output,
+            and denotes a date string (such as "Jan2016") that
+            corresponds to the month that is being plotted.
+            Default value: None
+
     """
 
     # ==================================================================
@@ -4941,6 +4955,10 @@ def make_benchmark_budget_tables(
     budgetdir = os.path.join(dst, "Budget")
     if not os.path.isdir(budgetdir):
         os.mkdir(budgetdir)
+    if subdst is not None:
+        budgetdir = os.path.join(budgetdir, subdst)
+        if not os.path.isdir(budgetdir):
+            os.mkdir(budgetdir)        
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
