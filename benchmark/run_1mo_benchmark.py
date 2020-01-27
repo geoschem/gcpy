@@ -46,7 +46,7 @@ import os
 from os.path import join
 import xarray as xr
 from gcpy import benchmark as bmk
-from gcpy.core import skip_these_vars
+from gcpy.constants import skip_these_vars
 import warnings
 
 # Tell matplotlib not to look for an X-window
@@ -554,7 +554,7 @@ if gchp_vs_gcc_diff_of_diffs:
     print('%\n%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%')
 
     # Get a list of variables that GCPy should not read
-    skip_vars = skip_these_vars()
+    skip_vars = skip_these_vars
 
     # Target output files
     diff_of_diffs_refspc = './gcc_diffs_spc.nc4'
