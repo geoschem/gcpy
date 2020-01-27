@@ -758,9 +758,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
             absdiff_fixed_title  = "Difference\nDev - Ref, Restricted Range [5%,95%]"
             fracdiff_dynam_title = "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
             fracdiff_fixed_title = "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
-
-        
-            
+                    
         # ==============================================================
         # Bundle variables for 6 parallel plotting calls
         # 0 = Ref                 1 = Dev
@@ -1443,6 +1441,32 @@ def compare_zonal_mean(
         dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev)
 
         # ==============================================================
+        # Calculate zonal mean difference
+        # ==============================================================
+
+        zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
+
+        # Test if abs. diff is zero everywhere or NaN everywhere
+        absdiff_is_all_zero = not np.any(zm_diff)
+        absdiff_is_all_nan = np.isnan(zm_diff).all()
+
+        # Absolute maximum difference value
+        diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
+
+        # ==============================================================
+        # Calculate fractional difference, set divides by zero to Nan
+        # ==============================================================
+
+        zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(
+            zm_ref_cmp
+        )
+        zm_fracdiff = np.where(zm_fracdiff == np.inf, np.nan, zm_fracdiff)
+
+        # Test if the frac. diff is zero everywhere or NaN everywhere
+        fracdiff_is_all_zero = not np.any(zm_fracdiff)
+        fracdiff_is_all_nan = np.isnan(zm_fracdiff).all()
+
+        # ==============================================================
         # Create 3x2 figure
         # ==============================================================
 
@@ -1471,12 +1495,88 @@ def compare_zonal_mean(
         # in order to avoid set_bad() from being applied to the base
         # color table. See: https://docs.python.org/3/library/copy.html
         # ==============================================================
+
         if use_cmap_RdBu:
             cmap1 = copy.copy(mpl.cm.RdBu_r)
         else:
             cmap1 = copy.copy(WhGrYlRd)
         cmap1.set_bad("gray")
+        
+        cmap_plot = copy.copy(mpl.cm.RdBu_r)
+        cmap_plot.set_bad(color="gray")
+        
+        # ==============================================================
+        # Set titles for plots
+        # ==============================================================
+        
+        if refgridtype == "ll":
+            ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
+            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
+        else:
+            ref_title = "{} (Ref){}\nc{} regridded from c{}".format(refstr, subtitle_extra, cmpres, refres)
+            dev_title = "{} (Dev){}\nc{} regridded from c{}".format(devstr, subtitle_extra, cmpres, devres)
 
+        if regridany:
+            absdiff_dynam_title  = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title  = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
+            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(cmpres)
+            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)     
+        else:
+            absdiff_dynam_title  = "Difference\nDev - Ref, Dynamic Range"
+            absdiff_fixed_title  = "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            fracdiff_dynam_title = "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
+            fracdiff_fixed_title = "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
+                    
+        # ==============================================================
+        # Bundle variables for 6 parallel plotting calls
+        # 0 = Ref                 1 = Dev
+        # 2 = Dynamic abs diff    3 = Restricted abs diff
+        # 4 = Dynamic frac diff   5 = Restricted frac diff
+        # ==============================================================
+
+        plot_types = ['ref',                     'dev',
+                      'dyn_abs_diff',   'res_abs_diff',
+                      'dyn_frac_diff', 'res_frac_diff']
+        
+        all_zeros = [ref_is_all_zero,           dev_is_all_zero,
+                     absdiff_is_all_zero,   absdiff_is_all_zero,
+                     fracdiff_is_all_zero, fracdiff_is_all_zero]
+
+        all_nans  = [ref_is_all_nan,             dev_is_all_nan,
+                     absdiff_is_all_nan,     absdiff_is_all_nan,
+                     fracdiff_is_all_nan,   fracdiff_is_all_nan]
+
+        plot_vals = [zm_ref,     zm_dev,
+                     zm_diff,   zm_diff,
+                     zm_fracdiff, zm_fracdiff]
+        
+        axs = [ax0, ax1,
+               ax2, ax3,
+               ax4, ax5]
+        
+        cmaps = [cmap1,         cmap1,
+                 cmap_plot, cmap_plot,
+                 cmap_plot, cmap_plot]
+
+        rowcols = [(0,0), (0,1),
+                   (1,0), (1,1),
+                   (2,0), (2,1)]
+        
+        titles = [ref_title,                       dev_title,
+                  absdiff_dynam_title,   absdiff_fixed_title,
+                  fracdiff_dynam_title, fracdiff_fixed_title]
+
+        if refgridtype == "ll":
+            grids = [refgrid, devgrid,
+                     cmpgrid, cmpgrid,
+                     cmpgrid, cmpgrid]
+        else:
+            grids = [cmpgrid, cmpgrid,
+                     cmpgrid, cmpgrid,
+                     cmpgrid, cmpgrid]
+
+        
+        
         # ==============================================================
         # Subplot (0,0): Ref
         # ==============================================================
@@ -1638,28 +1738,6 @@ def compare_zonal_mean(
         cb.update_ticks()
         cb.set_label(units)
 
-        # ==============================================================
-        # Configure colorbar for difference plots, use gray for NaNs
-        #
-        # Use shallow copy (copy.copy() to create color map objects,
-        # in order to avoid set_bad() from being applied to the base
-        # color table. See: https://docs.python.org/3/library/copy.html
-        # ==============================================================
-        cmap_plot = copy.copy(mpl.cm.RdBu_r)
-        cmap_plot.set_bad(color="gray")
-
-        # ==============================================================
-        # Calculate zonal mean difference
-        # ==============================================================
-
-        zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
-
-        # Test if abs. diff is zero everywhere or NaN everywhere
-        absdiff_is_all_zero = not np.any(zm_diff)
-        absdiff_is_all_nan = np.isnan(zm_diff).all()
-
-        # Absolute maximum difference value
-        diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
 
         # ==============================================================
         # Subplot (1,0): Difference, dynamic range
@@ -1788,19 +1866,6 @@ def compare_zonal_mean(
                 cb.locator = mticker.MaxNLocator(nbins=4)
         cb.update_ticks()
         cb.set_label(units)
-
-        # ==============================================================
-        # Calculate fractional difference, set divides by zero to Nan
-        # ==============================================================
-
-        zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(
-            zm_ref_cmp
-        )
-        zm_fracdiff = np.where(zm_fracdiff == np.inf, np.nan, zm_fracdiff)
-
-        # Test if the frac. diff is zero everywhere or NaN everywhere
-        fracdiff_is_all_zero = not np.any(zm_fracdiff)
-        fracdiff_is_all_nan = np.isnan(zm_fracdiff).all()
 
         # ==============================================================
         # Subplot (2,0): Fractional Difference, dynamic range
