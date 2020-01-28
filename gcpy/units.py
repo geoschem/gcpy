@@ -260,16 +260,13 @@ def convert_units(
     # Compute target units
     # ==============================
 
-    # Create an array for the number of seconds for braodcasting
-    # (This is klunky, maybe there is a better way to do this)
-    seconds = np.zeros(dr.shape)
-    if len(dr.shape) == 3:
-        for t in range(dr.shape[0]):
-            seconds[t, :, :] = interval[t]
-    elif len(dr.shape) == 4:
-        for t in range(dr.shape[0]):
-            seconds[t, :, :, :] = interval[t]
-
+    # Create an array for the number of seconds for broadcasting
+    seconds = np.full(dr.shape, 1)
+    
+    #Assume time is the first dimension
+    for t in range(dr.shape[0]):
+        seconds[t] = seconds[t]*interval[t]
+            
     if units == "kg/m2/s":
         # Note: multiplying data arrays will broadcast dimensions properly
         data_kg = dr * area_m2
