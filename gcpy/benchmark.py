@@ -1588,7 +1588,13 @@ def compare_zonal_mean(
             grids = [cmpgrid, cmpgrid,
                      cmpgrid, cmpgrid,
                      cmpgrid, cmpgrid]
+        extents = [None, None,
+                   None, None,
+                   None, None]
 
+        masked = ['ZM', 'ZM',
+                  'ZM', 'ZM',
+                  'ZM', 'ZM']
 
 def sixplot(plot_type,
             all_zero,
@@ -1660,22 +1666,38 @@ def sixplot(plot_type,
 
     # Create plot
     ax.set_title(title)
-    if masked_data == None:
+    
+    if masked_data == 'ZM':
+        #Zonal mean plot
+        plot = ax.pcolormesh(grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm = norm)
+        ax.set_aspect("auto")
+        ax.set_ylabel("Pressure (hPa)")
+        if log_yaxis:
+            ax.set_yscale("log")
+            ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+        ax.invert_yaxis()
+        ax.set_xticks(xtick_positions)
+        ax.set_xticklabels(xticklabels)        
+
+    elif cmpgridtype == "ll":
+        #Create a lon/lat plot
+        plot = ax.imshow(plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm)
+    else:
+        for j in range(6):
+            plot = ax.pcolormesh(
+                grid["lon_b"][j, :, :],
+                grid["lat_b"][j, :, :],
+                masked_data[j, :, :],
+                transform = ccrs.PlateCarree(),
+                cmap=comap,
+                norm = norm
+            )
         
-            
         def sixplot_zonal_mean(plot_type, all_zero, all_nan, plot_val, grid, ax, rowcol, title, comap):
 
 
 
-            plot = ax.pcolormesh(grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm = norm)
-            ax.set_aspect("auto")
-            ax.set_ylabel("Pressure (hPa)")
-            if log_yaxis:
-                ax.set_yscale("log")
-                ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-            ax.invert_yaxis()
-            ax.set_xticks(xtick_positions)
-            ax.set_xticklabels(xticklabels)
+            
 
             # Define the colorbar for the plot
             cb = plt.colorbar(plot, ax=ax, orientation = "horizontal", pad = 0.10)
