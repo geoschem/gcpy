@@ -92,7 +92,9 @@ def check_units(refdata, devdata, varname):
             # if not enforcing units, just keep going after
             # only printing warning once
             print_units_warning = False
-        
+
+    return units_ref, units_dev
+
 def reshape_MAPL_CS(ds, vdims):
     #Reshape cubed sphere data if using MAPL v1.0.0+
     if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
@@ -1232,10 +1234,10 @@ def compare_zonal_mean(
     # Make grids (ref, dev, and comparison)
     # ==================================================================
 
-    [refgrid, regrid_list]  = call_make_grid(refres, gridtype, True, False)
-    [devgrid, devgrid_list] = call_make_grid(devres, gridtype, True, False)
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, gridtype, True, True)
-
+    [refgrid, regrid_list]  = call_make_grid(refres, refgridtype, True, False)
+    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, True, False)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, True, True)
+    
     # ==================================================================
     # Make regridders, if applicable
     # TODO: Add CS to CS regridders
@@ -1617,7 +1619,7 @@ def compare_zonal_mean(
                     if plot_type is 'dyn_abs_diff':
                         [vmin, vmax] = [-diffabsmax, diffabsmax]
                     elif plot_type is 'res_abs_diff':
-                        [pct5, pct95] = [np.percentile(absdiff, 5), np.percentile(absdiff, 95)]
+                        [pct5, pct95] = [np.percentile(plot_val, 5), np.percentile(plot_val, 95)]
                         abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
                         [vmin, vmax] = [-abspctmax, abspctmax]
                     elif plot_type is 'dyn_frac_diff':
@@ -1664,7 +1666,7 @@ def compare_zonal_mean(
                 else:
                     if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                         cb.locator = mticker.MaxNLocator(nbins=4)
-            if plot_Type in ('ref', 'dev', 'dyn_abs_diff', 'res_abs_diff'):
+            if plot_type in ('ref', 'dev', 'dyn_abs_diff', 'res_abs_diff'):
                 cb.set_label(units)
             else:
                 cb.set_label("unitless")
