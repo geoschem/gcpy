@@ -1708,6 +1708,8 @@ def sixplot(plot_type,
                         cb.set_ticks([0.0])
                     else:
                         cb.set_ticks([0.5])
+                else:
+                    cb.set_ticks([0.0])
                 if all_nan:
                     cb.set_ticklabels(["Undefined throughout domain"])
                 else:
