@@ -1,4 +1,4 @@
-1;95;0c1"""
+"""
 Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 """
 
@@ -117,39 +117,52 @@ def sixplot(plot_type,
             title,
             comap,
             unit,
-            extent = None,
-            masked_data = None,
+            extent,
+            masked_data,
+            other_all_nan,
+            vmins,
+            vmaxs,
+            use_cmap_RdBu,
+            match_cbar,
+            verbose,
+            cmpgridtype,
+            log_color_scale,
+            pedge=None,
+            pedge_ind=0,
+            log_yaxis=False,
+            xtick_positions=[],
+            xticklabels=[]
             ):
 
     # Set min and max of the data range
     if plot_type in ('ref', 'dev'):
         if all_zero or all_nan:
             if plot_type is 'ref':
-                [vmin, vmax] = [vmin_ref, vmax_ref]
+                [vmin, vmax] = [vmins[0], vmaxs[0]]
             else:
-                [vmin, vmax] = [vmin_dev, vmax_dev]
+                [vmin, vmax] = [vmins[1], vmaxs[1]]
         elif use_cmap_RdBu:
             if plot_type is 'ref':
-                if match_cbar and (not all_nans[1]):
-                    absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
+                if match_cbar and (not other_all_nan):
+                    absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
                 else:
-                    absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
+                    absmax = max([np.abs(vmins[0]), np.abs(vmaxs[0])])
             else:
-                if match_cbar and (not all_nans[0]):
-                    absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
+                if match_cbar and (not other_all_nan):
+                    absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
                 else:
-                    absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
+                    absmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
         else:
             if plot_type is 'ref':
-                if match_cbar and (not all_nans[1]):
-                    [vmin, vmax] = [vmin_abs, vmax_abs]
+                if match_cbar and (not other_all_nan):
+                    [vmin, vmax] = [vmins[2], vmaxs[2]]
                 else:
-                    [vmin, vmax] = [vmin_ref, vmax_ref]
+                    [vmin, vmax] = [vmins[0], vmaxs[0]]
             else:
-                if match_cbar and (not all_nans[0]):
-                    [vmin, vmax] = [vmin_abs, vmax_abs]
+                if match_cbar and (not other_all_nan):
+                    [vmin, vmax] = [vmins[2], vmaxs[2]]
                 else:
-                    [vmin, vmax] = [vmin_dev, vmax_dev]
+                    [vmin, vmax] = [vmins[1], vmaxs[1]]
 
     else:
         if all_zero:
@@ -158,6 +171,8 @@ def sixplot(plot_type,
             [vmin, vmax] = [np.nan, np.nan]
         else:
             if plot_type is 'dyn_abs_diff':
+                # Min and max of abs. diff, excluding NaNs
+                diffabsmax = max([np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))])
                 [vmin, vmax] = [-diffabsmax, diffabsmax]
             elif plot_type is 'res_abs_diff':
                 [pct5, pct95] = [np.percentile(plot_val, 5), np.percentile(plot_val, 95)]
@@ -171,11 +186,11 @@ def sixplot(plot_type,
     if verbose:
         print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
 
-        #Normalize colors (put into range [0..1] for matplotlib methods)
-        if plot_type in ('ref', 'dev'):
-            norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
-        else:
-            norm = core.normalize_colors(vmin, vmax, is_difference = True)
+    #Normalize colors (put into range [0..1] for matplotlib methods)
+    if plot_type in ('ref', 'dev'):
+        norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
+    else:
+        norm = core.normalize_colors(vmin, vmax, is_difference = True)
 
     # Create plot
     ax.set_title(title)
@@ -193,9 +208,11 @@ def sixplot(plot_type,
         ax.set_xticklabels(xticklabels)        
 
     elif cmpgridtype == "ll":
+        ax.coastlines()
         #Create a lon/lat plot
         plot = ax.imshow(plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm)
     else:
+        ax.coastlines()
         for j in range(6):
             plot = ax.pcolormesh(
                 grid["lon_b"][j, :, :],
@@ -739,9 +756,6 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         absdiff_is_all_zero = not np.any(absdiff)
         absdiff_is_all_nan = np.isnan(absdiff).all()
 
-        # Min and max of abs. diff, excluding NaNs
-        diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])
-
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
         if cmpgridtype == "cs":
@@ -935,7 +949,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                      cmap_nongray, cmap_nongray,
                      cmap_nongray, cmap_nongray]
 
-        if cmpgridtype = "ll":
+        if cmpgridtype == "ll":
             masked = [None, None,
                            None, None,
                            None, None]
@@ -949,12 +963,23 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         unit_list = [units_ref,   units_dev,
                      units,           units,
                      "unitless", "unitless"]
+
+        other_all_nans = [dev_is_all_nan, ref_is_all_nan,
+                          False,                   False,                          
+                          False,                   False]
+
+        mins = [vmin_ref, vmin_dev, vmin_abs]
+        maxs = [vmax_ref, vmax_dev, vmax_abs]
+
         #Plot 
         for i in range(6):
             sixplot(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
                     grids[i], axs[i], rowcols[i], titles[i], cmaps[i],
-                    unit_list[i], extents[i], masked[i])
+                    unit_list[i], extents[i], masked[i], other_all_nans[i],
+                    mins, maxs, use_cmap_RdBu, match_cbar, verbose, cmpgridtype,
+                    log_color_scale)
 
+        
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(max(fracdiff)) > 0.1
@@ -1617,10 +1642,20 @@ def compare_zonal_mean(
                      "unitless", "unitless",
                      "unitless", "unitless"]
 
+        other_all_nans = [dev_is_all_nan, ref_is_all_nan,
+                          False,                   False,
+                          False,                   False]
+
+        mins = [vmin_ref, vmin_dev, vmin_abs]
+        maxs = [vmax_ref, vmax_dev, vmax_abs]
+
+        #Plot 
         for i in range(6):
             sixplot(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
                     grids[i], axs[i], rowcols[i], titles[i], cmaps[i],
-                    unit_list[i], extents[i], masked[i])
+                    unit_list[i], extents[i], masked[i], other_all_nans[i],
+                    mins, maxs, use_cmap_RdBu, match_cbar, verbose, cmpgridtype,
+                    log_color_scale, pedge, pedge_ind, log_yaxis)
                 
         # ==============================================================
         # Update the list of variables with significant differences.
