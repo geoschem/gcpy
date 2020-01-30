@@ -849,7 +849,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
             else:
                 if all_zero:
                     [vmin, vmax] = [0, 0]
-                elif all_zero:
+                elif all_nan:
                     [vmin, vmax] = [np.nan, np.nan]
                 else:
                     if plot_type is 'dyn_abs_diff':
@@ -982,6 +982,7 @@ def compare_zonal_mean(
     log_color_scale=False,
     log_yaxis=False,
     extra_title_txt=None,
+    n_job = -1,
     sigdiff_list=[],
 ):
 
@@ -1575,432 +1576,103 @@ def compare_zonal_mean(
                      cmpgrid, cmpgrid,
                      cmpgrid, cmpgrid]
 
-        
-        
-        # ==============================================================
-        # Subplot (0,0): Ref
-        # ==============================================================
+            
+        def sixplot_zonal_mean(plot_type, all_zero, all_nan, plot_val, grid, ax, rowcol, title, comap):
 
-        # Set local flags to denote if Ref is zero or NaN everywhere
-        # (these will eventually be passed to a plotting routine,
-        # once we abstract the plotting code below).
-        all_zero = ref_is_all_zero
-        all_undefined = ref_is_all_nan
-
-        # Set the min and max of the data range for Ref.
-        # NOTE: If Dev contains all NaN's, then just use the min and
-        # max of Ref to set the data range, even if match_cbar=True.
-        if all_zero or all_undefined:
-            [vmin, vmax] = [vmin_ref, vmax_ref]
-        elif use_cmap_RdBu:
-            if match_cbar and (not dev_is_all_nan):
-                absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
+            # Set min and max of the data range
+            if plot_type in ('ref', 'dev'):
+                if all_zero or all_nan:
+                    if plot_type is 'ref':
+                        [vmin, vmax] = [vmin_ref, vmax_ref]
+                    else:
+                        [vmin, vmax] = [vmin_dev, vmax_dev]
+                elif use_cmap_RdBu:
+                    if plot_type is 'ref':
+                        if match_cbar and (not all_nans[1]):
+                            absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
+                        else:
+                            absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
+                    else:
+                        if match_cbar and (not all_nans[0]):
+                            absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
+                        else:
+                            absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
+                else:
+                    if plot_type is 'ref':
+                        if match_cbar and (not all_nans[1]):
+                            [vmin, vmax] = [vmin_abs, vmax_abs]
+                        else:
+                            [vmin, vmax] = [vmin_ref, vmax_ref]
+                    else:
+                        if match_cbar and (not all_nans[0]):
+                            [vmin, vmax] = [vmin_abs, vmax_abs]
+                        else:
+                            [vmin, vmax] = [vmin_dev, vmax_dev]
             else:
-                absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if match_cbar and (not dev_is_all_nan):
-                [vmin, vmax] = [vmin_abs, vmax_abs]
+                if all_zero:
+                    [vmin, vmax] = [0, 0]
+                elif all_nan:
+                    [vmin, vmax] = [np.nan, np.nan]
+                else:
+                    if plot_type is 'dyn_abs_diff':
+                        [vmin, vmax] = [-diffabsmax, diffabsmax]
+                    elif plot_type is 'res_abs_diff':
+                        [pct5, pct95] = [np.percentile(absdiff, 5), np.percentile(absdiff, 95)]
+                        abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
+                        [vmin, vmax] = [-abspctmax, abspctmax]
+                    elif plot_type is 'dyn_frac_diff':
+                        [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
+                    else:
+                        [vmin, vmax] = [-2, 2]
+            if verbose:
+                print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
+
+            #Normalize colors (put into range [0..1] for matplotlib methods)
+            if plot_type in ('ref', 'dev'):
+                norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
             else:
-                [vmin, vmax] = [vmin_ref, vmax_ref]
-        if verbose:
-            print("Subplot (0,0) vmin, vmax: {}, {}".format(vmin, vmax))
+                norm = core.normalize_colors(vmin, vmax, is_difference = True)
 
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(
-            vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
-        )
+            # Create plot
+            ax.set_title(title)
+            plot = ax.pcolormesh(grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm = norm)
+            ax.set_aspect("auto")
+            ax.set_ylabel("Pressure (hPa)")
+            if log_yaxis:
+                ax.set_yscale("log")
+                ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+            ax.invert_yaxis()
+            ax.set_xticks(xtick_positions)
+            ax.set_xticklabels(xticklabels)
 
-        # Plot data for either lat-lon or cubed-sphere grids
-        if refgridtype == "ll":
-            plot0 = ax0.pcolormesh(
-                refgrid["lat_b"], pedge[pedge_ind], zm_ref, cmap=cmap1, norm=norm
-            )
-
-            ax0.set_title("{} (Ref){}\n{}".format(refstr, subtitle_extra, refres))
-        else:
-            plot0 = ax0.pcolormesh(
-                cmpgrid["lat_b"], pedge[pedge_ind], zm_ref, cmap=cmap1, norm=norm
-            )
-            ax0.set_title(
-                "{} (Ref){}\n{} regridded from c{}".format(
-                    refstr, subtitle_extra, cmpres, refres
-                )
-            )
-        ax0.set_aspect("auto")
-        ax0.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax0.set_yscale("log")
-            ax0.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax0.invert_yaxis()
-        ax0.set_xticks(xtick_positions)
-        ax0.set_xticklabels(xticklabels)
-
-        # Define the colorbar for the plot.  If Ref is zero everywhere
-        # or NaN everywhere, set a single tick in the middle of the
-        # colorbar with the appopriate label.
-        cb = plt.colorbar(plot0, ax=ax0, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
+            # Define the colorbar for the plot
+            cb = plt.colorbar(plot, ax=ax, orientation = "horizontal", pad = 0.10)
+            cb.mappable.set_norm(norm)
+            if all_zero or all_nan:
+                if plot_type in ('ref', 'dev'):
+                    if use_cmap_RdBu:
+                        cb.set_ticks([0.0])
+                    else:
+                        cb.set_ticks([0.5])
+                if all_nan:
+                    cb.set_ticklabels(["Undefined throughout domain"])
+                else:
+                    cb.set_ticklabels(["Zero throughout domain"])
             else:
-                cb.set_ticks([0.5])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
+                if plot_type in ('ref', 'dev') and log_color_scale:
+                        cb.formatter = mticker.LogFormatter(base=10)
+                else:
+                    if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
+                        cb.locator = mticker.MaxNLocator(nbins=4)
+            if plot_Type in ('ref', 'dev', 'dyn_abs_diff', 'res_abs_diff'):
+                cb.set_label(units)
             else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
-            else:
-                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
+                cb.set_label("unitless")
 
-        # ==============================================================
-        # Subplot (0,1): Dev
-        # ==============================================================
-
-        # Set local flags to denote if Dev is zero or NaN everywhere
-        # (these will eventually be passed to a plotting routine,
-        # once we abstract the plotting code below).
-        all_zero = dev_is_all_zero
-        all_undefined = dev_is_all_nan
-
-        # Set the min and max of the data range for Dev.
-        # NOTE: If Ref contains all NaN's, then just use the min and
-        # max of Dev to set the data range, even if match_cbar=True.
-        if all_zero or all_undefined:
-            [vmin, vmax] = [vmin_dev, vmax_dev]
-        elif use_cmap_RdBu:
-            if match_cbar and (not ref_is_all_nan):
-                absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
-            else:
-                absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if match_cbar and (not ref_is_all_nan):
-                [vmin, vmax] = [vmin_abs, vmax_abs]
-            else:
-                [vmin, vmax] = [vmin_dev, vmax_dev]
-        if verbose:
-            print("Subplot (0,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, log_color_scale=log_color_scale)
-
-        # Plot data for either lat-lon or cubed-sphere grids.
-        if devgridtype == "ll":
-            plot1 = ax1.pcolormesh(
-                devgrid["lat_b"], pedge[pedge_ind], zm_dev, cmap=cmap1, norm=norm
-            )
-            ax1.set_title("{} (Dev){}\n{}".format(devstr, subtitle_extra, devres))
-        else:
-            plot1 = ax1.pcolormesh(
-                cmpgrid["lat_b"], pedge[pedge_ind], zm_dev, cmap=cmap1, norm=norm
-            )
-            ax1.set_title(
-                "{} (Dev){}\n{} regridded from c{}".format(
-                    devstr, subtitle_extra, cmpres, devres
-                )
-            )
-        ax1.set_aspect("auto")
-        ax1.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax1.set_yscale("log")
-            ax1.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax1.invert_yaxis()
-        ax1.set_xticks(xtick_positions)
-        ax1.set_xticklabels(xticklabels)
-
-        # Define the colorbar for the plot.  If Ref is zero everywhere
-        # or NaN everywhere, set a single tick in the middle of the
-        # colorbar with the appopriate label.
-        cb = plt.colorbar(plot1, ax=ax1, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
-            else:
-                cb.set_ticks([0.5])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
-            else:
-                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-
-
-        # ==============================================================
-        # Subplot (1,0): Difference, dynamic range
-        # ==============================================================
-
-        # Set local flags to denote if Abs. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero
-        all_undefined = absdiff_is_all_nan
-
-        # If the abs. diff. is zero everywhere or NaN everywhere,
-        # then set the min and max of the data range to zero (or Nan),
-        # which will cause normalize_colors to place the white color
-        # in the middle of RdBu difference color scale.  Otherwise,
-        # set the data range to be symmetric around the dynamic range
-        # of the zm_diff array.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [vmin, vmax] = [-diffabsmax, diffabsmax]
-        if verbose:
-            print("Subplot (1,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create the plot
-        plot2 = ax2.pcolormesh(
-            cmpgrid["lat_b"], pedge[pedge_ind], zm_diff, cmap=cmap_plot, norm=norm
-        )
-        if regridany:
-            ax2.set_title("Difference ({})\nDev - Ref, Dynamic Range".format(cmpres))
-        else:
-            ax2.set_title("Difference\nDev - Ref, Dynamic Range")
-        ax2.set_aspect("auto")
-        ax2.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax2.set_yscale("log")
-            ax2.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax2.invert_yaxis()
-        ax2.set_xticks(xtick_positions)
-        ax2.set_xticklabels(xticklabels)
-
-        # Define the colorbar for the plot.  If absdiff is zero
-        # everywhere or NaN everywhere, set a single tick in the
-        # middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot2, ax=ax2, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-
-        # ==============================================================
-        # Subplot (1,1): Difference, restricted range
-        # ==============================================================
-
-        # Set local flags to denote if Abs. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero
-        all_undefined = absdiff_is_all_nan
-
-        # If the abs. diff. is zero everywhere or NaN everywhere,
-        # then set the min and max of the data range to zero (or Nan),
-        # which will cause normalize_colors to place the white color
-        # in the middle of the color range for the difference color
-        # scale.  Otherwise, set the data range to be symmetric with
-        # the extremes being the maximum of the 5th and 95th percentiles.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [pct5, pct95] = [np.percentile(zm_diff, 5), np.percentile(zm_diff, 95)]
-            abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
-            [vmin, vmax] = [-abspctmax, abspctmax]
-        if verbose:
-            print("Subplot (1,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create the plot
-        plot3 = ax3.pcolormesh(
-            cmpgrid["lat_b"], pedge[pedge_ind], zm_diff, cmap=cmap_plot, norm=norm
-        )
-        if regridany:
-            ax3.set_title(
-                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
-            )
-        else:
-            ax3.set_title("Difference\nDev - Ref, Restriced Range [5%,95%]")
-        ax3.set_aspect("auto")
-        ax3.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax3.set_yscale("log")
-            ax3.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax3.invert_yaxis()
-        ax3.set_xticks(xtick_positions)
-        ax3.set_xticklabels(xticklabels)
-
-        # Define the colorbar for the plot.  If absdiff is zero
-        # everywhere or NaN everywhere, set a single tick in the
-        # middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot3, ax=ax3, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-
-        # ==============================================================
-        # Subplot (2,0): Fractional Difference, dynamic range
-        # ==============================================================
-
-        # Set local flags to denote if Frac. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero or (fracdiff_is_all_zero and not ref_is_all_zero)
-        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
-
-        # Set the min and max of the data range.  If fracdiff is
-        # zero everywhere, then set the data range to [0,0].
-        # If fracdiff is NaN everywhere, or if Ref (the denominator
-        # of the expression that computes fracdiff) is zero
-        # everywhere, set the data range to undefined (NaN).
-        # Otherwise set the data range to be symmetric around
-        # the dynamic range of fracdiff.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            fracdiffabsmax = np.max(
-                [np.abs(np.nanmin(zm_fracdiff)), np.abs(np.nanmax(zm_fracdiff))]
-            )
-            [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
-        if verbose:
-            print("Subplot (2,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create the plot
-        plot4 = ax4.pcolormesh(
-            cmpgrid["lat_b"], pedge[pedge_ind], zm_fracdiff, cmap=cmap_plot, norm=norm
-        )
-        if regridany:
-            ax4.set_title(
-                "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
-                    cmpres
-                )
-            )
-        else:
-            ax4.set_title("Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range")
-        ax4.set_aspect("auto")
-        if log_yaxis:
-            ax4.set_yscale("log")
-            ax4.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax4.set_ylabel("Pressure (hPa)")
-        ax4.invert_yaxis()
-        ax4.set_xticks(xtick_positions)
-        ax4.set_xticklabels(xticklabels)
-
-        # Define the colorbar If fracdiff will be zero everywhere
-        # or undefined everywhere, put a single tick at the middle
-        # of the colorbar with the appropriate label.
-        cb = plt.colorbar(plot4, ax=ax4, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label("unitless")
-
-        # ==============================================================
-        # Subplot (2,1): Fractional Difference, restricted range
-        # ==============================================================
-
-        # Set local flags to denote if Frac. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero or (fracdiff_is_all_zero and not ref_is_all_zero)
-        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
-
-        # Set the min and max of the data range.  If fracdiff is
-        # zero everywhere, then set the data range to [0,0].
-        # If fracdiff is NaN everywhere, or if Ref (the denominator
-        # of the expression that computes fracdiff) is zero
-        # everywhere, set the data range to undefined [NaN, Nan].
-        # Otherwise set the data range to [-2, 2] (+/- 200% change).
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [vmin, vmax] = [-2, 2]
-        if verbose:
-            print("Subplot (2,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create the plot
-        plot5 = ax5.pcolormesh(
-            cmpgrid["lat_b"], pedge[pedge_ind], zm_fracdiff, cmap=cmap_plot, norm=norm
-        )
-        if regridany:
-            ax5.set_title(
-                "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)
-            )
-        else:
-            ax5.set_title("Fractional Difference\n(Dev-Ref)/Ref, Fixed Range")
-        ax5.set_aspect("auto")
-        ax5.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax5.set_yscale("log")
-            ax5.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax5.invert_yaxis()
-        ax5.set_xticks(xtick_positions)
-        ax5.set_xticklabels(xticklabels)
-
-        # Define the colorbar for the plot.  If fracdiff will be zero
-        # everywhere or undefined everywhere, put a single tick at the
-        # middle of the colorbar with the appropriate label.
-        cb = plt.colorbar(plot5, ax=ax5, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label("unitless")
-
+        for i in range(6):
+            sixplot_zonal_mean(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
+                               grids[i], axs[i], rowcols[i], titles[i], cmaps[i])
+                
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(max(fracdiff)) > 0.1
@@ -2014,16 +1686,25 @@ def compare_zonal_mean(
         # Add this page of 6-panel plots to the PDF file
         # ==============================================================
         if savepdf:
+            pdf = PdfPages(pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar))
             pdf.savefig(figs)
+            pdf.close()
             plt.close(figs)
-
+            
+    #for i in range(n_var):
+    #    createfig(i)
+    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+    
     # ==================================================================
     # Finish
     # ==================================================================
     if savepdf:
-        pdf.close()
-        print("")
-
+        print("Closed PDF")
+        merge = PdfFileMerger()
+        for i in range(n_var):
+            merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
+            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
+        merge.write(pdfname)
 
 def get_emissions_varnames(commonvars, template=None):
     """
