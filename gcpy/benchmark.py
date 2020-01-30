@@ -1,4 +1,4 @@
-"""
+1;95;0c1"""
 Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 """
 
@@ -244,7 +244,6 @@ def compare_single_level(
 
     # TODO: refactor this function and zonal mean plot function.
     # There is a lot of overlap and repeated code that could be abstracted.
-    print('here')
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
@@ -316,9 +315,9 @@ def compare_single_level(
     # Make grids (ref, dev, and comparison)
     # =================================================================        
 
-    [refgrid, regrid_list]  = call_make_grid(refres, gridtype, False, False)
-    [devgrid, devgrid_list] = call_make_grid(devres, gridtype, False, False)
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, gridtype, False, True)
+    [refgrid, regrid_list]  = call_make_grid(refres, refgridtype, False, False)
+    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, False, False)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, False, True)
 
     # =================================================================
     # Make regridders, if applicable
@@ -386,7 +385,7 @@ def compare_single_level(
     
     print_units_warning = True
 
-    
+    #This loop is written as a function so it can be called in parallel
     def createfig(ivar):
         
         if savepdf:
@@ -631,7 +630,6 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
             fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(
                 ds_ref_cmp
             )
-            print(np.max(fracdiff))
         else:
             fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
 
@@ -651,7 +649,6 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         if cmpgridtype == "cs":
             fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, fracdiff)
 
-        print("Creating Figure")
         # ==============================================================
         # Create 3x2 figure
         # ==============================================================
@@ -813,11 +810,22 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                      cmap_nongray, cmap_nongray,
                      cmap_nongray, cmap_nongray]
 
+        if cmpgridtype = "ll":
+            masked = [None, None,
+                           None, None,
+                           None, None]
+        else:
+            ref_masked = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_ref_reshaped )
+            dev_masked = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_dev_reshaped )
+            masked = [rev_masked, dev_masked,
+                      absdiff,       absdiff,
+                      fracdiff,     fracdiff]
+                                  
         # ==============================================================
         # Plot in parallel 
         # ==============================================================
 
-        def sixplot_single_level(plot_type, all_zero, all_nan, extent, plot_val, grid, ax, rowcol, title, comap):
+        def sixplot_single_level(plot_type, all_zero, all_nan, plot_val, grid, ax, rowcol, title, comap, extent, masked_data):
 
             # Set min and max of the data range.
             if plot_type in ('ref', 'dev'):
@@ -927,8 +935,8 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                 cb.set_label("unitless")
          
         for i in range(6):
-            sixplot_single_level(plot_types[i], all_zeros[i], all_nans[i], extents[i], plot_vals[i],
-                    grids[i], axs[i], rowcols[i], titles[i], cmaps[i])
+            sixplot_single_level(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
+                                 grids[i], axs[i], rowcols[i], titles[i], cmaps[i],  extents[i], masked[i])
 
         # ==============================================================
         # Update the list of variables with significant differences.
@@ -1281,6 +1289,8 @@ def compare_zonal_mean(
 
     # Loop over variables
     print_units_warning = True
+
+    #This loop is written as a function so it can be called in parallel
     def createfig(ivar):
         if savepdf:
             print("{} ".format(ivar), end="")
@@ -1579,66 +1589,84 @@ def compare_zonal_mean(
                      cmpgrid, cmpgrid,
                      cmpgrid, cmpgrid]
 
+
+def sixplot(plot_type,
+            all_zero,
+            all_nan,
+            plot_val,
+            grid,
+            ax,
+            rowcol,
+            title,
+            comap,
+            extent = None,
+            masked_data = None):
+
+    # Set min and max of the data range
+    if plot_type in ('ref', 'dev'):
+        if all_zero or all_nan:
+            if plot_type is 'ref':
+                [vmin, vmax] = [vmin_ref, vmax_ref]
+            else:
+                [vmin, vmax] = [vmin_dev, vmax_dev]
+        elif use_cmap_RdBu:
+            if plot_type is 'ref':
+                if match_cbar and (not all_nans[1]):
+                    absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
+                else:
+                    absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
+            else:
+                if match_cbar and (not all_nans[0]):
+                    absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
+                else:
+                    absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
+        else:
+            if plot_type is 'ref':
+                if match_cbar and (not all_nans[1]):
+                    [vmin, vmax] = [vmin_abs, vmax_abs]
+                else:
+                    [vmin, vmax] = [vmin_ref, vmax_ref]
+            else:
+                if match_cbar and (not all_nans[0]):
+                    [vmin, vmax] = [vmin_abs, vmax_abs]
+                else:
+                    [vmin, vmax] = [vmin_dev, vmax_dev]
+
+    else:
+        if all_zero:
+            [vmin, vmax] = [0, 0]
+        elif all_nan:
+            [vmin, vmax] = [np.nan, np.nan]
+        else:
+            if plot_type is 'dyn_abs_diff':
+                [vmin, vmax] = [-diffabsmax, diffabsmax]
+            elif plot_type is 'res_abs_diff':
+                [pct5, pct95] = [np.percentile(plot_val, 5), np.percentile(plot_val, 95)]
+                abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
+                [vmin, vmax] = [-abspctmax, abspctmax]
+            elif plot_type is 'dyn_frac_diff':
+                fracdiffabsmax = np.max([np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))])
+                [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
+            else:
+                [vmin, vmax] = [-2, 2]
+    if verbose:
+        print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
+
+        #Normalize colors (put into range [0..1] for matplotlib methods)
+        if plot_type in ('ref', 'dev'):
+            norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
+        else:
+            norm = core.normalize_colors(vmin, vmax, is_difference = True)
+
+    # Create plot
+    ax.set_title(title)
+    if masked_data == None:
+        
             
         def sixplot_zonal_mean(plot_type, all_zero, all_nan, plot_val, grid, ax, rowcol, title, comap):
 
-            # Set min and max of the data range
-            if plot_type in ('ref', 'dev'):
-                if all_zero or all_nan:
-                    if plot_type is 'ref':
-                        [vmin, vmax] = [vmin_ref, vmax_ref]
-                    else:
-                        [vmin, vmax] = [vmin_dev, vmax_dev]
-                elif use_cmap_RdBu:
-                    if plot_type is 'ref':
-                        if match_cbar and (not all_nans[1]):
-                            absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
-                        else:
-                            absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
-                    else:
-                        if match_cbar and (not all_nans[0]):
-                            absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
-                        else:
-                            absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
-                else:
-                    if plot_type is 'ref':
-                        if match_cbar and (not all_nans[1]):
-                            [vmin, vmax] = [vmin_abs, vmax_abs]
-                        else:
-                            [vmin, vmax] = [vmin_ref, vmax_ref]
-                    else:
-                        if match_cbar and (not all_nans[0]):
-                            [vmin, vmax] = [vmin_abs, vmax_abs]
-                        else:
-                            [vmin, vmax] = [vmin_dev, vmax_dev]
-            else:
-                if all_zero:
-                    [vmin, vmax] = [0, 0]
-                elif all_nan:
-                    [vmin, vmax] = [np.nan, np.nan]
-                else:
-                    if plot_type is 'dyn_abs_diff':
-                        [vmin, vmax] = [-diffabsmax, diffabsmax]
-                    elif plot_type is 'res_abs_diff':
-                        [pct5, pct95] = [np.percentile(plot_val, 5), np.percentile(plot_val, 95)]
-                        abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
-                        [vmin, vmax] = [-abspctmax, abspctmax]
-                    elif plot_type is 'dyn_frac_diff':
-                        fracdiffabsmax = np.max([np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))])
-                        [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
-                    else:
-                        [vmin, vmax] = [-2, 2]
-            if verbose:
-                print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
 
-            #Normalize colors (put into range [0..1] for matplotlib methods)
-            if plot_type in ('ref', 'dev'):
-                norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
-            else:
-                norm = core.normalize_colors(vmin, vmax, is_difference = True)
 
-            # Create plot
-            ax.set_title(title)
             plot = ax.pcolormesh(grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm = norm)
             ax.set_aspect("auto")
             ax.set_ylabel("Pressure (hPa)")
@@ -1668,6 +1696,8 @@ def compare_zonal_mean(
                 else:
                     if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                         cb.locator = mticker.MaxNLocator(nbins=4)
+
+            cb.update_ticks()
             if plot_type in ('ref', 'dev', 'dyn_abs_diff', 'res_abs_diff'):
                 cb.set_label(units)
             else:
