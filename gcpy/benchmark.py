@@ -1273,6 +1273,7 @@ def compare_zonal_mean(
     if savepdf:
         print("Creating {} for {} variables".format(pdfname, n_var))
         pdf = PdfPages(pdfname)
+        pdf.close()
 
     # ==================================================================
     # Loop over variables
@@ -1280,7 +1281,7 @@ def compare_zonal_mean(
 
     # Loop over variables
     print_units_warning = True
-    for ivar in range(n_var):
+    def createfig(ivar):
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
@@ -1623,6 +1624,7 @@ def compare_zonal_mean(
                         abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
                         [vmin, vmax] = [-abspctmax, abspctmax]
                     elif plot_type is 'dyn_frac_diff':
+                        fracdiffabsmax = np.max([np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))])
                         [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
                     else:
                         [vmin, vmax] = [-2, 2]
