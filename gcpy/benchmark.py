@@ -23,6 +23,8 @@ from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .units import convert_units
 from joblib import Parallel, delayed, cpu_count
+import threading
+from multiprocessing import current_process
 
 
 # JSON files
@@ -533,7 +535,6 @@ def compare_single_level(
 
     #This loop is written as a function so it can be called in parallel
     def createfig(ivar):
-        
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
@@ -1004,7 +1005,12 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
 
     #for i in range(n_var):
     #    createfig(i)
-    Parallel(n_jobs = n_job, verbose=10, prefer='processes') (delayed(createfig)(i) for i in range(n_var))
+
+    #do not attempt nested thread parallelization due to issues with matplotlib
+    if current_process().name != "MainProcess":
+        n_job = 1
+        
+    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
 
     # ==================================================================
     # Finish
@@ -1681,6 +1687,11 @@ def compare_zonal_mean(
             
     #for i in range(n_var):
     #    createfig(i)
+    
+    #do not attempt nested thread parallelization due to issues with matplotlib
+    if current_process().name != "MainProcess":
+        n_job = 1
+
     Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
     
     # ==================================================================
@@ -2626,6 +2637,7 @@ def make_benchmark_conc_plots(
     use_cmap_RdBu=False,
     log_color_scale=False,
     sigdiff_files=None,
+    n_job=-1
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -2806,8 +2818,7 @@ def make_benchmark_conc_plots(
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_sfc,
-                n_job=4
+                sigdiff_list=diff_sfc
             )
             diff_sfc[:] = [v.replace("SpeciesConc_", "") for v in diff_sfc]
             add_nested_bookmarks_to_pdf(
@@ -2838,7 +2849,6 @@ def make_benchmark_conc_plots(
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_500,
-                n_job=4
             )
             diff_500[:] = [v.replace("SpeciesConc_", "") for v in diff_500]
             add_nested_bookmarks_to_pdf(
@@ -2870,8 +2880,7 @@ def make_benchmark_conc_plots(
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_zm,
-                n_job=4
+                sigdiff_list=diff_zm
             )
             diff_zm[:] = [v.replace("SpeciesConc_", "") for v in diff_zm]
             add_nested_bookmarks_to_pdf(
@@ -2898,8 +2907,7 @@ def make_benchmark_conc_plots(
                 pres_range=[1, 100],
                 log_yaxis=True,
                 extra_title_txt=extra_title_txt,
-                log_color_scale=log_color_scale,
-                n_job=4
+                log_color_scale=log_color_scale
             )
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
@@ -2941,7 +2949,8 @@ def make_benchmark_conc_plots(
 
     #for i, filecat in enumerate(catdict):
     #    createplots(i, filecat)
-    Parallel(n_jobs = 6, prefer='processes') (delayed(createplots)(i,filecast) for i, filecast in enumerate(catdict))
+
+    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecast) for i, filecast in enumerate(catdict))
                             
 def make_benchmark_emis_plots(
     ref,
@@ -2958,6 +2967,7 @@ def make_benchmark_emis_plots(
     flip_dev=False,
     log_color_scale=False,
     sigdiff_files=None,
+    n_job=-1
 ):
     """
     Creates PDF files containing plots of emissions for model
@@ -3167,7 +3177,8 @@ def make_benchmark_emis_plots(
                 os.mkdir(emisspcdir)
 
         diff_dict = {}
-        for c in emis_cats:
+        #for c in emis_cats:
+        def createfile(c):
             # Handle cases of bioburn and bioBurn (temporary until 12.3.1)
             if c == "Bioburn":
                 varnames = [
@@ -3223,6 +3234,7 @@ def make_benchmark_emis_plots(
                             print(file=f)
                         f.close()
 
+        Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
     # ==================================================================
     # if plot_by_benchmark_cat is true, make a file for each benchmark
     # species category with emissions in the diagnostics file
@@ -3237,8 +3249,8 @@ def make_benchmark_emis_plots(
             []
         )  # for checking if emissions species not defined in benchmark category file
         emisdict = {}  # used for nested pdf bookmarks
-        for i, filecat in enumerate(catdict):
-
+        #for i, filecat in enumerate(catdict):
+        def createfile(filecat):
             # Get emissions for species in this benchmark category
             varlist = []
             emisdict[filecat] = {}
@@ -3302,8 +3314,10 @@ def make_benchmark_emis_plots(
                         spc
                     )
                 )
+                
+        Parallel(n_jobs = n_job) (delayed(createfile)(i) for i in range(n_var))        
 
-
+        
 def make_benchmark_emis_tables(
     reflist,
     refstr,
@@ -4268,7 +4282,7 @@ def make_benchmark_mass_tables(
 
 
 def make_benchmark_budget_tables(
-    dev, devstr, dst="./1mo_benchmark", overwrite=False, interval=[2678400.0]
+        dev, devstr, dst="./1mo_benchmark", overwrite=False, interval=[2678400.0], n_job = -1
 ):
     """
     Creates a text file containing budgets by species for benchmarking
@@ -4342,7 +4356,8 @@ def make_benchmark_budget_tables(
     budget_vars = [k for k in devds.data_vars.keys() if k[:6] == "Budget"]
     budget_regions = sorted(set([v.split("_")[0][-4:] for v in budget_vars]))
 
-    for region in budget_regions:
+    #for region in budget_regions:
+    def createfile(region):
 
         # Destination file
         file_budget = os.path.join(budgetdir, "Budget_" + region + ".txt")
@@ -4362,7 +4377,8 @@ def make_benchmark_budget_tables(
             interval,
             template="Budget_{}",
         )
-
+        
+    Parallel(n_jobs = n_job) (delayed(createfile)(i) for i in range(n_var))
 
 def make_benchmark_oh_metrics(
     reflist,
