@@ -3269,7 +3269,7 @@ def make_benchmark_emis_plots(
                         filecat
                     )
                 )
-                continue
+                return
 
             # Use same directory structure as for concentration plots
             catdir = os.path.join(dst, filecat)
