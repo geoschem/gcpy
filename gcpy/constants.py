@@ -21,3 +21,11 @@ MW_AIR = 28.97e-3
 
 # Molar mass of water, kg/mol
 MW_H2O = 18.016e-3
+
+# netCDF variables that we should skip reading
+skip_these_vars = ["anchor", 
+                   "ncontact", 
+                   "orientation", 
+                   "contacts", 
+                   "cubed_sphere"]
+

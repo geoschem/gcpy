@@ -22,6 +22,7 @@ from .grid.regrid import make_regridder_C2L, make_regridder_L2L
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .units import convert_units
+from .constants import skip_these_vars
 
 # JSON files
 aod_spc = "aod_species.json"
@@ -3352,19 +3353,16 @@ def make_benchmark_conc_plots(
     else:
         extra_title_txt = None
 
-    # Get a list of variables that GCPy should not read
-    skip_vars = core.skip_these_vars()
-
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=skip_vars)
+        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Ref file: {}".format(ref))
     refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_vars)
+        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
     devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
@@ -3704,18 +3702,15 @@ def make_benchmark_emis_plots(
     else:
         extra_title_txt = None
 
-    # Get a list of variables that GCPy should not read
-    skip_vars = core.skip_these_vars()
-
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=skip_vars)
+        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Ref file: {}".format(ref))
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_vars)
+        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
 
@@ -4006,19 +4001,16 @@ def make_benchmark_emis_tables(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Get a list of variables that GCPy should not read
-    skip_vars = core.skip_these_vars()
-
     # Read the Ref dataset and make sure that the area variables are present
     if len(reflist) == 1:
         reflist = [reflist]
-    refds = xr.open_mfdataset(reflist, drop_variables=skip_vars)
+    refds = xr.open_mfdataset(reflist, drop_variables=skip_these_vars)
     refds = core.check_for_area(refds)
 
     # Read the Dev dataset and make sure that area variables are present
     if len(devlist) == 1:
         devlist = [devlist]
-    devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
+    devds = xr.open_mfdataset(devlist, drop_variables=skip_these_vars)
     devds = core.check_for_area(devds)
 
     # ==================================================================
@@ -4198,18 +4190,15 @@ def make_benchmark_jvalue_plots(
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
-    # Get a list of variables that GCPy should not read
-    skip_vars = core.skip_these_vars()
-
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=skip_vars)
+        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Ref file: {}".format(ref))
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_vars)
+        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
 
@@ -4518,18 +4507,15 @@ def make_benchmark_aod_plots(
     else:
         extra_title_txt = None
 
-    # Get a list of variables that GCPy should not read
-    skip_vars = core.skip_these_vars()
-
     # Read the Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=skip_vars)
+        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Ref file: {}".format(ref))
 
     # Read the Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_vars)
+        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
 
@@ -4777,18 +4763,15 @@ def make_benchmark_mass_tables(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Get a list of variables that GCPy should not read
-    skip_vars = core.skip_these_vars()
-
     # Ref
     try:
-        refds = xr.open_mfdataset(reflist, drop_variables=skip_vars)
+        refds = xr.open_mfdataset(reflist, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Error opening Ref files: {}".format(reflist))
 
     # Dev dataset
     try:
-        devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
+        devds = xr.open_mfdataset(devlist, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Error opening Dev files: {}!".format(devlist))
 
@@ -4964,12 +4947,9 @@ def make_benchmark_budget_tables(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Get a list of variables that GCPy should not read
-    skip_vars = core.skip_these_vars()
-
     # Dev
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_vars)
+        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
 
@@ -5073,12 +5053,9 @@ def make_benchmark_oh_metrics(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Get a list of variables that GCPy should not read
-    skip_vars = core.skip_these_vars()
-
     # Ref
     try:
-        refds = xr.open_mfdataset(reflist, drop_variables=skip_vars)
+        refds = xr.open_mfdataset(reflist, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError(
             "Could not find one of the Ref files: {}".format(reflist)
@@ -5086,7 +5063,7 @@ def make_benchmark_oh_metrics(
 
     # Dev
     try:
-        devds = xr.open_mfdataset(devlist, drop_variables=skip_vars)
+        devds = xr.open_mfdataset(devlist, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError(
             "Could not find one of the Dev files: {}".format(devlist)
