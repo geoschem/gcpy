@@ -46,7 +46,7 @@ def get_input_res(data):
         elif lat / 6 == lon:
             return lon, "cs"
         else:
-            print("Error: ref or dev {}x{} grid not defined in gpy!".format(lat, lon))
+            print("Error: ref or dev {}x{} grid not defined in gcpy!".format(lat, lon))
             return
     else:
         #GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
@@ -1010,7 +1010,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
     if current_process().name != "MainProcess":
         n_job = 1
         
-    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+    Parallel(n_jobs = 1) (delayed(createfig)(i) for i in range(n_var))
 
     # ==================================================================
     # Finish
@@ -1692,7 +1692,7 @@ def compare_zonal_mean(
     if current_process().name != "MainProcess":
         n_job = 1
 
-    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+    Parallel(n_jobs = 1) (delayed(createfig)(i) for i in range(n_var))
     
     # ==================================================================
     # Finish
@@ -3234,7 +3234,7 @@ def make_benchmark_emis_plots(
                             print(file=f)
                         f.close()
 
-        Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+        Parallel(n_jobs = n_job) (delayed(createfile)(c) for c in emis_cats)
     # ==================================================================
     # if plot_by_benchmark_cat is true, make a file for each benchmark
     # species category with emissions in the diagnostics file
@@ -3315,7 +3315,7 @@ def make_benchmark_emis_plots(
                     )
                 )
                 
-        Parallel(n_jobs = n_job) (delayed(createfile)(i) for i in range(n_var))        
+        Parallel(n_jobs = n_job) (delayed(createfile)(filecat) for i, filecat in enumerate(catdict))        
 
         
 def make_benchmark_emis_tables(
@@ -4378,7 +4378,7 @@ def make_benchmark_budget_tables(
             template="Budget_{}",
         )
         
-    Parallel(n_jobs = n_job) (delayed(createfile)(i) for i in range(n_var))
+    Parallel(n_jobs = n_job) (delayed(createfile)(region) for region in budget_regions)
 
 def make_benchmark_oh_metrics(
     reflist,
