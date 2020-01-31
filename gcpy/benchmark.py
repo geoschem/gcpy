@@ -134,6 +134,10 @@ def sixplot(plot_type,
             xticklabels=[]
             ):
 
+    '''
+    To be called from compare_single_level or compare_zonal_mean
+    '''
+    
     # Set min and max of the data range
     if plot_type in ('ref', 'dev'):
         if all_zero or all_nan:
@@ -1000,7 +1004,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
 
     #for i in range(n_var):
     #    createfig(i)
-    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+    Parallel(n_jobs = n_job, verbose=10, prefer='processes') (delayed(createfig)(i) for i in range(n_var))
 
     # ==================================================================
     # Finish
@@ -2803,6 +2807,7 @@ def make_benchmark_conc_plots(
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_sfc,
+                n_job=4
             )
             diff_sfc[:] = [v.replace("SpeciesConc_", "") for v in diff_sfc]
             add_nested_bookmarks_to_pdf(
@@ -2833,6 +2838,7 @@ def make_benchmark_conc_plots(
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_500,
+                n_job=4
             )
             diff_500[:] = [v.replace("SpeciesConc_", "") for v in diff_500]
             add_nested_bookmarks_to_pdf(
@@ -2865,6 +2871,7 @@ def make_benchmark_conc_plots(
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_zm,
+                n_job=4
             )
             diff_zm[:] = [v.replace("SpeciesConc_", "") for v in diff_zm]
             add_nested_bookmarks_to_pdf(
@@ -2892,6 +2899,7 @@ def make_benchmark_conc_plots(
                 log_yaxis=True,
                 extra_title_txt=extra_title_txt,
                 log_color_scale=log_color_scale,
+                n_job=4
             )
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
@@ -2933,7 +2941,7 @@ def make_benchmark_conc_plots(
 
     #for i, filecat in enumerate(catdict):
     #    createplots(i, filecat)
-    Parallel(n_jobs = 5) (delayed(createplots)(i,filecast) for i, filecast in enumerate(catdict))
+    Parallel(n_jobs = 6, prefer='processes') (delayed(createplots)(i,filecast) for i, filecast in enumerate(catdict))
                             
 def make_benchmark_emis_plots(
     ref,
