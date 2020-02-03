@@ -23,7 +23,6 @@ from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .units import convert_units
 from joblib import Parallel, delayed, cpu_count
-import threading
 from multiprocessing import current_process
 
 
@@ -769,7 +768,6 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         # ==============================================================
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
-
         if cmpgridtype == "ll":
             fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(
                 ds_ref_cmp
@@ -1007,10 +1005,12 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
     #    createfig(i)
 
     #do not attempt nested thread parallelization due to issues with matplotlib
+    print(os.getpid())
     if current_process().name != "MainProcess":
+        print("not main process", os.getpid())
         n_job = 1
         
-    Parallel(n_jobs = 1) (delayed(createfig)(i) for i in range(n_var))
+    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
 
     # ==================================================================
     # Finish
@@ -1689,10 +1689,12 @@ def compare_zonal_mean(
     #    createfig(i)
     
     #do not attempt nested thread parallelization due to issues with matplotlib
+    print(os.getpid())
     if current_process().name != "MainProcess":
+        print("not main process", os.getpid())
         n_job = 1
 
-    Parallel(n_jobs = 1) (delayed(createfig)(i) for i in range(n_var))
+    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
     
     # ==================================================================
     # Finish
@@ -3178,7 +3180,7 @@ def make_benchmark_emis_plots(
 
         diff_dict = {}
         #for c in emis_cats:
-        def createfile(c):
+        def createfile_hco_cat(c):
             # Handle cases of bioburn and bioBurn (temporary until 12.3.1)
             if c == "Bioburn":
                 varnames = [
@@ -3197,6 +3199,7 @@ def make_benchmark_emis_plots(
                 pdfname = os.path.join(emisspcdir, "{}_Emissions.pdf".format(c))
 
             diff_emis = []
+            print(pdfname)            
             compare_single_level(
                 refds,
                 refstr,
@@ -3234,7 +3237,7 @@ def make_benchmark_emis_plots(
                             print(file=f)
                         f.close()
 
-        Parallel(n_jobs = n_job) (delayed(createfile)(c) for c in emis_cats)
+        Parallel(n_jobs = n_job) (delayed(createfile_hco_cat)(c) for c in emis_cats)
     # ==================================================================
     # if plot_by_benchmark_cat is true, make a file for each benchmark
     # species category with emissions in the diagnostics file
@@ -3250,7 +3253,7 @@ def make_benchmark_emis_plots(
         )  # for checking if emissions species not defined in benchmark category file
         emisdict = {}  # used for nested pdf bookmarks
         #for i, filecat in enumerate(catdict):
-        def createfile(filecat):
+        def createfile_bench_cat(filecat):
             # Get emissions for species in this benchmark category
             varlist = []
             emisdict[filecat] = {}
@@ -3289,7 +3292,7 @@ def make_benchmark_emis_plots(
                 )
             else:
                 pdfname = os.path.join(catdir, "{}_Emissions.pdf".format(filecat))
-
+            print(pdfname)
             # Create the PDF
             compare_single_level(
                 refds,
@@ -3315,7 +3318,7 @@ def make_benchmark_emis_plots(
                     )
                 )
                 
-        Parallel(n_jobs = n_job) (delayed(createfile)(filecat) for i, filecat in enumerate(catdict))        
+        Parallel(n_jobs = n_job) (delayed(createfile_bench_cat)(filecat) for i, filecat in enumerate(catdict))        
 
         
 def make_benchmark_emis_tables(
