@@ -25,6 +25,9 @@ from .units import convert_units
 from joblib import Parallel, delayed, cpu_count
 from multiprocessing import current_process
 
+#Turn off warnings to prevent stupid parallel errors
+import warnings
+warnings.filterwarnings('ignore')
 
 # JSON files
 aod_spc = "aod_species.json"
@@ -1010,6 +1013,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         print("not main process", os.getpid())
         n_job = 1
         
+    print(n_job)
     Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
 
     # ==================================================================
@@ -1693,7 +1697,7 @@ def compare_zonal_mean(
     if current_process().name != "MainProcess":
         print("not main process", os.getpid())
         n_job = 1
-
+    print(n_job)
     Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
     
     # ==================================================================
