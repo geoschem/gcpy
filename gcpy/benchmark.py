@@ -27,7 +27,9 @@ from multiprocessing import current_process
 
 #Turn off warnings to prevent stupid parallel errors
 import warnings
-warnings.filterwarnings('ignore')
+
+#Save warnings format to undo overwriting built into PyPDF2
+warning_format = warnings.showwarning
 
 # JSON files
 aod_spc = "aod_species.json"
@@ -391,7 +393,7 @@ def compare_single_level(
         >>> benchmark.compare_single_level( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
         >>> plt.show()
     """
-
+    warnings.showwarning=warning_format
     # TODO: refactor this function and zonal mean plot function.
     # There is a lot of overlap and repeated code that could be abstracted.
     # Error check arguments
@@ -1003,17 +1005,13 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
-
     #for i in range(n_var):
     #    createfig(i)
 
     #do not attempt nested thread parallelization due to issues with matplotlib
-    print(os.getpid())
     if current_process().name != "MainProcess":
-        print("not main process", os.getpid())
         n_job = 1
         
-    print(n_job)
     Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
 
     # ==================================================================
@@ -1026,7 +1024,8 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
             merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         merge.write(pdfname)
-
+        merge.close()
+        warnings.showwarning=warning_format
 def compare_zonal_mean(
     refdata,
     refstr,
@@ -1173,7 +1172,7 @@ def compare_zonal_mean(
 
     # TODO: refactor this function and single level plot function. There is a lot of overlap and
     # repeated code that could be abstracted.
-
+    warnings.showwarning = warning_format
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
 
@@ -1693,11 +1692,9 @@ def compare_zonal_mean(
     #    createfig(i)
     
     #do not attempt nested thread parallelization due to issues with matplotlib
-    print(os.getpid())
     if current_process().name != "MainProcess":
-        print("not main process", os.getpid())
         n_job = 1
-    print(n_job)
+
     Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
     
     # ==================================================================
@@ -1710,7 +1707,9 @@ def compare_zonal_mean(
             merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         merge.write(pdfname)
-
+        merge.close()
+        warnings.showwarning=warning_format
+        
 def get_emissions_varnames(commonvars, template=None):
     """
     Will return a list of emissions diagnostic variable names that
@@ -3173,6 +3172,7 @@ def make_benchmark_emis_plots(
     # Also write the list of emission quantities that have significant
     # diffs.  We'll need that to fill out the benchmark forms.
     # ==================================================================
+    
     if plot_by_hco_cat:
         emisspcdir = os.path.join(dst, "Emissions")
         if not os.path.isdir(emisspcdir):
@@ -3203,7 +3203,6 @@ def make_benchmark_emis_plots(
                 pdfname = os.path.join(emisspcdir, "{}_Emissions.pdf".format(c))
 
             diff_emis = []
-            print(pdfname)            
             compare_single_level(
                 refds,
                 refstr,
@@ -3216,16 +3215,16 @@ def make_benchmark_emis_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_emis,
             )
+        
             add_bookmarks_to_pdf(
                 pdfname, varnames, remove_prefix="Emis", verbose=verbose
             )
-
             # Save the list of quantities with significant differences for
             # this category into the diff_dict dictionary for use below
             diff_emis[:] = [v.replace("Emis", "") for v in diff_emis]
             diff_emis[:] = [v.replace("_" + c, "") for v in diff_emis]
             diff_dict[c] = diff_emis
-
+        Parallel(n_jobs = n_job) (delayed(createfile_hco_cat)(c) for c in emis_cats)
         # =============================================================
         # Write the list of species having significant differences,
         # which we need to fill out the benchmark approval forms.
@@ -3240,8 +3239,7 @@ def make_benchmark_emis_plots(
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
                         f.close()
-
-        Parallel(n_jobs = n_job) (delayed(createfile_hco_cat)(c) for c in emis_cats)
+        
     # ==================================================================
     # if plot_by_benchmark_cat is true, make a file for each benchmark
     # species category with emissions in the diagnostics file
@@ -3313,6 +3311,8 @@ def make_benchmark_emis_plots(
             )
             add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
 
+        Parallel(n_jobs = n_job) (delayed(createfile_bench_cat)(filecat) for i, filecat in enumerate(catdict))        
+
         # Give warning if emissions species is not assigned a benchmark category
         for spc in emis_spc:
             if spc not in allcatspc:
@@ -3322,9 +3322,7 @@ def make_benchmark_emis_plots(
                     )
                 )
                 
-        Parallel(n_jobs = n_job) (delayed(createfile_bench_cat)(filecat) for i, filecat in enumerate(catdict))        
 
-        
 def make_benchmark_emis_tables(
     reflist,
     refstr,
@@ -4721,7 +4719,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
 
     # Setup
     pdfobj = open(pdfname, "rb")
-    input = PdfFileReader(pdfobj)
+    input = PdfFileReader(pdfobj, overwriteWarnings=False)
     output = PdfFileWriter()
 
     for i, varname in enumerate(varlist):
@@ -4740,7 +4738,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
 
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
-
+    pdfobj.close()
 
 def add_nested_bookmarks_to_pdf(
     pdfname, category, catdict, warninglist, remove_prefix=""
@@ -4781,7 +4779,7 @@ def add_nested_bookmarks_to_pdf(
     # Setup
     # ==================================================================
     pdfobj = open(pdfname, "rb")
-    input = PdfFileReader(pdfobj)
+    input = PdfFileReader(pdfobj,overwriteWarnings=False)
     output = PdfFileWriter()
     warninglist = [k.replace(remove_prefix, "") for k in warninglist]
 
@@ -4836,7 +4834,7 @@ def add_nested_bookmarks_to_pdf(
 
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
-
+    pdfobj.close()
 
 def add_missing_variables(refdata, devdata, **kwargs):
     """
