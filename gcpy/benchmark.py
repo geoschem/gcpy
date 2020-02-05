@@ -2763,7 +2763,12 @@ def make_benchmark_conc_plots(
     # ==================================================================
     # Create the plots!
     # ==================================================================
-        
+
+    #Use dictionaries to maintain order of significant difference categories
+    dict_sfc = {}
+    dict_500 = {}
+    dict_zm = {}
+    
     def createplots(i, filecat):
 
         # If restrict_cats list is passed,
@@ -2797,7 +2802,7 @@ def make_benchmark_conc_plots(
                     filecat, warninglist
                 )
             )
-
+        
         # -----------------------
         # Surface plots
         # -----------------------
@@ -2826,6 +2831,7 @@ def make_benchmark_conc_plots(
                 sigdiff_list=diff_sfc
             )
             diff_sfc[:] = [v.replace("SpeciesConc_", "") for v in diff_sfc]
+            dict_sfc[filecat] = diff_sfc
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
@@ -2856,6 +2862,7 @@ def make_benchmark_conc_plots(
                 sigdiff_list=diff_500,
             )
             diff_500[:] = [v.replace("SpeciesConc_", "") for v in diff_500]
+            dict_500[filecat] = diff_500
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
@@ -2888,6 +2895,7 @@ def make_benchmark_conc_plots(
                 sigdiff_list=diff_zm
             )
             diff_zm[:] = [v.replace("SpeciesConc_", "") for v in diff_zm]
+            dict_zm = diff_zm
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
@@ -2917,43 +2925,42 @@ def make_benchmark_conc_plots(
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
-
-        # ==============================================================
-        # Write the list of species having significant differences,
-        # which we need to fill out the benchmark approval forms.
-        # ==============================================================
-        if sigdiff_files != None:
-            for filename in sigdiff_files:
-                if "sfc" in plots:
-                    if "sfc" in filename:
-                        with open(filename, "a+") as f:
-                            print("* {}: ".format(filecat), file=f, end="")
-                            for v in diff_sfc:
+            
+    # ==============================================================
+    # Write the list of species having significant differences,
+    # which we need to fill out the benchmark approval forms.
+    # ==============================================================
+    if sigdiff_files != None:
+        for filename in sigdiff_files:
+            if "sfc" in plots:
+                if "sfc" in filename:
+                    with open(filename, "a+") as f:
+                        for c, diff_list in dict_sfc.items():
+                            print("* {}: ".format(c), file=f, end="")
+                            for v in diff_list:
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
-                            f.close()
+                        f.close()
 
-                if "500hpa" in plots:
-                    if "500hpa" in filename:
-                        with open(filename, "a+") as f:
-                            print("* {}: ".format(filecat), file=f, end="")
-                            for v in diff_500:
+            if "500hpa" in plots:
+                if "500hpa" in filename:
+                    with open(filename, "a+") as f:
+                        for c, diff_list in dict_500.items():
+                            print("* {}: ".format(c), file=f, end="")
+                            for v in diff_list:
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
-                            f.close()
+                        f.close()
 
-                if "zonalmean" in plots or "zm" in plots:
-                    if "zonalmean" in filename or "zm" in filename:
-                        with open(filename, "a+") as f:
-                            print("* {}: ".format(filecat), file=f, end="")
-                            for v in diff_zm:
+            if "zonalmean" in plots or "zm" in plots:
+                if "zonalmean" in filename or "zm" in filename:
+                    with open(filename, "a+") as f:
+                        for c, diff_list in dict_zm.items():
+                            print("* {}: ".format(c), file=f, end="")
+                            for v in diff_list:
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
-                            f.close()
-
-
-    #for i, filecat in enumerate(catdict):
-    #    createplots(i, filecat)
+                        f.close()
 
     Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) for i, filecat in enumerate(catdict))
                             
