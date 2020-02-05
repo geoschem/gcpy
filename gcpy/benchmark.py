@@ -2955,7 +2955,7 @@ def make_benchmark_conc_plots(
     #for i, filecat in enumerate(catdict):
     #    createplots(i, filecat)
 
-    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecast) for i, filecast in enumerate(catdict))
+    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) for i, filecat in enumerate(catdict))
                             
 def make_benchmark_emis_plots(
     ref,
