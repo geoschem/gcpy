@@ -436,7 +436,9 @@ def compare_single_level(
     # If no cmpres is passed then choose highest resolution between ref and dev.
     # If one dataset is lat-lon and the other cubed sphere, and no
     # comparison grid resolution is passed, then default to 1x1.25
+    print(cmpres)
     if cmpres == None:
+        print("cmpres is None")
         if refres == devres and refgridtype == "ll":
             cmpres = refres
             cmpgridtype = refgridtype
@@ -453,8 +455,10 @@ def compare_single_level(
             cmpres = "1x1.25"
             cmpgridtype = "ll"
     elif "x" in cmpres:
+        print("cmpres has x")
         cmpgridtype = "ll"
     else:
+        print("cmpres is 0")
         cmpgridtype = "cs"
         cmpres = int(cmpres)  # must cast to integer for cubed-sphere
 
@@ -514,13 +518,18 @@ def compare_single_level(
     if refgridtype == "ll":
         [refminlon, refmaxlon] = [min(refgrid["lon_b"]), max(refgrid["lon_b"])]
         [refminlat, refmaxlat] = [min(refgrid["lat_b"]), max(refgrid["lat_b"])]
+    else:
+        refminlon, refmaxlon, refminlat, refmaxlat = None, None, None, None
     if devgridtype == "ll":
         [devminlon, devmaxlon] = [min(devgrid["lon_b"]), max(devgrid["lon_b"])]
         [devminlat, devmaxlat] = [min(devgrid["lat_b"]), max(devgrid["lat_b"])]
+    else:
+        devminlon, devmaxlon, devminlat, devmaxlat = None, None, None, None
     if cmpgridtype == "ll":
         [cmpminlon, cmpmaxlon] = [min(cmpgrid["lon_b"]), max(cmpgrid["lon_b"])]
         [cmpminlat, cmpmaxlat] = [min(cmpgrid["lat_b"]), max(cmpgrid["lat_b"])]
-
+    else:
+        cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = None, None, None, None
     # =================================================================
     # Create pdf if saving to file
     # =================================================================
@@ -878,10 +887,11 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         # ==============================================================
         # Set plot bounds for non cubed-sphere plotting
         # ==============================================================
-
-        ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
-        dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
-        cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
+        if cmpgridtype == "ll":
+            print("CMPGRIDTYPE: ", cmpgridtype)
+            ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
+            dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
+            cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
         
         # ==============================================================
         # Set titles for plots
