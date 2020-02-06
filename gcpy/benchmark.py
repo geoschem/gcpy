@@ -963,9 +963,9 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                      cmap_gray, cmap_gray,
                      cmap_gray, cmap_gray]
         else:
-            cmaps = [ref_cmap,         dev_cmap,
-                     cmap_nongray, cmap_nongray,
-                     cmap_nongray, cmap_nongray]
+            cmaps = [cmap_toprow_nongray,         cmap_toprow_nongray,
+                     cmap_nongray,                       cmap_nongray,
+                     cmap_nongray,                       cmap_nongray]
 
         if cmpgridtype == "ll":
             masked = [None, None,
