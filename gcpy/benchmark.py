@@ -109,6 +109,7 @@ def reshape_MAPL_CS(ds, vdims):
     if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
         ds = ds.stack(lat=("nf", "Ydim"))
         ds = ds.rename({"Xdim": "lon"})
+        print(" ds post renaming: ", ds)
         ds = ds.transpose("lat", "lon")
     return ds
 
@@ -225,7 +226,6 @@ def sixplot(plot_type,
         #Create a lon/lat plot
         plot = ax.imshow(plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm)
     else:
-        print(gridtype)
         ax.coastlines()
         for j in range(6):
             plot = ax.pcolormesh(
@@ -602,10 +602,9 @@ def compare_single_level(
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
-                
         ds_ref = reshape_MAPL_CS(ds_ref, refdata[varname].dims)
         ds_dev = reshape_MAPL_CS(ds_dev, devdata[varname].dims)
-
+        
         # ==============================================================
         # Area normalization, if any
         # ==============================================================
@@ -890,7 +889,6 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         # Set plot bounds for non cubed-sphere plotting
         # ==============================================================
         if cmpgridtype == "ll":
-            print("CMPGRIDTYPE: ", cmpgridtype)
             ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
             dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
             cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
@@ -1403,8 +1401,7 @@ def compare_zonal_mean(
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
-        # ==============================================================
-
+        # ==============================================================        
         ds_ref = reshape_MAPL_CS(ds_ref, refdata[varname].dims)
         ds_dev = reshape_MAPL_CS(ds_dev, devdata[varname].dims)
 
