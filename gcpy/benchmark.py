@@ -109,8 +109,10 @@ def reshape_MAPL_CS(ds, vdims):
     if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
         ds = ds.stack(lat=("nf", "Ydim"))
         ds = ds.rename({"Xdim": "lon"})
-        print(" ds post renaming: ", ds)
-        ds = ds.transpose("lat", "lon")
+        if "lev" in ds.dims:
+            ds = ds.transpose("lev", "lat", "lon")
+        else:
+            ds = ds.transpose("lat", "lon")
     return ds
 
 def all_zero_or_nan(ds):
@@ -1680,7 +1682,11 @@ def compare_zonal_mean(
         other_all_nans = [dev_is_all_nan, ref_is_all_nan,
                           False,                   False,
                           False,                   False]
-
+        
+        gridtypes = [cmpgridtype, cmpgridtype,
+                     cmpgridtype, cmpgridtype,
+                     cmpgridtype, cmpgridtype]
+        
         mins = [vmin_ref, vmin_dev, vmin_abs]
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
@@ -1689,7 +1695,7 @@ def compare_zonal_mean(
             sixplot(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
                     grids[i], axs[i], rowcols[i], titles[i], cmaps[i],
                     unit_list[i], extents[i], masked[i], other_all_nans[i],
-                    mins, maxs, use_cmap_RdBu, match_cbar, verbose, cmpgridtype,
+                    gridtypes[i], mins, maxs, use_cmap_RdBu, match_cbar, verbose, 
                     log_color_scale, pedge, pedge_ind, log_yaxis)
                 
         # ==============================================================
@@ -3708,6 +3714,7 @@ def make_benchmark_jvalue_plots(
             pdfname = os.path.join(jvdir, "{}Surface.pdf".format(prefix))
 
         diff_sfc = []
+        print(type(refds), type(refstr), type(devds), type(devstr), type(varlist), type(pdfname), type(flip_ref), type(flip_dev), type(log_color_scale), type(extra_title_txt), type(diff_sfc))
         compare_single_level(
             refds,
             refstr,
