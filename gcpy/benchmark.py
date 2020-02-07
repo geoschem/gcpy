@@ -43,6 +43,7 @@ def get_input_res(data):
     if "lat" in vdims and "lon" in vdims:
         lat = data.sizes["lat"]
         lon = data.sizes["lon"]
+        print("grid has lat and lon: ", vdims)
         if lat == 46 and lon == 72:
             return "4x5", "ll"
         elif lat == 91 and lon == 144:
@@ -52,7 +53,9 @@ def get_input_res(data):
         else:
             print("Error: ref or dev {}x{} grid not defined in gcpy!".format(lat, lon))
             return
+        
     else:
+        print("grid is cs: ", vdims)
         #GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return data.dims["Xdim"], "cs"    
 
@@ -126,12 +129,12 @@ def sixplot(plot_type,
             extent,
             masked_data,
             other_all_nan,
+            gridtype,
             vmins,
             vmaxs,
             use_cmap_RdBu,
             match_cbar,
             verbose,
-            cmpgridtype,
             log_color_scale,
             pedge=None,
             pedge_ind=0,
@@ -217,11 +220,12 @@ def sixplot(plot_type,
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)        
 
-    elif cmpgridtype == "ll":
+    elif gridtype == "ll":
         ax.coastlines()
         #Create a lon/lat plot
         plot = ax.imshow(plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm)
     else:
+        print(gridtype)
         ax.coastlines()
         for j in range(6):
             plot = ax.pcolormesh(
@@ -436,9 +440,7 @@ def compare_single_level(
     # If no cmpres is passed then choose highest resolution between ref and dev.
     # If one dataset is lat-lon and the other cubed sphere, and no
     # comparison grid resolution is passed, then default to 1x1.25
-    print(cmpres)
     if cmpres == None:
-        print("cmpres is None")
         if refres == devres and refgridtype == "ll":
             cmpres = refres
             cmpgridtype = refgridtype
@@ -455,10 +457,8 @@ def compare_single_level(
             cmpres = "1x1.25"
             cmpgridtype = "ll"
     elif "x" in cmpres:
-        print("cmpres has x")
         cmpgridtype = "ll"
     else:
-        print("cmpres is 0")
         cmpgridtype = "cs"
         cmpres = int(cmpres)  # must cast to integer for cubed-sphere
 
@@ -514,7 +514,9 @@ def compare_single_level(
     # =================================================================
     # Get lat/lon extents, if applicable
     # =================================================================
-
+    print('refgridtype: ', refgridtype)
+    print('devgridtype: ', devgridtype)
+    print('cmpgridtype: ', cmpgridtype)
     if refgridtype == "ll":
         [refminlon, refmaxlon] = [min(refgrid["lon_b"]), max(refgrid["lon_b"])]
         [refminlat, refmaxlat] = [min(refgrid["lat_b"]), max(refgrid["lat_b"])]
@@ -977,6 +979,10 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
             masked = [rev_masked, dev_masked,
                       absdiff,       absdiff,
                       fracdiff,     fracdiff]
+        
+        gridtypes = [refgridtype, devgridtype,
+                     cmpgridtype, cmpgridtype,
+                     cmpgridtype, cmpgridtype]
 
         unit_list = [units_ref,   units_dev,
                      units,           units,
@@ -994,7 +1000,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
             sixplot(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
                     grids[i], axs[i], rowcols[i], titles[i], cmaps[i],
                     unit_list[i], extents[i], masked[i], other_all_nans[i],
-                    mins, maxs, use_cmap_RdBu, match_cbar, verbose, cmpgridtype,
+                    gridtypes[i], mins, maxs, use_cmap_RdBu, match_cbar, verbose, 
                     log_color_scale)
 
         
