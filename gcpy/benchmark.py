@@ -208,7 +208,7 @@ def sixplot(plot_type,
     # Create plot
     ax.set_title(title)
     
-    if masked_data == 'ZM':
+    if type(masked_data) is str:
         #Zonal mean plot
         plot = ax.pcolormesh(grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm = norm)
         ax.set_aspect("auto")
@@ -969,16 +969,25 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                      cmap_nongray,                       cmap_nongray,
                      cmap_nongray,                       cmap_nongray]
 
+        '''WBD
+
         if cmpgridtype == "ll":
             masked = [None, None,
-                           None, None,
-                           None, None]
+                      None, None,
+                      None, None]
+        
         else:
             ref_masked = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_ref_reshaped )
             dev_masked = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_dev_reshaped )
-            masked = [rev_masked, dev_masked,
+            masked = [ref_masked, dev_masked,
                       absdiff,       absdiff,
                       fracdiff,     fracdiff]
+        '''
+        ref_masked = np.ma.masked_where( np.abs(refgrid["lon"] - 180) < 2, ds_ref_reshaped )
+        dev_masked = np.ma.masked_where( np.abs(devgrid["lon"] - 180) < 2, ds_dev_reshaped )
+        masked = [ref_masked, dev_masked,
+                  absdiff,       absdiff,
+                  fracdiff,     fracdiff]
         
         gridtypes = [refgridtype, devgridtype,
                      cmpgridtype, cmpgridtype,
