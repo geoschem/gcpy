@@ -593,9 +593,7 @@ def compare_single_level(
     for i in range(n_var):
         
         ds_ref = ds_refs[i]
-        print(ds_ref)
         ds_dev = ds_devs[i]
-        print(ds_dev)
         # Ref
         if regridref:
             if refgridtype == "ll":
@@ -605,9 +603,9 @@ def compare_single_level(
                 # regrid cs to ll
                 ds_ref_cmps[i] = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
                 ds_ref_reshaped = ds_ref.data.reshape(6, refres, refres)
-                for i in range(6):
-                    regridder = refregridder_list[i]
-                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[i])        
+                for j in range(6):
+                    regridder = refregridder_list[j]
+                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])        
         else:
             ds_ref_cmps[i] = ds_ref
             
@@ -620,9 +618,9 @@ def compare_single_level(
                 # regrid cs to ll
                 ds_dev_cmps[i] = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
                 ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
-                for i in range(6):
-                    regridder = devregridder_list[i]
-                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[i])
+                for j in range(6):
+                    regridder = devregridder_list[j]
+                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[j])
         else:
             ds_dev_cmps[i] = ds_dev
         
@@ -1351,7 +1349,7 @@ def compare_zonal_mean(
     ds_devs = [None]*n_var
     for i in range(n_var):
         
-        varname = varlist[ivar]        
+        varname = varlist[i]        
         # ==============================================================
         # Slice the data, allowing for the
         # possibility of no time dimension (bpch)
@@ -1393,7 +1391,7 @@ def compare_zonal_mean(
         # ==============================================================
 
         ds_ref = ds_refs[i]
-        ds_dev = ds_dev[i]
+        ds_dev = ds_devs[i]
             
         # Ref
         if regridref:
@@ -1406,9 +1404,9 @@ def compare_zonal_mean(
                     0, 1
                 )
                 ds_ref_cmps[i] = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = refregridder_list[i]
-                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[i])
+                for j in range(6):
+                    regridder = refregridder_list[j]
+                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])
         else:
             ds_ref_cmps[i] = ds_ref
 
@@ -1423,9 +1421,9 @@ def compare_zonal_mean(
                     0, 1
                 )
                 ds_dev_cmps[i] = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = devregridder_list[i]
-                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[i])
+                for j in range(6):
+                    regridder = devregridder_list[j]
+                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[j])
         else:
             ds_dev_cmps[i] = ds_dev
     
@@ -2683,8 +2681,7 @@ def make_benchmark_conc_plots(
     use_cmap_RdBu=False,
     log_color_scale=False,
     sigdiff_files=None,
-    n_job=1
-    #WBD FIX THIS
+    n_job=-1
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -2872,7 +2869,6 @@ def make_benchmark_conc_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_sfc
             )
-            #WBD FIX THIS^^^^^^
             diff_sfc[:] = [v.replace("SpeciesConc_", "") for v in diff_sfc]
             dict_sfc[filecat] = diff_sfc
             add_nested_bookmarks_to_pdf(
