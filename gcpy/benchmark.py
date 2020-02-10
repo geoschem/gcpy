@@ -22,7 +22,7 @@ from .grid.regrid import make_regridder_C2L, make_regridder_L2L
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .units import convert_units
-from joblib import Parallel, delayed, cpu_count
+from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
 
 #Turn off warnings to prevent stupid parallel errors
@@ -469,6 +469,10 @@ def compare_single_level(
     regriddev = devres != cmpres
     regridany = regridref or regriddev
 
+    print("refres: ", refres)
+    print("devres: ", devres)
+    print("cmpres: ", cmpres)
+    
     # =================================================================
     # Make grids (ref, dev, and comparison)
     # =================================================================        
@@ -497,6 +501,7 @@ def compare_single_level(
                 refregridder_list = make_regridder_C2L(
                     refres, cmpres, weightsdir=weightsdir, reuse_weights=True
                 )
+                print(type(refregridder_list))
     if regriddev:
         if devgridtype == "ll":
             devregridder = make_regridder_L2L(
@@ -516,9 +521,6 @@ def compare_single_level(
     # =================================================================
     # Get lat/lon extents, if applicable
     # =================================================================
-    print('refgridtype: ', refgridtype)
-    print('devgridtype: ', devgridtype)
-    print('cmpgridtype: ', cmpgridtype)
     if refgridtype == "ll":
         [refminlon, refmaxlon] = [min(refgrid["lon_b"]), max(refgrid["lon_b"])]
         [refminlat, refmaxlat] = [min(refgrid["lat_b"]), max(refgrid["lat_b"])]
@@ -552,6 +554,8 @@ def compare_single_level(
 
     #This loop is written as a function so it can be called in parallel
     def createfig(ivar):
+        
+        print("In createfig")
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
@@ -653,40 +657,30 @@ def compare_single_level(
         if devgridtype == "cs":
             ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
             
-        '''
-        #WBD MOVE TO FUNCTION
-
-def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped):
-    if regrid:
-        if gridtype == "ll":
-            #regrid ll to ll
-            return regridder(ds)
-        else:
-            #regrid cs to ll
-            ds_cmp = np.zeros([cmpgrid["lat"].size, cpmgrid["lon"].size])
-            for i in range(6):
-                regridder = ds_regridder[i]
-                ds_cmp += regridder(ds_reshaped[i])
-            return ds_cmp
-    else:
-        return ds
-
-        ds_ref_cmp = regrid_cmp_datasets(regridref, refgridtype, ds_ref, cmpgrid, ds_ref_reshaped)
-        '''
-
+        #WBD FIX REQUIRED HERE
+        
         # Ref
+        regridref = True
         if regridref:
             if refgridtype == "ll":
                 # regrid ll to ll
+                print("refregridder: ", refregridder)
+                print(type(refregridder))
                 ds_ref_cmp = refregridder(ds_ref)
+                print("ds_ref_cmp: ", ds_ref_cmp)
+                print(type(ds_ref_cmp[0]))
             else:
                 # regrid cs to ll
                 ds_ref_cmp = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
                 for i in range(6):
                     regridder = refregridder_list[i]
                     ds_ref_cmp += regridder(ds_ref_reshaped[i])
+                #ds_ref_cmp = None
+                print("ds_ref_cmp: ", ds_ref_cmp)
+                print(type(ds_ref_cmp[0, 1]))
         else:
             ds_ref_cmp = ds_ref
+            
 
         # Dev
         if regriddev:
@@ -807,6 +801,7 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
         # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
         if cmpgridtype == "cs":
             fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, fracdiff)
+
 
         # ==============================================================
         # Create 3x2 figure
@@ -969,22 +964,12 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
                      cmap_nongray,                       cmap_nongray,
                      cmap_nongray,                       cmap_nongray]
 
-        '''WBD
-
-        if cmpgridtype == "ll":
-            masked = [None, None,
-                      None, None,
-                      None, None]
-        
-        else:
-            ref_masked = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_ref_reshaped )
-            dev_masked = np.ma.masked_where( np.abs(grid["lon"] - 180) < 2, ds_dev_reshaped )
-            masked = [ref_masked, dev_masked,
-                      absdiff,       absdiff,
-                      fracdiff,     fracdiff]
-        '''
-        ref_masked = np.ma.masked_where( np.abs(refgrid["lon"] - 180) < 2, ds_ref_reshaped )
-        dev_masked = np.ma.masked_where( np.abs(devgrid["lon"] - 180) < 2, ds_dev_reshaped )
+        ref_masked = None
+        dev_masked = None
+        if refgridtype == "cs":
+            ref_masked = np.ma.masked_where( np.abs(refgrid["lon"] - 180) < 2, ds_ref_reshaped )
+        if devgridtype == "cs":
+            dev_masked = np.ma.masked_where( np.abs(devgrid["lon"] - 180) < 2, ds_dev_reshaped )
         masked = [ref_masked, dev_masked,
                   absdiff,       absdiff,
                   fracdiff,     fracdiff]
@@ -1030,14 +1015,16 @@ def regrid_cmp_datasets(regrid, gridtype, ds, cmpgrid, ds_regridder, ds_reshaped
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
+            
     #for i in range(n_var):
     #    createfig(i)
 
     #do not attempt nested thread parallelization due to issues with matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
-        
-    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+
+    Parallel(n_jobs = 1) (delayed(createfig)(i) for i in range(n_var))
+
 
     # ==================================================================
     # Finish
@@ -2670,7 +2657,8 @@ def make_benchmark_conc_plots(
     use_cmap_RdBu=False,
     log_color_scale=False,
     sigdiff_files=None,
-    n_job=-1
+    n_job=1
+    #WBD FIX THIS
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -2856,8 +2844,10 @@ def make_benchmark_conc_plots(
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_sfc
+                sigdiff_list=diff_sfc,
+                cmpres="2x2.5"
             )
+            #WBD FIX THIS^^^^^^
             diff_sfc[:] = [v.replace("SpeciesConc_", "") for v in diff_sfc]
             dict_sfc[filecat] = diff_sfc
             add_nested_bookmarks_to_pdf(
@@ -3715,6 +3705,7 @@ def make_benchmark_jvalue_plots(
 
         diff_sfc = []
         print(type(refds), type(refstr), type(devds), type(devstr), type(varlist), type(pdfname), type(flip_ref), type(flip_dev), type(log_color_scale), type(extra_title_txt), type(diff_sfc))
+        print(refds, devds)
         compare_single_level(
             refds,
             refstr,
@@ -4741,7 +4732,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
 
     Keyword Args (optional):
     ------------------------
-        remove_prefix : str
+        remove_prefix : str0
             Specifies a prefix to remove from each entry in varlist
             when creating bookmarks.  For example, if varlist has
             a variable name "SpeciesConc_NO", and you specify
