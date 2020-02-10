@@ -536,6 +536,96 @@ def compare_single_level(
         [cmpminlat, cmpmaxlat] = [min(cmpgrid["lat_b"]), max(cmpgrid["lat_b"])]
     else:
         cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = None, None, None, None
+
+    ds_refs = [None]*n_var
+    ds_devs = [None]*n_var
+    for i in range(n_var):
+        # ==============================================================
+        # Slice the data, allowing for the
+        # possibility of no time dimension (bpch)
+        # ==============================================================        
+        varname = varlist[i]
+        # Ref
+        vdims = refdata[varname].dims
+        if "time" in vdims and "lev" in vdims:
+            if flip_ref:
+                ds_refs[i] = refdata[varname].isel(time=itime, lev=71 - ilev)
+            else:
+                ds_refs[i] = refdata[varname].isel(time=itime, lev=ilev)
+        elif "time" not in vdims and "lev" in vdims:
+            if flip_ref:
+                ds_refs[i] = refdata[varname].isel(lev=71 - ilev)
+            else:
+                ds_refs[i] = refdata[varname].isel(lev=ilev)
+        elif "time" in vdims and "lev" not in vdims:
+            ds_refs[i] = refdata[varname].isel(time=itime)
+        else:
+            ds_refs[i] = refdata[varname]
+
+        # Dev
+        vdims = devdata[varname].dims
+        if "time" in vdims and "lev" in vdims:
+            if flip_dev:
+                ds_devs[i] = devdata[varname].isel(time=itime, lev=71 - ilev)
+            else:
+                ds_devs[i] = devdata[varname].isel(time=itime, lev=ilev)
+        elif "time" not in vdims and "lev" in vdims:
+            if flip_dev:
+                ds_devs[i] = devdata[varname].isel(lev=71 - ilev)
+            else:
+                ds_devs[i] = devdata[varname].isel(lev=ilev)
+        elif "time" in vdims and "lev" not in vdims:
+            ds_devs[i] = devdata[varname].isel(time=itime)
+        else:
+            ds_devs[i] = devdata[varname]
+
+        # ==============================================================
+        # Reshape cubed sphere data if using MAPL v1.0.0+
+        # TODO: update function to expect data in this format
+        # ==============================================================
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
+
+            
+            
+    ds_ref_cmps = [None]*n_var
+    ds_dev_cmps = [None]*n_var
+    for i in range(n_var):
+        
+        ds_ref = ds_refs[i]
+        print(ds_ref)
+        ds_dev = ds_devs[i]
+        print(ds_dev)
+        # Ref
+        if regridref:
+            if refgridtype == "ll":
+                # regrid ll to ll
+                ds_ref_cmps[i] = refregridder(ds_ref)
+            else:
+                # regrid cs to ll
+                ds_ref_cmps[i] = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
+                ds_ref_reshaped = ds_ref.data.reshape(6, refres, refres)
+                for i in range(6):
+                    regridder = refregridder_list[i]
+                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[i])        
+        else:
+            ds_ref_cmps[i] = ds_ref
+            
+        # Dev
+        if regriddev:
+            if devgridtype == "ll":
+                # regrid ll to ll
+                ds_dev_cmps[i] = devregridder(ds_dev)
+            else:
+                # regrid cs to ll
+                ds_dev_cmps[i] = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
+                ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
+                for i in range(6):
+                    regridder = devregridder_list[i]
+                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[i])
+        else:
+            ds_dev_cmps[i] = ds_dev
+        
     # =================================================================
     # Create pdf if saving to file
     # =================================================================
@@ -564,53 +654,10 @@ def compare_single_level(
 
         #Convert mol/mol units to ppb and ensure ref and dev units match
         units_ref, units_dev = check_units(refdata, devdata, varname)
-
-        # ==============================================================
-        # Slice the data, allowing for the
-        # possibility of no time dimension (bpch)
-        # ==============================================================        
-
-        # Ref
-        vdims = refdata[varname].dims
-        if "time" in vdims and "lev" in vdims:
-            if flip_ref:
-                ds_ref = refdata[varname].isel(time=itime, lev=71 - ilev)
-            else:
-                ds_ref = refdata[varname].isel(time=itime, lev=ilev)
-        elif "time" not in vdims and "lev" in vdims:
-            if flip_ref:
-                ds_ref = refdata[varname].isel(lev=71 - ilev)
-            else:
-                ds_ref = refdata[varname].isel(lev=ilev)
-        elif "time" in vdims and "lev" not in vdims:
-            ds_ref = refdata[varname].isel(time=itime)
-        else:
-            ds_ref = refdata[varname]
-
-        # Dev
-        vdims = devdata[varname].dims
-        if "time" in vdims and "lev" in vdims:
-            if flip_dev:
-                ds_dev = devdata[varname].isel(time=itime, lev=71 - ilev)
-            else:
-                ds_dev = devdata[varname].isel(time=itime, lev=ilev)
-        elif "time" not in vdims and "lev" in vdims:
-            if flip_dev:
-                ds_dev = devdata[varname].isel(lev=71 - ilev)
-            else:
-                ds_dev = devdata[varname].isel(lev=ilev)
-        elif "time" in vdims and "lev" not in vdims:
-            ds_dev = devdata[varname].isel(time=itime)
-        else:
-            ds_dev = devdata[varname]
-
-        # ==============================================================
-        # Reshape cubed sphere data if using MAPL v1.0.0+
-        # TODO: update function to expect data in this format
-        # ==============================================================
-        ds_ref = reshape_MAPL_CS(ds_ref, refdata[varname].dims)
-        ds_dev = reshape_MAPL_CS(ds_dev, devdata[varname].dims)
         
+        ds_ref = ds_refs[ivar]
+        ds_dev = ds_devs[ivar]
+                
         # ==============================================================
         # Area normalization, if any
         # ==============================================================
@@ -657,46 +704,8 @@ def compare_single_level(
         if devgridtype == "cs":
             ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
             
-        #WBD FIX REQUIRED HERE
-        
-        # Ref
-        regridref = True
-        if regridref:
-            if refgridtype == "ll":
-                # regrid ll to ll
-                print("refregridder: ", refregridder)
-                print(type(refregridder))
-                ds_ref_cmp = refregridder(ds_ref)
-                print("ds_ref_cmp: ", ds_ref_cmp)
-                print(type(ds_ref_cmp[0]))
-            else:
-                # regrid cs to ll
-                ds_ref_cmp = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = refregridder_list[i]
-                    ds_ref_cmp += regridder(ds_ref_reshaped[i])
-                #ds_ref_cmp = None
-                print("ds_ref_cmp: ", ds_ref_cmp)
-                print(type(ds_ref_cmp[0, 1]))
-        else:
-            ds_ref_cmp = ds_ref
-            
-
-        # Dev
-        if regriddev:
-            if devgridtype == "ll":
-                # regrid ll to ll
-                ds_dev_cmp = devregridder(ds_dev)
-            else:
-                # regrid cs to ll
-                ds_dev_cmp = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = devregridder_list[i]
-                    ds_dev_cmp += regridder(ds_dev_reshaped[i])
-        else:
-            ds_dev_cmp = ds_dev
-
-        #WBD LEAVE
+        ds_ref_cmp = ds_ref_cmps[ivar]
+        ds_dev_cmp = ds_dev_cmps[ivar]
 
         # Reshape comparison cubed sphere data, if any
         if cmpgridtype == "cs":
@@ -1023,7 +1032,7 @@ def compare_single_level(
     if current_process().name != "MainProcess":
         n_job = 1
 
-    Parallel(n_jobs = 1) (delayed(createfig)(i) for i in range(n_var))
+    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
 
 
     # ==================================================================
@@ -1038,6 +1047,7 @@ def compare_single_level(
         merge.write(pdfname)
         merge.close()
         warnings.showwarning=warning_format
+    
 def compare_zonal_mean(
     refdata,
     refstr,
@@ -1337,6 +1347,88 @@ def compare_zonal_mean(
                 devres, cmpres, weightsdir=weightsdir, reuse_weights=True
             )
 
+    ds_refs = [None]*n_var
+    ds_devs = [None]*n_var
+    for i in range(n_var):
+        
+        varname = varlist[ivar]        
+        # ==============================================================
+        # Slice the data, allowing for the
+        # possibility of no time dimension (bpch)
+        # ==============================================================
+
+        # Ref
+        vdims = refdata[varname].dims
+        if "time" in vdims:
+            ds_refs[i] = refdata[varname].isel(time=itime)
+        else:
+            ds_refs[i] = refdata[varname]
+
+        # Dev
+        vdims = devdata[varname].dims
+        if "time" in vdims:
+            ds_devs[i] = devdata[varname].isel(time=itime)
+        else:
+            ds_devs[i] = devdata[varname]
+
+        # ==============================================================
+        # Reshape cubed sphere data if using MAPL v1.0.0+
+        # TODO: update function to expect data in this format
+        # ==============================================================        
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
+
+        # Flip in the vertical if applicable
+        if flip_ref:
+            ds_refs[i].data = ds_refs[i].data[::-1, :, :]
+        if flip_dev:
+            ds_devs[i].data = ds_devs[i].data[::-1, :, :]
+        
+    ds_ref_cmps = [None]*n_var
+    ds_dev_cmps = [None]*n_var
+
+    for i in range(n_var):
+        # ==============================================================
+        # Get comparison data sets, regridding input slices if needed
+        # ==============================================================
+
+        ds_ref = ds_refs[i]
+        ds_dev = ds_dev[i]
+            
+        # Ref
+        if regridref:
+            if refgridtype == "ll":
+                # regrid ll to ll
+                ds_ref_cmps[i] = refregridder(ds_ref)
+            else:
+                # regrid cs to ll
+                ds_ref_reshaped = ds_ref.data.reshape(nlev, 6, refres, refres).swapaxes(
+                    0, 1
+                )
+                ds_ref_cmps[i] = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
+                for i in range(6):
+                    regridder = refregridder_list[i]
+                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[i])
+        else:
+            ds_ref_cmps[i] = ds_ref
+
+        # Dev
+        if regriddev:
+            if devgridtype == "ll":
+                # regrid ll to ll
+                ds_dev_cmps[i] = devregridder(ds_dev)
+            else:
+                # regrid cs to ll
+                ds_dev_reshaped = ds_dev.data.reshape(nlev, 6, devres, devres).swapaxes(
+                    0, 1
+                )
+                ds_dev_cmps[i] = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
+                for i in range(6):
+                    regridder = devregridder_list[i]
+                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[i])
+        else:
+            ds_dev_cmps[i] = ds_dev
+    
     # ==================================================================
     # Create pdf, if savepdf is passed as True
     # ==================================================================
@@ -1369,32 +1461,6 @@ def compare_zonal_mean(
         units_ref, units_dev = check_units(refdata, devdata, varname)
 
         # ==============================================================
-        # Slice the data, allowing for the
-        # possibility of no time dimension (bpch)
-        # ==============================================================
-
-        # Ref
-        vdims = refdata[varname].dims
-        if "time" in vdims:
-            ds_ref = refdata[varname].isel(time=itime)
-        else:
-            ds_ref = refdata[varname]
-
-        # Dev
-        vdims = devdata[varname].dims
-        if "time" in vdims:
-            ds_dev = devdata[varname].isel(time=itime)
-        else:
-            ds_dev = devdata[varname]
-
-        # ==============================================================
-        # Reshape cubed sphere data if using MAPL v1.0.0+
-        # TODO: update function to expect data in this format
-        # ==============================================================        
-        ds_ref = reshape_MAPL_CS(ds_ref, refdata[varname].dims)
-        ds_dev = reshape_MAPL_CS(ds_dev, devdata[varname].dims)
-
-        # ==============================================================
         # Area normalization, if any
         # ==============================================================
 
@@ -1413,53 +1479,13 @@ def compare_zonal_mean(
             subtitle_extra = ", Normalized by Area"
 
         # ==============================================================
-        # Get comparison data sets, regridding input slices if needed
+        # Assign data variables
         # ==============================================================
-
-        # Flip in the vertical if applicable
-        if flip_ref:
-            ds_ref.data = ds_ref.data[::-1, :, :]
-        if flip_dev:
-            ds_dev.data = ds_dev.data[::-1, :, :]
-
-        # Reshape ref/dev cubed sphere data, if any
-        if refgridtype == "cs":
-            ds_ref_reshaped = ds_ref.data.reshape(nlev, 6, refres, refres).swapaxes(
-                0, 1
-            )
-        if devgridtype == "cs":
-            ds_dev_reshaped = ds_dev.data.reshape(nlev, 6, devres, devres).swapaxes(
-                0, 1
-            )
-
-        # Ref
-        if regridref:
-            if refgridtype == "ll":
-                # regrid ll to ll
-                ds_ref_cmp = refregridder(ds_ref)
-            else:
-                # regrid cs to ll
-                ds_ref_cmp = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = refregridder_list[i]
-                    ds_ref_cmp += regridder(ds_ref_reshaped[i])
-        else:
-            ds_ref_cmp = ds_ref
-
-        # Dev
-        if regriddev:
-            if devgridtype == "ll":
-                # regrid ll to ll
-                ds_dev_cmp = devregridder(ds_dev)
-            else:
-                # regrid cs to ll
-                ds_dev_cmp = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = devregridder_list[i]
-                    ds_dev_cmp += regridder(ds_dev_reshaped[i])
-        else:
-            ds_dev_cmp = ds_dev
-
+        ds_ref = ds_refs[ivar]
+        ds_dev = ds_devs[ivar]
+        ds_ref_cmp = ds_ref_cmps[ivar]
+        ds_dev_cmp = ds_dev_cmps[ivar]
+            
         # ==============================================================
         # Calculate zonal mean
         # ==============================================================
@@ -2844,8 +2870,7 @@ def make_benchmark_conc_plots(
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_sfc,
-                cmpres="2x2.5"
+                sigdiff_list=diff_sfc
             )
             #WBD FIX THIS^^^^^^
             diff_sfc[:] = [v.replace("SpeciesConc_", "") for v in diff_sfc]
