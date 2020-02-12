@@ -2964,7 +2964,7 @@ def make_benchmark_conc_plots(
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
-            
+    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) for i, filecat in enumerate(catdict))
     # ==============================================================
     # Write the list of species having significant differences,
     # which we need to fill out the benchmark approval forms.
@@ -3001,7 +3001,6 @@ def make_benchmark_conc_plots(
                             print(file=f)
                         f.close()
 
-    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) for i, filecat in enumerate(catdict))
                             
 def make_benchmark_emis_plots(
     ref,
