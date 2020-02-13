@@ -213,6 +213,10 @@ def sixplot(plot_type,
     
     if type(masked_data) is str:
         #Zonal mean plot
+        print("zonal mean plotting")
+        print("pedge[pedge_ind]: ", pedge[pedge_ind])
+        print("plot_val: ", plot_val)
+        print("comap :", comap)
         plot = ax.pcolormesh(grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm = norm)
         ax.set_aspect("auto")
         ax.set_ylabel("Pressure (hPa)")
@@ -643,7 +647,6 @@ def compare_single_level(
     #This loop is written as a function so it can be called in parallel
     def createfig(ivar):
         
-        print("In createfig")
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
