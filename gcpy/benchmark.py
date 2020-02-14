@@ -37,87 +37,6 @@ spc_categories = "benchmark_categories.json"
 emission_spc = "emission_species.json"
 emission_inv = "emission_inventories.json"
 
-def get_input_res(data):
-    
-    vdims = data.dims
-    if "lat" in vdims and "lon" in vdims:
-        lat = data.sizes["lat"]
-        lon = data.sizes["lon"]
-        print("grid has lat and lon: ", vdims)
-        if lat == 46 and lon == 72:
-            return "4x5", "ll"
-        elif lat == 91 and lon == 144:
-            return "2x2.5", "ll"
-        elif lat / 6 == lon:
-            return lon, "cs"
-        else:
-            print("Error: ref or dev {}x{} grid not defined in gcpy!".format(lat, lon))
-            return
-        
-    else:
-        print("grid is cs: ", vdims)
-        #GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        return data.dims["Xdim"], "cs"    
-
-def call_make_grid(res, gridtype, zonal_mean, comparison):
-    
-    if gridtype == "ll" or (zonal_mean and comparison):
-        return [make_grid_LL(res), None]
-    else:
-        return make_grid_CS(res)
-
-def check_units(refdata, devdata, varname):
-    # If units are mol/mol then convert to ppb
-    conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
-    if refdata[varname].units.strip() in conc_units:
-        refdata[varname].attrs["units"] = "ppbv"
-        refdata[varname].values = refdata[varname].values * 1e9
-    if devdata[varname].units.strip() in conc_units:
-        devdata[varname].attrs["units"] = "ppbv"
-        devdata[varname].values = devdata[varname].values * 1e9
-        
-    # Binary diagnostic concentrations have units ppbv. Change to ppb.
-    if refdata[varname].units.strip() == "ppbv":
-        refdata[varname].attrs["units"] = "ppb"
-    if devdata[varname].units.strip() == "ppbv":
-        devdata[varname].attrs["units"] = "ppb"
-        
-    # Check that units match
-    units_ref = refdata[varname].units.strip()
-    units_dev = devdata[varname].units.strip()
-    if units_ref != units_dev:
-        print_units_warning = True
-        if print_units_warning:
-            print("WARNING: ref and dev concentration units do not match!")
-            print("Ref units: {}".format(units_ref))
-            print("Dev units: {}".format(units_dev))
-        if enforce_units:
-            # if enforcing units, stop the program if
-            # units do not match
-            assert units_ref == units_dev, "Units do not match for {}!".format(
-                varname
-            )
-        else:
-            # if not enforcing units, just keep going after
-            # only printing warning once
-            print_units_warning = False
-
-    return units_ref, units_dev
-
-def reshape_MAPL_CS(ds, vdims):
-    #Reshape cubed sphere data if using MAPL v1.0.0+
-    if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-        ds = ds.stack(lat=("nf", "Ydim"))
-        ds = ds.rename({"Xdim": "lon"})
-        if "lev" in ds.dims:
-            ds = ds.transpose("lev", "lat", "lon")
-        else:
-            ds = ds.transpose("lat", "lon")
-    return ds
-
-def all_zero_or_nan(ds):
-    #Return whether ds is all zeros, or all nans
-    return not np.any(ds.values), np.isnan(ds.values).all()
 
 def sixplot(plot_type,
             all_zero,
@@ -147,8 +66,95 @@ def sixplot(plot_type,
             ):
 
     '''
-    To be called from compare_single_level or compare_zonal_mean
+    Plotting function to be called from compare_single_level or compare_zonal_mean.
+    Can also be called on its own
+    WBD MOVE TO core.py and RENAME?
+    Args:
+    -----
+    
+    plot_type : str
+       Type of plot to create (ref, dev, absolute difference or fractional difference)
+    
+    all_zero : boolean
+       Set this flag to True if the data to be plotted consist only of zeros
+    
+    all_nan : boolean
+       Set this flag to True if the data to be plotted consist only of NaNs
+
+    plot_val : xarray DataArray
+       Single variable GEOS-Chem output values to plot
+    
+    grid : dict
+       Dictionary mapping plot_val to plottable coordinates
+
+    WBD VVVVV
+    ax : matplotlib axes 
+       Axes object to plot information. Will create a new axes if none is passed.
+
+    rowcol : tuple
+       Subplot position in overall Figure WBD DELETE?
+
+    title : str
+       Title to print on axes
+
+    comap : matplotlib Colormap
+       Colormap for plotting data values    
+
+    unit : str
+       Units of plotted data
+    
+    extent : tuple (minlon, maxlon, minlat, maxlat) WBD SHOULD BE KEYWORD?
+       Describes minimum and maximum latitude and longitude of input data 
+
+    masked_data : numpy array
+       Masked area for cubed-sphere plotting
+    
+    #Need to modify this name
+    other_all_nan : boolean
+        Set this flag to True if plotting ref/dev and the other of ref/dev is all nan
+
+    gridtype : str
+       "ll" for lat/lon or "cs" for cubed-sphere
+    
+    vmins: list of float
+       list of length 3 of minimum ref value, dev value, and absdiff value
+
+    vmaxs: list of float
+       list of length 3 of maximum ref value, dev value, and absdiff value
+
+    use_cmap_RdBu : boolean
+       Set this flag to True to use a blue-white-red colormap 
+
+    match_cbar : boolean
+       Set this flag to True if you are plotting with the same colorbar for ref and dev
+
+    verbose : boolean
+       Set this flag to True to enable informative printout.    
+
+    log_color_scale : boolean
+       Set this flag to True to enable log-scale colormapping
+
+    pedge : 
+       Edge pressures of grid cells in data to be plotted
+
+    pedge_ind : int
+       Index of edge pressure values within pressure range  in data to be plotted 
+
+    log_yaxis : boolean
+       Set this flag to True to enable log scaling of pressure in zonal mean plots
+
+    xtick_positions : list of float
+       Locations of lat/lon or lon ticks on plot
+
+    xtick_labels: list of str
+       Labels for lat/lon ticks
     '''
+
+    local = locals()
+    for key in local:
+        print(key)
+        print(type(local[key]))
+        
     
     # Set min and max of the data range
     if plot_type in ('ref', 'dev'):
@@ -213,10 +219,6 @@ def sixplot(plot_type,
     
     if type(masked_data) is str:
         #Zonal mean plot
-        print("zonal mean plotting")
-        print("pedge[pedge_ind]: ", pedge[pedge_ind])
-        print("plot_val: ", plot_val)
-        print("comap :", comap)
         plot = ax.pcolormesh(grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm = norm)
         ax.set_aspect("auto")
         ax.set_ylabel("Pressure (hPa)")
@@ -429,7 +431,9 @@ def compare_single_level(
     savepdf = True
     if pdfname == "":
         savepdf = False
-
+    # Cleanup previous temp PDFs
+    #for i in range(n_var):
+    #    os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
     # =================================================================
     # Determine input grid resolutions and types
     # =================================================================
@@ -766,8 +770,8 @@ def compare_single_level(
         # values for the color ranges below.
         # ==============================================================
         
-        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref)
-        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev)
+        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref.values)
+        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev.values)
 
         # ==============================================================
         # Calculate absolute difference
@@ -778,8 +782,7 @@ def compare_single_level(
             absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
 
         # Test if the abs. diff. is zero everywhere or NaN everywhere
-        absdiff_is_all_zero = not np.any(absdiff)
-        absdiff_is_all_nan = np.isnan(absdiff).all()
+        absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(absdiff)
 
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
@@ -1223,6 +1226,9 @@ def compare_zonal_mean(
     savepdf = True
     if pdfname == "":
         savepdf = False
+    # Cleanup previous temp PDFs
+    for i in range(n_var):
+        os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
 
     # Get mid-point pressure and edge pressures for this grid (assume 72-level)
     pmid = GEOS_72L_grid.p_mid()
@@ -1544,8 +1550,8 @@ def compare_zonal_mean(
         # values for the color ranges below.
         # ==============================================================
 
-        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref)
-        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev)
+        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref.values)
+        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev.values)
 
         # ==============================================================
         # Calculate zonal mean difference
@@ -1554,9 +1560,8 @@ def compare_zonal_mean(
         zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
 
         # Test if abs. diff is zero everywhere or NaN everywhere
-        absdiff_is_all_zero = not np.any(zm_diff)
-        absdiff_is_all_nan = np.isnan(zm_diff).all()
-
+        absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(zm_diff)
+        
         # Absolute maximum difference value
         diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
 
@@ -1673,14 +1678,16 @@ def compare_zonal_mean(
                   absdiff_dynam_title,   absdiff_fixed_title,
                   fracdiff_dynam_title, fracdiff_fixed_title]
 
-        if refgridtype == "ll":
-            grids = [refgrid, devgrid,
-                     cmpgrid, cmpgrid,
-                     cmpgrid, cmpgrid]
-        else:
-            grids = [cmpgrid, cmpgrid,
-                     cmpgrid, cmpgrid,
-                     cmpgrid, cmpgrid]
+
+        grids = [refgrid, devgrid,
+                 cmpgrid, cmpgrid,
+                 cmpgrid, cmpgrid]
+        
+        if refgridtype != "ll":
+            grids[0] = cmpgrid
+        if devgridtype != "ll":
+            grids[1] = cmpgrid
+        
         extents = [None, None,
                    None, None,
                    None, None]
@@ -5047,3 +5054,88 @@ def get_troposphere_mask(ds):
 
     # Reshape into the same shape as Met_BxHeight
     return tropmask.reshape(shape)
+
+
+
+def get_input_res(data):
+    #return resolution of dataset passed to compare_single_level or compare_zonal_means
+    
+    vdims = data.dims
+    if "lat" in vdims and "lon" in vdims:
+        lat = data.sizes["lat"]
+        lon = data.sizes["lon"]
+        print("grid has lat and lon: ", vdims)
+        if lat == 46 and lon == 72:
+            return "4x5", "ll"
+        elif lat == 91 and lon == 144:
+            return "2x2.5", "ll"
+        elif lat / 6 == lon:
+            return lon, "cs"
+        else:
+            print("Error: ref or dev {}x{} grid not defined in gcpy!".format(lat, lon))
+            return
+        
+    else:
+        print("grid is cs: ", vdims)
+        #GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        return data.dims["Xdim"], "cs"    
+
+def call_make_grid(res, gridtype, zonal_mean, comparison):
+    #call appropriate make_grid function and return new grid
+    if gridtype == "ll" or (zonal_mean and comparison):
+        return [make_grid_LL(res), None]
+    else:
+        return make_grid_CS(res)
+
+def check_units(refdata, devdata, varname):
+    # If units are mol/mol then convert to ppb
+    conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
+    if refdata[varname].units.strip() in conc_units:
+        refdata[varname].attrs["units"] = "ppbv"
+        refdata[varname].values = refdata[varname].values * 1e9
+    if devdata[varname].units.strip() in conc_units:
+        devdata[varname].attrs["units"] = "ppbv"
+        devdata[varname].values = devdata[varname].values * 1e9
+        
+    # Binary diagnostic concentrations have units ppbv. Change to ppb.
+    if refdata[varname].units.strip() == "ppbv":
+        refdata[varname].attrs["units"] = "ppb"
+    if devdata[varname].units.strip() == "ppbv":
+        devdata[varname].attrs["units"] = "ppb"
+        
+    # Check that units match
+    units_ref = refdata[varname].units.strip()
+    units_dev = devdata[varname].units.strip()
+    if units_ref != units_dev:
+        print_units_warning = True
+        if print_units_warning:
+            print("WARNING: ref and dev concentration units do not match!")
+            print("Ref units: {}".format(units_ref))
+            print("Dev units: {}".format(units_dev))
+        if enforce_units:
+            # if enforcing units, stop the program if
+            # units do not match
+            assert units_ref == units_dev, "Units do not match for {}!".format(
+                varname
+            )
+        else:
+            # if not enforcing units, just keep going after
+            # only printing warning once
+            print_units_warning = False
+
+    return units_ref, units_dev
+
+def reshape_MAPL_CS(ds, vdims):
+    #Reshape cubed sphere data if using MAPL v1.0.0+
+    if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
+        ds = ds.stack(lat=("nf", "Ydim"))
+        ds = ds.rename({"Xdim": "lon"})
+        if "lev" in ds.dims:
+            ds = ds.transpose("lev", "lat", "lon")
+        else:
+            ds = ds.transpose("lat", "lon")
+    return ds
+
+def all_zero_or_nan(ds):
+    #Return whether ds is all zeros, or all nans
+    return not np.any(ds), np.isnan(ds).all()
