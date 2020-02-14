@@ -15,7 +15,7 @@ from cartopy.mpl.geoaxes import GeoAxes  # for assertion
 import matplotlib as mpl
 import matplotlib.ticker as mticker
 from matplotlib.backends.backend_pdf import PdfPages
-from PyPDF2 import PdfFileWriter, PdfFileReader
+from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd
 from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L
@@ -23,6 +23,15 @@ from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .units import convert_units
 from .constants import skip_these_vars
+from joblib import Parallel, delayed, cpu_count, parallel_backend
+from multiprocessing import current_process
+import warnings
+
+#Save warnings format to undo overwriting built into PyPDF2
+warning_format = warnings.showwarning
+
+#Suppress numpy divide by zero warnings to prevent output spam
+np.seterr(divide='ignore', invalid='ignore')
 
 # JSON files
 aod_spc = "aod_species.json"
@@ -30,6 +39,233 @@ spc_categories = "benchmark_categories.json"
 emission_spc = "emission_species.json"
 emission_inv = "emission_inventories.json"
 
+
+def sixplot(plot_type,
+            all_zero,
+            all_nan,
+            plot_val,
+            grid,
+            ax,
+            rowcol,
+            title,
+            comap,
+            unit,
+            extent,
+            masked_data,
+            other_all_nan,
+            gridtype,
+            vmins,
+            vmaxs,
+            use_cmap_RdBu,
+            match_cbar,
+            verbose,
+            log_color_scale,
+            pedge=None,
+            pedge_ind=0,
+            log_yaxis=False,
+            xtick_positions=[],
+            xticklabels=[]
+            ):
+
+    '''
+    Plotting function to be called from compare_single_level or compare_zonal_mean.
+    Can also be called on its own
+    WBD MOVE TO core.py and RENAME?
+    Args:
+    -----
+    
+    plot_type : str
+       Type of plot to create (ref, dev, absolute difference or fractional difference)
+    
+    all_zero : boolean
+       Set this flag to True if the data to be plotted consist only of zeros
+    
+    all_nan : boolean
+       Set this flag to True if the data to be plotted consist only of NaNs
+
+    plot_val : xarray DataArray
+       Single variable GEOS-Chem output values to plot
+    
+    grid : dict
+       Dictionary mapping plot_val to plottable coordinates
+
+    WBD VVVVV
+    ax : matplotlib axes 
+       Axes object to plot information. Will create a new axes if none is passed.
+
+    rowcol : tuple
+       Subplot position in overall Figure WBD DELETE?
+
+    title : str
+       Title to print on axes
+
+    comap : matplotlib Colormap
+       Colormap for plotting data values    
+
+    unit : str
+       Units of plotted data
+    
+    extent : tuple (minlon, maxlon, minlat, maxlat) WBD SHOULD BE KEYWORD?
+       Describes minimum and maximum latitude and longitude of input data 
+
+    masked_data : numpy array
+       Masked area for cubed-sphere plotting
+    
+    #Need to modify this name
+    other_all_nan : boolean
+        Set this flag to True if plotting ref/dev and the other of ref/dev is all nan
+
+    gridtype : str
+       "ll" for lat/lon or "cs" for cubed-sphere
+    
+    vmins: list of float
+       list of length 3 of minimum ref value, dev value, and absdiff value
+
+    vmaxs: list of float
+       list of length 3 of maximum ref value, dev value, and absdiff value
+
+    use_cmap_RdBu : boolean
+       Set this flag to True to use a blue-white-red colormap 
+
+    match_cbar : boolean
+       Set this flag to True if you are plotting with the same colorbar for ref and dev
+
+    verbose : boolean
+       Set this flag to True to enable informative printout.    
+
+    log_color_scale : boolean
+       Set this flag to True to enable log-scale colormapping
+
+    pedge : 
+       Edge pressures of grid cells in data to be plotted
+
+    pedge_ind : int
+       Index of edge pressure values within pressure range  in data to be plotted 
+
+    log_yaxis : boolean
+       Set this flag to True to enable log scaling of pressure in zonal mean plots
+
+    xtick_positions : list of float
+       Locations of lat/lon or lon ticks on plot
+
+    xtick_labels: list of str
+       Labels for lat/lon ticks
+    '''
+    
+    # Set min and max of the data range
+    if plot_type in ('ref', 'dev'):
+        if all_zero or all_nan:
+            if plot_type is 'ref':
+                [vmin, vmax] = [vmins[0], vmaxs[0]]
+            else:
+                [vmin, vmax] = [vmins[1], vmaxs[1]]
+        elif use_cmap_RdBu:
+            if plot_type is 'ref':
+                if match_cbar and (not other_all_nan):
+                    absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
+                else:
+                    absmax = max([np.abs(vmins[0]), np.abs(vmaxs[0])])
+            else:
+                if match_cbar and (not other_all_nan):
+                    absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
+                else:
+                    absmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
+        else:
+            if plot_type is 'ref':
+                if match_cbar and (not other_all_nan):
+                    [vmin, vmax] = [vmins[2], vmaxs[2]]
+                else:
+                    [vmin, vmax] = [vmins[0], vmaxs[0]]
+            else:
+                if match_cbar and (not other_all_nan):
+                    [vmin, vmax] = [vmins[2], vmaxs[2]]
+                else:
+                    [vmin, vmax] = [vmins[1], vmaxs[1]]
+
+    else:
+        if all_zero:
+            [vmin, vmax] = [0, 0]
+        elif all_nan:
+            [vmin, vmax] = [np.nan, np.nan]
+        else:
+            if plot_type is 'dyn_abs_diff':
+                # Min and max of abs. diff, excluding NaNs
+                diffabsmax = max([np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))])
+                [vmin, vmax] = [-diffabsmax, diffabsmax]
+            elif plot_type is 'res_abs_diff':
+                [pct5, pct95] = [np.percentile(plot_val, 5), np.percentile(plot_val, 95)]
+                abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
+                [vmin, vmax] = [-abspctmax, abspctmax]
+            elif plot_type is 'dyn_frac_diff':
+                fracdiffabsmax = np.max([np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))])
+                [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
+            else:
+                [vmin, vmax] = [-2, 2]
+    if verbose:
+        print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
+
+    #Normalize colors (put into range [0..1] for matplotlib methods)
+    if plot_type in ('ref', 'dev'):
+        norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
+    else:
+        norm = core.normalize_colors(vmin, vmax, is_difference = True)
+
+    # Create plot
+    ax.set_title(title)
+    
+    if type(masked_data) is str:
+        #Zonal mean plot
+        plot = ax.pcolormesh(grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm = norm)
+        ax.set_aspect("auto")
+        ax.set_ylabel("Pressure (hPa)")
+        if log_yaxis:
+            ax.set_yscale("log")
+            ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+        ax.invert_yaxis()
+        ax.set_xticks(xtick_positions)
+        ax.set_xticklabels(xticklabels)        
+
+    elif gridtype == "ll":
+        ax.coastlines()
+        #Create a lon/lat plot
+        plot = ax.imshow(plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm)
+    else:
+        ax.coastlines()
+        for j in range(6):
+            plot = ax.pcolormesh(
+                grid["lon_b"][j, :, :],
+                grid["lat_b"][j, :, :],
+                masked_data[j, :, :],
+                transform = ccrs.PlateCarree(),
+                cmap=comap,
+                norm = norm
+            )
+            
+    # Define the colorbar for the plot
+    cb = plt.colorbar(plot, ax=ax, orientation = "horizontal", pad = 0.10)
+    cb.mappable.set_norm(norm)
+    if all_zero or all_nan:
+        if plot_type in ('ref', 'dev'):
+            if use_cmap_RdBu:
+                cb.set_ticks([0.0])
+            else:
+                cb.set_ticks([0.5])
+        else:
+            cb.set_ticks([0.0])
+        if all_nan:
+            cb.set_ticklabels(["Undefined throughout domain"])
+        else:
+            cb.set_ticklabels(["Zero throughout domain"])
+    else:
+        if plot_type in ('ref', 'dev') and log_color_scale:
+            cb.formatter = mticker.LogFormatter(base=10)
+        else:
+            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
+                cb.locator = mticker.MaxNLocator(nbins=4)
+                
+    cb.update_ticks()
+    cb.set_label(unit)
+            
 
 def compare_single_level(
     refdata,
@@ -51,6 +287,7 @@ def compare_single_level(
     verbose=False,
     log_color_scale=False,
     extra_title_txt=None,
+    n_job=-1,
     sigdiff_list=[],
 ):
     """
@@ -164,10 +401,9 @@ def compare_single_level(
         >>> benchmark.compare_single_level( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
         >>> plt.show()
     """
-
+    warnings.showwarning=warning_format
     # TODO: refactor this function and zonal mean plot function.
     # There is a lot of overlap and repeated code that could be abstracted.
-
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
@@ -191,55 +427,20 @@ def compare_single_level(
     savepdf = True
     if pdfname == "":
         savepdf = False
-
+    # Cleanup previous temp PDFs
+    for i in range(n_var):
+        try:            
+            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
+        except:
+            continue
     # =================================================================
     # Determine input grid resolutions and types
     # =================================================================
 
     # GCC output and GCHP output using pre-v1.0.0 MAPL have lat and lon dims
 
-    # ref
-    vdims = refdata.dims
-    if "lat" in vdims and "lon" in vdims:
-        refnlat = refdata.sizes["lat"]
-        refnlon = refdata.sizes["lon"]
-        if refnlat == 46 and refnlon == 72:
-            refres = "4x5"
-            refgridtype = "ll"
-        elif refnlat == 91 and refnlon == 144:
-            refres = "2x2.5"
-            refgridtype = "ll"
-        elif refnlat / 6 == refnlon:
-            refres = refnlon
-            refgridtype = "cs"
-        else:
-            print("ERROR: ref {}x{} grid not defined in gcpy!".format(refnlat, refnlon))
-            return
-    else:
-        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        refres = refdata.dims["Xdim"]
-        refgridtype = "cs"
-
-    # dev
-    vdims = devdata.dims
-    if "lat" in vdims and "lon" in vdims:
-        devnlat = devdata.sizes["lat"]
-        devnlon = devdata.sizes["lon"]
-        if devnlat == 46 and devnlon == 72:
-            devres = "4x5"
-            devgridtype = "ll"
-        elif devnlat == 91 and devnlon == 144:
-            devres = "2x2.5"
-            devgridtype = "ll"
-        elif devnlat / 6 == devnlon:
-            devres = devnlon
-            devgridtype = "cs"
-        else:
-            print("ERROR: dev {}x{} grid not defined in gcpy!".format(refnlat, refnlon))
-            return
-    else:
-        devres = devdata.dims["Xdim"]
-        devgridtype = "cs"
+    refres, refgridtype = get_input_res(refdata)
+    devres, devgridtype = get_input_res(devdata)
 
     # =================================================================
     # Determine comparison grid resolution and type (if not passed)
@@ -275,27 +476,17 @@ def compare_single_level(
     regriddev = devres != cmpres
     regridany = regridref or regriddev
 
+    print("refres: ", refres)
+    print("devres: ", devres)
+    print("cmpres: ", cmpres)
+    
     # =================================================================
     # Make grids (ref, dev, and comparison)
-    # =================================================================
+    # =================================================================        
 
-    # Ref
-    if refgridtype == "ll":
-        refgrid = make_grid_LL(refres)
-    else:
-        [refgrid, regrid_list] = make_grid_CS(refres)
-
-    # Dev
-    if devgridtype == "ll":
-        devgrid = make_grid_LL(devres)
-    else:
-        [devgrid, devgrid_list] = make_grid_CS(devres)
-
-    # Comparison
-    if cmpgridtype == "ll":
-        cmpgrid = make_grid_LL(cmpres)
-    else:
-        [cmpgrid, cmpgrid_list] = make_grid_CS(cmpres)
+    [refgrid, regrid_list]  = call_make_grid(refres, refgridtype, False, False)
+    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, False, False)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, False, True)
 
     # =================================================================
     # Make regridders, if applicable
@@ -317,6 +508,7 @@ def compare_single_level(
                 refregridder_list = make_regridder_C2L(
                     refres, cmpres, weightsdir=weightsdir, reuse_weights=True
                 )
+                print(type(refregridder_list))
     if regriddev:
         if devgridtype == "ll":
             devregridder = make_regridder_L2L(
@@ -336,17 +528,109 @@ def compare_single_level(
     # =================================================================
     # Get lat/lon extents, if applicable
     # =================================================================
-
     if refgridtype == "ll":
         [refminlon, refmaxlon] = [min(refgrid["lon_b"]), max(refgrid["lon_b"])]
         [refminlat, refmaxlat] = [min(refgrid["lat_b"]), max(refgrid["lat_b"])]
+    else:
+        refminlon, refmaxlon, refminlat, refmaxlat = None, None, None, None
     if devgridtype == "ll":
         [devminlon, devmaxlon] = [min(devgrid["lon_b"]), max(devgrid["lon_b"])]
         [devminlat, devmaxlat] = [min(devgrid["lat_b"]), max(devgrid["lat_b"])]
+    else:
+        devminlon, devmaxlon, devminlat, devmaxlat = None, None, None, None
     if cmpgridtype == "ll":
         [cmpminlon, cmpmaxlon] = [min(cmpgrid["lon_b"]), max(cmpgrid["lon_b"])]
         [cmpminlat, cmpmaxlat] = [min(cmpgrid["lat_b"]), max(cmpgrid["lat_b"])]
+    else:
+        cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = None, None, None, None
 
+    ds_refs = [None]*n_var
+    ds_devs = [None]*n_var
+    for i in range(n_var):
+        # ==============================================================
+        # Slice the data, allowing for the
+        # possibility of no time dimension (bpch)
+        # ==============================================================        
+        varname = varlist[i]
+        # Ref
+        vdims = refdata[varname].dims
+        if "time" in vdims and "lev" in vdims:
+            if flip_ref:
+                ds_refs[i] = refdata[varname].isel(time=itime, lev=71 - ilev)
+            else:
+                ds_refs[i] = refdata[varname].isel(time=itime, lev=ilev)
+        elif "time" not in vdims and "lev" in vdims:
+            if flip_ref:
+                ds_refs[i] = refdata[varname].isel(lev=71 - ilev)
+            else:
+                ds_refs[i] = refdata[varname].isel(lev=ilev)
+        elif "time" in vdims and "lev" not in vdims:
+            ds_refs[i] = refdata[varname].isel(time=itime)
+        else:
+            ds_refs[i] = refdata[varname]
+
+        # Dev
+        vdims = devdata[varname].dims
+        if "time" in vdims and "lev" in vdims:
+            if flip_dev:
+                ds_devs[i] = devdata[varname].isel(time=itime, lev=71 - ilev)
+            else:
+                ds_devs[i] = devdata[varname].isel(time=itime, lev=ilev)
+        elif "time" not in vdims and "lev" in vdims:
+            if flip_dev:
+                ds_devs[i] = devdata[varname].isel(lev=71 - ilev)
+            else:
+                ds_devs[i] = devdata[varname].isel(lev=ilev)
+        elif "time" in vdims and "lev" not in vdims:
+            ds_devs[i] = devdata[varname].isel(time=itime)
+        else:
+            ds_devs[i] = devdata[varname]
+
+        # ==============================================================
+        # Reshape cubed sphere data if using MAPL v1.0.0+
+        # TODO: update function to expect data in this format
+        # ==============================================================
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
+
+            
+            
+    ds_ref_cmps = [None]*n_var
+    ds_dev_cmps = [None]*n_var
+    for i in range(n_var):
+        
+        ds_ref = ds_refs[i]
+        ds_dev = ds_devs[i]
+        # Ref
+        if regridref:
+            if refgridtype == "ll":
+                # regrid ll to ll
+                ds_ref_cmps[i] = refregridder(ds_ref)
+            else:
+                # regrid cs to ll
+                ds_ref_cmps[i] = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
+                ds_ref_reshaped = ds_ref.data.reshape(6, refres, refres)
+                for j in range(6):
+                    regridder = refregridder_list[j]
+                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])        
+        else:
+            ds_ref_cmps[i] = ds_ref
+            
+        # Dev
+        if regriddev:
+            if devgridtype == "ll":
+                # regrid ll to ll
+                ds_dev_cmps[i] = devregridder(ds_dev)
+            else:
+                # regrid cs to ll
+                ds_dev_cmps[i] = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
+                ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
+                for j in range(6):
+                    regridder = devregridder_list[j]
+                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[j])
+        else:
+            ds_dev_cmps[i] = ds_dev
+        
     # =================================================================
     # Create pdf if saving to file
     # =================================================================
@@ -354,112 +638,30 @@ def compare_single_level(
     if savepdf:
         print("Creating {} for {} variables".format(pdfname, n_var))
         pdf = PdfPages(pdfname)
+        pdf.close()
 
     # =================================================================
     # Loop over variables
     # =================================================================
 
+    
     print_units_warning = True
-    for ivar in range(n_var):
+
+    #This loop is written as a function so it can be called in parallel
+    def createfig(ivar):
+        
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
 
-        # If units are mol/mol then convert to ppb
-        conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
-        if refdata[varname].units.strip() in conc_units:
-            refdata[varname].attrs["units"] = "ppbv"
-            refdata[varname].values = refdata[varname].values * 1e9
-        if devdata[varname].units.strip() in conc_units:
-            devdata[varname].attrs["units"] = "ppbv"
-            devdata[varname].values = devdata[varname].values * 1e9
-
-        # Binary diagnostic concentrations have units ppbv. Change to ppb.
-        if refdata[varname].units.strip() == "ppbv":
-            refdata[varname].attrs["units"] = "ppb"
-        if devdata[varname].units.strip() == "ppbv":
-            devdata[varname].attrs["units"] = "ppb"
-
-        # Check that units match
-        units_ref = refdata[varname].units.strip()
-        units_dev = devdata[varname].units.strip()
-        if units_ref != units_dev:
-            print_units_warning = True
-            if print_units_warning:
-                print("WARNING: ref and dev concentration units do not match!")
-                print("Ref units: {}".format(units_ref))
-                print("Dev units: {}".format(units_dev))
-            if enforce_units:
-                # if enforcing units, stop the program if
-                # units do not match
-                assert units_ref == units_dev, "Units do not match for {}!".format(
-                    varname
-                )
-            else:
-                # if not enforcing units, just keep going after
-                # only printing warning once
-                print_units_warning = False
-
-        # ==============================================================
-        # Slice the data, allowing for the
-        # possibility of no time dimension (bpch)
-        # ==============================================================
-
-        # Ref
-        vdims = refdata[varname].dims
-        if "time" in vdims and "lev" in vdims:
-            if flip_ref:
-                ds_ref = refdata[varname].isel(time=itime, lev=71 - ilev)
-            else:
-                ds_ref = refdata[varname].isel(time=itime, lev=ilev)
-        elif "time" not in vdims and "lev" in vdims:
-            if flip_ref:
-                ds_ref = refdata[varname].isel(lev=71 - ilev)
-            else:
-                ds_ref = refdata[varname].isel(lev=ilev)
-        elif "time" in vdims and "lev" not in vdims:
-            ds_ref = refdata[varname].isel(time=itime)
-        else:
-            ds_ref = refdata[varname]
-
-        # Dev
-        vdims = devdata[varname].dims
-        if "time" in vdims and "lev" in vdims:
-            if flip_dev:
-                ds_dev = devdata[varname].isel(time=itime, lev=71 - ilev)
-            else:
-                ds_dev = devdata[varname].isel(time=itime, lev=ilev)
-        elif "time" not in vdims and "lev" in vdims:
-            if flip_dev:
-                ds_dev = devdata[varname].isel(lev=71 - ilev)
-            else:
-                ds_dev = devdata[varname].isel(lev=ilev)
-        elif "time" in vdims and "lev" not in vdims:
-            ds_dev = devdata[varname].isel(time=itime)
-        else:
-            ds_dev = devdata[varname]
-
-        # ==============================================================
-        # Reshape cubed sphere data if using MAPL v1.0.0+
-        # TODO: update function to expect data in this format
-        # ==============================================================
-
-        # ref
-        vdims = refdata[varname].dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            ds_ref = ds_ref.stack(lat=("nf", "Ydim"))
-            ds_ref = ds_ref.rename({"Xdim": "lon"})
-            ds_ref = ds_ref.transpose("lat", "lon")
-
-        # dev
-        vdims = devdata[varname].dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            ds_dev = ds_dev.stack(lat=("nf", "Ydim"))
-            ds_dev = ds_dev.rename({"Xdim": "lon"})
-            ds_dev = ds_dev.transpose("lat", "lon")
-
+        #Convert mol/mol units to ppb and ensure ref and dev units match
+        units_ref, units_dev = check_units(refdata, devdata, varname)
+        
+        ds_ref = ds_refs[ivar]
+        ds_dev = ds_devs[ivar]
+                
         # ==============================================================
         # Area normalization, if any
         # ==============================================================
@@ -499,38 +701,15 @@ def compare_single_level(
         # ==============================================================
 
         # Reshape ref/dev cubed sphere data, if any
+        ds_ref_reshaped = None
         if refgridtype == "cs":
             ds_ref_reshaped = ds_ref.data.reshape(6, refres, refres)
+        ds_dev_reshaped = None
         if devgridtype == "cs":
             ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
-
-        # Ref
-        if regridref:
-            if refgridtype == "ll":
-                # regrid ll to ll
-                ds_ref_cmp = refregridder(ds_ref)
-            else:
-                # regrid cs to ll
-                ds_ref_cmp = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = refregridder_list[i]
-                    ds_ref_cmp += regridder(ds_ref_reshaped[i])
-        else:
-            ds_ref_cmp = ds_ref
-
-        # Dev
-        if regriddev:
-            if devgridtype == "ll":
-                # regrid ll to ll
-                ds_dev_cmp = devregridder(ds_dev)
-            else:
-                # regrid cs to ll
-                ds_dev_cmp = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = devregridder_list[i]
-                    ds_dev_cmp += regridder(ds_dev_reshaped[i])
-        else:
-            ds_dev_cmp = ds_dev
+            
+        ds_ref_cmp = ds_ref_cmps[ivar]
+        ds_dev_cmp = ds_dev_cmps[ivar]
 
         # Reshape comparison cubed sphere data, if any
         if cmpgridtype == "cs":
@@ -540,6 +719,8 @@ def compare_single_level(
         # ==============================================================
         # Get min and max values for use in the colorbars
         # ==============================================================
+
+        #WBD MOVE TO FUNCTION
 
         # Ref
         vmin_ref = float(ds_ref.data.min())
@@ -587,11 +768,52 @@ def compare_single_level(
         # This will have implications as to how we set min and max
         # values for the color ranges below.
         # ==============================================================
-        ref_is_all_zero = not np.any(ds_ref.values)
-        ref_is_all_nan = np.isnan(ds_ref.values).all()
+        
+        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref.values)
+        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev.values)
 
-        dev_is_all_zero = not np.any(ds_dev.values)
-        dev_is_all_nan = np.isnan(ds_dev.values).all()
+        # ==============================================================
+        # Calculate absolute difference
+        # ==============================================================
+        if cmpgridtype == "ll":
+            absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
+        else:
+            absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
+
+        # Test if the abs. diff. is zero everywhere or NaN everywhere
+        absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(absdiff)
+
+        # For cubed-sphere, take special care to avoid a spurious
+        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
+        if cmpgridtype == "cs":
+            absdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, absdiff)
+
+        # ==============================================================
+        # Calculate fractional difference, set divides by zero to NaN
+        # ==============================================================
+        if cmpgridtype == "ll":
+            fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(
+                ds_ref_cmp
+            )
+        else:
+            fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
+
+        # Replace Infinity values with NaN
+        fracdiff = np.where(fracdiff == np.inf, np.nan, fracdiff)
+
+        # Test if the frac. diff. is zero everywhere or NaN everywhere
+        fracdiff_is_all_zero = absdiff_is_all_zero or (not np.any(fracdiff) and not ref_is_all_zero)
+        fracdiff_is_all_nan = np.isnan(fracdiff).all() or ref_is_all_zero
+
+
+        # Absolute max value of fracdiff, excluding NaNs
+        fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
+
+        # For cubed-sphere, take special care to avoid a spurious
+        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
+        if cmpgridtype == "cs":
+            fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, fracdiff)
+
 
         # ==============================================================
         # Create 3x2 figure
@@ -659,561 +881,138 @@ def compare_single_level(
             cmap_toprow_gray = copy.copy(WhGrYlRd)
         cmap_toprow_gray.set_bad(color="gray")
 
+        if refgridtype == "ll":
+            if ref_is_all_nan:
+                ref_cmap = cmap_toprow_gray
+            else:
+                ref_cmap = cmap_toprow_nongray
+
+            if dev_is_all_nan:
+                dev_cmap = cmap_toprow_gray
+            else:
+                dev_cmap = cmap_toprow_nongray
+                
         # Colormaps for 2nd row (Abs. Diff.) and 3rd row (Frac. Diff,)
         cmap_nongray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray.set_bad(color="gray")
 
         # ==============================================================
-        # Subplot (0,0): Ref, plotted on ref input grid
+        # Set plot bounds for non cubed-sphere plotting
         # ==============================================================
-
-        # Set local flags to denote if Ref is zero or NaN everywhere
-        # (these will eventually be passed to a plotting routine,
-        # once we abstract the plotting code below).
-        all_zero = ref_is_all_zero
-        all_undefined = ref_is_all_nan
-
-        # Set min and max of the data range.
-        # NOTE: If Dev contains all NaN's, then just use the min and
-        # max of Ref to set the data range, even if match_cbar=True.
-        if all_zero or all_undefined:
-            [vmin, vmax] = [vmin_ref, vmax_ref]
-        elif use_cmap_RdBu:
-            if match_cbar and (not dev_is_all_nan):
-                absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
-            else:
-                absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if match_cbar and (not dev_is_all_nan):
-                [vmin, vmax] = [vmin_abs, vmax_abs]
-            else:
-                [vmin, vmax] = [vmin_ref, vmax_ref]
-        if verbose:
-            print("Subplot (0,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(
-            vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
-        )
-
-        # Plot data for either lat-lon or cubed-sphere grids.
-        ax0.coastlines()
+        if cmpgridtype == "ll":
+            ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
+            dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
+            cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
+        
+        # ==============================================================
+        # Set titles for plots
+        # ==============================================================
+        
         if refgridtype == "ll":
-            # Set top title for lat-lon plot
-            ax0.set_title("{} (Ref){}\n{}".format(refstr, subtitle_extra, refres))
-
-            # If all of the data is NaN, then plot as gray
-            if ref_is_all_nan:
-                cmap = cmap_toprow_gray
-            else:
-                cmap = cmap_toprow_nongray
-
-            # Plot the lon/lat data
-            plot0 = ax0.imshow(
-                ds_ref,
-                extent=(refminlon, refmaxlon, refminlat, refmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap,
-                norm=norm,
-            )
+            ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
+            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
         else:
-            # Set top title for cubed-sphere plot
-            ax0.set_title("{} (Ref){}\nc{}".format(refstr, subtitle_extra, refres))
-
-            # Mask the reference data
-            masked_refdata = np.ma.masked_where(
-                np.abs(refgrid["lon"] - 180) < 2, ds_ref_reshaped
-            )
-
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot0 = ax0.pcolormesh(
-                    refgrid["lon_b"][i, :, :],
-                    refgrid["lat_b"][i, :, :],
-                    masked_refdata[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_toprow_nongray,
-                    norm=norm,
-                )
-
-        # Define the colorbar for the plot.  If Ref is zero everywhere
-        # or NaN everywhere, set a single tick in the middle of the
-        # colorbar with the appopriate label.
-        cb = plt.colorbar(plot0, ax=ax0, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
-            else:
-                cb.set_ticks([0.5])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
-            else:
-                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units_ref)
-        
-        # ==============================================================
-        # Subplot (0,1): Dev, plotted on dev input grid
-        # ==============================================================
-
-        # Set local flags to denote if Dev is zero or NaN everywhere
-        # (these will eventually be passed to a plotting routine,
-        # once we abstract the plotting code below).
-        all_zero = dev_is_all_zero
-        all_undefined = dev_is_all_nan
-
-        # Set min and max of the data range.
-        # NOTE: If Ref contains all NaN's, then just use the min and
-        # max of Dev to set the data range, even if match_cbar=True.
-        if all_zero or all_undefined:
-            [vmin, vmax] = [vmin_dev, vmax_dev]
-        elif use_cmap_RdBu:
-            if match_cbar and (not ref_is_all_nan):
-                absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
-            else:
-                absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if match_cbar and (not ref_is_all_nan):
-                [vmin, vmax] = [vmin_abs, vmax_abs]
-            else:
-                [vmin, vmax] = [vmin_dev, vmax_dev]
-        if verbose:
-            print("Subplot (0,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(
-            vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
-        )
-
-        # Plot for either lat-lon or cubed-sphere
-        ax1.coastlines()
-        if devgridtype == "ll":
-            # Set top title for lat-lon plot
-            ax1.set_title("{} (Dev){}\n{}".format(devstr, subtitle_extra, devres))
-
-            # If all of the data is NaN, then plot as gray
-            if dev_is_all_nan:
-                cmap = cmap_toprow_gray
-            else:
-                cmap = cmap_toprow_nongray
-
-            # Plot the data!
-            plot1 = ax1.imshow(
-                ds_dev,
-                extent=(devminlon, devmaxlon, devminlat, devmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap,
-                norm=norm,
-            )
-        else:
-            # Set top title for cubed-sphere plot
-            ax1.set_title("{} (Dev){}\nc{}".format(devstr, subtitle_extra, devres))
-
-            # Mask the data
-            masked_devdata = np.ma.masked_where(
-                np.abs(devgrid["lon"] - 180) < 2, ds_dev_reshaped
-            )
-
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot1 = ax1.pcolormesh(
-                    devgrid["lon_b"][i, :, :],
-                    devgrid["lat_b"][i, :, :],
-                    masked_devdata[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_toprow_nongray,
-                    norm=norm,
-                )
-
-        # Define the colorbar for log or linear color scales
-        # If Dev is zero or NaN everywhere, set a single tick
-        # in the middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot1, ax=ax1, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
-            else:
-                cb.set_ticks([0.5])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
-            else:
-                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units_dev)
-
-        # ==============================================================
-        # Calculate absolute difference
-        # ==============================================================
-        if cmpgridtype == "ll":
-            absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
-        else:
-            absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
-
-        # Test if the abs. diff. is zero everywhere or NaN everywhere
-        absdiff_is_all_zero = not np.any(absdiff)
-        absdiff_is_all_nan = np.isnan(absdiff).all()
-
-        # Min and max of abs. diff, excluding NaNs
-        diffabsmax = max([np.abs(np.nanmin(absdiff)), np.abs(np.nanmax(absdiff))])
-
-        # For cubed-sphere, take special care to avoid a spurious
-        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
-        if cmpgridtype == "cs":
-            absdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, absdiff)
-        
-        # ==============================================================
-        # Subplot (1,0): Difference, dynamic range
-        # ==============================================================
-
-        # Set local flags to denote if Abs. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero
-        all_undefined = absdiff_is_all_nan
-
-        # Set data range.  If absdiff is not all zeroes or all NaN,
-        # then set the data range to be symmetric around the dynamic
-        # range of the data.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [vmin, vmax] = [-diffabsmax, diffabsmax]
-        if verbose:
-            print("Subplot (1,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create plots
-        ax2.coastlines()
-        if cmpgridtype == "ll":
-
-            # Create the lon/lat plot
-            plot2 = ax2.imshow(
-                absdiff,
-                extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                cmap=cmap_gray,
-                norm=norm,
-            )
-        else:
-
-            # Plot each face of the cubed sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot2 = ax2.pcolormesh(
-                    cmpgrid["lon_b"][i, :, :],
-                    cmpgrid["lat_b"][i, :, :],
-                    absdiff[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    norm=norm,
-                    cmap=cmap_nongray,
-                )
-        if regridany:
-            ax2.set_title("Difference ({})\nDev - Ref, Dynamic Range".format(cmpres))
-        else:
-            ax2.set_title("Difference\nDev - Ref, Dynamic Range")
-
-        # Define the colorbar for the plot.  If absdiff is zero
-        # everywhere or NaN everywhere, set a single tick in
-        # the middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot2, ax=ax2, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-        
-        # ==============================================================
-        # Subplot (1,1): Difference, restricted range
-        # ==============================================================
-
-        # Set local flags to denote if Abs. Diff is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero
-        all_undefined = absdiff_is_all_nan
-
-        # Set data range.  If absdiff is not all zeroes or all NaN,
-        # then set the data range to be symmetric around the larger
-        # of the 5th and 95th percentiles.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [pct5, pct95] = [np.percentile(absdiff, 5), np.percentile(absdiff, 95)]
-            abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
-            [vmin, vmax] = [-abspctmax, abspctmax]
-        if verbose:
-            print("Subplot (1,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create plots
-        ax3.coastlines()
-        if cmpgridtype == "ll":
-
-            # Create the lat/lon plot
-            plot3 = ax3.imshow(
-                absdiff,
-                extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap_gray,
-                norm=norm,
-            )
-        else:
-
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot3 = ax3.pcolormesh(
-                    cmpgrid["lon_b"][i, :, :],
-                    cmpgrid["lat_b"][i, :, :],
-                    absdiff[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_nongray,
-                    norm=norm,
-                )
-        if regridany:
-            ax3.set_title(
-                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
-            )
-        else:
-            ax3.set_title("Difference\nDev - Ref, Restricted Range [5%,95%]")
-
-        # Define the colorbar for the plot.  If absdiff is zero
-        # everywhere or NaN everywhere, set a single tick in
-        # the middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot3, ax=ax3, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if absdiff_is_all_nan:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-        
-        # ==============================================================
-        # Calculate fractional difference, set divides by zero to NaN
-        # ==============================================================
-
-        if cmpgridtype == "ll":
-            fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(
-                ds_ref_cmp
-            )
-        else:
-            fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
-
-        # Replace Infinity values with NaN
-        fracdiff = np.where(fracdiff == np.inf, np.nan, fracdiff)
-
-        # Test if the frac. diff. is zero everywhere or NaN everywhere
-        fracdiff_is_all_zero = not np.any(fracdiff)
-        fracdiff_is_all_nan = np.isnan(fracdiff).all()
-
-        # Absolute max value of fracdiff, excluding NaNs
-        fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
-
-        # For cubed-sphere, take special care to avoid a spurious
-        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
-        if cmpgridtype == "cs":
-            fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, fracdiff)
-
-        # ==============================================================
-        # Subplot (2,0): Fractional Difference, full dynamic range
-        # ==============================================================
-
-        # Set local flags to denote if Frac. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a
-        # plotting routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero or (fracdiff_is_all_zero and not ref_is_all_zero)
-        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
-
-        # Set the min and max of the data range.  If fracdiff is
-        # zero everywhere, then set the data range to [0,0].
-        # If fracdiff is NaN everywhere, or if Ref (the denominator
-        # of the expression that computes fracdiff) is zero
-        # everywhere, set the data range to undefined (NaN).
-        # Otherwise set the data range to be symmetric around
-        # the dynamic range of fracdiff.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
-        if verbose:
-            print("Subplot (2,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create plots
-        ax4.coastlines()
-        if cmpgridtype == "ll":
-
-            # Create the lon/lat plot
-            plot4 = ax4.imshow(
-                fracdiff,
-                extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap_gray,
-                norm=norm,
-            )
-        else:
-
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot4 = ax4.pcolormesh(
-                    cmpgrid["lon_b"][i, :, :],
-                    cmpgrid["lat_b"][i, :, :],
-                    fracdiff[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_nongray,
-                    norm=norm,
-                )
+            ref_title = "{} (Ref){}\nc{}".format(refstr, subtitle_extra, refres)
+            dev_title = "{} (Dev){}\nc{}".format(devstr, subtitle_extra, devres)
 
         if regridany:
-            ax4.set_title(
-                "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
-                    cmpres
-                )
-            )
+            absdiff_dynam_title  = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title  = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
+            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(cmpres)
+            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)     
         else:
-            ax4.set_title("Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range")
+            absdiff_dynam_title  = "Difference\nDev - Ref, Dynamic Range"
+            absdiff_fixed_title  = "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            fracdiff_dynam_title = "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
+            fracdiff_fixed_title = "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
+                    
+        # ==============================================================
+        # Bundle variables for 6 parallel plotting calls
+        # 0 = Ref                 1 = Dev
+        # 2 = Dynamic abs diff    3 = Restricted abs diff
+        # 4 = Dynamic frac diff   5 = Restricted frac diff
+        # ==============================================================
 
-        # Define the colorbar If fracdiff will be zero everywhere
-        # or undefined everywhere, put a single tick at the middle
-        # of the colorbar with the appropriate label.
-        cb = plt.colorbar(plot4, ax=ax4, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label("unitless")
+        plot_types = ['ref',                     'dev',
+                      'dyn_abs_diff',   'res_abs_diff',
+                      'dyn_frac_diff', 'frac_abs_diff']
         
-        # ==============================================================
-        # Subplot (2,1): Fractional Difference, restricted range
-        # ==============================================================
+        all_zeros = [ref_is_all_zero,           dev_is_all_zero,
+                     absdiff_is_all_zero,   absdiff_is_all_zero,
+                     fracdiff_is_all_zero, fracdiff_is_all_zero]
 
-        # Set local flags to denote if Frac. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero or (fracdiff_is_all_zero and not ref_is_all_zero)
-        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
+        all_nans  = [ref_is_all_nan,             dev_is_all_nan,
+                     absdiff_is_all_nan,     absdiff_is_all_nan,
+                     fracdiff_is_all_nan,   fracdiff_is_all_nan]
 
-        # Set the min and max of the data range.  If fracdiff is
-        # zero everywhere, then set the data range to [0,0].
-        # If fracdiff is NaN everywhere, or if Ref (the denominator
-        # of the expression that computes fracdiff) is zero
-        # everywhere, set the data range to undefined [NaN, Nan].
-        # Otherwise set the data range to [-2, 2] (+/- 200% change).
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
+        extents = [ref_extent, dev_extent,
+                   cmp_extent, cmp_extent,
+                   cmp_extent, cmp_extent]
+
+        plot_vals = [ds_ref,     ds_dev,
+                     absdiff,   absdiff,
+                     fracdiff, fracdiff]
+
+        grids = [refgrid, devgrid,
+                 cmpgrid, cmpgrid,
+                 cmpgrid, cmpgrid]
+        
+        axs = [ax0, ax1,
+               ax2, ax3,
+               ax4, ax5]
+        
+        rowcols = [(0,0), (0,1),
+                   (1,0), (1,1),
+                   (2,0), (2,1)]
+        
+        titles = [ref_title,                       dev_title,
+                  absdiff_dynam_title,   absdiff_fixed_title,
+                  fracdiff_dynam_title, fracdiff_fixed_title]
+
+        if refgridtype == "ll":
+            cmaps = [ref_cmap,   dev_cmap,
+                     cmap_gray, cmap_gray,
+                     cmap_gray, cmap_gray]
         else:
-            [vmin, vmax] = [-2, 2]
-        if verbose:
-            print("Subplot (2,1) vmin, vmax: {}, {}".format(vmin, vmax))
+            cmaps = [cmap_toprow_nongray,         cmap_toprow_nongray,
+                     cmap_nongray,                       cmap_nongray,
+                     cmap_nongray,                       cmap_nongray]
 
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
+        ref_masked = None
+        dev_masked = None
+        if refgridtype == "cs":
+            ref_masked = np.ma.masked_where( np.abs(refgrid["lon"] - 180) < 2, ds_ref_reshaped )
+        if devgridtype == "cs":
+            dev_masked = np.ma.masked_where( np.abs(devgrid["lon"] - 180) < 2, ds_dev_reshaped )
+        masked = [ref_masked, dev_masked,
+                  absdiff,       absdiff,
+                  fracdiff,     fracdiff]
+        
+        gridtypes = [refgridtype, devgridtype,
+                     cmpgridtype, cmpgridtype,
+                     cmpgridtype, cmpgridtype]
 
-        # Create plots
-        ax5.coastlines()
-        if cmpgridtype == "ll":
+        unit_list = [units_ref,   units_dev,
+                     units,           units,
+                     "unitless", "unitless"]
 
-            # Create the lon/lat plot
-            plot5 = ax5.imshow(
-                fracdiff,
-                extent=(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat),
-                transform=ccrs.PlateCarree(),
-                cmap=cmap_gray,
-                norm=norm,
-            )
-        else:
+        other_all_nans = [dev_is_all_nan, ref_is_all_nan,
+                          False,                   False,                          
+                          False,                   False]
 
-            # Plot each face of the cubed-sphere
-            # Do not use color map with gray values for NaN's,
-            # as this causes some weird behavior for cubed-sphere.
-            for i in range(6):
-                plot5 = ax5.pcolormesh(
-                    cmpgrid["lon_b"][i, :, :],
-                    cmpgrid["lat_b"][i, :, :],
-                    fracdiff[i, :, :],
-                    transform=ccrs.PlateCarree(),
-                    cmap=cmap_nongray,
-                    norm=norm,
-                )
-        if regridany:
-            ax5.set_title(
-                "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)
-            )
-        else:
-            ax5.set_title("Fractional Difference\n(Dev-Ref)/Ref, Fixed Range")
+        mins = [vmin_ref, vmin_dev, vmin_abs]
+        maxs = [vmax_ref, vmax_dev, vmax_abs]
 
-        # Define the colorbar for the plot.  If fracdiff will be zero
-        # everywhere or undefined everywhere, put a single tick at the
-        # middle of the colorbar with the appropriate label.
-        cb = plt.colorbar(plot5, ax=ax5, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if fracdiff_is_all_nan or ref_is_all_zero:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        cb.update_ticks()
-        cb.set_label("unitless")
+        #Plot 
+        for i in range(6):
+            sixplot(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
+                    grids[i], axs[i], rowcols[i], titles[i], cmaps[i],
+                    unit_list[i], extents[i], masked[i], other_all_nans[i],
+                    gridtypes[i], mins, maxs, use_cmap_RdBu, match_cbar, verbose, 
+                    log_color_scale)
 
+        
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(max(fracdiff)) > 0.1
@@ -1224,20 +1023,33 @@ def compare_single_level(
             sigdiff_list.append(varname)
 
         # ==============================================================
-        # Add this page of 6-panel plots to the PDF file
+        # Add this page of 6-panel plots to a PDF file
         # ==============================================================
         if savepdf:
+            pdf = PdfPages(pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar))
             pdf.savefig(figs)
+            pdf.close()
             plt.close(figs)
+            
+    #do not attempt nested thread parallelization due to issues with matplotlib
+    if current_process().name != "MainProcess":
+        n_job = 1
+
+    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
 
     # ==================================================================
     # Finish
     # ==================================================================
     if savepdf:
-        pdf.close()
-        print("")
-
-
+        print("Closed PDF")
+        merge = PdfFileMerger()
+        for i in range(n_var):
+            merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
+            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
+        merge.write(pdfname)
+        merge.close()
+        warnings.showwarning=warning_format
+    
 def compare_zonal_mean(
     refdata,
     refstr,
@@ -1259,6 +1071,7 @@ def compare_zonal_mean(
     log_color_scale=False,
     log_yaxis=False,
     extra_title_txt=None,
+    n_job = -1,
     sigdiff_list=[],
 ):
 
@@ -1383,7 +1196,7 @@ def compare_zonal_mean(
 
     # TODO: refactor this function and single level plot function. There is a lot of overlap and
     # repeated code that could be abstracted.
-
+    warnings.showwarning = warning_format
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
 
@@ -1411,7 +1224,12 @@ def compare_zonal_mean(
     savepdf = True
     if pdfname == "":
         savepdf = False
-
+    # Cleanup previous temp PDFs
+    for i in range(n_var):
+        try:
+            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
+        except:
+            continue
     # Get mid-point pressure and edge pressures for this grid (assume 72-level)
     pmid = GEOS_72L_grid.p_mid()
     pedge = GEOS_72L_grid.p_edge()
@@ -1474,48 +1292,8 @@ def compare_zonal_mean(
     # lon dims.  GCHP output in v1.0.0 MAPL has XDim and YDim instead.
     # ==================================================================
 
-    # ref
-    vdims = refdata.dims
-    if "lat" in vdims and "lon" in vdims:
-        refnlat = refdata.sizes["lat"]
-        refnlon = refdata.sizes["lon"]
-        if refnlat == 46 and refnlon == 72:
-            refres = "4x5"
-            refgridtype = "ll"
-        elif refnlat == 91 and refnlon == 144:
-            refres = "2x2.5"
-            refgridtype = "ll"
-        elif refnlat / 6 == refnlon:
-            refres = refnlon
-            refgridtype = "cs"
-        else:
-            print("ERROR: ref {}x{} grid not defined in gcpy!".format(refnlat, refnlon))
-            return
-    else:
-        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        refres = refdata.dims["Xdim"]
-        refgridtype = "cs"
-
-    # dev
-    vdims = devdata.dims
-    if "lat" in vdims and "lon" in vdims:
-        devnlat = devdata.sizes["lat"]
-        devnlon = devdata.sizes["lon"]
-        if devnlat == 46 and devnlon == 72:
-            devres = "4x5"
-            devgridtype = "ll"
-        elif devnlat == 91 and devnlon == 144:
-            devres = "2x2.5"
-            devgridtype = "ll"
-        elif devnlat / 6 == devnlon:
-            devres = devnlon
-            devgridtype = "cs"
-        else:
-            print("ERROR: dev {}x{} grid not defined in gcpy!".format(refnlat, refnlon))
-            return
-    else:
-        devres = devdata.dims["Xdim"]
-        devgridtype = "cs"
+    refres, refgridtype = get_input_res(refdata)
+    devres, devgridtype = get_input_res(devdata)
 
     # ==================================================================
     # Determine comparison grid resolution (if not passed)
@@ -1548,21 +1326,10 @@ def compare_zonal_mean(
     # Make grids (ref, dev, and comparison)
     # ==================================================================
 
-    # Ref
-    if refgridtype == "ll":
-        refgrid = make_grid_LL(refres)
-    else:
-        [refgrid, regrid_list] = make_grid_CS(refres)
-
-    # Dev
-    if devgridtype == "ll":
-        devgrid = make_grid_LL(devres)
-    else:
-        [devgrid, devgrid_list] = make_grid_CS(devres)
-
-    # Comparison
-    cmpgrid = make_grid_LL(cmpres)
-
+    [refgrid, regrid_list]  = call_make_grid(refres, refgridtype, True, False)
+    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, True, False)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, True, True)
+    
     # ==================================================================
     # Make regridders, if applicable
     # TODO: Add CS to CS regridders
@@ -1587,6 +1354,88 @@ def compare_zonal_mean(
                 devres, cmpres, weightsdir=weightsdir, reuse_weights=True
             )
 
+    ds_refs = [None]*n_var
+    ds_devs = [None]*n_var
+    for i in range(n_var):
+        
+        varname = varlist[i]        
+        # ==============================================================
+        # Slice the data, allowing for the
+        # possibility of no time dimension (bpch)
+        # ==============================================================
+
+        # Ref
+        vdims = refdata[varname].dims
+        if "time" in vdims:
+            ds_refs[i] = refdata[varname].isel(time=itime)
+        else:
+            ds_refs[i] = refdata[varname]
+
+        # Dev
+        vdims = devdata[varname].dims
+        if "time" in vdims:
+            ds_devs[i] = devdata[varname].isel(time=itime)
+        else:
+            ds_devs[i] = devdata[varname]
+
+        # ==============================================================
+        # Reshape cubed sphere data if using MAPL v1.0.0+
+        # TODO: update function to expect data in this format
+        # ==============================================================        
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
+
+        # Flip in the vertical if applicable
+        if flip_ref:
+            ds_refs[i].data = ds_refs[i].data[::-1, :, :]
+        if flip_dev:
+            ds_devs[i].data = ds_devs[i].data[::-1, :, :]
+        
+    ds_ref_cmps = [None]*n_var
+    ds_dev_cmps = [None]*n_var
+
+    for i in range(n_var):
+        # ==============================================================
+        # Get comparison data sets, regridding input slices if needed
+        # ==============================================================
+
+        ds_ref = ds_refs[i]
+        ds_dev = ds_devs[i]
+            
+        # Ref
+        if regridref:
+            if refgridtype == "ll":
+                # regrid ll to ll
+                ds_ref_cmps[i] = refregridder(ds_ref)
+            else:
+                # regrid cs to ll
+                ds_ref_reshaped = ds_ref.data.reshape(nlev, 6, refres, refres).swapaxes(
+                    0, 1
+                )
+                ds_ref_cmps[i] = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
+                for j in range(6):
+                    regridder = refregridder_list[j]
+                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])
+        else:
+            ds_ref_cmps[i] = ds_ref
+
+        # Dev
+        if regriddev:
+            if devgridtype == "ll":
+                # regrid ll to ll
+                ds_dev_cmps[i] = devregridder(ds_dev)
+            else:
+                # regrid cs to ll
+                ds_dev_reshaped = ds_dev.data.reshape(nlev, 6, devres, devres).swapaxes(
+                    0, 1
+                )
+                ds_dev_cmps[i] = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
+                for j in range(6):
+                    regridder = devregridder_list[j]
+                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[j])
+        else:
+            ds_dev_cmps[i] = ds_dev
+    
     # ==================================================================
     # Create pdf, if savepdf is passed as True
     # ==================================================================
@@ -1598,6 +1447,7 @@ def compare_zonal_mean(
     if savepdf:
         print("Creating {} for {} variables".format(pdfname, n_var))
         pdf = PdfPages(pdfname)
+        pdf.close()
 
     # ==================================================================
     # Loop over variables
@@ -1605,82 +1455,17 @@ def compare_zonal_mean(
 
     # Loop over variables
     print_units_warning = True
-    for ivar in range(n_var):
+
+    #This loop is written as a function so it can be called in parallel
+    def createfig(ivar):
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
 
-        # If units are mol/mol then convert to ppb
-        conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
-        if refdata[varname].units.strip() in conc_units:
-            refdata[varname].attrs["units"] = "ppbv"
-            refdata[varname].values = refdata[varname].values * 1e9
-        if devdata[varname].units.strip() in conc_units:
-            devdata[varname].attrs["units"] = "ppbv"
-            devdata[varname].values = devdata[varname].values * 1e9
-
-        # Binary diagnostic concentrations have units ppbv. Change to ppb.
-        if refdata[varname].units.strip() == "ppbv":
-            refdata[varname].attrs["units"] = "ppb"
-        if devdata[varname].units.strip() == "ppbv":
-            devdata[varname].attrs["units"] = "ppb"
-
-        # Check that units match
-        units_ref = refdata[varname].units.strip()
-        units_dev = devdata[varname].units.strip()
-        if units_ref != units_dev:
-            if print_units_warning:
-                print("WARNING: ref and dev concentration units do not match!")
-                print("Ref units: {}".format(units_ref))
-                print("Dev units: {}".format(units_dev))
-            if enforce_units:
-                # if enforcing units, stop the program if units do not match
-                assert units_ref == units_dev, "Units do not match for {}!".format(
-                    varname
-                )
-            else:
-                # if not enforcing units, just keep going after only printing warning once
-                print_units_warning = False
-
-        # ==============================================================
-        # Slice the data, allowing for the
-        # possibility of no time dimension (bpch)
-        # ==============================================================
-
-        # Ref
-        vdims = refdata[varname].dims
-        if "time" in vdims:
-            ds_ref = refdata[varname].isel(time=itime)
-        else:
-            ds_ref = refdata[varname]
-
-        # Dev
-        vdims = devdata[varname].dims
-        if "time" in vdims:
-            ds_dev = devdata[varname].isel(time=itime)
-        else:
-            ds_dev = devdata[varname]
-
-        # ==============================================================
-        # Reshape cubed sphere data if using MAPL v1.0.0+
-        # TODO: update function to expect data in this format
-        # ==============================================================
-
-        # ref
-        vdims = refdata[varname].dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            ds_ref = ds_ref.stack(lat=("nf", "Ydim"))
-            ds_ref = ds_ref.rename({"Xdim": "lon"})
-            ds_ref = ds_ref.transpose("lev", "lat", "lon")
-
-        # dev
-        vdims = devdata[varname].dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            ds_dev = ds_dev.stack(lat=("nf", "Ydim"))
-            ds_dev = ds_dev.rename({"Xdim": "lon"})
-            ds_dev = ds_dev.transpose("lev", "lat", "lon")
+        #Convert mol/mol units to ppb and ensure ref and dev units match
+        units_ref, units_dev = check_units(refdata, devdata, varname)
 
         # ==============================================================
         # Area normalization, if any
@@ -1701,53 +1486,13 @@ def compare_zonal_mean(
             subtitle_extra = ", Normalized by Area"
 
         # ==============================================================
-        # Get comparison data sets, regridding input slices if needed
+        # Assign data variables
         # ==============================================================
-
-        # Flip in the vertical if applicable
-        if flip_ref:
-            ds_ref.data = ds_ref.data[::-1, :, :]
-        if flip_dev:
-            ds_dev.data = ds_dev.data[::-1, :, :]
-
-        # Reshape ref/dev cubed sphere data, if any
-        if refgridtype == "cs":
-            ds_ref_reshaped = ds_ref.data.reshape(nlev, 6, refres, refres).swapaxes(
-                0, 1
-            )
-        if devgridtype == "cs":
-            ds_dev_reshaped = ds_dev.data.reshape(nlev, 6, devres, devres).swapaxes(
-                0, 1
-            )
-
-        # Ref
-        if regridref:
-            if refgridtype == "ll":
-                # regrid ll to ll
-                ds_ref_cmp = refregridder(ds_ref)
-            else:
-                # regrid cs to ll
-                ds_ref_cmp = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = refregridder_list[i]
-                    ds_ref_cmp += regridder(ds_ref_reshaped[i])
-        else:
-            ds_ref_cmp = ds_ref
-
-        # Dev
-        if regriddev:
-            if devgridtype == "ll":
-                # regrid ll to ll
-                ds_dev_cmp = devregridder(ds_dev)
-            else:
-                # regrid cs to ll
-                ds_dev_cmp = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
-                for i in range(6):
-                    regridder = devregridder_list[i]
-                    ds_dev_cmp += regridder(ds_dev_reshaped[i])
-        else:
-            ds_dev_cmp = ds_dev
-
+        ds_ref = ds_refs[ivar]
+        ds_dev = ds_devs[ivar]
+        ds_ref_cmp = ds_ref_cmps[ivar]
+        ds_dev_cmp = ds_dev_cmps[ivar]
+            
         # ==============================================================
         # Calculate zonal mean
         # ==============================================================
@@ -1805,11 +1550,33 @@ def compare_zonal_mean(
         # values for the color ranges below.
         # ==============================================================
 
-        ref_is_all_zero = not np.any(ds_ref.values)
-        ref_is_all_nan = np.isnan(ds_ref.values).all()
+        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref.values)
+        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev.values)
 
-        dev_is_all_zero = not np.any(ds_dev.values)
-        dev_is_all_nan = np.isnan(ds_dev.values).all()
+        # ==============================================================
+        # Calculate zonal mean difference
+        # ==============================================================
+
+        zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
+
+        # Test if abs. diff is zero everywhere or NaN everywhere
+        absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(zm_diff)
+        
+        # Absolute maximum difference value
+        diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
+
+        # ==============================================================
+        # Calculate fractional difference, set divides by zero to Nan
+        # ==============================================================
+
+        zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(
+            zm_ref_cmp
+        )
+        zm_fracdiff = np.where(zm_fracdiff == np.inf, np.nan, zm_fracdiff)
+
+        # Test if the frac. diff is zero everywhere or NaN everywhere
+        fracdiff_is_all_zero = not np.any(zm_fracdiff)
+        fracdiff_is_all_nan = np.isnan(zm_fracdiff).all()
 
         # ==============================================================
         # Create 3x2 figure
@@ -1842,471 +1609,118 @@ def compare_zonal_mean(
         # in order to avoid set_bad() from being applied to the base
         # color table. See: https://docs.python.org/3/library/copy.html
         # ==============================================================
+
         if use_cmap_RdBu:
             cmap1 = copy.copy(mpl.cm.RdBu_r)
         else:
             cmap1 = copy.copy(WhGrYlRd)
         cmap1.set_bad("gray")
-
-        # ==============================================================
-        # Subplot (0,0): Ref
-        # ==============================================================
-
-        # Set local flags to denote if Ref is zero or NaN everywhere
-        # (these will eventually be passed to a plotting routine,
-        # once we abstract the plotting code below).
-        all_zero = ref_is_all_zero
-        all_undefined = ref_is_all_nan
-
-        # Set the min and max of the data range for Ref.
-        # NOTE: If Dev contains all NaN's, then just use the min and
-        # max of Ref to set the data range, even if match_cbar=True.
-        if all_zero or all_undefined:
-            [vmin, vmax] = [vmin_ref, vmax_ref]
-        elif use_cmap_RdBu:
-            if match_cbar and (not dev_is_all_nan):
-                absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
-            else:
-                absmax = max([np.abs(vmin_ref), np.abs(vmax_ref)])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if match_cbar and (not dev_is_all_nan):
-                [vmin, vmax] = [vmin_abs, vmax_abs]
-            else:
-                [vmin, vmax] = [vmin_ref, vmax_ref]
-        if verbose:
-            print("Subplot (0,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(
-            vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
-        )
-
-        # Plot data for either lat-lon or cubed-sphere grids
-        if refgridtype == "ll":
-            plot0 = ax0.pcolormesh(
-                refgrid["lat_b"], pedge[pedge_ind], zm_ref, cmap=cmap1, norm=norm
-            )
-
-            ax0.set_title("{} (Ref){}\n{}".format(refstr, subtitle_extra, refres))
-        else:
-            plot0 = ax0.pcolormesh(
-                cmpgrid["lat_b"], pedge[pedge_ind], zm_ref, cmap=cmap1, norm=norm
-            )
-            ax0.set_title(
-                "{} (Ref){}\n{} regridded from c{}".format(
-                    refstr, subtitle_extra, cmpres, refres
-                )
-            )
-        ax0.set_aspect("auto")
-        ax0.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax0.set_yscale("log")
-            ax0.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax0.invert_yaxis()
-        ax0.set_xticks(xtick_positions)
-        ax0.set_xticklabels(xticklabels)
-
-        # Define the colorbar for the plot.  If Ref is zero everywhere
-        # or NaN everywhere, set a single tick in the middle of the
-        # colorbar with the appopriate label.
-        cb = plt.colorbar(plot0, ax=ax0, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
-            else:
-                cb.set_ticks([0.5])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
-            else:
-                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-
-        # ==============================================================
-        # Subplot (0,1): Dev
-        # ==============================================================
-
-        # Set local flags to denote if Dev is zero or NaN everywhere
-        # (these will eventually be passed to a plotting routine,
-        # once we abstract the plotting code below).
-        all_zero = dev_is_all_zero
-        all_undefined = dev_is_all_nan
-
-        # Set the min and max of the data range for Dev.
-        # NOTE: If Ref contains all NaN's, then just use the min and
-        # max of Dev to set the data range, even if match_cbar=True.
-        if all_zero or all_undefined:
-            [vmin, vmax] = [vmin_dev, vmax_dev]
-        elif use_cmap_RdBu:
-            if match_cbar and (not ref_is_all_nan):
-                absmax = max([np.abs(vmin_abs), np.abs(vmax_abs)])
-            else:
-                absmax = max([np.abs(vmin_dev), np.abs(vmax_dev)])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if match_cbar and (not ref_is_all_nan):
-                [vmin, vmax] = [vmin_abs, vmax_abs]
-            else:
-                [vmin, vmax] = [vmin_dev, vmax_dev]
-        if verbose:
-            print("Subplot (0,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, log_color_scale=log_color_scale)
-
-        # Plot data for either lat-lon or cubed-sphere grids.
-        if devgridtype == "ll":
-            plot1 = ax1.pcolormesh(
-                devgrid["lat_b"], pedge[pedge_ind], zm_dev, cmap=cmap1, norm=norm
-            )
-            ax1.set_title("{} (Dev){}\n{}".format(devstr, subtitle_extra, devres))
-        else:
-            plot1 = ax1.pcolormesh(
-                cmpgrid["lat_b"], pedge[pedge_ind], zm_dev, cmap=cmap1, norm=norm
-            )
-            ax1.set_title(
-                "{} (Dev){}\n{} regridded from c{}".format(
-                    devstr, subtitle_extra, cmpres, devres
-                )
-            )
-        ax1.set_aspect("auto")
-        ax1.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax1.set_yscale("log")
-            ax1.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax1.invert_yaxis()
-        ax1.set_xticks(xtick_positions)
-        ax1.set_xticklabels(xticklabels)
-
-        # Define the colorbar for the plot.  If Ref is zero everywhere
-        # or NaN everywhere, set a single tick in the middle of the
-        # colorbar with the appopriate label.
-        cb = plt.colorbar(plot1, ax=ax1, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
-            else:
-                cb.set_ticks([0.5])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
-            else:
-                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-
-        # ==============================================================
-        # Configure colorbar for difference plots, use gray for NaNs
-        #
-        # Use shallow copy (copy.copy() to create color map objects,
-        # in order to avoid set_bad() from being applied to the base
-        # color table. See: https://docs.python.org/3/library/copy.html
-        # ==============================================================
+        
         cmap_plot = copy.copy(mpl.cm.RdBu_r)
         cmap_plot.set_bad(color="gray")
-
+        
         # ==============================================================
-        # Calculate zonal mean difference
+        # Set titles for plots
         # ==============================================================
-
-        zm_diff = np.array(zm_dev_cmp) - np.array(zm_ref_cmp)
-
-        # Test if abs. diff is zero everywhere or NaN everywhere
-        absdiff_is_all_zero = not np.any(zm_diff)
-        absdiff_is_all_nan = np.isnan(zm_diff).all()
-
-        # Absolute maximum difference value
-        diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
-
-        # ==============================================================
-        # Subplot (1,0): Difference, dynamic range
-        # ==============================================================
-
-        # Set local flags to denote if Abs. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero
-        all_undefined = absdiff_is_all_nan
-
-        # If the abs. diff. is zero everywhere or NaN everywhere,
-        # then set the min and max of the data range to zero (or Nan),
-        # which will cause normalize_colors to place the white color
-        # in the middle of RdBu difference color scale.  Otherwise,
-        # set the data range to be symmetric around the dynamic range
-        # of the zm_diff array.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
+        
+        if refgridtype == "ll":
+            ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
+            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
         else:
-            [vmin, vmax] = [-diffabsmax, diffabsmax]
-        if verbose:
-            print("Subplot (1,0) vmin, vmax: {}, {}".format(vmin, vmax))
+            ref_title = "{} (Ref){}\nc{} regridded from c{}".format(refstr, subtitle_extra, cmpres, refres)
+            dev_title = "{} (Dev){}\nc{} regridded from c{}".format(devstr, subtitle_extra, cmpres, devres)
 
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create the plot
-        plot2 = ax2.pcolormesh(
-            cmpgrid["lat_b"], pedge[pedge_ind], zm_diff, cmap=cmap_plot, norm=norm
-        )
         if regridany:
-            ax2.set_title("Difference ({})\nDev - Ref, Dynamic Range".format(cmpres))
+            absdiff_dynam_title  = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title  = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
+            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(cmpres)
+            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)     
         else:
-            ax2.set_title("Difference\nDev - Ref, Dynamic Range")
-        ax2.set_aspect("auto")
-        ax2.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax2.set_yscale("log")
-            ax2.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax2.invert_yaxis()
-        ax2.set_xticks(xtick_positions)
-        ax2.set_xticklabels(xticklabels)
-
-        # Define the colorbar for the plot.  If absdiff is zero
-        # everywhere or NaN everywhere, set a single tick in the
-        # middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot2, ax=ax2, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
-
+            absdiff_dynam_title  = "Difference\nDev - Ref, Dynamic Range"
+            absdiff_fixed_title  = "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            fracdiff_dynam_title = "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
+            fracdiff_fixed_title = "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
+                    
         # ==============================================================
-        # Subplot (1,1): Difference, restricted range
+        # Bundle variables for 6 parallel plotting calls
+        # 0 = Ref                 1 = Dev
+        # 2 = Dynamic abs diff    3 = Restricted abs diff
+        # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        # Set local flags to denote if Abs. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero
-        all_undefined = absdiff_is_all_nan
+        plot_types = ['ref',                     'dev',
+                      'dyn_abs_diff',   'res_abs_diff',
+                      'dyn_frac_diff', 'res_frac_diff']
+        
+        all_zeros = [ref_is_all_zero,           dev_is_all_zero,
+                     absdiff_is_all_zero,   absdiff_is_all_zero,
+                     fracdiff_is_all_zero, fracdiff_is_all_zero]
 
-        # If the abs. diff. is zero everywhere or NaN everywhere,
-        # then set the min and max of the data range to zero (or Nan),
-        # which will cause normalize_colors to place the white color
-        # in the middle of the color range for the difference color
-        # scale.  Otherwise, set the data range to be symmetric with
-        # the extremes being the maximum of the 5th and 95th percentiles.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [pct5, pct95] = [np.percentile(zm_diff, 5), np.percentile(zm_diff, 95)]
-            abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
-            [vmin, vmax] = [-abspctmax, abspctmax]
-        if verbose:
-            print("Subplot (1,1) vmin, vmax: {}, {}".format(vmin, vmax))
+        all_nans  = [ref_is_all_nan,             dev_is_all_nan,
+                     absdiff_is_all_nan,     absdiff_is_all_nan,
+                     fracdiff_is_all_nan,   fracdiff_is_all_nan]
 
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
+        plot_vals = [zm_ref,     zm_dev,
+                     zm_diff,   zm_diff,
+                     zm_fracdiff, zm_fracdiff]
+        
+        axs = [ax0, ax1,
+               ax2, ax3,
+               ax4, ax5]
+        
+        cmaps = [cmap1,         cmap1,
+                 cmap_plot, cmap_plot,
+                 cmap_plot, cmap_plot]
 
-        # Create the plot
-        plot3 = ax3.pcolormesh(
-            cmpgrid["lat_b"], pedge[pedge_ind], zm_diff, cmap=cmap_plot, norm=norm
-        )
-        if regridany:
-            ax3.set_title(
-                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
-            )
-        else:
-            ax3.set_title("Difference\nDev - Ref, Restriced Range [5%,95%]")
-        ax3.set_aspect("auto")
-        ax3.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax3.set_yscale("log")
-            ax3.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax3.invert_yaxis()
-        ax3.set_xticks(xtick_positions)
-        ax3.set_xticklabels(xticklabels)
+        rowcols = [(0,0), (0,1),
+                   (1,0), (1,1),
+                   (2,0), (2,1)]
+        
+        titles = [ref_title,                       dev_title,
+                  absdiff_dynam_title,   absdiff_fixed_title,
+                  fracdiff_dynam_title, fracdiff_fixed_title]
 
-        # Define the colorbar for the plot.  If absdiff is zero
-        # everywhere or NaN everywhere, set a single tick in the
-        # middle of the colorbar with the appopriate label.
-        cb = plt.colorbar(plot3, ax=ax3, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label(units)
 
-        # ==============================================================
-        # Calculate fractional difference, set divides by zero to Nan
-        # ==============================================================
+        grids = [refgrid, devgrid,
+                 cmpgrid, cmpgrid,
+                 cmpgrid, cmpgrid]
+        
+        if refgridtype != "ll":
+            grids[0] = cmpgrid
+        if devgridtype != "ll":
+            grids[1] = cmpgrid
+        
+        extents = [None, None,
+                   None, None,
+                   None, None]
 
-        zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(
-            zm_ref_cmp
-        )
-        zm_fracdiff = np.where(zm_fracdiff == np.inf, np.nan, zm_fracdiff)
+        masked = ['ZM', 'ZM',
+                  'ZM', 'ZM',
+                  'ZM', 'ZM']
 
-        # Test if the frac. diff is zero everywhere or NaN everywhere
-        fracdiff_is_all_zero = not np.any(zm_fracdiff)
-        fracdiff_is_all_nan = np.isnan(zm_fracdiff).all()
+        unit_list = [units,           units,
+                     "unitless", "unitless",
+                     "unitless", "unitless"]
 
-        # ==============================================================
-        # Subplot (2,0): Fractional Difference, dynamic range
-        # ==============================================================
+        other_all_nans = [dev_is_all_nan, ref_is_all_nan,
+                          False,                   False,
+                          False,                   False]
+        
+        gridtypes = [cmpgridtype, cmpgridtype,
+                     cmpgridtype, cmpgridtype,
+                     cmpgridtype, cmpgridtype]
+        
+        mins = [vmin_ref, vmin_dev, vmin_abs]
+        maxs = [vmax_ref, vmax_dev, vmax_abs]
 
-        # Set local flags to denote if Frac. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero or (fracdiff_is_all_zero and not ref_is_all_zero)
-        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
-
-        # Set the min and max of the data range.  If fracdiff is
-        # zero everywhere, then set the data range to [0,0].
-        # If fracdiff is NaN everywhere, or if Ref (the denominator
-        # of the expression that computes fracdiff) is zero
-        # everywhere, set the data range to undefined (NaN).
-        # Otherwise set the data range to be symmetric around
-        # the dynamic range of fracdiff.
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            fracdiffabsmax = np.max(
-                [np.abs(np.nanmin(zm_fracdiff)), np.abs(np.nanmax(zm_fracdiff))]
-            )
-            [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
-        if verbose:
-            print("Subplot (2,0) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create the plot
-        plot4 = ax4.pcolormesh(
-            cmpgrid["lat_b"], pedge[pedge_ind], zm_fracdiff, cmap=cmap_plot, norm=norm
-        )
-        if regridany:
-            ax4.set_title(
-                "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
-                    cmpres
-                )
-            )
-        else:
-            ax4.set_title("Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range")
-        ax4.set_aspect("auto")
-        if log_yaxis:
-            ax4.set_yscale("log")
-            ax4.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax4.set_ylabel("Pressure (hPa)")
-        ax4.invert_yaxis()
-        ax4.set_xticks(xtick_positions)
-        ax4.set_xticklabels(xticklabels)
-
-        # Define the colorbar If fracdiff will be zero everywhere
-        # or undefined everywhere, put a single tick at the middle
-        # of the colorbar with the appropriate label.
-        cb = plt.colorbar(plot4, ax=ax4, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label("unitless")
-
-        # ==============================================================
-        # Subplot (2,1): Fractional Difference, restricted range
-        # ==============================================================
-
-        # Set local flags to denote if Frac. Diff. is zero or NaN
-        # everywhere (these will eventually be passed to a plotting
-        # routine, once we abstract the plotting code below).
-        all_zero = absdiff_is_all_zero or (fracdiff_is_all_zero and not ref_is_all_zero)
-        all_undefined = fracdiff_is_all_nan or ref_is_all_zero
-
-        # Set the min and max of the data range.  If fracdiff is
-        # zero everywhere, then set the data range to [0,0].
-        # If fracdiff is NaN everywhere, or if Ref (the denominator
-        # of the expression that computes fracdiff) is zero
-        # everywhere, set the data range to undefined [NaN, Nan].
-        # Otherwise set the data range to [-2, 2] (+/- 200% change).
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_undefined:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            [vmin, vmax] = [-2, 2]
-        if verbose:
-            print("Subplot (2,1) vmin, vmax: {}, {}".format(vmin, vmax))
-
-        # Normalize colors (put into range [0..1] for matplotlib methods)
-        norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
-        # Create the plot
-        plot5 = ax5.pcolormesh(
-            cmpgrid["lat_b"], pedge[pedge_ind], zm_fracdiff, cmap=cmap_plot, norm=norm
-        )
-        if regridany:
-            ax5.set_title(
-                "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)
-            )
-        else:
-            ax5.set_title("Fractional Difference\n(Dev-Ref)/Ref, Fixed Range")
-        ax5.set_aspect("auto")
-        ax5.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax5.set_yscale("log")
-            ax5.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
-        ax5.invert_yaxis()
-        ax5.set_xticks(xtick_positions)
-        ax5.set_xticklabels(xticklabels)
-
-        # Define the colorbar for the plot.  If fracdiff will be zero
-        # everywhere or undefined everywhere, put a single tick at the
-        # middle of the colorbar with the appropriate label.
-        cb = plt.colorbar(plot5, ax=ax5, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
-        if all_zero or all_undefined:
-            cb.set_ticks([0.0])
-            if all_undefined:
-                cb.set_ticklabels(["Undefined throughout domain"])
-            else:
-                cb.set_ticklabels(["Zero throughout domain"])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
-        cb.update_ticks()
-        cb.set_label("unitless")
-
+        #Plot 
+        for i in range(6):
+            sixplot(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
+                    grids[i], axs[i], rowcols[i], titles[i], cmaps[i],
+                    unit_list[i], extents[i], masked[i], other_all_nans[i],
+                    gridtypes[i], mins, maxs, use_cmap_RdBu, match_cbar, verbose, 
+                    log_color_scale, pedge, pedge_ind, log_yaxis)
+                
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(max(fracdiff)) > 0.1
@@ -2320,17 +1734,33 @@ def compare_zonal_mean(
         # Add this page of 6-panel plots to the PDF file
         # ==============================================================
         if savepdf:
+            pdf = PdfPages(pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar))
             pdf.savefig(figs)
+            pdf.close()
             plt.close(figs)
+            
+    #for i in range(n_var):
+    #    createfig(i)
+    
+    #do not attempt nested thread parallelization due to issues with matplotlib
+    if current_process().name != "MainProcess":
+        n_job = 1
 
+    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+    
     # ==================================================================
     # Finish
     # ==================================================================
     if savepdf:
-        pdf.close()
-        print("")
-
-
+        print("Closed PDF")
+        merge = PdfFileMerger()
+        for i in range(n_var):
+            merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
+            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
+        merge.write(pdfname)
+        merge.close()
+        warnings.showwarning=warning_format
+        
 def get_emissions_varnames(commonvars, template=None):
     """
     Will return a list of emissions diagnostic variable names that
@@ -3263,6 +2693,7 @@ def make_benchmark_conc_plots(
     use_cmap_RdBu=False,
     log_color_scale=False,
     sigdiff_files=None,
+    n_job=-1
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -3380,12 +2811,18 @@ def make_benchmark_conc_plots(
     # ==================================================================
     # Create the plots!
     # ==================================================================
-    for i, filecat in enumerate(catdict):
+
+    #Use dictionaries to maintain order of significant difference categories
+    dict_sfc = {}
+    dict_500 = {}
+    dict_zm = {}
+    
+    def createplots(i, filecat):
 
         # If restrict_cats list is passed,
         # skip all categories except those in the list
         if restrict_cats and filecat not in restrict_cats:
-            continue
+            return
 
         # Create a directory for each category.
         # If subdst is passed, then create a subdirectory in each
@@ -3413,7 +2850,7 @@ def make_benchmark_conc_plots(
                     filecat, warninglist
                 )
             )
-
+        
         # -----------------------
         # Surface plots
         # -----------------------
@@ -3426,6 +2863,7 @@ def make_benchmark_conc_plots(
             else:
                 pdfname = os.path.join(catdir, "{}_Surface.pdf".format(filecat))
 
+            print("Comparing Single Level")
             diff_sfc = []
             compare_single_level(
                 refds,
@@ -3438,9 +2876,10 @@ def make_benchmark_conc_plots(
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_sfc,
+                sigdiff_list=diff_sfc
             )
             diff_sfc[:] = [v.replace("SpeciesConc_", "") for v in diff_sfc]
+            dict_sfc[filecat] = diff_sfc
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
@@ -3471,6 +2910,7 @@ def make_benchmark_conc_plots(
                 sigdiff_list=diff_500,
             )
             diff_500[:] = [v.replace("SpeciesConc_", "") for v in diff_500]
+            dict_500[filecat] = diff_500
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
@@ -3500,9 +2940,10 @@ def make_benchmark_conc_plots(
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_zm,
+                sigdiff_list=diff_zm
             )
             diff_zm[:] = [v.replace("SpeciesConc_", "") for v in diff_zm]
+            dict_zm = diff_zm
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
@@ -3527,46 +2968,49 @@ def make_benchmark_conc_plots(
                 pres_range=[1, 100],
                 log_yaxis=True,
                 extra_title_txt=extra_title_txt,
-                log_color_scale=log_color_scale,
+                log_color_scale=log_color_scale
             )
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
-
-        # ==============================================================
-        # Write the list of species having significant differences,
-        # which we need to fill out the benchmark approval forms.
-        # ==============================================================
-        if sigdiff_files != None:
-            for filename in sigdiff_files:
-                if "sfc" in plots:
-                    if "sfc" in filename:
-                        with open(filename, "a+") as f:
-                            print("* {}: ".format(filecat), file=f, end="")
-                            for v in diff_sfc:
+    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) for i, filecat in enumerate(catdict))
+    # ==============================================================
+    # Write the list of species having significant differences,
+    # which we need to fill out the benchmark approval forms.
+    # ==============================================================
+    if sigdiff_files != None:
+        for filename in sigdiff_files:
+            if "sfc" in plots:
+                if "sfc" in filename:
+                    with open(filename, "a+") as f:
+                        for c, diff_list in dict_sfc.items():
+                            print("* {}: ".format(c), file=f, end="")
+                            for v in diff_list:
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
-                            f.close()
+                        f.close()
 
-                if "500hpa" in plots:
-                    if "500hpa" in filename:
-                        with open(filename, "a+") as f:
-                            print("* {}: ".format(filecat), file=f, end="")
-                            for v in diff_500:
+            if "500hpa" in plots:
+                if "500hpa" in filename:
+                    with open(filename, "a+") as f:
+                        for c, diff_list in dict_500.items():
+                            print("* {}: ".format(c), file=f, end="")
+                            for v in diff_list:
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
-                            f.close()
+                        f.close()
 
-                if "zonalmean" in plots or "zm" in plots:
-                    if "zonalmean" in filename or "zm" in filename:
-                        with open(filename, "a+") as f:
-                            print("* {}: ".format(filecat), file=f, end="")
-                            for v in diff_zm:
+            if "zonalmean" in plots or "zm" in plots:
+                if "zonalmean" in filename or "zm" in filename:
+                    with open(filename, "a+") as f:
+                        for c, diff_list in dict_zm.items():
+                            print("* {}: ".format(c), file=f, end="")
+                            for v in diff_list:
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
-                            f.close()
+                        f.close()
 
-
+                            
 def make_benchmark_emis_plots(
     ref,
     refstr,
@@ -3582,6 +3026,7 @@ def make_benchmark_emis_plots(
     flip_dev=False,
     log_color_scale=False,
     sigdiff_files=None,
+    n_job=-1
 ):
     """
     Creates PDF files containing plots of emissions for model
@@ -3778,6 +3223,7 @@ def make_benchmark_emis_plots(
     # Also write the list of emission quantities that have significant
     # diffs.  We'll need that to fill out the benchmark forms.
     # ==================================================================
+    
     if plot_by_hco_cat:
         emisspcdir = os.path.join(dst, "Emissions")
         if not os.path.isdir(emisspcdir):
@@ -3788,7 +3234,8 @@ def make_benchmark_emis_plots(
                 os.mkdir(emisspcdir)
 
         diff_dict = {}
-        for c in emis_cats:
+        #for c in emis_cats:
+        def createfile_hco_cat(c):
             # Handle cases of bioburn and bioBurn (temporary until 12.3.1)
             if c == "Bioburn":
                 varnames = [
@@ -3819,16 +3266,16 @@ def make_benchmark_emis_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_emis,
             )
+        
             add_bookmarks_to_pdf(
                 pdfname, varnames, remove_prefix="Emis", verbose=verbose
             )
-
             # Save the list of quantities with significant differences for
             # this category into the diff_dict dictionary for use below
             diff_emis[:] = [v.replace("Emis", "") for v in diff_emis]
             diff_emis[:] = [v.replace("_" + c, "") for v in diff_emis]
             diff_dict[c] = diff_emis
-
+        Parallel(n_jobs = n_job) (delayed(createfile_hco_cat)(c) for c in emis_cats)
         # =============================================================
         # Write the list of species having significant differences,
         # which we need to fill out the benchmark approval forms.
@@ -3843,7 +3290,7 @@ def make_benchmark_emis_plots(
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
                         f.close()
-
+        
     # ==================================================================
     # if plot_by_benchmark_cat is true, make a file for each benchmark
     # species category with emissions in the diagnostics file
@@ -3858,8 +3305,8 @@ def make_benchmark_emis_plots(
             []
         )  # for checking if emissions species not defined in benchmark category file
         emisdict = {}  # used for nested pdf bookmarks
-        for i, filecat in enumerate(catdict):
-
+        #for i, filecat in enumerate(catdict):
+        def createfile_bench_cat(filecat):
             # Get emissions for species in this benchmark category
             varlist = []
             emisdict[filecat] = {}
@@ -3878,7 +3325,7 @@ def make_benchmark_emis_plots(
                         filecat
                     )
                 )
-                continue
+                return
 
             # Use same directory structure as for concentration plots
             catdir = os.path.join(dst, filecat)
@@ -3898,7 +3345,7 @@ def make_benchmark_emis_plots(
                 )
             else:
                 pdfname = os.path.join(catdir, "{}_Emissions.pdf".format(filecat))
-
+            print(pdfname)
             # Create the PDF
             compare_single_level(
                 refds,
@@ -3915,6 +3362,8 @@ def make_benchmark_emis_plots(
             )
             add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
 
+        Parallel(n_jobs = n_job) (delayed(createfile_bench_cat)(filecat) for i, filecat in enumerate(catdict))        
+
         # Give warning if emissions species is not assigned a benchmark category
         for spc in emis_spc:
             if spc not in allcatspc:
@@ -3923,7 +3372,7 @@ def make_benchmark_emis_plots(
                         spc
                     )
                 )
-
+                
 
 def make_benchmark_emis_tables(
     reflist,
@@ -4275,6 +3724,8 @@ def make_benchmark_jvalue_plots(
             pdfname = os.path.join(jvdir, "{}Surface.pdf".format(prefix))
 
         diff_sfc = []
+        print(type(refds), type(refstr), type(devds), type(devstr), type(varlist), type(pdfname), type(flip_ref), type(flip_dev), type(log_color_scale), type(extra_title_txt), type(diff_sfc))
+        print(refds, devds)
         compare_single_level(
             refds,
             refstr,
@@ -4877,12 +4328,12 @@ def make_benchmark_mass_tables(
 
 
 def make_benchmark_budget_tables(
-        dev,
-        devstr,
-        dst="./1mo_benchmark",
-        overwrite=False,
-        interval=[2678400.0],
-        subdst=None
+        dev, 
+        devstr, 
+        dst="./1mo_benchmark", 
+        overwrite=False, 
+        interval=[2678400.0], 
+        n_job = -1
 ):
     """
     Creates a text file containing budgets by species for benchmarking
@@ -4966,7 +4417,8 @@ def make_benchmark_budget_tables(
     budget_vars = [k for k in devds.data_vars.keys() if k[:6] == "Budget"]
     budget_regions = sorted(set([v.split("_")[0][-4:] for v in budget_vars]))
 
-    for region in budget_regions:
+    #for region in budget_regions:
+    def createfile(region):
 
         # Destination file
         file_budget = os.path.join(budgetdir, "Budget_" + region + ".txt")
@@ -4986,7 +4438,8 @@ def make_benchmark_budget_tables(
             interval,
             template="Budget_{}",
         )
-
+        
+    Parallel(n_jobs = n_job) (delayed(createfile)(region) for region in budget_regions)
 
 def make_benchmark_oh_metrics(
     reflist,
@@ -5305,7 +4758,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
 
     Keyword Args (optional):
     ------------------------
-        remove_prefix : str
+        remove_prefix : str0
             Specifies a prefix to remove from each entry in varlist
             when creating bookmarks.  For example, if varlist has
             a variable name "SpeciesConc_NO", and you specify
@@ -5319,7 +4772,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
 
     # Setup
     pdfobj = open(pdfname, "rb")
-    input = PdfFileReader(pdfobj)
+    input = PdfFileReader(pdfobj, overwriteWarnings=False)
     output = PdfFileWriter()
 
     for i, varname in enumerate(varlist):
@@ -5338,7 +4791,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
 
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
-
+    pdfobj.close()
 
 def add_nested_bookmarks_to_pdf(
     pdfname, category, catdict, warninglist, remove_prefix=""
@@ -5379,7 +4832,7 @@ def add_nested_bookmarks_to_pdf(
     # Setup
     # ==================================================================
     pdfobj = open(pdfname, "rb")
-    input = PdfFileReader(pdfobj)
+    input = PdfFileReader(pdfobj,overwriteWarnings=False)
     output = PdfFileWriter()
     warninglist = [k.replace(remove_prefix, "") for k in warninglist]
 
@@ -5434,7 +4887,7 @@ def add_nested_bookmarks_to_pdf(
 
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
-
+    pdfobj.close()
 
 def add_missing_variables(refdata, devdata, **kwargs):
     """
@@ -5597,3 +5050,88 @@ def get_troposphere_mask(ds):
 
     # Reshape into the same shape as Met_BxHeight
     return tropmask.reshape(shape)
+
+
+
+def get_input_res(data):
+    #return resolution of dataset passed to compare_single_level or compare_zonal_means
+    
+    vdims = data.dims
+    if "lat" in vdims and "lon" in vdims:
+        lat = data.sizes["lat"]
+        lon = data.sizes["lon"]
+        print("grid has lat and lon: ", vdims)
+        if lat == 46 and lon == 72:
+            return "4x5", "ll"
+        elif lat == 91 and lon == 144:
+            return "2x2.5", "ll"
+        elif lat / 6 == lon:
+            return lon, "cs"
+        else:
+            print("Error: ref or dev {}x{} grid not defined in gcpy!".format(lat, lon))
+            return
+        
+    else:
+        print("grid is cs: ", vdims)
+        #GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        return data.dims["Xdim"], "cs"    
+
+def call_make_grid(res, gridtype, zonal_mean, comparison):
+    #call appropriate make_grid function and return new grid
+    if gridtype == "ll" or (zonal_mean and comparison):
+        return [make_grid_LL(res), None]
+    else:
+        return make_grid_CS(res)
+
+def check_units(refdata, devdata, varname):
+    # If units are mol/mol then convert to ppb
+    conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
+    if refdata[varname].units.strip() in conc_units:
+        refdata[varname].attrs["units"] = "ppbv"
+        refdata[varname].values = refdata[varname].values * 1e9
+    if devdata[varname].units.strip() in conc_units:
+        devdata[varname].attrs["units"] = "ppbv"
+        devdata[varname].values = devdata[varname].values * 1e9
+        
+    # Binary diagnostic concentrations have units ppbv. Change to ppb.
+    if refdata[varname].units.strip() == "ppbv":
+        refdata[varname].attrs["units"] = "ppb"
+    if devdata[varname].units.strip() == "ppbv":
+        devdata[varname].attrs["units"] = "ppb"
+        
+    # Check that units match
+    units_ref = refdata[varname].units.strip()
+    units_dev = devdata[varname].units.strip()
+    if units_ref != units_dev:
+        print_units_warning = True
+        if print_units_warning:
+            print("WARNING: ref and dev concentration units do not match!")
+            print("Ref units: {}".format(units_ref))
+            print("Dev units: {}".format(units_dev))
+        if enforce_units:
+            # if enforcing units, stop the program if
+            # units do not match
+            assert units_ref == units_dev, "Units do not match for {}!".format(
+                varname
+            )
+        else:
+            # if not enforcing units, just keep going after
+            # only printing warning once
+            print_units_warning = False
+
+    return units_ref, units_dev
+
+def reshape_MAPL_CS(ds, vdims):
+    #Reshape cubed sphere data if using MAPL v1.0.0+
+    if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
+        ds = ds.stack(lat=("nf", "Ydim"))
+        ds = ds.rename({"Xdim": "lon"})
+        if "lev" in ds.dims:
+            ds = ds.transpose("lev", "lat", "lon")
+        else:
+            ds = ds.transpose("lat", "lon")
+    return ds
+
+def all_zero_or_nan(ds):
+    #Return whether ds is all zeros, or all nans
+    return not np.any(ds), np.isnan(ds).all()
