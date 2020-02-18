@@ -4,8 +4,8 @@ Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 
 import os
 import shutil
-import json
-from json import load as json_load_file
+import yaml
+from yaml import load as yaml_load_file
 import copy
 import numpy as np
 import xarray as xr
@@ -33,11 +33,11 @@ warning_format = warnings.showwarning
 #Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide='ignore', invalid='ignore')
 
-# JSON files
-aod_spc = "aod_species.json"
-spc_categories = "benchmark_categories.json"
-emission_spc = "emission_species.json"
-emission_inv = "emission_inventories.json"
+# YAML files
+aod_spc = "aod_species.yml"
+spc_categories = "benchmark_categories.yml"
+emission_spc = "emission_species.yml"
+emission_inv = "emission_inventories.yml"
 
 
 def sixplot(plot_type,
@@ -475,10 +475,6 @@ def compare_single_level(
     regridref = refres != cmpres
     regriddev = devres != cmpres
     regridany = regridref or regriddev
-
-    print("refres: ", refres)
-    print("devres: ", devres)
-    print("cmpres: ", cmpres)
     
     # =================================================================
     # Make grids (ref, dev, and comparison)
@@ -508,7 +504,6 @@ def compare_single_level(
                 refregridder_list = make_regridder_C2L(
                     refres, cmpres, weightsdir=weightsdir, reuse_weights=True
                 )
-                print(type(refregridder_list))
     if regriddev:
         if devgridtype == "ll":
             devregridder = make_regridder_L2L(
@@ -2081,7 +2076,7 @@ def create_total_emissions_table(
         rather than as a general-purpose tool.
 
         Species properties (such as molecular weights) are read from a
-        JSON file called "species_database.json".
+        YAML file called "species_database.yml".
 
     Example:
     --------
@@ -2122,12 +2117,12 @@ def create_total_emissions_table(
             "Area variable {} is not in the dev Dataset!".format(dev_area_varname)
         )
 
-    # Load a JSON file containing species properties (such as
+    # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this folder where
     # this benchmark.py file is found.
-    properties_path = os.path.join(os.path.dirname(__file__), "species_database.json")
-    properties = json_load_file(open(properties_path))
+    properties_path = os.path.join(os.path.dirname(__file__), "species_database.yml")
+    properties = yaml_load_file(open(properties_path))
 
     # ==================================================================
     # Get the list of emission variables for which we will print totals
@@ -2370,7 +2365,7 @@ def create_global_mass_table(
         rather than as a general-purpose tool.
 
         Species properties (such as molecular weights) are read from a
-        JSON file called "species_database.json".
+        YAML file called "species_database.yml".
 
         The area variable for GEOS-Chem "Classic" will be "AREA",
         but for GCHP it will be "Met_AREAM2".
@@ -2410,11 +2405,11 @@ def create_global_mass_table(
     if met_and_masks is None:
         raise ValueError('The "met_and_masks" argument was not passed!')
 
-    # Load a JSON file containing species properties (such as
+    # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
-    properties_path = os.path.join(os.path.dirname(__file__), "species_database.json")
-    properties = json_load_file(open(properties_path))
+    properties_path = os.path.join(os.path.dirname(__file__), "species_database.yml")
+    properties = yaml_load_file(open(properties_path))
 
     # ==================================================================
     # Open file for output
@@ -2652,25 +2647,25 @@ def get_species_categories():
             A nested dictionary of categories (and sub-categories)
             and the species belonging to each.
 
-    NOTE: The benchmark categories are specified in JSON file
-    benchmark_species.json.
+    NOTE: The benchmark categories are specified in YAML file
+    benchmark_species.yml.
     """
-    jsonfile = os.path.join(os.path.dirname(__file__), spc_categories)
-    with open(jsonfile, "r") as f:
-        spc_cat_dict = json.loads(f.read())
+    yamlfile = os.path.join(os.path.dirname(__file__), spc_categories)
+    with open(yamlfile, "r") as f:
+        spc_cat_dict = yaml.load(f.read())
     return spc_cat_dict
 
 
 def archive_species_categories(dst):
     """
-    Writes the list of benchmark categories to a JSON file
-    named "benchmark_species.json".
+    Writes the list of benchmark categories to a YAML file
+    named "benchmark_species.yml".
 
     Args:
     -----
         dst : str
-            Name of the folder where the JSON file containing
-            benchmark categories ("benchmark_species.json")
+            Name of the folder where the YAML file containing
+            benchmark categories ("benchmark_species.yml")
             will be written.
     """
 
@@ -2740,7 +2735,7 @@ def make_benchmark_conc_plots(
             Default value: False.
 
         restrict_cats : list of strings
-            List of benchmark categories in benchmark_categories.json to make
+            List of benchmark categories in benchmark_categories.yml to make
             plots for. If empty, plots are made for all categories.
             Default value: empty
 
@@ -2863,7 +2858,6 @@ def make_benchmark_conc_plots(
             else:
                 pdfname = os.path.join(catdir, "{}_Surface.pdf".format(filecat))
 
-            print("Comparing Single Level")
             diff_sfc = []
             compare_single_level(
                 refds,
@@ -3068,7 +3062,7 @@ def make_benchmark_emis_plots(
             Set this flag to True to separate plots into PDF files
             according to the benchmark categories (e.g. Oxidants,
             Aerosols, Nitrogen, etc.)  These categories are specified
-            in the JSON file benchmark_species.json.
+            in the YAML file benchmark_species.yml.
             Default value: False
 
         plot_by_hco_cat : boolean
@@ -3368,7 +3362,7 @@ def make_benchmark_emis_plots(
         for spc in emis_spc:
             if spc not in allcatspc:
                 print(
-                    "Warning: species {} has emissions diagnostics but is not in benchmark_categories.json".format(
+                    "Warning: species {} has emissions diagnostics but is not in benchmark_categories.yml".format(
                         spc
                     )
                 )
@@ -3467,10 +3461,10 @@ def make_benchmark_emis_tables(
     # ==================================================================
 
     # Emissions species dictionary
-    species = json_load_file(
+    species = yaml_load_file(
         open(os.path.join(os.path.dirname(__file__), emission_spc))
     )
-    inventories = json_load_file(
+    inventories = yaml_load_file(
         open(os.path.join(os.path.dirname(__file__), emission_inv))
     )
 
@@ -3724,8 +3718,6 @@ def make_benchmark_jvalue_plots(
             pdfname = os.path.join(jvdir, "{}Surface.pdf".format(prefix))
 
         diff_sfc = []
-        print(type(refds), type(refstr), type(devds), type(devstr), type(varlist), type(pdfname), type(flip_ref), type(flip_dev), type(log_color_scale), type(extra_title_txt), type(diff_sfc))
-        print(refds, devds)
         compare_single_level(
             refds,
             refstr,
@@ -4007,7 +3999,7 @@ def make_benchmark_aod_plots(
         varlist = [v for v in cmn3D if "AOD" in v and "_bin" not in v]
 
     # Dictionary and list for new display names
-    newvars = json_load_file(open(os.path.join(os.path.dirname(__file__), aod_spc)))
+    newvars = yaml_load_file(open(os.path.join(os.path.dirname(__file__), aod_spc)))
     newvarlist = []
 
     # ==================================================================
