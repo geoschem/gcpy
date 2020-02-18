@@ -5,7 +5,7 @@ from __future__ import division
 from __future__ import print_function
 
 import os
-import json
+import yaml
 import shutil
 import matplotlib.colors as mcolors
 import numpy as np
@@ -14,9 +14,9 @@ import xbpch
 from .constants import skip_these_vars
 
 
-# JSON files to read
-lumped_spc = "lumped_species.json"
-bpch_to_nc_names = "bpch_to_nc_names.json"
+# YAML files to read
+lumped_spc = "lumped_species.yml"
+bpch_to_nc_names = "bpch_to_nc_names.yml"
 
 
 def open_dataset(filename, **kwargs):
@@ -462,7 +462,7 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
     Remarks:
     --------
         To add more diagnostic names, edit the dictionary contained
-        in the bpch_to_nc_names.json.
+        in the bpch_to_nc_names.yml.
 
     Examples:
     -----------------
@@ -472,9 +472,9 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
 
     # Names dictionary (key = bpch id, value[0] = netcdf id,
     # value[1] = action to create full name using id)
-    # Now read from JSON file (bmy, 4/5/19)
-    jsonfile = os.path.join(os.path.dirname(__file__), bpch_to_nc_names)
-    names = json.load(open(jsonfile))
+    # Now read from YAML file (bmy, 4/5/19)
+    yamlfile = os.path.join(os.path.dirname(__file__), bpch_to_nc_names)
+    names = yaml.load(open(yamlfile))
 
     # define some special variable to overwrite above
     special_vars = {
@@ -521,7 +521,7 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
         original_variable_name = variable_name
 
         # Replace "__" with "_", in variable name (which will get tested
-        # against the name sin the JSON file.  This will allow us to
+        # against the name sin the YAML file.  This will allow us to
         # replace variable names in files created with BPCH2COARDS.
         if "__" in variable_name:
             variable_name = variable_name.replace("__", "_")
@@ -645,9 +645,9 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
 
 
 def get_lumped_species_definitions():
-    jsonfile = os.path.join(os.path.dirname(__file__), lumped_spc)
-    with open(jsonfile, "r") as f:
-        lumped_spc_dict = json.loads(f.read())
+    yamlfile = os.path.join(os.path.dirname(__file__), lumped_spc)
+    with open(yamlfile, "r") as f:
+        lumped_spc_dict = yaml.load(f.read())
     return lumped_spc_dict
 
 
@@ -660,7 +660,7 @@ def archive_lumped_species_definitions(dst):
 def add_lumped_species_to_dataset(
     ds,
     lspc_dict={},
-    lspc_json="",
+    lspc_yaml="",
     verbose=False,
     overwrite=False,
     prefix="SpeciesConc_",
@@ -668,15 +668,15 @@ def add_lumped_species_to_dataset(
 
     # Default is to add all benchmark lumped species.
     # Can overwrite by passing a dictionary
-    # or a json file path containing one
+    # or a yaml file path containing one
     assert not (
-        lspc_dict != {} and lspc_json != ""
-    ), "Cannot pass both lspc_dict and lspc_json. Choose one only."
-    if lspc_dict == {} and lspc_json == "":
+        lspc_dict != {} and lspc_yaml != ""
+    ), "Cannot pass both lspc_dict and lspc_yaml. Choose one only."
+    if lspc_dict == {} and lspc_yaml == "":
         lspc_dict = get_lumped_species_definitions()
-    elif lspc_dict == {} and lspc_json != "":
-        with open(lspc_json, "r") as f:
-            lspc_dict = json.loads(f.read())
+    elif lspc_dict == {} and lspc_yaml != "":
+        with open(lspc_yaml, "r") as f:
+            lspc_dict = yaml.load(f.read())
 
     for lspc in lspc_dict:
         varname_new = prefix + lspc
