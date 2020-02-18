@@ -62,7 +62,7 @@ N_MONTHS_FLOAT       = N_MONTHS * 1.0
 ds                   = xr.open_mfdataset(StateMet)
 
 # Read certain met data variables
-area_m2              = ds['AREA'] #.isel(time=0)
+area_m2              = ds['AREA'].isel(time=0)
 area_cm2             = area_m2 * 1.0e4
 tropmask             = get_troposphere_mask(ds)
 
@@ -331,20 +331,30 @@ ds                  = xr.open_mfdataset(HemcoDiag)
 ds_dcy              = xr.open_mfdataset(RadioNucl)
 
 # Sources [g/day], full-atmosphere
-Pb210_src           = ( ds_dcy['PbFromRnDecay']         ) * KG_S_TO_G_DAY
-Be7_src             = ( ds['EmisBe7_Cosmic']  * area_m2 ) * KG_S_TO_G_DAY
-Be10_src            = ( ds['EmisBe10_Cosmic'] * area_m2 ) * KG_S_TO_G_DAY
+Pb210_src           = ds_dcy['PbFromRnDecay']         * KG_S_TO_G_DAY
+Be7_src             = np.zeros([N_MONTHS,72,46,72])
+Be10_src            = np.zeros([N_MONTHS,72,46,72])
+
+# Convert Be7 and Be10 sources from kg/m2/s to g/day
+# NOTE: This is a kludgey way to do it but it works and
+# preserves the shape of the data as (time,lev,lat,lon).
+for t in range(N_MONTHS):
+    for k in range(72):
+        Be7_src[t,k,:,:]  = ds['EmisBe7_Cosmic'].isel(time=t, lev=k) \
+                          * area_m2 * KG_S_TO_G_DAY
+        Be10_src[t,k,:,:] = ds['EmisBe10_Cosmic'].isel(time=t, lev=k) \
+                          * area_m2 * KG_S_TO_G_DAY
 
 # Sources [g/day], troposphere-only
 Pb210_src_tr        = np.ma.masked_array(Pb210_src.values, tropmask)
-Be7_src_tr          = np.ma.masked_array(Be7_src.values,   tropmask)
-Be10_src_tr         = np.ma.masked_array(Be10_src.values,  tropmask)
+Be7_src_tr          = np.ma.masked_array(Be7_src,          tropmask)
+Be10_src_tr         = np.ma.masked_array(Be10_src,         tropmask)
 
 # Compute monthly sums
 for t in range(N_MONTHS):
     Pb210_sum[t]    = np.sum(Pb210_src.isel(time=t).values)
-    Be7_sum[t]      = np.sum(Be7_src.isel(time=t).values)
-    Be10_sum[t]     = np.sum(Be10_src.isel(time=t).values)
+    Be7_sum[t]      = np.sum(Be7_src[t,:,:,:])
+    Be10_sum[t]     = np.sum(Be10_src[t,:,:,:])
     Pb210_sum_tr[t] = np.sum(Pb210_src_tr[t,:,:,:])
     Be7_sum_tr[t]   = np.sum(Be7_src_tr[t,:,:,:])
     Be10_sum_tr[t]  = np.sum(Be10_src_tr[t,:,:,:])
