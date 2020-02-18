@@ -3,20 +3,20 @@ Module for obtaining version information.
 '''
 import platform
 import sys
-import json
+import yaml
 import importlib
 
 
-def show_versions(as_json=False):
+def show_versions(as_yaml=False):
     '''
     Prints a list of GCPy dependencies and their version numbers.
-    Can also return the list of dependencies as a JSON object.
+    Can also return the list of dependencies as a YAML object.
 
     Keyword Args (optional):
     ------------------------
-    as_json : bool
+    as_yaml : bool
         Set this switch to True to return the list of versions
-        as a JSON object instead of printing them to stdout.
+        as a YAML object instead of printing them to stdout.
         Default value: False
 
     Example:
@@ -42,10 +42,10 @@ def show_versions(as_json=False):
         if versions[modname] is None:
             del versions[modname]
 
-    # If as_json is True, return a JSON of the version numbers
+    # If as_yaml is True, return a YAML of the version numbers
     # of each module.  Otherwise print this info to stdout.
-    if as_json:
-        return json.dumps(versions)
+    if as_yaml:
+        return yaml.dump(versions)
     else:
         print('\nSYSTEM INFORMATION')
         print('------------------')
@@ -78,8 +78,8 @@ def get_version_number(modname):
 
     Example:
     --------
-    >>> import json
-    >>> print(get_version_number('json')
+    >>> import yaml
+    >>> print(get_version_number('yaml')
     >>> 2.0.9
     '''
 
