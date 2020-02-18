@@ -2,11 +2,7 @@ AODDust: Column_AOD_Dust
 AODHyg550nm_BCPI: Column_AOD_BCPI
 AODHyg550nm_OCPI: Column_AOD_OCPI
 AODHyg550nm_SALA: Column_AOD_SALA
-AODHyg550nm_SALAAL: Column_AOD_SALAAL
-AODHyg550nm_SALACL: Column_AOD_SALACL
 AODHyg550nm_SALC: Column_AOD_SALC
-AODHyg550nm_SALCAL: Column_AOD_SALCAL
-AODHyg550nm_SALCCL: Column_AOD_SALCCLL
 AODHyg550nm_SO4: Column_AOD_SO4
 AODPolarStratCloud550nm: Column_AOD_Polar_Strat_Cloud
 AODSOAfromAqIsoprene550nm: Column_AOD_SOA_from_Aqueous_ISOP
