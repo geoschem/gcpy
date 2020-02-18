@@ -2792,19 +2792,33 @@ def make_benchmark_conc_plots(
         refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Ref file: {}".format(ref))
-    refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
 
     # Dev dataset
     try:
         devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
-    devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
 
+    # If Rn222 is present, this is a TransportTracers benchmark,
+    # so we can skip the lumped species definitions.
+    TransportTracers = 'SpeciesConc_Rn222' in refds.data_vars.keys() or \
+                       'SpeciesConc_Rn222' in devds.data_vars.keys()
+    
+    # Don't add lumped species if this is a TransportTracers benchmark
+    # (this is kludgey but it works for now. (bmy, 2/18/20)
+    if TransportTracers:
+        restrict_cats = ['Radionuclides', 'PassiveTracers']
+    else:
+        refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
+        devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
+
+    # Get the list of species categories
     catdict = get_species_categories()
-
+    print(restrict_cats)
+    
     archive_species_categories(dst)
-    core.archive_lumped_species_definitions(dst)
+    if not TransportTracers:
+        core.archive_lumped_species_definitions(dst)
 
     # Make sure that Ref and Dev datasets have the same variables.
     # Variables that are in Ref but not in Dev will be added to Dev
@@ -2822,6 +2836,10 @@ def make_benchmark_conc_plots(
     
     def createplots(i, filecat):
 
+        # Suppress harmless run-time warnings from all threads
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        warnings.filterwarnings('ignore', category=UserWarning)
+        
         # If restrict_cats list is passed,
         # skip all categories except those in the list
         if restrict_cats and filecat not in restrict_cats:
@@ -2843,7 +2861,8 @@ def make_benchmark_conc_plots(
         for subcat in catdict[filecat]:
             for spc in catdict[filecat][subcat]:
                 varname = "SpeciesConc_" + spc
-                if varname not in refds.data_vars or varname not in devds.data_vars:
+                if varname not in refds.data_vars or \
+                   varname not in devds.data_vars:
                     warninglist.append(varname)
                     continue
                 varlist.append(varname)
@@ -2975,7 +2994,11 @@ def make_benchmark_conc_plots(
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
             )
-    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) for i, filecat in enumerate(catdict))
+
+    # Create the plots in parallel
+    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) \
+                              for i, filecat in enumerate(catdict))
+    
     # ==============================================================
     # Write the list of species having significant differences,
     # which we need to fill out the benchmark approval forms.
@@ -3012,7 +3035,352 @@ def make_benchmark_conc_plots(
                             print(file=f)
                         f.close()
 
-                            
+def make_benchmark_wetdep_plots(
+    ref,
+    refstr,
+    dev,
+    devstr,
+    dst="./1mo_benchmark",
+    subdst=None,
+    overwrite=False,
+    verbose=False,
+    collection='WetLossConv',
+    plots=["sfc", "500hpa", "zonalmean"],
+    use_cmap_RdBu=False,
+    log_color_scale=False,
+    sigdiff_files=None,
+    n_job=-1
+):
+    """
+    Creates PDF files containing plots of wet deposition fluxes
+    for model benchmarking purposes.
+
+    Args:
+    -----
+        ref: str
+            Path name for the "Ref" (aka "Reference") data set.
+
+        refstr : str
+            A string to describe ref (e.g. version number)
+
+        dev : str
+            Path name for the "Dev" (aka "Development") data set.
+            This data set will be compared against the "Reference"
+            data set.
+
+        devstr : str
+            A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str
+            A string denoting the destination folder where a PDF
+            file containing plots will be written.
+            Default value: ./1mo_benchmark
+
+        subdst : str
+            A string denoting the sub-directory of dst where PDF
+            files containing plots will be written.  In practice,
+            subdst is only needed for the 1-year benchmark output,
+            and denotes a date string (such as "Jan2016") that
+            corresponds to the month that is being plotted.
+            Default value: None
+
+        overwrite : boolean
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False.
+
+        verbose : boolean
+            Set this flag to True to print extra informational output.
+            Default value: False.
+
+        collection : str
+            Specifies WetLossConv (default) or WetLossLS.
+
+        plots : list of strings
+            List of plot types to create.
+            Default value: ['sfc', '500hpa', 'zonalmean']
+
+        log_color_scale: boolean         
+            Set this flag to True to enable plotting data (not diffs)
+            on a log color scale.
+            Default value: False
+
+        sigdiff_files : list of str
+            Filenames that will contain the lists of species having
+            significant differences in the 'sfc', '500hpa', and
+            'zonalmean' plots.  These lists are needed in order to
+            fill out the benchmark approval forms.
+            Default value: None
+    """
+
+    # NOTE: this function could use some refactoring;
+    # abstract processing per category?
+
+    # ==================================================================
+    # Initialization and data read
+    # ==================================================================
+    if os.path.isdir(dst) and not overwrite:
+        print(
+            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
+                dst
+            )
+        )
+        return
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+
+    # Define extra title text (usually a date string)
+    # for the top-title of the plot
+    if subdst is not None:
+        extra_title_txt = subdst
+    else:
+        extra_title_txt = None
+
+    # Ref dataset
+    try:
+        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
+    except FileNotFoundError:
+        raise FileNotFoundError("Could not find Ref file: {}".format(ref))
+
+    # Dev dataset
+    try:
+        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
+    except FileNotFoundError:
+        raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
+
+    # Get the list of species categories
+    catdict = get_species_categories()
+    archive_species_categories(dst)
+
+    # Collection name
+    collection_prefix = collection + "_"
+
+    # Restrict categories to this collection
+    restrict_cats = [collection]
+    
+    # Make sure that Ref and Dev datasets have the same variables.
+    # Variables that are in Ref but not in Dev will be added to Dev
+    # with all missing values (NaNs). And vice-versa.
+    [refds, devds] = add_missing_variables(refds, devds)
+
+    # ==============================<====================================
+    # Create the plots!
+    # ==================================================================
+
+    #Use dictionaries to maintain order of significant difference categories
+    dict_sfc = {}
+    dict_500 = {}
+    dict_zm = {}
+    
+    def createplots(i, filecat):
+
+        # Suppress harmless run-time warnings from all threads
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        warnings.filterwarnings('ignore', category=UserWarning)
+        
+        # If restrict_cats list is passed,
+        # skip all categories except those in the list
+        if restrict_cats and filecat not in restrict_cats:
+            return
+
+        # Create a directory for each category.
+        # If subdst is passed, then create a subdirectory in each
+        # category directory (e.g. as for the 1-year benchmark).
+        catdir = os.path.join(dst, filecat)
+        if not os.path.isdir(catdir):
+            os.mkdir(catdir)
+        if subdst is not None:
+            catdir = os.path.join(catdir, subdst)
+            if not os.path.isdir(catdir):
+                os.mkdir(catdir)
+
+        varlist = []
+        warninglist = []
+        for spc in catdict[filecat]:
+            varname = collection_prefix + spc
+            if varname not in refds.data_vars or \
+               varname not in devds.data_vars:
+                warninglist.append(varname)
+                continue
+            varlist.append(varname)
+        if warninglist != []:
+            print(
+                "\n\nWarning: variables in {} category not in dataset: {}".format(
+                    filecat, warninglist
+                )
+            )
+        
+        # -----------------------
+        # Surface plots
+        # -----------------------
+        if "sfc" in plots:
+
+            if subdst is not None:
+                pdfname = os.path.join(
+                    catdir, "{}_Surface_{}.pdf".format(filecat, subdst)
+                )
+            else:
+                pdfname = os.path.join(catdir, "{}_Surface.pdf".format(filecat))
+
+            diff_sfc = []
+            compare_single_level(
+                refds,
+                refstr,
+                devds,
+                devstr,
+                varlist=varlist,
+                ilev=0,
+                pdfname=pdfname,
+                use_cmap_RdBu=use_cmap_RdBu,
+                log_color_scale=log_color_scale,
+                extra_title_txt=extra_title_txt,
+                sigdiff_list=diff_sfc
+            )
+            diff_sfc[:] = [v.replace(collection_prefix, "") for v in diff_sfc]
+            dict_sfc[filecat] = diff_sfc
+            add_bookmarks_to_pdf(pdfname, varlist,
+                                 remove_prefix=collection_prefix,
+                                 verbose=verbose
+            )
+            
+        # -----------------------
+        # 500 hPa plots
+        # -----------------------
+        if "500hpa" in plots:
+
+            if subdst is not None:
+                pdfname = os.path.join(
+                    catdir, "{}_500hPa_{}.pdf".format(filecat, subdst)
+                )
+            else:
+                pdfname = os.path.join(catdir, "{}_500hPa.pdf".format(filecat))
+
+            diff_500 = []
+            compare_single_level(
+                refds,
+                refstr,
+                devds,
+                devstr,
+                varlist=varlist,
+                ilev=22,
+                pdfname=pdfname,
+                use_cmap_RdBu=use_cmap_RdBu,
+                log_color_scale=log_color_scale,
+                extra_title_txt=extra_title_txt,
+                sigdiff_list=diff_500,
+            )
+            diff_500[:] = [v.replace(collection_prefix, "") for v in diff_500]
+            dict_500[filecat] = diff_500
+            add_bookmarks_to_pdf(pdfname, varlist,
+                                 remove_prefix=collection_prefix,
+                                 verbose=verbose
+            )
+
+        # -----------------------
+        # Zonal mean plots
+        # -----------------------
+        if "zonalmean" in plots or "zm" in plots:
+
+            if subdst is not None:
+                pdfname = os.path.join(
+                    catdir, "{}_FullColumn_ZonalMean_{}.pdf".format(filecat, subdst)
+                )
+            else:
+                pdfname = os.path.join(
+                    catdir, "{}_FullColumn_ZonalMean.pdf".format(filecat)
+                )
+
+            diff_zm = []
+            compare_zonal_mean(
+                refds,
+                refstr,
+                devds,
+                devstr,
+                varlist=varlist,
+                pdfname=pdfname,
+                use_cmap_RdBu=use_cmap_RdBu,
+                log_color_scale=log_color_scale,
+                extra_title_txt=extra_title_txt,
+                sigdiff_list=diff_zm
+            )
+            diff_zm[:] = [v.replace(collection_prefix, "") for v in diff_zm]
+            dict_zm = diff_zm
+            add_bookmarks_to_pdf(pdfname, varlist,
+                                 remove_prefix=collection_prefix,
+                                 verbose=verbose
+            )
+
+            # Strat_ZonalMean plots will use a log-pressure Y-axis, with
+            # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
+            if subdst is not None:
+                pdfname = os.path.join(
+                    catdir, "{}_Strat_ZonalMean_{}.pdf".format(filecat, subdst)
+                )
+            else:
+                pdfname = os.path.join(catdir, "{}_Strat_ZonalMean.pdf".format(
+                    filecat))
+
+            compare_zonal_mean(
+                refds,
+                refstr,
+                devds,
+                devstr,
+                varlist=varlist,
+                pdfname=pdfname,
+                use_cmap_RdBu=use_cmap_RdBu,
+                pres_range=[1, 100],
+                log_yaxis=True,
+                extra_title_txt=extra_title_txt,
+                log_color_scale=log_color_scale
+            )
+            add_bookmarks_to_pdf(pdfname, varlist,
+                                 remove_prefix=collection_prefix,
+                                 verbose=verbose
+            )
+
+    # Create plots in parallel
+    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) \
+                              for i, filecat in enumerate(catdict))
+        
+    # ==============================================================
+    # Write the list of species having significant differences,
+    # which we need to fill out the benchmark approval forms.
+    # ==============================================================
+    if sigdiff_files != None:
+        for filename in sigdiff_files:
+            if "sfc" in plots:
+                if "sfc" in filename:
+                    with open(filename, "a+") as f:
+                        for c, diff_list in dict_sfc.items():
+                            print("* {}: ".format(c), file=f, end="")
+                            for v in diff_list:
+                                print("{} ".format(v), file=f, end="")
+                            print(file=f)
+                        f.close()
+
+            if "500hpa" in plots:
+                if "500hpa" in filename:
+                    with open(filename, "a+") as f:
+                        for c, diff_list in dict_500.items():
+                            print("* {}: ".format(c), file=f, end="")
+                            for v in diff_list:
+                                print("{} ".format(v), file=f, end="")
+                            print(file=f)
+                        f.close()
+
+            if "zonalmean" in plots or "zm" in plots:
+                if "zonalmean" in filename or "zm" in filename:
+                    with open(filename, "a+") as f:
+                        for c, diff_list in dict_zm.items():
+                            print("* {}: ".format(c), file=f, end="")
+                            for v in diff_list:
+                                print("{} ".format(v), file=f, end="")
+                            print(file=f)
+                        f.close()
+
+
 def make_benchmark_emis_plots(
     ref,
     refstr,
@@ -3203,7 +3571,8 @@ def make_benchmark_emis_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
         )
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="Emis", verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix="Emis", verbose=verbose)
         return
 
     # Get emissions variables (non-inventory), categories, and species
@@ -3721,7 +4090,8 @@ def make_benchmark_jvalue_plots(
     # Surface plots
     if "sfc" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}Surface_{}.pdf".format(prefix, subdst))
+            pdfname = os.path.join(jvdir, "{}Surface_{}.pdf".format(prefix,
+                                                                    subdst))
         else:
             pdfname = os.path.join(jvdir, "{}Surface.pdf".format(prefix))
 
@@ -3741,7 +4111,8 @@ def make_benchmark_jvalue_plots(
             sigdiff_list=diff_sfc,
         )
         diff_sfc[:] = [v.replace(prefix, "") for v in diff_sfc]
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
     # 500hPa plots
     if "500hpa" in plots:
@@ -3766,7 +4137,8 @@ def make_benchmark_jvalue_plots(
             sigdiff_list=diff_500,
         )
         diff_500[:] = [v.replace(prefix, "") for v in diff_500]
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
     # Full-column zonal mean plots
     if "zonalmean" in plots:
@@ -3775,7 +4147,8 @@ def make_benchmark_jvalue_plots(
                 jvdir, "{}FullColumn_ZonalMean_{}.pdf".format(prefix, subdst)
             )
         else:
-            pdfname = os.path.join(jvdir, "{}FullColumn_ZonalMean.pdf".format(prefix))
+            pdfname = os.path.join(jvdir, "{}FullColumn_ZonalMean.pdf".format(
+                prefix))
 
         diff_zm = []
         compare_zonal_mean(
@@ -3792,7 +4165,8 @@ def make_benchmark_jvalue_plots(
             sigdiff_list=diff_zm,
         )
         diff_zm[:] = [v.replace(prefix, "") for v in diff_zm]
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
         # Strat_ZonalMean plots will use a log-pressure Y-axis, with
         # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
@@ -3817,7 +4191,8 @@ def make_benchmark_jvalue_plots(
             extra_title_txt=extra_title_txt,
             log_color_scale=log_color_scale,
         )
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
         # ==============================================================
         # Write the lists of J-values that have significant differences,
@@ -4420,6 +4795,10 @@ def make_benchmark_budget_tables(
     #for region in budget_regions:
     def createfile(region):
 
+        # Suppress harmless run-time warnings from all threads
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        warnings.filterwarnings('ignore', category=UserWarning)        
+        
         # Destination file
         file_budget = os.path.join(budgetdir, "Budget_" + region + ".txt")
 
@@ -4439,8 +4818,11 @@ def make_benchmark_budget_tables(
             template="Budget_{}",
         )
         
-    Parallel(n_jobs = n_job) (delayed(createfile)(region) for region in budget_regions)
+    # Create budget tables in parallel
+    Parallel(n_jobs = n_job) (delayed(createfile)(region) \
+                              for region in budget_regions)
 
+    
 def make_benchmark_oh_metrics(
     reflist,
     refstr,
@@ -4778,7 +5160,8 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
     for i, varname in enumerate(varlist):
         bookmarkname = varname.replace(remove_prefix, "")
         if verbose:
-            print("Adding bookmark for {} with name {}".format(varname, bookmarkname))
+            print("Adding bookmark for {} with name {}".format(
+                varname, bookmarkname))
         output.addPage(input.getPage(i))
         output.addBookmark(bookmarkname, i)
         output.setPageMode("/UseOutlines")
@@ -4793,6 +5176,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
     os.rename(pdfname_tmp, pdfname)
     pdfobj.close()
 
+    
 def add_nested_bookmarks_to_pdf(
     pdfname, category, catdict, warninglist, remove_prefix=""
 ):
@@ -4888,6 +5272,7 @@ def add_nested_bookmarks_to_pdf(
     # Rename temp file with the target name
     os.rename(pdfname_tmp, pdfname)
     pdfobj.close()
+
 
 def add_missing_variables(refdata, devdata, **kwargs):
     """
@@ -5017,7 +5402,8 @@ def get_troposphere_mask(ds):
         # --------------------------------------------------------------
 
         # Create the tropmask array with dims (time, lev, lat*lon)
-        tropmask = np.ones((shape[0], shape[1], np.prod(np.array(shape[2:]))), bool)
+        tropmask = np.ones((shape[0], shape[1], np.prod(np.array(shape[2:]))),
+                           bool)
 
         # Loop over each time
         for t in range(tropmask.shape[0]):
@@ -5060,7 +5446,7 @@ def get_input_res(data):
     if "lat" in vdims and "lon" in vdims:
         lat = data.sizes["lat"]
         lon = data.sizes["lon"]
-        print("grid has lat and lon: ", vdims)
+#        print("grid has lat and lon: ", vdims)
         if lat == 46 and lon == 72:
             return "4x5", "ll"
         elif lat == 91 and lon == 144:
@@ -5076,12 +5462,14 @@ def get_input_res(data):
         #GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return data.dims["Xdim"], "cs"    
 
+
 def call_make_grid(res, gridtype, zonal_mean, comparison):
     #call appropriate make_grid function and return new grid
     if gridtype == "ll" or (zonal_mean and comparison):
         return [make_grid_LL(res), None]
     else:
         return make_grid_CS(res)
+
 
 def check_units(refdata, devdata, varname):
     # If units are mol/mol then convert to ppb
@@ -5121,6 +5509,7 @@ def check_units(refdata, devdata, varname):
 
     return units_ref, units_dev
 
+
 def reshape_MAPL_CS(ds, vdims):
     #Reshape cubed sphere data if using MAPL v1.0.0+
     if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
@@ -5131,6 +5520,7 @@ def reshape_MAPL_CS(ds, vdims):
         else:
             ds = ds.transpose("lat", "lon")
     return ds
+
 
 def all_zero_or_nan(ds):
     #Return whether ds is all zeros, or all nans
