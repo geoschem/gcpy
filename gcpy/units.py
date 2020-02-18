@@ -191,10 +191,10 @@ def convert_units(
     --------
         >>> import.gcpy
         >>> import xarray as xr
-        >>> import json
+        >>> import yaml
         >>> ds = xr.open_dataset("myfile.nc")
         >>> dr = ds["CO"]
-        >>> properties = json.load(open(species_database.json))
+        >>> properties = yaml.load(open(species_database.yaml))
         >>> dr_new = convert_units(dr, "CO", properties.get("CO"),
                      "Tg", interval=86400.0, ds["AREA"])
 
@@ -233,7 +233,7 @@ def convert_units(
         )
     if "g" in target_units and mw_g is None:
         raise ValueError(
-            "Conversion from {} to {} for {} requires MW_g definition in species_database.json".format(
+            "Conversion from {} to {} for {} requires MW_g definition in species_database.yaml".format(
                 units, target_units, species_name
             )
         )
