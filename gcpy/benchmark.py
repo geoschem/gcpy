@@ -27,11 +27,11 @@ from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
 import warnings
 
-#Save warnings format to undo overwriting built into PyPDF2
+# Save warnings format to undo overwriting built into PyPDF2
 warning_format = warnings.showwarning
 
-#Suppress numpy divide by zero warnings to prevent output spam
-np.seterr(divide='ignore', invalid='ignore')
+# Suppress numpy divide by zero warnings to prevent output spam
+np.seterr(divide="ignore", invalid="ignore")
 
 # YAML files
 aod_spc = "aod_species.yml"
@@ -40,34 +40,35 @@ emission_spc = "emission_species.yml"
 emission_inv = "emission_inventories.yml"
 
 
-def sixplot(plot_type,
-            all_zero,
-            all_nan,
-            plot_val,
-            grid,
-            ax,
-            rowcol,
-            title,
-            comap,
-            unit,
-            extent,
-            masked_data,
-            other_all_nan,
-            gridtype,
-            vmins,
-            vmaxs,
-            use_cmap_RdBu,
-            match_cbar,
-            verbose,
-            log_color_scale,
-            pedge=None,
-            pedge_ind=0,
-            log_yaxis=False,
-            xtick_positions=[],
-            xticklabels=[]
-            ):
+def sixplot(
+    plot_type,
+    all_zero,
+    all_nan,
+    plot_val,
+    grid,
+    ax,
+    rowcol,
+    title,
+    comap,
+    unit,
+    extent,
+    masked_data,
+    other_all_nan,
+    gridtype,
+    vmins,
+    vmaxs,
+    use_cmap_RdBu,
+    match_cbar,
+    verbose,
+    log_color_scale,
+    pedge=None,
+    pedge_ind=0,
+    log_yaxis=False,
+    xtick_positions=[],
+    xticklabels=[],
+):
 
-    '''
+    """
     Plotting function to be called from compare_single_level or compare_zonal_mean.
     Can also be called on its own
     WBD MOVE TO core.py and RENAME?
@@ -150,16 +151,17 @@ def sixplot(plot_type,
 
     xtick_labels: list of str
        Labels for lat/lon ticks
-    '''
+    """
+
     # Set min and max of the data range
-    if plot_type in ('ref', 'dev'):
+    if plot_type in ("ref", "dev"):
         if all_zero or all_nan:
-            if plot_type is 'ref':
+            if plot_type is "ref":
                 [vmin, vmax] = [vmins[0], vmaxs[0]]
             else:
                 [vmin, vmax] = [vmins[1], vmaxs[1]]
         elif use_cmap_RdBu:
-            if plot_type is 'ref':
+            if plot_type is "ref":
                 if match_cbar and (not other_all_nan):
                     absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
                 else:
@@ -170,7 +172,7 @@ def sixplot(plot_type,
                 else:
                     absmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
         else:
-            if plot_type is 'ref':
+            if plot_type is "ref":
                 if match_cbar and (not other_all_nan):
                     [vmin, vmax] = [vmins[2], vmaxs[2]]
                 else:
@@ -186,46 +188,63 @@ def sixplot(plot_type,
         elif all_nan:
             [vmin, vmax] = [np.nan, np.nan]
         else:
-            if plot_type is 'dyn_abs_diff':
+            if plot_type is "dyn_abs_diff":
                 # Min and max of abs. diff, excluding NaNs
-                diffabsmax = max([np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))])
+                diffabsmax = max(
+                    [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+                )
                 [vmin, vmax] = [-diffabsmax, diffabsmax]
-            elif plot_type is 'res_abs_diff':
-                [pct5, pct95] = [np.percentile(plot_val, 5), np.percentile(plot_val, 95)]
+            elif plot_type is "res_abs_diff":
+                [pct5, pct95] = [
+                    np.percentile(plot_val, 5),
+                    np.percentile(plot_val, 95),
+                ]
                 abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
                 [vmin, vmax] = [-abspctmax, abspctmax]
-            elif plot_type is 'dyn_frac_diff':
-                fracdiffabsmax = np.max([np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))])
+            elif plot_type is "dyn_frac_diff":
+                fracdiffabsmax = np.max(
+                    [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+                )
                 [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
             else:
                 [vmin, vmax] = [-2, 2]
     if verbose:
         print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
-    #Normalize colors (put into range [0..1] for matplotlib methods)
-    if plot_type in ('ref', 'dev'):
-        norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
+
+    # Normalize colors (put into range [0..1] for matplotlib methods)
+    if plot_type in ("ref", "dev"):
+        norm = core.normalize_colors(
+            vmin, vmax, is_difference=use_cmap_RdBu,
+            log_color_scale=log_color_scale
+        )
     else:
-        norm = core.normalize_colors(vmin, vmax, is_difference = True)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
     # Create plot
     ax.set_title(title)
-    
+
     if type(masked_data) is str:
-        #Zonal mean plot
-        plot = ax.pcolormesh(grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm = norm)
+        # Zonal mean plot
+        plot = ax.pcolormesh(
+            grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm=norm
+        )
         ax.set_aspect("auto")
         ax.set_ylabel("Pressure (hPa)")
         if log_yaxis:
             ax.set_yscale("log")
-            ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda y, _: '{:g}'.format(y)))
+            ax.yaxis.set_major_formatter(
+                mticker.FuncFormatter(lambda y, _: "{:g}".format(y))
+            )
         ax.invert_yaxis()
         ax.set_xticks(xtick_positions)
-        ax.set_xticklabels(xticklabels)        
+        ax.set_xticklabels(xticklabels)
 
     elif gridtype == "ll":
         ax.coastlines()
-        #Create a lon/lat plot
-        plot = ax.imshow(plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm)
+        # Create a lon/lat plot
+        plot = ax.imshow(
+            plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm
+        )
     else:
         ax.coastlines()
         for j in range(6):
@@ -233,16 +252,16 @@ def sixplot(plot_type,
                 grid["lon_b"][j, :, :],
                 grid["lat_b"][j, :, :],
                 masked_data[j, :, :],
-                transform = ccrs.PlateCarree(),
+                transform=ccrs.PlateCarree(),
                 cmap=comap,
-                norm = norm
+                norm=norm,
             )
-            
+
     # Define the colorbar for the plot
-    cb = plt.colorbar(plot, ax=ax, orientation = "horizontal", pad = 0.10)
+    cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
     cb.mappable.set_norm(norm)
     if all_zero or all_nan:
-        if plot_type in ('ref', 'dev'):
+        if plot_type in ("ref", "dev"):
             if use_cmap_RdBu:
                 cb.set_ticks([0.0])
             else:
@@ -254,15 +273,15 @@ def sixplot(plot_type,
         else:
             cb.set_ticklabels(["Zero throughout domain"])
     else:
-        if plot_type in ('ref', 'dev') and log_color_scale:
+        if plot_type in ("ref", "dev") and log_color_scale:
             cb.formatter = mticker.LogFormatter(base=10)
         else:
             if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
-                
+
     cb.update_ticks()
     cb.set_label(unit)
-            
+
 
 def compare_single_level(
     refdata,
@@ -398,7 +417,7 @@ def compare_single_level(
         >>> benchmark.compare_single_level( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
         >>> plt.show()
     """
-    warnings.showwarning=warning_format
+    warnings.showwarning = warning_format
     # TODO: refactor this function and zonal mean plot function.
     # There is a lot of overlap and repeated code that could be abstracted.
     # Error check arguments
@@ -426,7 +445,7 @@ def compare_single_level(
         savepdf = False
     # Cleanup previous temp PDFs
     for i in range(n_var):
-        try:            
+        try:
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         except:
             continue
@@ -472,12 +491,12 @@ def compare_single_level(
     regridref = refres != cmpres
     regriddev = devres != cmpres
     regridany = regridref or regriddev
-    
+
     # =================================================================
     # Make grids (ref, dev, and comparison)
-    # =================================================================        
+    # =================================================================
 
-    [refgrid, regrid_list]  = call_make_grid(refres, refgridtype, False, False)
+    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, False, False)
     [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, False, False)
     [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, False, True)
 
@@ -536,13 +555,13 @@ def compare_single_level(
     else:
         cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = None, None, None, None
 
-    ds_refs = [None]*n_var
-    ds_devs = [None]*n_var
+    ds_refs = [None] * n_var
+    ds_devs = [None] * n_var
     for i in range(n_var):
         # ==============================================================
         # Slice the data, allowing for the
         # possibility of no time dimension (bpch)
-        # ==============================================================        
+        # ==============================================================
         varname = varlist[i]
         units_ref, units_dev = check_units(refdata, devdata, varname)
         # Ref
@@ -586,10 +605,8 @@ def compare_single_level(
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
 
-            
-            
-    ds_ref_cmps = [None]*n_var
-    ds_dev_cmps = [None]*n_var
+    ds_ref_cmps = [None] * n_var
+    ds_dev_cmps = [None] * n_var
     for i in range(n_var):
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
@@ -604,10 +621,10 @@ def compare_single_level(
                 ds_ref_reshaped = ds_ref.data.reshape(6, refres, refres)
                 for j in range(6):
                     regridder = refregridder_list[j]
-                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])        
+                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])
         else:
             ds_ref_cmps[i] = ds_ref
-            
+
         # Dev
         if regriddev:
             if devgridtype == "ll":
@@ -622,7 +639,7 @@ def compare_single_level(
                     ds_dev_cmps[i] += regridder(ds_dev_reshaped[j])
         else:
             ds_dev_cmps[i] = ds_dev
-        
+
     # =================================================================
     # Create pdf if saving to file
     # =================================================================
@@ -636,24 +653,23 @@ def compare_single_level(
     # Loop over variables
     # =================================================================
 
-    
     print_units_warning = True
 
-    #This loop is written as a function so it can be called in parallel
+    # This loop is written as a function so it can be called in parallel
     def createfig(ivar):
-        
+
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
 
-        #Convert mol/mol units to ppb and ensure ref and dev units match
+        # Convert mol/mol units to ppb and ensure ref and dev units match
         units_ref, units_dev = check_units(refdata, devdata, varname)
-        
+
         ds_ref = ds_refs[ivar]
         ds_dev = ds_devs[ivar]
-                
+
         # ==============================================================
         # Area normalization, if any
         # ==============================================================
@@ -670,7 +686,7 @@ def compare_single_level(
         # by area below. GEOS-Chem Classic output files include area and so
         # do not need to be passed.
         exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
-        if regridany and (units in ('kg', 'kgC') or normalize_by_area):
+        if regridany and (units in ("kg", "kgC") or normalize_by_area):
             if not any(s in varname for s in exclude_list):
                 if (
                     "AREAM2" in refdata.data_vars.keys()
@@ -699,7 +715,7 @@ def compare_single_level(
         ds_dev_reshaped = None
         if devgridtype == "cs":
             ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
-            
+
         ds_ref_cmp = ds_ref_cmps[ivar]
         ds_dev_cmp = ds_dev_cmps[ivar]
 
@@ -712,7 +728,7 @@ def compare_single_level(
         # Get min and max values for use in the colorbars
         # ==============================================================
 
-        #WBD MOVE TO FUNCTION
+        # WBD MOVE TO FUNCTION
 
         # Ref
         vmin_ref = float(ds_ref.data.min())
@@ -760,7 +776,7 @@ def compare_single_level(
         # This will have implications as to how we set min and max
         # values for the color ranges below.
         # ==============================================================
-        
+
         ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref.values)
         dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev.values)
 
@@ -794,9 +810,10 @@ def compare_single_level(
         fracdiff = np.where(fracdiff == np.inf, np.nan, fracdiff)
 
         # Test if the frac. diff. is zero everywhere or NaN everywhere
-        fracdiff_is_all_zero = absdiff_is_all_zero or (not np.any(fracdiff) and not ref_is_all_zero)
+        fracdiff_is_all_zero = absdiff_is_all_zero or (
+            not np.any(fracdiff) and not ref_is_all_zero
+        )
         fracdiff_is_all_nan = np.isnan(fracdiff).all() or ref_is_all_zero
-
 
         # Absolute max value of fracdiff, excluding NaNs
         fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
@@ -805,7 +822,6 @@ def compare_single_level(
         # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
         if cmpgridtype == "cs":
             fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, fracdiff)
-
 
         # ==============================================================
         # Create 3x2 figure
@@ -818,7 +834,7 @@ def compare_single_level(
         )
         # Ensure subplots don't overlap when invoking plt.show()
         if not savepdf:
-            plt.subplots_adjust(hspace = 0.4)
+            plt.subplots_adjust(hspace=0.4)
         # Give the figure a title
         offset = 0.96
         fontsize = 25
@@ -883,7 +899,7 @@ def compare_single_level(
                 dev_cmap = cmap_toprow_gray
             else:
                 dev_cmap = cmap_toprow_nongray
-                
+
         # Colormaps for 2nd row (Abs. Diff.) and 3rd row (Frac. Diff,)
         cmap_nongray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray = copy.copy(mpl.cm.RdBu_r)
@@ -896,11 +912,11 @@ def compare_single_level(
             ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
             dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
             cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
-        
+
         # ==============================================================
         # Set titles for plots
         # ==============================================================
-        
+
         if refgridtype == "ll":
             ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
             dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
@@ -909,16 +925,24 @@ def compare_single_level(
             dev_title = "{} (Dev){}\nc{}".format(devstr, subtitle_extra, devres)
 
         if regridany:
-            absdiff_dynam_title  = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
-            absdiff_fixed_title  = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
-            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(cmpres)
-            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)     
+            absdiff_dynam_title = "Difference ({})\nDev - Ref, Dynamic Range".format(
+                cmpres
+            )
+            absdiff_fixed_title = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
+                cmpres
+            )
+            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
+                cmpres
+            )
+            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(
+                cmpres
+            )
         else:
-            absdiff_dynam_title  = "Difference\nDev - Ref, Dynamic Range"
-            absdiff_fixed_title  = "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
+            absdiff_fixed_title = "Difference\nDev - Ref, Restricted Range [5%,95%]"
             fracdiff_dynam_title = "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
             fracdiff_fixed_title = "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
-                    
+
         # ==============================================================
         # Bundle variables for 6 parallel plotting calls
         # 0 = Ref                 1 = Dev
@@ -926,85 +950,124 @@ def compare_single_level(
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        plot_types = ['ref',                     'dev',
-                      'dyn_abs_diff',   'res_abs_diff',
-                      'dyn_frac_diff', 'frac_abs_diff']
-        
-        all_zeros = [ref_is_all_zero,           dev_is_all_zero,
-                     absdiff_is_all_zero,   absdiff_is_all_zero,
-                     fracdiff_is_all_zero, fracdiff_is_all_zero]
+        plot_types = [
+            "ref",
+            "dev",
+            "dyn_abs_diff",
+            "res_abs_diff",
+            "dyn_frac_diff",
+            "frac_abs_diff",
+        ]
 
-        all_nans  = [ref_is_all_nan,             dev_is_all_nan,
-                     absdiff_is_all_nan,     absdiff_is_all_nan,
-                     fracdiff_is_all_nan,   fracdiff_is_all_nan]
+        all_zeros = [
+            ref_is_all_zero,
+            dev_is_all_zero,
+            absdiff_is_all_zero,
+            absdiff_is_all_zero,
+            fracdiff_is_all_zero,
+            fracdiff_is_all_zero,
+        ]
 
-        extents = [ref_extent, dev_extent,
-                   cmp_extent, cmp_extent,
-                   cmp_extent, cmp_extent]
+        all_nans = [
+            ref_is_all_nan,
+            dev_is_all_nan,
+            absdiff_is_all_nan,
+            absdiff_is_all_nan,
+            fracdiff_is_all_nan,
+            fracdiff_is_all_nan,
+        ]
 
-        plot_vals = [ds_ref,     ds_dev,
-                     absdiff,   absdiff,
-                     fracdiff, fracdiff]
+        extents = [
+            ref_extent,
+            dev_extent,
+            cmp_extent,
+            cmp_extent,
+            cmp_extent,
+            cmp_extent,
+        ]
 
-        grids = [refgrid, devgrid,
-                 cmpgrid, cmpgrid,
-                 cmpgrid, cmpgrid]
-        
-        axs = [ax0, ax1,
-               ax2, ax3,
-               ax4, ax5]
-        
-        rowcols = [(0,0), (0,1),
-                   (1,0), (1,1),
-                   (2,0), (2,1)]
-        
-        titles = [ref_title,                       dev_title,
-                  absdiff_dynam_title,   absdiff_fixed_title,
-                  fracdiff_dynam_title, fracdiff_fixed_title]
+        plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
+
+        grids = [refgrid, devgrid, cmpgrid, cmpgrid, cmpgrid, cmpgrid]
+
+        axs = [ax0, ax1, ax2, ax3, ax4, ax5]
+
+        rowcols = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
+
+        titles = [
+            ref_title,
+            dev_title,
+            absdiff_dynam_title,
+            absdiff_fixed_title,
+            fracdiff_dynam_title,
+            fracdiff_fixed_title,
+        ]
 
         if refgridtype == "ll":
-            cmaps = [ref_cmap,   dev_cmap,
-                     cmap_gray, cmap_gray,
-                     cmap_gray, cmap_gray]
+            cmaps = [ref_cmap, dev_cmap, cmap_gray, cmap_gray, cmap_gray, cmap_gray]
         else:
-            cmaps = [cmap_toprow_nongray,         cmap_toprow_nongray,
-                     cmap_nongray,                       cmap_nongray,
-                     cmap_nongray,                       cmap_nongray]
+            cmaps = [
+                cmap_toprow_nongray,
+                cmap_toprow_nongray,
+                cmap_nongray,
+                cmap_nongray,
+                cmap_nongray,
+                cmap_nongray,
+            ]
 
         ref_masked = None
         dev_masked = None
         if refgridtype == "cs":
-            ref_masked = np.ma.masked_where( np.abs(refgrid["lon"] - 180) < 2, ds_ref_reshaped )
+            ref_masked = np.ma.masked_where(
+                np.abs(refgrid["lon"] - 180) < 2, ds_ref_reshaped
+            )
         if devgridtype == "cs":
-            dev_masked = np.ma.masked_where( np.abs(devgrid["lon"] - 180) < 2, ds_dev_reshaped )
-        masked = [ref_masked, dev_masked,
-                  absdiff,       absdiff,
-                  fracdiff,     fracdiff]
-        
-        gridtypes = [refgridtype, devgridtype,
-                     cmpgridtype, cmpgridtype,
-                     cmpgridtype, cmpgridtype]
+            dev_masked = np.ma.masked_where(
+                np.abs(devgrid["lon"] - 180) < 2, ds_dev_reshaped
+            )
+        masked = [ref_masked, dev_masked, absdiff, absdiff, fracdiff, fracdiff]
 
-        unit_list = [units_ref,   units_dev,
-                     units,           units,
-                     "unitless", "unitless"]
+        gridtypes = [
+            refgridtype,
+            devgridtype,
+            cmpgridtype,
+            cmpgridtype,
+            cmpgridtype,
+            cmpgridtype,
+        ]
 
-        other_all_nans = [dev_is_all_nan, ref_is_all_nan,
-                          False,                   False,                          
-                          False,                   False]
+        unit_list = [units_ref, units_dev, units, units, "unitless", "unitless"]
+
+        other_all_nans = [dev_is_all_nan, ref_is_all_nan, False, False, False, False]
 
         mins = [vmin_ref, vmin_dev, vmin_abs]
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
-        #Plot 
+        # Plot
         for i in range(6):
-            sixplot(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
-                    grids[i], axs[i], rowcols[i], titles[i], cmaps[i],
-                    unit_list[i], extents[i], masked[i], other_all_nans[i],
-                    gridtypes[i], mins, maxs, use_cmap_RdBu, match_cbar, verbose, 
-                    log_color_scale)
+            sixplot(
+                plot_types[i],
+                all_zeros[i],
+                all_nans[i],
+                plot_vals[i],
+                grids[i],
+                axs[i],
+                rowcols[i],
+                titles[i],
+                cmaps[i],
+                unit_list[i],
+                extents[i],
+                masked[i],
+                other_all_nans[i],
+                gridtypes[i],
+                mins,
+                maxs,
+                use_cmap_RdBu,
+                match_cbar,
+                verbose,
+                log_color_scale,
+            )
 
-        
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(max(fracdiff)) > 0.1
@@ -1032,6 +1095,7 @@ def compare_single_level(
         #disable parallel plotting to allow interactive figure plotting
         for i in range(n_var):
             createfig(i)
+
     # ==================================================================
     # Finish
     # ==================================================================
@@ -1043,8 +1107,9 @@ def compare_single_level(
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         merge.write(pdfname)
         merge.close()
-        warnings.showwarning=warning_format
-    
+        warnings.showwarning = warning_format
+
+
 def compare_zonal_mean(
     refdata,
     refstr,
@@ -1066,7 +1131,7 @@ def compare_zonal_mean(
     log_color_scale=False,
     log_yaxis=False,
     extra_title_txt=None,
-    n_job = -1,
+    n_job=-1,
     sigdiff_list=[],
 ):
 
@@ -1274,8 +1339,10 @@ def compare_zonal_mean(
     pmid_ind_ref = pmid_ind
     pmid_ind_dev = pmid_ind
     pmid_ind_flipped = 72 - pmid_ind[::-1] - 1
-    if flip_ref: pmid_ind_ref = pmid_ind_flipped
-    if flip_dev: pmid_ind_dev = pmid_ind_flipped
+    if flip_ref:
+        pmid_ind_ref = pmid_ind_flipped
+    if flip_dev:
+        pmid_ind_dev = pmid_ind_flipped
 
     refdata = refdata.isel(lev=pmid_ind_ref)
     devdata = devdata.isel(lev=pmid_ind_dev)
@@ -1321,10 +1388,10 @@ def compare_zonal_mean(
     # Make grids (ref, dev, and comparison)
     # ==================================================================
 
-    [refgrid, regrid_list]  = call_make_grid(refres, refgridtype, True, False)
+    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, True, False)
     [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, True, False)
     [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, True, True)
-    
+
     # ==================================================================
     # Make regridders, if applicable
     # TODO: Add CS to CS regridders
@@ -1349,12 +1416,12 @@ def compare_zonal_mean(
                 devres, cmpres, weightsdir=weightsdir, reuse_weights=True
             )
 
-    ds_refs = [None]*n_var
-    ds_devs = [None]*n_var
+    ds_refs = [None] * n_var
+    ds_devs = [None] * n_var
     for i in range(n_var):
-        
         varname = varlist[i]
         units_ref, units_dev = check_units(refdata, devdata, varname)        
+
         # ==============================================================
         # Slice the data, allowing for the
         # possibility of no time dimension (bpch)
@@ -1377,7 +1444,7 @@ def compare_zonal_mean(
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
-        # ==============================================================        
+        # ==============================================================
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
 
@@ -1386,9 +1453,9 @@ def compare_zonal_mean(
             ds_refs[i].data = ds_refs[i].data[::-1, :, :]
         if flip_dev:
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
-        
-    ds_ref_cmps = [None]*n_var
-    ds_dev_cmps = [None]*n_var
+
+    ds_ref_cmps = [None] * n_var
+    ds_dev_cmps = [None] * n_var
 
     for i in range(n_var):
         # ==============================================================
@@ -1397,7 +1464,7 @@ def compare_zonal_mean(
 
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
-            
+
         # Ref
         if regridref:
             if refgridtype == "ll":
@@ -1408,7 +1475,9 @@ def compare_zonal_mean(
                 ds_ref_reshaped = ds_ref.data.reshape(nlev, 6, refres, refres).swapaxes(
                     0, 1
                 )
-                ds_ref_cmps[i] = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
+                ds_ref_cmps[i] = np.zeros(
+                    [nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
+                )
                 for j in range(6):
                     regridder = refregridder_list[j]
                     ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])
@@ -1425,13 +1494,15 @@ def compare_zonal_mean(
                 ds_dev_reshaped = ds_dev.data.reshape(nlev, 6, devres, devres).swapaxes(
                     0, 1
                 )
-                ds_dev_cmps[i] = np.zeros([nlev, cmpgrid["lat"].size, cmpgrid["lon"].size])
+                ds_dev_cmps[i] = np.zeros(
+                    [nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
+                )
                 for j in range(6):
                     regridder = devregridder_list[j]
                     ds_dev_cmps[i] += regridder(ds_dev_reshaped[j])
         else:
             ds_dev_cmps[i] = ds_dev
-    
+
     # ==================================================================
     # Create pdf, if savepdf is passed as True
     # ==================================================================
@@ -1452,7 +1523,7 @@ def compare_zonal_mean(
     # Loop over variables
     print_units_warning = True
 
-    #This loop is written as a function so it can be called in parallel
+    # This loop is written as a function so it can be called in parallel
     def createfig(ivar):
         if savepdf:
             print("{} ".format(ivar), end="")
@@ -1460,7 +1531,7 @@ def compare_zonal_mean(
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
 
-        #Convert mol/mol units to ppb and ensure ref and dev units match
+        # Convert mol/mol units to ppb and ensure ref and dev units match
         units_ref, units_dev = check_units(refdata, devdata, varname)
 
         # ==============================================================
@@ -1488,7 +1559,7 @@ def compare_zonal_mean(
         ds_dev = ds_devs[ivar]
         ds_ref_cmp = ds_ref_cmps[ivar]
         ds_dev_cmp = ds_dev_cmps[ivar]
-            
+
         # ==============================================================
         # Calculate zonal mean
         # ==============================================================
@@ -1557,7 +1628,7 @@ def compare_zonal_mean(
 
         # Test if abs. diff is zero everywhere or NaN everywhere
         absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(zm_diff)
-        
+
         # Absolute maximum difference value
         diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
 
@@ -1584,7 +1655,7 @@ def compare_zonal_mean(
         )
         # Ensure subplots don't overlap when invoking plt.show()
         if not savepdf:
-            plt.subplots_adjust(hspace = 0.4)            
+            plt.subplots_adjust(hspace=0.4)
         # Give the plot a title
         offset = 0.96
         fontsize = 25
@@ -1611,32 +1682,44 @@ def compare_zonal_mean(
         else:
             cmap1 = copy.copy(WhGrYlRd)
         cmap1.set_bad("gray")
-        
+
         cmap_plot = copy.copy(mpl.cm.RdBu_r)
         cmap_plot.set_bad(color="gray")
-        
+
         # ==============================================================
         # Set titles for plots
         # ==============================================================
-        
+
         if refgridtype == "ll":
             ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
             dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
         else:
-            ref_title = "{} (Ref){}\nc{} regridded from c{}".format(refstr, subtitle_extra, cmpres, refres)
-            dev_title = "{} (Dev){}\nc{} regridded from c{}".format(devstr, subtitle_extra, cmpres, devres)
+            ref_title = "{} (Ref){}\nc{} regridded from c{}".format(
+                refstr, subtitle_extra, cmpres, refres
+            )
+            dev_title = "{} (Dev){}\nc{} regridded from c{}".format(
+                devstr, subtitle_extra, cmpres, devres
+            )
 
         if regridany:
-            absdiff_dynam_title  = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
-            absdiff_fixed_title  = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
-            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(cmpres)
-            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(cmpres)     
+            absdiff_dynam_title = "Difference ({})\nDev - Ref, Dynamic Range".format(
+                cmpres
+            )
+            absdiff_fixed_title = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
+                cmpres
+            )
+            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
+                cmpres
+            )
+            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(
+                cmpres
+            )
         else:
-            absdiff_dynam_title  = "Difference\nDev - Ref, Dynamic Range"
-            absdiff_fixed_title  = "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
+            absdiff_fixed_title = "Difference\nDev - Ref, Restricted Range [5%,95%]"
             fracdiff_dynam_title = "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
             fracdiff_fixed_title = "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
-                    
+
         # ==============================================================
         # Bundle variables for 6 parallel plotting calls
         # 0 = Ref                 1 = Dev
@@ -1644,79 +1727,105 @@ def compare_zonal_mean(
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        plot_types = ['ref',                     'dev',
-                      'dyn_abs_diff',   'res_abs_diff',
-                      'dyn_frac_diff', 'res_frac_diff']
-        
-        all_zeros = [ref_is_all_zero,           dev_is_all_zero,
-                     absdiff_is_all_zero,   absdiff_is_all_zero,
-                     fracdiff_is_all_zero, fracdiff_is_all_zero]
+        plot_types = [
+            "ref",
+            "dev",
+            "dyn_abs_diff",
+            "res_abs_diff",
+            "dyn_frac_diff",
+            "res_frac_diff",
+        ]
 
-        all_nans  = [ref_is_all_nan,             dev_is_all_nan,
-                     absdiff_is_all_nan,     absdiff_is_all_nan,
-                     fracdiff_is_all_nan,   fracdiff_is_all_nan]
+        all_zeros = [
+            ref_is_all_zero,
+            dev_is_all_zero,
+            absdiff_is_all_zero,
+            absdiff_is_all_zero,
+            fracdiff_is_all_zero,
+            fracdiff_is_all_zero,
+        ]
 
-        plot_vals = [zm_ref,     zm_dev,
-                     zm_diff,   zm_diff,
-                     zm_fracdiff, zm_fracdiff]
-        
-        axs = [ax0, ax1,
-               ax2, ax3,
-               ax4, ax5]
-        
-        cmaps = [cmap1,         cmap1,
-                 cmap_plot, cmap_plot,
-                 cmap_plot, cmap_plot]
+        all_nans = [
+            ref_is_all_nan,
+            dev_is_all_nan,
+            absdiff_is_all_nan,
+            absdiff_is_all_nan,
+            fracdiff_is_all_nan,
+            fracdiff_is_all_nan,
+        ]
 
-        rowcols = [(0,0), (0,1),
-                   (1,0), (1,1),
-                   (2,0), (2,1)]
-        
-        titles = [ref_title,                       dev_title,
-                  absdiff_dynam_title,   absdiff_fixed_title,
-                  fracdiff_dynam_title, fracdiff_fixed_title]
+        plot_vals = [zm_ref, zm_dev, zm_diff, zm_diff, zm_fracdiff, zm_fracdiff]
 
+        axs = [ax0, ax1, ax2, ax3, ax4, ax5]
 
-        grids = [refgrid, devgrid,
-                 cmpgrid, cmpgrid,
-                 cmpgrid, cmpgrid]
-        
+        cmaps = [cmap1, cmap1, cmap_plot, cmap_plot, cmap_plot, cmap_plot]
+
+        rowcols = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
+
+        titles = [
+            ref_title,
+            dev_title,
+            absdiff_dynam_title,
+            absdiff_fixed_title,
+            fracdiff_dynam_title,
+            fracdiff_fixed_title,
+        ]
+
+        grids = [refgrid, devgrid, cmpgrid, cmpgrid, cmpgrid, cmpgrid]
+
         if refgridtype != "ll":
             grids[0] = cmpgrid
         if devgridtype != "ll":
             grids[1] = cmpgrid
-        
-        extents = [None, None,
-                   None, None,
-                   None, None]
 
-        masked = ['ZM', 'ZM',
-                  'ZM', 'ZM',
-                  'ZM', 'ZM']
+        extents = [None, None, None, None, None, None]
 
-        unit_list = [units,           units,
-                     "unitless", "unitless",
-                     "unitless", "unitless"]
+        masked = ["ZM", "ZM", "ZM", "ZM", "ZM", "ZM"]
 
-        other_all_nans = [dev_is_all_nan, ref_is_all_nan,
-                          False,                   False,
-                          False,                   False]
-        
-        gridtypes = [cmpgridtype, cmpgridtype,
-                     cmpgridtype, cmpgridtype,
-                     cmpgridtype, cmpgridtype]
-        
+        unit_list = [units, units, "unitless", "unitless", "unitless", "unitless"]
+
+        other_all_nans = [dev_is_all_nan, ref_is_all_nan, False, False, False, False]
+
+        gridtypes = [
+            cmpgridtype,
+            cmpgridtype,
+            cmpgridtype,
+            cmpgridtype,
+            cmpgridtype,
+            cmpgridtype,
+        ]
+
         mins = [vmin_ref, vmin_dev, vmin_abs]
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
-        #Plot 
+        # Plot
         for i in range(6):
-            sixplot(plot_types[i], all_zeros[i], all_nans[i], plot_vals[i],
-                    grids[i], axs[i], rowcols[i], titles[i], cmaps[i],
-                    unit_list[i], extents[i], masked[i], other_all_nans[i],
-                    gridtypes[i], mins, maxs, use_cmap_RdBu, match_cbar, verbose, 
-                    log_color_scale, pedge, pedge_ind, log_yaxis)
-                
+            sixplot(
+                plot_types[i],
+                all_zeros[i],
+                all_nans[i],
+                plot_vals[i],
+                grids[i],
+                axs[i],
+                rowcols[i],
+                titles[i],
+                cmaps[i],
+                unit_list[i],
+                extents[i],
+                masked[i],
+                other_all_nans[i],
+                gridtypes[i],
+                mins,
+                maxs,
+                use_cmap_RdBu,
+                match_cbar,
+                verbose,
+                log_color_scale,
+                pedge,
+                pedge_ind,
+                log_yaxis,
+            )
+
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(max(fracdiff)) > 0.1
@@ -1734,16 +1843,17 @@ def compare_zonal_mean(
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
-            
-    #for i in range(n_var):
+
+    # for i in range(n_var):
     #    createfig(i)
-    
-    #do not attempt nested thread parallelization due to issues with matplotlib
+
+    # do not attempt nested thread parallelization due to issues with matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
 
-    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
-    
+    # This seems like it shouldn't be here (bmy, 2/21/20)
+    #Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+        
     if savepdf:
         Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
     else:
@@ -1762,8 +1872,9 @@ def compare_zonal_mean(
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         merge.write(pdfname)
         merge.close()
-        warnings.showwarning=warning_format
-        
+        warnings.showwarning = warning_format
+
+
 def get_emissions_varnames(commonvars, template=None):
     """
     Will return a list of emissions diagnostic variable names that
@@ -2541,7 +2652,7 @@ def create_budget_table(
     varnames,
     outfilename,
     interval=[2678400.0],
-    template="Budget_{}"
+    template="Budget_{}",
 ):
     """
     Creates a table of budgets by species and component for a data set.
@@ -2644,11 +2755,17 @@ def create_budget_table(
     f.close()
 
 
-def get_species_categories():
+def get_species_categories(benchmark_type="FullChemBenchmark"):
     """
     Returns the list of benchmark categories that each species
     belongs to.  This determines which PDF files will contain the
     plots for the various species.
+
+    Args:
+    -----
+        benchmark_type : str
+            Specifies the type of the benchmark (either 
+            FullChemBenchmark (default) or TransportTracersBenchmark).
 
     Returns:
         spc_cat_dict : dict
@@ -2661,7 +2778,7 @@ def get_species_categories():
     yamlfile = os.path.join(os.path.dirname(__file__), spc_categories)
     with open(yamlfile, "r") as f:
         spc_cat_dict = yaml.load(f.read())
-    return spc_cat_dict
+    return spc_cat_dict[benchmark_type]
 
 
 def archive_species_categories(dst):
@@ -2682,7 +2799,7 @@ def archive_species_categories(dst):
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
 
-def make_benchmark_conc_plots(
+def make_benchmark_plots(
     ref,
     refstr,
     dev,
@@ -2691,12 +2808,14 @@ def make_benchmark_conc_plots(
     subdst=None,
     overwrite=False,
     verbose=False,
+    collection="SpeciesConc",
+    benchmark_type="FullChemBenchmark",
     restrict_cats=[],
     plots=["sfc", "500hpa", "zonalmean"],
     use_cmap_RdBu=False,
     log_color_scale=False,
     sigdiff_files=None,
-    n_job=-1
+    n_job=-1,
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -2799,47 +2918,39 @@ def make_benchmark_conc_plots(
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
 
-    # If Rn222 is present, this is a TransportTracers benchmark,
-    # so we can skip the lumped species definitions.
-    TransportTracers = 'SpeciesConc_Rn222' in refds.data_vars.keys() or \
-                       'SpeciesConc_Rn222' in devds.data_vars.keys()
-    
-    # Don't add lumped species if this is a TransportTracers benchmark
-    # (this is kludgey but it works for now. (bmy, 2/18/20)
-    if TransportTracers:
-        restrict_cats = ['Radionuclides', 'PassiveTracers']
-    else:
+    # FullChemBenchmark has lumped species (TransportTracers does not)
+    if "FullChem" in benchmark_type:
         refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
         devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
+        core.archive_lumped_species_definitions(dst)
 
     # Get the list of species categories
-    catdict = get_species_categories()
-    print(restrict_cats)
-    
+    catdict = get_species_categories(benchmark_type)
     archive_species_categories(dst)
-    if not TransportTracers:
-        core.archive_lumped_species_definitions(dst)
 
     # Make sure that Ref and Dev datasets have the same variables.
     # Variables that are in Ref but not in Dev will be added to Dev
     # with all missing values (NaNs). And vice-versa.
     [refds, devds] = add_missing_variables(refds, devds)
 
+    # Collection prefix
+    coll_prefix = collection.strip() + "_"
+
     # ==================================================================
     # Create the plots!
     # ==================================================================
 
-    #Use dictionaries to maintain order of significant difference categories
+    # Use dictionaries to maintain order of significant difference categories
     dict_sfc = {}
     dict_500 = {}
     dict_zm = {}
-    
+
     def createplots(i, filecat):
 
         # Suppress harmless run-time warnings from all threads
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
-        warnings.filterwarnings('ignore', category=UserWarning)
-        
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        warnings.filterwarnings("ignore", category=UserWarning)
+
         # If restrict_cats list is passed,
         # skip all categories except those in the list
         if restrict_cats and filecat not in restrict_cats:
@@ -2860,7 +2971,7 @@ def make_benchmark_conc_plots(
         warninglist = []
         for subcat in catdict[filecat]:
             for spc in catdict[filecat][subcat]:
-                varname = "SpeciesConc_" + spc
+                varname = coll_prefix + spc
                 if varname not in refds.data_vars or \
                    varname not in devds.data_vars:
                     warninglist.append(varname)
@@ -2872,7 +2983,7 @@ def make_benchmark_conc_plots(
                     filecat, warninglist
                 )
             )
-        
+
         # -----------------------
         # Surface plots
         # -----------------------
@@ -2897,13 +3008,15 @@ def make_benchmark_conc_plots(
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_sfc
+                sigdiff_list=diff_sfc,
             )
-            diff_sfc[:] = [v.replace("SpeciesConc_", "") for v in diff_sfc]
+            diff_sfc[:] = [v.replace(coll_prefix, "") for v in diff_sfc]
             dict_sfc[filecat] = diff_sfc
             add_nested_bookmarks_to_pdf(
-                pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
+                pdfname, filecat, catdict,
+                warninglist, remove_prefix=coll_prefix
             )
+
         # -----------------------
         # 500 hPa plots
         # -----------------------
@@ -2930,10 +3043,11 @@ def make_benchmark_conc_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_500,
             )
-            diff_500[:] = [v.replace("SpeciesConc_", "") for v in diff_500]
+            diff_500[:] = [v.replace(coll_prefix, "") for v in diff_500]
             dict_500[filecat] = diff_500
             add_nested_bookmarks_to_pdf(
-                pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
+                pdfname, filecat, catdict,
+                warninglist, remove_prefix=coll_prefix
             )
 
         # -----------------------
@@ -2961,12 +3075,13 @@ def make_benchmark_conc_plots(
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_zm
+                sigdiff_list=diff_zm,
             )
-            diff_zm[:] = [v.replace("SpeciesConc_", "") for v in diff_zm]
+            diff_zm[:] = [v.replace(coll_prefix, "") for v in diff_zm]
             dict_zm = diff_zm
             add_nested_bookmarks_to_pdf(
-                pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
+                pdfname, filecat, catdict,
+                warninglist, remove_prefix=coll_prefix
             )
 
             # Strat_ZonalMean plots will use a log-pressure Y-axis, with
@@ -2989,361 +3104,18 @@ def make_benchmark_conc_plots(
                 pres_range=[1, 100],
                 log_yaxis=True,
                 extra_title_txt=extra_title_txt,
-                log_color_scale=log_color_scale
+                log_color_scale=log_color_scale,
             )
             add_nested_bookmarks_to_pdf(
-                pdfname, filecat, catdict, warninglist, remove_prefix="SpeciesConc_"
+                pdfname, filecat, catdict,
+                warninglist, remove_prefix=coll_prefix
             )
 
     # Create the plots in parallel
-    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) \
-                              for i, filecat in enumerate(catdict))
-    
-    # ==============================================================
-    # Write the list of species having significant differences,
-    # which we need to fill out the benchmark approval forms.
-    # ==============================================================
-    if sigdiff_files != None:
-        for filename in sigdiff_files:
-            if "sfc" in plots:
-                if "sfc" in filename:
-                    with open(filename, "a+") as f:
-                        for c, diff_list in dict_sfc.items():
-                            print("* {}: ".format(c), file=f, end="")
-                            for v in diff_list:
-                                print("{} ".format(v), file=f, end="")
-                            print(file=f)
-                        f.close()
+    Parallel(n_jobs=n_job)(
+        delayed(createplots)(i, filecat) for i, filecat in enumerate(catdict)
+    )
 
-            if "500hpa" in plots:
-                if "500hpa" in filename:
-                    with open(filename, "a+") as f:
-                        for c, diff_list in dict_500.items():
-                            print("* {}: ".format(c), file=f, end="")
-                            for v in diff_list:
-                                print("{} ".format(v), file=f, end="")
-                            print(file=f)
-                        f.close()
-
-            if "zonalmean" in plots or "zm" in plots:
-                if "zonalmean" in filename or "zm" in filename:
-                    with open(filename, "a+") as f:
-                        for c, diff_list in dict_zm.items():
-                            print("* {}: ".format(c), file=f, end="")
-                            for v in diff_list:
-                                print("{} ".format(v), file=f, end="")
-                            print(file=f)
-                        f.close()
-
-def make_benchmark_wetdep_plots(
-    ref,
-    refstr,
-    dev,
-    devstr,
-    dst="./1mo_benchmark",
-    subdst=None,
-    overwrite=False,
-    verbose=False,
-    collection='WetLossConv',
-    plots=["sfc", "500hpa", "zonalmean"],
-    use_cmap_RdBu=False,
-    log_color_scale=False,
-    sigdiff_files=None,
-    n_job=-1
-):
-    """
-    Creates PDF files containing plots of wet deposition fluxes
-    for model benchmarking purposes.
-
-    Args:
-    -----
-        ref: str
-            Path name for the "Ref" (aka "Reference") data set.
-
-        refstr : str
-            A string to describe ref (e.g. version number)
-
-        dev : str
-            Path name for the "Dev" (aka "Development") data set.
-            This data set will be compared against the "Reference"
-            data set.
-
-        devstr : str
-            A string to describe dev (e.g. version number)
-
-    Keyword Args (optional):
-    ------------------------
-        dst : str
-            A string denoting the destination folder where a PDF
-            file containing plots will be written.
-            Default value: ./1mo_benchmark
-
-        subdst : str
-            A string denoting the sub-directory of dst where PDF
-            files containing plots will be written.  In practice,
-            subdst is only needed for the 1-year benchmark output,
-            and denotes a date string (such as "Jan2016") that
-            corresponds to the month that is being plotted.
-            Default value: None
-
-        overwrite : boolean
-            Set this flag to True to overwrite files in the
-            destination folder (specified by the dst argument).
-            Default value: False.
-
-        verbose : boolean
-            Set this flag to True to print extra informational output.
-            Default value: False.
-
-        collection : str
-            Specifies WetLossConv (default) or WetLossLS.
-
-        plots : list of strings
-            List of plot types to create.
-            Default value: ['sfc', '500hpa', 'zonalmean']
-
-        log_color_scale: boolean         
-            Set this flag to True to enable plotting data (not diffs)
-            on a log color scale.
-            Default value: False
-
-        sigdiff_files : list of str
-            Filenames that will contain the lists of species having
-            significant differences in the 'sfc', '500hpa', and
-            'zonalmean' plots.  These lists are needed in order to
-            fill out the benchmark approval forms.
-            Default value: None
-    """
-
-    # NOTE: this function could use some refactoring;
-    # abstract processing per category?
-
-    # ==================================================================
-    # Initialization and data read
-    # ==================================================================
-    if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
-                dst
-            )
-        )
-        return
-    elif not os.path.isdir(dst):
-        os.mkdir(dst)
-
-    # Define extra title text (usually a date string)
-    # for the top-title of the plot
-    if subdst is not None:
-        extra_title_txt = subdst
-    else:
-        extra_title_txt = None
-
-    # Ref dataset
-    try:
-        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not find Ref file: {}".format(ref))
-
-    # Dev dataset
-    try:
-        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
-
-    # Get the list of species categories
-    catdict = get_species_categories()
-    archive_species_categories(dst)
-
-    # Collection name
-    collection_prefix = collection + "_"
-
-    # Restrict categories to this collection
-    restrict_cats = [collection]
-    
-    # Make sure that Ref and Dev datasets have the same variables.
-    # Variables that are in Ref but not in Dev will be added to Dev
-    # with all missing values (NaNs). And vice-versa.
-    [refds, devds] = add_missing_variables(refds, devds)
-
-    # ==============================<====================================
-    # Create the plots!
-    # ==================================================================
-
-    #Use dictionaries to maintain order of significant difference categories
-    dict_sfc = {}
-    dict_500 = {}
-    dict_zm = {}
-    
-    def createplots(i, filecat):
-
-        # Suppress harmless run-time warnings from all threads
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
-        warnings.filterwarnings('ignore', category=UserWarning)
-        
-        # If restrict_cats list is passed,
-        # skip all categories except those in the list
-        if restrict_cats and filecat not in restrict_cats:
-            return
-
-        # Create a directory for each category.
-        # If subdst is passed, then create a subdirectory in each
-        # category directory (e.g. as for the 1-year benchmark).
-        catdir = os.path.join(dst, filecat)
-        if not os.path.isdir(catdir):
-            os.mkdir(catdir)
-        if subdst is not None:
-            catdir = os.path.join(catdir, subdst)
-            if not os.path.isdir(catdir):
-                os.mkdir(catdir)
-
-        varlist = []
-        warninglist = []
-        for spc in catdict[filecat]:
-            varname = collection_prefix + spc
-            if varname not in refds.data_vars or \
-               varname not in devds.data_vars:
-                warninglist.append(varname)
-                continue
-            varlist.append(varname)
-        if warninglist != []:
-            print(
-                "\n\nWarning: variables in {} category not in dataset: {}".format(
-                    filecat, warninglist
-                )
-            )
-        
-        # -----------------------
-        # Surface plots
-        # -----------------------
-        if "sfc" in plots:
-
-            if subdst is not None:
-                pdfname = os.path.join(
-                    catdir, "{}_Surface_{}.pdf".format(filecat, subdst)
-                )
-            else:
-                pdfname = os.path.join(catdir, "{}_Surface.pdf".format(filecat))
-
-            diff_sfc = []
-            compare_single_level(
-                refds,
-                refstr,
-                devds,
-                devstr,
-                varlist=varlist,
-                ilev=0,
-                pdfname=pdfname,
-                use_cmap_RdBu=use_cmap_RdBu,
-                log_color_scale=log_color_scale,
-                extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_sfc
-            )
-            diff_sfc[:] = [v.replace(collection_prefix, "") for v in diff_sfc]
-            dict_sfc[filecat] = diff_sfc
-            add_bookmarks_to_pdf(pdfname, varlist,
-                                 remove_prefix=collection_prefix,
-                                 verbose=verbose
-            )
-            
-        # -----------------------
-        # 500 hPa plots
-        # -----------------------
-        if "500hpa" in plots:
-
-            if subdst is not None:
-                pdfname = os.path.join(
-                    catdir, "{}_500hPa_{}.pdf".format(filecat, subdst)
-                )
-            else:
-                pdfname = os.path.join(catdir, "{}_500hPa.pdf".format(filecat))
-
-            diff_500 = []
-            compare_single_level(
-                refds,
-                refstr,
-                devds,
-                devstr,
-                varlist=varlist,
-                ilev=22,
-                pdfname=pdfname,
-                use_cmap_RdBu=use_cmap_RdBu,
-                log_color_scale=log_color_scale,
-                extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_500,
-            )
-            diff_500[:] = [v.replace(collection_prefix, "") for v in diff_500]
-            dict_500[filecat] = diff_500
-            add_bookmarks_to_pdf(pdfname, varlist,
-                                 remove_prefix=collection_prefix,
-                                 verbose=verbose
-            )
-
-        # -----------------------
-        # Zonal mean plots
-        # -----------------------
-        if "zonalmean" in plots or "zm" in plots:
-
-            if subdst is not None:
-                pdfname = os.path.join(
-                    catdir, "{}_FullColumn_ZonalMean_{}.pdf".format(filecat, subdst)
-                )
-            else:
-                pdfname = os.path.join(
-                    catdir, "{}_FullColumn_ZonalMean.pdf".format(filecat)
-                )
-
-            diff_zm = []
-            compare_zonal_mean(
-                refds,
-                refstr,
-                devds,
-                devstr,
-                varlist=varlist,
-                pdfname=pdfname,
-                use_cmap_RdBu=use_cmap_RdBu,
-                log_color_scale=log_color_scale,
-                extra_title_txt=extra_title_txt,
-                sigdiff_list=diff_zm
-            )
-            diff_zm[:] = [v.replace(collection_prefix, "") for v in diff_zm]
-            dict_zm = diff_zm
-            add_bookmarks_to_pdf(pdfname, varlist,
-                                 remove_prefix=collection_prefix,
-                                 verbose=verbose
-            )
-
-            # Strat_ZonalMean plots will use a log-pressure Y-axis, with
-            # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
-            if subdst is not None:
-                pdfname = os.path.join(
-                    catdir, "{}_Strat_ZonalMean_{}.pdf".format(filecat, subdst)
-                )
-            else:
-                pdfname = os.path.join(catdir, "{}_Strat_ZonalMean.pdf".format(
-                    filecat))
-
-            compare_zonal_mean(
-                refds,
-                refstr,
-                devds,
-                devstr,
-                varlist=varlist,
-                pdfname=pdfname,
-                use_cmap_RdBu=use_cmap_RdBu,
-                pres_range=[1, 100],
-                log_yaxis=True,
-                extra_title_txt=extra_title_txt,
-                log_color_scale=log_color_scale
-            )
-            add_bookmarks_to_pdf(pdfname, varlist,
-                                 remove_prefix=collection_prefix,
-                                 verbose=verbose
-            )
-
-    # Create plots in parallel
-    Parallel(n_jobs = n_job) (delayed(createplots)(i,filecat) \
-                              for i, filecat in enumerate(catdict))
-        
     # ==============================================================
     # Write the list of species having significant differences,
     # which we need to fill out the benchmark approval forms.
@@ -3396,7 +3168,7 @@ def make_benchmark_emis_plots(
     flip_dev=False,
     log_color_scale=False,
     sigdiff_files=None,
-    n_job=-1
+    n_job=-1,
 ):
     """
     Creates PDF files containing plots of emissions for model
@@ -3571,8 +3343,7 @@ def make_benchmark_emis_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
         )
-        add_bookmarks_to_pdf(pdfname, varlist,
-                             remove_prefix="Emis", verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="Emis", verbose=verbose)
         return
 
     # Get emissions variables (non-inventory), categories, and species
@@ -3594,7 +3365,7 @@ def make_benchmark_emis_plots(
     # Also write the list of emission quantities that have significant
     # diffs.  We'll need that to fill out the benchmark forms.
     # ==================================================================
-    
+
     if plot_by_hco_cat:
         emisspcdir = os.path.join(dst, "Emissions")
         if not os.path.isdir(emisspcdir):
@@ -3605,7 +3376,7 @@ def make_benchmark_emis_plots(
                 os.mkdir(emisspcdir)
 
         diff_dict = {}
-        #for c in emis_cats:
+        # for c in emis_cats:
         def createfile_hco_cat(c):
             # Handle cases of bioburn and bioBurn (temporary until 12.3.1)
             if c == "Bioburn":
@@ -3637,7 +3408,7 @@ def make_benchmark_emis_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_emis,
             )
-        
+
             add_bookmarks_to_pdf(
                 pdfname, varnames, remove_prefix="Emis", verbose=verbose
             )
@@ -3646,7 +3417,8 @@ def make_benchmark_emis_plots(
             diff_emis[:] = [v.replace("Emis", "") for v in diff_emis]
             diff_emis[:] = [v.replace("_" + c, "") for v in diff_emis]
             diff_dict[c] = diff_emis
-        Parallel(n_jobs = n_job) (delayed(createfile_hco_cat)(c) for c in emis_cats)
+
+        Parallel(n_jobs=n_job)(delayed(createfile_hco_cat)(c) for c in emis_cats)
         # =============================================================
         # Write the list of species having significant differences,
         # which we need to fill out the benchmark approval forms.
@@ -3661,7 +3433,7 @@ def make_benchmark_emis_plots(
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
                         f.close()
-        
+
     # ==================================================================
     # if plot_by_benchmark_cat is true, make a file for each benchmark
     # species category with emissions in the diagnostics file
@@ -3676,7 +3448,7 @@ def make_benchmark_emis_plots(
             []
         )  # for checking if emissions species not defined in benchmark category file
         emisdict = {}  # used for nested pdf bookmarks
-        #for i, filecat in enumerate(catdict):
+        # for i, filecat in enumerate(catdict):
         def createfile_bench_cat(filecat):
             # Get emissions for species in this benchmark category
             varlist = []
@@ -3733,7 +3505,9 @@ def make_benchmark_emis_plots(
             )
             add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
 
-        Parallel(n_jobs = n_job) (delayed(createfile_bench_cat)(filecat) for i, filecat in enumerate(catdict))        
+        Parallel(n_jobs=n_job)(
+            delayed(createfile_bench_cat)(filecat) for i, filecat in enumerate(catdict)
+        )
 
         # Give warning if emissions species is not assigned a benchmark category
         for spc in emis_spc:
@@ -3743,7 +3517,7 @@ def make_benchmark_emis_plots(
                         spc
                     )
                 )
-                
+
 
 def make_benchmark_emis_tables(
     reflist,
@@ -4090,8 +3864,7 @@ def make_benchmark_jvalue_plots(
     # Surface plots
     if "sfc" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}Surface_{}.pdf".format(prefix,
-                                                                    subdst))
+            pdfname = os.path.join(jvdir, "{}Surface_{}.pdf".format(prefix, subdst))
         else:
             pdfname = os.path.join(jvdir, "{}Surface.pdf".format(prefix))
 
@@ -4111,8 +3884,7 @@ def make_benchmark_jvalue_plots(
             sigdiff_list=diff_sfc,
         )
         diff_sfc[:] = [v.replace(prefix, "") for v in diff_sfc]
-        add_bookmarks_to_pdf(pdfname, varlist,
-                             remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
 
     # 500hPa plots
     if "500hpa" in plots:
@@ -4137,8 +3909,7 @@ def make_benchmark_jvalue_plots(
             sigdiff_list=diff_500,
         )
         diff_500[:] = [v.replace(prefix, "") for v in diff_500]
-        add_bookmarks_to_pdf(pdfname, varlist,
-                             remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
 
     # Full-column zonal mean plots
     if "zonalmean" in plots:
@@ -4147,8 +3918,7 @@ def make_benchmark_jvalue_plots(
                 jvdir, "{}FullColumn_ZonalMean_{}.pdf".format(prefix, subdst)
             )
         else:
-            pdfname = os.path.join(jvdir, "{}FullColumn_ZonalMean.pdf".format(
-                prefix))
+            pdfname = os.path.join(jvdir, "{}FullColumn_ZonalMean.pdf".format(prefix))
 
         diff_zm = []
         compare_zonal_mean(
@@ -4165,8 +3935,7 @@ def make_benchmark_jvalue_plots(
             sigdiff_list=diff_zm,
         )
         diff_zm[:] = [v.replace(prefix, "") for v in diff_zm]
-        add_bookmarks_to_pdf(pdfname, varlist,
-                             remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
 
         # Strat_ZonalMean plots will use a log-pressure Y-axis, with
         # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
@@ -4191,8 +3960,7 @@ def make_benchmark_jvalue_plots(
             extra_title_txt=extra_title_txt,
             log_color_scale=log_color_scale,
         )
-        add_bookmarks_to_pdf(pdfname, varlist,
-                             remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
 
         # ==============================================================
         # Write the lists of J-values that have significant differences,
@@ -4703,12 +4471,7 @@ def make_benchmark_mass_tables(
 
 
 def make_benchmark_budget_tables(
-        dev, 
-        devstr, 
-        dst="./1mo_benchmark", 
-        overwrite=False, 
-        interval=[2678400.0], 
-        n_job = -1
+    dev, devstr, dst="./1mo_benchmark", overwrite=False, interval=[2678400.0], n_job=-1
 ):
     """
     Creates a text file containing budgets by species for benchmarking
@@ -4767,7 +4530,7 @@ def make_benchmark_budget_tables(
     if subdst is not None:
         budgetdir = os.path.join(budgetdir, subdst)
         if not os.path.isdir(budgetdir):
-            os.mkdir(budgetdir)        
+            os.mkdir(budgetdir)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -4792,13 +4555,13 @@ def make_benchmark_budget_tables(
     budget_vars = [k for k in devds.data_vars.keys() if k[:6] == "Budget"]
     budget_regions = sorted(set([v.split("_")[0][-4:] for v in budget_vars]))
 
-    #for region in budget_regions:
+    # for region in budget_regions:
     def createfile(region):
 
         # Suppress harmless run-time warnings from all threads
-        warnings.filterwarnings('ignore', category=RuntimeWarning)
-        warnings.filterwarnings('ignore', category=UserWarning)        
-        
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        warnings.filterwarnings("ignore", category=UserWarning)
+
         # Destination file
         file_budget = os.path.join(budgetdir, "Budget_" + region + ".txt")
 
@@ -4817,12 +4580,11 @@ def make_benchmark_budget_tables(
             interval,
             template="Budget_{}",
         )
-        
-    # Create budget tables in parallel
-    Parallel(n_jobs = n_job) (delayed(createfile)(region) \
-                              for region in budget_regions)
 
-    
+    # Create budget tables in parallel
+    Parallel(n_jobs=n_job)(delayed(createfile)(region) for region in budget_regions)
+
+
 def make_benchmark_oh_metrics(
     reflist,
     refstr,
@@ -5160,8 +4922,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
     for i, varname in enumerate(varlist):
         bookmarkname = varname.replace(remove_prefix, "")
         if verbose:
-            print("Adding bookmark for {} with name {}".format(
-                varname, bookmarkname))
+            print("Adding bookmark for {} with name {}".format(varname, bookmarkname))
         output.addPage(input.getPage(i))
         output.addBookmark(bookmarkname, i)
         output.setPageMode("/UseOutlines")
@@ -5176,7 +4937,7 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
     os.rename(pdfname_tmp, pdfname)
     pdfobj.close()
 
-    
+
 def add_nested_bookmarks_to_pdf(
     pdfname, category, catdict, warninglist, remove_prefix=""
 ):
@@ -5216,7 +4977,7 @@ def add_nested_bookmarks_to_pdf(
     # Setup
     # ==================================================================
     pdfobj = open(pdfname, "rb")
-    input = PdfFileReader(pdfobj,overwriteWarnings=False)
+    input = PdfFileReader(pdfobj, overwriteWarnings=False)
     output = PdfFileWriter()
     warninglist = [k.replace(remove_prefix, "") for k in warninglist]
 
@@ -5402,8 +5163,7 @@ def get_troposphere_mask(ds):
         # --------------------------------------------------------------
 
         # Create the tropmask array with dims (time, lev, lat*lon)
-        tropmask = np.ones((shape[0], shape[1], np.prod(np.array(shape[2:]))),
-                           bool)
+        tropmask = np.ones((shape[0], shape[1], np.prod(np.array(shape[2:]))), bool)
 
         # Loop over each time
         for t in range(tropmask.shape[0]):
@@ -5438,15 +5198,14 @@ def get_troposphere_mask(ds):
     return tropmask.reshape(shape)
 
 
-
 def get_input_res(data):
-    #return resolution of dataset passed to compare_single_level or compare_zonal_means
-    
+    # return resolution of dataset passed to compare_single_level or compare_zonal_means
+
     vdims = data.dims
     if "lat" in vdims and "lon" in vdims:
         lat = data.sizes["lat"]
         lon = data.sizes["lon"]
-#        print("grid has lat and lon: ", vdims)
+        #        print("grid has lat and lon: ", vdims)
         if lat == 46 and lon == 72:
             return "4x5", "ll"
         elif lat == 91 and lon == 144:
@@ -5456,15 +5215,15 @@ def get_input_res(data):
         else:
             print("Error: ref or dev {}x{} grid not defined in gcpy!".format(lat, lon))
             return
-        
+
     else:
         print("grid is cs: ", vdims)
-        #GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        return data.dims["Xdim"], "cs"    
+        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        return data.dims["Xdim"], "cs"
 
 
 def call_make_grid(res, gridtype, zonal_mean, comparison):
-    #call appropriate make_grid function and return new grid
+    # call appropriate make_grid function and return new grid
     if gridtype == "ll" or (zonal_mean and comparison):
         return [make_grid_LL(res), None]
     else:
@@ -5480,13 +5239,13 @@ def check_units(refdata, devdata, varname):
     if devdata[varname].units.strip() in conc_units:
         devdata[varname].attrs["units"] = "ppbv"
         devdata[varname].values = devdata[varname].values * 1e9
-        
+
     # Binary diagnostic concentrations have units ppbv. Change to ppb.
     if refdata[varname].units.strip() == "ppbv":
         refdata[varname].attrs["units"] = "ppb"
     if devdata[varname].units.strip() == "ppbv":
         devdata[varname].attrs["units"] = "ppb"
-        
+
     # Check that units match
     units_ref = refdata[varname].units.strip()
     units_dev = devdata[varname].units.strip()
@@ -5499,9 +5258,7 @@ def check_units(refdata, devdata, varname):
         if enforce_units:
             # if enforcing units, stop the program if
             # units do not match
-            assert units_ref == units_dev, "Units do not match for {}!".format(
-                varname
-            )
+            assert units_ref == units_dev, "Units do not match for {}!".format(varname)
         else:
             # if not enforcing units, just keep going after
             # only printing warning once
@@ -5511,7 +5268,7 @@ def check_units(refdata, devdata, varname):
 
 
 def reshape_MAPL_CS(ds, vdims):
-    #Reshape cubed sphere data if using MAPL v1.0.0+
+    # Reshape cubed sphere data if using MAPL v1.0.0+
     if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
         ds = ds.stack(lat=("nf", "Ydim"))
         ds = ds.rename({"Xdim": "lon"})
@@ -5523,5 +5280,5 @@ def reshape_MAPL_CS(ds, vdims):
 
 
 def all_zero_or_nan(ds):
-    #Return whether ds is all zeros, or all nans
+    # Return whether ds is all zeros, or all nans
     return not np.any(ds), np.isnan(ds).all()
