@@ -81,16 +81,35 @@ gchp_vs_gcc  = False
 gchp_vs_gchp = False
 gchp_vs_gcc_diff_of_diffs = False
 
+########################################################################
+##### FULL-CHEMISTRY BENCHMARK OPTIONS (comment out if not needed) #####
+########################################################################
 # Output to generate (edit as needed)
 # Plots/tables will be created in this order:
+bmk_type     = 'FullChemBenchmark'
 plot_conc    = True
 plot_emis    = True
 emis_table   = True
 plot_jvalues = True
 plot_aod     = True
-mass_table   = False
-budget_table = False
-OH_metrics   = False
+mass_table   = True
+budget_table = True
+OH_metrics   = True
+plot_wetdep  = False
+
+########################################################################
+#### TransportTracers BENCHMARK OPTIONS (comment out if not needed) ####
+########################################################################
+#bmk_type     = 'TransportTracersBenchmark'
+#plot_conc    = True
+#plot_wetdep  = True
+#plot_emis    = False
+#emis_table   = False
+#plot_jvalues = False
+#plot_aod     = False
+#mass_table   = False
+#budget_table = False
+#OH_metrics   = False
 
 # Start and end of the benchmark year (as numpy.datetime64 dates)
 bmk_start = np.datetime64('2016-01-01')
@@ -212,32 +231,46 @@ if gcc_vs_gcc:
     if plot_conc:
         # --------------------------------------------------------------
         # GCC vs GCC Concentration plots
-        # (includes lumped species and separates by category)
+        # (FullChemBenchmark or TransportTracersBenchmark)
+        #
+        # FullChemBenchmark includes lumped species and
+        # and also separates plots by category
         # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC concentration plots %%%')
-
+   
         # File lists for emissions data (seasonal)
-        gcc_vs_gcc_refspc = get_filepaths(gcc_vs_gcc_refdir, 'SpeciesConc',
+        collection = 'SpeciesConc'
+        gcc_vs_gcc_refspc = get_filepaths(gcc_vs_gcc_refdir, collection,
                                           bmk_seasons, is_gcc=True)
-        gcc_vs_gcc_devspc = get_filepaths(gcc_vs_gcc_devdir, 'SpeciesConc',
+        gcc_vs_gcc_devspc = get_filepaths(gcc_vs_gcc_devdir, collection,
                                           bmk_seasons, is_gcc=True)
+
+        # Only plot concentration categories for TransportTracers
+        if 'TransportTracers' in bmk_type:
+            restrict_cats = ['RnPbBeTracers', 'PassiveTracers']
+        else:
+            restrict_cats = []  # Add FullChemBenchmark restrictions here
 
         # Create seasonal concentration plots
         for s in range(bmk_nseasons):
             mon_yr_str = bmk_seasons_names[s]
             sigdiff_files= gcc_vs_gcc_sigdiff[mon_yr_str]
-            bmk.make_benchmark_conc_plots(gcc_vs_gcc_refspc[s],
-                                          gcc_vs_gcc_refstr,
-                                          gcc_vs_gcc_devspc[s],
-                                          gcc_vs_gcc_devstr,
-                                          dst=gcc_vs_gcc_plotsdir,
-                                          subdst=mon_yr_str,
-                                          overwrite=True,
-                                          sigdiff_files=sigdiff_files)
+            bmk.make_benchmark_plots(gcc_vs_gcc_refspc[s],
+                                     gcc_vs_gcc_refstr,
+                                     gcc_vs_gcc_devspc[s],
+                                     gcc_vs_gcc_devstr,
+                                     dst=gcc_vs_gcc_plotsdir,
+                                     subdst=mon_yr_str,
+                                     benchmark_type=bmk_type,
+                                     collection=collection,
+                                     restrict_cats=restrict_cats,
+                                     overwrite=True,
+                                     sigdiff_files=sigdiff_files)
 
     if plot_emis:
         # --------------------------------------------------------------
         # GCC vs GCC emissions plots
+        # (FullChemBenchmark only)
         # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC emissions plots %%%')
 
@@ -265,6 +298,7 @@ if gcc_vs_gcc:
     if emis_table:
         # --------------------------------------------------------------
         # GCC vs GCC tables of emission and inventory totals
+        # (FullChemBenchmark only)
         # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC emissions and inventory tables %%%')
 
@@ -286,6 +320,7 @@ if gcc_vs_gcc:
     if plot_jvalues:
         # --------------------------------------------------------------
         # GCC vs GCC J-value plots
+        # (FullChemBenchmark only)
         # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC J-value plots %%%')
 
@@ -311,6 +346,7 @@ if gcc_vs_gcc:
     if plot_aod:
         # --------------------------------------------------------------
         # GCC vs. GCC column AOD plots
+        # (FullChemBenchmark only)
         # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC column AOD plots %%%')
 
@@ -336,6 +372,7 @@ if gcc_vs_gcc:
     if mass_table:
         # --------------------------------------------------------------
         # GCC vs. GCC global mass tables
+        # (FullChemBenchmark only)
         # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC global mass tables %%%')
         bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst,
@@ -348,6 +385,7 @@ if gcc_vs_gcc:
     if budget_table:
         # --------------------------------------------------------------
         # GCC vs GCC budgets tables
+        # (FullChemBenchmark only)
         # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC budget tables %%%')
 
@@ -368,6 +406,7 @@ if gcc_vs_gcc:
     if OH_metrics:
         # --------------------------------------------------------------
         # GCC vs GCC Global mean OH, MCF Lifetime, CH4 Lifetime
+        # (FullChemBenchmark only)
         # --------------------------------------------------------------
         print('\n%%% Creating GCC vs. GCC OH metrics %%%')
         gcc_vs_gcc_reflist = [gcc_vs_gcc_refcac, gcc_vs_gcc_refmet]
@@ -379,6 +418,38 @@ if gcc_vs_gcc:
                                       dst=gcc_vs_gcc_plotsdir,
                                       overwrite=True)
 
+    if plot_wetdep and "TransportTracers" in bmk_type:
+        # --------------------------------------------------------------
+        # GCC vs GCC wet deposition
+        # (TransportTracers only)
+        # --------------------------------------------------------------
+        print('\n%%% Creating GCC vs. GCC wet deposition plots %%%')
+                
+        # Loop over wet deposition collections
+        collection_list = ['WetLossConv', 'WetLossLS']
+        for collection in collection_list:
+            gcc_vs_gcc_refwd = get_filepaths(gcc_vs_gcc_refdir, collection, 
+                                             bmk_seasons, is_gcc=True)
+            gcc_vs_gcc_devwd = get_filepaths(gcc_vs_gcc_devdir, collection,
+                                             bmk_seasons, is_gcc=True)
+
+            # Create seasonal plots for wet scavenging
+            for s in range(bmk_nseasons):
+                mon_yr_str = bmk_seasons_names[s]
+                sigdiff_files= gcc_vs_gcc_sigdiff[mon_yr_str]
+                bmk.make_benchmark_plots(gcc_vs_gcc_refwd[s],
+                                         gcc_vs_gcc_refstr,
+                                         gcc_vs_gcc_devwd[s],
+                                         gcc_vs_gcc_devstr,
+                                         dst=gcc_vs_gcc_plotsdir,
+                                         subdst=mon_yr_str,
+                                         overwrite=True,
+                                         benchmark_type=bmk_type,
+                                         collection=collection,
+                                         restrict_cats=[collection],
+                                         sigdiff_files=sigdiff_files)
+
+            
 ###############################################################################
 # NOTE: For now, we are developing the GCC vs. GCC 1-yr benchmark plots.
 # Leave this commented out for now.

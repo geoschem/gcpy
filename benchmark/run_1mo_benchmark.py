@@ -274,13 +274,13 @@ if gcc_vs_gcc:
         # Concentration plots
         # (includes lumped species and separates by category)
         print('\n%%% Creating GCC vs. GCC concentration plots %%%')
-        bmk.make_benchmark_conc_plots(gcc_vs_gcc_refspc,
-                                      gcc_vs_gcc_refstr,
-                                      gcc_vs_gcc_devspc,
-                                      gcc_vs_gcc_devstr,
-                                      dst=gcc_vs_gcc_plotsdir,
-                                      overwrite=True,
-                                      sigdiff_files=gcc_vs_gcc_sigdiff)
+        bmk.make_benchmark_plots(gcc_vs_gcc_refspc,
+                                 gcc_vs_gcc_refstr,
+                                 gcc_vs_gcc_devspc,
+                                 gcc_vs_gcc_devstr,
+                                 dst=gcc_vs_gcc_plotsdir,
+                                 overwrite=True,
+                                 sigdiff_files=gcc_vs_gcc_sigdiff)
 
     if plot_emis:
         # Emissions plots
@@ -370,13 +370,13 @@ if gchp_vs_gcc:
         # Concentration plots
         # (includes lumped species and separates by category)
         print('\n%%% Creating GCHP vs. GCC concentration plots %%%')
-        bmk.make_benchmark_conc_plots(gchp_vs_gcc_refspc,
-                                      gchp_vs_gcc_refstr,
-                                      gchp_vs_gcc_devspc,
-                                      gchp_vs_gcc_devstr,
-                                      dst=gchp_vs_gcc_plotsdir,
-                                      overwrite=True,
-                                      sigdiff_files=gchp_vs_gcc_sigdiff)
+        bmk.make_benchmark_plots(gchp_vs_gcc_refspc,
+                                 gchp_vs_gcc_refstr,
+                                 gchp_vs_gcc_devspc,
+                                 gchp_vs_gcc_devstr,
+                                 dst=gchp_vs_gcc_plotsdir,
+                                 overwrite=True,
+                                 sigdiff_files=gchp_vs_gcc_sigdiff)
 
     if plot_emis:
         # Emissions plots
@@ -461,13 +461,13 @@ if gchp_vs_gchp:
         # Concentration plots
         # (includes lumped species and separates by category)
         print('\n%%% Creating GCHP vs. GCHP concentration plots %%%')
-        bmk.make_benchmark_conc_plots(gchp_vs_gchp_refspc,
-                                      gchp_vs_gchp_refstr,
-                                      gchp_vs_gchp_devspc,
-                                      gchp_vs_gchp_devstr,
-                                      dst=gchp_vs_gchp_plotsdir,
-                                      overwrite=True,
-                                      sigdiff_files=gchp_vs_gchp_sigdiff)
+        bmk.make_benchmark_plots(gchp_vs_gchp_refspc,
+                                 gchp_vs_gchp_refstr,
+                                 gchp_vs_gchp_devspc,
+                                 gchp_vs_gchp_devstr,
+                                 dst=gchp_vs_gchp_plotsdir,
+                                 overwrite=True,
+                                 sigdiff_files=gchp_vs_gchp_sigdiff)
 
     if plot_emis:
         # Emissions plots
@@ -602,10 +602,10 @@ if gchp_vs_gcc_diff_of_diffs:
     # NOTE: Since at the present time we are only printing out
     # diff-of-diffs for concentration plots, we can take this
     # call out of the "if plot_conc:" block.
-    bmk.make_benchmark_conc_plots(diff_of_diffs_refspc,
-                                  diff_of_diffs_refstr,
-                                  diff_of_diffs_devspc,
-                                  diff_of_diffs_devstr,
-                                  dst=diff_of_diffs_plotsdir,
-                                  overwrite=True,
-                                  use_cmap_RdBu=True)
+    bmk.make_benchmark_lots(diff_of_diffs_refspc,
+                            diff_of_diffs_refstr,
+                            diff_of_diffs_devspc,
+                            diff_of_diffs_devstr,
+                            dst=diff_of_diffs_plotsdir,
+                            overwrite=True,
+                            use_cmap_RdBu=True)

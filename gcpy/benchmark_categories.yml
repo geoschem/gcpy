@@ -1,237 +1,243 @@
-Aerosols:
-  Dust:
-  - DST1
-  - DST2
-  - DST3
-  - DST4
-  Inorganic:
-  - NH4
-  - NIT
-  - SO4
-  OC_BC:
-  - BCPI
-  - BCPO
-  - OCPI
-  - OCPO
-  SOA:
-  - Complex_SOA
-  - Simple_SOA
-  Sea_Salt:
-  - AERI
-  - BrSALA
-  - BrSALC
-  - ISALA
-  - ISALC
-  - NITs
-  - SALA
-  - SALC
-  - SO4s
-Bromine:
+FullChemBenchmark:
+  Aerosols:
+    Dust:
+      - DST1
+      - DST2
+      - DST3
+      - DST4
+    Inorganic:
+      - NH4
+      - NIT
+      - SO4
+    OC_BC:
+      - BCPI
+      - BCPO
+      - OCPI
+      - OCPO
+    SOA:
+      - Complex_SOA
+      - Simple_SOA
+    Sea_Salt:
+      - AERI
+      - BrSALA
+      - BrSALC
+      - ISALA
+      - ISALC
+      - NITs
+      - SALA
+      - SALC
+      - SO4s
   Bromine:
-  - Bry
-  - BrOx
-  - Br
-  - Br2
-  - BrCl
-  - BrNO2
-  - BrNO3
-  - BrO
-  - CH3Br
-  - CH2Br2
-  - CHBr3
-  - HOBr
-  - HBr
-Chlorine:
+    Bromine:
+      - Bry
+      - BrOx
+      - Br
+      - Br2
+      - BrCl
+      - BrNO2
+      - BrNO3
+      - BrO
+      - CH3Br
+      - CH2Br2
+      - CHBr3
+      - HOBr
+      - HBr
   Chlorine:
-  - Cly
-  - ClOx
-  - Cl
-  - ClO
-  - Cl2
-  - Cl2O2
-  - ClOO
-  - ClNO2
-  - ClNO3
-  - CCl4
-  - CFCs
-  - CH3Cl
-  - CH2Cl2
-  - CH3CCl3
-  - CHCl3
-  - HOCl
-  - HCl
-  - Halons
-  - HCFCs
-  - OClO
-Iodine:
+    Chlorine:
+      - Cly
+      - ClOx
+      - Cl
+      - ClO
+      - Cl2
+      - Cl2O2
+      - ClOO
+      - ClNO2
+      - ClNO3
+      - CCl4
+      - CFCs
+      - CH3Cl
+      - CH2Cl2
+      - CH3CCl3
+      - CHCl3
+      - HOCl
+      - HCl
+      - Halons
+      - HCFCs
+      - OClO    
   Iodine:
-  - Iy
-  - IxOy
-  - I
-  - I2
-  - IBr
-  - ICl
-  - IO
-  - INO2
-  - IONO2
-  - CH3I
-  - CH2I2
-  - CH2ICl
-  - CH2IBr
-  - HI
-  - HOI
-  - OIO
-Nitrogen:
+    Iodine:
+      - Iy
+      - IxOy
+      - I
+      - I2
+      - IBr
+      - ICl
+      - IO
+      - INO2
+      - IONO2
+      - CH3I
+      - CH2I2
+      - CH2ICl
+      - CH2IBr
+      - HI
+      - HOI
+      - OIO
   Nitrogen:
-  - NOy
-  - NOx
-  - HNO2
-  - HNO3
-  - HNO4
-  - IPMN
-  - NIT
-  - 'NO'
-  - NO2
-  - NO3
-  - N2O5
-  - MPN
-  - PAN
-  - PPN
-  - N2O
-  - NHx
-  - NH3
-  - NH4
-  - MENO3
-  - ETNO3
-  - IPRNO3
-  - NPRNO3
-Oxidants:
+    Nitrogen:
+      - NOy
+      - NOx
+      - HNO2
+      - HNO3
+      - HNO4
+      - IPMN
+      - NIT
+      - 'NO'
+      - NO2
+      - NO3
+      - N2O5
+      - MPN
+      - PAN
+      - PPN
+      - N2O
+      - NHx
+      - NH3
+      - NH4
+      - MENO3
+      - ETNO3
+      - IPRNO3
+      - NPRNO3
   Oxidants:
-  - O3
-  - CO
-  - OH
-  - NOx
-Primary_Organics:
-  Alcohols:
-  - EOH
-  - MOH
-  Biogenics:
-  - ISOP
-  - MTPA
-  - MTPO
-  - LIMO
-  HCs:
-  - ALK4
-  - BENZ
-  - CH4
-  - C2H6
-  - C2H4
-  - C3H8
-  - PRPE
-  - TOLU
-  - XYLE
-  Other:
-  - MBO
-ROy:
+    Oxidants:
+      - O3
+      - CO
+      - OH
+      - NOx    
+  Primary_Organics:
+    Alcohols:
+      - EOH
+      - MOH
+    Biogenics:
+      - ISOP
+      - MTPA
+      - MTPO
+      - LIMO
+    HCs:
+      - ALK4
+      - BENZ
+      - CH4
+      - C2H6
+      - C2H4
+      - C3H8
+      - PRPE
+      - TOLU
+      - XYLE
+    Other:
+      - MBO
   ROy:
-  - H2O2
-  - H
-  - H2
-  - H2O
-  - HO2
-  - O1D
-  - OH
-  - RO2
-Secondary_Organic_Aerosols:
-  Complex_SOA:
-  - TSOA0
-  - TSOA1
-  - TSOA2
-  - TSOA3
-  - ASOA1
-  - ASOA2
-  - ASOA3
-  - ASOAN
-  - TSOG0
-  - TSOG1
-  - TSOG2
-  - TSOG3
-  - ISOG1
-  - ISOG2
-  - ISOG3
-  - ASOG1
-  - ASOG2
-  - ASOG3
-  Isoprene_SOA:
-  - INDIOL
-  - ISN1OA
-  - LVOCOA
-  - SOAIE
-  - SOAGX
-  - SOAME
-  - SOAMG
-  Simple_SOA:
-  - SOAP
-  - SOAS
-Secondary_Organics:
-  Acids:
-  - ACTA
-  Aldehydes:
-  - ALD2
-  - CH2O
-  - HPALD
-  - MACR
-  Epoxides:
-  - IEPOX
-  Ketones:
-  - ACET
-  - MEK
-  - MVK
-  Nitrates:
-  - ISOPN
-  Other:
-  - GLYX
-  - HCOOH
-  - MAP
-  - RCHO
-  Peroxides:
-  - MP
-Sulfur:
+    ROy:
+      - H2O2
+      - H
+      - H2
+      - H2O
+      - HO2
+      - O1D
+      - OH
+      - RO2
+  Secondary_Organic_Aerosols:
+    Complex_SOA:
+      - TSOA0
+      - TSOA1
+      - TSOA2
+      - TSOA3
+      - ASOA1
+      - ASOA2
+      - ASOA3
+      - ASOAN
+      - TSOG0
+      - TSOG1
+      - TSOG2
+      - TSOG3
+      - ISOG1
+      - ISOG2
+      - ISOG3
+      - ASOG1
+      - ASOG2
+      - ASOG3
+    Isoprene_SOA:
+      - INDIOL
+      - ISN1OA
+      - LVOCOA
+      - SOAIE
+      - SOAGX
+      - SOAME
+      - SOAMG
+    Simple_SOA:
+      - SOAP
+      - SOAS
+  Secondary_Organics:
+    Acids:
+      - ACTA
+    Aldehydes:
+      - ALD2
+      - CH2O
+      - HPALD
+      - MACR
+    Epoxides:
+      - IEPOX
+    Ketones:
+      - ACET
+      - MEK
+      - MVK
+    Nitrates:
+      - ISOPN
+    Other:
+      - GLYX
+      - HCOOH
+      - MAP
+      - RCHO
+    Peroxides:
+      - MP
   Sulfur:
-  - SOx
-  - DMS
-  - OCS
-  - SO2
-  - SO4
-Radionuclides:
- - Rn222
- - Pb210
- - Pb210Strat
- - Be7
- - Be7Strat
- - Be10
- - Be10Strat
-PassiveTracers:
- - PassiveTracer
- - SF6Tracer
- - CH3ITracer
- - COAnthroEmis25dayTracer
- - COAnthroEmis50dayTracer
- - COUniformEmis25dayTracer
- - GlobEmis90dayTracer
- - NHEmis90dayTracer
- - SHEmis90dayTracer
-WetLossConv:
- - Pb210
- - Pb210Strat
- - Be7
- - Be7Strat
- - Be10
- - Be10Strat
-WetLossLS:
- - Pb210
- - Pb210Strat
- - Be7
- - Be7Strat
- - Be10
- - Be10Strat
+    Sulfur:
+      - SOx
+      - DMS
+      - OCS
+      - SO2
+      - SO4
+TransportTracersBenchmark:
+  RnPbBeTracers:
+    RnPbBeTracers:
+      - Rn222
+      - Pb210
+      - Pb210Strat
+      - Be7
+      - Be7Strat
+      - Be10
+      - Be10Strat
+  PassiveTracers:
+    PassiveTracers:
+      - PassiveTracer
+      - SF6Tracer
+      - CH3ITracer
+      - COAnthroEmis25dayTracer
+      - COAnthroEmis50dayTracer
+      - COUniformEmis25dayTracer
+      - GlobEmis90dayTracer
+      - NHEmis90dayTracer
+      - SHEmis90dayTracer
+  WetLossConv:
+    WetLossConv:
+      - Pb210
+      - Pb210Strat
+      - Be7
+      - Be7Strat
+      - Be10
+      - Be10Strat
+  WetLossLS:
+    WetLossLS:
+      - Pb210
+      - Pb210Strat
+      - Be7
+      - Be7Strat
+      - Be10
+      - Be10Strat
