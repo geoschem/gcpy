@@ -1025,13 +1025,16 @@ def compare_single_level(
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
-            
+
     #do not attempt nested thread parallelization due to issues with matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
-
-    Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
-
+    if savepdf:
+        Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+    else:
+        #disable parallel plotting to allow interactive figure plotting
+        for i in range(n_var):
+            createfig(i)
     # ==================================================================
     # Finish
     # ==================================================================
@@ -1743,6 +1746,13 @@ def compare_zonal_mean(
 
     Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
     
+    if savepdf:
+        Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+    else:
+        #disable parallel plotting to allow interactive figure plotting
+        for i in range(n_var):
+            createfig(i)
+
     # ==================================================================
     # Finish
     # ==================================================================
