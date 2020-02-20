@@ -151,7 +151,6 @@ def sixplot(plot_type,
     xtick_labels: list of str
        Labels for lat/lon ticks
     '''
-    
     # Set min and max of the data range
     if plot_type in ('ref', 'dev'):
         if all_zero or all_nan:
@@ -181,7 +180,6 @@ def sixplot(plot_type,
                     [vmin, vmax] = [vmins[2], vmaxs[2]]
                 else:
                     [vmin, vmax] = [vmins[1], vmaxs[1]]
-
     else:
         if all_zero:
             [vmin, vmax] = [0, 0]
@@ -203,7 +201,6 @@ def sixplot(plot_type,
                 [vmin, vmax] = [-2, 2]
     if verbose:
         print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
-
     #Normalize colors (put into range [0..1] for matplotlib methods)
     if plot_type in ('ref', 'dev'):
         norm = core.normalize_colors(vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale)
@@ -547,6 +544,7 @@ def compare_single_level(
         # possibility of no time dimension (bpch)
         # ==============================================================        
         varname = varlist[i]
+        units_ref, units_dev = check_units(refdata, devdata, varname)
         # Ref
         vdims = refdata[varname].dims
         if "time" in vdims and "lev" in vdims:
@@ -593,7 +591,6 @@ def compare_single_level(
     ds_ref_cmps = [None]*n_var
     ds_dev_cmps = [None]*n_var
     for i in range(n_var):
-        
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
         # Ref
@@ -1356,7 +1353,8 @@ def compare_zonal_mean(
     ds_devs = [None]*n_var
     for i in range(n_var):
         
-        varname = varlist[i]        
+        varname = varlist[i]
+        units_ref, units_dev = check_units(refdata, devdata, varname)        
         # ==============================================================
         # Slice the data, allowing for the
         # possibility of no time dimension (bpch)
