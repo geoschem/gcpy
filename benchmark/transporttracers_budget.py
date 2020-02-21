@@ -3,10 +3,8 @@
 """
 Computes the budget of Pb and Be7 from the TransportTracers benchmarks.
 
-NOTE: In the future we can perhaps refactor this to use data structures
-such as classes.  The initial development was intended to get this feature
-working ASAP for the benchmarks. 
-  -- Bob Yantosca (11 Feb 2020)
+NOTE: This works for GC-Classic, but may need modifications for GCHP.
+ -- Bob Yantosca (21 Jan 2020)
 """
 
 # ======================================================================
@@ -17,540 +15,483 @@ from calendar import monthrange
 import numpy as np
 import os
 from os.path import join
-from gcpy.constants import AVOGADRO
+import gcpy.constants as constants
 from gcpy.benchmark import get_troposphere_mask
 import warnings
 import xarray as xr
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
-warnings.filterwarnings('ignore', category=RuntimeWarning)
-warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # ======================================================================
-# Configurables (MUST EDIT)
+# GLOBAL VARIABLES: Configurables (MUST EDIT)
 # ======================================================================
 
-maindir     = '/path/to/data/dir'
+# Main data directory
+maindir     = "/path/to/main/data/dir"
 
 # Version string
-devstr      = 'version_string'
+devstr      = "dev_version_str"
+
+# Directory where budget tables will be created
+plotsdir    = join(maindir, devstr, "Plots")
 
 # Restart collections
-rstdir      = join(maindir, 'restarts',                      )
-RstInit     = join(rstdir,  'GEOSChem.Restart.2016*.nc4'     )
-RstFinal    = join(rstdir,  'GEOSChem.Restart.2017*.nc4'     )
+rstdir      = join(maindir, devstr, "restarts",              )
+RstInit     = join(rstdir,  "GEOSChem.Restart.2016*.nc4"     )
+RstFinal    = join(rstdir,  "GEOSChem.Restart.2017*.nc4"     )
 
 # Data collections
-datadir     = join(maindir, 'OutputDir'                      )
-HemcoDiag   = join(datadir, 'HEMCO_diagnostics.2016*.nc'     )
-DryDep      = join(datadir, 'GEOSChem.DryDep.2016*.nc4'      )
-RadioNucl   = join(datadir, 'GEOSChem.RadioNuclide.2016*.nc4')
-StateMet    = join(datadir, 'GEOSChem.StateMet.2016*.nc4'    )
-SpeciesConc = join(datadir, 'GEOSChem.SpeciesConc.2016*.nc4' )
-WetLossConv = join(datadir, 'GEOSChem.WetLossConv.2016*.nc4' )
-WetLossLS   = join(datadir, 'GEOSChem.WetLossLS.2016*.nc4'   )
+datadir     = join(maindir, devstr, "OutputDir"              )
+HemcoDiag   = join(datadir, "HEMCO_diagnostics.2016*.nc"     )
+DryDep      = join(datadir, "GEOSChem.DryDep.2016*.nc4"      )
+RadioNucl   = join(datadir, "GEOSChem.RadioNuclide.2016*.nc4")
+StateMet    = join(datadir, "GEOSChem.StateMet.2016*.nc4"    )
+SpeciesConc = join(datadir, "GEOSChem.SpeciesConc.2016*.nc4" )
+WetLossConv = join(datadir, "GEOSChem.WetLossConv.2016*.nc4" )
+WetLossLS   = join(datadir, "GEOSChem.WetLossLS.2016*.nc4"   )
 
 # ======================================================================
-# Meteorological variables, constants, conversion factors
+# GLOBAL VARIABLES: Months and days
 # ======================================================================
 
-# Number of months (normally=12, but can use 1 for testing)
-N_MONTHS             = 12
-N_MONTHS_FLOAT       = N_MONTHS * 1.0
+# Number of months (nominally 12)
+N_MONTHS = 12
+N_MONTHS_FLOAT = N_MONTHS * 1.0
+
+# Days per month in 2016
+d_per_mon = np.zeros(N_MONTHS)
+for t in range(N_MONTHS):
+    d_per_mon[t] = monthrange(2016,t+1)[1] * 1.0
+
+# Days in the year 2016
+d_per_yr = np.sum(d_per_mon)
+
+# Fraction of year occupied by each month
+frac_of_yr = np.zeros(N_MONTHS)
+for t in range(N_MONTHS):
+    frac_of_yr[t] = d_per_mon[t] / d_per_yr
+    
+# ======================================================================
+# GLOBAL VARIABLES: Met fields, constants, conversion factors
+# ======================================================================
 
 # Read the StateMet collection
-ds                   = xr.open_mfdataset(StateMet)
+ds = xr.open_mfdataset(StateMet)
 
 # Read certain met data variables
-area_m2              = ds['AREA'].isel(time=0)
-area_cm2             = area_m2 * 1.0e4
-tropmask             = get_troposphere_mask(ds)
+area_m2 = ds["AREA"].isel(time=0)
+area_cm2 = area_m2 * 1.0e4
+tropmask = get_troposphere_mask(ds)
+
+# List of species (and subsets for the trop & strat)
+species_list = ["Pb210", "Be7", "Be10" ]
+full_atm = [v + "_f" for v in species_list]
+trop_only = [v + "_t" for v in species_list]
+strat_only = [v + "_s" for v in species_list]
 
 # Molecular weights
-MW_AIR               = 28.9644       
-MW_Pb210             = 210.0
-MW_Be7               = 7.0
-MW_Be10              = 10.0
+mw = { "Pb210": 210.0, "Be7": 7.0, "Be10": 10.0, "Air": 28.9644}
+
+# kg/s --> g/day
+kg_s_to_g_d_value= 86400.0 * 1000.0
 
 # Conversion factors
-KG_PER_MOL_Pb210     = AVOGADRO / (MW_Pb210 * 1e-3)
-KG_PER_MOL_Be7       = AVOGADRO / (MW_Be7   * 1e-3)
-KG_PER_MOL_Be10      = AVOGADRO / (MW_Be10  * 1e-3)
-KG_S_TO_G_DAY        = 86400.0 * 1000.0      
-Pb210_VV_TO_G        = ds['Met_AD'] * (MW_Pb210 / MW_AIR) * 1000.0
-Be7_VV_TO_G          = ds['Met_AD'] * (MW_Be7   / MW_AIR) * 1000.0         
-Be10_VV_TO_G         = ds['Met_AD'] * (MW_Be10  / MW_AIR) * 1000.0
-Pb210_MCM2S_TO_G_DAY = area_cm2 / KG_PER_MOL_Pb210 * KG_S_TO_G_DAY
-Be7_MCM2S_TO_G_DAY   = area_cm2 / KG_PER_MOL_Be7   * KG_S_TO_G_DAY
-Be10_MCM2S_TO_G_DAY  = area_cm2 / KG_PER_MOL_Be10  * KG_S_TO_G_DAY
+kg_per_mol = {}
+vv_to_g = {}
+mcm2s_to_g_d  = {} 
+kg_s_to_g_d = {}
 
-# Create arrays for monthly sums
-Pb210_sum            = np.zeros(N_MONTHS)
-Be7_sum              = np.zeros(N_MONTHS)
-Be10_sum             = np.zeros(N_MONTHS)
-Pb210_sum_tr         = np.zeros(N_MONTHS)
-Be7_sum_tr           = np.zeros(N_MONTHS)
-Be10_sum_tr          = np.zeros(N_MONTHS)
+for spc in species_list:
 
-# ======================================================================
-# Compute initial and final mass [g] from the restart files
-# ======================================================================
+    # kg/s --> g/day (same for all species)
+    kg_s_to_g_d[spc] = kg_s_to_g_d_value
+    
+    # kg/mole for each species
+    kg_per_mol[spc] = constants.AVOGADRO / (mw[spc]  * 1e-3)
 
-# ------------------------------------
-# Initial mass [mol/mol dry] -> [g]
-# ------------------------------------
+    # v/v dry --> g
+    vv_to_g[spc] = ds["Met_AD"].values * (mw[spc] / mw["Air"]) * 1000.0
 
-# Read initial restart data
-ds             = xr.open_mfdataset(RstInit)
-
-# Full-atmosphere initial mass arrays [g]
-Pb210_init     = ds['SpeciesRst_Pb210'].isel(time=0) * Pb210_VV_TO_G
-Be7_init       = ds['SpeciesRst_Be7'  ].isel(time=0) * Be7_VV_TO_G
-Be10_init      = ds['SpeciesRst_Be10' ].isel(time=0) * Be10_VV_TO_G
-
-# Trop-only initial mass arrays [g]
-Pb210_init_tr  = np.ma.masked_array(Pb210_init.values, tropmask)
-Be7_init_tr    = np.ma.masked_array(Be7_init.values,   tropmask)
-Be10_init_tr   = np.ma.masked_array(Be10_init.values,  tropmask)
-
-# Full-atmosphere annual average mass [g] (recycle variable names)
-Pb210_init     = np.sum(Pb210_init.values) / N_MONTHS_FLOAT
-Be7_init       = np.sum(Be7_init.values  ) / N_MONTHS_FLOAT
-Be10_init      = np.sum(Be10_init.values ) / N_MONTHS_FLOAT
-
-# Trop-only annual average mass [g] (recycle variable names)
-Pb210_init_tr  = np.sum(Pb210_init_tr) / N_MONTHS_FLOAT
-Be7_init_tr    = np.sum(Be7_init_tr  ) / N_MONTHS_FLOAT
-Be10_init_tr   = np.sum(Be10_init_tr ) / N_MONTHS_FLOAT
-
-# Strat-only annual average mass [g]
-Pb210_init_st  = Pb210_init - Pb210_init_tr
-Be7_init_st    = Be7_init   - Be7_init_tr
-Be10_init_st   = Be10_init  - Be10_init_tr
-
-# ------------------------------------
-# Final mass [mol/mol dry] -> [g]
-# ------------------------------------
-
-# Read final restart file
-ds             = xr.open_mfdataset(RstFinal)
-
-# Full-atmosphere mass arrays [g]
-Pb210_final    = ds['SpeciesRst_Pb210'].isel(time=0) * Pb210_VV_TO_G
-Be7_final      = ds['SpeciesRst_Be7'  ].isel(time=0) * Be7_VV_TO_G
-Be10_final     = ds['SpeciesRst_Be10' ].isel(time=0) * Be10_VV_TO_G
-
-# Trop-only mass arrays [g]
-Pb210_final_tr = np.ma.masked_array(Pb210_final.values, tropmask)
-Be7_final_tr   = np.ma.masked_array(Be7_final.values,   tropmask)
-Be10_final_tr  = np.ma.masked_array(Be10_final.values,  tropmask)
-
-# Full-atmosphere annual average mass sums [g] (recycle variable names)
-Pb210_final    = np.sum(Pb210_final.values) / N_MONTHS_FLOAT
-Be7_final      = np.sum(Be7_final.values  ) / N_MONTHS_FLOAT
-Be10_final     = np.sum(Be10_final.values ) / N_MONTHS_FLOAT
-
-# Trop-only annual average mass [g] (recycle variable names)
-Pb210_final_tr = np.sum(Pb210_final_tr) / N_MONTHS_FLOAT
-Be7_final_tr   = np.sum(Be7_final_tr  ) / N_MONTHS_FLOAT
-Be10_final_tr  = np.sum(Be10_final_tr ) / N_MONTHS_FLOAT
-
-# Strat-only annual average mass [g]
-Pb210_final_st = Pb210_final - Pb210_final_tr
-Be7_final_st   = Be7_final   - Be7_final_tr
-Be10_final_st  = Be10_final  - Be10_final_tr
-
-# ------------------------------------
-# Final mass - Initial mass [g]
-# ------------------------------------
-Pb210_diff     = Pb210_final    - Pb210_init
-Pb210_diff_tr  = Pb210_final_tr - Pb210_init_tr
-Pb210_diff_st  = Pb210_final_st - Pb210_init_st
-Be7_diff       = Be7_final      - Be7_init     
-Be7_diff_tr    = Be7_final_tr   - Be7_init_tr  
-Be7_diff_st    = Be7_final_st   - Be7_init_st  
-Be10_diff      = Be10_final     - Be10_init     
-Be10_diff_tr   = Be10_final_tr  - Be10_init_tr
-Be10_diff_st   = Be10_final_st  - Be10_init_st
+    # molec/cm2/s --> g/day
+    mcm2s_to_g_d[spc] = area_cm2.values / kg_per_mol[spc] * kg_s_to_g_d[spc]
 
 # ======================================================================
-# Burdens [mol/mol dry] -> [g]
+# Functions
 # ======================================================================
 
-# Read initial restart data
-ds                  = xr.open_mfdataset(SpeciesConc)
+def diff(dict0, dict1):
+    """
+    Function to take the difference of two dict objects.
+    Assumes that both objects have the same keys.
+    """
+    result = {}
+    for key, value in dict0.items():
+        result[key] = dict1[key] - dict0[key]
 
-# Full-atmosphere atmospheric burdens [g]
-Pb210_burden        = ds['SpeciesConc_Pb210'] * Pb210_VV_TO_G
-Be7_burden          = ds['SpeciesConc_Be7'  ] * Be7_VV_TO_G
-Be10_burden         = ds['SpeciesConc_Be10' ] * Be10_VV_TO_G
+    return result
 
-# Trop-only atmospheric burdens [g]
-Pb210_burden_tr     = np.ma.masked_array(Pb210_burden.values, tropmask)
-Be7_burden_tr       = np.ma.masked_array(Be7_burden.values,   tropmask)
-Be10_burden_tr      = np.ma.masked_array(Be10_burden.values,  tropmask)
 
-# Compute monthly sums [g]
-for t in range(N_MONTHS):
-    Pb210_sum[t]    = np.sum(Pb210_burden.isel(time=t).values)
-    Be7_sum[t]      = np.sum(Be7_burden.isel(time=t).values)
-    Be10_sum[t]     = np.sum(Be10_burden.isel(time=t).values)
-    Pb210_sum_tr[t] = np.sum(Pb210_burden_tr[t,:,:,:])
-    Be7_sum_tr[t]   = np.sum(Be7_burden_tr[t,:,:,:]  )
-    Be10_sum_tr[t]  = np.sum(Be10_burden_tr[t,:,:,:] )
+def total(dict_list):
+    """
+    Function to take the difference of two dict objects.
+    Assumes that all objects have the same keys.
+    """
+    # Initialize
+    result = {}
+    for spc in species_list:
+        result[spc + "_f"] = 0.0   # full-atmosphere
+        result[spc + "_t"] = 0.0   # trop-only
+        result[spc + "_s"] = 0.0   # strat-only
 
-# Save trop-only sums [g] for residence time computation
-Pb210_sum_burden    = Pb210_sum_tr
-Be7_sum_burden      = Be7_sum_tr
-Be10_sum_burden     = Be10_sum_tr
+    # Sum over all dictionaries
+    for d in dict_list:
+        for k, v in d.items():
+            result[k] += v
 
-# Compute annual average burdens [g] (recycle variable names)
-Pb210_burden        = np.mean(Pb210_sum)
-Pb210_burden_tr     = np.mean(Pb210_sum_tr)
-Pb210_burden_st     = Pb210_burden - Pb210_burden_tr
-Be7_burden          = np.mean(Be7_sum)
-Be7_burden_tr       = np.mean(Be7_sum_tr)
-Be7_burden_st       = Be7_burden - Be7_burden_tr
-Be10_burden         = np.mean(Be10_sum)
-Be10_burden_tr      = np.mean(Be10_sum_tr)
-Be10_burden_st      = Be10_burden - Be10_burden_tr
+    return result
 
-# ======================================================================
-# Drydep [molec/cm2/s] -> [g/day]
-# NOTE: By nature, drydep is only in the troposphere
-# ======================================================================
 
-# Read initial restart data
-ds               = xr.open_mfdataset(DryDep)
+def mass_from_rst(ds, tropmask):
+    """
+    Computes global species mass from a restart file.
+    """
+    # Initialize
+    vv_to_g = {}
+    rst_f = {}
+    rst_t = {}
+    result = {}
+    
+    # Conversion factors based on restart-file met fields
+    g100    = 100.0 / constants.G
+    airmass = ds["Met_DELPDRY"].isel(time=0) * ds["AREA"] * g100
+    airmass = airmass.values
 
-# Drydep flux [g/day]
-Pb210_dry        = ds['DryDep_Pb210'] * Pb210_MCM2S_TO_G_DAY
-Be7_dry          = ds['DryDep_Be7']   * Be7_MCM2S_TO_G_DAY
-Be10_dry         = ds['DryDep_Be10']  * Be7_MCM2S_TO_G_DAY
+    # Loop over species
+    for spc in species_list:
 
-# Compute monthly sums [g]
-for t in range(N_MONTHS):
-    Pb210_sum[t] = np.sum(Pb210_dry.isel(time=t).values)
-    Be7_sum[t]   = np.sum(Be7_dry.isel(time=t).values)
-    Be10_sum[t]  = np.sum(Be10_dry.isel(time=t).values)
+        # Conversion factor from mixing ratio to g, w/ met from rst file
+        vv_to_g[spc] = airmass * (mw[spc] / mw["Air"]) * 1000.0
 
-# Save trop-only sums [g] for residence time computation
-Pb210_sum_dry    = Pb210_sum
-Be7_sum_dry      = Be7_sum
-Be10_sum_dry     = Be10_sum
+        # Whole-atmosphere mass
+        rst_f[spc] = ds["SpeciesRst_" + spc].isel(time=0).values * vv_to_g[spc]
 
-# Compute annual average drydep flux [g/day] (recycle variable names)
-Pb210_dry        = np.mean(Pb210_sum)
-Be7_dry          = np.mean(Be7_sum)
-Be10_dry         = np.mean(Be10_sum)
+        # Troposphere-only mass
+        rst_t[spc] = np.ma.masked_array(rst_f[spc], tropmask)
 
-# ======================================================================
-# Large scale wetdep [kg/s] -> [g day]
-# ======================================================================
+        # Sums
+        result[spc + "_f"] = np.sum(rst_f[spc])
+        result[spc + "_t"] = np.sum(rst_t[spc])
+        result[spc + "_s"] = result[spc + "_f"] - result[spc + "_t"]
 
-# Read wetdep data
-ds                  = xr.open_mfdataset(WetLossLS)
+    return result
 
-# Large-scale wet scavenging [g/day]
-Pb210_wls           = ds['WetLossLS_Pb210'] * KG_S_TO_G_DAY
-Be7_wls             = ds['WetLossLS_Be7']   * KG_S_TO_G_DAY
-Be10_wls            = ds['WetLossLS_Be10']  * KG_S_TO_G_DAY
 
-# Large-scale wet scavenging [g/day], troposphere only
-Pb210_wls_tr        = np.ma.masked_array(Pb210_wls.values, tropmask)
-Be7_wls_tr          = np.ma.masked_array(Be7_wls.values,   tropmask)
-Be10_wls_tr         = np.ma.masked_array(Be10_wls.values,  tropmask)
+def annual_average(ds, collection, tropmask, conv_factor):
+    """Take the annual average of a quantity"""
 
-# Create monthly sums [g/day]
-for t in range(N_MONTHS):
-    Pb210_sum[t]    = np.sum(Pb210_wls.isel(time=t).values)
-    Be7_sum[t]      = np.sum(Be7_wls.isel(time=t).values)
-    Be10_sum[t]     = np.sum(Be10_wls.isel(time=t).values)
-    Pb210_sum_tr[t] = np.sum(Pb210_wls_tr[t,:,:,:])
-    Be7_sum_tr[t]   = np.sum(Be7_wls_tr[t,:,:,:])
-    Be10_sum_tr[t]  = np.sum(Be10_wls_tr[t,:,:,:])
+    # Initialize
+    q = {}
+    q_sum_f = np.zeros(N_MONTHS)
+    q_sum_t = np.zeros(N_MONTHS)
+    q_sum_s = np.zeros(N_MONTHS)
+    result = {}
+    
+    for spc in species_list:
+        
+        # Whole-atmosphere and trop-only quantities [g]
+        # NOTE: DryDep is by nature trop-only
+        varname = collection.strip() + "_" + spc
+        q[spc + "_f"] = ds[varname].values * conv_factor[spc]
+        if "DryDep" not in collection:
+            q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
 
-# Save trop-only sums [g] for residence time computation
-Pb210_sum_wls       = Pb210_sum_tr
-Be7_sum_wls         = Be7_sum_tr
-Be10_sum_wls        = Be10_sum_tr
+        # Compute monthly averages, weighted by # of days in month
+        # Special handling for Drydep, which is a 3-D array
+        for t in range(N_MONTHS):
+            if "DryDep" in collection:
+                q_sum_f[t] = np.sum(q[spc + "_f"][t,:,:]) * d_per_mon[t]
+                q_sum_t[t] = q_sum_f[t]
+                q_sum_s[t] = 0.0
+            else:
+                q_sum_f[t] = np.sum(q[spc + "_f"][t,:,:,:]) * d_per_mon[t]
+                q_sum_t[t] = np.sum(q[spc + "_t"][t,:,:,:]) * d_per_mon[t] 
+                q_sum_s[t] = q_sum_f[t] - q_sum_t[t]
 
-# Annual average large-scale wet-scavenging [g/day] (recycle variable names)
-Pb210_wls           = np.mean(Pb210_sum)
-Pb210_wls_tr        = np.mean(Pb210_sum_tr)
-Be7_wls             = np.mean(Be7_sum)
-Be7_wls_tr          = np.mean(Be7_sum_tr)
-Be10_wls            = np.mean(Be10_sum)
-Be10_wls_tr         = np.mean(Be10_sum_tr)
+        # Take annual averages
+        result[spc + "_f"] = np.sum(q_sum_f) / d_per_yr
+        result[spc + "_t"] = np.sum(q_sum_t) / d_per_yr
+        result[spc + "_s"] = np.sum(q_sum_s) / d_per_yr
 
-# ======================================================================
-# Convective wet scavenging [kg/s] -> [g day]
-# ======================================================================
+    return result
 
-# Read convective wet scavenging data
-ds                  = xr.open_mfdataset(WetLossConv)
 
-# Convective wet scavenging [g/day], full-atmosphere
-Pb210_wcv           = ds['WetLossConv_Pb210'] * KG_S_TO_G_DAY
-Be7_wcv             = ds['WetLossConv_Be7']   * KG_S_TO_G_DAY
-Be10_wcv            = ds['WetLossConv_Be10']  * KG_S_TO_G_DAY
+def annual_average_sources(ds_hco, ds_dcy, tropmask):
+    """
+    Take the annual average of a sources -- special handling
+    because Pb210 source is in one collection and Be7/Be10 sources
+    are in another collection.
+    """
+    
+    # Initialize
+    q = {}
+    q_sum_f  = np.zeros(N_MONTHS)
+    q_sum_t = np.zeros(N_MONTHS)
+    q_sum_s = np.zeros(N_MONTHS)
+    result = {}
+    
+    # Pb210 source is from Rn222 decay, in the RadioNuclide collection
+    q["Pb210_f"] = ds_dcy["PbFromRnDecay"].values * kg_s_to_g_d["Pb210"]
+    q_shape = q["Pb210_f"].shape
 
-# Convective wet scavenging [g/day], troposphere only
-Pb210_wcv_tr        = np.ma.masked_array(Pb210_wcv.values, tropmask)
-Be7_wcv_tr          = np.ma.masked_array(Be7_wcv.values,   tropmask)
-Be10_wcv_tr         = np.ma.masked_array(Be10_wcv.values,  tropmask)
+    # Be7 and Be10 sources are in the HEMCO diagnostics collection
+    q["Be7_f"] = np.zeros(q_shape)
+    q["Be10_f"] = np.zeros(q_shape)
 
-# Compute monthly sums [g]
-for t in range(N_MONTHS):
-    Pb210_sum[t]    = np.sum(Pb210_wcv.isel(time=t).values)
-    Be7_sum[t]      = np.sum(Be7_wcv.isel(time=t).values)
-    Be10_sum[t]     = np.sum(Be10_wcv.isel(time=t).values)
-    Pb210_sum_tr[t] = np.sum(Pb210_wcv_tr[t,:,:,:])
-    Be7_sum_tr[t]   = np.sum(Be7_wcv_tr[t,:,:,:])
-    Be10_sum_tr[t]  = np.sum(Be10_wcv_tr[t,:,:,:])
+    # Convert Be7 and Be10 sources from kg/m2/s to g/day
+    # NOTE: This is a kludgey way to do it but it works and
+    # preserves the shape of the data as (time,lev,lat,lon).
+    for t in range(N_MONTHS):
+        for k in range(q_shape[1]):
+            q["Be7_f"][t,k,:,:]  = \
+                ds_hco["EmisBe7_Cosmic"].isel(time=t, lev=k) * \
+                ds_hco["AREA"].isel(time=t) * \
+                kg_s_to_g_d["Be7"]
+            q["Be10_f"][t,k,:,:] = \
+                ds_hco["EmisBe10_Cosmic"].isel(time=t, lev=k) * \
+                ds_hco["AREA"].isel(time=t) * \
+                kg_s_to_g_d["Be10"]
 
-# Save trop-only sums [g] for residence time computation
-Pb210_sum_wcv       = Pb210_sum_tr
-Be7_sum_wcv         = Be7_sum_tr
-Be10_sum_wcv        = Be10_sum_tr
+    # Now proceed to computing the annual averages
+    for spc in species_list:
 
-# Annual average convective wet scavenging [g/day] (recycle variable names)
-Pb210_wcv           = np.mean(Pb210_sum)
-Pb210_wcv_tr        = np.mean(Pb210_sum_tr)
-Be7_wcv             = np.mean(Be7_sum)
-Be7_wcv_tr          = np.mean(Be7_sum_tr)
-Be10_wcv            = np.mean(Be10_sum)
-Be10_wcv_tr         = np.mean(Be10_sum_tr)
+        # Tropospheric-only quantities
+        q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
 
-# ======================================================================
-# Emissions [kg/m2/s] -> [g day]
-# ======================================================================
+        # Compute monthly averages, weighted by # of days in month
+        for t in range(N_MONTHS):
+            q_sum_f[t] = np.sum(q[spc + "_f"][t,:,:,:]) * d_per_mon[t]
+            q_sum_t[t] = np.sum(q[spc + "_t"][t,:,:,:]) * d_per_mon[t]
+            q_sum_s[t] = q_sum_f[t] - q_sum_t[t]
 
-# Read sources and sinks data
-ds                  = xr.open_mfdataset(HemcoDiag)
-ds_dcy              = xr.open_mfdataset(RadioNucl)
+        # Take annual averages
+        result[spc + "_f"] = np.sum(q_sum_f) / d_per_yr
+        result[spc + "_t"] = np.sum(q_sum_t) / d_per_yr
+        result[spc + "_s"] = np.sum(q_sum_s) / d_per_yr
 
-# Sources [g/day], full-atmosphere
-Pb210_src           = ds_dcy['PbFromRnDecay']         * KG_S_TO_G_DAY
-Be7_src             = np.zeros([N_MONTHS,72,46,72])
-Be10_src            = np.zeros([N_MONTHS,72,46,72])
+    return result
 
-# Convert Be7 and Be10 sources from kg/m2/s to g/day
-# NOTE: This is a kludgey way to do it but it works and
-# preserves the shape of the data as (time,lev,lat,lon).
-for t in range(N_MONTHS):
-    for k in range(72):
-        Be7_src[t,k,:,:]  = ds['EmisBe7_Cosmic'].isel(time=t, lev=k) \
-                          * area_m2 * KG_S_TO_G_DAY
-        Be10_src[t,k,:,:] = ds['EmisBe10_Cosmic'].isel(time=t, lev=k) \
-                          * area_m2 * KG_S_TO_G_DAY
 
-# Sources [g/day], troposphere-only
-Pb210_src_tr        = np.ma.masked_array(Pb210_src.values, tropmask)
-Be7_src_tr          = np.ma.masked_array(Be7_src,          tropmask)
-Be10_src_tr         = np.ma.masked_array(Be10_src,         tropmask)
+def trop_residence_time(ds_cnc, ds_dry, ds_wcv, ds_wls):
+    """Take the annual average of a quantity"""
 
-# Compute monthly sums
-for t in range(N_MONTHS):
-    Pb210_sum[t]    = np.sum(Pb210_src.isel(time=t).values)
-    Be7_sum[t]      = np.sum(Be7_src[t,:,:,:])
-    Be10_sum[t]     = np.sum(Be10_src[t,:,:,:])
-    Pb210_sum_tr[t] = np.sum(Pb210_src_tr[t,:,:,:])
-    Be7_sum_tr[t]   = np.sum(Be7_src_tr[t,:,:,:])
-    Be10_sum_tr[t]  = np.sum(Be10_src_tr[t,:,:,:])
+    # Initialize
+    result = {}
 
-# Annual average sources [g/day] (recycle variable names)
-Pb210_src           = np.mean(Pb210_sum)
-Pb210_src_tr        = np.mean(Pb210_sum_tr)
-Pb210_src_st        = Pb210_src - Pb210_src_tr
-Be7_src             = np.mean(Be7_sum)
-Be7_src_tr          = np.mean(Be7_sum_tr)
-Be7_src_st          = Be7_src - Be7_src_tr
-Be10_src            = np.mean(Be10_sum)
-Be10_src_tr         = np.mean(Be10_sum_tr)
-Be10_src_st         = Be10_src - Be10_src_tr
+    # Loop over species
+    for spc in species_list:
 
-# ======================================================================
-# Radioactive decay [kg/s] -> [g day]
-# ======================================================================
+        # Initialize
+        result[spc + "_t"] = 0.0
+        
+        # Concentration [g]
+        var = "SpeciesConc_" + spc
+        q_cnc = ds_cnc[var].values * vv_to_g[spc]
+        q_cnc = np.ma.masked_array(q_cnc, tropmask)
 
-# Radioactive decay [g/day], full-atmosphere
-Pb210_dcy           = ds_dcy['RadDecay_Pb210'] * KG_S_TO_G_DAY
-Be7_dcy             = ds_dcy['RadDecay_Be7']   * KG_S_TO_G_DAY
-Be10_dcy            = ds_dcy['RadDecay_Be10']  * KG_S_TO_G_DAY
+        # DryDep [g d-1]
+        var = "DryDep_" + spc
+        q_dry = ds_dry[var].values * mcm2s_to_g_d[spc]
 
-# Radioactive decay [g/day], troposphere only
-Pb210_dcy_tr        = np.ma.masked_array(Pb210_dcy.values, tropmask)
-Be7_dcy_tr          = np.ma.masked_array(Be7_dcy.values,   tropmask)
-Be10_dcy_tr         = np.ma.masked_array(Be10_dcy.values,  tropmask)
+        # Convective wet scavenging [g d-1]
+        var = "WetLossConv_" + spc
+        q_wcv = ds_wcv[var].values * kg_s_to_g_d[spc]
+        q_wcv = np.ma.masked_array(q_wcv, tropmask)
+        
+        # Large-scale wet scavenging [g d-1]
+        var = "WetLossLS_" + spc
+        q_wls = ds_wls[var].values * kg_s_to_g_d[spc]
+        q_wls = np.ma.masked_array(q_wls, tropmask)
 
-# Compute monthly sums
-for t in range(N_MONTHS):
-    Pb210_sum[t]    = np.sum(Pb210_dcy.isel(time=t).values)
-    Be7_sum[t]      = np.sum(Be7_dcy.isel(time=t).values)
-    Be10_sum[t]     = np.sum(Be10_dcy.isel(time=t).values)
-    Pb210_sum_tr[t] = np.sum(Pb210_dcy_tr[t,:,:,:])
-    Be7_sum_tr[t]   = np.sum(Be7_dcy_tr[t,:,:,:])
-    Be10_sum_tr[t]  = np.sum(Be10_dcy_tr[t,:,:,:])
+        # Loop over months
+        for t in range(N_MONTHS):
 
-# Annual average sinks [g/day] (recycle variable names)
-Pb210_dcy           = np.mean(Pb210_sum)
-Pb210_dcy_tr        = np.mean(Pb210_sum_tr)
-Pb210_dcy_st        = Pb210_dcy - Pb210_dcy_tr
-Be7_dcy             = np.mean(Be7_sum)
-Be7_dcy_tr          = np.mean(Be7_sum_tr)
-Be7_dcy_st          = Be7_dcy - Be7_dcy_tr
-Be10_dcy            = np.mean(Be10_sum)
-Be10_dcy_tr         = np.mean(Be10_sum_tr)
-Be10_dcy_st         = Be10_dcy - Be10_dcy_tr
+            # Compute monthly averages [g]
+            q_cnc_sum = np.sum(q_cnc[t,:,:,:])
+            q_dry_sum = np.sum(q_dry[t,:,:]  )
+            q_wcv_sum = np.sum(q_wcv[t,:,:,:])
+            q_wls_sum = np.sum(q_wls[t,:,:,:])
 
-# ======================================================================
-# Compute total sinks [g/day]
-# ======================================================================
-Pb210_snk           = Pb210_dry + Pb210_wls + Pb210_wcv + Pb210_dcy
-Be7_snk             = Be7_dry   + Be7_wls   + Be7_wcv   + Be7_dcy
-Be10_snk            = Be10_dry  + Be10_wls  + Be10_wcv  + Be10_dcy
-Pb210_snk_tr        = Pb210_dry + Pb210_wls + Pb210_wcv + Pb210_dcy_tr
-Be7_snk_tr          = Be7_dry   + Be7_wls   + Be7_wcv   + Be7_dcy_tr
-Be10_snk_tr         = Be10_dry  + Be10_wls  + Be10_wcv  + Be10_dcy_tr
+            # Compute lifetime
+            num = q_cnc_sum
+            denom = q_dry_sum + q_wcv_sum + q_wls_sum 
+            result[spc + "_t"] += 1.0 / (num / denom)
 
-# ======================================================================
-# Compute tropospheric residence time [days]
-# ======================================================================
-tau_Pb210       = 0.0
-tau_Be7         = 0.0
-tau_Be10        = 0.0
+        # Convert residence time [d]
+        result[spc + "_t"] = 1.0 / ( result[spc + "_t"] / N_MONTHS_FLOAT)
+            
+    return result
 
-for t in range(N_MONTHS):
-    days_in_mon = monthrange(2016,t+1)[1] * 1.0
 
-    # Lifetime of Pb210 [days]
-    num         = Pb210_sum_burden[t]
-    denom       = Pb210_sum_dry[t] + Pb210_sum_wcv[t] + Pb210_sum_wls[t] 
-    tau_Pb210  += 1.0 / (num / denom * days_in_mon)
+def print_budgets(data, key):
+    """Prints the trop+strat budget file"""
+    
+    # Filename to print
+    if "_f" in key:
+        filename = "{}/{}-TransportTracers.Pb-Be_budget_trop_strat.txt".format(
+            plotsdir, devstr)
+    elif "_t" in key:
+        filename = "{}/{}-TransportTracers.Pb-Be_budget_troposphere.txt".format(
+            plotsdir, devstr)
+    elif "_s"in key:
+        filename = \
+            "{}/{}-TransportTracers.Pb-Be_budget_stratosphere.txt".format(
+             plotsdir, devstr)
 
-    # Lifetime of Be7 [days]
-    num         = Be7_sum_burden[t]
-    denom       = Be7_sum_dry[t] + Be7_sum_wcv[t] + Be7_sum_wls[t] 
-    tau_Be7    += 1.0 / (num / denom * days_in_mon)
 
-    # Lifetime of Be210 [days]
-    num         = Be10_sum_burden[t]
-    denom       = Be10_sum_dry[t] + Be10_sum_wcv[t] + Be10_sum_wls[t] 
-    tau_Be10   += 1.0 / (num / denom * days_in_mon)
+    # Open file and print budgets
+    with open(filename, "w+") as f:
+        if "_f" in key:
+            print("Table 1. Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n         in the Troposphere + Stratosphere for 2016\n", file=f)
+        elif "_t" in key:
+            print("Table 2. Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n         in the Troposphere for 2016\n", file=f)
+        elif "_s" in key:
+            print("Table 3. Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n         in the Stratosphere for 2016\n", file=f)
+        print("                                210Pb          7Be         10Be",
+              file=f)
+        print("                          -----------  -----------  -----------",
+              file=f)
 
-# Residence time [days]
-res_Pb210       = 1.0 / ( tau_Pb210 / N_MONTHS_FLOAT )
-res_Be7         = 1.0 / ( tau_Be7   / N_MONTHS_FLOAT )
-res_Be10        = 1.0 / ( tau_Be10  / N_MONTHS_FLOAT )
+        vals = [v[1] for v in list(data["burden"].items()) if key in v[0]]
+        print("  Burden, g               {:11.4f}  {:11.4f}  {:11.4f}".format(
+            *vals), file=f)
+        print(file=f),
 
-# ======================================================================
-# Table 1: Trop + Strat budgets
-# ======================================================================
-filename = "{}-TransportTracers.Pb-Be_budget_trop_strat.txt".format(devstr)
-with open(filename, "w+") as f:
-    print("Table 1. Annual Average Global Budgets of 210Pb, 7Be, and 10Be",
-          file=f)
-    print("         in the Troposphere + Stratosphere for 2016\n", file=f)
-    print("                                210Pb          7Be         10Be",
-          file=f)
-    print("                          -----------  -----------  -----------",
-          file=f)
-    print("  Burden, g               {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_burden,  Be7_burden, Be10_burden), file=f)
-    print("    Stratosphere          {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_burden_st, Be7_burden_st, Be10_burden_st), file=f)
-    print("    Troposphere           {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_burden_tr, Be7_burden_tr, Be10_burden_tr), file=f)    
-    print(file=f),
-    print("  Sources, g d-1          {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_src, Be7_src, Be10_src), file=f)
-    print("    Stratosphere          {:11.6f}  {:11.6f}  {:11.6f}".format(
-        Pb210_src_st, Be7_src_st, Be10_src_st), file=f)
-    print("    Troposphere           {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_src_tr, Be7_src_tr, Be10_src_tr), file=f)
-    print(file=f)
-    print("  Sinks, g d-1            {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_snk, Be7_snk, Be10_snk), file=f)
-    print("    Dry deposition        {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_dry, Be7_dry, Be10_dry), file=f)
-    print("    Wet deposition", file=f)
-    print("      Stratiform          {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_wls, Be7_wls, Be10_wls), file=f)
-    print("      Convective          {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_wcv, Be7_wcv, Be10_wcv), file=f)
-    print("    Radioactive decay     {:11.7f}  {:11.7f}  {:11.8f}".format(
-        Pb210_dcy, Be7_dcy, Be10_dcy), file=f)
-    print("      Stratosphere        {:11.7f}  {:11.7f}  {:11.8f}".format(
-        Pb210_dcy_st, Be7_dcy_st, Be10_dcy_st), file=f)
-    print("      Tropoosphere        {:11.7f}  {:11.7f}  {:11.8f}".format(
-        Pb210_dcy_tr, Be7_dcy_tr, Be10_dcy_tr), file=f)
+        if "_t" in key:
+            vals = [v[1] for v in list(data["res_time"].items()) if key in v[0]]
 
-    print(file=f)
-    print("  Accumulation Term", file=f)
-    print("    Initial mass, g       {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_init, Be7_init, Be10_init), file=f)
-    print("      Stratosphere        {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_init_st, Be7_init_st, Be10_init_st), file=f)
-    print("      Troposphere         {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_init_tr, Be7_init_tr, Be10_init_tr), file=f)
-    print(file=f)
-    print("    Final mass, g         {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_final, Be7_final, Be10_final), file=f)
-    print("      Stratosphere        {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_final_st, Be7_final_st, Be10_final_st), file=f)
-    print("      Troposphere         {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_final_tr, Be7_final_tr, Be10_final_tr), file=f)
-    print(file=f)
-    print("    Difference, g         {:11.7f}  {:11.7f}  {:11.7f}".format(
-        Pb210_diff, Be7_diff, Be10_diff), file=f)
-    print("      Stratosphere        {:11.7f}  {:11.7f}  {:11.7f}".format(
-        Pb210_diff_st, Be7_diff_st, Be10_diff_st), file=f)
-    print("      Troposphere         {:11.7f}  {:11.7f}  {:11.7f}".format(
-        Pb210_diff_tr, Be7_diff_tr, Be10_diff_tr), file=f)
-    f.close()
+            print("  Residence time, d       {:11.4f}  {:11.4f}  {:11.4f}".format(*vals), file=f)
+            print(file=f)
+        
+        vals = [v[1] for v in list(data["src_total"].items()) if key in v[0]]
+        print("  Sources, g d-1          {:11.4f}  {:11.4f}  {:11.4f}".format(
+            *vals), file=f)
+        print(file=f)
 
-# ======================================================================
-# Table 2: Trop only budgets
-# ======================================================================
-filename = "{}-TransportTracers.Pb-Be_budget_troposphere.txt".format(devstr)
-with open(filename, "w+") as f:
-    print("Table 1. Annual Average Global Budgets of 210Pb, 7Be, and 10Be",
-          file=f)
-    print("         in the Troposphere for 2016\n", file=f)
-    print("                                210Pb          7Be         10Be",
-          file=f)
-    print("                          -----------  -----------  -----------",
-          file=f)
-    print("  Burden, g               {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_burden_tr,  Be7_burden_tr, Be10_burden_tr), file=f)
-    print(file=f),
-    print("  Residence time, d       {:11.4f}  {:11.4f}  {:11.4f}".format(
-        res_Pb210, res_Be7, res_Be10), file=f)
-    print(file=f)
-    print("  Sources, g d-1", file=f)
-    print("    From stratosphere     {:11.6f}  {:11.6f}  {:11.6f}".format(
-        Pb210_src_st, Be7_src_st, Be10_src_st), file=f)
-    print("    Within troposphere    {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_src_tr, Be7_src_tr, Be10_src_tr), file=f)
-    print(file=f)
-    print("  Sinks, g d-1            {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_snk, Be7_snk, Be10_snk), file=f)
-    print("    Dry deposition        {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_dry, Be7_dry, Be10_dry), file=f)
-    print("    Wet deposition", file=f)
-    print("      Stratiform          {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_wls, Be7_wls, Be10_wls), file=f)
-    print("      Convective          {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_wcv, Be7_wcv, Be10_wcv), file=f)
-    print("    Radioactive decay     {:11.7f}  {:11.7f}  {:11.8f}".format(
-        Pb210_dcy_tr, Be7_dcy_tr, Be10_dcy_tr), file=f)
-    print(file=f)
-    print("  Accumulation Term", file=f)
-    print("    Initial mass, g       {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_init_tr, Be7_init_tr, Be10_init_tr), file=f)
-    print("    Final mass, g         {:11.4f}  {:11.4f}  {:11.4f}".format(
-        Pb210_final_tr, Be7_final_tr, Be10_final_tr), file=f)
-    print("    Difference, g         {:11.7f}  {:11.7f}  {:11.7f}".format(
-        Pb210_diff_tr, Be7_diff_tr, Be10_diff_tr), file=f)
-    f.close()
+        vals = [v[1] for v in list(data["snk_total"].items()) if key in v[0]]
+        print("  Sinks, g d-1            {:11.4f}  {:11.4f}  {:11.4f}".format(
+            *vals), file=f)
+
+        vals = [v[1] for v in list(data["snk_drydep"].items()) if key in v[0]]
+        print("    Dry deposition        {:11.4f}  {:11.4f}  {:11.4f}".format(
+            *vals), file=f)
+        print("    Wet deposition", file=f)
+
+        vals = [v[1] for v in list(data["snk_wetls"].items()) if key in v[0]]
+        print("      Stratiform          {:11.4f}  {:11.4f}  {:11.4f}".format(
+            *vals), file=f)
+
+        vals = [v[1] for v in list(data["snk_wetconv"].items()) if key in v[0]]
+        print("      Convective          {:11.4f}  {:11.4f}  {:11.4f}".format(
+           *vals), file=f)
+
+        vals = [v[1] for v in list(data["snk_decay"].items()) if key in v[0]]
+        print("    Radioactive decay     {:11.7f}  {:11.7f}  {:11.8f}".format(
+            *vals), file=f)
+        print(file=f)
+
+        vals = [v[1] for v in list(data["src_minus_snk"].items())
+                if key in v[0]]
+        print("  Sources - Sinks, g d-1  {:11.6f}  {:11.6f}  {:11.6f}".format(
+            *vals), file=f)
+        print(file=f)
+        print("  Accumulation Term", file=f)
+
+        vals = [v[1] for v in list(data["accum_init"].items()) if key in v[0]]
+        print("    Initial mass, g       {:11.4f}  {:11.4f}  {:11.4f}".format(
+            *vals), file=f)
+
+        vals = [v[1] for v in list(data["accum_final"].items()) if key in v[0]]
+        print("    Final mass, g         {:11.4f}  {:11.4f}  {:11.4f}".format(
+            *vals), file=f)
+
+        vals = [v[1] for v in list(data["accum_diff"].items()) if key in v[0]]
+        print("    Difference, g         {:11.7f}  {:11.7f}  {:11.7f}".format(
+            *vals), file=f)
+        f.close()
+        
+        
+def transport_tracers_budgets():
+    """Driver program."""
+
+    # Initialize
+    data = {}
+    
+    # ==================================================================
+    # Get the accumulation term (init & final masses) from the restarts
+    # ==================================================================
+    
+    # Get initial mass from restart file
+    ds = xr.open_mfdataset(RstInit)
+    data["accum_init"] = mass_from_rst(ds, tropmask[0,:,:,:])
+
+    # Get initial mass from restart file
+    ds = xr.open_mfdataset(RstFinal)
+    data["accum_final"] = mass_from_rst(ds, tropmask[11,:,:,:])
+
+    # Take the difference final - init
+    data["accum_diff"] = diff(data["accum_init"], data["accum_final"])
+
+    # ==================================================================
+    # Burdens [g]
+    # ==================================================================
+    ds_cnc = xr.open_mfdataset(SpeciesConc)
+    data["burden"] = annual_average(ds_cnc, "SpeciesConc", tropmask, vv_to_g)
+
+    # ==================================================================
+    # Sources and sinks [g d-1]
+    # ==================================================================
+
+    # Sources
+    ds_hco = xr.open_mfdataset(HemcoDiag)
+    ds_dcy = xr.open_mfdataset(RadioNucl)
+    data["src_total"] = annual_average_sources(ds_hco, ds_dcy, tropmask)
+    
+    # Radioactive decay [g d-1]
+    data["snk_decay"] = annual_average(ds_dcy, "RadDecay",
+                                       tropmask, kg_s_to_g_d)
+    
+    # Drydep fluxes
+    ds_dry = xr.open_mfdataset(DryDep)
+    data["snk_drydep"]= annual_average(ds_dry, "DryDep",
+                                       tropmask, mcm2s_to_g_d)
+
+    # Convective wet scavenging
+    ds_wcv = xr.open_mfdataset(WetLossConv)
+    data["snk_wetconv"] = annual_average(ds_wcv, "WetLossConv",
+                                         tropmask, kg_s_to_g_d)
+
+    # Large-scale wet scavenging [g d-1]
+    ds_wls = xr.open_mfdataset(WetLossLS)
+    data["snk_wetls"] = annual_average(ds_wls, "WetLossLS",
+                                       tropmask, kg_s_to_g_d)
+
+    # Total sinks and sources - sinks
+    data["snk_total"] = total([data["snk_drydep"], data["snk_wetls"], 
+                               data["snk_wetconv"], data["snk_decay"]])
+    data["src_minus_snk"] = diff(data["snk_total"], data["src_total"])
+
+    # Tropospheric residence time
+    data["res_time"] = trop_residence_time(ds_cnc, ds_dry, ds_wcv, ds_wls)
+    
+    # ==================================================================
+    # Print budgets
+    # ==================================================================
+    for key in ["_f", "_t", "_s"]:
+        print_budgets(data, key)
+        
+
+if __name__ == "__main__":
+    transport_tracers_budgets()
+
