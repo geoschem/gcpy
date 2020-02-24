@@ -49,6 +49,7 @@ import xarray as xr
 from gcpy import benchmark as bmk
 from gcpy.constants import skip_these_vars
 from gcpy.core import get_filepaths
+import gcpy.budget_tt as ttbdg
 import pandas as pd
 import numpy as np
 import warnings
@@ -103,17 +104,20 @@ plot_wetdep  = False
 #bmk_type     = 'TransportTracersBenchmark'
 #plot_conc    = True
 #plot_wetdep  = True
+#budget_table = True
 #plot_emis    = False
 #emis_table   = False
 #plot_jvalues = False
 #plot_aod     = False
 #mass_table   = False
-#budget_table = False
 #OH_metrics   = False
 
 # Start and end of the benchmark year (as numpy.datetime64 dates)
-bmk_start = np.datetime64('2016-01-01')
-bmk_end = np.datetime64('2017-01-01')
+bmk_year = 2016
+bmk_start_str = "{}-01-01".format(str(bmk_year))
+bmk_end_str = "{}-01-01".format(str(bmk_year+1))
+bmk_start = np.datetime64(bmk_start_str)
+bmk_end = np.datetime64(bmk_end_str)
 
 # Data directories (edit as needed)
 gcc_vs_gcc_refdir   = join(maindir, gcc_ref_version,  'OutputDir')
@@ -382,12 +386,12 @@ if gcc_vs_gcc:
                                        dst=gcc_vs_gcc_plotsdir,
                                        overwrite=True)
         
-    if budget_table:
+    if budget_table and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC budgets tables
-        # (FullChemBenchmark only)
+        # (FullChemBenchmark)
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC budget tables %%%')
+        print('\n%%% Creating GCC vs. GCC FullChemBenchmark budgets %%%')
 
         ## Paths to budget data
         gcc_vs_gcc_devbgt = get_filepaths(gcc_vs_gcc_devdir, 'Budget',
@@ -403,7 +407,20 @@ if gcc_vs_gcc:
                                              interval=sec_per_month[s*3],
                                              subdst=mon_yr_str)
 
-    if OH_metrics:
+
+    if budget_table and "TransportTracers" in bmk_type:
+        # --------------------------------------------------------------
+        # GCC vs GCC budgets tables
+        # (TransportTracers)
+        # --------------------------------------------------------------
+        print('\n%%% Creating GCC vs. GCC TransportTracersBenchmark budgets %%%')
+        ttbdg.transport_tracers_budgets(maindir,
+                                        gcc_dev_version,
+                                        gcc_vs_gcc_plotsdir,
+                                        bmk_year)
+
+
+    if OH_metrics and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC Global mean OH, MCF Lifetime, CH4 Lifetime
         # (FullChemBenchmark only)
