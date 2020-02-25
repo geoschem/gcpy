@@ -96,18 +96,10 @@ class _GlobVars:
         # Read data collections
         # ------------------------------
 
-        # Set a to denote if we are reading GCHP data
-        is_gchp = "GCHP" in SpeciesConc
-        
         # Restarts
         self.ds_ini = xr.open_mfdataset(RstInit)
         self.ds_end = xr.open_mfdataset(RstFinal)
 
-        # Emissions
-        if is_gchp:
-            self.ds_hco = xr.open_mfdataset(GCHPEmiss)
-        else:
-            self.ds_hco = xr.open_mfdataset(HemcoDiag)
 
         # Diagnostics
         self.ds_dcy = xr.open_mfdataset(RadioNucl)
@@ -117,8 +109,17 @@ class _GlobVars:
         self.ds_wcv = xr.open_mfdataset(WetLossConv)
         self.ds_wls = xr.open_mfdataset(WetLossLS)
 
+        # Set a flag if this data is from GCHP
+        self.is_gchp = "nf" in self.ds_cnc.dims.keys()
+
+        # Emissions
+        if self.is_gchp:
+            self.ds_hco = xr.open_mfdataset(GCHPEmiss)
+        else:
+            self.ds_hco = xr.open_mfdataset(HemcoDiag)
+        
         # Area and troposphere mask
-        if is_gchp:
+        if self.is_gchp:
             self.area_m2 = self.ds_met["Met_AREAM2"].isel(time=0)
         else:
             self.area_m2 = self.ds_met["AREA"].isel(time=0)
@@ -334,16 +335,14 @@ def annual_average(globvars, ds, collection, conv_factor):
             # NOTE: DryDep is by nature trop-only
             # Therefore, data arrays don't have a lev dimension,
             # so special handling must be done.
-            is_gchp = len(q_shape) == 4
-            if is_gchp:
+            if globvars.is_gchp:
                 sum_axes = (1,2,3)
             else:
                 sum_axes = (1,2)
 
         else:
             # Otherwise, expect a lev dimension
-            is_gchp = len(q_shape) == 5
-            if is_gchp:
+            if globvars.is_gchp:
                 sum_axes = (1,2,3.4)
             else:
                 sum_axes = (1,2,3)
@@ -403,10 +402,9 @@ def annual_average_sources(globvars):
     # Determine the shape of the data
     q_shape = q["Pb210_f"].shape     # e.g. (time,lev,lat,lon)
     n_levs = q_shape[1]              # Number of levels 
-    is_gchp = len(q_shape) == 5      # GCHP arrays also have nf dimension
 
     # Determine which array axes to sum over for monthly sums
-    if is_gchp:
+    if globvars.is_gchp:
         area_var = "Met_AREAM2"
         sum_axes = (1,2,3,4)
     else:
@@ -507,8 +505,7 @@ def trop_residence_time(globvars):
 
         # Set a flag to denote if this is GCHP
         # and also denote which axes we should sum over
-        is_gchp = len(q_cnc.shape) == 5
-        if is_gchp:
+        if globvars.is_gchp:
             sum_axes = (1,2,3,4)
             sum_dryd = (1,2,3)
         else:
