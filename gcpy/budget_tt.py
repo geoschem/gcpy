@@ -34,16 +34,30 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, maindir, devstr, plotsdir, year):
+    def __init__(self, devstr, maindir, plotsdir, year, overwrite):
         """
         Initializes the _GlobVars class.
+
+        Args:
+        -----
+            devstr : str
+                Label denoting the "Dev" version.
+            maindir : str
+                Top-level benchmark run directory.
+            plotsdir : str
+                Directory where plots & tables will be created.
+            year : int
+                Year of the benchmark simulation.
+            overwrite : bool
+                Denotes whether to ovewrite existing budget tables.
         """
         # ------------------------------
         # Arguments from outside
         # ------------------------------
-        self.maindir = maindir
         self.devstr = devstr
+        self.maindir = maindir
         self.plotsdir = plotsdir
+        self.overwrite = overwrite
         
         # ------------------------------
         # Benchmark year
@@ -56,11 +70,11 @@ class _GlobVars:
         # ------------------------------
         # Collection file lists
         # ------------------------------
-        rstdir = join(maindir, devstr, "restarts")
+        rstdir = join(self.maindir, self.devstr, "restarts")
         RstInit = join(rstdir, "GEOSChem.Restart.{}*nc4".format(self.y0_str))
         RstFinal = join(rstdir, "GEOSChem.Restart.{}*.nc4".format(self.y1_str))
 
-        datadir = join(maindir, devstr, "OutputDir")
+        datadir = join(self.maindir, self.devstr, "OutputDir")
         HemcoDiag = join(datadir, 
                          "HEMCO_diagnostics.{}*.nc".format(self.y0_str))
         DryDep = join(datadir, 
@@ -170,6 +184,11 @@ def diff(globvars, dict0, dict1):
             Global variables needed for budget computations.
         dict0, dict1 : dict
             Dictionaries to be subtracted (dict1 - dict0)
+
+    Returns:
+    -------
+        result : dict
+            Key-by-key difference of dict1 - dict0
     """
     result = {}
     for key, value in dict0.items():
@@ -184,10 +203,16 @@ def total(globvars, dict_list):
     Assumes that all objects have the same keys.
 
     Args:
+    -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
         dict_list : list of dict
             Dictionaries to be summed.
+
+    Returns:
+    -------
+        result : dict
+            Key-by-key sum of all dicts in dict_list.
     """
     # Initialize
     result = {}
@@ -216,6 +241,11 @@ def mass_from_rst(globvars, ds, tropmask):
             Data containing species mass to be summed.
         tropmask : numpy ndarray
             Mask to denote tropospheric grid boxes.
+
+    Returns:
+    --------
+        result: dict
+            Species mass in strat, trop, and strat+trop regimes.
     """
     # Initialize
     vv_to_g = {}
@@ -263,6 +293,12 @@ def annual_average(globvars, ds, collection, conv_factor):
             Name of the diagnostic collection.
         conv_factor : str
             Conversion factor to be applied.
+
+     Returns:
+     --------
+        result: dict
+            Annual-average budgets or fluxes in 
+            in strat, trop, and strat+trop regimes.
     """
 
     # Initialize
@@ -312,6 +348,11 @@ def annual_average_sources(globvars):
     -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
+
+     Returns:
+     -------
+        result : dict
+            Source totals in strat, trop, and strat+trop regimes.
     """
     
     # Initialize
@@ -372,6 +413,11 @@ def trop_residence_time(globvars):
     -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
+
+    Returns:
+    --------
+        result : dict
+            Tropopsheric residence time for all species.
     """
 
     # Initialize
@@ -425,7 +471,7 @@ def trop_residence_time(globvars):
 
 def print_budgets(globvars, data, key):
     """
-    Prints the trop+strat budget file
+    Prints the trop+strat budget file.
     
     Args:
     -----
@@ -434,36 +480,48 @@ def print_budgets(globvars, data, key):
         data: dict
             Nested dictionary containing budget info.
         key: list of str
-            One of "_f", "_t", or "_s".
+            One of "_f", (full-atmosphere) "_t" (trop-only),
+            or "_s" (strat-only).
     """
+
+    # Directory in which budgets tables will be created
+    table_dir = "{}/Tables".format(globvars.plotsdir)
+
+    # Create table_dir if it doesn't already exist (if overwrite=True)
+    if os.path.isdir(table_dir) and not globvars.overwrite:
+        err_str = "Pass overwrite=True to overwrite files in that directory"
+        print("Directory {} exists. {}".format(table_dir, err_str))
+        return
+    elif not os.path.isdir(table_dir):
+        os.mkdir(table_dir)
     
     # Filename to print
     if "_f" in key:
         filename = "{}/{}-TransportTracers.Pb-Be_budget_trop_strat.txt".format(
-            globvars.plotsdir, globvars.devstr)
+            table_dir, globvars.devstr)
     elif "_t" in key:
         filename = "{}/{}-TransportTracers.Pb-Be_budget_troposphere.txt".format(
-            globvars.plotsdir, globvars.devstr)
+            table_dir, globvars.devstr)
     elif "_s"in key:
         filename = \
             "{}/{}-TransportTracers.Pb-Be_budget_stratosphere.txt".format(
-             globvars.plotsdir, globvars.devstr)
+            table_dir, globvars.devstr)
 
     # Common title string
-    title_str = "Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n        "
-        
+    title = "Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n        "
+    
     # Open file and print budgets
     with open(filename, "w+") as f:
         if "_f" in key:
             print(\
                 "Table 1. {} in the Troposphere + Stratosphere for {}\n".format(
-                title_str, globvars.y0_str), file=f)
+                title, globvars.y0_str), file=f)
         elif "_t" in key:
             print("Table 2. {} in the Troposphere for {}\n".format(
-                title_str, globvars.y0_str), file=f)
+                title, globvars.y0_str), file=f)
         elif "_s" in key:
             print("Table 3. {} in the Stratosphere for 2016\n".format(
-                title_str, globvars.y0_str), file=f)
+                title, globvars.y0_str), file=f)
         print("                                210Pb          7Be         10Be",
               file=f)
         print("                          -----------  -----------  -----------",
@@ -528,26 +586,29 @@ def print_budgets(globvars, data, key):
         f.close()
         
         
-def transport_tracers_budgets(maindir, devstr, plotsdir, year):
+def transport_tracers_budgets(devstr, devdir,
+                              plotsdir, year, overwrite=True):
     """
     Main program to compute TransportTracersBenchmark budgets
 
     Args:
     -----
-        maindir : str
-            Main benchmark directory (containing links to data).
+        devdir : str
+            Benchmark directory (containing links to data).
         devstr : str
             Denotes the "Dev" benchmark version.
         plotsdir : str 
             Directory where budget tables will be created.
         year : int
             The year of the benchmark simulation (e.g. 2016). 
+        overwrite : bool
+            Denotes whether to ovewrite existing budget tables.
     """
 
     # Store global variables in a private class
-    globvars = _GlobVars(maindir, devstr, plotsdir, year)
+    globvars = _GlobVars(devstr, devdir, plotsdir, year, overwrite)
 
-    # Initialize 
+    # Data structure for budgets
     data = {}
     
     # ==================================================================
@@ -629,5 +690,12 @@ def transport_tracers_budgets(maindir, devstr, plotsdir, year):
         
 
 if __name__ == "__main__":
-    transport_tracers_budgets()
+
+    # Make sure we have enough arguments
+    if  len(sys.argv) != 5:
+        err_msg = "Usage: budgets_tt.py devstr, maindir, plotsdir, year"
+        raise ValueError(err_msg)
+    
+    # Call the driver program
+    transport_tracers_budgets(sys.argv[1:4])
 
