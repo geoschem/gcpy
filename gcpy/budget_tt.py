@@ -78,28 +78,38 @@ class _GlobVars:
         HemcoDiag = join(datadir, 
                          "HEMCO_diagnostics.{}*.nc".format(self.y0_str))
         DryDep = join(datadir, 
-                      "GEOSChem.DryDep.{}*.nc4".format(self.y0_str))
+                      "*.DryDep.{}*.nc4".format(self.y0_str))
         RadioNucl = join(datadir, 
-                         "GEOSChem.RadioNuclide.{}*.nc4".format(self.y0_str))
+                         "*.RadioNuclide.{}*.nc4".format(self.y0_str))
         StateMet = join(datadir, 
-                        "GEOSChem.StateMet.{}*.nc4".format(self.y0_str))
+                        "*.StateMet.{}*.nc4".format(self.y0_str))
         SpeciesConc = join(datadir, 
-                           "GEOSChem.SpeciesConc.{}*.nc4".format(self.y0_str))
+                           "*.SpeciesConc.{}*.nc4".format(self.y0_str))
         WetLossConv = join(datadir, 
-                           "GEOSChem.WetLossConv.{}*.nc4".format(self.y0_str))
+                           "*.WetLossConv.{}*.nc4".format(self.y0_str))
         WetLossLS = join(datadir, 
-                         "GEOSChem.WetLossLS.{}*.nc4".format(self.y0_str))
-
+                         "*.WetLossLS.{}*.nc4".format(self.y0_str))
+        GCHPEmiss =  join(datadir, 
+                         "GCHP.Emissions.{}*.nc4".format(self.y0_str))
+      
         # ------------------------------        
         # Read data collections
         # ------------------------------
+
+        # Set a to denote if we are reading GCHP data
+        is_gchp = "GCHP" in SpeciesConc
         
         # Restarts
         self.ds_ini = xr.open_mfdataset(RstInit)
         self.ds_end = xr.open_mfdataset(RstFinal)
 
+        # Emissions
+        if is_gchp:
+            self.ds_hco = xr.open_mfdataset(GCHPEmiss)
+        else:
+            self.ds_hco = xr.open_mfdataset(HemcoDiag)
+
         # Diagnostics
-        self.ds_hco = xr.open_mfdataset(HemcoDiag)
         self.ds_dcy = xr.open_mfdataset(RadioNucl)
         self.ds_dry = xr.open_mfdataset(DryDep)
         self.ds_met = xr.open_mfdataset(StateMet)
@@ -108,7 +118,10 @@ class _GlobVars:
         self.ds_wls = xr.open_mfdataset(WetLossLS)
 
         # Area and troposphere mask
-        self.area_m2 = self.ds_met["AREA"].isel(time=0)
+        if is_gchp:
+            self.area_m2 = self.ds_met["Met_AREAM2"].isel(time=0)
+        else:
+            self.area_m2 = self.ds_met["AREA"].isel(time=0)
         self.area_cm2 = self.area_m2 * 1.0e4
         self.tropmask = get_troposphere_mask(self.ds_met)
 
@@ -310,27 +323,48 @@ def annual_average(globvars, ds, collection, conv_factor):
     
     for spc in globvars.species_list:
         
-        # Whole-atmosphere and trop-only quantities [g]
-        # NOTE: DryDep is by nature trop-only
+        # Whole-atmosphere quanity [g] or [g d-1]
         varname = collection.strip() + "_" + spc
         q[spc + "_f"] = ds[varname].values * conv_factor[spc]
-        if "DryDep" not in collection:
-            q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], globvars.tropmask)
+
+        # Shape of the data
+        q_shape = q[spc + "_f"].shape
+
+        if "DryDep" in collection:
+            # NOTE: DryDep is by nature trop-only
+            # Therefore, data arrays don't have a lev dimension,
+            # so special handling must be done.
+            is_gchp = len(q_shape) == 4
+            if is_gchp:
+                sum_axes = (1,2,3)
+            else:
+                sum_axes = (1,2)
+
+        else:
+            # Otherwise, expect a lev dimension
+            is_gchp = len(q_shape) == 5
+            if is_gchp:
+                sum_axes = (1,2,3.4)
+            else:
+                sum_axes = (1,2,3)
+
+            # Trop-only quantities [g] or [g d-1] 
+            q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], \
+                                               globvars.tropmask)
 
         # Compute monthly averages, weighted by # of days in month
-        # Special handling for Drydep, which is a 3-D array
-        for t in range(globvars.N_MONTHS):
-            if "DryDep" in collection:
-                q_sum_f[t] = np.sum(q[spc + "_f"][t,:,:]) \
-                           * globvars.d_per_mon[t]
-                q_sum_t[t] = q_sum_f[t]
-                q_sum_s[t] = 0.0
-            else:
-                q_sum_f[t] = np.sum(q[spc + "_f"][t,:,:,:]) \
-                           * globvars.d_per_mon[t]
-                q_sum_t[t] = np.sum(q[spc + "_t"][t,:,:,:]) \
-                           * globvars.d_per_mon[t] 
-                q_sum_s[t] = q_sum_f[t] - q_sum_t[t]
+        # Special handling for DryDep, which lacks a "lev" dimension.
+        if "DryDep" in collection:
+            q_sum_f = np.sum(q[spc + "_f"], axis=sum_axes) \
+                    * globvars.d_per_mon
+            q_sum_t = q_sum_f
+            q_sum_s = 0.0
+        else:
+            q_sum_f = np.sum(q[spc + "_f"], axis=sum_axes) \
+                    * globvars.d_per_mon
+            q_sum_t = np.sum(q[spc + "_t"], axis=sum_axes) \
+                    * globvars.d_per_mon
+            q_sum_s = q_sum_f - q_sum_t
 
         # Take annual averages
         result[spc + "_f"] = np.sum(q_sum_f) / globvars.d_per_yr
@@ -365,8 +399,20 @@ def annual_average_sources(globvars):
     # Pb210 source is from Rn222 decay, in the RadioNuclide collection
     q["Pb210_f"] = globvars.ds_dcy["PbFromRnDecay"].values \
                  * globvars.kg_s_to_g_d["Pb210"]
-    q_shape = q["Pb210_f"].shape
 
+    # Determine the shape of the data
+    q_shape = q["Pb210_f"].shape     # e.g. (time,lev,lat,lon)
+    n_levs = q_shape[1]              # Number of levels 
+    is_gchp = len(q_shape) == 5      # GCHP arrays also have nf dimension
+
+    # Determine which array axes to sum over for monthly sums
+    if is_gchp:
+        area_var = "Met_AREAM2"
+        sum_axes = (1,2,3,4)
+    else:
+        area_var = "AREA"
+        sum_axes = (1,2,3)
+        
     # Be7 and Be10 sources are in the HEMCO diagnostics collection
     q["Be7_f"] = np.zeros(q_shape)
     q["Be10_f"] = np.zeros(q_shape)
@@ -375,15 +421,25 @@ def annual_average_sources(globvars):
     # NOTE: This is a kludgey way to do it but it works and
     # preserves the shape of the data as (time,lev,lat,lon).
     for t in range(globvars.N_MONTHS):
-        for k in range(q_shape[1]):
-            q["Be7_f"][t,k,:,:]  = \
-                globvars.ds_hco["EmisBe7_Cosmic"].isel(time=t, lev=k) * \
-                globvars.ds_hco["AREA"].isel(time=t) * \
-                globvars.kg_s_to_g_d["Be7"]
-            q["Be10_f"][t,k,:,:] = \
-                globvars.ds_hco["EmisBe10_Cosmic"].isel(time=t, lev=k) * \
-                globvars.ds_hco["AREA"].isel(time=t) * \
-                globvars.kg_s_to_g_d["Be10"]
+        for k in range(n_levs):
+            if is_gchp:
+                q["Be7_f"][t,k,:,:,:]  = \
+                    globvars.ds_hco["EmisBe7_Cosmic"].isel(time=t, lev=k) * \
+                    globvars.ds_met[area_var].isel(time=t) * \
+                    globvars.kg_s_to_g_d["Be7"]
+                q["Be10_f"][t,k,:,:,:] = \
+                    globvars.ds_hco["EmisBe10_Cosmic"].isel(time=t, lev=k) * \
+                    globvars.ds_met[area_var].isel(time=t) * \
+                    globvars.kg_s_to_g_d["Be10"]
+            else:
+                q["Be7_f"][t,k,:,:]  = \
+                    globvars.ds_hco["EmisBe7_Cosmic"].isel(time=t, lev=k) * \
+                    globvars.ds_met[area_var].isel(time=t) * \
+                    globvars.kg_s_to_g_d["Be7"]
+                q["Be10_f"][t,k,:,:] = \
+                    globvars.ds_hco["EmisBe10_Cosmic"].isel(time=t, lev=k) * \
+                    globvars.ds_met[area_var].isel(time=t) * \
+                    globvars.kg_s_to_g_d["Be10"]
 
     # Now proceed to computing the annual averages
     for spc in globvars.species_list:
@@ -391,12 +447,13 @@ def annual_average_sources(globvars):
         # Tropospheric-only quantities
         q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], globvars.tropmask)
 
-        # Compute monthly averages, weighted by # of days in month
-        for t in range(globvars.N_MONTHS):
-            q_sum_f[t] = np.sum(q[spc + "_f"][t,:,:,:]) * globvars.d_per_mon[t]
-            q_sum_t[t] = np.sum(q[spc + "_t"][t,:,:,:]) * globvars.d_per_mon[t]
-            q_sum_s[t] = q_sum_f[t] - q_sum_t[t]
-
+        # Take monthly sums, weighted by the # of days in the month
+        q_sum_f = np.sum(q[spc + "_f"], axis=sum_axes) \
+                * globvars.d_per_mon
+        q_sum_t = np.sum(q[spc + "_t"], axis=sum_axes) \
+                * globvars.d_per_mon
+        q_sum_s = q_sum_f - q_sum_t                
+                
         # Take annual averages
         result[spc + "_f"] = np.sum(q_sum_f) / globvars.d_per_yr
         result[spc + "_t"] = np.sum(q_sum_t) / globvars.d_per_yr
@@ -448,20 +505,28 @@ def trop_residence_time(globvars):
         q_wls = globvars.ds_wls[var].values * globvars.kg_s_to_g_d[spc]
         q_wls = np.ma.masked_array(q_wls, globvars.tropmask)
 
-        # Loop over months
+        # Set a flag to denote if this is GCHP
+        # and also denote which axes we should sum over
+        is_gchp = len(q_cnc.shape) == 5
+        if is_gchp:
+            sum_axes = (1,2,3,4)
+            sum_dryd = (1,2,3)
+        else:
+            sum_axes = (1,2,3)
+            sum_dryd = (1,2)
+        
+        # Compute monthly averages [g]
+        q_cnc_sum = np.sum(q_cnc, axis=sum_axes)
+        q_dry_sum = np.sum(q_dry, axis=sum_dryd)
+        q_wcv_sum = np.sum(q_wcv, axis=sum_axes)
+        q_wls_sum = np.sum(q_wls, axis=sum_axes)
+        
+        # Compute lifetime
         for t in range(globvars.N_MONTHS):
-
-            # Compute monthly averages [g]
-            q_cnc_sum = np.sum(q_cnc[t,:,:,:])
-            q_dry_sum = np.sum(q_dry[t,:,:]  )
-            q_wcv_sum = np.sum(q_wcv[t,:,:,:])
-            q_wls_sum = np.sum(q_wls[t,:,:,:])
-
-            # Compute lifetime
-            num = q_cnc_sum
-            denom = q_dry_sum + q_wcv_sum + q_wls_sum 
+            num = q_cnc_sum[t]
+            denom = q_dry_sum[t] + q_wcv_sum[t] + q_wls_sum[t] 
             result[spc + "_t"] += 1.0 / (num / denom)
-
+                    
         # Convert residence time [d]
         result[spc + "_t"] = 1.0 \
                            / (result[spc + "_t"] / globvars.N_MONTHS_FLOAT)
