@@ -49,6 +49,7 @@ import xarray as xr
 from gcpy import benchmark as bmk
 from gcpy.constants import skip_these_vars
 from gcpy.core import get_filepaths
+import gcpy.budget_aer as aerbdg
 import gcpy.budget_tt as ttbdg
 import pandas as pd
 import numpy as np
@@ -240,7 +241,9 @@ if gcc_vs_gcc:
         # FullChemBenchmark includes lumped species and
         # and also separates plots by category
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC concentration plots %%%')
+        title = '\n%%% Creating GCC vs. GCC {} concentration plots %%%'.format(
+            bmk_type)
+        print(title)
    
         # File lists for emissions data (seasonal)
         collection = 'SpeciesConc'
@@ -271,12 +274,14 @@ if gcc_vs_gcc:
                                      overwrite=True,
                                      sigdiff_files=sigdiff_files)
 
-    if plot_emis:
+    if plot_emis and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC emissions plots
         # (FullChemBenchmark only)
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC emissions plots %%%')
+        title = '\n%%% Creating GCC vs. GCC {} emissions plots %%%'.format(
+            bmk_type)
+        print(title)
 
         # File lists for emissions data (seasonal)
         gcc_vs_gcc_refhco = get_filepaths(gcc_vs_gcc_refdir, 'Emissions',
@@ -299,12 +304,13 @@ if gcc_vs_gcc:
                                           overwrite=True,
                                           sigdiff_files=sigdiff_files)
 
-    if emis_table:
+    if emis_table and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC tables of emission and inventory totals
         # (FullChemBenchmark only)
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC emissions and inventory tables %%%')
+        title = '\n%%% Creating GCC vs. GCC {} emissions and inventory totals %%%'.format(bmk_type)
+        print(title)
 
         # File lists for J-values data (monthly)
         gcc_vs_gcc_refhco = get_filepaths(gcc_vs_gcc_refdir, 'Emissions',
@@ -321,12 +327,14 @@ if gcc_vs_gcc:
                                        interval=sec_per_month,
                                        overwrite=True)
 
-    if plot_jvalues:
+    if plot_jvalues and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC J-value plots
         # (FullChemBenchmark only)
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC J-value plots %%%')
+        title = '\n%%% Creating GCC vs. GCC {} J-value plots %%%'.format(
+            bmk_type)
+        print(title)
 
         # Paths to J-value data (seasonal)
         gcc_vs_gcc_refjv = get_filepaths(gcc_vs_gcc_refdir, 'JValues',
@@ -347,12 +355,14 @@ if gcc_vs_gcc:
                                             overwrite=True,
                                             sigdiff_files=sigdiff_files)
 
-    if plot_aod:
+    if plot_aod and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs. GCC column AOD plots
         # (FullChemBenchmark only)
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC column AOD plots %%%')
+        title = '\n%%% Creating GCC vs. GCC {} column AOD plots %%%'.format(
+            bmk_type)
+        print(title)
 
         ## Paths to aerosol optical depth data
         gcc_vs_gcc_refaod = get_filepaths(gcc_vs_gcc_refdir, 'Aerosols',
@@ -373,12 +383,16 @@ if gcc_vs_gcc:
                                          overwrite=True,
                                          sigdiff_files=sigdiff_files)
 
-    if mass_table:
+
+    if mass_table and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs. GCC global mass tables
         # (FullChemBenchmark only)
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC global mass tables %%%')
+        title = '\n%%% Creating GCC vs. GCC {} global mass tables %%%'.format(
+            bmk_type)
+        print(title)
+
         bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst,
                                        gcc_vs_gcc_refstr,
                                        gcc_vs_gcc_devrst,
@@ -391,7 +405,8 @@ if gcc_vs_gcc:
         # GCC vs GCC budgets tables
         # (FullChemBenchmark)
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC FullChemBenchmark budgets %%%')
+        title = '\n%%% Creating GCC vs. GCC {} budgets %%%'.format(bmk_type)
+        print(title)
 
         ## Paths to budget data
         gcc_vs_gcc_devbgt = get_filepaths(gcc_vs_gcc_devdir, 'Budget',
@@ -407,25 +422,33 @@ if gcc_vs_gcc:
                                              interval=sec_per_month[s*3],
                                              subdst=mon_yr_str)
 
-
+        # Compute annual mean AOD budgets and aerosol burdens
+        aerbdg.aerosol_budgets_and_burdens(gcc_dev_version,
+                                           gcc_vs_gcc_devdir,
+                                           gcc_vs_gcc_plotsdir,
+                                           bmk_year,
+                                           overwrite=True)
+        
     if budget_table and "TransportTracers" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC budgets tables
         # (TransportTracers)
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC TransportTracersBenchmark budgets %%%')
-        ttbdg.transport_tracers_budgets(maindir,
-                                        gcc_dev_version,
+        title = '\n%%% Creating GCC vs. GCC {} budgets %%%'.format(bmk_type)
+        print(title)
+        ttbdg.transport_tracers_budgets(gcc_dev_version,
+                                        gcc_vs_gcc_devdir,
                                         gcc_vs_gcc_plotsdir,
-                                        bmk_year)
-
+                                        bmk_year,
+                                        overwrite=True)
 
     if OH_metrics and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC Global mean OH, MCF Lifetime, CH4 Lifetime
         # (FullChemBenchmark only)
         # --------------------------------------------------------------
-        print('\n%%% Creating GCC vs. GCC OH metrics %%%')
+        title = '\n%%% Creating GCC vs. GCC {} OH metrics %%%'.format(bmk_type)
+        print(title)
         gcc_vs_gcc_reflist = [gcc_vs_gcc_refcac, gcc_vs_gcc_refmet]
         gcc_vs_gcc_devlist = [gcc_vs_gcc_devcac, gcc_vs_gcc_devmet]
         bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
