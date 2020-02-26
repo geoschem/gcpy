@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 """
-Computes the budget of Pb and Be7 from the TransportTracers benchmarks.
-
-NOTE: This works for GC-Classic, but may need modifications for GCHP.
- -- Bob Yantosca (21 Jan 2020)
+Computes the aerosol budgets and burdens from 1-year
+FullChemBenchmark simulations.
 """
 
 # ======================================================================
@@ -25,10 +23,9 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # ======================================================================
-# GLOBAL VARIABLES: Configurables (MUST EDIT)
+# Define a class for passing global variables
 # ======================================================================
 
-# Define a class for passing local data
 class _GlobVars:
     """
     Private class _GlobVars contains global data that needs to be
@@ -36,6 +33,21 @@ class _GlobVars:
     """
     def __init__(self, devstr, devdir, plotsdir, year, overwrite):
         """
+        Initializes the _GlobVars class.
+
+        Args:
+        -----
+            devstr : str
+                Label denoting the "Dev" version.
+            devdir : str
+                Directory where benchmark diagnostic files are found.
+            plotsdir : str
+                Directory where plots & tables will be created.
+            year : int
+                Year of the benchmark simulation.
+            overwrite : bool
+                Denotes whether to ovewrite existing budget tables.
+        """        """
         Initializes the _GlobVars class.
         """
         # ------------------------------
@@ -55,29 +67,60 @@ class _GlobVars:
         self.y1_str = "{}".format(self.y1)
 
         # ------------------------------
+        # Species info
+        # ------------------------------
+
+        # List of species (and subsets for the trop & strat)
+        self.species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC" ]
+
+        # Molecular weights
+        # NOTE: In future, get these from species database (bmy, 2/25/20)
+        self.mw = {"BCPI": 12.0, "OCPI": 12.0, "SO4" : 96.0,   "DST1": 29.0, 
+                   "SALA": 31.4, "SALC": 31.4, "Air" : 28.9644}
+
+        # Aerosol optical depth variables
+        self.aod_list = ["AODHyg550nm_SO4",
+                         "AODHyg550nm_BCPI", 
+                         "AODHyg550nm_OCPI",
+                         "AODHyg550nm_SALA", 
+                         "AODHyg550nm_SALC"]
+
+        # Names
+        self.aod_name = {"BCPI": "Black Carbon", 
+                         "DST1": "Dust",
+                         "OCPI": "Organic Carbon", 
+                         "SO4" : "Sulfate", 
+                         "SALA": "Sea Salt (accum)", 
+                         "SALC": "Sea Salt (coarse)"}
+
+        # ------------------------------
         # Collection file lists
         # ------------------------------
         datadir = join(devstr, "OutputDir")
         Aerosols = join(datadir, 
-                        "GEOSChem.Aerosols.{}*.nc4".format(self.y0_str))
+                        "*.Aerosols.{}*.nc4".format(self.y0_str))
         StateMet = join(datadir, 
-                        "GEOSChem.StateMet.{}*.nc4".format(self.y0_str))
+                        "*.StateMet.{}*.nc4".format(self.y0_str))
         SpeciesConc = join(datadir, 
-                           "GEOSChem.SpeciesConc.{}*.nc4".format(self.y0_str))
-
+                           "*.SpeciesConc.{}*.nc4".format(self.y0_str))
+        
         # ------------------------------        
         # Read data collections
         # ------------------------------
 
         # Diagnostics
-        self.ds_aer = xr.open_mfdataset(Aerosols)
+        self.ds_aer = xr.open_mfdataset(Aerosols, data_vars=self.aod_list)
         self.ds_cnc = xr.open_mfdataset(SpeciesConc)
         self.ds_met = xr.open_mfdataset(StateMet)
 
-        # Area and troposphere mask
-        self.area_m2 = self.ds_met["AREA"].isel(time=0)
-        self.area_cm2 = self.area_m2 * 1.0e4
+        # Troposphere mask
         self.tropmask = get_troposphere_mask(self.ds_met)
+
+        # Number of vertical levels
+        self.N_LEVS  = self.ds_cnc.dims["lev"]
+
+        # Set a flag to denote if this data is from GCHP
+        self.is_gchp = "nf" in self.ds_cnc.dims.keys()
 
         # ------------------------------       
         # Months and days
@@ -98,75 +141,55 @@ class _GlobVars:
         for t in range(self.N_MONTHS):
             self.frac_of_yr[t] = self.d_per_mon[t] / self.d_per_yr
 
-        # ------------------------------
-        # Species info
-        # ------------------------------
+        # --------------------------------
+        # Surface area
+        # (kludgey but it works)
+        # --------------------------------
+        if self.is_gchp:   
+            area = self.ds_met["Met_AREAM2"].values
+            a = area.shape
+            self.area_m2 = np.zeros([a[0], N_LEVS, a[1], a[2], a[3]])
+            for t in range(self.N_MONTHS):
+                for k in range(self.N_LEVS):
+                    self.area_m2[t,k,:,:,:] = area[t,:,:,:]
+            self.total_area_m2 = np.sum(self.area_m2[0,0,:,:,:])
+        else:
+            area = self.ds_met["AREA"].values
+            a = area.shape
+            self.area_m2 = np.zeros([a[0], self.N_LEVS, a[1], a[2]])
+            for t in range(self.N_MONTHS):
+                for k in range(self.N_LEVS):
+                    self.area_m2[t,k,:,:] = area[t,:,:]
+            self.total_area_m2 = np.sum(self.area_m2[0,0,:,:])
 
-        # List of species (and subsets for the trop & strat)
-        self.species_list = ["BCPI", "SO4", "DST1", "SALA", "SALC" ]
-
-        # Molecular weights
-        # NOTE: In future, get these from species database (bmy, 2/25/20)
-        self.mw = { "BCPI": 12.0, 
-                    "SO4": 96.0, 
-                    "DST1": 29.0, 
-                    "SALA": 31.4,
-                    "SALC": 31.4,
-                    "Air" : 28.9644}
 
         # ------------------------------
         # Conversion factors
         # ------------------------------
-        self.kg_per_mol = {}
+
+        # v/v dry --> Tg
         self.vv_to_Tg = {}
-        self.kg_s_to_g_d = {}
-
         for spc in self.species_list:
-
-            # kg/mole for each species
-            self.kg_per_mol[spc] = constants.AVOGADRO / (self.mw[spc]  * 1e-3)
-
-            # v/v dry --> Tg
             self.vv_to_Tg[spc] = self.ds_met["Met_AD"].values  \
                                * (self.mw[spc] / self.mw["Air"]) * 1e-9
-
+            
 # ======================================================================
-# Functions
+# Methods
 # ======================================================================
 
-def diff(globvars, dict0, dict1):
+def annual_average(globvars):
     """
-    Function to take the difference of two dict objects.
-    Assumes that both objects have the same keys.
+    Computes the annual average budget of aerosol species.
 
     Args:
     -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
-        dict0, dict1 : dict
-            Dictionaries to be subtracted (dict1 - dict0)
-    """
-    result = {}
-    for key, value in dict0.items():
-        result[key] = dict1[key] - dict0[key]
 
-    return result
-
-
-def annual_average(globvars, ds, collection, conv_factor):
-    """
-    Computes the annual average of budgets or fluxes.
-
-    Args:
-    -----
-        globvars : obj of type _GlobVars
-            Global variables needed for budget computations.
-        ds : xarray Dataset
-            Data to be averaged
-        collection : str
-            Name of the diagnostic collection.
-        conv_factor : str
-            Conversion factor to be applied.
+    Returns:
+    --------
+        result : dict
+            Contains annual average budgets.
     """
 
     # Initialize
@@ -175,26 +198,100 @@ def annual_average(globvars, ds, collection, conv_factor):
     q_sum_t = np.zeros(globvars.N_MONTHS)
     q_sum_s = np.zeros(globvars.N_MONTHS)
     result = {}
-    
+
+    # Define the axes we need to sum over to make monthly sums
+    if globvars.is_gchp:
+        sum_axes = (1,2,3,4)
+    else:
+        sum_axes = (1,2,3)
+
+    # Loop over species
     for spc in globvars.species_list:
         
         # Whole-atmosphere and trop-only quantities [g]
         # NOTE: DryDep is by nature trop-only
-        varname = collection.strip() + "_" + spc
-        q[spc + "_f"] = ds[varname].values * conv_factor[spc]
+        varname = "SpeciesConc_" + spc
+        q[spc + "_f"] = globvars.ds_cnc[varname].values \
+                      * globvars.vv_to_Tg[spc]
         q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], globvars.tropmask)
 
-        # Compute monthly averages, weighted by # of days in month
-        # Special handling for Drydep, which is a 3-D array
-        for t in range(globvars.N_MONTHS):
-            q_sum_f[t] = np.sum(q[spc + "_f"][t,:,:,:]) * globvars.d_per_mon[t]
-            q_sum_t[t] = np.sum(q[spc + "_t"][t,:,:,:]) * globvars.d_per_mon[t] 
-            q_sum_s[t] = q_sum_f[t] - q_sum_t[t]
-            
-        # Take annual averages
+        # Compute monthly sums, weighted by the number of days per month
+        q_sum_f = np.sum(q[spc + "_f"], axis=sum_axes) * globvars.d_per_mon
+        q_sum_t = np.sum(q[spc + "_t"], axis=sum_axes) * globvars.d_per_mon
+        q_sum_s = q_sum_f - q_sum_t
+
+        # Compute annual averages
         result[spc + "_f"] = np.sum(q_sum_f) / globvars.d_per_yr
         result[spc + "_t"] = np.sum(q_sum_t) / globvars.d_per_yr
         result[spc + "_s"] = np.sum(q_sum_s) / globvars.d_per_yr
+
+    return result
+
+
+def annual_average_aod(globvars):
+    """
+    Computes the annual average AODs (weighted by area and month).
+
+    Args:
+    -----
+        globvars : obj of type _GlobVars
+            Global variables needed for budget computations.
+
+    Returns:
+    --------
+        result : dict
+            Contains annual average AODs.
+    """
+
+    # Initialize
+    q = {}
+    q_sum_f = np.zeros(globvars.N_MONTHS)
+    q_sum_t = np.zeros(globvars.N_MONTHS)
+    q_sum_s = np.zeros(globvars.N_MONTHS)
+    result = {}
+
+    # Define axes to sum over, and total surface area
+    if globvars.is_gchp:
+        sum_axes = (1,2,3,4)
+    else:
+        sum_axes = (1,2,3)
+
+    # Loop over AOD variables
+    for varname in globvars.aod_list:
+        
+        # Get the corresponding species name 
+        if "Dust" in varname:
+            spc = "DST1"
+            result[spc + "_f"] = 0.0
+            result[spc + "_t"] = 0.0
+            result[spc + "_s"] = 0.0
+            continue
+        else:
+            spc = varname.split("_")[1]
+            
+        # Whole-atmosphere AOD [1]
+        q[spc + "_f"] = globvars.ds_aer[varname].values
+
+        # Tropospheric-only AOD [1]
+        q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], globvars.tropmask)
+
+        # Create monthly sums, weighted by the number of days per month
+        q_sum_f = np.sum(q[spc + "_f"] * globvars.area_m2, axis=sum_axes) \
+                * globvars.d_per_mon
+        q_sum_t = np.sum(q[spc + "_t"] * globvars.area_m2, axis=sum_axes) \
+                * globvars.d_per_mon
+        q_sum_s = q_sum_f - q_sum_t
+        
+        # Take annual averages
+        result[spc + "_f"] = np.sum(q_sum_f)         \
+                           / globvars.total_area_m2  \
+                           / globvars.d_per_yr
+        result[spc + "_t"] = np.sum(q_sum_t)         \
+                           / globvars.total_area_m2  \
+                           / globvars.d_per_yr
+        result[spc + "_s"] = np.sum(q_sum_s)         \
+                           / globvars.total_area_m2  \
+                           / globvars.d_per_yr
 
     return result
 
@@ -229,26 +326,83 @@ def print_aerosol_burdens(globvars, data):
     # Open file and print budgets
     with open(filename, "w+") as f:
 
-        # Print header
+        # Print top header
         print("%"*79, file=f)
         print(" Annual average global aerosol burdens for {} in {}".format(
             globvars.y0, globvars.devstr), file=f) 
+        print(" (weighted by the number of days per month)", file=f)
         print("%"*79, file=f)
-        print(file=f)
+        line = "\n                        Strat         Trop    Strat+Trop\n"
+        line += "                    ----------   ----------   ----------"
+        print(line, file=f)
 
+        # Print burdens
         for spc in globvars.species_list:
-            print("{} burden [Tg]".format(spc), file=f)
-            print( "    Stratosphere :   {:10.8f}".format(
-                data["burden"][spc + "_s"]), file=f)
-            print( "    Troposphere  :   {:10.8f}".format(
-                data["burden"][spc + "_t"]), file=f)
-            print( "    Strat + Trop :   {:10.8f}".format(
-                data["burden"][spc + "_f"]), file=f)
-            print(file=f)
+            line = "{} burden [Tg] :  {:10.8f}   {:10.8f}   {:10.8f}\n".format(
+                spc.ljust(4), data[spc + "_s"], 
+                data[spc + "_t"], data[spc + "_f"])
+            print(line, file=f)
 
+        # Close file
         f.close()
+
+
+def print_annual_average_aod(globvars, data):
+    """
+    Prints burdens for aerosols species from a
+    1-year FullChemBenchmark simulation.
+    
+    Args:
+    -----
+        globvars: object of type _GlobVars
+            Global variables needed for budget computations.
+        data: dict
+            Nested dictionary containing budget info.
+    """
+
+
+    # Directory in which budgets & burdens tables. will be created
+    table_dir = "{}/Aerosols".format(globvars.plotsdir)
+
+    # Create table_dir if it doesn't already exist (if overwrite=True)
+    if os.path.isdir(table_dir) and not globvars.overwrite:
+        err_str = "Pass overwrite=True to overwrite files in that directory"
+        print("Directory {} exists. {}".format(table_dir, err_str))
+        return
+    elif not os.path.isdir(table_dir):
+        os.mkdir(table_dir)
         
-        
+    # File name
+    filename = "{}/Global_Mean_AOD_{}.txt".format(table_dir, globvars.devstr)
+
+    # Open file and print budgets
+    with open(filename, "w+") as f:
+
+        # Print header
+        print("%"*79, file=f)
+        print(" Annual average global AODs for {} in {}".format(
+            globvars.y0, globvars.devstr), file=f) 
+        print(" (weighted by surface area and days in each month)", file=f)
+        print("%"*79, file=f)
+        line = "\n                                        Strat         Trop   Strat+Trop\n"
+        line += "                                  -----------   ----------   ----------"
+        print(line, file=f)
+
+        # Print burdens
+        for spc in globvars.species_list:
+            if "DST1" in spc:
+                continue
+            line = "{} mean AOD [1] :  {:11.9f}   {:10.8f}   {:10.8f}\n".format(
+                globvars.aod_name[spc].ljust(17), 
+                data[spc + "_s"], 
+                data[spc + "_t"], 
+                data[spc + "_f"])
+            print(line, file=f)
+
+        # Close file
+        f.close()
+
+
 def aerosol_budgets_and_burdens(devstr, devdir,
                                 plotsdir, year, overwrite=True):
     """
@@ -267,34 +421,16 @@ def aerosol_budgets_and_burdens(devstr, devdir,
         overwrite : bool
             Overwrite burden & budget tables? (default=True)
     """
-
-    # ==================================================================
-    # Initialize
-    # ==================================================================
-
-    # Dictionary containing output data
-    data = {}
-    
-    # Internal class with Get global variables necessary for computations
+    # Initialize a private class with required global variables
     globvars = _GlobVars(devstr, devdir, plotsdir, year, overwrite)
 
-    # ==================================================================
     # Aerosol burdens [Tg]
-    # ==================================================================
-
-    # Compute aerosol burdens
-    data["burden"] = annual_average(globvars,
-                                    ds=globvars.ds_cnc,
-                                    collection='SpeciesConc',
-                                    conv_factor=globvars.vv_to_Tg)
-
-
-    # Print aerosol burdens
-    print_aerosol_burdens(globvars, data)
+    burdens = annual_average(globvars)
+    print_aerosol_burdens(globvars, burdens)
     
-    # ==================================================================
     # Annual average AOD's [Tg]
-    # ==================================================================
+    aods = annual_average_aod(globvars)
+    print_annual_average_aod(globvars, aods)
 
 
 if __name__ == "__main__":
