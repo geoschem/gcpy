@@ -1301,3 +1301,118 @@ def get_gchp_filepath(outputdir, collection, day, time):
         outputdir, "GCHP.{}.{}_{}z.nc4".format(collection, day, time)
     )
     return filepath
+
+def gcplot(plot_vals,
+           ax=plt.axes(),
+           plot_type="single_level",
+           grid={},
+           gridtype=""
+           title="",
+           comap=WhGrYlRd,
+           norm=[],
+           unit="",
+           extent=(None, None, None, None),
+           masked_data=None,
+           use_cmap_RdBu=False,
+           log_color_scale=False,
+           add_cb=True,
+           pres_range = [0, 2000],
+           pedge=None,
+           pedge_ind=-1,
+           log_yaxis=False,
+           xtick_positions=np.arange(-90,91,30),
+           xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
+):
+    #Generate grid if not passed
+    if grid == {}:
+        res, gridtype = get_input_res(plot_vals)
+        [grid, _] = call_make_grid(res, gridtype, False, False)
+
+    # Normalize colors (put into range [0..1] for matplotlib methods)
+    if norm == []:
+        vmin = plot_vals.data.min()
+        vmax = plot_vals.data.max()
+        norm = core.normalize_colors(
+            vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
+        )
+        
+    if unit == "":
+        unit = plots_vals.units.strip()
+
+
+    # Create plot
+    ax.set_title(title)
+    if plot_type == "zonal_mean":
+        if pedge == None:
+            pedge = GEOS_72L_grid.p_edge()            
+        if pedge_ind == -1:
+            pedge_ind = np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))
+            pedge_ind = pedge_ind[0]
+            # Pad edges if subset does not include surface or TOA so data spans entire subrange
+            if min(pedge_ind) != 0:
+                pedge_ind = np.append(min(pedge_ind) - 1, pedge_ind)
+            if max(pedge_ind) != 72:
+                pedge_ind = np.append(pedge_ind, max(pedge_ind) + 1)
+        # Zonal mean plot
+        plot = ax.pcolormesh(
+            grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm=norm
+        )
+        ax.set_aspect("auto")
+        ax.set_ylabel("Pressure (hPa)")
+        if log_yaxis:
+            ax.set_yscale("log")
+            ax.yaxis.set_major_formatter(
+                mticker.FuncFormatter(lambda y, _: "{:g}".format(y))
+            )
+        ax.invert_yaxis()
+        ax.set_xticks(xtick_positions)
+        ax.set_xticklabels(xticklabels)
+
+    elif gridtype == "ll":
+        #Lat/Lon single level                         
+        ax.coastlines()                                                                                                                
+        if extent == (None, None, None, None):                                                                                         
+            [minlon, maxlon] = [min(grid["lon_b"]), max(grid["lon_b"])]                                                                
+            [minlat, maxlat] = [min(grid["lat_b"]), max(grid["lat_b"])]                                                                
+            extent = (minlon, maxlon, minlat, maxlat)                                                                                  
+        # Create a lon/lat plot                                                                                                        
+        plot = ax.imshow(                                                                                                              
+            plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm                                               
+        )                                                                                                                              
+    else:                                                                                                                              
+        #Cubed-sphere single level                                                                                                     
+        ax.coastlines()                                                                                                                
+        if masked_data == None:                                                                                                        
+            masked_data = np.ma.masked_where(np.abs(grid["lon"] - 180) < 2, plot_vals.data.reshape(6, res, res))                       
+        for j in range(6):                                                                                                             
+            plot = ax.pcolormesh(                                                                                                      
+                grid["lon_b"][j, :, :],                                                                                                
+                grid["lat_b"][j, :, :],                                                                                                
+                masked_data[j, :, :],                                                                                                  
+                transform=ccrs.PlateCarree(),                                                                                          
+                cmap=comap,                                                                                                            
+                norm=norm,                                                                                                             
+            )                    
+    if add_cb == True:                                                                                                                 
+        cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)                                                             
+        cb.mappable.set_norm(norm)                                                                                                     
+        all_zero, all_nan = all_zero_or_nan(plot_vals.values)                                                                          
+        if all_zero or all_nan:                                                                                                        
+            if use_cmap_RdBu:                                                                                                          
+                cb.set_ticks([0.0])                                                                                                    
+            else:                                                                                                                      
+                cb.set_ticks([0.5])                                                                                                    
+            if all_nan:                                                                                                                
+                cb.set_ticklabels(["Undefined throughout domain"])                                                                     
+            else:                                                                                                                      
+                cb.set_ticklabels(["Zero throughout domain"])                                                                          
+        else:                                                                                                                          
+            if log_color_scale:                                                                                                        
+                cb.formatter = mticker.LogFormatter(base=10)                                                                           
+            else:                                                                                                                      
+                if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
+                    cb.locator = mticker.MaxNLocator(nbins=4)
+        cb.update_ticks()
+        cb.set_label(unit)
+        
+    return plot                                                      
