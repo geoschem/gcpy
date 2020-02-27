@@ -21,6 +21,7 @@ from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
+from core import gcplot
 from .units import convert_units
 from .constants import skip_these_vars
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -39,6 +40,7 @@ spc_categories = "benchmark_categories.yml"
 emission_spc = "emission_species.yml"
 emission_inv = "emission_inventories.yml"
 
+class benchmark_plotter
 
 def sixplot(
     plot_type,
@@ -75,16 +77,16 @@ def sixplot(
     Args:
     -----
     
-    plot_type : str
+    ^plot_type : str
        Type of plot to create (ref, dev, absolute difference or fractional difference)
     
-    all_zero : boolean
+    ^all_zero : boolean
        Set this flag to True if the data to be plotted consist only of zeros
     
-    all_nan : boolean
+    ^all_nan : boolean
        Set this flag to True if the data to be plotted consist only of NaNs
 
-    plot_val : xarray DataArray
+    *plot_val : xarray DataArray
        Single variable GEOS-Chem output values to plot
     
     grid : dict
@@ -94,7 +96,7 @@ def sixplot(
     ax : matplotlib axes 
        Axes object to plot information. Will create a new axes if none is passed.
 
-    rowcol : tuple
+    ^rowcol : tuple
        Subplot position in overall Figure WBD DELETE?
 
     title : str
@@ -113,22 +115,22 @@ def sixplot(
        Masked area for cubed-sphere plotting
     
     #Need to modify this name
-    other_all_nan : boolean
+    ^other_all_nan : boolean
         Set this flag to True if plotting ref/dev and the other of ref/dev is all nan
 
     gridtype : str
        "ll" for lat/lon or "cs" for cubed-sphere
     
-    vmins: list of float
+    ^vmins: list of float
        list of length 3 of minimum ref value, dev value, and absdiff value
 
-    vmaxs: list of float
+    ^vmaxs: list of float
        list of length 3 of maximum ref value, dev value, and absdiff value
 
     use_cmap_RdBu : boolean
        Set this flag to True to use a blue-white-red colormap 
 
-    match_cbar : boolean
+    ^match_cbar : boolean
        Set this flag to True if you are plotting with the same colorbar for ref and dev
 
     verbose : boolean
@@ -220,42 +222,11 @@ def sixplot(
     else:
         norm = core.normalize_colors(vmin, vmax, is_difference=True)
 
-    # Create plot
-    ax.set_title(title)
-
-    if type(masked_data) is str:
-        # Zonal mean plot
-        plot = ax.pcolormesh(
-            grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm=norm
-        )
-        ax.set_aspect("auto")
-        ax.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax.set_yscale("log")
-            ax.yaxis.set_major_formatter(
-                mticker.FuncFormatter(lambda y, _: "{:g}".format(y))
-            )
-        ax.invert_yaxis()
-        ax.set_xticks(xtick_positions)
-        ax.set_xticklabels(xticklabels)
-
-    elif gridtype == "ll":
-        ax.coastlines()
-        # Create a lon/lat plot
-        plot = ax.imshow(
-            plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm
-        )
-    else:
-        ax.coastlines()
-        for j in range(6):
-            plot = ax.pcolormesh(
-                grid["lon_b"][j, :, :],
-                grid["lat_b"][j, :, :],
-                masked_data[j, :, :],
-                transform=ccrs.PlateCarree(),
-                cmap=comap,
-                norm=norm,
-            )
+    #Create plot
+    plot = gcplot(plot_val, ax, plot_type, grid, gridtype, title, comap,
+                  norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
+                  add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
+                  xtick_positions=xtick_positions, xticklabels=xticklabels)
 
     # Define the colorbar for the plot
     cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
