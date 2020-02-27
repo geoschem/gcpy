@@ -17,13 +17,14 @@ import gcpy.constants as constants
 from gcpy.benchmark import get_troposphere_mask
 import warnings
 import xarray as xr
+from yaml import load as yaml_load_file
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # ======================================================================
-# Define a class for passing global variables
+# Define a class for passing global variables to the methods below
 # ======================================================================
 
 class _GlobVars:
@@ -70,33 +71,42 @@ class _GlobVars:
         # Species info
         # ------------------------------
 
+        # Directory where diagnostic files are found
+        datadir = join(devstr, "OutputDir")
+
         # List of species (and subsets for the trop & strat)
         self.species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC" ]
 
-        # Molecular weights
-        # NOTE: In future, get these from species database (bmy, 2/25/20)
-        self.mw = {"BCPI": 12.0, "OCPI": 12.0, "SO4" : 96.0,   "DST1": 29.0, 
-                   "SALA": 31.4, "SALC": 31.4, "Air" : 28.9644}
+        # Read the species database
+        try:
+            path = join(datadir, "species_database.yml")
+            spcdb = yaml_load_file(open(path))
+        except FileNotFoundError:
+            path = join(os.path.dirname(__file__), "species_database.yml")
+            spcdb = yaml_load_file(open(path))
 
-        # Aerosol optical depth variables
-        self.aod_list = ["AODHyg550nm_SO4",
-                         "AODHyg550nm_BCPI", 
-                         "AODHyg550nm_OCPI",
-                         "AODHyg550nm_SALA", 
-                         "AODHyg550nm_SALC"]
+        # Molecular weights [g mol-1], as taken from the species database
+        self.mw = {}
+        for v in self.species_list:
+            self.mw[v] = spcdb[v]["MW_g"]
+        self.mw["Air"] = constants.MW_AIR * 1.0e3
 
-        # Names
-        self.aod_name = {"BCPI": "Black Carbon", 
+        # Get the list of relevant AOD diagnostics from a YAML file
+        path = join(os.path.dirname(__file__), "aod_species.yml")
+        aod = yaml_load_file(open(path))
+        self.aod_list = [v for v in aod.keys() if "Dust" in v or "Hyg" in v]
+
+        # Descriptive names
+        self.spc2name = {"BCPI": "Black Carbon",
                          "DST1": "Dust",
-                         "OCPI": "Organic Carbon", 
-                         "SO4" : "Sulfate", 
-                         "SALA": "Sea Salt (accum)", 
+                         "OCPI": "Organic Carbon",
+                         "SO4" : "Sulfate",
+                         "SALA": "Sea Salt (accum)",
                          "SALC": "Sea Salt (coarse)"}
 
         # ------------------------------
         # Collection file lists
         # ------------------------------
-        datadir = join(devstr, "OutputDir")
         Aerosols = join(datadir, 
                         "*.Aerosols.{}*.nc4".format(self.y0_str))
         StateMet = join(datadir, 
@@ -262,10 +272,6 @@ def annual_average_aod(globvars):
         # Get the corresponding species name 
         if "Dust" in varname:
             spc = "DST1"
-            result[spc + "_f"] = 0.0
-            result[spc + "_t"] = 0.0
-            result[spc + "_s"] = 0.0
-            continue
         else:
             spc = varname.split("_")[1]
             
@@ -310,7 +316,7 @@ def print_aerosol_burdens(globvars, data):
     """
 
     # Directory in which budgets & burdens tables. will be created
-    table_dir = "{}/Aerosols".format(globvars.plotsdir)
+    table_dir = "{}/Tables".format(globvars.plotsdir)
 
     # Create table_dir if it doesn't already exist (if overwrite=True)
     if os.path.isdir(table_dir) and not globvars.overwrite:
@@ -339,8 +345,10 @@ def print_aerosol_burdens(globvars, data):
         # Print burdens
         for spc in globvars.species_list:
             line = "{} burden [Tg] :  {:10.8f}   {:10.8f}   {:10.8f}\n".format(
-                spc.ljust(4), data[spc + "_s"], 
-                data[spc + "_t"], data[spc + "_f"])
+                spc.ljust(4),
+                data[spc + "_s"],
+                data[spc + "_t"],
+                data[spc + "_f"])
             print(line, file=f)
 
         # Close file
@@ -362,7 +370,7 @@ def print_annual_average_aod(globvars, data):
 
 
     # Directory in which budgets & burdens tables. will be created
-    table_dir = "{}/Aerosols".format(globvars.plotsdir)
+    table_dir = "{}/Tables".format(globvars.plotsdir)
 
     # Create table_dir if it doesn't already exist (if overwrite=True)
     if os.path.isdir(table_dir) and not globvars.overwrite:
@@ -380,9 +388,10 @@ def print_annual_average_aod(globvars, data):
 
         # Print header
         print("%"*79, file=f)
-        print(" Annual average global AODs for {} in {}".format(
+        print(" Annual average global AODs for {} in {} (@ 550nm)".format(
             globvars.y0, globvars.devstr), file=f) 
-        print(" (weighted by surface area and days in each month)", file=f)
+        print(" (weighted by surface area and unumber of days per month",
+              file=f)
         print("%"*79, file=f)
         line = "\n                                        Strat         Trop   Strat+Trop\n"
         line += "                                  -----------   ----------   ----------"
@@ -390,11 +399,9 @@ def print_annual_average_aod(globvars, data):
 
         # Print burdens
         for spc in globvars.species_list:
-            if "DST1" in spc:
-                continue
             line = "{} mean AOD [1] :  {:11.9f}   {:10.8f}   {:10.8f}\n".format(
-                globvars.aod_name[spc].ljust(17), 
-                data[spc + "_s"], 
+                globvars.spc2name[spc].ljust(17),
+                data[spc + "_s"],
                 data[spc + "_t"], 
                 data[spc + "_f"])
             print(line, file=f)

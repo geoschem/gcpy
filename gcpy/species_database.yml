@@ -233,6 +233,58 @@ BCPO:
   Is_WetDep: true
   MW_g: 12.01
   MolecRatio: 1.0
+Be7:
+  FullName: Beryllium-7 isotope
+  Formula: Be7
+  MW_g: 7.0
+  Is_Gas: F
+  Is_Drydep: T
+  Is_Wetdep: T
+  DD_DvzAerSnow: 0.03
+  DD_F0: 0.0
+  DD_HStar_old: 0.0_fp
+  WD_AerScavEff: 1.0_fp
+  WD_KcScaleFac: [1.0, 0.5, 1.0]
+  WD_RainoutEff: [1.0, 0.0, 1.0]
+Be7STRAT:
+  FullName: Beryllium-7 isotope in stratosphere
+  Formula: Be7
+  MW_g: 7.0
+  Is_Gas: F
+  Is_Drydep: T
+  Is_Wetdep: T
+  DD_DvzAerSnow: 0.03
+  DD_F0: 0.0
+  DD_HStar_old: 0.0_fp
+  WD_AerScavEff: 1.0_fp
+  WD_KcScaleFac: [1.0, 0.5, 1.0]
+  WD_RainoutEff: [1.0, 0.0, 1.0]
+Be10:
+  FullName: Beryllium-7 isotope
+  Formula: Be10
+  MW_g: 10.0
+  Is_Gas: F
+  Is_Drydep: T
+  Is_Wetdep: T
+  DD_DvzAerSnow: 0.03
+  DD_F0: 0.0
+  DD_HStar_old: 0.0_fp
+  WD_AerScavEff: 1.0_fp
+  WD_KcScaleFac: [1.0, 0.5, 1.0]
+  WD_RainoutEff: [1.0, 0.0, 1.0]
+Be10STRAT:
+  FullName: Beryllium-7 isotope in stratosphere
+  Formula: Be10
+  MW_g: 7.0
+  Is_Gas: F
+  Is_Drydep: T
+  Is_Wetdep: T
+  DD_DvzAerSnow: 0.03
+  DD_F0: 0.0
+  DD_HStar_old: 0.0_fp
+  WD_AerScavEff: 1.0_fp
+  WD_KcScaleFac: [1.0, 0.5, 1.0]
+  WD_RainoutEff: [1.0, 0.0, 1.0]
 BENZ:
   EmMW_g: 12.0
   Formula: C6H6
@@ -2916,6 +2968,19 @@ PAN:
   Is_WetDep: false
   MW_g: 121.0
   MolecRatio: 1.0
+Pb210:
+  FullName: Lead-210 isotope
+  Formula: Pb
+  MW_g: 210.0
+  Is_Gas: false
+  Is_Drydep: false
+  Is_Wetdep: false
+  DD_DvzAerSnow: 0.03
+  DD_F0: 0.0
+  DD_HStar: 0.0_fp
+  WD_AerScavEff: 1.0_fp
+  WD_KcScaleFac: [1.0, 0.5, 1.0]
+  WD_RainoutEff: [1.0, 0.0, 1.0]
 PCO:
   EmMW_g: 1.0
   Fullname: PCO

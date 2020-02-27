@@ -4706,7 +4706,7 @@ def make_benchmark_oh_metrics(
     # ==================================================================
 
     # Create file
-    outfilename = os.path.join(dst, "{}_OH_metrics.txt".format(devstr))
+    outfilename = os.path.join(dst, "Tables/{}_OH_metrics.txt".format(devstr))
     try:
         f = open(outfilename, "w")
     except FileNotFoundError:

@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
 """
-Computes the budget of Pb and Be7 from the TransportTracers benchmarks.
-
-NOTE: This works for GC-Classic, but may need modifications for GCHP.
- -- Bob Yantosca (21 Jan 2020)
+Computes the budget of Pb, Be7, and Be10 from 1-year
+TransportTracersBenchmark simulations.
 """
 
 # ======================================================================
@@ -19,16 +17,16 @@ import gcpy.constants as constants
 from gcpy.benchmark import get_troposphere_mask
 import warnings
 import xarray as xr
+from yaml import load as yaml_load_file
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # ======================================================================
-# GLOBAL VARIABLES: Configurables (MUST EDIT)
+# Define a class for passing global variables to the methods below
 # ======================================================================
 
-# Define a class for passing local data
 class _GlobVars:
     """
     Private class _GlobVars contains global data that needs to be
@@ -100,7 +98,6 @@ class _GlobVars:
         self.ds_ini = xr.open_mfdataset(RstInit)
         self.ds_end = xr.open_mfdataset(RstFinal)
 
-
         # Diagnostics
         self.ds_dcy = xr.open_mfdataset(RadioNucl)
         self.ds_dry = xr.open_mfdataset(DryDep)
@@ -152,8 +149,20 @@ class _GlobVars:
         # List of species (and subsets for the trop & strat)
         self.species_list = ["Pb210", "Be7", "Be10" ]
 
-        # Molecular weights
-        self.mw = { "Pb210": 210.0, "Be7": 7.0, "Be10": 10.0, "Air": 28.9644}
+        # Read the species database
+        try:
+            path = join(datadir, "species_database.yml")
+            spcdb = yaml_load_file(open(path))
+            tmp = spcdb["Pb210"]
+        except KeyError or FileNotFoundError:
+            path = join(os.path.dirname(__file__), "species_database.yml")
+            spcdb = yaml_load_file(open(path))
+
+        # Molecular weights [g mol-1], as taken from the species database
+        self.mw = {}
+        for v in self.species_list:
+            self.mw[v] = spcdb[v]["MW_g"]
+        self.mw["Air"] = constants.MW_AIR * 1.0e3
 
         # kg/s --> g/day
         self.kg_s_to_g_d_value= 86400.0 * 1000.0
@@ -177,8 +186,7 @@ class _GlobVars:
             # v/v dry --> g
             self.vv_to_g[spc] = self.ds_met["Met_AD"].values  \
                               * (self.mw[spc] / self.mw["Air"]) * 1000.0
-
-            # molec/cm2/s --> g/day
+          # molec/cm2/s --> g/day
             self.mcm2s_to_g_d[spc] = self.area_cm2.values \
                                    / self.kg_per_mol[spc] \
                                    * self.kg_s_to_g_d[spc]
@@ -420,7 +428,7 @@ def annual_average_sources(globvars):
     # preserves the shape of the data as (time,lev,lat,lon).
     for t in range(globvars.N_MONTHS):
         for k in range(n_levs):
-            if is_gchp:
+            if globvars.is_gchp:
                 q["Be7_f"][t,k,:,:,:]  = \
                     globvars.ds_hco["EmisBe7_Cosmic"].isel(time=t, lev=k) * \
                     globvars.ds_met[area_var].isel(time=t) * \
