@@ -1,4 +1,4 @@
-List of GCPy developers (06 Dec 2019)
+List of GCPy developers (27 Feb 2020)
 ===============================================================================
 
 Sebastian Eastham
@@ -8,3 +8,4 @@ Daniel Rothenberg
 Melissa Sulprizio
 Bob Yantosca
 Jiawei Zhuang
+Will Downs
