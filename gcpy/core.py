@@ -8,10 +8,15 @@ import os
 import yaml
 import shutil
 import matplotlib.colors as mcolors
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 import numpy as np
 import xarray as xr
 import xbpch
+import cartopy.crs as ccrs
 from .constants import skip_these_vars
+from .plot import WhGrYlRd
+from cartopy.mpl.geoaxes import GeoAxes
 
 
 # YAML files to read
@@ -1306,7 +1311,7 @@ def gcplot(plot_vals,
            ax=plt.axes(),
            plot_type="single_level",
            grid={},
-           gridtype=""
+           gridtype="",
            title="",
            comap=WhGrYlRd,
            norm=[],
@@ -1317,11 +1322,11 @@ def gcplot(plot_vals,
            log_color_scale=False,
            add_cb=True,
            pres_range = [0, 2000],
-           pedge=None,
-           pedge_ind=-1,
+           pedge=np.full((1, 1), -1),
+           pedge_ind=np.full((1,1), -1),
            log_yaxis=False,
            xtick_positions=np.arange(-90,91,30),
-           xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
+           xticklabels = []
 ):
     #Generate grid if not passed
     if grid == {}:
@@ -1335,7 +1340,9 @@ def gcplot(plot_vals,
         norm = core.normalize_colors(
             vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
         )
-        
+    if xticklabels == []:
+        xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
+
     if unit == "":
         unit = plots_vals.units.strip()
 
@@ -1343,9 +1350,9 @@ def gcplot(plot_vals,
     # Create plot
     ax.set_title(title)
     if plot_type == "zonal_mean":
-        if pedge == None:
+        if pedge.all() == -1:
             pedge = GEOS_72L_grid.p_edge()            
-        if pedge_ind == -1:
+        if pedge_ind.all() == -1:
             pedge_ind = np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))
             pedge_ind = pedge_ind[0]
             # Pad edges if subset does not include surface or TOA so data spans entire subrange
@@ -1355,7 +1362,7 @@ def gcplot(plot_vals,
                 pedge_ind = np.append(pedge_ind, max(pedge_ind) + 1)
         # Zonal mean plot
         plot = ax.pcolormesh(
-            grid["lat_b"], pedge[pedge_ind], plot_val, cmap=comap, norm=norm
+            grid["lat_b"], pedge[pedge_ind], plot_vals, cmap=comap, norm=norm
         )
         ax.set_aspect("auto")
         ax.set_ylabel("Pressure (hPa)")
@@ -1377,13 +1384,17 @@ def gcplot(plot_vals,
             extent = (minlon, maxlon, minlat, maxlat)                                                                                  
         # Create a lon/lat plot                                                                                                        
         plot = ax.imshow(                                                                                                              
-            plot_val, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm                                               
+            plot_vals, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm                                               
         )                                                                                                                              
     else:                                                                                                                              
         #Cubed-sphere single level                                                                                                     
         ax.coastlines()                                                                                                                
-        if masked_data == None:                                                                                                        
-            masked_data = np.ma.masked_where(np.abs(grid["lon"] - 180) < 2, plot_vals.data.reshape(6, res, res))                       
+        try: 
+            if masked_data == None:                                                                                                        
+                masked_data = np.ma.masked_where(np.abs(grid["lon"] - 180) < 2, plot_vals.data.reshape(6, res, res))
+        except ValueError:
+            #Comparison of numpy arrays throws errors
+            pass
         for j in range(6):                                                                                                             
             plot = ax.pcolormesh(                                                                                                      
                 grid["lon_b"][j, :, :],                                                                                                

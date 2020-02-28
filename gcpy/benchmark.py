@@ -21,7 +21,7 @@ from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
-from core import gcplot
+from .core import gcplot
 from .units import convert_units
 from .constants import skip_these_vars
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -40,10 +40,10 @@ spc_categories = "benchmark_categories.yml"
 emission_spc = "emission_species.yml"
 emission_inv = "emission_inventories.yml"
 
-class benchmark_plotter
+#class benchmark_plotter
 
 def sixplot(
-    plot_type,
+    subplot,
     all_zero,
     all_nan,
     plot_val,
@@ -68,6 +68,7 @@ def sixplot(
     log_yaxis=False,
     xtick_positions=[],
     xticklabels=[],
+    plot_type="single_level"
 ):
 
     """
@@ -77,7 +78,7 @@ def sixplot(
     Args:
     -----
     
-    ^plot_type : str
+    ^subplot : str
        Type of plot to create (ref, dev, absolute difference or fractional difference)
     
     ^all_zero : boolean
@@ -156,14 +157,14 @@ def sixplot(
     """
 
     # Set min and max of the data range
-    if plot_type in ("ref", "dev"):
+    if subplot in ("ref", "dev"):
         if all_zero or all_nan:
-            if plot_type is "ref":
+            if subplot is "ref":
                 [vmin, vmax] = [vmins[0], vmaxs[0]]
             else:
                 [vmin, vmax] = [vmins[1], vmaxs[1]]
         elif use_cmap_RdBu:
-            if plot_type is "ref":
+            if subplot is "ref":
                 if match_cbar and (not other_all_nan):
                     absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
                 else:
@@ -174,7 +175,7 @@ def sixplot(
                 else:
                     absmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
         else:
-            if plot_type is "ref":
+            if subplot is "ref":
                 if match_cbar and (not other_all_nan):
                     [vmin, vmax] = [vmins[2], vmaxs[2]]
                 else:
@@ -190,20 +191,20 @@ def sixplot(
         elif all_nan:
             [vmin, vmax] = [np.nan, np.nan]
         else:
-            if plot_type is "dyn_abs_diff":
+            if subplot is "dyn_abs_diff":
                 # Min and max of abs. diff, excluding NaNs
                 diffabsmax = max(
                     [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
                 )
                 [vmin, vmax] = [-diffabsmax, diffabsmax]
-            elif plot_type is "res_abs_diff":
+            elif subplot is "res_abs_diff":
                 [pct5, pct95] = [
                     np.percentile(plot_val, 5),
                     np.percentile(plot_val, 95),
                 ]
                 abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
                 [vmin, vmax] = [-abspctmax, abspctmax]
-            elif plot_type is "dyn_frac_diff":
+            elif subplot is "dyn_frac_diff":
                 fracdiffabsmax = np.max(
                     [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
                 )
@@ -214,14 +215,14 @@ def sixplot(
         print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
 
     # Normalize colors (put into range [0..1] for matplotlib methods)
-    if plot_type in ("ref", "dev"):
+    if subplot in ("ref", "dev"):
         norm = core.normalize_colors(
             vmin, vmax, is_difference=use_cmap_RdBu,
             log_color_scale=log_color_scale
         )
     else:
         norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
+        
     #Create plot
     plot = gcplot(plot_val, ax, plot_type, grid, gridtype, title, comap,
                   norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
@@ -232,7 +233,7 @@ def sixplot(
     cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
     cb.mappable.set_norm(norm)
     if all_zero or all_nan:
-        if plot_type in ("ref", "dev"):
+        if subplot in ("ref", "dev"):
             if use_cmap_RdBu:
                 cb.set_ticks([0.0])
             else:
@@ -244,7 +245,7 @@ def sixplot(
         else:
             cb.set_ticklabels(["Zero throughout domain"])
     else:
-        if plot_type in ("ref", "dev") and log_color_scale:
+        if subplot in ("ref", "dev") and log_color_scale:
             cb.formatter = mticker.LogFormatter(base=10)
         else:
             if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
@@ -921,7 +922,7 @@ def compare_single_level(
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        plot_types = [
+        subplots = [
             "ref",
             "dev",
             "dyn_abs_diff",
@@ -1017,7 +1018,7 @@ def compare_single_level(
         # Plot
         for i in range(6):
             sixplot(
-                plot_types[i],
+                subplots[i],
                 all_zeros[i],
                 all_nans[i],
                 plot_vals[i],
@@ -1037,6 +1038,7 @@ def compare_single_level(
                 match_cbar,
                 verbose,
                 log_color_scale,
+                plot_type="single_level"
             )
 
         # ==============================================================
@@ -1698,7 +1700,7 @@ def compare_zonal_mean(
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        plot_types = [
+        subplots = [
             "ref",
             "dev",
             "dyn_abs_diff",
@@ -1706,7 +1708,7 @@ def compare_zonal_mean(
             "dyn_frac_diff",
             "res_frac_diff",
         ]
-
+        
         all_zeros = [
             ref_is_all_zero,
             dev_is_all_zero,
@@ -1772,7 +1774,7 @@ def compare_zonal_mean(
         # Plot
         for i in range(6):
             sixplot(
-                plot_types[i],
+                subplots[i],
                 all_zeros[i],
                 all_nans[i],
                 plot_vals[i],
@@ -1795,6 +1797,7 @@ def compare_zonal_mean(
                 pedge,
                 pedge_ind,
                 log_yaxis,
+                plot_type="zonal_mean"
             )
 
         # ==============================================================
