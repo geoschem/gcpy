@@ -16,7 +16,9 @@ import xbpch
 import cartopy.crs as ccrs
 from .constants import skip_these_vars
 from .plot import WhGrYlRd
+from .grid.horiz import make_grid_LL, make_grid_CS
 from cartopy.mpl.geoaxes import GeoAxes
+
 
 
 # YAML files to read
@@ -1308,11 +1310,11 @@ def get_gchp_filepath(outputdir, collection, day, time):
     return filepath
 
 def gcplot(plot_vals,
-           ax=plt.axes(),
+           ax=None,
            plot_type="single_level",
            grid={},
            gridtype="",
-           title="",
+           title="fill",
            comap=WhGrYlRd,
            norm=[],
            unit="",
@@ -1337,16 +1339,24 @@ def gcplot(plot_vals,
     if norm == []:
         vmin = plot_vals.data.min()
         vmax = plot_vals.data.max()
-        norm = core.normalize_colors(
+        norm = normalize_colors(
             vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
         )
     if xticklabels == []:
         xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
 
     if unit == "":
-        unit = plots_vals.units.strip()
+        unit = plot_vals.units.strip()
 
-
+    if ax == None:
+        if plot_type == "zonal_mean":
+            ax = plt.axes()
+        if plot_type == "single_level":
+            ax = plt.axes(projection = ccrs.PlateCarree())
+            
+    if title == "fill":
+        title = plot_vals.name
+        
     # Create plot
     ax.set_title(title)
     if plot_type == "zonal_mean":
@@ -1427,3 +1437,40 @@ def gcplot(plot_vals,
         cb.set_label(unit)
         
     return plot                                                      
+
+
+
+def get_input_res(data):
+    # return resolution of dataset passed to compare_single_level or compare_zonal_means
+
+    vdims = data.dims
+    if "lat" in vdims and "lon" in vdims:
+        lat = data.sizes["lat"]
+        lon = data.sizes["lon"]
+        #        print("grid has lat and lon: ", vdims)
+        if lat == 46 and lon == 72:
+            return "4x5", "ll"
+        elif lat == 91 and lon == 144:
+            return "2x2.5", "ll"
+        elif lat / 6 == lon:
+            return lon, "cs"
+        else:
+            print("Error: ref or dev {}x{} grid not defined in gcpy!".format(lat, lon))
+            return
+
+    else:
+        print("grid is cs: ", vdims)
+        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        return data.dims["Xdim"], "cs"
+
+
+def call_make_grid(res, gridtype, zonal_mean, comparison):
+    # call appropriate make_grid function and return new grid
+    if gridtype == "ll" or (zonal_mean and comparison):
+        return [make_grid_LL(res), None]
+    else:
+        return make_grid_CS(res)
+
+def all_zero_or_nan(ds):
+    # Return whether ds is all zeros, or all nans
+    return not np.any(ds), np.isnan(ds).all()
