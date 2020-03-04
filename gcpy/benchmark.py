@@ -21,7 +21,7 @@ from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
-from .core import gcplot
+from .core import gcplot, call_make_grid, get_input_res, all_zero_or_nan
 from .units import convert_units
 from .constants import skip_these_vars
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -5172,38 +5172,6 @@ def get_troposphere_mask(ds):
     return tropmask.reshape(shape)
 
 
-def get_input_res(data):
-    # return resolution of dataset passed to compare_single_level or compare_zonal_means
-
-    vdims = data.dims
-    if "lat" in vdims and "lon" in vdims:
-        lat = data.sizes["lat"]
-        lon = data.sizes["lon"]
-        #        print("grid has lat and lon: ", vdims)
-        if lat == 46 and lon == 72:
-            return "4x5", "ll"
-        elif lat == 91 and lon == 144:
-            return "2x2.5", "ll"
-        elif lat / 6 == lon:
-            return lon, "cs"
-        else:
-            print("Error: ref or dev {}x{} grid not defined in gcpy!".format(lat, lon))
-            return
-
-    else:
-        print("grid is cs: ", vdims)
-        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        return data.dims["Xdim"], "cs"
-
-
-def call_make_grid(res, gridtype, zonal_mean, comparison):
-    # call appropriate make_grid function and return new grid
-    if gridtype == "ll" or (zonal_mean and comparison):
-        return [make_grid_LL(res), None]
-    else:
-        return make_grid_CS(res)
-
-
 def check_units(refdata, devdata, varname):
     # If units are mol/mol then convert to ppb
     conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
@@ -5252,7 +5220,3 @@ def reshape_MAPL_CS(ds, vdims):
             ds = ds.transpose("lat", "lon")
     return ds
 
-
-def all_zero_or_nan(ds):
-    # Return whether ds is all zeros, or all nans
-    return not np.any(ds), np.isnan(ds).all()
