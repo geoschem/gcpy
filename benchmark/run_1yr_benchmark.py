@@ -50,8 +50,9 @@ from gcpy import benchmark as bmk
 from gcpy.constants import skip_these_vars
 from gcpy.core import get_filepaths
 import gcpy.budget_aer as aerbdg
+import gcpy.budget_ops as opbdg
 import gcpy.budget_tt as ttbdg
-import gcpy.ste_flux as flx
+import gcpy.ste_flux as ste
 import pandas as pd
 import numpy as np
 import warnings
@@ -465,6 +466,21 @@ if gcc_vs_gcc:
                                         bmk_year,
                                         overwrite=True)
 
+        # Change in mass of species after each operation
+        species = ["Rn222", "Pb210", "Pb210Strat", "Be7", "Be7Strat",
+                   "Be10", "Be10Strat", "PassiveTracer", "SF6Tracer",
+                   "CH3ITracer", "COAnthroEmis25dayTracer",
+                   "COAnthroEmis50dayTracer", "COUniformEmis25dayTracer",
+                   "GlobEmis90dayTracer", "NHEmis90dayTracer",
+                   "SHEmis90dayTracer"]
+        opbdg.make_operations_budget_table(gcc_dev_version,
+                                           gcc_vs_gcc_devdir,
+                                           gcc_vs_gcc_plotsdir,
+                                           bmk_type,
+                                           bmk_year,
+                                           species,
+                                           overwrite=True)
+
     if OH_metrics and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC Global mean OH, MCF Lifetime, CH4 Lifetime
@@ -512,7 +528,6 @@ if gcc_vs_gcc:
                                          restrict_cats=[collection],
                                          sigdiff_files=sigdiff_files)
 
-
     if ste_table:
         # --------------------------------------------------------------
         # GCC Strat-Trop Exchange
@@ -528,7 +543,7 @@ if gcc_vs_gcc:
             species = ["O3"]
         
         # Strat-trop exchange
-        flx.make_benchmark_ste_table(gcc_dev_version,
+        ste.make_benchmark_ste_table(gcc_dev_version,
                                      gcc_vs_gcc_devdir,
                                      gcc_vs_gcc_plotsdir,
                                      bmk_year,
