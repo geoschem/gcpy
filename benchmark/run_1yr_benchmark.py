@@ -51,6 +51,7 @@ from gcpy.constants import skip_these_vars
 from gcpy.core import get_filepaths
 import gcpy.budget_aer as aerbdg
 import gcpy.budget_tt as ttbdg
+import gcpy.ste_flux as flx
 import pandas as pd
 import numpy as np
 import warnings
@@ -96,6 +97,7 @@ plot_jvalues = True
 plot_aod     = True
 mass_table   = True
 budget_table = True
+ste_table    = True
 OH_metrics   = True
 plot_wetdep  = False
 
@@ -103,15 +105,30 @@ plot_wetdep  = False
 #### TransportTracers BENCHMARK OPTIONS (comment out if not needed) ####
 ########################################################################
 #bmk_type     = 'TransportTracersBenchmark'
-#plot_conc    = True
-#plot_wetdep  = True
+#plot_conc    = False
+#plot_wetdep  = False
 #budget_table = True
+#ste_table    = True
 #plot_emis    = False
 #emis_table   = False
 #plot_jvalues = False
 #plot_aod     = False
 #mass_table   = False
 #OH_metrics   = False
+
+########################################################################
+#### Echo back selections to stdout                                 ####
+########################################################################
+print("The following plots and tables will be created for {}:".format(bmk_type))
+if plot_conc:    print(" - Concentration plots")
+if plot_wetdep:  print(" - Convective and large-scale wet deposition plots")
+if plot_emis:    print(" - Emissions plots")
+if plot_jvalues: print(" - J-values (photolysis rates) plots")
+if plot_aod:     print(" - Aerosol optical depth plots")
+if budget_table: print(" - Budget tables")
+if emis_table:   print(" - Table of emissions totals by species and inventory")
+if mass_table:   print(" - Table of species mass")
+if ste_table:    print(" - Table of strat-trop exchange")
 
 # Start and end of the benchmark year (as numpy.datetime64 dates)
 bmk_year = 2016
@@ -196,17 +213,21 @@ for m in range(1, 13):
 
 # Files that will contain lists of quantities that have significant
 # differences -- we need these for the benchmark approval forms.
+sigdiff_dir = join(gcc_vs_gcc_plotsdir, "Sig_Diffs")
+if not os.path.isdir(sigdiff_dir):
+    os.mkdir(sigdiff_dir)
 gcc_vs_gcc_sigdiff = {}
 for mon_yr_str in bmk_seasons_names:
     vstr = '{}_vs_{}.{}'.format(
         gcc_vs_gcc_refstr, gcc_vs_gcc_devstr, mon_yr_str)
 
     sigdiff_files = [
-        join(gcc_vs_gcc_plotsdir, '{}.sig_diffs_sfc.txt'.format(vstr)),
-        join(gcc_vs_gcc_plotsdir, '{}.sig_diffs_500hpa.txt'.format(vstr)),
-        join(gcc_vs_gcc_plotsdir, '{}.sig_diffs_zonalmean.txt'.format(vstr)),
-        join(gcc_vs_gcc_plotsdir, '{}.sig_diffs_emissions.txt'.format(vstr))]
-
+        join(sigdiff_dir, "{}/{}.sig_diffs_sfc.txt".format(sigdiff_dir, vstr)),
+        join(sigdiff_dir, "{}/{}.sig_diffs_500hpa.txt".format(sigdiff_dir, vstr)),
+        join(sigdiff_dir, "{}/{}.sig_diffs_zonalmean.txt".format(sigdiff_dir, vstr)),
+        join(sigdiff_dir, "{}/{}.sig_diffs_emissions.txt".format(sigdiff_dir, vstr))
+    ]
+    
     gcc_vs_gcc_sigdiff[mon_yr_str] = sigdiff_files
 
 ##############################################################################
@@ -436,8 +457,10 @@ if gcc_vs_gcc:
         # --------------------------------------------------------------
         title = '\n%%% Creating GCC vs. GCC {} budgets %%%'.format(bmk_type)
         print(title)
-        ttbdg.transport_tracers_budgets(gcc_dev_version,
-                                        gcc_vs_gcc_devdir,
+
+        # Budgets of Radionuclide species
+        ttbdg.transport_tracers_budgets(maindir,
+                                        gcc_dev_version,
                                         gcc_vs_gcc_plotsdir,
                                         bmk_year,
                                         overwrite=True)
@@ -489,7 +512,29 @@ if gcc_vs_gcc:
                                          restrict_cats=[collection],
                                          sigdiff_files=sigdiff_files)
 
-            
+
+    if ste_table:
+        # --------------------------------------------------------------
+        # GCC Strat-Trop Exchange
+        # --------------------------------------------------------------
+        title = '\n%%% Creating GCC vs. GCC {} Strat-Trop Exchange table %%%'.format(
+            bmk_type)
+        print(title)
+        
+        # Pick the species list depending on the benchmark type
+        if "TransportTracers" in bmk_type:
+            species = ["Pb210", "Be7", "Be10"]
+        elif "FullChem" in bmk_type:
+            species = ["O3"]
+        
+        # Strat-trop exchange
+        flx.make_benchmark_ste_table(gcc_dev_version,
+                                     gcc_vs_gcc_devdir,
+                                     gcc_vs_gcc_plotsdir,
+                                     bmk_year,
+                                     species=species,
+                                     overwrite=True)
+    
 ###############################################################################
 # NOTE: For now, we are developing the GCC vs. GCC 1-yr benchmark plots.
 # Leave this commented out for now.
