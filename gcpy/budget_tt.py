@@ -32,7 +32,7 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, devstr, maindir, plotsdir, year, overwrite):
+    def __init__(self, maindir, devstr, plotsdir, year, overwrite):
         """
         Initializes the _GlobVars class.
 
@@ -567,14 +567,14 @@ def print_budgets(globvars, data, key):
     
     # Filename to print
     if "_f" in key:
-        filename = "{}/{}-TransportTracers.Pb-Be_budget_trop_strat.txt".format(
+        filename = "{}/{}.Pb-Be_budget_trop_strat.txt".format(
             table_dir, globvars.devstr)
     elif "_t" in key:
-        filename = "{}/{}-TransportTracers.Pb-Be_budget_troposphere.txt".format(
+        filename = "{}/{},Pb-Be_budget_troposphere.txt".format(
             table_dir, globvars.devstr)
     elif "_s"in key:
         filename = \
-            "{}/{}-TransportTracers.Pb-Be_budget_stratosphere.txt".format(
+            "{}/{}.Pb-Be_budget_stratosphere.txt".format(
             table_dir, globvars.devstr)
 
     # Common title string
@@ -656,15 +656,14 @@ def print_budgets(globvars, data, key):
         f.close()
         
         
-def transport_tracers_budgets(devstr, devdir,
-                              plotsdir, year, overwrite=True):
+def transport_tracers_budgets(maindir, devstr, plotsdir, year, overwrite=True):
     """
     Main program to compute TransportTracersBenchmark budgets
 
     Args:
     -----
-        devdir : str
-            Benchmark directory (containing links to data).
+        maindir : str
+            Top-level benchmark folder
         devstr : str
             Denotes the "Dev" benchmark version.
         plotsdir : str 
@@ -676,7 +675,7 @@ def transport_tracers_budgets(devstr, devdir,
     """
 
     # Store global variables in a private class
-    globvars = _GlobVars(devstr, devdir, plotsdir, year, overwrite)
+    globvars = _GlobVars(maindir, devstr, plotsdir, year, overwrite)
 
     # Data structure for budgets
     data = {}

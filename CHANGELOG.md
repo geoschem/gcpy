@@ -7,8 +7,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## [Unreleased]
 
 ### Added
+- Added strat/trop exchange fluxes to 1-year benchmark output (gcpy/ste_flux.py)
+- Added operations budgets to 1-year benchmark output (gcpy/budget_ops.py)
 
 ### Changed
+- Significant difference files are now written out to the Plots/Sig_Diffs folder for the 1-year benchmarks.
+- Updated file names for Pb/Be budget tables in gcpy/budgets_tt.py.
 
 ### Deprecated
 
