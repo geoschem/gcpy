@@ -709,6 +709,7 @@ def add_lumped_species_to_dataset(
                 units = ds[varname].units
             else:
                 darr = darr + ds[varname] * lspc_dict[lspc][spc]
+        print(lspc_dict[lspc])
         darr.name = varname_new
         darr.attrs["units"] = units
         ds = xr.merge([ds, darr])
