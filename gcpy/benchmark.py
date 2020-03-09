@@ -4239,14 +4239,15 @@ def make_benchmark_aod_plots(
     # Write the list of AOD quantities having significant differences,
     # which we will need to fill out the benchmark forms.
     # ==================================================================
-    for filename in sigdiff_files:
-        if "sfc" in filename:
-            with open(filename, "a+") as f:
-                print("* Column AOD: ", file=f, end="")
-                for v in diff_aod:
-                    print("{} ".format(v), file=f, end="")
-                print(file=f)
-                f.close()
+    if sigdiff_files != None:
+        for filename in sigdiff_files:
+            if "sfc" in filename:
+                with open(filename, "a+") as f:
+                    print("* Column AOD: ", file=f, end="")
+                    for v in diff_aod:
+                        print("{} ".format(v), file=f, end="")
+                    print(file=f)
+                    f.close()
 
 
 def make_benchmark_mass_tables(
@@ -4445,7 +4446,7 @@ def make_benchmark_mass_tables(
 
 
 def make_benchmark_budget_tables(
-    dev, devstr, dst="./1mo_benchmark", overwrite=False, interval=[2678400.0], n_job=-1
+        dev, devstr, dst="./1mo_benchmark", overwrite=False, subdst=None, interval=[2678400.0], n_job=-1
 ):
     """
     Creates a text file containing budgets by species for benchmarking
@@ -5041,9 +5042,9 @@ def add_missing_variables(refdata, devdata, **kwargs):
 
     # Make sure that refdata and devdata are both xarray Dataset objects
     if not isinstance(refdata, xr.Dataset):
-        raise TypeError("The refdata object must be an xarray DataArray!")
+        raise TypeError("The refdata object must be an xarray Dataset!")
     if not isinstance(devdata, xr.Dataset):
-        raise TypeError("The refdata object must be an xarray DataArray!")
+        raise TypeError("The refdata object must be an xarray Dataset!")
 
     # Find common variables as well as variables only in one or the other
     vardict = core.compare_varnames(refdata, devdata, quiet=True)
