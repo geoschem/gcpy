@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Added
 - Added strat/trop exchange fluxes to 1-year benchmark output (gcpy/ste_flux.py)
 - Added operations budgets to 1-year benchmark output (gcpy/budget_ops.py)
+- Added seasonal mass table output for 1-year benchmak (FullChem).
 
 ### Changed
 - Significant difference files are now written out to the Plots/Sig_Diffs folder for the 1-year benchmarks.
