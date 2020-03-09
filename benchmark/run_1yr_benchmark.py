@@ -146,6 +146,14 @@ gchp_vs_gcc_devdir  = join(maindir, gchp_dev_version, 'OutputDir')
 gchp_vs_gchp_refdir = join(maindir, gchp_ref_version, 'OutputDir')
 gchp_vs_gchp_devdir = join(maindir, gchp_dev_version, 'OutputDir')
 
+# Restart file directories (edit as needed)
+gcc_vs_gcc_refrstdir   = join(maindir, gcc_ref_version,  'restarts')
+gcc_vs_gcc_devrstdir   = join(maindir, gcc_dev_version,  'restarts')
+gchp_vs_gcc_refrstdir  = join(maindir, gcc_dev_version,  'restarts')
+gchp_vs_gcc_devrstdir  = join(maindir, gchp_dev_version, 'restarts')
+gchp_vs_gchp_refrstdir = join(maindir, gchp_ref_version, 'restarts')
+gchp_vs_gchp_devrstdir = join(maindir, gchp_dev_version, 'restarts')
+
 # Plots directories (edit as needed)
 gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_version, 'Plots')
 gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_version,
@@ -174,12 +182,6 @@ diff_of_diffs_devstr = '{} - {}'.format(gchp_dev_version,
 
 ###############################################################################
 # Under development, comment these out for now
-## Paths to restart files
-#gcc_vs_gcc_refrst = core.get_gcc_filepath(gcc_vs_gcc_refdir, 'Restart',
-#                                          year=bmk_year, month=bmk_months)
-#gcc_vs_gcc_devrst = core.get_gcc_filepath(gcc_vs_gcc_devdir, 'Restart',
-#                                          year=bmk_year, month=bmk_months)
-#
 ## Paths to concentration after chemistry files
 #gcc_vs_gcc_refcac = core.get_gcc_filepath(gcc_vs_gcc_refdir, 'ConcAfterChem',
 #                                          year=bmk_year, month=bmk_months)
@@ -405,23 +407,34 @@ if gcc_vs_gcc:
                                          overwrite=True,
                                          sigdiff_files=sigdiff_files)
 
-
     if mass_table and "FullChem" in bmk_type:
         # --------------------------------------------------------------
-        # GCC vs. GCC global mass tables
-        # (FullChemBenchmark only)
+        # GCC vs GCC budgets tables
+        # (FullChemBenchmark)
         # --------------------------------------------------------------
-        title = '\n%%% Creating GCC vs. GCC {} global mass tables %%%'.format(
+        title = '\n%%% Creating GCC vs. GCC {} mass tables %%%'.format(
             bmk_type)
         print(title)
 
-        bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst,
-                                       gcc_vs_gcc_refstr,
-                                       gcc_vs_gcc_devrst,
-                                       gcc_vs_gcc_devstr,
-                                       dst=gcc_vs_gcc_plotsdir,
-                                       overwrite=True)
-        
+        ## Paths to restart files
+        gcc_vs_gcc_refrst = get_filepaths(gcc_vs_gcc_refrstdir, 'Restart',
+                                          bmk_seasons, is_gcc=True)
+        gcc_vs_gcc_devrst = get_filepaths(gcc_vs_gcc_devrstdir, 'Restart',
+                                          bmk_seasons, is_gcc=True)
+
+        # Create seasonal budget tables (mass at end of each season month)
+        seasons = ['Jan', 'Apr', 'Jul', 'Oct']
+        table_dir = join(gcc_vs_gcc_plotsdir, 'Tables')
+        for s in range(bmk_nseasons):
+            mon_yr_str = seasons[s]
+            bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst[s],
+                                           gcc_vs_gcc_refstr,
+                                           gcc_vs_gcc_devrst[s],
+                                           gcc_vs_gcc_devstr,
+                                           dst=table_dir,
+                                           overwrite=True,
+                                           subdst=mon_yr_str)
+
     if budget_table and "FullChem" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC budgets tables
@@ -450,7 +463,7 @@ if gcc_vs_gcc:
                                            gcc_vs_gcc_plotsdir,
                                            bmk_year,
                                            overwrite=True)
-        
+
     if budget_table and "TransportTracers" in bmk_type:
         # --------------------------------------------------------------
         # GCC vs GCC budgets tables
