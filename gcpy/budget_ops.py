@@ -28,8 +28,8 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, devstr, devdir, plotsdir, bmk_type,
-                 year, species, overwrite):
+    def __init__(self, devstr, files, plotsdir, bmk_type,
+                 label, interval, species, overwrite):
         """
         Initializes the _GlobVars class.
 
@@ -37,14 +37,16 @@ class _GlobVars:
         -----
             devstr : str
                 Label denoting the "Dev" version.
-            devdir : str
-                Directory containing benchmark simulation output.
+            files : list of str
+                Files to be read from disk.
             plotsdir : str
                 Directory where plots & tables will be created.
             bmk_type : str
                 "TransportTracersBenchmark" or "FullChemBenchmark".
-            year : int
-                Year of the benchmark simulation.
+            label : str
+                Label for the plot (e.g. "2016" or "Apr2016", etc.)
+            interval : float
+                Number of seconds in the budget period.
             overwrite : bool
                 Denotes whether to ovewrite existing budget tables.
         """
@@ -52,37 +54,50 @@ class _GlobVars:
         # Arguments
         # ------------------------------------------
         self.devstr = devstr
-        self.devdir = devdir
+        self.files = files
         self.plotsdir = plotsdir
         self.bmk_type = bmk_type
-        self.year = year
+        self.label = label.strip()
+        self.interval = interval
+        self.species = species
         self.overwrite = overwrite
 
-        # Exclude e.g. Rn222Strat, Pb210Strat, etc.
-        self.species = [s for s in species if "Strat" not in s]
-        
         # -----------------------------------------
-        # Months, days, years
+        # Other variables
         # ------------------------------------------
 
-        # Benchmark start & end year
-        self.y0_str = "{}".format(self.year)
-        self.y1_str = "{}".format(self.year + 1)
-        
-        # Number of months
-        self.N_MONTHS = 12
-        
-        # Days per month in the benchmark year
-        self.d_per_mon = np.zeros(self.N_MONTHS)
-        for t in range(self.N_MONTHS):
-            self.d_per_mon[t] = monthrange(self.year, t+1)[1] * 1.0
+        # Is this an annual total?
+        self.annual = self.interval > 3.0e7
+                    
+        # ------------------------------------------
+        # Read data from disk
+        # ------------------------------------------
 
-        # Seconds per month
-        self.s_per_mon = self.d_per_mon * 86400.0    
+        # Read the Budget collection
+        self.ds_bdg = xr.open_mfdataset(files)
 
-        # Days and seconds in the benchmark year
-        self.d_per_yr = np.sum(self.d_per_mon)
-        self.s_per_yr = np.sum(self.s_per_mon)
+        # Variable list
+        self.varlist = [v for v in self.ds_bdg.data_vars.keys() \
+                        if "Strat" not in v and "PBL" not in v  \
+                        and "_" in v]
+        
+        # Reduce the dataset to size
+        self.ds_bdg = self.ds_bdg[self.varlist]
+
+        # ------------------------------------------
+        # Species info
+        # ------------------------------------------
+
+        # Default species if none are passed
+        if self.species is None:
+            self.species = [v.split("_")[1] for v in self.varlist \
+                            if "Full" in v]
+            
+        # Also exclude the stratospheric species
+        self.species = [s for s in self.species if "Strat" not in s]
+
+        # Sort the species alphabetically
+        self.species.sort()
 
         # -----------------------------------------
         # Conversion factors and units
@@ -92,31 +107,33 @@ class _GlobVars:
         for spc in self.species:
             if "TransportTracers" in bmk_type:
                 if "Tracer" in spc:
-                    self.conv_factor[spc] = self.s_per_yr * 1e-9
+                    if self.annual:
+                        # Passive species, annual
+                        self.conv_factor[spc] = self.interval * 1e-9  
+                        self.units[spc] = '[Tg/yr]'
+                    else:
+                        # Passive species, specific month
+                        self.conv_factor[spc] = self.interval * 1e-6
+                        self.units[spc] = '[Gg]'
+                else:
+                    if self.annual:
+                        # Radionuclide, annual
+                        self.conv_factor[spc] = self.interval
+                        self.units[spc] = '[kg/yr]'
+                    else:
+                        # Radionuclide, specific month
+                        self.conv_factor[spc] = self.interval
+                        self.units[spc] = '[kg]'
+            else:
+                if self.annual:
+                    # FullChem species, annual
+                    self.conv_factor[spc] = self.interval * 1e-9
                     self.units[spc] = '[Tg/yr]'
                 else:
-                    self.conv_factor[spc] = self.s_per_yr
-                    self.units[spc] = '[kg/yr]'
-            else:
-                self.conv_factor[spc] = self.s_per_yr * 1e-9
-                self.units[spc] = '[Tg/yr]'
+                    # FullChem species, specific month
+                    self.conv_factor[spc] = self.interval * 1e-6
+                    self.units[spc] = '[Gg]'
         
-        # ------------------------------------------
-        # Read data from disk
-        # ------------------------------------------
-
-        # Read the Budget collection
-        Budget = join(self.devdir, "*.Budget.{}*.nc4".format(self.y0_str))
-        self.ds_bdg = xr.open_mfdataset(Budget)
-
-        # Variable list
-        self.varlist = [v for v in self.ds_bdg.data_vars.keys() \
-                        if "Strat" not in v and "PBL" not in v  \
-                        and "_" in v]
-    
-        # Reduce the dataset to size
-        self.ds_bdg = self.ds_bdg[self.varlist]
-
         # ------------------------------------------
         # Other parameters
         # ------------------------------------------
@@ -213,6 +230,8 @@ def compute_operations_budgets(globvars):
         substrs = name.split("_")
         op = substrs[0]
         spc = substrs[1]
+        if spc not in globvars.species:
+            continue
         spc_short = short_name(spc)
         if "Trop" in op:
             op = op.replace("Trop", "")
@@ -254,28 +273,25 @@ def print_operations_budgets(globvars, dataframes):
     # Set numeric format to be 16 chars wide with 8 decimals
     pd.options.display.float_format = '{:16.8f}'.format
 
-    # Directory in which budgets tables will be created
-    table_dir = "{}/Tables".format(globvars.plotsdir)
-
     # Create table_dir if it doesn't already exist (if overwrite=True)
-    if os.path.isdir(table_dir) and not globvars.overwrite:
+    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(table_dir, err_str))
+        print("Directory {} exists. {}".format(dst, err_str))
         return
-    elif not os.path.isdir(table_dir):
-        os.mkdir(table_dir)
+    elif not os.path.isdir(globvars.plotsdir):
+        os.mkdir(globvars.plotsdir)
 
     # Filename to contain budget info
-    filename = "{}/{}_operations_budgets.txt".format(
-        table_dir, globvars.devstr)
+    filename = "{}/{}_operations_budgets_{}.txt".format(
+        globvars.plotsdir, globvars.devstr, globvars.label)
     
     # Print budgets to the file
     with open(filename, "w+") as f:    
         for k in dataframes.keys():
 
             # Header
-            print("{} budget diagnostics from {} for year {}".format(
-                globvars.devstr, k, globvars.y0_str), file=f)
+            print("{} budget diagnostics from {} for {}".format(
+                globvars.devstr, k, globvars.label), file=f)
             print("Units : {}".format(globvars.units[k]), file=f)
 
             # Data
@@ -292,8 +308,9 @@ def print_operations_budgets(globvars, dataframes):
         f.close()
 
 
-def make_operations_budget_table(devstr, devdir, plotsdir, bmk_type,
-                                 year, species=["O3"], overwrite=True):
+def make_operations_budget_table(devstr, files, plotsdir, bmk_type, label,
+                                 interval=None, species=None,
+                                 overwrite=True):
     """
     Prints the "operations budget" (i.e. change in mass after
     each operation) from a GEOS-Chem benchmark simulation.
@@ -302,8 +319,8 @@ def make_operations_budget_table(devstr, devdir, plotsdir, bmk_type,
     -----
         devstr : str
             Label denoting the "Dev" version.
-        devdir : str
-            Directory containing benchmark simulation output.
+        files : list of str
+            List of files to read
         plotsdir : str
             Directory where plots & tables will be created.
         bmk_type : str
@@ -316,8 +333,8 @@ def make_operations_budget_table(devstr, devdir, plotsdir, bmk_type,
             Denotes whether to ovewrite existing budget tables.
     """
     # Initialize a class to hold global variables
-    globvars = _GlobVars(devstr, devdir, plotsdir, bmk_type,
-                         year, species, overwrite)
+    globvars = _GlobVars(devstr, files, plotsdir, bmk_type,
+                         label, interval, species, overwrite)
 
     # Compute operations budgets.  Return a dictionary of
     # DataFrame objects (one DataFrame per species).
