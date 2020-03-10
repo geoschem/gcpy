@@ -14,6 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Changed
 - Significant difference files are now written out to the Plots/Sig_Diffs folder for the 1-year benchmarks.
 - Updated file names for Pb/Be budget tables in gcpy/budgets_tt.py.
+- Created separate driver routines for 1-year FullChem and TransportTracers benchmarks
+- Useless warnings when creating benchmark output should now be suppressed
 
 ### Deprecated
 
