@@ -87,6 +87,10 @@ mass_table   = True
 budget_table = True
 OH_metrics   = True
 
+# Plot concentrations and emissions by category?
+plot_by_spc_cat = True
+plot_by_hco_cat = True
+
 # Filename date strings (edit as needed)
 gcc_datestr  = '20160701'
 gchp_datestr = '20160716'
@@ -272,13 +276,15 @@ if gcc_vs_gcc:
 
     if plot_conc:
         # Concentration plots
-        # (includes lumped species and separates by category)
+        # Includes lumped species and separates by category if plot_by_spc_cat
+        # is true; otherwise excludes lumped species and writes to one file
         print('\n%%% Creating GCC vs. GCC concentration plots %%%')
         bmk.make_benchmark_plots(gcc_vs_gcc_refspc,
                                  gcc_vs_gcc_refstr,
                                  gcc_vs_gcc_devspc,
                                  gcc_vs_gcc_devstr,
                                  dst=gcc_vs_gcc_plotsdir,
+                                 plot_by_spc_cat=plot_by_spc_cat,
                                  overwrite=True,
                                  sigdiff_files=gcc_vs_gcc_sigdiff)
 
@@ -290,8 +296,8 @@ if gcc_vs_gcc:
                                       gcc_vs_gcc_devhco,
                                       gcc_vs_gcc_devstr,
                                       dst=gcc_vs_gcc_plotsdir,
-                                      plot_by_benchmark_cat=True,
-                                      plot_by_hco_cat=True,
+                                      plot_by_spc_cat=plot_by_spc_cat,
+                                      plot_by_hco_cat=plot_by_hco_cat,
                                       overwrite=True,
                                       sigdiff_files=gcc_vs_gcc_sigdiff)
 
@@ -366,6 +372,7 @@ if gcc_vs_gcc:
 # =====================================================================
 
 if gchp_vs_gcc:
+
     if plot_conc:
         # Concentration plots
         # (includes lumped species and separates by category)
@@ -375,6 +382,7 @@ if gchp_vs_gcc:
                                  gchp_vs_gcc_devspc,
                                  gchp_vs_gcc_devstr,
                                  dst=gchp_vs_gcc_plotsdir,
+                                 plot_by_spc_cat=plot_by_spc_cat,
                                  overwrite=True,
                                  sigdiff_files=gchp_vs_gcc_sigdiff)
 
@@ -386,8 +394,8 @@ if gchp_vs_gcc:
                                       gchp_vs_gcc_devhco,
                                       gchp_vs_gcc_devstr,
                                       dst=gchp_vs_gcc_plotsdir,
-                                      plot_by_benchmark_cat=True,
-                                      plot_by_hco_cat=True,
+                                      plot_by_spc_cat=plot_by_spc_cat,
+                                      plot_by_hco_cat=plot_by_hco_cat,
                                       overwrite=True,
                                       flip_dev=True,
                                       sigdiff_files=gchp_vs_gcc_sigdiff)
@@ -466,6 +474,7 @@ if gchp_vs_gchp:
                                  gchp_vs_gchp_devspc,
                                  gchp_vs_gchp_devstr,
                                  dst=gchp_vs_gchp_plotsdir,
+                                 plot_by_spc_cat=plot_by_spc_cat,
                                  overwrite=True,
                                  sigdiff_files=gchp_vs_gchp_sigdiff)
 
@@ -477,8 +486,8 @@ if gchp_vs_gchp:
                                       gchp_vs_gchp_devhco,
                                       gchp_vs_gchp_devstr,
                                       dst=gchp_vs_gchp_plotsdir,
-                                      plot_by_benchmark_cat=True,
-                                      plot_by_hco_cat=True,
+                                      plot_by_spc_cat=plot_by_spc_cat,
+                                      plot_by_hco_cat=plot_by_hco_cat,
                                       overwrite=True,
                                       flip_ref=True,
                                       flip_dev=True,

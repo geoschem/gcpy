@@ -404,7 +404,7 @@ def compare_single_level(
         quiet = not verbose
         vardict = core.compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict["commonvars3D"] + vardict["commonvars2D"]
-        print("Plotting all common variables (surface only if 3D)")
+        print("Plotting all common variables")
     n_var = len(varlist)
 
     # If no weightsdir is passed, set to current directory in case it is needed
@@ -2784,6 +2784,7 @@ def make_benchmark_plots(
     verbose=False,
     collection="SpeciesConc",
     benchmark_type="FullChemBenchmark",
+    plot_by_spc_cat=True,
     restrict_cats=[],
     plots=["sfc", "500hpa", "zonalmean"],
     use_cmap_RdBu=False,
@@ -2834,6 +2835,11 @@ def make_benchmark_plots(
         verbose : boolean
             Set this flag to True to print extra informational output.
             Default value: False.
+
+        plot_by_spc_cat: logical
+            Set this flag to False to send plots to one file rather
+            than separate file per category.
+            Default value: True
 
         restrict_cats : list of strings
             List of benchmark categories in benchmark_categories.yml to make
@@ -2891,6 +2897,46 @@ def make_benchmark_plots(
         devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
+
+    # If sending plots to one file then do all plots here and return
+    if not plot_by_spc_cat:
+        [refds, devds] = add_missing_variables(refds, devds)
+        var_prefix = 'SpeciesConc_'
+        varlist = [k for k in refds.data_vars.keys() if var_prefix in k]
+        # Surface
+        pdfname = os.path.join(dst,'SpeciesConc_Sfc.pdf')
+        compare_single_level(refds, refstr, devds, devstr, 
+                             varlist=varlist,
+                             pdfname=pdfname,
+                             use_cmap_RdBu=use_cmap_RdBu,
+                             log_color_scale=log_color_scale,
+                             extra_title_txt=extra_title_txt)
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
+                             verbose=verbose)
+        # 500 hPa
+        pdfname = os.path.join(dst,'SpeciesConc_500hPa.pdf')
+        compare_single_level(refds, refstr, devds, devstr,
+                             ilev=22,
+                             varlist=varlist,
+                             pdfname=pdfname,
+                             use_cmap_RdBu=use_cmap_RdBu,
+                             log_color_scale=log_color_scale,
+                             extra_title_txt=extra_title_txt)
+
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
+                             verbose=verbose)
+        # Zonal mean
+        pdfname = os.path.join(dst,'SpeciesConc_ZnlMn.pdf')
+        compare_zonal_mean(refds, refstr, devds, devstr,
+                           varlist=varlist,
+                           pdfname=pdfname,
+                           use_cmap_RdBu=use_cmap_RdBu,
+                           log_color_scale=log_color_scale,
+                           extra_title_txt=extra_title_txt)
+
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
+                             verbose=verbose)
+        return
 
     # FullChemBenchmark has lumped species (TransportTracers does not)
     if "FullChem" in benchmark_type:
@@ -3134,7 +3180,7 @@ def make_benchmark_emis_plots(
     devstr,
     dst="./1mo_benchmark",
     subdst=None,
-    plot_by_benchmark_cat=False,
+    plot_by_spc_cat=False,
     plot_by_hco_cat=False,
     overwrite=False,
     verbose=False,
@@ -3180,9 +3226,9 @@ def make_benchmark_emis_plots(
             corresponds to the month that is being plotted.
             Default value: None
 
-        plot_by_benchmark_cat : boolean
+        plot_by_spc_cat : boolean
             Set this flag to True to separate plots into PDF files
-            according to the benchmark categories (e.g. Oxidants,
+            according to the benchmark species categories (e.g. Oxidants,
             Aerosols, Nitrogen, etc.)  These categories are specified
             in the YAML file benchmark_species.yml.
             Default value: False
@@ -3228,7 +3274,7 @@ def make_benchmark_emis_plots(
 
     Remarks:
     --------
-        (1) If both plot_by_benchmark_cat and plot_by_hco_cat are
+        (1) If both plot_by_spc_cat and plot_by_hco_cat are
             False, then all emission plots will be placed into the
             same PDF file.
 
@@ -3301,7 +3347,7 @@ def make_benchmark_emis_plots(
     # ==================================================================
     # If inputs plot_by* are both false, plot all emissions in same file
     # ==================================================================
-    if not plot_by_benchmark_cat and not plot_by_hco_cat:
+    if not plot_by_spc_cat and not plot_by_hco_cat:
         if subdst is not None:
             pdfname = os.path.join(emisdir, "Emissions_{}.pdf".format(subdst))
         else:
@@ -3409,10 +3455,10 @@ def make_benchmark_emis_plots(
                         f.close()
 
     # ==================================================================
-    # if plot_by_benchmark_cat is true, make a file for each benchmark
+    # if plot_by_spc_cat is true, make a file for each benchmark
     # species category with emissions in the diagnostics file
     # ==================================================================
-    if plot_by_benchmark_cat:
+    if plot_by_spc_cat:
 
         catdict = get_species_categories()
         warninglist = (
