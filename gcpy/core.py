@@ -1445,15 +1445,16 @@ def get_input_res(data):
 
     vdims = data.dims
     if "lat" in vdims and "lon" in vdims:
-        lat = data.sizes["lat"]
-        lon = data.sizes["lon"]
-        #        print("grid has lat and lon: ", vdims)
-        
-        if lat / 6 == lon:
-            return lon, "cs"
+        lat = data["lat"].values
+        lon = data["lon"].values        
+        if lat.size / 6 == lon.size:
+            return lon.size, "cs"
         else:
-            lat_res = 180/(lat - 1)
-            lon_res = 360/lon
+            lat.sort()
+            lon.sort()
+            #use increment of second and third coordinates to avoid polar mischief
+            lat_res = np.abs(lat[2]-lat[1])
+            lon_res = np.abs(lon[2]-lon[1])
             return str(lat_res) + "x" + str(lon_res), "ll"
 
     else:
