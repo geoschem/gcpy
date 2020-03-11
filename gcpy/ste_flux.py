@@ -32,8 +32,8 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, devstr, devdir, plotsdir, 
-                 year, species=["O3"], overwrite=True):
+    def __init__(self, devstr, files, plotsdir, year,
+                 bmk_type, species=["O3"], overwrite=True):
         """
         Initializes the _GlobVars class.
 
@@ -56,10 +56,11 @@ class _GlobVars:
         # Arguments from outside
         # ------------------------------
         self.devstr = devstr
-        self.devdir = devdir
+        self.files = files
         self.plotsdir = plotsdir
         self.overwrite = overwrite
         self.species = species
+        self.is_TransportTracers = "TransportTracers" in bmk_type
 
         # ------------------------------
         # Benchmark year
@@ -74,19 +75,16 @@ class _GlobVars:
         # ------------------------------
 
         # Read the species database
-        try:
-            path = join(devdir, "species_database.yml")
-            spcdb = yaml_load_file(open(path))
-        except FileNotFoundError:
-            path = join(os.path.dirname(__file__), "species_database.yml")
-            spcdb = yaml_load_file(open(path))
+        #try:
+        #    path = join(devdir, "species_database.yml")
+        #    spcdb = yaml_load_file(open(path))
+        #except FileNotFoundError:
+        #    path = join(os.path.dirname(__file__), "species_database.yml")
+        #    spcdb = yaml_load_file(open(path))
 
         # ------------------------------
         # Read data collections
         # ------------------------------
-
-        # Collection file list
-        AdvFlux = join(devdir, "*.AdvFluxVert.{}*.nc4".format(self.y0_str))
 
         # Variable names
         self.data_vars = {}
@@ -94,7 +92,7 @@ class _GlobVars:
             self.data_vars[spc] = "AdvFluxVert_" + spc
 
         # Vertical flux diagnostics
-        self.ds_flx = xr.open_mfdataset(AdvFlux)
+        self.ds_flx = xr.open_mfdataset(files)
 
         # Set a flag to denote if this data is from GCHP
         self.is_gchp = "nf" in self.ds_flx.dims.keys()
@@ -136,11 +134,9 @@ class _GlobVars:
         # Define the conversion factor dict
         self.conv_factor = {}
         for spc in species:
-            if "Pb210" in spc or "Be7" in spc or "Be10" in spc:
-                self.is_TransportTracers = True
+            if self.is_TransportTracers:
                 self.conv_factor[spc] = kg_s_to_g_yr
             else:
-                self.is_TransportTracers = False
                 self.conv_factor[spc] = kg_s_to_Tg_yr
 
 
@@ -195,23 +191,27 @@ def compute_ste(globvars):
 
 def print_ste(globvars, df):
     """
-    Prints the 
+    Prints the strat-trop exchange table.
+
+    Args:
+    -----
+        globvars : _GlobVars
+            Global variables
+        df : pandas DataFrame
+            Strat-trop exchange table
     """
 
-    # Directory in which budgets tables will be created
-    table_dir = "{}/Tables".format(globvars.plotsdir)
-
     # Create table_dir if it doesn't already exist (if overwrite=True)
-    if os.path.isdir(table_dir) and not globvars.overwrite:
+    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
         print("Directory {} exists. {}".format(table_dir, err_str))
         return
-    elif not os.path.isdir(table_dir):
-        os.mkdir(table_dir)
+    elif not os.path.isdir(globvars.plotsdir):
+        os.mkdir(globvars.plotsdir)
 
     # Save the file in the Tables folder of plotsdir
-    filename = "{}/{}.strat_trop_exchange.txt".format(
-        table_dir, globvars.devstr)
+    filename = "{}/{}.strat_trop_exchange_{}.txt".format(
+        globvars.plotsdir, globvars.devstr, globvars.y0_str)
 
     # Set numeric format to be 11 chars wide with 4 decimals
     pd.options.display.float_format = '{:11.4f}'.format
@@ -221,14 +221,16 @@ def print_ste(globvars, df):
 
         # Print header
         print("%"*79, file=f)
-        print(" Table 4. Strat-trop exchange in {} for year {}".format(
-            globvars.devstr, globvars.y0_str), file=f)
-        print("          (i.e. species flux across 100 hPa)", file=f)
-        print(file=f)
         if globvars.is_TransportTracers:
-            print(" Units: g/yr", file=f)
+            print(" Table 4. Strat-trop exchange in {} for year {}".format(
+                globvars.devstr, globvars.y0_str), file=f)
+            print("          (i.e. species flux across 100 hPa)", file=f)
+            print("\n Units: g/yr", file=f)
         else:
-            print(" Units: Tg/yr", file=f)
+            print(" Strat-trop exchange in {} for year {}".format(
+                globvars.devstr, globvars.y0_str), file=f)
+            print(" (i.e. species flux across 100 hPa)", file=f)
+            print("\n Units: Tg/yr", file=f)
         print(file=f)
         print(" Annual mean is weighted by the number of days per month",
               file=f)
@@ -239,7 +241,7 @@ def print_ste(globvars, df):
         print(df, file=f)
 
 
-def make_benchmark_ste_table(devstr, devdir, plotsdir, year,
+def make_benchmark_ste_table(devstr, files, plotsdir, year,
                              bmk_type="FullChemBenchmark",
                              species=["O3"],
                              overwrite=True):
@@ -251,8 +253,8 @@ def make_benchmark_ste_table(devstr, devdir, plotsdir, year,
     -----
         devstr : str
             Label denoting the "Dev" version.
-        devdir : str
-            Directory where benchmark diagnostic files are found.
+        files : str
+            List of files containing vertical fluxes.
         plotsdir : str
             Directory where plots & tables will be created.
         year : int
@@ -264,7 +266,8 @@ def make_benchmark_ste_table(devstr, devdir, plotsdir, year,
     """
 
     # Initialize a private class with required global variables
-    globvars = _GlobVars(devstr, devdir, plotsdir, year, species, overwrite)
+    globvars = _GlobVars(devstr, files, plotsdir, year,
+                         bmk_type, species, overwrite)
 
     # Compute the STE fluxes
     df = compute_ste(globvars)

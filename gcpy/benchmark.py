@@ -630,6 +630,10 @@ def compare_single_level(
     # This loop is written as a function so it can be called in parallel
     def createfig(ivar):
 
+        # Suppress harmless run-time warnings (mostly about underflow)
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        warnings.filterwarnings('ignore', category=UserWarning)
+
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
@@ -1498,6 +1502,11 @@ def compare_zonal_mean(
 
     # This loop is written as a function so it can be called in parallel
     def createfig(ivar):
+
+        # Suppress harmless run-time warnings (mostly about underflow)
+        warnings.filterwarnings('ignore', category=RuntimeWarning)
+        warnings.filterwarnings('ignore', category=UserWarning)
+
         if savepdf:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
