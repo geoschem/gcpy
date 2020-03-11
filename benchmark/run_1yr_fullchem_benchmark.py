@@ -397,7 +397,7 @@ if gcc_vs_gcc:
         # Create seasonal budget tables (mass at end of each season month)
         table_dir = join(gcc_vs_gcc_plotsdir, "Tables")
         for s in range(bmk_nseasons):
-            mon_yr_str = seasons[s]
+            mon_yr_str = bmk_seasons_names[s]
             bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst[s],
                                            gcc_vs_gcc_refstr,
                                            gcc_vs_gcc_devrst[s],
