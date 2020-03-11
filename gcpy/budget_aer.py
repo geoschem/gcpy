@@ -32,7 +32,7 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, devstr, devdir, plotsdir, year, overwrite):
+    def __init__(self, devstr, devdir, dst, year, overwrite):
         """
         Initializes the _GlobVars class.
 
@@ -42,7 +42,7 @@ class _GlobVars:
                 Label denoting the "Dev" version.
             devdir : str
                 Directory where benchmark diagnostic files are found.
-            plotsdir : str
+            dst : str
                 Directory where plots & tables will be created.
             year : int
                 Year of the benchmark simulation.
@@ -56,7 +56,7 @@ class _GlobVars:
         # ------------------------------
         self.devstr = devstr
         self.devdir = devdir
-        self.plotsdir = plotsdir
+        self.dst = dst
         self.overwrite = overwrite
         
         # ------------------------------
@@ -315,12 +315,12 @@ def print_aerosol_burdens(globvars, data):
             Nested dictionary containing budget info.
     """
     # Create the plot directory hierarchy if it doesn't already exist
-    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
+    if os.path.isdir(globvars.dst) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(globvars.plotsdir, err_str))
+        print("Directory {} exists. {}".format(globvars.dst, err_str))
         return
-    elif not os.path.isdir(table_dir):
-        os.makedirs(table_dir)
+    elif not os.path.isdir(globvars.dst):
+        os.makedirs(globvars.dst)
         
     # File name
     filename = "{}/Aerosol_Burdens_{}.txt".format(table_dir, globvars.devstr)
@@ -364,12 +364,12 @@ def print_annual_average_aod(globvars, data):
             Nested dictionary containing budget info.
     """
     # Create table_dir if it doesn't already exist (if overwrite=True)
-    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
+    if os.path.isdir(globvars.dst) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(globvars.plotsdir, err_str))
+        print("Directory {} exists. {}".format(globvars.dst, err_str))
         return
     elif not os.path.isdir(table_dir):
-        os.makedirs(globvars.plotsdir)
+        os.makedirs(globvars.dst)
         
     # File name
     filename = "{}/Global_Mean_AOD_{}.txt".format(table_dir, globvars.devstr)
@@ -401,8 +401,8 @@ def print_annual_average_aod(globvars, data):
         f.close()
 
 
-def aerosol_budgets_and_burdens(devstr, devdir,
-                                plotsdir, year, overwrite=True):
+def aerosol_budgets_and_burdens(devstr, devdir, year, 
+                                dst='./1yr_benchmark', overwrite=True):
     """
     Compute FullChemBenchmark aerosol budgets & burdens
 
@@ -412,15 +412,18 @@ def aerosol_budgets_and_burdens(devstr, devdir,
             Benchmark directory (containing links to data).
         devstr : str
             Denotes the "Dev" benchmark version.
-        plotsdir : str 
-            Directory where budget tables will be created.
         year : int
             The year of the benchmark simulation (e.g. 2016). 
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str 
+            Directory where budget tables will be created.
         overwrite : bool
             Overwrite burden & budget tables? (default=True)
     """
     # Initialize a private class with required global variables
-    globvars = _GlobVars(devstr, devdir, plotsdir, year, overwrite)
+    globvars = _GlobVars(devstr, devdir, dst, year, overwrite)
 
     # Aerosol burdens [Tg]
     burdens = annual_average(globvars)
@@ -435,7 +438,7 @@ if __name__ == "__main__":
 
     # Make sure we have enough arguments
     if  len(sys.argv) != 5:
-        err_msg = "Usage: budgets_tt.py devstr, maindir, plotsdir, year"
+        err_msg = "Usage: budgets_tt.py devstr, maindir, dst, year"
         raise ValueError(err_msg)
     
     # Call the driver program
