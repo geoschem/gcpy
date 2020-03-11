@@ -1448,15 +1448,13 @@ def get_input_res(data):
         lat = data.sizes["lat"]
         lon = data.sizes["lon"]
         #        print("grid has lat and lon: ", vdims)
-        if lat == 46 and lon == 72:
-            return "4x5", "ll"
-        elif lat == 91 and lon == 144:
-            return "2x2.5", "ll"
-        elif lat / 6 == lon:
+        
+        if lat / 6 == lon:
             return lon, "cs"
         else:
-            print("Error: ref or dev {}x{} grid not defined in gcpy!".format(lat, lon))
-            return
+            lat_res = 180/(lat - 1)
+            lon_res = 360/lon
+            return str(lat_res) + "x" + str(lon_res), "ll"
 
     else:
         print("grid is cs: ", vdims)
