@@ -186,7 +186,8 @@ class _GlobVars:
             # v/v dry --> g
             self.vv_to_g[spc] = self.ds_met["Met_AD"].values  \
                               * (self.mw[spc] / self.mw["Air"]) * 1000.0
-          # molec/cm2/s --> g/day
+
+            # molec/cm2/s --> g/day
             self.mcm2s_to_g_d[spc] = self.area_cm2.values \
                                    / self.kg_per_mol[spc] \
                                    * self.kg_s_to_g_d[spc]
@@ -553,29 +554,25 @@ def print_budgets(globvars, data, key):
             One of "_f", (full-atmosphere) "_t" (trop-only),
             or "_s" (strat-only).
     """
-
-    # Directory in which budgets tables will be created
-    table_dir = "{}/Tables".format(globvars.plotsdir)
-
-    # Create table_dir if it doesn't already exist (if overwrite=True)
-    if os.path.isdir(table_dir) and not globvars.overwrite:
+    # Create the plot directory hierarchy if it doesn't already exist
+    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(table_dir, err_str))
+        print("Directory {} exists. {}".format(globvars.plotsdir, err_str))
         return
-    elif not os.path.isdir(table_dir):
-        os.mkdir(table_dir)
+    elif not os.path.isdir(globvars.plotsdir):
+        os.makedirs(globvars.plotsdir)
     
     # Filename to print
     if "_f" in key:
-        filename = "{}/{}.Pb-Be_budget_trop_strat.txt".format(
-            table_dir, globvars.devstr)
+        filename = "{}/{}.Pb-Be_budget_trop_strat_{}.txt".format(
+            globvars.plotsdir, globvars.devstr, globvars.y0_str)
     elif "_t" in key:
-        filename = "{}/{},Pb-Be_budget_troposphere.txt".format(
-            table_dir, globvars.devstr)
+        filename = "{}/{},Pb-Be_budget_troposphere_{}.txt".format(
+            globvars.plotsdir, globvars.devstr, globvars.y0_str)
     elif "_s"in key:
         filename = \
-            "{}/{}.Pb-Be_budget_stratosphere.txt".format(
-            table_dir, globvars.devstr)
+            "{}/{}.Pb-Be_budget_stratosphere_{}.txt".format(
+            globvars.plotsdir, globvars.devstr, globvars.y0_str)
 
     # Common title string
     title = "Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n        "

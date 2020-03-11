@@ -314,17 +314,13 @@ def print_aerosol_burdens(globvars, data):
         data: dict
             Nested dictionary containing budget info.
     """
-
-    # Directory in which budgets & burdens tables. will be created
-    table_dir = "{}/Tables".format(globvars.plotsdir)
-
-    # Create table_dir if it doesn't already exist (if overwrite=True)
-    if os.path.isdir(table_dir) and not globvars.overwrite:
+    # Create the plot directory hierarchy if it doesn't already exist
+    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(table_dir, err_str))
+        print("Directory {} exists. {}".format(globvars.plotsdir, err_str))
         return
     elif not os.path.isdir(table_dir):
-        os.mkdir(table_dir)
+        os.makedirs(table_dir)
         
     # File name
     filename = "{}/Aerosol_Burdens_{}.txt".format(table_dir, globvars.devstr)
@@ -367,18 +363,13 @@ def print_annual_average_aod(globvars, data):
         data: dict
             Nested dictionary containing budget info.
     """
-
-
-    # Directory in which budgets & burdens tables. will be created
-    table_dir = "{}/Tables".format(globvars.plotsdir)
-
     # Create table_dir if it doesn't already exist (if overwrite=True)
-    if os.path.isdir(table_dir) and not globvars.overwrite:
+    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(table_dir, err_str))
+        print("Directory {} exists. {}".format(globvars.plotsdir, err_str))
         return
     elif not os.path.isdir(table_dir):
-        os.mkdir(table_dir)
+        os.makedirs(globvars.plotsdir)
         
     # File name
     filename = "{}/Global_Mean_AOD_{}.txt".format(table_dir, globvars.devstr)
