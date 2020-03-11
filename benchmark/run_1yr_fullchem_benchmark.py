@@ -99,6 +99,26 @@ mass_table   = True
 budget_table = True
 ste_table    = True
 OH_metrics   = True
+plot_wetdep  = False
+
+# Plot concentrations and emissions by category?
+plot_by_spc_cat = True
+plot_by_hco_cat = True
+
+########################################################################
+#### TransportTracers BENCHMARK OPTIONS (comment out if not needed) ####
+########################################################################
+#bmk_type     = 'TransportTracersBenchmark'
+#plot_conc    = False
+#plot_wetdep  = False
+#budget_table = True
+#ste_table    = True
+#plot_emis    = False
+#emis_table   = False
+#plot_jvalues = False
+#plot_aod     = False
+#mass_table   = False
+#OH_metrics   = False
 
 ########################################################################
 #### Echo back selections to stdout                                 ####
@@ -271,6 +291,7 @@ if gcc_vs_gcc:
                                      subdst=mon_yr_str,
                                      benchmark_type=bmk_type,
                                      collection=collection,
+                                     plot_by_spc_cat=plot_by_spc_cat,
                                      restrict_cats=restrict_cats,
                                      overwrite=True,
                                      sigdiff_files=sigdiff_files)
@@ -299,8 +320,8 @@ if gcc_vs_gcc:
                                           gcc_vs_gcc_devstr,
                                           dst=gcc_vs_gcc_plotsdir,
                                           subdst=mon_yr_str,
-                                          plot_by_benchmark_cat=True,
-                                          plot_by_hco_cat=True,
+                                          plot_by_spc_cat=plot_by_spc_cat,
+                                          plot_by_hco_cat=plot_by_hco_cat,
                                           overwrite=True,
                                           sigdiff_files=sigdiff_files)
 
@@ -514,6 +535,7 @@ if gcc_vs_gcc:
 #                                      gchp_vs_gcc_devspc,
 #                                      gchp_vs_gcc_devstr,
 #                                      dst=gchp_vs_gcc_plotsdir,
+#                                      plot_by_spc_cat=plot_by_spc_cat,
 #                                      overwrite=True,
 #                                      sigdiff_files=gchp_vs_gcc_sigdiff)
 #
@@ -525,8 +547,8 @@ if gcc_vs_gcc:
 #                                      gchp_vs_gcc_devhco,
 #                                      gchp_vs_gcc_devstr,
 #                                      dst=gchp_vs_gcc_plotsdir,
-#                                      plot_by_benchmark_cat=True,
-#                                      plot_by_hco_cat=True,
+#                                      plot_by_spc_cat=plot_by_spc_cat,
+#                                      plot_by_hco_cat=plot_by_hco_cat,
 #                                      overwrite=True,
 #                                      flip_dev=True,
 #                                      sigdiff_files=gchp_vs_gcc_sigdiff)
@@ -605,6 +627,7 @@ if gcc_vs_gcc:
 #                                      gchp_vs_gchp_devspc,
 #                                      gchp_vs_gchp_devstr,
 #                                      dst=gchp_vs_gchp_plotsdir,
+#                                      plot_by_spc_cat=plot_by_spc_cat,
 #                                      overwrite=True,
 #                                      sigdiff_files=gchp_vs_gchp_sigdiff)
 #
@@ -616,8 +639,8 @@ if gcc_vs_gcc:
 #                                      gchp_vs_gchp_devhco,
 #                                      gchp_vs_gchp_devstr,
 #                                      dst=gchp_vs_gchp_plotsdir,
-#                                      plot_by_benchmark_cat=True,
-#                                      plot_by_hco_cat=True,
+#                                      plot_by_spc_cat=plot_by_spc_cat,
+#                                      plot_by_hco_cat=plot_by_hco_cat,
 #                                      overwrite=True,
 #                                      flip_ref=True,
 #                                      flip_dev=True,
