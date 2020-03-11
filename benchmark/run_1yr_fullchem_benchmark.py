@@ -445,7 +445,7 @@ if gcc_vs_gcc:
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
         aerbdg.aerosol_budgets_and_burdens(gcc_dev_version,
                                            gcc_vs_gcc_devdir,
-                                           gcc_vs_gcc_plotsdir,
+                                           plot_dir,
                                            bmk_year,
                                            overwrite=True)
 

@@ -303,10 +303,8 @@ if gcc_vs_gcc:
         title = '\n%%% Creating GCC vs. GCC {} budgets %%%'.format(bmk_type)
         print(title)
 
-        # Send output to the Tables subolder
-        plot_dir = join(gcc_vs_gcc_plotsdir, 'Tables')
-        
         # Budgets of Radionuclide species
+        plot_dir = join(gcc_vs_gcc_plotsdir, 'Tables')
         ttbdg.transport_tracers_budgets(maindir,
                                         gcc_dev_version,
                                         plot_dir,
@@ -360,6 +358,7 @@ if gcc_vs_gcc:
                                      gcc_vs_gcc_devflx,
                                      plot_dir,
                                      bmk_year,
+                                     bmk_type,
                                      species=species,
                                      overwrite=True)
     

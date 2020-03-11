@@ -273,13 +273,13 @@ def print_operations_budgets(globvars, dataframes):
     # Set numeric format to be 16 chars wide with 8 decimals
     pd.options.display.float_format = '{:16.8f}'.format
 
-    # Create table_dir if it doesn't already exist (if overwrite=True)
+    # Create the plot directory hierarchy if it doesn't already exist
     if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
         print("Directory {} exists. {}".format(dst, err_str))
         return
     elif not os.path.isdir(globvars.plotsdir):
-        os.mkdir(globvars.plotsdir)
+        os.makedirs(globvars.plotsdir)
 
     # Filename to contain budget info
     filename = "{}/{}_operations_budgets_{}.txt".format(

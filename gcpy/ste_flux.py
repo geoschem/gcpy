@@ -200,14 +200,13 @@ def print_ste(globvars, df):
         df : pandas DataFrame
             Strat-trop exchange table
     """
-
     # Create table_dir if it doesn't already exist (if overwrite=True)
     if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
         print("Directory {} exists. {}".format(table_dir, err_str))
         return
     elif not os.path.isdir(globvars.plotsdir):
-        os.mkdir(globvars.plotsdir)
+        os.makedirs(globvars.plotsdir)
 
     # Save the file in the Tables folder of plotsdir
     filename = "{}/{}.strat_trop_exchange_{}.txt".format(
