@@ -395,14 +395,16 @@ if gcc_vs_gcc:
                                           bmk_seasons, is_gcc=True)
 
         # Create seasonal budget tables (mass at end of each season month)
-        table_dir = join(gcc_vs_gcc_plotsdir, "Tables")
         for s in range(bmk_nseasons):
             mon_yr_str = bmk_seasons_names[s]
+            label = "at 01{}".format(mon_yr_str)
+            plot_dir = join(gcc_vs_gcc_plotsdir, "Tables", mon_yr_str)
             bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst[s],
                                            gcc_vs_gcc_refstr,
                                            gcc_vs_gcc_devrst[s],
                                            gcc_vs_gcc_devstr,
-                                           dst=table_dir,
+                                           dst=plot_dir,
+                                           label=label,
                                            overwrite=True,
                                            subdst=mon_yr_str)
 
@@ -425,8 +427,8 @@ if gcc_vs_gcc:
             plot_dir = join(gcc_vs_gcc_plotsdir, 'Budget', mon_yr_str)      
             opbdg.make_operations_budget_table(gcc_dev_version,
                                                gcc_vs_gcc_devbgt[s],
-                                               plot_dir,
                                                bmk_type,
+                                               dst=plot_dir,
                                                label=mon_yr_str,
                                                interval=sec_per_month[s*3],
                                                overwrite=True)
@@ -445,24 +447,9 @@ if gcc_vs_gcc:
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
         aerbdg.aerosol_budgets_and_burdens(gcc_dev_version,
                                            gcc_vs_gcc_devdir,
-                                           plot_dir,
                                            bmk_year,
+                                           dst=plot_dir,
                                            overwrite=True)
-
-    if OH_metrics:
-        # --------------------------------------------------------------
-        # GCC vs GCC Global mean OH, MCF Lifetime, CH4 Lifetime
-        # --------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} OH metrics %%%".format(bmk_type)
-        print(title)
-        gcc_vs_gcc_reflist = [gcc_vs_gcc_refcac, gcc_vs_gcc_refmet]
-        gcc_vs_gcc_devlist = [gcc_vs_gcc_devcac, gcc_vs_gcc_devmet]
-        bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
-                                      gcc_vs_gcc_refstr,
-                                      gcc_vs_gcc_devlist,
-                                      gcc_vs_gcc_devstr,
-                                      dst=gcc_vs_gcc_plotsdir,
-                                      overwrite=True)
 
     if ste_table:
         # --------------------------------------------------------------
@@ -479,10 +466,36 @@ if gcc_vs_gcc:
         plot_dir = join(gcc_vs_gcc_plotsdir, 'Tables')
         ste.make_benchmark_ste_table(gcc_dev_version,
                                      gcc_vs_gcc_devflx,
-                                     plot_dir,
                                      bmk_year,
+                                     dst=plot_dir,
+                                     bmk_type=bmk_type,
                                      species=['O3'],
                                      overwrite=True)
+
+    if OH_metrics:
+        # --------------------------------------------------------------
+        # GCC vs GCC Global mean OH, MCF Lifetime, CH4 Lifetime
+        # --------------------------------------------------------------
+        title = "\n%%% Creating GCC vs. GCC {} OH metrics %%%".format(bmk_type)
+        print(title)
+
+        # Paths to data files
+        collections = ["ConcAfterChem", "StateMet"]
+        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collections,
+                                           bmk_seasons, is_gcc=True)
+        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collections,
+                                           bmk_seasons, is_gcc=True)
+
+        # Create OH metrics table
+        plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
+        print(plot_dir)
+        bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
+                                      gcc_vs_gcc_refstr,
+                                      gcc_vs_gcc_devlist,
+                                      gcc_vs_gcc_devstr,
+                                      dst=plot_dir,
+                                      overwrite=True)
+
     
 ###############################################################################
 # NOTE: For now, we are developing the GCC vs. GCC 1-yr benchmark plots.

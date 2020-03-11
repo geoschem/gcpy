@@ -2411,6 +2411,7 @@ def create_global_mass_table(
     devstr,
     varlist,
     met_and_masks,
+    label,
     trop_only=False,
     outfilename="GlobalMass_TropStrat.txt",
     verbose=False,
@@ -2443,6 +2444,10 @@ def create_global_mass_table(
         met_and_masks : dict of xarray DataArray
             Dictionary containing the meterological variables and
             masks for the Ref and Dev datasets.
+        
+        label : str
+            Label to go in the header string.  Can be used to
+            pass the month & year.
 
     Keyword Args (optional):
     ------------------------
@@ -2471,24 +2476,6 @@ def create_global_mass_table(
 
         The area variable for GEOS-Chem "Classic" will be "AREA",
         but for GCHP it will be "Met_AREAM2".
-
-    Example:
-    --------
-        Print the global mass of CO and ACET in two different
-        data sets, which represent different model versions:
-
-        >>> include gcpy
-        >>> include xarray as xr
-        >>> reffile = '~/output/12.1.1/GEOSChem.Restart.20160801_0000z.nc'
-        >>> refstr = '12.1.1'
-        >>> refdata = xr.open_dataset(reffile)
-        >>> devfile = '~/output/12.2.0/GEOSChem.Restart.20160801_0000z.nc'
-        >>> devstr = '12.2.0'
-        >>> devdata = xr.open_dataset(devfile)
-        >>> outfilename = '12.2.0_global_mass.txt'
-        >>> species = [ 'SpeciesRst_CO', 'SpeciesRst_ACET' ]
-        >>> create_global_mass_table(refdata, refstr, devdata, devstr,
-            varlist=species, outfilename=outfilename)
     """
 
     # ==================================================================
@@ -2526,9 +2513,9 @@ def create_global_mass_table(
 
     # Title strings
     if trop_only:
-        title1 = "### Global mass (Gg) at end of simulation (Trop only)"
+        title1 = "### Global mass (Gg) {} (Trop only)".format(label)
     else:
-        title1 = "### Global mass (Gg) at end of simulation (Trop + Strat)"
+        title1 = "### Global mass (Gg) {} (Trop + Strat)".format(label)
     title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
 
     # Print header to file
@@ -4269,6 +4256,7 @@ def make_benchmark_mass_tables(
     subdst=None,
     overwrite=False,
     verbose=False,
+    label="at end of simulation",
 ):
     """
     Creates a text file containing global mass totals by species and
@@ -4328,14 +4316,10 @@ def make_benchmark_mass_tables(
     # Define destination directory
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
-                dst
-            )
-        )
+        print("Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(dst))
         return
     elif not os.path.isdir(dst):
-        os.mkdir(dst)
+        os.makedirs(dst)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -4427,6 +4411,7 @@ def make_benchmark_mass_tables(
         devstr,
         varlist,
         met_and_masks,
+        label,
         outfilename=mass_file,
         verbose=verbose,
     )
@@ -4448,6 +4433,7 @@ def make_benchmark_mass_tables(
         devstr,
         varlist,
         met_and_masks,
+        label,
         outfilename=mass_file,
         trop_only=True,
         verbose=verbose,
@@ -4576,7 +4562,6 @@ def make_benchmark_oh_metrics(
     devstr,
     dst="./1mo_benchmark",
     overwrite=False,
-    interval=[2678400.0],
 ):
     """
     Creates a text file containing metrics of global mean OH, MCF lifetime,
@@ -4610,11 +4595,6 @@ def make_benchmark_oh_metrics(
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value : False
-
-        interval : float
-            Specifies the averaging period in seconds, which is used
-            to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
-            Default value : None
     """
 
     # ==================================================================
@@ -4622,13 +4602,10 @@ def make_benchmark_oh_metrics(
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
         print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
-                dst
-            )
-        )
+            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(dst))
         return
     elif not os.path.isdir(dst):
-        os.mkdir(dst)
+        os.makedirs(dst)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -4690,11 +4667,12 @@ def make_benchmark_oh_metrics(
     # ==================================================================
 
     # Create file
-    outfilename = os.path.join(dst, "Tables/{}_OH_metrics.txt".format(devstr))
+    outfilename = os.path.join(dst, "{}_OH_metrics.txt".format(devstr))
     try:
         f = open(outfilename, "w")
     except FileNotFoundError:
-        raise FileNotFoundError("Could not open {} for writing!".format(outfilename))
+        raise FileNotFoundError("Could not open {} for writing!".format(
+            outfilename))
 
     # ==================================================================
     # Compute mass-weighted OH in the troposphere

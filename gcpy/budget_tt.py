@@ -32,7 +32,7 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, maindir, devstr, plotsdir, year, overwrite):
+    def __init__(self, maindir, devstr, dst, year, overwrite):
         """
         Initializes the _GlobVars class.
 
@@ -42,7 +42,7 @@ class _GlobVars:
                 Label denoting the "Dev" version.
             maindir : str
                 Top-level benchmark run directory.
-            plotsdir : str
+            dst : str
                 Directory where plots & tables will be created.
             year : int
                 Year of the benchmark simulation.
@@ -54,7 +54,7 @@ class _GlobVars:
         # ------------------------------
         self.devstr = devstr
         self.maindir = maindir
-        self.plotsdir = plotsdir
+        self.dst = dst
         self.overwrite = overwrite
         
         # ------------------------------
@@ -555,24 +555,24 @@ def print_budgets(globvars, data, key):
             or "_s" (strat-only).
     """
     # Create the plot directory hierarchy if it doesn't already exist
-    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
+    if os.path.isdir(globvars.dst) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(globvars.plotsdir, err_str))
+        print("Directory {} exists. {}".format(globvars.dst, err_str))
         return
-    elif not os.path.isdir(globvars.plotsdir):
-        os.makedirs(globvars.plotsdir)
+    elif not os.path.isdir(globvars.dst):
+        os.makedirs(globvars.dst)
     
     # Filename to print
     if "_f" in key:
         filename = "{}/{}.Pb-Be_budget_trop_strat_{}.txt".format(
-            globvars.plotsdir, globvars.devstr, globvars.y0_str)
+            globvars.dst, globvars.devstr, globvars.y0_str)
     elif "_t" in key:
         filename = "{}/{},Pb-Be_budget_troposphere_{}.txt".format(
-            globvars.plotsdir, globvars.devstr, globvars.y0_str)
+            globvars.dst, globvars.devstr, globvars.y0_str)
     elif "_s"in key:
         filename = \
             "{}/{}.Pb-Be_budget_stratosphere_{}.txt".format(
-            globvars.plotsdir, globvars.devstr, globvars.y0_str)
+            globvars.dst, globvars.devstr, globvars.y0_str)
 
     # Common title string
     title = "Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n        "
@@ -653,7 +653,8 @@ def print_budgets(globvars, data, key):
         f.close()
         
         
-def transport_tracers_budgets(maindir, devstr, plotsdir, year, overwrite=True):
+def transport_tracers_budgets(maindir, devstr, year, 
+                              dst='./1yr_benchmark', overwrite=True):
     """
     Main program to compute TransportTracersBenchmark budgets
 
@@ -663,16 +664,19 @@ def transport_tracers_budgets(maindir, devstr, plotsdir, year, overwrite=True):
             Top-level benchmark folder
         devstr : str
             Denotes the "Dev" benchmark version.
-        plotsdir : str 
-            Directory where budget tables will be created.
         year : int
             The year of the benchmark simulation (e.g. 2016). 
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str 
+            Directory where budget tables will be created.
         overwrite : bool
             Denotes whether to ovewrite existing budget tables.
     """
 
     # Store global variables in a private class
-    globvars = _GlobVars(maindir, devstr, plotsdir, year, overwrite)
+    globvars = _GlobVars(maindir, devstr, dst, year, overwrite)
 
     # Data structure for budgets
     data = {}
@@ -759,7 +763,7 @@ if __name__ == "__main__":
 
     # Make sure we have enough arguments
     if  len(sys.argv) != 5:
-        err_msg = "Usage: budgets_tt.py devstr, maindir, plotsdir, year"
+        err_msg = "Usage: budgets_tt.py maindir, devstr, dst, year"
         raise ValueError(err_msg)
     
     # Call the driver program
