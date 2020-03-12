@@ -21,7 +21,7 @@ from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
-from .core import gcplot, call_make_grid, get_input_res, all_zero_or_nan
+from .core import gcplot, call_make_grid, get_input_res, all_zero_or_nan, get_grid_extents
 from .units import convert_units
 from .constants import skip_these_vars
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -464,6 +464,17 @@ def compare_single_level(
     regriddev = devres != cmpres
     regridany = regridref or regriddev
 
+    # =================================================================
+    # Get grid extents, only regridding to extents of each grid
+    # =================================================================
+
+    #refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refdata)
+    #devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devdata)
+    #cmpminlon = min(refminlon, devminlon)
+    #cmpmaxlon = max(refmaxlon, devmaxlon)
+    #cmpminlat = min(refminlat, devminlat)
+    #cmpmaxlat = max(refmaxlat, devmaxlat)
+    
     # =================================================================
     # Make grids (ref, dev, and comparison)
     # =================================================================
@@ -2929,7 +2940,7 @@ def make_benchmark_plots(
     dict_zm = {}
 
     def createplots(i, filecat):
-
+        cat_diff_dict = {'sfc' : [], '500' : [], 'zm' : []}
         # Suppress harmless run-time warnings from all threads
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         warnings.filterwarnings("ignore", category=UserWarning)
@@ -2994,7 +3005,7 @@ def make_benchmark_plots(
                 sigdiff_list=diff_sfc,
             )
             diff_sfc[:] = [v.replace(coll_prefix, "") for v in diff_sfc]
-            dict_sfc[filecat] = diff_sfc
+            cat_diff_dict['sfc'] = diff_sfc
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict,
                 warninglist, remove_prefix=coll_prefix
@@ -3027,7 +3038,8 @@ def make_benchmark_plots(
                 sigdiff_list=diff_500,
             )
             diff_500[:] = [v.replace(coll_prefix, "") for v in diff_500]
-            dict_500[filecat] = diff_500
+            #dict_500[filecat] = diff_500
+            cat_diff_dict['500'] = diff_500
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict,
                 warninglist, remove_prefix=coll_prefix
@@ -3061,7 +3073,8 @@ def make_benchmark_plots(
                 sigdiff_list=diff_zm,
             )
             diff_zm[:] = [v.replace(coll_prefix, "") for v in diff_zm]
-            dict_zm = diff_zm
+            #dict_zm = diff_zm
+            cat_diff_dict['zm'] = diff_zm
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict,
                 warninglist, remove_prefix=coll_prefix
@@ -3093,12 +3106,16 @@ def make_benchmark_plots(
                 pdfname, filecat, catdict,
                 warninglist, remove_prefix=coll_prefix
             )
-
+        return {filecat : cat_diff_dict}
     # Create the plots in parallel
-    Parallel(n_jobs=n_job)(
+    results = Parallel(n_jobs=n_job)(
         delayed(createplots)(i, filecat) for i, filecat in enumerate(catdict)
     )
 
+    dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] for result in results}
+    dict_500 = {list(result.keys())[0] : result[list(result.keys())[0]]['500'] for result in results}
+    dict_zm = {list(result.keys())[0] : result[list(result.keys())[0]]['zm']  for result in results}    
+    
     # ==============================================================
     # Write the list of species having significant differences,
     # which we need to fill out the benchmark approval forms.
@@ -3358,7 +3375,6 @@ def make_benchmark_emis_plots(
             if not os.path.isdir(emisspcdir):
                 os.mkdir(emisspcdir)
 
-        diff_dict = {}
         # for c in emis_cats:
         def createfile_hco_cat(c):
             # Handle cases of bioburn and bioBurn (temporary until 12.3.1)
@@ -3377,7 +3393,7 @@ def make_benchmark_emis_plots(
                 )
             else:
                 pdfname = os.path.join(emisspcdir, "{}_Emissions.pdf".format(c))
-
+            diff_dict = {}
             diff_emis = []
             compare_single_level(
                 refds,
@@ -3400,8 +3416,12 @@ def make_benchmark_emis_plots(
             diff_emis[:] = [v.replace("Emis", "") for v in diff_emis]
             diff_emis[:] = [v.replace("_" + c, "") for v in diff_emis]
             diff_dict[c] = diff_emis
+            return diff_dict
 
-        Parallel(n_jobs=n_job)(delayed(createfile_hco_cat)(c) for c in emis_cats)
+        results = Parallel(n_jobs=n_job)(delayed(createfile_hco_cat)(c) for c in emis_cats)
+
+        dict_emis = {list(result.keys())[0] : result[list(result.keys())[0]] for result in results}
+        
         # =============================================================
         # Write the list of species having significant differences,
         # which we need to fill out the benchmark approval forms.
@@ -3410,7 +3430,7 @@ def make_benchmark_emis_plots(
             for filename in sigdiff_files:
                 if "emis" in filename:
                     with open(filename, "w+") as f:
-                        for c, diff_list in diff_dict.items():
+                        for c, diff_list in dict_emis.items():
                             print("* {}: ".format(c), file=f, end="")
                             for v in diff_list:
                                 print("{} ".format(v), file=f, end="")
