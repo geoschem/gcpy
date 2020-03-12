@@ -53,6 +53,7 @@ from gcpy.core import get_filepaths
 import gcpy.budget_aer as aerbdg
 import gcpy.budget_ops as opbdg
 import gcpy.ste_flux as ste
+import gcpy.mean_oh_from_logs as moh
 import numpy as np
 import warnings
 
@@ -100,6 +101,10 @@ budget_table = True
 ste_table    = True
 OH_metrics   = True
 
+# Plot concentrations and emissions by category?
+plot_by_spc_cat = True
+plot_by_hco_cat = True
+
 ########################################################################
 #### Echo back selections to stdout                                 ####
 ########################################################################
@@ -112,6 +117,7 @@ if budget_table: print(" - Budget tables")
 if emis_table:   print(" - Table of emissions totals by species and inventory")
 if mass_table:   print(" - Table of species mass")
 if ste_table:    print(" - Table of strat-trop exchange")
+if OH_metrics:   print(" - Table of OH metrics")
 
 # Start and end of the benchmark year (as numpy.datetime64 dates)
 bmk_year = 2016
@@ -121,12 +127,12 @@ bmk_start = np.datetime64(bmk_start_str)
 bmk_end = np.datetime64(bmk_end_str)
 
 # Data directories (edit as needed)
-gcc_vs_gcc_refdir   = join(maindir, gcc_ref_version,  "OutputDir")
-gcc_vs_gcc_devdir   = join(maindir, gcc_dev_version,  "OutputDir")
-gchp_vs_gcc_refdir  = join(maindir, gcc_dev_version,  "OutputDir")
-gchp_vs_gcc_devdir  = join(maindir, gchp_dev_version, "OutputDir")
-gchp_vs_gchp_refdir = join(maindir, gchp_ref_version, "OutputDir")
-gchp_vs_gchp_devdir = join(maindir, gchp_dev_version, "OutputDir")
+gcc_vs_gcc_refdir      = join(maindir, gcc_ref_version,  "OutputDir")
+gcc_vs_gcc_devdir      = join(maindir, gcc_dev_version,  "OutputDir")
+gchp_vs_gcc_refdir     = join(maindir, gcc_dev_version,  "OutputDir")
+gchp_vs_gcc_devdir     = join(maindir, gchp_dev_version, "OutputDir")
+gchp_vs_gchp_refdir    = join(maindir, gchp_ref_version, "OutputDir")
+gchp_vs_gchp_devdir    = join(maindir, gchp_dev_version, "OutputDir")
 
 # Restart file directories (edit as needed)
 gcc_vs_gcc_refrstdir   = join(maindir, gcc_ref_version,  "restarts")
@@ -135,6 +141,10 @@ gchp_vs_gcc_refrstdir  = join(maindir, gcc_dev_version,  "restarts")
 gchp_vs_gcc_devrstdir  = join(maindir, gchp_dev_version, "restarts")
 gchp_vs_gchp_refrstdir = join(maindir, gchp_ref_version, "restarts")
 gchp_vs_gchp_devrstdir = join(maindir, gchp_dev_version, "restarts")
+
+# Log file directories -- GEOS-Chem "Classic" only (edit as needed)
+gcc_vs_gcc_reflogdir   = join(maindir, gcc_ref_version,  "logs")
+gcc_vs_gcc_devlogdir   = join(maindir, gcc_dev_version,  "logs")
 
 # Plots directories (edit as needed)
 gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_version, "Plots")
@@ -161,16 +171,6 @@ diff_of_diffs_devstr = "{} - {}".format(gchp_dev_version,
 # =====================================================================
 # The rest of these settings should not need to be changed
 # =====================================================================
-
-###############################################################################
-# Under development, comment these out for now
-## Paths to concentration after chemistry files
-#gcc_vs_gcc_refcac = core.get_gcc_filepath(gcc_vs_gcc_refdir, 'ConcAfterChem',
-#                                          year=bmk_year, month=bmk_months)
-#
-#gcc_vs_gcc_devcac = core.get_gcc_filepath(gcc_vs_gcc_devdir, 'ConcAfterChem',
-#                                          year=bmk_year, month=bmk_months)
-###############################################################################
 
 # Monthly array of dates
 bmk_delta_1m = np.timedelta64(1, "M")
@@ -271,6 +271,7 @@ if gcc_vs_gcc:
                                      subdst=mon_yr_str,
                                      benchmark_type=bmk_type,
                                      collection=collection,
+                                     plot_by_spc_cat=plot_by_spc_cat,
                                      restrict_cats=restrict_cats,
                                      overwrite=True,
                                      sigdiff_files=sigdiff_files)
@@ -299,8 +300,8 @@ if gcc_vs_gcc:
                                           gcc_vs_gcc_devstr,
                                           dst=gcc_vs_gcc_plotsdir,
                                           subdst=mon_yr_str,
-                                          plot_by_benchmark_cat=True,
-                                          plot_by_hco_cat=True,
+                                          plot_by_spc_cat=plot_by_spc_cat,
+                                          plot_by_hco_cat=plot_by_hco_cat,
                                           overwrite=True,
                                           sigdiff_files=sigdiff_files)
 
@@ -395,14 +396,16 @@ if gcc_vs_gcc:
                                           bmk_seasons, is_gcc=True)
 
         # Create seasonal budget tables (mass at end of each season month)
-        table_dir = join(gcc_vs_gcc_plotsdir, "Tables")
         for s in range(bmk_nseasons):
             mon_yr_str = bmk_seasons_names[s]
+            label = "at 01{}".format(mon_yr_str)
+            plot_dir = join(gcc_vs_gcc_plotsdir, "Tables", mon_yr_str)
             bmk.make_benchmark_mass_tables(gcc_vs_gcc_refrst[s],
                                            gcc_vs_gcc_refstr,
                                            gcc_vs_gcc_devrst[s],
                                            gcc_vs_gcc_devstr,
-                                           dst=table_dir,
+                                           dst=plot_dir,
+                                           label=label,
                                            overwrite=True,
                                            subdst=mon_yr_str)
 
@@ -425,8 +428,8 @@ if gcc_vs_gcc:
             plot_dir = join(gcc_vs_gcc_plotsdir, 'Budget', mon_yr_str)      
             opbdg.make_operations_budget_table(gcc_dev_version,
                                                gcc_vs_gcc_devbgt[s],
-                                               plot_dir,
                                                bmk_type,
+                                               dst=plot_dir,
                                                label=mon_yr_str,
                                                interval=sec_per_month[s*3],
                                                overwrite=True)
@@ -445,24 +448,9 @@ if gcc_vs_gcc:
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
         aerbdg.aerosol_budgets_and_burdens(gcc_dev_version,
                                            gcc_vs_gcc_devdir,
-                                           plot_dir,
                                            bmk_year,
+                                           dst=plot_dir,
                                            overwrite=True)
-
-    if OH_metrics:
-        # --------------------------------------------------------------
-        # GCC vs GCC Global mean OH, MCF Lifetime, CH4 Lifetime
-        # --------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} OH metrics %%%".format(bmk_type)
-        print(title)
-        gcc_vs_gcc_reflist = [gcc_vs_gcc_refcac, gcc_vs_gcc_refmet]
-        gcc_vs_gcc_devlist = [gcc_vs_gcc_devcac, gcc_vs_gcc_devmet]
-        bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
-                                      gcc_vs_gcc_refstr,
-                                      gcc_vs_gcc_devlist,
-                                      gcc_vs_gcc_devstr,
-                                      dst=gcc_vs_gcc_plotsdir,
-                                      overwrite=True)
 
     if ste_table:
         # --------------------------------------------------------------
@@ -479,10 +467,50 @@ if gcc_vs_gcc:
         plot_dir = join(gcc_vs_gcc_plotsdir, 'Tables')
         ste.make_benchmark_ste_table(gcc_dev_version,
                                      gcc_vs_gcc_devflx,
-                                     plot_dir,
                                      bmk_year,
+                                     dst=plot_dir,
+                                     bmk_type=bmk_type,
                                      species=['O3'],
                                      overwrite=True)
+
+    if OH_metrics:
+        # --------------------------------------------------------------
+        # GCC vs GCC Global mean OH, MCF Lifetime, CH4 Lifetime
+        # --------------------------------------------------------------
+        title = "\n%%% Creating GCC vs. GCC {} OH metrics %%%".format(bmk_type)
+        print(title)
+
+        ####################################################################
+        # NOTE: Need to better validate this routine
+        # for now, use the mean OH from the log files (bmy, 3/12/20)
+        ## Paths to data files
+        #collections = ["ConcAfterChem", "StateMet"]
+        #gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collections,
+        #                                   bmk_months, is_gcc=True)
+        #gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collections,
+        #                                   bmk_months, is_gcc=True)
+        #
+        ## Create OH metrics table
+        #plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
+        #bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
+        #                              gcc_vs_gcc_refstr,
+        #                              gcc_vs_gcc_devlist,
+        #                              gcc_vs_gcc_devstr,
+        #                              dst=plot_dir,
+        #                              overwrite=True)
+        #####################################################################
+        
+        # Compute mean OH from the log files
+        # NOTE: Only works for GEOS-Chem "Classic" benchmarks!
+        plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
+        moh.make_benchmark_oh_from_logs(gcc_vs_gcc_reflogdir,
+                                        gcc_vs_gcc_refstr,
+                                        gcc_vs_gcc_devlogdir,
+                                        gcc_vs_gcc_devstr,
+                                        bmk_year,
+                                        dst=plot_dir,
+                                        overwrite=True)
+
     
 ###############################################################################
 # NOTE: For now, we are developing the GCC vs. GCC 1-yr benchmark plots.
@@ -501,6 +529,7 @@ if gcc_vs_gcc:
 #                                      gchp_vs_gcc_devspc,
 #                                      gchp_vs_gcc_devstr,
 #                                      dst=gchp_vs_gcc_plotsdir,
+#                                      plot_by_spc_cat=plot_by_spc_cat,
 #                                      overwrite=True,
 #                                      sigdiff_files=gchp_vs_gcc_sigdiff)
 #
@@ -512,8 +541,8 @@ if gcc_vs_gcc:
 #                                      gchp_vs_gcc_devhco,
 #                                      gchp_vs_gcc_devstr,
 #                                      dst=gchp_vs_gcc_plotsdir,
-#                                      plot_by_benchmark_cat=True,
-#                                      plot_by_hco_cat=True,
+#                                      plot_by_spc_cat=plot_by_spc_cat,
+#                                      plot_by_hco_cat=plot_by_hco_cat,
 #                                      overwrite=True,
 #                                      flip_dev=True,
 #                                      sigdiff_files=gchp_vs_gcc_sigdiff)
@@ -592,6 +621,7 @@ if gcc_vs_gcc:
 #                                      gchp_vs_gchp_devspc,
 #                                      gchp_vs_gchp_devstr,
 #                                      dst=gchp_vs_gchp_plotsdir,
+#                                      plot_by_spc_cat=plot_by_spc_cat,
 #                                      overwrite=True,
 #                                      sigdiff_files=gchp_vs_gchp_sigdiff)
 #
@@ -603,8 +633,8 @@ if gcc_vs_gcc:
 #                                      gchp_vs_gchp_devhco,
 #                                      gchp_vs_gchp_devstr,
 #                                      dst=gchp_vs_gchp_plotsdir,
-#                                      plot_by_benchmark_cat=True,
-#                                      plot_by_hco_cat=True,
+#                                      plot_by_spc_cat=plot_by_spc_cat,
+#                                      plot_by_hco_cat=plot_by_hco_cat,
 #                                      overwrite=True,
 #                                      flip_ref=True,
 #                                      flip_dev=True,
