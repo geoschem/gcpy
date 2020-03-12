@@ -53,6 +53,7 @@ from gcpy.core import get_filepaths
 import gcpy.budget_aer as aerbdg
 import gcpy.budget_ops as opbdg
 import gcpy.ste_flux as ste
+import gcpy.mean_oh_from_logs as moh
 import numpy as np
 import warnings
 
@@ -99,26 +100,10 @@ mass_table   = True
 budget_table = True
 ste_table    = True
 OH_metrics   = True
-plot_wetdep  = False
 
 # Plot concentrations and emissions by category?
 plot_by_spc_cat = True
 plot_by_hco_cat = True
-
-########################################################################
-#### TransportTracers BENCHMARK OPTIONS (comment out if not needed) ####
-########################################################################
-#bmk_type     = 'TransportTracersBenchmark'
-#plot_conc    = False
-#plot_wetdep  = False
-#budget_table = True
-#ste_table    = True
-#plot_emis    = False
-#emis_table   = False
-#plot_jvalues = False
-#plot_aod     = False
-#mass_table   = False
-#OH_metrics   = False
 
 ########################################################################
 #### Echo back selections to stdout                                 ####
@@ -132,6 +117,7 @@ if budget_table: print(" - Budget tables")
 if emis_table:   print(" - Table of emissions totals by species and inventory")
 if mass_table:   print(" - Table of species mass")
 if ste_table:    print(" - Table of strat-trop exchange")
+if OH_metrics:   print(" - Table of OH metrics")
 
 # Start and end of the benchmark year (as numpy.datetime64 dates)
 bmk_year = 2016
@@ -141,12 +127,12 @@ bmk_start = np.datetime64(bmk_start_str)
 bmk_end = np.datetime64(bmk_end_str)
 
 # Data directories (edit as needed)
-gcc_vs_gcc_refdir   = join(maindir, gcc_ref_version,  "OutputDir")
-gcc_vs_gcc_devdir   = join(maindir, gcc_dev_version,  "OutputDir")
-gchp_vs_gcc_refdir  = join(maindir, gcc_dev_version,  "OutputDir")
-gchp_vs_gcc_devdir  = join(maindir, gchp_dev_version, "OutputDir")
-gchp_vs_gchp_refdir = join(maindir, gchp_ref_version, "OutputDir")
-gchp_vs_gchp_devdir = join(maindir, gchp_dev_version, "OutputDir")
+gcc_vs_gcc_refdir      = join(maindir, gcc_ref_version,  "OutputDir")
+gcc_vs_gcc_devdir      = join(maindir, gcc_dev_version,  "OutputDir")
+gchp_vs_gcc_refdir     = join(maindir, gcc_dev_version,  "OutputDir")
+gchp_vs_gcc_devdir     = join(maindir, gchp_dev_version, "OutputDir")
+gchp_vs_gchp_refdir    = join(maindir, gchp_ref_version, "OutputDir")
+gchp_vs_gchp_devdir    = join(maindir, gchp_dev_version, "OutputDir")
 
 # Restart file directories (edit as needed)
 gcc_vs_gcc_refrstdir   = join(maindir, gcc_ref_version,  "restarts")
@@ -155,6 +141,10 @@ gchp_vs_gcc_refrstdir  = join(maindir, gcc_dev_version,  "restarts")
 gchp_vs_gcc_devrstdir  = join(maindir, gchp_dev_version, "restarts")
 gchp_vs_gchp_refrstdir = join(maindir, gchp_ref_version, "restarts")
 gchp_vs_gchp_devrstdir = join(maindir, gchp_dev_version, "restarts")
+
+# Log file directories -- GEOS-Chem "Classic" only (edit as needed)
+gcc_vs_gcc_reflogdir   = join(maindir, gcc_ref_version,  "logs")
+gcc_vs_gcc_devlogdir   = join(maindir, gcc_dev_version,  "logs")
 
 # Plots directories (edit as needed)
 gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_version, "Plots")
@@ -181,16 +171,6 @@ diff_of_diffs_devstr = "{} - {}".format(gchp_dev_version,
 # =====================================================================
 # The rest of these settings should not need to be changed
 # =====================================================================
-
-###############################################################################
-# Under development, comment these out for now
-## Paths to concentration after chemistry files
-#gcc_vs_gcc_refcac = core.get_gcc_filepath(gcc_vs_gcc_refdir, 'ConcAfterChem',
-#                                          year=bmk_year, month=bmk_months)
-#
-#gcc_vs_gcc_devcac = core.get_gcc_filepath(gcc_vs_gcc_devdir, 'ConcAfterChem',
-#                                          year=bmk_year, month=bmk_months)
-###############################################################################
 
 # Monthly array of dates
 bmk_delta_1m = np.timedelta64(1, "M")
@@ -500,22 +480,36 @@ if gcc_vs_gcc:
         title = "\n%%% Creating GCC vs. GCC {} OH metrics %%%".format(bmk_type)
         print(title)
 
-        # Paths to data files
-        collections = ["ConcAfterChem", "StateMet"]
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collections,
-                                           bmk_seasons, is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collections,
-                                           bmk_seasons, is_gcc=True)
-
-        # Create OH metrics table
+        ####################################################################
+        # NOTE: Need to better validate this routine
+        # for now, use the mean OH from the log files (bmy, 3/12/20)
+        ## Paths to data files
+        #collections = ["ConcAfterChem", "StateMet"]
+        #gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collections,
+        #                                   bmk_months, is_gcc=True)
+        #gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collections,
+        #                                   bmk_months, is_gcc=True)
+        #
+        ## Create OH metrics table
+        #plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
+        #bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
+        #                              gcc_vs_gcc_refstr,
+        #                              gcc_vs_gcc_devlist,
+        #                              gcc_vs_gcc_devstr,
+        #                              dst=plot_dir,
+        #                              overwrite=True)
+        #####################################################################
+        
+        # Compute mean OH from the log files
+        # NOTE: Only works for GEOS-Chem "Classic" benchmarks!
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
-        print(plot_dir)
-        bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
-                                      gcc_vs_gcc_refstr,
-                                      gcc_vs_gcc_devlist,
-                                      gcc_vs_gcc_devstr,
-                                      dst=plot_dir,
-                                      overwrite=True)
+        moh.make_benchmark_oh_from_logs(gcc_vs_gcc_reflogdir,
+                                        gcc_vs_gcc_refstr,
+                                        gcc_vs_gcc_devlogdir,
+                                        gcc_vs_gcc_devstr,
+                                        bmk_year,
+                                        dst=plot_dir,
+                                        overwrite=True)
 
     
 ###############################################################################

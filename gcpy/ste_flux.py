@@ -205,7 +205,7 @@ def print_ste(globvars, df):
         df : pandas DataFrame
             Strat-trop exchange table
     """
-    # Create table_dir if it doesn't already exist (if overwrite=True)
+    # Create plot directory hierarchy if necessary
     if os.path.isdir(globvars.dst) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
         print("Directory {} exists. {}".format(table_dir, err_str))
