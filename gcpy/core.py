@@ -1473,3 +1473,22 @@ def call_make_grid(res, gridtype, zonal_mean, comparison):
 def all_zero_or_nan(ds):
     # Return whether ds is all zeros, or all nans
     return not np.any(ds), np.isnan(ds).all()
+
+def get_grid_extents(data):
+    #Get min and max lat and lon from an input GEOS-Chem xarray dataset or grid dict
+    if type(data) is dict:
+        if "lon_b" in data:
+            return min(refgrid["lon_b"]), max(refgrid["lon_b"]), min(refgrid["lat_b"]), max(refgrid["lat_b"])
+        else:
+            return None, None, None, None
+    elif "lat" in data.dims and "lon" in data.dims:
+        lat = data["lat"].values
+        lon = data["lon"].values
+        if lat.size / 6 == lon.size:
+            #No extents for CS plots right now
+            return None, None, None, None
+        else:
+            return np.min(lon), np.max(lon), np.min(lat), np.max(lat)
+    else:
+        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        return None, None, None, None
