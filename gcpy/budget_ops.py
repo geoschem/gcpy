@@ -28,7 +28,7 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, devstr, files, plotsdir, bmk_type,
+    def __init__(self, devstr, files, dst, bmk_type,
                  label, interval, species, overwrite):
         """
         Initializes the _GlobVars class.
@@ -39,7 +39,7 @@ class _GlobVars:
                 Label denoting the "Dev" version.
             files : list of str
                 Files to be read from disk.
-            plotsdir : str
+            dst : str
                 Directory where plots & tables will be created.
             bmk_type : str
                 "TransportTracersBenchmark" or "FullChemBenchmark".
@@ -55,7 +55,7 @@ class _GlobVars:
         # ------------------------------------------
         self.devstr = devstr
         self.files = files
-        self.plotsdir = plotsdir
+        self.dst = dst
         self.bmk_type = bmk_type
         self.label = label.strip()
         self.interval = interval
@@ -274,16 +274,16 @@ def print_operations_budgets(globvars, dataframes):
     pd.options.display.float_format = '{:16.8f}'.format
 
     # Create the plot directory hierarchy if it doesn't already exist
-    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
+    if os.path.isdir(globvars.dst) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
         print("Directory {} exists. {}".format(dst, err_str))
         return
-    elif not os.path.isdir(globvars.plotsdir):
-        os.makedirs(globvars.plotsdir)
+    elif not os.path.isdir(globvars.dst):
+        os.makedirs(globvars.dst)
 
     # Filename to contain budget info
     filename = "{}/{}_operations_budgets_{}.txt".format(
-        globvars.plotsdir, globvars.devstr, globvars.label)
+        globvars.dst, globvars.devstr, globvars.label)
     
     # Print budgets to the file
     with open(filename, "w+") as f:    
@@ -308,9 +308,9 @@ def print_operations_budgets(globvars, dataframes):
         f.close()
 
 
-def make_operations_budget_table(devstr, files, plotsdir, bmk_type, label,
-                                 interval=None, species=None,
-                                 overwrite=True):
+def make_operations_budget_table(devstr, files, bmk_type, label,
+                                 dst=None, interval=None,
+                                 species=None, overwrite=True):
     """
     Prints the "operations budget" (i.e. change in mass after
     each operation) from a GEOS-Chem benchmark simulation.
@@ -321,19 +321,24 @@ def make_operations_budget_table(devstr, files, plotsdir, bmk_type, label,
             Label denoting the "Dev" version.
         files : list of str
             List of files to read
-        plotsdir : str
-            Directory where plots & tables will be created.
         bmk_type : str
             "TransportTracersBenchmark" or "FullChemBenchmark".
         year : int
             Year of the benchmark simulation.
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str
+            Directory where plots & tables will be created.
+        interval : float
+            Number of seconds in the diagnostic interval.
         species : list of str
             List of species for which budgets will be created.
         overwrite : bool
             Denotes whether to ovewrite existing budget tables.
     """
     # Initialize a class to hold global variables
-    globvars = _GlobVars(devstr, files, plotsdir, bmk_type,
+    globvars = _GlobVars(devstr, files, dst, bmk_type,
                          label, interval, species, overwrite)
 
     # Compute operations budgets.  Return a dictionary of

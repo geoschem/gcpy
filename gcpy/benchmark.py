@@ -404,7 +404,7 @@ def compare_single_level(
         quiet = not verbose
         vardict = core.compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict["commonvars3D"] + vardict["commonvars2D"]
-        print("Plotting all common variables (surface only if 3D)")
+        print("Plotting all common variables")
     n_var = len(varlist)
 
     # If no weightsdir is passed, set to current directory in case it is needed
@@ -2422,6 +2422,7 @@ def create_global_mass_table(
     devstr,
     varlist,
     met_and_masks,
+    label,
     trop_only=False,
     outfilename="GlobalMass_TropStrat.txt",
     verbose=False,
@@ -2454,6 +2455,10 @@ def create_global_mass_table(
         met_and_masks : dict of xarray DataArray
             Dictionary containing the meterological variables and
             masks for the Ref and Dev datasets.
+        
+        label : str
+            Label to go in the header string.  Can be used to
+            pass the month & year.
 
     Keyword Args (optional):
     ------------------------
@@ -2482,24 +2487,6 @@ def create_global_mass_table(
 
         The area variable for GEOS-Chem "Classic" will be "AREA",
         but for GCHP it will be "Met_AREAM2".
-
-    Example:
-    --------
-        Print the global mass of CO and ACET in two different
-        data sets, which represent different model versions:
-
-        >>> include gcpy
-        >>> include xarray as xr
-        >>> reffile = '~/output/12.1.1/GEOSChem.Restart.20160801_0000z.nc'
-        >>> refstr = '12.1.1'
-        >>> refdata = xr.open_dataset(reffile)
-        >>> devfile = '~/output/12.2.0/GEOSChem.Restart.20160801_0000z.nc'
-        >>> devstr = '12.2.0'
-        >>> devdata = xr.open_dataset(devfile)
-        >>> outfilename = '12.2.0_global_mass.txt'
-        >>> species = [ 'SpeciesRst_CO', 'SpeciesRst_ACET' ]
-        >>> create_global_mass_table(refdata, refstr, devdata, devstr,
-            varlist=species, outfilename=outfilename)
     """
 
     # ==================================================================
@@ -2537,9 +2524,9 @@ def create_global_mass_table(
 
     # Title strings
     if trop_only:
-        title1 = "### Global mass (Gg) at end of simulation (Trop only)"
+        title1 = "### Global mass (Gg) {} (Trop only)".format(label)
     else:
-        title1 = "### Global mass (Gg) at end of simulation (Trop + Strat)"
+        title1 = "### Global mass (Gg) {} (Trop + Strat)".format(label)
     title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
 
     # Print header to file
@@ -2804,6 +2791,7 @@ def make_benchmark_plots(
     verbose=False,
     collection="SpeciesConc",
     benchmark_type="FullChemBenchmark",
+    plot_by_spc_cat=True,
     restrict_cats=[],
     plots=["sfc", "500hpa", "zonalmean"],
     use_cmap_RdBu=False,
@@ -2854,6 +2842,11 @@ def make_benchmark_plots(
         verbose : boolean
             Set this flag to True to print extra informational output.
             Default value: False.
+
+        plot_by_spc_cat: logical
+            Set this flag to False to send plots to one file rather
+            than separate file per category.
+            Default value: True
 
         restrict_cats : list of strings
             List of benchmark categories in benchmark_categories.yml to make
@@ -2911,6 +2904,46 @@ def make_benchmark_plots(
         devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
+
+    # If sending plots to one file then do all plots here and return
+    if not plot_by_spc_cat:
+        [refds, devds] = add_missing_variables(refds, devds)
+        var_prefix = 'SpeciesConc_'
+        varlist = [k for k in refds.data_vars.keys() if var_prefix in k]
+        # Surface
+        pdfname = os.path.join(dst,'SpeciesConc_Sfc.pdf')
+        compare_single_level(refds, refstr, devds, devstr, 
+                             varlist=varlist,
+                             pdfname=pdfname,
+                             use_cmap_RdBu=use_cmap_RdBu,
+                             log_color_scale=log_color_scale,
+                             extra_title_txt=extra_title_txt)
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
+                             verbose=verbose)
+        # 500 hPa
+        pdfname = os.path.join(dst,'SpeciesConc_500hPa.pdf')
+        compare_single_level(refds, refstr, devds, devstr,
+                             ilev=22,
+                             varlist=varlist,
+                             pdfname=pdfname,
+                             use_cmap_RdBu=use_cmap_RdBu,
+                             log_color_scale=log_color_scale,
+                             extra_title_txt=extra_title_txt)
+
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
+                             verbose=verbose)
+        # Zonal mean
+        pdfname = os.path.join(dst,'SpeciesConc_ZnlMn.pdf')
+        compare_zonal_mean(refds, refstr, devds, devstr,
+                           varlist=varlist,
+                           pdfname=pdfname,
+                           use_cmap_RdBu=use_cmap_RdBu,
+                           log_color_scale=log_color_scale,
+                           extra_title_txt=extra_title_txt)
+
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
+                             verbose=verbose)
+        return
 
     # FullChemBenchmark has lumped species (TransportTracers does not)
     if "FullChem" in benchmark_type:
@@ -3160,7 +3193,7 @@ def make_benchmark_emis_plots(
     devstr,
     dst="./1mo_benchmark",
     subdst=None,
-    plot_by_benchmark_cat=False,
+    plot_by_spc_cat=False,
     plot_by_hco_cat=False,
     overwrite=False,
     verbose=False,
@@ -3206,9 +3239,9 @@ def make_benchmark_emis_plots(
             corresponds to the month that is being plotted.
             Default value: None
 
-        plot_by_benchmark_cat : boolean
+        plot_by_spc_cat : boolean
             Set this flag to True to separate plots into PDF files
-            according to the benchmark categories (e.g. Oxidants,
+            according to the benchmark species categories (e.g. Oxidants,
             Aerosols, Nitrogen, etc.)  These categories are specified
             in the YAML file benchmark_species.yml.
             Default value: False
@@ -3254,7 +3287,7 @@ def make_benchmark_emis_plots(
 
     Remarks:
     --------
-        (1) If both plot_by_benchmark_cat and plot_by_hco_cat are
+        (1) If both plot_by_spc_cat and plot_by_hco_cat are
             False, then all emission plots will be placed into the
             same PDF file.
 
@@ -3327,7 +3360,7 @@ def make_benchmark_emis_plots(
     # ==================================================================
     # If inputs plot_by* are both false, plot all emissions in same file
     # ==================================================================
-    if not plot_by_benchmark_cat and not plot_by_hco_cat:
+    if not plot_by_spc_cat and not plot_by_hco_cat:
         if subdst is not None:
             pdfname = os.path.join(emisdir, "Emissions_{}.pdf".format(subdst))
         else:
@@ -3438,10 +3471,10 @@ def make_benchmark_emis_plots(
                         f.close()
 
     # ==================================================================
-    # if plot_by_benchmark_cat is true, make a file for each benchmark
+    # if plot_by_spc_cat is true, make a file for each benchmark
     # species category with emissions in the diagnostics file
     # ==================================================================
-    if plot_by_benchmark_cat:
+    if plot_by_spc_cat:
 
         catdict = get_species_categories()
         warninglist = (
@@ -4289,6 +4322,7 @@ def make_benchmark_mass_tables(
     subdst=None,
     overwrite=False,
     verbose=False,
+    label="at end of simulation",
 ):
     """
     Creates a text file containing global mass totals by species and
@@ -4348,14 +4382,10 @@ def make_benchmark_mass_tables(
     # Define destination directory
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
-                dst
-            )
-        )
+        print("Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(dst))
         return
     elif not os.path.isdir(dst):
-        os.mkdir(dst)
+        os.makedirs(dst)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -4447,6 +4477,7 @@ def make_benchmark_mass_tables(
         devstr,
         varlist,
         met_and_masks,
+        label,
         outfilename=mass_file,
         verbose=verbose,
     )
@@ -4468,6 +4499,7 @@ def make_benchmark_mass_tables(
         devstr,
         varlist,
         met_and_masks,
+        label,
         outfilename=mass_file,
         trop_only=True,
         verbose=verbose,
@@ -4596,7 +4628,6 @@ def make_benchmark_oh_metrics(
     devstr,
     dst="./1mo_benchmark",
     overwrite=False,
-    interval=[2678400.0],
 ):
     """
     Creates a text file containing metrics of global mean OH, MCF lifetime,
@@ -4630,11 +4661,6 @@ def make_benchmark_oh_metrics(
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value : False
-
-        interval : float
-            Specifies the averaging period in seconds, which is used
-            to convert fluxes (e.g. kg/m2/s) to masses (e.g kg).
-            Default value : None
     """
 
     # ==================================================================
@@ -4642,13 +4668,10 @@ def make_benchmark_oh_metrics(
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
         print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
-                dst
-            )
-        )
+            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(dst))
         return
     elif not os.path.isdir(dst):
-        os.mkdir(dst)
+        os.makedirs(dst)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -4710,11 +4733,12 @@ def make_benchmark_oh_metrics(
     # ==================================================================
 
     # Create file
-    outfilename = os.path.join(dst, "Tables/{}_OH_metrics.txt".format(devstr))
+    outfilename = os.path.join(dst, "{}_OH_metrics.txt".format(devstr))
     try:
         f = open(outfilename, "w")
     except FileNotFoundError:
-        raise FileNotFoundError("Could not open {} for writing!".format(outfilename))
+        raise FileNotFoundError("Could not open {} for writing!".format(
+            outfilename))
 
     # ==================================================================
     # Compute mass-weighted OH in the troposphere

@@ -32,8 +32,8 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, devstr, files, plotsdir, year,
-                 bmk_type, species=["O3"], overwrite=True):
+    def __init__(self, devstr, files, dst, year,
+                 bmk_type, species, overwrite):
         """
         Initializes the _GlobVars class.
 
@@ -43,10 +43,15 @@ class _GlobVars:
                 Label denoting the "Dev" version.
             devdir : str
                 Directory where benchmark diagnostic files are found.
-            plotsdir : str
-                Directory where plots & tables will be created.
             year : int
                 Year of the benchmark simulation.
+
+        Keyword Args (optional):
+        ------------------------
+            dst : str
+                Directory where plots & tables will be created.
+            bmk_type : str
+                FullChemBenchmark or TransportTracersBenchmark.
             species : list of str
                 Species for which STE fluxes are desired.
             overwrite : bool
@@ -57,7 +62,7 @@ class _GlobVars:
         # ------------------------------
         self.devstr = devstr
         self.files = files
-        self.plotsdir = plotsdir
+        self.dst = dst
         self.overwrite = overwrite
         self.species = species
         self.is_TransportTracers = "TransportTracers" in bmk_type
@@ -200,17 +205,17 @@ def print_ste(globvars, df):
         df : pandas DataFrame
             Strat-trop exchange table
     """
-    # Create table_dir if it doesn't already exist (if overwrite=True)
-    if os.path.isdir(globvars.plotsdir) and not globvars.overwrite:
+    # Create plot directory hierarchy if necessary
+    if os.path.isdir(globvars.dst) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
         print("Directory {} exists. {}".format(table_dir, err_str))
         return
-    elif not os.path.isdir(globvars.plotsdir):
-        os.makedirs(globvars.plotsdir)
+    elif not os.path.isdir(globvars.dst):
+        os.makedirs(globvars.dst)
 
-    # Save the file in the Tables folder of plotsdir
+    # Save the file in the Tables folder of dst
     filename = "{}/{}.strat_trop_exchange_{}.txt".format(
-        globvars.plotsdir, globvars.devstr, globvars.y0_str)
+        globvars.dst, globvars.devstr, globvars.y0_str)
 
     # Set numeric format to be 11 chars wide with 4 decimals
     pd.options.display.float_format = '{:11.4f}'.format
@@ -240,7 +245,8 @@ def print_ste(globvars, df):
         print(df, file=f)
 
 
-def make_benchmark_ste_table(devstr, files, plotsdir, year,
+def make_benchmark_ste_table(devstr, files, year,
+                             dst='./1yr_benchmark',
                              bmk_type="FullChemBenchmark",
                              species=["O3"],
                              overwrite=True):
@@ -254,10 +260,15 @@ def make_benchmark_ste_table(devstr, files, plotsdir, year,
             Label denoting the "Dev" version.
         files : str
             List of files containing vertical fluxes.
-        plotsdir : str
-            Directory where plots & tables will be created.
         year : int
             Year of the benchmark simulation.
+
+    Keyword Args (optional):
+    -----------------------
+        dst : str
+            Directory where plots & tables will be created.
+        bmk_type : str
+            FullChemBenchmark or TransportTracersBenchmark.
         species : list of str
             Species for which STE fluxes are desired.
         overwrite : bool
@@ -265,7 +276,7 @@ def make_benchmark_ste_table(devstr, files, plotsdir, year,
     """
 
     # Initialize a private class with required global variables
-    globvars = _GlobVars(devstr, files, plotsdir, year,
+    globvars = _GlobVars(devstr, files, dst, year,
                          bmk_type, species, overwrite)
 
     # Compute the STE fluxes
