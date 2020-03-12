@@ -2910,6 +2910,7 @@ def make_benchmark_plots(
         [refds, devds] = add_missing_variables(refds, devds)
         var_prefix = 'SpeciesConc_'
         varlist = [k for k in refds.data_vars.keys() if var_prefix in k]
+        varlist.sort()
         # Surface
         pdfname = os.path.join(dst,'SpeciesConc_Sfc.pdf')
         compare_single_level(refds, refstr, devds, devstr, 
