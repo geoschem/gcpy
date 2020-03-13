@@ -2972,7 +2972,7 @@ def make_benchmark_plots(
     dict_sfc = {}
     dict_500 = {}
     dict_zm = {}
-
+    print(restrict_cats)
     def createplots(i, filecat):
         cat_diff_dict = {'sfc' : [], '500' : [], 'zm' : []}
         # Suppress harmless run-time warnings from all threads
@@ -2982,7 +2982,7 @@ def make_benchmark_plots(
         # If restrict_cats list is passed,
         # skip all categories except those in the list
         if restrict_cats and filecat not in restrict_cats:
-            return
+            return {filecat : cat_diff_dict}
 
         # Create a directory for each category.
         # If subdst is passed, then create a subdirectory in each
@@ -3140,12 +3140,11 @@ def make_benchmark_plots(
                 pdfname, filecat, catdict,
                 warninglist, remove_prefix=coll_prefix
             )
-        return {filecat : cat_diff_dict}
+            return {filecat : cat_diff_dict}
     # Create the plots in parallel
     results = Parallel(n_jobs=n_job)(
         delayed(createplots)(i, filecat) for i, filecat in enumerate(catdict)
     )
-
     dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] for result in results}
     dict_500 = {list(result.keys())[0] : result[list(result.keys())[0]]['500'] for result in results}
     dict_zm = {list(result.keys())[0] : result[list(result.keys())[0]]['zm']  for result in results}    
