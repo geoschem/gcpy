@@ -7,8 +7,13 @@ from itertools import product
 INV_SQRT_3 = 1.0 / np.sqrt(3.0)
 ASIN_INV_SQRT_3 = np.arcsin(INV_SQRT_3)
 
-def make_grid_LL(llres):
+def make_grid_LL(llres, minlon=-180, maxlon=175, minlat=-90, maxlat=90):
     [dlat,dlon] = list(map(float, llres.split('x')))
+    #temporary measure until automatic reading of coordiante descriptions is in place
+    #maxlon = maxlon + dlon
+    #lon_b = np.linspace(minlon - dlon/2, maxlon - dlon/2, int((abs(minlon)+abs(maxlon))/dlon) + 1, endpoint=True)
+    #lat_b = np.linspace(minlat - dlat/2, maxlat + dlat/2, 
+    #                    int((abs(minlat)+abs(maxlat))/dlat) + 2, endpoint=True).clip(minlat,maxlat)
     lon_b = np.linspace(-180 - dlon/2, 180 - dlon/2, int(360/dlon) + 1, endpoint=True)
     lat_b = np.linspace(-90 - dlat/2, 90 + dlat/2, int(180/dlat) + 2, endpoint=True).clip(-90,90)
     lat = (lat_b[1:] + lat_b[:-1]) / 2

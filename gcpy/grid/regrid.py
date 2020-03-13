@@ -4,9 +4,10 @@ import os
 import xesmf as xe
 from .horiz import make_grid_LL, make_grid_CS
 
-def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False ):
-    llgrid_in = make_grid_LL(llres_in)
-    llgrid_out = make_grid_LL(llres_out)
+def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False,
+minlon=-180, maxlon=180, minlat=-90, maxlat=90 ):
+    llgrid_in = make_grid_LL(llres_in, minlon, maxlon, minlat, maxlat)
+    llgrid_out = make_grid_LL(llres_out, minlon, maxlon, minlat, maxlat)
     weightsfile = os.path.join(weightsdir,'conservative_{}_{}.nc'.format(llres_in, llres_out))
     regridder = xe.Regridder(llgrid_in, llgrid_out, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
     return regridder

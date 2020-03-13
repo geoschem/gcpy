@@ -275,6 +275,7 @@ def compare_single_level(
     verbose=False,
     log_color_scale=False,
     extra_title_txt=None,
+    plot_extent = [-1000, -1000, -1000, -1000],
     n_job=-1,
     sigdiff_list=[],
 ):
@@ -468,30 +469,35 @@ def compare_single_level(
     # Get grid extents, only regridding to extents of each grid
     # =================================================================
 
-    #refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refdata)
-    #devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devdata)
-    #cmpminlon = min(refminlon, devminlon)
-    #cmpmaxlon = max(refmaxlon, devmaxlon)
-    #cmpminlat = min(refminlat, devminlat)
-    #cmpmaxlat = max(refmaxlat, devmaxlat)
+    refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refdata)
+    devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devdata)
+    cmpminlon = min(x for x in [refminlon, devminlon] if x is not None)
+    cmpmaxlon = max(x for x in [refmaxlon, devmaxlon] if x is not None)
+    cmpminlat = min(x for x in [refminlat, devminlat] if x is not None)
+    cmpmaxlat = max(x for x in [refmaxlat, devmaxlat] if x is not None)
     
     # =================================================================
     # Make grids (ref, dev, and comparison)
     # =================================================================
 
-    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, False, False)
-    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, False, False)
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, False, True)
+    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, False, False,
+                                            refminlon, refmaxlon, refminlat, refmaxlat)
+    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, False, False,
+                                             devminlon, devmaxlon, devminlat, devmaxlat)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, False, True,
+                                             cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
 
     # =================================================================
     # Make regridders, if applicable
     # TODO: Make CS to CS regridders
     # =================================================================
-
+    #print(refgrid)
+    #print(len(refgrid['lat']), len(refgrid['lon']))
     if regridref:
         if refgridtype == "ll":
             refregridder = make_regridder_L2L(
-                refres, cmpres, weightsdir=weightsdir, reuse_weights=True
+                refres, cmpres, weightsdir=weightsdir, reuse_weights=True,
+                #minlon=refminlon, maxlon=refmaxlon, minlat=refminlat, maxlat=refmaxlat
             )
         else:
             if cmpgridtype == "cs":
@@ -506,7 +512,8 @@ def compare_single_level(
     if regriddev:
         if devgridtype == "ll":
             devregridder = make_regridder_L2L(
-                devres, cmpres, weightsdir=weightsdir, reuse_weights=True
+                devres, cmpres, weightsdir=weightsdir, reuse_weights=True,
+                #minlon=devminlon, maxlon=devmaxlon, minlat=devminlat, maxlat=devmaxlat
             )
         else:
             if cmpgridtype == "cs":
@@ -515,6 +522,7 @@ def compare_single_level(
                 )
                 return
             else:
+                print(devres, cmpres)
                 devregridder_list = make_regridder_C2L(
                     devres, cmpres, weightsdir=weightsdir, reuse_weights=True
                 )
@@ -522,21 +530,9 @@ def compare_single_level(
     # =================================================================
     # Get lat/lon extents, if applicable
     # =================================================================
-    if refgridtype == "ll":
-        [refminlon, refmaxlon] = [min(refgrid["lon_b"]), max(refgrid["lon_b"])]
-        [refminlat, refmaxlat] = [min(refgrid["lat_b"]), max(refgrid["lat_b"])]
-    else:
-        refminlon, refmaxlon, refminlat, refmaxlat = None, None, None, None
-    if devgridtype == "ll":
-        [devminlon, devmaxlon] = [min(devgrid["lon_b"]), max(devgrid["lon_b"])]
-        [devminlat, devmaxlat] = [min(devgrid["lat_b"]), max(devgrid["lat_b"])]
-    else:
-        devminlon, devmaxlon, devminlat, devmaxlat = None, None, None, None
-    if cmpgridtype == "ll":
-        [cmpminlon, cmpmaxlon] = [min(cmpgrid["lon_b"]), max(cmpgrid["lon_b"])]
-        [cmpminlat, cmpmaxlat] = [min(cmpgrid["lat_b"]), max(cmpgrid["lat_b"])]
-    else:
-        cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = None, None, None, None
+    refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
+    devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
+    cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)    
 
     ds_refs = [None] * n_var
     ds_devs = [None] * n_var
@@ -963,24 +959,19 @@ def compare_single_level(
             fracdiff_is_all_nan,
             fracdiff_is_all_nan,
         ]
-
-        extents = [
-            ref_extent,
-            dev_extent,
-            cmp_extent,
-            cmp_extent,
-            cmp_extent,
-            cmp_extent,
-        ]
+        if not -1000 in plot_extent:
+            extents = [plot_extent, plot_extent,
+                       plot_extent, plot_extent,
+                       plot_extent, plot_extent]
+        else:
+            extents = [ref_extent, dev_extent, 
+                       cmp_extent, cmp_extent, 
+                       cmp_extent, cmp_extent]
 
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
-
         grids = [refgrid, devgrid, cmpgrid, cmpgrid, cmpgrid, cmpgrid]
-
         axs = [ax0, ax1, ax2, ax3, ax4, ax5]
-
         rowcols = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
-
         titles = [
             ref_title,
             dev_title,
@@ -3148,7 +3139,7 @@ def make_benchmark_plots(
 
     dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] for result in results}
     dict_500 = {list(result.keys())[0] : result[list(result.keys())[0]]['500'] for result in results}
-    dict_zm = {list(result.keys())[0] : result[list(result.keys())[0]]['zm']  for result in results}    
+    dict_zm  = {list(result.keys())[0] : result[list(result.keys())[0]]['zm']  for result in results}    
     
     # ==============================================================
     # Write the list of species having significant differences,

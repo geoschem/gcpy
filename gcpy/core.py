@@ -1463,10 +1463,10 @@ def get_input_res(data):
         return data.dims["Xdim"], "cs"
 
 
-def call_make_grid(res, gridtype, zonal_mean, comparison):
+def call_make_grid(res, gridtype, zonal_mean, comparison, minlon=-180, maxlon=180, minlat=-90, maxlat=90):
     # call appropriate make_grid function and return new grid
     if gridtype == "ll" or (zonal_mean and comparison):
-        return [make_grid_LL(res), None]
+        return [make_grid_LL(res, minlon, maxlon, minlat, maxlat), None]
     else:
         return make_grid_CS(res)
 
@@ -1477,8 +1477,8 @@ def all_zero_or_nan(ds):
 def get_grid_extents(data):
     #Get min and max lat and lon from an input GEOS-Chem xarray dataset or grid dict
     if type(data) is dict:
-        if "lon_b" in data:
-            return min(refgrid["lon_b"]), max(refgrid["lon_b"]), min(refgrid["lat_b"]), max(refgrid["lat_b"])
+        if "lon" in data:
+            return np.min(data["lon"]), np.max(data["lon"]), np.min(data["lat"]), np.max(data["lat"])
         else:
             return None, None, None, None
     elif "lat" in data.dims and "lon" in data.dims:
@@ -1488,7 +1488,15 @@ def get_grid_extents(data):
             #No extents for CS plots right now
             return None, None, None, None
         else:
-            return np.min(lon), np.max(lon), np.min(lat), np.max(lat)
+            lat = np.sort(lat)
+            minlat = np.min(lat)
+            if abs(abs(lat[1])-abs(lat[0])) != abs(abs(lat[2]) - abs(lat[1])):
+                #pole is cutoff
+                minlat = minlat - 1
+            maxlat = np.max(lat)
+            if abs(abs(lat[-1])-abs(lat[-2])) != abs(abs(lat[-2])- abs(lat[-3])):
+                maxlat = maxlat+1
+            return np.min(lon), np.max(lon), minlat, maxlat
     else:
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return None, None, None, None
