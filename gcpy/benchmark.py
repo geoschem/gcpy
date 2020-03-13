@@ -5177,6 +5177,9 @@ def get_troposphere_mask(ds):
     # Mask of tropospheric grid boxes in the Ref dataset
     shape = core.get_shape_of_data(np.squeeze(ds["Met_BXHEIGHT"]))
 
+    # Determine if this is GCHP data
+    is_gchp = "nf" in ds["Met_BXHEIGHT"].dims
+
     # ==================================================================
     # Create the mask arrays for the troposphere
     #
@@ -5185,13 +5188,19 @@ def get_troposphere_mask(ds):
     # array index notation.
     # ==================================================================
 
-    if len(shape) == 4:
+    multi_time_slices = (is_gchp and len(shape) == 5) or \
+                        (not is_gchp and len(shape) == 4)
+
+    if multi_time_slices:
         # --------------------------------------------------------------
-        # There are multiple time slices
+        # GCC: There are multiple time slices
         # --------------------------------------------------------------
 
-        # Create the tropmask array with dims (time, lev, lat*lon)
-        tropmask = np.ones((shape[0], shape[1], np.prod(np.array(shape[2:]))), bool)
+        # Create the tropmask array with dims
+        # (time, lev, nf*lat*lon) for GCHP, or
+        # (time, lev, lat*lon   ) for GCC
+        tropmask = np.ones((shape[0], shape[1],
+                            np.prod(np.array(shape[2:]))), bool)
 
         # Loop over each time
         for t in range(tropmask.shape[0]):
@@ -5205,7 +5214,7 @@ def get_troposphere_mask(ds):
             for x in range(tropmask.shape[2]):
                 tropmask[t, 0 : lev_1d[x], x] = False
 
-    elif len(shape) == 3:
+    else:
         # --------------------------------------------------------------
         # There is only one time slice
         # --------------------------------------------------------------

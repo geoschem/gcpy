@@ -32,7 +32,7 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, maindir, devstr, dst, year, overwrite):
+    def __init__(self, maindir, devstr, year, dst, is_gchp, overwrite):
         """
         Initializes the _GlobVars class.
 
@@ -46,6 +46,8 @@ class _GlobVars:
                 Directory where plots & tables will be created.
             year : int
                 Year of the benchmark simulation.
+            is_gchp : bool
+                Denotes if this is GCHP (True) or GCC (False) data.
             overwrite : bool
                 Denotes whether to ovewrite existing budget tables.
         """
@@ -55,6 +57,7 @@ class _GlobVars:
         self.devstr = devstr
         self.maindir = maindir
         self.dst = dst
+        self.is_gchp = is_gchp
         self.overwrite = overwrite
         
         # ------------------------------
@@ -68,10 +71,21 @@ class _GlobVars:
         # ------------------------------
         # Collection file lists
         # ------------------------------
-        rstdir = join(self.maindir, self.devstr, "restarts")
-        RstInit = join(rstdir, "GEOSChem.Restart.{}*nc4".format(self.y0_str))
-        RstFinal = join(rstdir, "GEOSChem.Restart.{}*.nc4".format(self.y1_str))
 
+        # Restarts
+        if self.is_gchp:
+            rstdir = join(self.maindir, self.devstr)
+            RstInit = join(rstdir, "gcchem_internal_checkpoint.{}*nc4".format(
+                self.y0_str))
+            RstFinal = join(rstdir,
+                            "gcchem_internal_checkpoint.restart.{}*.nc4".format(
+                                self.y1_str))
+        else:
+            rstdir = join(self.maindir, self.devstr, "restarts")
+            RstInit = join(rstdir, "GEOSChem.Restart.{}*nc4".format(self.y0_str))
+            RstFinal = join(rstdir, "GEOSChem.Restart.{}*.nc4".format(self.y1_str))
+
+        # Diagnostics
         datadir = join(self.maindir, self.devstr, "OutputDir")
         HemcoDiag = join(datadir, 
                          "HEMCO_diagnostics.{}*.nc".format(self.y0_str))
@@ -79,8 +93,14 @@ class _GlobVars:
                       "*.DryDep.{}*.nc4".format(self.y0_str))
         RadioNucl = join(datadir, 
                          "*.RadioNuclide.{}*.nc4".format(self.y0_str))
-        StateMet = join(datadir, 
-                        "*.StateMet.{}*.nc4".format(self.y0_str))
+        if is_gchp:
+            StateMetAvg = join(datadir, 
+                            "*.StateMet_avg.{}*.nc4".format(self.y0_str))
+            StateMetInst = join(datadir, 
+                            "*.StateMet_inst.{}*.nc4".format(self.y0_str))
+        else:
+            StateMet = join(datadir, 
+                            "*.StateMet.{}*.nc4".format(self.y0_str))
         SpeciesConc = join(datadir, 
                            "*.SpeciesConc.{}*.nc4".format(self.y0_str))
         WetLossConv = join(datadir, 
@@ -95,25 +115,35 @@ class _GlobVars:
         # ------------------------------
 
         # Restarts
-        self.ds_ini = xr.open_mfdataset(RstInit)
-        self.ds_end = xr.open_mfdataset(RstFinal)
+        skip_vars = constants.skip_these_vars
+        self.ds_ini = xr.open_mfdataset(RstInit, drop_variables=skip_vars)
+        self.ds_end = xr.open_mfdataset(RstFinal, drop_variables=skip_vars)
 
         # Diagnostics
-        self.ds_dcy = xr.open_mfdataset(RadioNucl)
-        self.ds_dry = xr.open_mfdataset(DryDep)
-        self.ds_met = xr.open_mfdataset(StateMet)
-        self.ds_cnc = xr.open_mfdataset(SpeciesConc)
-        self.ds_wcv = xr.open_mfdataset(WetLossConv)
-        self.ds_wls = xr.open_mfdataset(WetLossLS)
+        self.ds_dcy = xr.open_mfdataset(RadioNucl, drop_variables=skip_vars)
+        self.ds_dry = xr.open_mfdataset(DryDep, drop_variables=skip_vars)
+        self.ds_cnc = xr.open_mfdataset(SpeciesConc, drop_variables=skip_vars)
+        self.ds_wcv = xr.open_mfdataset(WetLossConv, drop_variables=skip_vars)
+        self.ds_wls = xr.open_mfdataset(WetLossLS, drop_variables=skip_vars)
 
-        # Set a flag if this data is from GCHP
-        self.is_gchp = "nf" in self.ds_cnc.dims.keys()
+        # Met fields
+        if is_gchp:
+            self.ds_met = xr.open_mfdataset(StateMetAvg,
+                                            drop_variables=skip_vars)
+            ds_met_inst = xr.open_mfdataset(StateMetInst,
+                                            drop_variables=skip_vars)
+
+            # Add the initial met fields to the restart file collections
+            self.ds_ini = xr.merge([self.ds_ini, ds_met_inst.isel(time=0)])
+            self.ds_end = xr.merge([self.ds_end, ds_met_inst.isel(time=11)])
+        else:
+            self.ds_met = xr.open_mfdataset(StateMet, drop_variables=skip_vars)
 
         # Emissions
         if self.is_gchp:
-            self.ds_hco = xr.open_mfdataset(GCHPEmiss)
+            self.ds_hco = xr.open_mfdataset(GCHPEmiss, drop_variables=skip_vars)
         else:
-            self.ds_hco = xr.open_mfdataset(HemcoDiag)
+            self.ds_hco = xr.open_mfdataset(HemcoDiag, drop_variables=skip_vars)
         
         # Area and troposphere mask
         if self.is_gchp:
@@ -150,14 +180,18 @@ class _GlobVars:
         self.species_list = ["Pb210", "Be7", "Be10" ]
 
         # Read the species database
-        try:
-            path = join(datadir, "species_database.yml")
-            spcdb = yaml_load_file(open(path))
-            tmp = spcdb["Pb210"]
-        except KeyError or FileNotFoundError:
-            path = join(os.path.dirname(__file__), "species_database.yml")
-            spcdb = yaml_load_file(open(path))
-
+        #try:
+        #    path = join(datadir, "species_database.yml")
+        #    spcdb = yaml_load_file(open(path))
+        #    #tmp = spcdb["Pb210"]
+        #except KeyError or FileNotFoundError:
+        #    path = join(os.path.dirname(__file__), "species_database.yml")
+        #    spcdb = yaml_load_file(open(path))
+        #-----------------------------------------------------------------
+        # For now, point to this in the GCPy folder (bmy, 3/13/20)
+        path = join(os.path.dirname(__file__), "species_database.yml")
+        spcdb = yaml_load_file(open(path))
+            
         # Molecular weights [g mol-1], as taken from the species database
         self.mw = {}
         for v in self.species_list:
@@ -278,7 +312,7 @@ def mass_from_rst(globvars, ds, tropmask):
     
     # Conversion factors based on restart-file met fields
     g100    = 100.0 / constants.G
-    airmass = ds["Met_DELPDRY"].isel(time=0) * ds["AREA"] * g100
+    airmass = ds["Met_DELPDRY"].isel(time=0) * globvars.area_m2 * g100
     airmass = airmass.values
 
     # Loop over species
@@ -654,7 +688,9 @@ def print_budgets(globvars, data, key):
         
         
 def transport_tracers_budgets(maindir, devstr, year, 
-                              dst='./1yr_benchmark', overwrite=True):
+                              dst='./1yr_benchmark',
+                              is_gchp=False,
+                              overwrite=True):
     """
     Main program to compute TransportTracersBenchmark budgets
 
@@ -671,12 +707,14 @@ def transport_tracers_budgets(maindir, devstr, year,
     ------------------------
         dst : str 
             Directory where budget tables will be created.
+        is_gchp : bool
+            Denotes if data is from GCHP (True) or GCC (false).
         overwrite : bool
             Denotes whether to ovewrite existing budget tables.
     """
 
     # Store global variables in a private class
-    globvars = _GlobVars(maindir, devstr, dst, year, overwrite)
+    globvars = _GlobVars(maindir, devstr, year, dst, is_gchp, overwrite)
 
     # Data structure for budgets
     data = {}
