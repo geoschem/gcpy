@@ -2972,9 +2972,9 @@ def make_benchmark_plots(
     dict_sfc = {}
     dict_500 = {}
     dict_zm = {}
-    print(restrict_cats)
     def createplots(i, filecat):
         cat_diff_dict = {'sfc' : [], '500' : [], 'zm' : []}
+
         # Suppress harmless run-time warnings from all threads
         warnings.filterwarnings("ignore", category=RuntimeWarning)
         warnings.filterwarnings("ignore", category=UserWarning)
