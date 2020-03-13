@@ -1131,7 +1131,7 @@ def check_for_area(ds, gcc_area_name="AREA", gchp_area_name="Met_AREAM2"):
     return ds
 
 
-def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
+def get_filepaths(outputdir, collections, dates, is_gcc=False, is_gchp=False):
     """
     Routine to return filepaths for a given GEOS-Chem "Classic"
     (aka "GCC") or GCHP diagnostic collection.
@@ -1170,10 +1170,11 @@ def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
     # ==================================================================
 
     # Error check input flags
-    if (not is_gcc) and (not is_gchp):
+    if is_gcc == is_gchp:
         msg = (
-            "Both is_gcc=False and is_gchp=False!  At present, "
-            + "get_filepaths only works with GCC or GCHP data!"
+            "Both is_gcc={} and is_gchp={}!  At present, "
+            + "get_filepaths returns either GCC or GCHP data! "
+            + "but not both!".format(is_gcc, is_gchp)
         )
         raise ValueError(msg)
 
@@ -1458,7 +1459,7 @@ def get_input_res(data):
             return str(lat_res) + "x" + str(lon_res), "ll"
 
     else:
-        print("grid is cs: ", vdims)
+        #print("grid is cs: ", vdims)
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return data.dims["Xdim"], "cs"
 

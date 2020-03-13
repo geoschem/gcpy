@@ -97,7 +97,8 @@ class _GlobVars:
             self.data_vars[spc] = "AdvFluxVert_" + spc
 
         # Vertical flux diagnostics
-        self.ds_flx = xr.open_mfdataset(files)
+        skip_vars = constants.skip_these_vars
+        self.ds_flx = xr.open_mfdataset(files, drop_variables=skip_vars)
 
         # Set a flag to denote if this data is from GCHP
         self.is_gchp = "nf" in self.ds_flx.dims.keys()

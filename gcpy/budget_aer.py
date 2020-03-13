@@ -119,9 +119,10 @@ class _GlobVars:
         # ------------------------------
 
         # Diagnostics
+        skip_vars = constants.skip_these_vars
         self.ds_aer = xr.open_mfdataset(Aerosols, data_vars=self.aod_list)
-        self.ds_cnc = xr.open_mfdataset(SpeciesConc)
-        self.ds_met = xr.open_mfdataset(StateMet)
+        self.ds_cnc = xr.open_mfdataset(SpeciesConc, drop_variables=skip_vars)
+        self.ds_met = xr.open_mfdataset(StateMet, drop_variables=skip_vars)
 
         # Troposphere mask
         self.tropmask = get_troposphere_mask(self.ds_met)
