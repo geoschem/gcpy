@@ -906,9 +906,12 @@ def compare_single_level(
 
         if refgridtype == "ll":
             ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
-            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
         else:
             ref_title = "{} (Ref){}\nc{}".format(refstr, subtitle_extra, refres)
+
+        if devgridtype == "ll":
+            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
+        else:
             dev_title = "{} (Dev){}\nc{}".format(devstr, subtitle_extra, devres)
 
         if regridany:
@@ -1685,14 +1688,16 @@ def compare_zonal_mean(
 
         if refgridtype == "ll":
             ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
-            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
         else:
             ref_title = "{} (Ref){}\nc{} regridded from c{}".format(
                 refstr, subtitle_extra, cmpres, refres
             )
+
+        if devgridtype == "ll":
+            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
+        else:
             dev_title = "{} (Dev){}\nc{} regridded from c{}".format(
-                devstr, subtitle_extra, cmpres, devres
-            )
+                devstr, subtitle_extra, cmpres, devres)
 
         if regridany:
             absdiff_dynam_title = "Difference ({})\nDev - Ref, Dynamic Range".format(
@@ -1775,7 +1780,7 @@ def compare_zonal_mean(
 
         masked = ["ZM", "ZM", "ZM", "ZM", "ZM", "ZM"]
 
-        unit_list = [units, units, "unitless", "unitless", "unitless", "unitless"]
+        unit_list = [units, units, units, units, "unitless", "unitless"]
 
         other_all_nans = [dev_is_all_nan, ref_is_all_nan, False, False, False, False]
 
