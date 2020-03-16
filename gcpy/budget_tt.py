@@ -116,8 +116,10 @@ class _GlobVars:
 
         # Restarts
         skip_vars = constants.skip_these_vars
-        self.ds_ini = xr.open_mfdataset(RstInit, drop_variables=skip_vars)
-        self.ds_end = xr.open_mfdataset(RstFinal, drop_variables=skip_vars)
+        # For now, don't read restarts from gchp (bmy, 3/16/20)
+        if not self.is_gchp:
+            self.ds_ini = xr.open_mfdataset(RstInit, drop_variables=skip_vars)
+            self.ds_end = xr.open_mfdataset(RstFinal, drop_variables=skip_vars)
 
         # Diagnostics
         self.ds_dcy = xr.open_mfdataset(RadioNucl, drop_variables=skip_vars)
@@ -130,12 +132,13 @@ class _GlobVars:
         if is_gchp:
             self.ds_met = xr.open_mfdataset(StateMetAvg,
                                             drop_variables=skip_vars)
-            ds_met_inst = xr.open_mfdataset(StateMetInst,
-                                            drop_variables=skip_vars)
-
+            # For now, don't read restarts for GCHP (bmy, 3/16/20)
+            #ds_met_inst = xr.open_mfdataset(StateMetInst,
+            #                                drop_variables=skip_vars)
+            #
             # Add the initial met fields to the restart file collections
-            self.ds_ini = xr.merge([self.ds_ini, ds_met_inst.isel(time=0)])
-            self.ds_end = xr.merge([self.ds_end, ds_met_inst.isel(time=11)])
+            #self.ds_ini = xr.merge([self.ds_ini, ds_met_inst.isel(time=0)])
+            #self.ds_end = xr.merge([self.ds_end, ds_met_inst.isel(time=11)])
         else:
             self.ds_met = xr.open_mfdataset(StateMet, drop_variables=skip_vars)
 
@@ -370,30 +373,30 @@ def annual_average(globvars, ds, collection, conv_factor):
         # Whole-atmosphere quanity [g] or [g d-1]
         varname = collection.strip() + "_" + spc
         q[spc + "_f"] = ds[varname].values * conv_factor[spc]
-
+    
         # Shape of the data
         q_shape = q[spc + "_f"].shape
-
+        
         if "DryDep" in collection:
             # NOTE: DryDep is by nature trop-only
             # Therefore, data arrays don't have a lev dimension,
             # so special handling must be done.
             if globvars.is_gchp:
-                sum_axes = (1,2,3)
+                sum_axes = (1, 2, 3)
             else:
-                sum_axes = (1,2)
+                sum_axes = (1, 2)
 
         else:
             # Otherwise, expect a lev dimension
             if globvars.is_gchp:
-                sum_axes = (1,2,3.4)
+                sum_axes = (1, 2, 3, 4)
             else:
-                sum_axes = (1,2,3)
+                sum_axes = (1, 2, 3)
 
             # Trop-only quantities [g] or [g d-1] 
             q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], \
                                                globvars.tropmask)
-
+        
         # Compute monthly averages, weighted by # of days in month
         # Special handling for DryDep, which lacks a "lev" dimension.
         if "DryDep" in collection:
@@ -670,6 +673,12 @@ def print_budgets(globvars, data, key):
                 if key in v[0]]
         print("  Sources - Sinks, g d-1  {:11.6f}  {:11.6f}  {:11.6f}".format(
             *vals), file=f)
+
+        # Skip plotting the accumulation term for GCHP for now
+        if globvars.is_gchp:
+            f.close()
+            return
+        
         print(file=f)
         print("  Accumulation Term", file=f)
 
@@ -722,21 +731,25 @@ def transport_tracers_budgets(maindir, devstr, year,
     # ==================================================================
     # Get the accumulation term (init & final masses) from the restarts
     # ==================================================================
-    
-    # Get initial mass from restart file
-    ds = globvars.ds_ini
-    tropmask = globvars.tropmask[0,:,:,:]
-    data["accum_init"] = mass_from_rst(globvars, ds, tropmask)
 
-    # Get initial mass from restart file
-    ds = globvars.ds_end
-    tropmask = globvars.tropmask[globvars.N_MONTHS-1,:,:,:]
-    data["accum_final"] = mass_from_rst(globvars, ds, tropmask)
+    # For now, skip accumulation term for GCHP, since we need to figure
+    # out how to reliably convert v/v/ to mass (bmy, 3/16/20)
+    if not globvars.is_gchp:
 
-    # Take the difference final - init
-    data["accum_diff"] = diff(globvars,
-                              data["accum_init"],
-                              data["accum_final"])
+        # Get initial mass from restart file
+        ds = globvars.ds_ini
+        tropmask = globvars.tropmask[0,:,:,:]
+        data["accum_init"] = mass_from_rst(globvars, ds, tropmask)
+
+        # Get initial mass from restart file
+        ds = globvars.ds_end
+        tropmask = globvars.tropmask[globvars.N_MONTHS-1,:,:,:]
+        data["accum_final"] = mass_from_rst(globvars, ds, tropmask)
+
+        # Take the difference final - init
+        data["accum_diff"] = diff(globvars,
+                                  data["accum_init"],
+                                  data["accum_final"])
     
     # ==================================================================
     # Burdens [g]
