@@ -1817,7 +1817,9 @@ def compare_zonal_mean(
                 pedge,
                 pedge_ind,
                 log_yaxis,
-                plot_type="zonal_mean"
+                plot_type="zonal_mean",
+                xtick_positions=xtick_positions,
+                xticklabels=xticklabels
             )
 
         # ==============================================================
