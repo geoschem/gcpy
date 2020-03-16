@@ -497,7 +497,7 @@ def compare_single_level(
         if refgridtype == "ll":
             refregridder = make_regridder_L2L(
                 refres, cmpres, weightsdir=weightsdir, reuse_weights=True,
-                #minlon=refminlon, maxlon=refmaxlon, minlat=refminlat, maxlat=refmaxlat
+                minlon=refminlon, maxlon=refmaxlon, minlat=refminlat, maxlat=refmaxlat
             )
         else:
             if cmpgridtype == "cs":
@@ -513,7 +513,7 @@ def compare_single_level(
         if devgridtype == "ll":
             devregridder = make_regridder_L2L(
                 devres, cmpres, weightsdir=weightsdir, reuse_weights=True,
-                #minlon=devminlon, maxlon=devmaxlon, minlat=devminlat, maxlat=devmaxlat
+                minlon=devminlon, maxlon=devmaxlon, minlat=devminlat, maxlat=devmaxlat
             )
         else:
             if cmpgridtype == "cs":
@@ -641,7 +641,7 @@ def compare_single_level(
         warnings.filterwarnings('ignore', category=RuntimeWarning)
         warnings.filterwarnings('ignore', category=UserWarning)
 
-        if savepdf:
+        if savepdf and verbose:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
@@ -1079,7 +1079,8 @@ def compare_single_level(
     # Finish
     # ==================================================================
     if savepdf:
-        print("Closed PDF")
+        if verbose:
+            print("Closed PDF")
         merge = PdfFileMerger()
         for i in range(n_var):
             merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
@@ -1509,7 +1510,7 @@ def compare_zonal_mean(
         warnings.filterwarnings('ignore', category=RuntimeWarning)
         warnings.filterwarnings('ignore', category=UserWarning)
 
-        if savepdf:
+        if savepdf and verbose:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
@@ -1850,7 +1851,8 @@ def compare_zonal_mean(
     # Finish
     # ==================================================================
     if savepdf:
-        print("Closed PDF")
+        if verbose:
+            print("Closed PDF")
         merge = PdfFileMerger()
         for i in range(n_var):
             merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
