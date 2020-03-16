@@ -373,21 +373,6 @@ def compare_single_level(
             Returns a list of all quantities having significant 
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
-
-    Returns:
-    --------
-        Nothing
-
-    Example:
-    --------
-        >>> import matplotlib.pyplot as plt
-        >>> import xarray as xr
-        >>> from gcpy import benchmark
-        >>> refds = xr.open_dataset('path/to/ref.nc4')
-        >>> devds = xr.open_dataset('path/to/dev.nc4')
-        >>> varlist = ['SpeciesConc_O3', 'SpeciesConc_NO']
-        >>> benchmark.compare_single_level( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
-        >>> plt.show()
     """
     warnings.showwarning = warning_format
     # TODO: refactor this function and zonal mean plot function.
@@ -593,6 +578,7 @@ def compare_single_level(
     for i in range(n_var):
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
+
         # Ref
         if regridref:
             if refgridtype == "ll":
@@ -600,7 +586,8 @@ def compare_single_level(
                 ds_ref_cmps[i] = refregridder(ds_ref)
             else:
                 # regrid cs to ll
-                ds_ref_cmps[i] = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
+                ds_ref_cmps[i] = np.zeros([cmpgrid["lat"].size,
+                                           cmpgrid["lon"].size])
                 ds_ref_reshaped = ds_ref.data.reshape(6, refres, refres)
                 for j in range(6):
                     regridder = refregridder_list[j]
@@ -615,7 +602,8 @@ def compare_single_level(
                 ds_dev_cmps[i] = devregridder(ds_dev)
             else:
                 # regrid cs to ll
-                ds_dev_cmps[i] = np.zeros([cmpgrid["lat"].size, cmpgrid["lon"].size])
+                ds_dev_cmps[i] = np.zeros([cmpgrid["lat"].size,
+                                           cmpgrid["lon"].size])
                 ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
                 for j in range(6):
                     regridder = devregridder_list[j]
@@ -656,7 +644,7 @@ def compare_single_level(
 
         ds_ref = ds_refs[ivar]
         ds_dev = ds_devs[ivar]
-
+        
         # ==============================================================
         # Area normalization, if any
         # ==============================================================
@@ -668,25 +656,30 @@ def compare_single_level(
         varndim = varndim_ref
 
         # if regridding then normalization by area may be necessary
-        # depending on units. Either pass normalize_by_area=True to
-        # normalize all, or include units that should always be normalized
-        # by area below. GEOS-Chem Classic output files include area and so
-        # do not need to be passed.
+        # depending on units. Pass normalize_by_area=True to normalize all.
         exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
-        if regridany and (units in ("kg", "kgC") or normalize_by_area):
+        if normalize_by_area:
             if not any(s in varname for s in exclude_list):
-                if (
-                    "AREAM2" in refdata.data_vars.keys()
-                    and "AREAM2" in devdata.data_vars.keys()
-                ):
-                    ds_ref.values = ds_ref.values / refdata["AREAM2"].values
-                    ds_dev.values = ds_dev.values / devdata["AREAM2"].values
+                if "AREAM2" in refdata.data_vars.keys():
+                    ds_ref.values /= refdata["AREAM2"].values
                 else:
-                    print(
-                        "ERROR: Variables AREAM2 needed for area normalization missing from dataset"
-                    )
-                    return
-                units = "{}/m2".format(units)
+                    msg = "normalize_by_area = True but AREAM2 is not " \
+                        + "present in the Ref dataset!"
+                    raise ValueError(msg)
+
+                if "AREAM2" in devdata.data_vars.keys():
+                    print((ds_dev.values).shape)
+                    print((devdata["AREAM2"].values).shape)
+                    ds_dev.values /= devdata["AREAM2"].values
+                else:
+                    msg = "normalize_by_area = True but AREAM2 is not " \
+                        + "present in the Dev dataset!"
+                    raise ValueError(msg)
+
+                if "/" in units:
+                    units = "{}/m2".format(units)
+                else:
+                    units = "{} m-2".format(units)
                 units_ref = units
                 units_dev = units
                 subtitle_extra = ", Normalized by Area"
@@ -1114,6 +1107,7 @@ def compare_zonal_mean(
     match_cbar=True,
     pres_range=[0, 2000],
     normalize_by_area=False,
+    areas=None,
     enforce_units=True,
     flip_ref=False,
     flip_dev=False,
@@ -1185,6 +1179,11 @@ def compare_zonal_mean(
             Ref and Dev datasets by grid area.
             Default value: False
 
+        areas : dict of xarray DataArray
+            Contains the surface areas on the Ref and Dev grids,
+            which are needed for normalization by area.
+            Default value: None
+
         enforce_units : boolean
             Set this flag to True force an error if the variables in
             the Ref and Dev datasets have different units.
@@ -1228,21 +1227,6 @@ def compare_zonal_mean(
             Returns a list of all quantities having significant 
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
-
-    Returns:
-    --------
-        Nothing
-
-    Example:
-    --------
-        >>> import matplotlib.pyplot as plt
-        >>> import xarray as xr
-        >>> from gcpy import benchmark
-        >>> refds = xr.open_dataset('path/to/ref.nc4')
-        >>> devds = xr.open_dataset('path/to/dev.nc4')
-        >>> varlist = ['SpeciesConc_O3', 'SpeciesConc_NO']
-        >>> benchmark.compare_zonal_mean( refds, '12.3.2', devds, 'bug fix', varlist=varlist )
-        >>> plt.show()
     """
 
     # TODO: refactor this function and single level plot function. There is a lot of overlap and
@@ -1540,14 +1524,6 @@ def compare_zonal_mean(
         varndim = varndim_ref
         subtitle_extra = ""
 
-        # if normalizing by area, transform on the native grid and adjust units and subtitle string
-        exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
-        if normalize_by_area and not any(s in varname for s in exclude_list):
-            ds_ref.values = ds_ref.values / refdata["AREAM2"].values[np.newaxis, :, :]
-            ds_dev.values = ds_dev.values / devdata["AREAM2"].values[np.newaxis, :, :]
-            units = "{} m-2".format(units)
-            subtitle_extra = ", Normalized by Area"
-
         # ==============================================================
         # Assign data variables
         # ==============================================================
@@ -1555,6 +1531,15 @@ def compare_zonal_mean(
         ds_dev = ds_devs[ivar]
         ds_ref_cmp = ds_ref_cmps[ivar]
         ds_dev_cmp = ds_dev_cmps[ivar]
+
+        # if normalizing by area, transform on the native grid and
+        # adjust units and subtitle string
+        exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
+        if normalize_by_area and not any(s in varname for s in exclude_list):
+            ds_ref.values /= refdata["AREAM2"].values[np.newaxis, :, :]
+            ds_dev.values /= devdata["AREAM2"].values[np.newaxis, :, :]
+            units = "{} m-2".format(units)
+            subtitle_extra = ", Normalized by Area"
 
         # ==============================================================
         # Calculate zonal mean
@@ -1662,7 +1647,8 @@ def compare_zonal_mean(
                 y=offset,
             )
         else:
-            figs.suptitle("{}, Zonal Mean".format(varname), fontsize=fontsize, y=offset)
+            figs.suptitle("{}, Zonal Mean".format(varname),
+                          fontsize=fontsize, y=offset)
 
         # ==============================================================
         # Set color map objects.  Use gray for NaNs (no worries,
@@ -1689,14 +1675,14 @@ def compare_zonal_mean(
         if refgridtype == "ll":
             ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
         else:
-            ref_title = "{} (Ref){}\nc{} regridded from c{}".format(
+            ref_title = "{} (Ref){}\n{} regridded from c{}".format(
                 refstr, subtitle_extra, cmpres, refres
             )
 
         if devgridtype == "ll":
             dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
         else:
-            dev_title = "{} (Dev){}\nc{} regridded from c{}".format(
+            dev_title = "{} (Dev){}\n{} regridded from c{}".format(
                 devstr, subtitle_extra, cmpres, devres)
 
         if regridany:
@@ -1852,9 +1838,6 @@ def compare_zonal_mean(
     if current_process().name != "MainProcess":
         n_job = 1
 
-    # This seems like it shouldn't be here (bmy, 2/21/20)
-    #Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
-        
     if savepdf:
         Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
     else:
@@ -2804,6 +2787,8 @@ def make_benchmark_plots(
     use_cmap_RdBu=False,
     log_color_scale=False,
     sigdiff_files=None,
+    normalize_by_area=False,
+    areas=None,
     n_job=-1,
 ):
     """
@@ -2869,6 +2854,10 @@ def make_benchmark_plots(
             on a log color scale.
             Default value: False
 
+        normalize_by_area: bool
+            Set this flag to true to enable normalization of data
+            by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
+
         sigdiff_files : list of str
             Filenames that will contain the lists of species having
             significant differences in the 'sfc', '500hpa', and
@@ -2912,7 +2901,20 @@ def make_benchmark_plots(
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
 
+    # If we are normalizing by area, then merge the surface areas
+    # on the Ref & Dev grids into the Ref & Dev datasets
+    if normalize_by_area:
+        if areas is not None:
+            refds = xr.merge([refds, areas["Ref"]])
+            devds = xr.merge([devds, areas["Dev"]])
+        else:
+            msg = "ERROR: normalize_by_area = True but " \
+                + "the 'areas' argument was not passed!"
+            raise(ValueError, msg)
+
+    # ==================================================================
     # If sending plots to one file then do all plots here and return
+    # ==================================================================
     if not plot_by_spc_cat:
         [refds, devds] = add_missing_variables(refds, devds)
         var_prefix = 'SpeciesConc_'
@@ -2925,7 +2927,8 @@ def make_benchmark_plots(
                              pdfname=pdfname,
                              use_cmap_RdBu=use_cmap_RdBu,
                              log_color_scale=log_color_scale,
-                             extra_title_txt=extra_title_txt)
+                             extra_title_txt=extra_title_txt,
+                             normalize_by_area=normalize_by_area)
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
         # 500 hPa
@@ -2936,6 +2939,7 @@ def make_benchmark_plots(
                              pdfname=pdfname,
                              use_cmap_RdBu=use_cmap_RdBu,
                              log_color_scale=log_color_scale,
+                             normalize_by_area=normalize_by_area,
                              extra_title_txt=extra_title_txt)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
@@ -2947,11 +2951,16 @@ def make_benchmark_plots(
                            pdfname=pdfname,
                            use_cmap_RdBu=use_cmap_RdBu,
                            log_color_scale=log_color_scale,
+                           normalize_by_area=normalize_by_area,
                            extra_title_txt=extra_title_txt)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
         return
+
+    # ==================================================================
+    # Otherwise plot by categories
+    # ==================================================================
 
     # FullChemBenchmark has lumped species (TransportTracers does not)
     if "FullChem" in benchmark_type:
@@ -3042,6 +3051,7 @@ def make_benchmark_plots(
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
+                normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_sfc,
             )
@@ -3075,6 +3085,7 @@ def make_benchmark_plots(
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
+                normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_500,
             )
@@ -3110,6 +3121,7 @@ def make_benchmark_plots(
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
+                normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_zm,
             )
@@ -3142,6 +3154,7 @@ def make_benchmark_plots(
                 log_yaxis=True,
                 extra_title_txt=extra_title_txt,
                 log_color_scale=log_color_scale,
+                normalize_by_area=normalize_by_area,
             )
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict,
@@ -4752,9 +4765,9 @@ def make_benchmark_oh_metrics(
     # ==================================================================
 
     # Physical constants
-    Avo = 6.022140857e23  # molec/mol
-    mw_air = 28.97  # g/mole dry air
-    g0 = 9.80665  # m/s2
+    Avo = constants.AVOGADRO   # molec/mol
+    mw_air = constants.MW_AIR  # g/mole dry air
+    g0 = constants.G           # m/s2
 
     # Ref
     ref_oh_trop = np.ma.masked_array(ref_oh.values, ref_tropmask)

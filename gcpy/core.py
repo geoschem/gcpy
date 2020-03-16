@@ -1440,10 +1440,11 @@ def gcplot(plot_vals,
     return plot                                                      
 
 
-
 def get_input_res(data):
-    # return resolution of dataset passed to compare_single_level or compare_zonal_means
-
+    """
+    Returns resolution of dataset passed to
+    compare_single_level or compare_zonal_means
+    """
     vdims = data.dims
     if "lat" in vdims and "lon" in vdims:
         lat = data["lat"].values
@@ -1453,7 +1454,8 @@ def get_input_res(data):
         else:
             lat.sort()
             lon.sort()
-            #use increment of second and third coordinates to avoid polar mischief
+            #use increment of second and third coordinates
+            # to avoid polar mischief
             lat_res = np.abs(lat[2]-lat[1])
             lon_res = np.abs(lon[2]-lon[1])
             return str(lat_res) + "x" + str(lon_res), "ll"
@@ -1465,21 +1467,29 @@ def get_input_res(data):
 
 
 def call_make_grid(res, gridtype, zonal_mean, comparison):
-    # call appropriate make_grid function and return new grid
+    """
+    call appropriate make_grid function and return new grid
+    """
     if gridtype == "ll" or (zonal_mean and comparison):
         return [make_grid_LL(res), None]
     else:
         return make_grid_CS(res)
 
 def all_zero_or_nan(ds):
-    # Return whether ds is all zeros, or all nans
+    """
+    Return whether ds is all zeros, or all nans
+    """
     return not np.any(ds), np.isnan(ds).all()
 
 def get_grid_extents(data):
-    #Get min and max lat and lon from an input GEOS-Chem xarray dataset or grid dict
+    """
+    Get min and max lat and lon from an input GEOS-Chem 
+    xarray dataset or grid dict
+    """
     if type(data) is dict:
         if "lon_b" in data:
-            return min(refgrid["lon_b"]), max(refgrid["lon_b"]), min(refgrid["lat_b"]), max(refgrid["lat_b"])
+            return min(refgrid["lon_b"]), max(refgrid["lon_b"]), \
+                   min(refgrid["lat_b"]), max(refgrid["lat_b"])
         else:
             return None, None, None, None
     elif "lat" in data.dims and "lon" in data.dims:

@@ -186,19 +186,18 @@ days_per_yr = np.sum(days_per_month)
 sec_per_yr = np.sum(sec_per_month)
 
 # Timestamps for GCHP (these are in the middle of the month)
-if gchp_vs_gcc or gchp_vs_gchp:
-    gchp_months = np.zeros(12, dtype="datetime64[h]")
-    for m in range(12):
-        if days_per_month[m] == 31:
-            delta = np.timedelta64(((15 * 24) + 12), 'h')
-        elif days_per_month[m] == 30:
-            delta = np.timedelta64((15 * 24), 'h')
-        elif days_per_month[m] == 29:
-            delta = np.timedelta64((14 * 24), 'h')
-        else:
-            delta = np.timedelta64((14 * 24), 'h')
-        gchp_months[m] = bmk_months[m].astype("datetime64[h]") + delta
-    gchp_seasons = gchp_months[[0, 3, 6, 9]]
+gchp_months = np.zeros(12, dtype="datetime64[h]")
+for m in range(12):
+    if days_per_month[m] == 31:
+        delta = np.timedelta64(((15 * 24) + 12), 'h')
+    elif days_per_month[m] == 30:
+        delta = np.timedelta64((15 * 24), 'h')
+    elif days_per_month[m] == 29:
+        delta = np.timedelta64((14 * 24), 'h')
+    else:
+        delta = np.timedelta64((14 * 24), 'h')
+    gchp_months[m] = bmk_months[m].astype("datetime64[h]") + delta
+gchp_seasons = gchp_months[[0, 3, 6, 9]]
     
 # ----------------------------------------------------------------------
 # Files that will contain lists of quantities that have significant
@@ -257,11 +256,49 @@ for mon_yr_str in bmk_seasons_names:
         gchp_vs_gchp_sigdiff[mon_yr_str] = sigdiff_files
 
 # ======================================================================
+# Functions for area normalization
+# ======================================================================
+def get_gcc_area(data_dir): 
+    """
+    Returns the area variable for GEOS-Chem "Classic"
+    and renames it to "AREAM2".
+    """
+    if gcc_vs_gcc or gchp_vs_gcc:
+        path = get_filepaths(data_dir, "StateMet",
+                            [bmk_months[0]], is_gcc=True)
+        with xr.set_options(keep_attrs=True):
+            ds = xr.open_mfdataset(path)
+            ds = ds.rename({"AREA": "AREAM2"})
+            ds = ds["AREAM2"]
+            return ds
+    else:
+        return None
+
+    
+def get_gchp_area(data_dir):
+    """
+    """
+    if gchp_vs_gcc or gchp_vs_gchp:
+        path = get_filepaths(data_dir, "StateMet_avg",
+                             [gchp_months[0]], is_gchp=True)
+        with xr.set_options(keep_attrs=True):
+            ds = xr.open_mfdataset(path)
+            ds = ds.rename({"Met_AREAM2": "AREAM2"})
+            ds = ds["AREAM2"]
+            return ds
+    else:
+        return None
+    
+# ======================================================================
 # Create GCC vs GCC benchmark plots and tables
 # ======================================================================
 
 if gcc_vs_gcc:
 
+    # Get surface area variables on Ref and Dev grids
+    gcc_vs_gcc_areas = {"Ref": get_gcc_area(gcc_vs_gcc_refdir),
+                        "Dev": get_gcc_area(gcc_vs_gcc_devdir)}
+    
     if plot_conc:
         # --------------------------------------------------------------
         # GCC vs GCC Concentration plots
@@ -324,6 +361,8 @@ if gcc_vs_gcc:
                                          benchmark_type=bmk_type,
                                          collection=collection,
                                          restrict_cats=[collection],
+                                         normalize_by_area=True,
+                                         areas=gcc_vs_gcc_areas,
                                          sigdiff_files=sigdiff_files)
 
     if budget_table:
@@ -398,6 +437,10 @@ if gcc_vs_gcc:
 
 if gchp_vs_gcc:
 
+    # Get surface area variables on Ref and Dev grids
+    gchp_vs_gcc_areas = {"Ref": get_gcc_area(gchp_vs_gcc_refdir),
+                         "Dev": get_gchp_area(gchp_vs_gcc_devdir)}
+    
     if plot_conc:
         # --------------------------------------------------------------
         # GCC vs GCC Concentration plots
@@ -434,7 +477,7 @@ if gchp_vs_gcc:
 
     if plot_wetdep:
         # --------------------------------------------------------------
-        # GCC vs GCC wet deposition
+        # GCHP vs GCC wet deposition
         # --------------------------------------------------------------
         print("\n%%% Creating GCHP vs. GCC wet deposition plots %%%")
                 
@@ -445,7 +488,7 @@ if gchp_vs_gcc:
                                               bmk_seasons, is_gcc=True)
             gchp_vs_gcc_devwd = get_filepaths(gchp_vs_gcc_devdir, collection,
                                               gchp_seasons, is_gchp=True)
-
+                                           
             # Create seasonal plots for wet scavenging
             for s in range(bmk_nseasons):
                 mon_yr_str = bmk_seasons_names[s]
@@ -460,6 +503,8 @@ if gchp_vs_gcc:
                                          benchmark_type=bmk_type,
                                          collection=collection,
                                          restrict_cats=[collection],
+                                         normalize_by_area=True,
+                                         areas=gchp_vs_gcc_areas,
                                          sigdiff_files=sigdiff_files)
 
     if budget_table:
@@ -513,23 +558,8 @@ if gchp_vs_gcc:
         # --------------------------------------------------------------
         # GCHP vs GCC Strat-Trop Exchange
         # --------------------------------------------------------------
-        title = \
-        "\n%%% Creating GCC vs. GCC {} Strat-Trop Exchange table %%%".format(
-            bmk_type)
+        title = "%%% Cannot create Strat-Trop Exchange tables for GCHP %%%"
         print(title)
-        
-        # Strat-trop exchange of radionuclide species
-        gchp_vs_gcc_devflx = get_filepaths(gchp_vs_gcc_devdir, "AdvFluxVert",
-                                           gchp_months, is_gchp=True)
-        plot_dir = join(gchp_vs_gcc_plotsdir, "Tables")
-        species = ["Pb210", "Be7", "Be10"]
-        ste.make_benchmark_ste_table(gchp_dev_version,
-                                     gchp_vs_gcc_devflx,
-                                     bmk_year,
-                                     dst=plot_dir,
-                                     bmk_type=bmk_type,
-                                     species=species,
-                                     overwrite=True)
  
 ## =====================================================================
 ## Create GCHP vs GCHP benchmark plots and tables
