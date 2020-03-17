@@ -465,7 +465,7 @@ def compare_single_level(
     # Make grids (ref, dev, and comparison)
     # =================================================================
 
-    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, False, False)
+    [refgrid, refgrid_list] = call_make_grid(refres, refgridtype, False, False)
     [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, False, False)
     [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, False, True)
 
