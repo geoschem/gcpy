@@ -474,6 +474,10 @@ def compare_single_level(
     # TODO: Make CS to CS regridders
     # =================================================================
 
+    msg = "CS to CS regridding is not yet implemented in gcpy. " \
+        + "Ref and dev cubed sphere grids must be the same resolution, " \
+        + "or pass cmpres to compare_single_level as a lat-lon grid resolution."
+
     if regridref:
         if refgridtype == "ll":
             refregridder = make_regridder_L2L(
@@ -481,10 +485,7 @@ def compare_single_level(
             )
         else:
             if cmpgridtype == "cs":
-                print(
-                    "ERROR: CS to CS regridding is not yet implemented in gcpy. Ref and dev cubed sphere grids must be the same resolution, or pass cmpres to compare_single_level as a lat-lon grid resolution."
-                )
-                return
+                raise ValueError(msg)
             else:
                 refregridder_list = make_regridder_C2L(
                     refres, cmpres, weightsdir=weightsdir, reuse_weights=True
@@ -496,10 +497,7 @@ def compare_single_level(
             )
         else:
             if cmpgridtype == "cs":
-                print(
-                    "ERROR: CS to CS regridding is not yet implemented in gcpy. Ref and dev cubed sphere grids must be the same resolution, or pass cmpres to compare_single_level as a lat-lon grid resolution."
-                )
-                return
+                raise ValueError(msg)
             else:
                 devregridder_list = make_regridder_C2L(
                     devres, cmpres, weightsdir=weightsdir, reuse_weights=True
@@ -1718,23 +1716,26 @@ def compare_zonal_mean(
                 devstr, subtitle_extra, cmpres, devres)
 
         if regridany:
-            absdiff_dynam_title = "Difference ({})\nDev - Ref, Dynamic Range".format(
-                cmpres
-            )
-            absdiff_fixed_title = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
-                cmpres
-            )
-            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
-                cmpres
-            )
-            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(
-                cmpres
-            )
+            absdiff_dynam_title = \
+                "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title = \
+                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
+                    cmpres)
+            fracdiff_dynam_title = \
+             "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
+                cmpres)
+            fracdiff_fixed_title = \
+                "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(
+                cmpres)
         else:
-            absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
-            absdiff_fixed_title = "Difference\nDev - Ref, Restricted Range [5%,95%]"
-            fracdiff_dynam_title = "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
-            fracdiff_fixed_title = "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
+            absdiff_dynam_title = \
+                "Difference\nDev - Ref, Dynamic Range"
+            absdiff_fixed_title = \
+                "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            fracdiff_dynam_title = \
+                "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
+            fracdiff_fixed_title = \
+                "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
 
         # ==============================================================
         # Bundle variables for 6 parallel plotting calls
