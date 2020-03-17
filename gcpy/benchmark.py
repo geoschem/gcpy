@@ -4249,9 +4249,13 @@ def make_benchmark_aod_plots(
     devattrs = devtot.attrs
 
     # Compute the sum of all AOD variables
+    # Avoid double-counting SOA from aqueous isoprene, which is
+    # already accounted for in AODHyg550nm_OCPI.  Also see
+    # Github issue: https://github.com/geoschem/gcpy/issues/65
     for v in varlist:
-        reftot = reftot + refds[v]
-        devtot = devtot + devds[v]
+        if "AODSOAfromAqIsoprene550nm" not in v:
+            reftot = reftot + refds[v]
+            devtot = devtot + devds[v]
 
     # Reattach the variable attributes
     reftot.name = "AODTotal"
