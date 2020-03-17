@@ -72,7 +72,8 @@ def sixplot(
 ):
 
     """
-    Plotting function to be called from compare_single_level or compare_zonal_mean.
+    Plotting function to be called from compare_single_level or
+    compare_zonal_mean.
     Can also be called on its own
     WBD MOVE TO core.py and RENAME?
     Args:
@@ -573,6 +574,34 @@ def compare_single_level(
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
 
+    # ==================================================================   
+    # Also reshape the area variables if normalize_by_area=True
+    # ==================================================================
+    if normalize_by_area:
+        if "AREAM2" in refdata.data_vars.keys():
+            ref_area = refdata["AREAM2"]
+            if "time" in ref_area.dims:
+                ref_area = ref_area.isel(time=0)                
+            ref_area = reshape_MAPL_CS(ref_area, ref_area.dims)
+        else:
+            msg = "normalize_by_area = True but AREAM2 is not " \
+                + "present in the Ref dataset!"
+            raise ValueError(msg)
+
+        if "AREAM2" in devdata.data_vars.keys():
+            dev_area = devdata["AREAM2"]
+            if "time" in dev_area.dims:
+                dev_area = dev_area.isel(time=0)                
+            dev_area = reshape_MAPL_CS(dev_area, dev_area.dims)
+        else:
+            msg = "normalize_by_area = True but AREAM2 is not " \
+                + "present in the Dev dataset!"
+            raise ValueError(msg)
+
+    # ==================================================================   
+    # Create arrays for each variable in Ref and Dev datasets
+    # and do any necessary regridding.
+    # ==================================================================   
     ds_ref_cmps = [None] * n_var
     ds_dev_cmps = [None] * n_var
     for i in range(n_var):
@@ -646,36 +675,16 @@ def compare_single_level(
         ds_dev = ds_devs[ivar]
         
         # ==============================================================
-        # Area normalization, if any
+        # Area normalization, if normalize_by_area=True
         # ==============================================================
-
-        # if normalizing by area, adjust units to be per m2,
-        # and adjust title string
         units = units_ref
         subtitle_extra = ""
         varndim = varndim_ref
-
-        # if regridding then normalization by area may be necessary
-        # depending on units. Pass normalize_by_area=True to normalize all.
-        exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
         if normalize_by_area:
+            exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
-                if "AREAM2" in refdata.data_vars.keys():
-                    ds_ref.values /= refdata["AREAM2"].values
-                else:
-                    msg = "normalize_by_area = True but AREAM2 is not " \
-                        + "present in the Ref dataset!"
-                    raise ValueError(msg)
-
-                if "AREAM2" in devdata.data_vars.keys():
-                    print((ds_dev.values).shape)
-                    print((devdata["AREAM2"].values).shape)
-                    ds_dev.values /= devdata["AREAM2"].values
-                else:
-                    msg = "normalize_by_area = True but AREAM2 is not " \
-                        + "present in the Dev dataset!"
-                    raise ValueError(msg)
-
+                ds_ref.values = ds_ref.values / ref_area.values 
+                ds_dev.values = ds_dev.values / dev_area.values 
                 if "/" in units:
                     units = "{}/m2".format(units)
                 else:
@@ -774,17 +783,18 @@ def compare_single_level(
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
         if cmpgridtype == "cs":
-            absdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, absdiff)
+            absdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2,
+                                         absdiff)
 
         # ==============================================================
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
         if cmpgridtype == "ll":
-            fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) / np.array(
-                ds_ref_cmp
-            )
+            fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) \
+                     / np.array(ds_ref_cmp)
         else:
-            fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) / ds_ref_cmp_reshaped
+            fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) \
+                     / ds_ref_cmp_reshaped
 
         # Replace Infinity values with NaN
         fracdiff = np.where(fracdiff == np.inf, np.nan, fracdiff)
@@ -796,12 +806,14 @@ def compare_single_level(
         fracdiff_is_all_nan = np.isnan(fracdiff).all() or ref_is_all_zero
 
         # Absolute max value of fracdiff, excluding NaNs
-        fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)), np.abs(np.nanmax(fracdiff))])
+        fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)),
+                              np.abs(np.nanmax(fracdiff))])
 
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
         if cmpgridtype == "cs":
-            fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, fracdiff)
+            fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, \
+                                          fracdiff)
 
         # ==============================================================
         # Create 3x2 figure
@@ -810,7 +822,8 @@ def compare_single_level(
         # Create figures and axes objects
         # Also define the map projection that will be shown
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(
-            3, 2, figsize=[12, 14], subplot_kw={"projection": ccrs.PlateCarree()}
+            3, 2, figsize=[12, 14],
+            subplot_kw={"projection": ccrs.PlateCarree()}
         )
         # Ensure subplots don't overlap when invoking plt.show()
         if not savepdf:
@@ -833,7 +846,8 @@ def compare_single_level(
                 )
             else:
                 figs.suptitle(
-                    "{}, {}".format(varname, levstr), fontsize=fontsize, y=offset
+                    "{}, {}".format(varname, levstr),
+                    fontsize=fontsize, y=offset
                 )
         elif (
             "lat" in ds_ref.dims
@@ -908,23 +922,25 @@ def compare_single_level(
             dev_title = "{} (Dev){}\nc{}".format(devstr, subtitle_extra, devres)
 
         if regridany:
-            absdiff_dynam_title = "Difference ({})\nDev - Ref, Dynamic Range".format(
-                cmpres
-            )
-            absdiff_fixed_title = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
-                cmpres
-            )
-            fracdiff_dynam_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
-                cmpres
-            )
-            fracdiff_fixed_title = "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(
-                cmpres
-            )
+            absdiff_dynam_title = \
+                "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title = \
+                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
+                cmpres)
+            fracdiff_dynam_title = \
+             "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
+                cmpres)
+            fracdiff_fixed_title = \
+             "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(
+                cmpres)
         else:
             absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
-            absdiff_fixed_title = "Difference\nDev - Ref, Restricted Range [5%,95%]"
-            fracdiff_dynam_title = "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
-            fracdiff_fixed_title = "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
+            absdiff_fixed_title = \
+                "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            fracdiff_dynam_title = \
+                "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
+            fracdiff_fixed_title = \
+                "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
 
         # ==============================================================
         # Bundle variables for 6 parallel plotting calls
@@ -987,7 +1003,8 @@ def compare_single_level(
         ]
 
         if refgridtype == "ll":
-            cmaps = [ref_cmap, dev_cmap, cmap_gray, cmap_gray, cmap_gray, cmap_gray]
+            cmaps = [ref_cmap, dev_cmap, cmap_gray, \
+                     cmap_gray, cmap_gray, cmap_gray]
         else:
             cmaps = [
                 cmap_toprow_nongray,
@@ -1021,7 +1038,8 @@ def compare_single_level(
 
         unit_list = [units_ref, units_dev, units, units, "unitless", "unitless"]
 
-        other_all_nans = [dev_is_all_nan, ref_is_all_nan, False, False, False, False]
+        other_all_nans = [dev_is_all_nan, ref_is_all_nan, \
+                          False, False, False, False]
 
         mins = [vmin_ref, vmin_dev, vmin_abs]
         maxs = [vmax_ref, vmax_dev, vmax_abs]
@@ -1107,7 +1125,6 @@ def compare_zonal_mean(
     match_cbar=True,
     pres_range=[0, 2000],
     normalize_by_area=False,
-    areas=None,
     enforce_units=True,
     flip_ref=False,
     flip_dev=False,
@@ -1178,11 +1195,6 @@ def compare_zonal_mean(
             Set this flag to True to to normalize raw data in both
             Ref and Dev datasets by grid area.
             Default value: False
-
-        areas : dict of xarray DataArray
-            Contains the surface areas on the Ref and Dev grids,
-            which are needed for normalization by area.
-            Default value: None
 
         enforce_units : boolean
             Set this flag to True force an error if the variables in
@@ -1287,10 +1299,9 @@ def compare_zonal_mean(
     elif refdata.sizes["lev"] == 73:
         refdata["lev"] = pedge
     else:
-        print(
-            "ERROR: compare_zonal_mean implemented for 72 or 73 levels only. Other values found in ref."
-        )
-        return
+        msg = "compare_zonal_mean implemented for 72 or 73 levels only. " \
+            + "Other values found in Ref."
+        raise ValueError(msg)
     refdata["lev"].attrs["units"] = "hPa"
     refdata["lev"].attrs["long_name"] = "level pressure"
 
@@ -1299,10 +1310,9 @@ def compare_zonal_mean(
     elif devdata.sizes["lev"] == 73:
         devdata["lev"] = pedge
     else:
-        print(
-            "ERROR: compare_zonal_mean implemented for 72 or 73 levels only. Other value found in dev."
-        )
-        return
+        msg = "compare_zonal_mean implemented for 72 or 73 levels only. " \
+            + "Other values found in Dev."
+        raise ValueError(msg)
     devdata["lev"].attrs["units"] = "hPa"
     devdata["lev"].attrs["long_name"] = "level pressure"
 
@@ -1349,9 +1359,9 @@ def compare_zonal_mean(
         else:
             cmpres = "1x1.25"
     elif "x" not in cmpres:
-        print(
-            "WARNING: zonal mean comparison grid must be lat-lon. Defaulting to 1x1.25"
-        )
+        msg = "WARNING: zonal mean comparison grid must be lat-lon. " \
+            + "Defaulting to 1x1.25"
+        print(msg)
         cmpres = "1x1.25"
 
     # Determine what, if any, need regridding.
@@ -1429,14 +1439,38 @@ def compare_zonal_mean(
         if flip_dev:
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
 
+    # ==================================================================   
+    # Also reshape the area variables if normalize_by_area=True
+    # ==================================================================
+    if normalize_by_area:
+        if "AREAM2" in refdata.data_vars.keys():
+            ref_area = refdata["AREAM2"]
+            if "time" in ref_area.dims:
+                ref_area = ref_area.isel(time=0)                
+            ref_area = reshape_MAPL_CS(ref_area, ref_area.dims)
+        else:
+            msg = "normalize_by_area = True but AREAM2 is not " \
+                + "present in the Ref dataset!"
+            raise ValueError(msg)
+
+        if "AREAM2" in devdata.data_vars.keys():
+            dev_area = devdata["AREAM2"]
+            if "time" in dev_area.dims:
+                dev_area = dev_area.isel(time=0)                
+            dev_area = reshape_MAPL_CS(dev_area, dev_area.dims)
+        else:
+            msg = "normalize_by_area = True but AREAM2 is not " \
+                + "present in the Dev dataset!"
+            raise ValueError(msg)
+
+    # ==================================================================   
+    # Create arrays for each variable in the Ref and Dev dataset
+    # and regrid to the comparison grid.
+    # ==================================================================
     ds_ref_cmps = [None] * n_var
     ds_dev_cmps = [None] * n_var
 
     for i in range(n_var):
-        # ==============================================================
-        # Get comparison data sets, regridding input slices if needed
-        # ==============================================================
-
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
 
@@ -1447,9 +1481,8 @@ def compare_zonal_mean(
                 ds_ref_cmps[i] = refregridder(ds_ref)
             else:
                 # regrid cs to ll
-                ds_ref_reshaped = ds_ref.data.reshape(nlev, 6, refres, refres).swapaxes(
-                    0, 1
-                )
+                ds_ref_reshaped = \
+                    ds_ref.data.reshape(nlev, 6, refres, refres).swapaxes(0, 1)
                 ds_ref_cmps[i] = np.zeros(
                     [nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
                 )
@@ -1466,9 +1499,8 @@ def compare_zonal_mean(
                 ds_dev_cmps[i] = devregridder(ds_dev)
             else:
                 # regrid cs to ll
-                ds_dev_reshaped = ds_dev.data.reshape(nlev, 6, devres, devres).swapaxes(
-                    0, 1
-                )
+                ds_dev_reshaped = \
+                    ds_dev.data.reshape(nlev, 6, devres, devres).swapaxes(0, 1)
                 ds_dev_cmps[i] = np.zeros(
                     [nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
                 )
@@ -1515,16 +1547,6 @@ def compare_zonal_mean(
         units_ref, units_dev = check_units(refdata, devdata, varname)
 
         # ==============================================================
-        # Area normalization, if any
-        # ==============================================================
-
-        # if normalizing by area, adjust units to be per m2, and
-        # adjust title string
-        units = units_ref
-        varndim = varndim_ref
-        subtitle_extra = ""
-
-        # ==============================================================
         # Assign data variables
         # ==============================================================
         ds_ref = ds_refs[ivar]
@@ -1532,15 +1554,25 @@ def compare_zonal_mean(
         ds_ref_cmp = ds_ref_cmps[ivar]
         ds_dev_cmp = ds_dev_cmps[ivar]
 
-        # if normalizing by area, transform on the native grid and
-        # adjust units and subtitle string
-        exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
-        if normalize_by_area and not any(s in varname for s in exclude_list):
-            ds_ref.values /= refdata["AREAM2"].values[np.newaxis, :, :]
-            ds_dev.values /= devdata["AREAM2"].values[np.newaxis, :, :]
-            units = "{} m-2".format(units)
-            subtitle_extra = ", Normalized by Area"
-
+        # ==============================================================
+        # Area normalization, if normalize_by_area=True
+        # ==============================================================
+        units = units_ref
+        varndim = varndim_ref
+        subtitle_extra = ""
+        if normalize_by_area:
+            exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]            
+            if not any(s in varname for s in exclude_list):
+                ds_ref.values = ds_ref.values / ref_area.values 
+                ds_dev.values = ds_dev.values / dev_area.values 
+                if "/" in units:
+                    units = "{}/m2".format(units)
+                else:
+                    units = "{} m-2".format(units)
+                units_ref = units
+                units_dev = units
+                subtitle_extra = ", Normalized by Area"
+   
         # ==============================================================
         # Calculate zonal mean
         # ==============================================================
@@ -1879,14 +1911,6 @@ def get_emissions_varnames(commonvars, template=None):
         varnames : list of strs
             A list of variable names corresponding to emission
             diagnostics for a given species and sector.
-
-    Example:
-    --------
-        >>> import gcpy
-        >>> commonvars = ['EmisCO_Anthro', 'EmisNO_Anthro', 'AREA']
-        >>> varnames = gcpy.get_emissions_varnames(commonvars, "Emis")
-        >>> print(varnames)
-        ['EmisCO_Anthro', 'EmisNO_Anthro']
     """
 
     # Make sure the commonvars list has at least one element
@@ -1925,14 +1949,6 @@ def create_display_name(diagnostic_name):
         (for emissions by category) or "Inv" (for emissions by inventory).
         This should be an OK assumption to make since this routine is
         specifically geared towards model benchmarking.
-
-    Example:
-    --------
-        >>> import gcpy
-        >>> diag_name = "EmisCO_Anthro"
-        >>> display_name = gcpy.create_display_name(diag_name)
-        >>> print(display_name)
-        CO Anthro
     """
 
     # Initialize
@@ -2180,24 +2196,6 @@ def create_total_emissions_table(
 
         Species properties (such as molecular weights) are read from a
         YAML file called "species_database.yml".
-
-    Example:
-    --------
-        Print the total of CO and ACET emissions in two different
-        data sets, which represent different model versions:
-
-        >>> include gcpy
-        >>> include xarray as xr
-        >>> reffile = '~/output/12.1.1/HEMCO_diagnostics.201607010000.nc'
-        >>> refstr = '12.1.1'
-        >>> refdata = xr.open_dataset(reffile)
-        >>> devfile = '~/output/12.2.0/HEMCO_sa.diagnostics.201607010000.nc'
-        >>> devstr = '12.2.0'
-        >>> devdata = xr.open_dataset(devfile)
-        >>> outfilename = '12.2.0_emission_totals.txt'
-        >>> species = { 'CO' : 'Tg', 'ACET', 'Tg C', 'ALK4', 'Gg C' }
-        >>> create_total_emissions_table(refdata, refstr, devdata, devstr,
-            species, outfilename)
     """
 
     # ==================================================================
@@ -2858,6 +2856,10 @@ def make_benchmark_plots(
             Set this flag to true to enable normalization of data
             by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
 
+        areas : dict of xarray DataArray:
+            Grid box surface areas in m2 on Ref and Dev grids.
+            Default value: None
+
         sigdiff_files : list of str
             Filenames that will contain the lists of species having
             significant differences in the 'sfc', '500hpa', and
@@ -2873,12 +2875,9 @@ def make_benchmark_plots(
     # Initialization and data read
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
-                dst
-            )
-        )
-        return
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any.".format(dst)
+        raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
@@ -3022,11 +3021,9 @@ def make_benchmark_plots(
                     continue
                 varlist.append(varname)
         if warninglist != []:
-            print(
-                "\n\nWarning: variables in {} category not in dataset: {}".format(
-                    filecat, warninglist
-                )
-            )
+            msg = "\n\nWarning: variables in {} category " \
+                + "not in dataset: {}".format(filecat, warninglist)
+            print(msg)
 
         # -----------------------
         # Surface plots
@@ -3104,7 +3101,8 @@ def make_benchmark_plots(
 
             if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, "{}_FullColumn_ZonalMean_{}.pdf".format(filecat, subdst)
+                    catdir, "{}_FullColumn_ZonalMean_{}.pdf".format(
+                        filecat, subdst)
                 )
             else:
                 pdfname = os.path.join(
@@ -3140,7 +3138,8 @@ def make_benchmark_plots(
                     catdir, "{}_Strat_ZonalMean_{}.pdf".format(filecat, subdst)
                 )
             else:
-                pdfname = os.path.join(catdir, "{}_Strat_ZonalMean.pdf".format(filecat))
+                pdfname = os.path.join(catdir, "{}_Strat_ZonalMean.pdf".format(
+                    filecat))
 
             compare_zonal_mean(
                 refds,
@@ -3165,9 +3164,12 @@ def make_benchmark_plots(
     results = Parallel(n_jobs=n_job)(
         delayed(createplots)(i, filecat) for i, filecat in enumerate(catdict)
     )
-    dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] for result in results}
-    dict_500 = {list(result.keys())[0] : result[list(result.keys())[0]]['500'] for result in results}
-    dict_zm = {list(result.keys())[0] : result[list(result.keys())[0]]['zm']  for result in results}    
+    dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] \
+                for result in results}
+    dict_500 = {list(result.keys())[0] : result[list(result.keys())[0]]['500'] \
+                for result in results}
+    dict_zm = {list(result.keys())[0] : result[list(result.keys())[0]]['zm'] \
+               for result in results}    
     
     # ==============================================================
     # Write the list of species having significant differences,
@@ -3320,12 +3322,9 @@ def make_benchmark_emis_plots(
 
     # Create destination folder if it does not exist
     if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
-                dst
-            )
-        )
-        return
+        msg = "Directory {} exists. Pass overwrite=True to overwrite "\
+            + "files in that directory, if any.".format(dst)
+        raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
@@ -3396,7 +3395,8 @@ def make_benchmark_emis_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
         )
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="Emis", verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix="Emis", verbose=verbose)
         return
 
     # Get emissions variables (non-inventory), categories, and species
@@ -3432,8 +3432,8 @@ def make_benchmark_emis_plots(
         def createfile_hco_cat(c):
             # Handle cases of bioburn and bioBurn (temporary until 12.3.1)
             if c == "Bioburn":
-                varnames = [
-                    k for k in emis_vars if any(b in k for b in ["Bioburn", "BioBurn"])
+                varnames = [k for k in emis_vars \
+                            if any(b in k for b in ["Bioburn", "BioBurn"])
                 ]
             else:
                 varnames = [k for k in emis_vars if c in k]
@@ -3471,9 +3471,11 @@ def make_benchmark_emis_plots(
             diff_dict[c] = diff_emis
             return diff_dict
 
-        results = Parallel(n_jobs=n_job)(delayed(createfile_hco_cat)(c) for c in emis_cats)
+        results = Parallel(n_jobs=n_job)(delayed(createfile_hco_cat)(c) \
+                                         for c in emis_cats)
 
-        dict_emis = {list(result.keys())[0] : result[list(result.keys())[0]] for result in results}
+        dict_emis = {list(result.keys())[0] : result[list(result.keys())[0]] \
+                     for result in results}
         
         # =============================================================
         # Write the list of species having significant differences,
@@ -3514,7 +3516,8 @@ def make_benchmark_emis_plots(
                     allcatspc.append(spc)
                     if spc in emis_spc:
                         emisdict[filecat][spc] = []
-                        emisvars = [v for v in emis_vars if spc == v.split("_")[0][4:]]
+                        emisvars = [v for v in emis_vars \
+                                    if spc == v.split("_")[0][4:]]
                         for var in emisvars:
                             emisdict[filecat][spc].append(var.replace("Emis", ""))
                             varlist.append(var)
@@ -3543,7 +3546,8 @@ def make_benchmark_emis_plots(
                     catdir, "{}_Emissions_{}.pdf".format(filecat, subdst)
                 )
             else:
-                pdfname = os.path.join(catdir, "{}_Emissions.pdf".format(filecat))
+                pdfname = os.path.join(catdir, "{}_Emissions.pdf".format(
+                    filecat))
             print(pdfname)
             # Create the PDF
             compare_single_level(
@@ -3562,7 +3566,8 @@ def make_benchmark_emis_plots(
             add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
 
         Parallel(n_jobs=n_job)(
-            delayed(createfile_bench_cat)(filecat) for i, filecat in enumerate(catdict)
+            delayed(createfile_bench_cat)(filecat) \
+            for i, filecat in enumerate(catdict)
         )
 
         # Give warning if emissions species is not assigned a benchmark category
@@ -3831,12 +3836,9 @@ def make_benchmark_jvalue_plots(
 
     # Create the destination folder if it does not exist
     if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in tht directory, if any.".format(
-                dst
-            )
-        )
-        return
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in tht directory, if any.".format(dst)
+        raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
@@ -3882,8 +3884,10 @@ def make_benchmark_jvalue_plots(
 
         # JNoon_* are cumulative sums of local noon J-values; we need
         # to divide these by JNoonFrac to get the average value
-        refds = core.divide_dataset_by_dataarray(refds, refds["JNoonFrac"], varlist)
-        devds = core.divide_dataset_by_dataarray(devds, devds["JNoonFrac"], varlist)
+        refds = core.divide_dataset_by_dataarray(refds, \
+                                                 refds["JNoonFrac"], varlist)
+        devds = core.divide_dataset_by_dataarray(devds, \
+                                                 devds["JNoonFrac"], varlist)
 
         # Subfolder of dst where PDF files will be printed
         catdir = "JValuesLocalNoon"
@@ -3920,7 +3924,8 @@ def make_benchmark_jvalue_plots(
     # Surface plots
     if "sfc" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}Surface_{}.pdf".format(prefix, subdst))
+            pdfname = os.path.join(jvdir, "{}Surface_{}.pdf".format(
+                prefix, subdst))
         else:
             pdfname = os.path.join(jvdir, "{}Surface.pdf".format(prefix))
 
@@ -3945,7 +3950,8 @@ def make_benchmark_jvalue_plots(
     # 500hPa plots
     if "500hpa" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}500hPa_{}.pdf".format(prefix, subdst))
+            pdfname = os.path.join(jvdir, "{}500hPa_{}.pdf".format(
+                prefix, subdst))
         else:
             pdfname = os.path.join(jvdir, "{}500hPa.pdf".format(prefix))
 
@@ -3965,7 +3971,8 @@ def make_benchmark_jvalue_plots(
             sigdiff_list=diff_500,
         )
         diff_500[:] = [v.replace(prefix, "") for v in diff_500]
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
     # Full-column zonal mean plots
     if "zonalmean" in plots:
@@ -3974,7 +3981,8 @@ def make_benchmark_jvalue_plots(
                 jvdir, "{}FullColumn_ZonalMean_{}.pdf".format(prefix, subdst)
             )
         else:
-            pdfname = os.path.join(jvdir, "{}FullColumn_ZonalMean.pdf".format(prefix))
+            pdfname = os.path.join(jvdir, "{}FullColumn_ZonalMean.pdf".format(
+                prefix))
 
         diff_zm = []
         compare_zonal_mean(
@@ -4016,7 +4024,8 @@ def make_benchmark_jvalue_plots(
             extra_title_txt=extra_title_txt,
             log_color_scale=log_color_scale,
         )
-        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
+        add_bookmarks_to_pdf(pdfname, varlist,
+                             remove_prefix=prefix, verbose=verbose)
 
         # ==============================================================
         # Write the lists of J-values that have significant differences,
@@ -4134,12 +4143,9 @@ def make_benchmark_aod_plots(
 
     # Create the destination directory if it does not exist
     if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in tht directory, if any.".format(
-                dst
-            )
-        )
-        return
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any.".format(msg)
+        raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
@@ -4295,7 +4301,8 @@ def make_benchmark_aod_plots(
     # Create the plots
     # ==================================================================
     if subdst is not None:
-        pdfname = os.path.join(aoddir, "Aerosols_ColumnOptDepth_{}.pdf".format(subdst))
+        pdfname = os.path.join(aoddir, "Aerosols_ColumnOptDepth_{}.pdf".format(
+            subdst))
     else:
         pdfname = os.path.join(aoddir, "Aerosols_ColumnOptDepth.pdf")
 
@@ -4402,8 +4409,9 @@ def make_benchmark_mass_tables(
     # Define destination directory
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
-        print("Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(dst))
-        return
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any.".format(dst)
+        raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.makedirs(dst)
 
@@ -4488,7 +4496,8 @@ def make_benchmark_mass_tables(
             dst, "{}_GlobalMass_TropStrat_{}.txt".format(devstr, subdst)
         )
     else:
-        mass_file = os.path.join(dst, "{}_GlobalMass_TropStrat.txt".format(devstr))
+        mass_file = os.path.join(dst, "{}_GlobalMass_TropStrat.txt".format(
+            devstr))
 
     create_global_mass_table(
         refds,
@@ -4527,7 +4536,13 @@ def make_benchmark_mass_tables(
 
 
 def make_benchmark_budget_tables(
-        dev, devstr, dst="./1mo_benchmark", overwrite=False, subdst=None, interval=[2678400.0], n_job=-1
+    dev,
+    devstr,
+    dst="./1mo_benchmark",
+    overwrite=False,
+    subdst=None,
+    interval=[2678400.0],
+    n_job=-1
 ):
     """
     Creates a text file containing budgets by species for benchmarking
@@ -4572,12 +4587,9 @@ def make_benchmark_budget_tables(
     # Define destination directory
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
-                dst
-            )
-        )
-        return
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any.".format(dst)
+        raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
     budgetdir = os.path.join(dst, "Budget")
@@ -4638,7 +4650,8 @@ def make_benchmark_budget_tables(
         )
 
     # Create budget tables in parallel
-    Parallel(n_jobs=n_job)(delayed(createfile)(region) for region in budget_regions)
+    Parallel(n_jobs=n_job)(delayed(createfile)(region) \
+                           for region in budget_regions)
 
 
 def make_benchmark_oh_metrics(
@@ -4687,9 +4700,9 @@ def make_benchmark_oh_metrics(
     # Define destination directory
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(dst))
-        return
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any.".format(dst)
+        raise ValueError(dst)
     elif not os.path.isdir(dst):
         os.makedirs(dst)
 
@@ -4857,7 +4870,8 @@ def make_benchmark_oh_metrics(
     dev_num = np.sum(dev_dens.values * dev_vol.values)
 
     # Denominator: Loss rate in troposphere
-    ref_mcf_denom = np.sum(ref_mcf_k * ref_oh_trop * ref_dens_trop * ref_vol_trop)
+    ref_mcf_denom = np.sum(ref_mcf_k * ref_oh_trop * \
+                           ref_dens_trop * ref_vol_trop)
 
     dev_mcf_denom = np.sum(dev_mcf_k * dev_oh_trop * dev_dens_trop * dev_vol_trop)
     ref_ch4_denom = np.sum(ref_ch4_k * ref_oh_trop * ref_dens_trop * ref_vol_trop)
@@ -5256,7 +5270,9 @@ def get_troposphere_mask(ds):
 
 
 def check_units(refdata, devdata, varname):
-    # If units are mol/mol then convert to ppb
+    """
+    If units are mol/mol then convert to ppb
+    """
     conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
     if refdata[varname].units.strip() in conc_units:
         refdata[varname].attrs["units"] = "ppbv"
