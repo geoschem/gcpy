@@ -81,7 +81,6 @@ gchp_ref_version = "gchp_ref_version_string"
 gchp_dev_version = "gchp_dev_version_string"
 
 # Comparisons to run (edit as needed)
-# NOTE: For now, just develop GCC vs GCC and add others later (bmy, 10/11/19)
 gcc_vs_gcc   = True
 gchp_vs_gcc  = False
 gchp_vs_gchp = False
@@ -384,29 +383,13 @@ if gcc_vs_gcc:
         gcc_vs_gcc_devbgt = get_filepaths(gcc_vs_gcc_devdir, "Budget",
                                           bmk_months, is_gcc=True)
         label = "{}".format(bmk_year)
-        species = ["Rn222",
-                   "Pb210",
-                   "Pb210Strat",
-                   "Be7",
-                   "Be7Strat",
-                   "Be10",
-                   "Be10Strat",
-                   "PassiveTracer",
-                   "SF6Tracer",
-                   "CH3ITracer",
-                   "COAnthroEmis25dayTracer",
-                   "COAnthroEmis50dayTracer",
-                   "COUniformEmis25dayTracer",
-                   "GlobEmis90dayTracer",
-                   "NHEmis90dayTracer",
-                   "SHEmis90dayTracer"]
         opbdg.make_operations_budget_table(gcc_dev_version,
                                            gcc_vs_gcc_devbgt,
                                            bmk_type,
                                            label,
                                            dst=plot_dir,
                                            interval=sec_per_yr,
-                                           species=species,
+                                           species=ops_budget_species,
                                            overwrite=True)
 
     if ste_table:
@@ -443,10 +426,10 @@ if gchp_vs_gcc:
     
     if plot_conc:
         # --------------------------------------------------------------
-        # GCC vs GCC Concentration plots
+        # GCHP vs GCC Concentration plots
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} concentration plots %%%".format(
-            bmk_type)
+        title = "\n%%% Creating GCHP vs. GCC {} " \
+              + "concentration plots %%%".format(bmk_type)
         print(title)
    
         # File lists for emissions data (seasonal)
@@ -479,8 +462,10 @@ if gchp_vs_gcc:
         # --------------------------------------------------------------
         # GCHP vs GCC wet deposition
         # --------------------------------------------------------------
-        print("\n%%% Creating GCHP vs. GCC wet deposition plots %%%")
-                
+        title = "\n%%% Creating GCHP vs. GCC {} " \
+              + "wet deposition plots %%%".format(title)
+        print(title)
+        
         # Loop over wet deposition collections
         collection_list = ["WetLossConv", "WetLossLS"]
         for collection in collection_list:
@@ -529,24 +514,124 @@ if gchp_vs_gcc:
         gchp_vs_gcc_devbgt = get_filepaths(gchp_vs_gcc_devdir, "Budget",
                                            gchp_months, is_gchp=True)
         label = "{}".format(bmk_year)
-        species = ["Rn222",
-                   "Pb210",
-                   "Pb210Strat",
-                   "Be7",
-                   "Be7Strat",
-                   "Be10",
-                   "Be10Strat",
-                   "PassiveTracer",
-                   "SF6Tracer",
-                   "CH3ITracer",
-                   "COAnthroEmis25dayTracer",
-                   "COAnthroEmis50dayTracer",
-                   "COUniformEmis25dayTracer",
-                   "GlobEmis90dayTracer",
-                   "NHEmis90dayTracer",
-                   "SHEmis90dayTracer"]
         opbdg.make_operations_budget_table(gchp_dev_version,
                                            gchp_vs_gcc_devbgt,
+                                           bmk_type,
+                                           label,
+                                           dst=plot_dir,
+                                           interval=sec_per_yr,
+                                           species=ops_budget_species,
+                                           overwrite=True)
+
+    if ste_table:
+        # --------------------------------------------------------------
+        # GCHP vs GCC Strat-Trop Exchange
+        # --------------------------------------------------------------
+        title = "%%% Cannot create Strat-Trop Exchange tables for GCHP %%%"
+        print(title)
+        
+# =====================================================================
+# Create GCHP vs GCHP benchmark plots and tables
+# =====================================================================
+
+if gchp_vs_gchp:
+
+    # Get surface area variables on Ref and Dev grids
+    gchp_vs_gchp_areas = {"Ref": get_gchp_area(gchp_vs_gchp_refdir),
+                          "Dev": get_gchp_area(gchp_vs_gchp_devdir)}
+ 
+    if plot_conc:
+        # --------------------------------------------------------------
+        # GCC vs GCC Concentration plots
+        # --------------------------------------------------------------
+        title = "\n%%% Creating GCHP vs. GCHP {} " \
+              + "concentration plots %%%".format(bmk_type)
+        print(title)
+   
+        # File lists for emissions data (seasonal)
+        collection = "SpeciesConc"
+        gchp_vs_gchp_refspc = get_filepaths(gchp_vs_gchp_refdir, collection,
+                                            gchp_seasons, is_gchp=True)
+        gchp_vs_gchp_devspc = get_filepaths(gchp_vs_gcc_devdir, collection,
+                                            gchp_seasons, is_gchp=True)
+
+        # Only plot concentration categories for TransportTracers
+        restrict_cats = ["RnPbBeTracers", "PassiveTracers"]
+
+        # Create seasonal concentration plots
+        for s in range(bmk_nseasons):
+            mon_yr_str = bmk_seasons_names[s]
+            sigdiff_files= gchp_vs_gchp_sigdiff[mon_yr_str]
+            bmk.make_benchmark_plots(gchp_vs_gchp_refspc[s],
+                                     gchp_vs_gchp_refstr,
+                                     gchp_vs_gchp_devspc[s],
+                                     gchp_vs_gchp_devstr,
+                                     dst=gchp_vs_gchp_plotsdir,
+                                     subdst=mon_yr_str,
+                                     benchmark_type=bmk_type,
+                                     collection=collection,
+                                     restrict_cats=restrict_cats,
+                                     overwrite=True,
+                                     sigdiff_files=sigdiff_files)
+
+    if plot_wetdep:
+        # --------------------------------------------------------------
+        # GCHP vs GCHP wet deposition
+        # --------------------------------------------------------------
+        title = "\n%%% Creating GCHP vs. GCHP {} "\
+              + "wet deposition plots %%%".format(bmk_type)
+        print(title)
+                
+        # Loop over wet deposition collections
+        collection_list = ["WetLossConv", "WetLossLS"]
+        for collection in collection_list:
+            gchp_vs_gchp_refwd = get_filepaths(gchp_vs_gchp_refdir, collection, 
+                                               gchp_seasons, is_gchp=True)
+            gchp_vs_gchp_devwd = get_filepaths(gchp_vs_gchp_devdir, collection,
+                                               gchp_seasons, is_gchp=True)
+                                           
+            # Create seasonal plots for wet scavenging
+            for s in range(bmk_nseasons):
+                mon_yr_str = bmk_seasons_names[s]
+                sigdiff_files= gchp_vs_gchp_sigdiff[mon_yr_str]
+                bmk.make_benchmark_plots(gchp_vs_gchp_refwd[s],
+                                         gchp_vs_gchp_refstr,
+                                         gchp_vs_gchp_devwd[s],
+                                         gchp_vs_gchp_devstr,
+                                         dst=gchp_vs_gchp_plotsdir,
+                                         subdst=mon_yr_str,
+                                         overwrite=True,
+                                         benchmark_type=bmk_type,
+                                         collection=collection,
+                                         restrict_cats=[collection],
+                                         normalize_by_area=True,
+                                         areas=gchp_vs_gchp_areas,
+                                         sigdiff_files=sigdiff_files)
+
+    if budget_table:
+        # --------------------------------------------------------------
+        # GCHP vs GCHP budgets tables
+        # --------------------------------------------------------------
+        title = "\n%%% Creating GCHP vs. GCHP {} budgets %%%".format(bmk_type)
+        print(title)
+
+        # Budgets of Radionuclide species
+        print("-- Budgets of radionuclide species")
+        plot_dir = join(gchp_vs_gchp_plotsdir, "Tables")
+        ttbdg.transport_tracers_budgets(maindir,
+                                        gchp_dev_version,
+                                        bmk_year,
+                                        dst=plot_dir,
+                                        is_gchp=True,
+                                        overwrite=True)
+
+        # Change in mass of species after each operation
+        print("-- Change in mass after each operation")
+        gchp_vs_gcc_devbgt = get_filepaths(gchp_vs_gchp_devdir, "Budget",
+                                           gchp_months, is_gchp=True)
+        label = "{}".format(bmk_year)
+        opbdg.make_operations_budget_table(gchp_dev_version,
+                                           gchp_vs_gchp_devbgt,
                                            bmk_type,
                                            label,
                                            dst=plot_dir,
@@ -560,99 +645,7 @@ if gchp_vs_gcc:
         # --------------------------------------------------------------
         title = "%%% Cannot create Strat-Trop Exchange tables for GCHP %%%"
         print(title)
- 
-## =====================================================================
-## Create GCHP vs GCHP benchmark plots and tables
-## =====================================================================
-#
-#if gchp_vs_gchp:
-#
-#    if plot_conc:
-#        # Concentration plots
-#        # (includes lumped species and separates by category)
-#        print("\n%%% Creating GCHP vs. GCHP concentration plots %%%")
-#        bmk.make_benchmark_conc_plots(gchp_vs_gchp_refspc,
-#                                      gchp_vs_gchp_refstr,
-#                                      gchp_vs_gchp_devspc,
-#                                      gchp_vs_gchp_devstr,
-#                                      dst=gchp_vs_gchp_plotsdir,
-#                                      overwrite=True,
-#                                      sigdiff_files=gchp_vs_gchp_sigdiff)
-#
-#    if plot_emis:
-#        # Emissions plots
-#        print("\n%%% Creating GCHP vs. GCHP emissions plots %%%")
-#        bmk.make_benchmark_emis_plots(gchp_vs_gchp_refhco,
-#                                      gchp_vs_gchp_refstr,
-#                                      gchp_vs_gchp_devhco,
-#                                      gchp_vs_gchp_devstr,
-#                                      dst=gchp_vs_gchp_plotsdir,
-#                                      plot_by_spc_cat=True,
-#                                      plot_by_hco_cat=True,
-#                                      overwrite=True,
-#                                      flip_ref=True,
-#                                      flip_dev=True,
-#                                      sigdiff_files=gchp_vs_gchp_sigdiff)
-#
-#    if emis_table:
-#        # Tables of emissions and inventory totals
-#        print("\n%%% Creating GCHP vs. GCHP emissions and inventory tables %%%")
-#        gchp_vs_gchp_reflist = [gchp_vs_gchp_refhco, gchp_vs_gchp_refmet]
-#        gchp_vs_gchp_devlist = [gchp_vs_gchp_devhco, gchp_vs_gchp_devmet]
-#        bmk.make_benchmark_emis_tables(gchp_vs_gchp_reflist,
-#                                       gchp_vs_gchp_refstr,
-#                                       gchp_vs_gchp_devlist,
-#                                       gchp_vs_gchp_devstr,
-#                                       dst=gchp_vs_gchp_plotsdir,
-#                                       overwrite=True)
-#
-#    if plot_jvalues:
-#        # Local noon J-values plots
-#        print("\n%%% Creating GCHP vs. GCHP J-value plots %%%")
-#        bmk.make_benchmark_jvalue_plots(gchp_vs_gchp_refjv,
-#                                        gchp_vs_gchp_refstr,
-#                                        gchp_vs_gchp_devjv,
-#                                        gchp_vs_gchp_devstr,
-#                                        dst=gchp_vs_gchp_plotsdir,
-#                                        overwrite=True,
-#                                        sigdiff_files=gchp_vs_gchp_sigdiff)
-#
-#    if plot_aod:
-#        # Column AOD plots
-#        print("\n%%% Creating GCHP vs. GCHP column AOD plots %%%")
-#        bmk.make_benchmark_aod_plots(gchp_vs_gchp_refaod,
-#                                     gchp_vs_gchp_refstr,
-#                                     gchp_vs_gchp_devaod,
-#                                     gchp_vs_gchp_devstr,
-#                                     dst=gchp_vs_gchp_plotsdir,
-#                                     overwrite=True,
-#                                     sigdiff_files=gchp_vs_gchp_sigdiff)
-#
-## Under development, leave commented out for now (bmy, 9/5/19)
-##    if mass_table:
-##        # Global mass tables
-##        print("\n%%% Creating GCHP vs. GCHP global mass tables %%%")
-##        gchp_vs_gchp_reflist = [gchp_vs_gchp_refrst, gchp_vs_gchp_refmetinst]
-##        gchp_vs_gchp_devlist = [gchp_vs_gchp_devrst, gchp_vs_gchp_devmetinst]
-##        bmk.make_benchmark_mass_tables(gchp_vs_gchp_reflist,
-##                                       gchp_vs_gchp_refstr,
-##                                       gchp_vs_gchp_devlist,
-##                                       gchp_vs_gchp_devstr,
-##                                       dst=gchp_vs_gchp_plotsdir,
-##                                       overwrite=True)
-#
-#    if OH_metrics:
-#        # Global mean OH, MCF Lifetime, CH4 Lifetime
-#        print("\n%%% Creating GCHP vs. GCHP OH metrics %%%")
-#        gchp_vs_gcc_reflist = [gchp_vs_gchp_refcac, gchp_vs_gchp_refmet]
-#        gchp_vs_gcc_devlist = [gchp_vs_gchp_devcac, gchp_vs_gchp_devmet]
-#        bmk.make_benchmark_oh_metrics(gchp_vs_gchp_reflist,
-#                                      gchp_vs_gchp_refstr,
-#                                      gchp_vs_gchp_devlist,
-#                                      gchp_vs_gchp_devstr,
-#                                      dst=gchp_vs_gchp_plotsdir,
-#                                      overwrite=True)
-#
+
 ## =====================================================================
 ## Create GCHP vs GCC difference of differences benchmark plots
 ## =====================================================================
