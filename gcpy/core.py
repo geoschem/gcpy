@@ -1334,7 +1334,9 @@ def gcplot(plot_vals,
     """
     Core plotting routine -- creates a single plot panel.
     """
-    
+
+    data_is_xr = type(plot_vals) is xr.DataArray
+
     #Generate grid if not passed
     if grid == {}:
         res, gridtype = get_input_res(plot_vals)
@@ -1342,15 +1344,19 @@ def gcplot(plot_vals,
 
     # Normalize colors (put into range [0..1] for matplotlib methods)
     if norm == []:
-        vmin = plot_vals.data.min()
-        vmax = plot_vals.data.max()
+        if data_is_xr:
+            vmin = plot_vals.data.min()
+            vmax = plot_vals.data.max()
+        elif type(plot_vals) is np.ndarray:
+            vmin = np.min(plot_vals)
+            vmax = np.max(plot_vals)
         norm = normalize_colors(
             vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
         )
     if xticklabels == []:
         xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
 
-    if unit == "":
+    if unit == "" and data_is_xr:
         unit = plot_vals.units.strip()
 
     if ax == None:
@@ -1359,7 +1365,7 @@ def gcplot(plot_vals,
         if plot_type == "single_level":
             ax = plt.axes(projection = ccrs.PlateCarree())
 
-    if title == "fill":
+    if title == "fill" and data_is_xr:
         title = plot_vals.name
 
     # Create plot
