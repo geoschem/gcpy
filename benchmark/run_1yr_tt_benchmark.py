@@ -120,9 +120,9 @@ gchp_vs_gchp_refdir = join(maindir, gchp_ref_version, "OutputDir")
 gchp_vs_gchp_devdir = join(maindir, gchp_dev_version, "OutputDir")
 
 # Restart file directories (edit as needed)
-gcc_vs_gcc_refrstdir   = join(maindir, gcc_ref_version,  "restarts")
-gcc_vs_gcc_devrstdir   = join(maindir, gcc_dev_version,  "restarts")
-gchp_vs_gcc_refrstdir  = join(maindir, gcc_dev_version)
+gcc_vs_gcc_refrstdir   = join(maindir, gcc_ref_version, "restarts")
+gcc_vs_gcc_devrstdir   = join(maindir, gcc_dev_version, "restarts")
+gchp_vs_gcc_refrstdir  = join(maindir, gcc_dev_version, "restarts")
 gchp_vs_gcc_devrstdir  = join(maindir, gchp_dev_version)
 gchp_vs_gchp_refrstdir = join(maindir, gchp_ref_version)
 gchp_vs_gchp_devrstdir = join(maindir, gchp_dev_version)
@@ -130,11 +130,11 @@ gchp_vs_gchp_devrstdir = join(maindir, gchp_dev_version)
 # Plots directories (edit as needed)
 gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_version, "Plots")
 gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_version,
-                              "Plots/GCHP_version_comparison")
+                              "Plots", "GCHP_version_comparison")
 gchp_vs_gcc_plotsdir   = join(maindir, gchp_dev_version,
-                              "Plots/GCHP_GCC_comparison")
+                              "Plots", "GCHP_GCC_comparison")
 diff_of_diffs_plotsdir = join(maindir, gchp_dev_version,
-                              "Plots/GCHP_GCC_diff_of_diffs")
+                              "Plots", "GCHP_GCC_diff_of_diffs")
 
 # Plot title strings (edit as needed)
 # For gchp_vs_gcc_refstr use gcc_dev_version, not ref (mps, 6/27/19)
@@ -245,7 +245,7 @@ for mon_yr_str in bmk_seasons_names:
 
     if gchp_vs_gchp:
         vstr = "{}_vs_{}.{}".format(
-            gchp_vs_gchp_refstr, gchp_vs_gcc_devstr, mon_yr_str)
+            gchp_vs_gchp_refstr, gchp_vs_gchp_devstr, mon_yr_str)
         sigdiff_files = [
             join(gchp_vs_gchp_sigdir, "{}_sig_diffs_sfc.txt".format(vstr)),
             join(gchp_vs_gchp_sigdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
@@ -253,6 +253,24 @@ for mon_yr_str in bmk_seasons_names:
             join(gchp_vs_gchp_sigdir, "{}_sig_diffs_emissions.txt".format(vstr))
         ]
         gchp_vs_gchp_sigdiff[mon_yr_str] = sigdiff_files
+
+# List of species for the operations budgets
+ops_budget_species = ["Rn222",
+                      "Pb210",
+                      "Pb210Strat",
+                      "Be7",
+                      "Be7Strat",
+                      "Be10",
+                      "Be10Strat",
+                      "PassiveTracer",
+                      "SF6Tracer",
+                      "CH3ITracer",
+                      "COAnthroEmis25dayTracer",
+                      "COAnthroEmis50dayTracer",
+                      "COUniformEmis25dayTracer",
+                      "GlobEmis90dayTracer",
+                      "NHEmis90dayTracer",
+                      "SHEmis90dayTracer"]
 
 # ======================================================================
 # Functions for area normalization
@@ -302,9 +320,8 @@ if gcc_vs_gcc:
         # --------------------------------------------------------------
         # GCC vs GCC Concentration plots
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} concentration plots %%%".format(
-            bmk_type)
-        print(title)
+        title = "\n%%% Creating GCC vs. GCC {} concentration plots %%%"
+        print(title.format(bmk_type))
    
         # File lists for emissions data (seasonal)
         collection = "SpeciesConc"
@@ -336,7 +353,8 @@ if gcc_vs_gcc:
         # --------------------------------------------------------------
         # GCC vs GCC wet deposition
         # --------------------------------------------------------------
-        print("\n%%% Creating GCC vs. GCC wet deposition plots %%%")
+        title = "\n%%% Creating GCC vs. GCC {} wet deposition plots %%%"
+        print(title.format(bmk_type))
                 
         # Loop over wet deposition collections
         collection_list = ["WetLossConv", "WetLossLS"]
@@ -368,8 +386,8 @@ if gcc_vs_gcc:
         # --------------------------------------------------------------
         # GCC vs GCC budgets tables
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} budgets %%%".format(bmk_type)
-        print(title)
+        title = "\n%%% Creating GCC vs. GCC {} budgets %%%"
+        print(title.format(bmk_type))
 
         # Budgets of Radionuclide species
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
@@ -428,9 +446,8 @@ if gchp_vs_gcc:
         # --------------------------------------------------------------
         # GCHP vs GCC Concentration plots
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} " \
-              + "concentration plots %%%".format(bmk_type)
-        print(title)
+        title = "\n%%% Creating GCHP vs. GCC {} concentration plots %%%"
+        print(title.format(bmk_type))
    
         # File lists for emissions data (seasonal)
         collection = "SpeciesConc"
@@ -462,9 +479,8 @@ if gchp_vs_gcc:
         # --------------------------------------------------------------
         # GCHP vs GCC wet deposition
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} " \
-              + "wet deposition plots %%%".format(title)
-        print(title)
+        title = "\n%%% Creating GCHP vs. GCC {} wet deposition plots %%%"
+        print(title.format(bmk_type))
         
         # Loop over wet deposition collections
         collection_list = ["WetLossConv", "WetLossLS"]
@@ -496,8 +512,8 @@ if gchp_vs_gcc:
         # --------------------------------------------------------------
         # GCHP vs GCC budgets tables
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} budgets %%%".format(bmk_type)
-        print(title)
+        title = "\n%%% Creating GCHP vs. GCC {} budgets %%%"
+        print(title.format(bmk_type))
 
         # Budgets of Radionuclide species
         print("-- Budgets of radionuclide species")
@@ -544,9 +560,8 @@ if gchp_vs_gchp:
         # --------------------------------------------------------------
         # GCC vs GCC Concentration plots
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCHP {} " \
-              + "concentration plots %%%".format(bmk_type)
-        print(title)
+        title = "\n%%% Creating GCHP vs. GCHP {} concentration plots %%%"
+        print(title.format(bmk_type))
    
         # File lists for emissions data (seasonal)
         collection = "SpeciesConc"
@@ -578,9 +593,8 @@ if gchp_vs_gchp:
         # --------------------------------------------------------------
         # GCHP vs GCHP wet deposition
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCHP {} "\
-              + "wet deposition plots %%%".format(bmk_type)
-        print(title)
+        title = "\n%%% Creating GCHP vs. GCHP {} wet deposition plots %%%"
+        print(title.format(bmk_type))
                 
         # Loop over wet deposition collections
         collection_list = ["WetLossConv", "WetLossLS"]
@@ -612,8 +626,8 @@ if gchp_vs_gchp:
         # --------------------------------------------------------------
         # GCHP vs GCHP budgets tables
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCHP {} budgets %%%".format(bmk_type)
-        print(title)
+        title = "\n%%% Creating GCHP vs. GCHP {} budgets %%%"
+        print(title.format(bmk_type))
 
         # Budgets of Radionuclide species
         print("-- Budgets of radionuclide species")
