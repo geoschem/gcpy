@@ -18,7 +18,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd
 from .grid.horiz import make_grid_LL, make_grid_CS
-from .grid.regrid import make_regridder_C2L, make_regridder_L2L
+from .grid.regrid import make_regridder_C2L, make_regridder_L2L, create_regridders
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .core import gcplot, call_make_grid, get_input_res, all_zero_or_nan, get_grid_extents
@@ -264,7 +264,7 @@ def compare_single_level(
     varlist=None,
     ilev=0,
     itime=0,
-    weightsdir=None,
+    weightsdir='.',
     pdfname="",
     cmpres=None,
     match_cbar=True,
@@ -393,10 +393,6 @@ def compare_single_level(
         print("Plotting all common variables")
     n_var = len(varlist)
 
-    # If no weightsdir is passed, set to current directory in case it is needed
-    if weightsdir == None:
-        weightsdir = "."
-
     # If no pdf name passed, then do not save to PDF
     savepdf = True
     if pdfname == "":
@@ -407,101 +403,11 @@ def compare_single_level(
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         except:
             continue
-    # =================================================================
-    # Determine input grid resolutions and types
-    # =================================================================
 
-    # GCC output and GCHP output using pre-v1.0.0 MAPL have lat and lon dims
-
-    refres, refgridtype = get_input_res(refdata)
-    devres, devgridtype = get_input_res(devdata)
-
-    # =================================================================
-    # Determine comparison grid resolution and type (if not passed)
-    # =================================================================
-
-    # If no cmpres is passed then choose highest resolution between ref and dev.
-    # If one dataset is lat-lon and the other cubed sphere, and no
-    # comparison grid resolution is passed, then default to 1x1.25
-    if cmpres == None:
-        if refres == devres and refgridtype == "ll":
-            cmpres = refres
-            cmpgridtype = refgridtype
-        elif refgridtype == "ll" and devgridtype == "ll":
-            cmpres = min([refres, devres])
-            cmpgridtype = "ll"
-        elif refgridtype == "cs" and devgridtype == "cs":
-            # CS to CS regridding is not enabled yet, so default to 1x1.25
-            # cmpres = max([refres, devres])
-            # cmpgridtype = 'cs'
-            cmpres = "1x1.25"
-            cmpgridtype = "ll"
-        else:
-            cmpres = "1x1.25"
-            cmpgridtype = "ll"
-    elif "x" in cmpres:
-        cmpgridtype = "ll"
-    else:
-        cmpgridtype = "cs"
-        cmpres = int(cmpres)  # must cast to integer for cubed-sphere
-
-    # Determine what, if any, need regridding.
-    regridref = refres != cmpres
-    regriddev = devres != cmpres
-    regridany = regridref or regriddev
-
-    # =================================================================
-    # Get grid extents, only regridding to extents of each grid
-    # =================================================================
-
-    #refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refdata)
-    #devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devdata)
-    #cmpminlon = min(refminlon, devminlon)
-    #cmpmaxlon = max(refmaxlon, devmaxlon)
-    #cmpminlat = min(refminlat, devminlat)
-    #cmpmaxlat = max(refmaxlat, devmaxlat)
-    
-    # =================================================================
-    # Make grids (ref, dev, and comparison)
-    # =================================================================
-
-    [refgrid, refgrid_list] = call_make_grid(refres, refgridtype, False, False)
-    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, False, False)
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, False, True)
-
-    # =================================================================
-    # Make regridders, if applicable
-    # TODO: Make CS to CS regridders
-    # =================================================================
-
-    msg = "CS to CS regridding is not yet implemented in gcpy. " \
-        + "Ref and dev cubed sphere grids must be the same resolution, " \
-        + "or pass cmpres to compare_single_level as a lat-lon grid resolution."
-
-    if regridref:
-        if refgridtype == "ll":
-            refregridder = make_regridder_L2L(
-                refres, cmpres, weightsdir=weightsdir, reuse_weights=True
-            )
-        else:
-            if cmpgridtype == "cs":
-                raise ValueError(msg)
-            else:
-                refregridder_list = make_regridder_C2L(
-                    refres, cmpres, weightsdir=weightsdir, reuse_weights=True
-                )
-    if regriddev:
-        if devgridtype == "ll":
-            devregridder = make_regridder_L2L(
-                devres, cmpres, weightsdir=weightsdir, reuse_weights=True
-            )
-        else:
-            if cmpgridtype == "cs":
-                raise ValueError(msg)
-            else:
-                devregridder_list = make_regridder_C2L(
-                    devres, cmpres, weightsdir=weightsdir, reuse_weights=True
-                )
+    # Get grid info and regrid if necessary
+    [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref,
+    regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder, devregridder,
+    refregridder_list, devregridder_list] = create_regridders(refdata, devdata, weightsdir, cmpres=cmpres)
 
     # =================================================================
     # Get lat/lon extents, if applicable
@@ -1117,7 +1023,7 @@ def compare_zonal_mean(
     devstr,
     varlist=None,
     itime=0,
-    weightsdir=None,
+    weightsdir='.',
     pdfname="",
     cmpres=None,
     match_cbar=True,
@@ -1261,10 +1167,6 @@ def compare_zonal_mean(
         print("WARNING: no 3D variables to plot zonal mean for!")
         return
 
-    # If no weightsdir is passed, set to current directory in case it is needed
-    if weightsdir == None:
-        weightsdir = "."
-
     # If no pdf name passed, then do not save to PDF
     savepdf = True
     if pdfname == "":
@@ -1329,76 +1231,11 @@ def compare_zonal_mean(
 
     refdata = refdata.isel(lev=pmid_ind_ref)
     devdata = devdata.isel(lev=pmid_ind_dev)
-
-    # ==================================================================
-    # Determine input grid resolutions and types
-    #
-    # GCC output and GCHP output using pre-v1.0.0 MAPL have lat and
-    # lon dims.  GCHP output in v1.0.0 MAPL has XDim and YDim instead.
-    # ==================================================================
-
-    refres, refgridtype = get_input_res(refdata)
-    devres, devgridtype = get_input_res(devdata)
-
-    # ==================================================================
-    # Determine comparison grid resolution (if not passed)
-    # ==================================================================
-
-    # If no cmpres is passed then choose highest resolution between ref and dev.
-    # If both datasets are cubed sphere then default to 1x1.25 for comparison.
-    # If cmpres pass as cubed-sphere, over-ride to be 1x1.25 lat-lon with
-    # a warning.
-    cmpgridtype = "ll"
-    if cmpres == None:
-        if refres == devres and refgridtype == "ll":
-            cmpres = refres
-        elif refgridtype == "ll" and devgridtype == "ll":
-            cmpres = min([refres, devres])
-        else:
-            cmpres = "1x1.25"
-    elif "x" not in cmpres:
-        msg = "WARNING: zonal mean comparison grid must be lat-lon. " \
-            + "Defaulting to 1x1.25"
-        print(msg)
-        cmpres = "1x1.25"
-
-    # Determine what, if any, need regridding.
-    regridref = refres != cmpres
-    regriddev = devres != cmpres
-    regridany = regridref or regriddev
-
-    # ==================================================================
-    # Make grids (ref, dev, and comparison)
-    # ==================================================================
-
-    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, True, False)
-    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, True, False)
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, True, True)
-
-    # ==================================================================
-    # Make regridders, if applicable
-    # TODO: Add CS to CS regridders
-    # ==================================================================
-
-    if regridref:
-        if refgridtype == "ll":
-            refregridder = make_regridder_L2L(
-                refres, cmpres, weightsdir=weightsdir, reuse_weights=True
-            )
-        else:
-            refregridder_list = make_regridder_C2L(
-                refres, cmpres, weightsdir=weightsdir, reuse_weights=True
-            )
-    if regriddev:
-        if devgridtype == "ll":
-            devregridder = make_regridder_L2L(
-                devres, cmpres, weightsdir=weightsdir, reuse_weights=True
-            )
-        else:
-            devregridder_list = make_regridder_C2L(
-                devres, cmpres, weightsdir=weightsdir, reuse_weights=True
-            )
-
+            
+    [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, regriddev,
+     regridany, refgrid, devgrid, cmpgrid, refregridder, devregridder,
+     refregridder_list, devregridder_list] = create_regridders(refdata, devdata, weightsdir=weightsdir,
+                                                               cmpres=cmpres, zm=True)
     ds_refs = [None] * n_var
     ds_devs = [None] * n_var
     for i in range(n_var):
@@ -2788,6 +2625,7 @@ def make_benchmark_plots(
     sigdiff_files=None,
     normalize_by_area=False,
     areas=None,
+    weightsdir=None,
     n_job=-1,
 ):
     """
@@ -2900,6 +2738,9 @@ def make_benchmark_plots(
         devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
+        
+    # Create regridding files if necessary while not in parallel loop
+    [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
     # If we are normalizing by area, then merge the surface areas
     # on the Ref & Dev grids into the Ref & Dev datasets
@@ -2911,7 +2752,7 @@ def make_benchmark_plots(
             msg = "ERROR: normalize_by_area = True but " \
                 + "the 'areas' argument was not passed!"
             raise(ValueError, msg)
-
+            
     # ==================================================================
     # If sending plots to one file then do all plots here and return
     # ==================================================================
@@ -2928,7 +2769,8 @@ def make_benchmark_plots(
                              use_cmap_RdBu=use_cmap_RdBu,
                              log_color_scale=log_color_scale,
                              extra_title_txt=extra_title_txt,
-                             normalize_by_area=normalize_by_area)
+                             normalize_by_area=normalize_by_area,
+                             weightsdir=weightsdir)
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
         # 500 hPa
@@ -2940,7 +2782,8 @@ def make_benchmark_plots(
                              use_cmap_RdBu=use_cmap_RdBu,
                              log_color_scale=log_color_scale,
                              normalize_by_area=normalize_by_area,
-                             extra_title_txt=extra_title_txt)
+                             extra_title_txt=extra_title_txt,
+                             weightsdir=weightsdir)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -2952,7 +2795,8 @@ def make_benchmark_plots(
                            use_cmap_RdBu=use_cmap_RdBu,
                            log_color_scale=log_color_scale,
                            normalize_by_area=normalize_by_area,
-                           extra_title_txt=extra_title_txt)
+                           extra_title_txt=extra_title_txt,
+                           weightsdir=weightsdir)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -3052,6 +2896,7 @@ def make_benchmark_plots(
                 normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_sfc,
+                weightsdir=weightsdir
             )
             diff_sfc[:] = [v.replace(coll_prefix, "") for v in diff_sfc]
             cat_diff_dict['sfc'] = diff_sfc
@@ -3086,6 +2931,7 @@ def make_benchmark_plots(
                 normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_500,
+                weightsdir=weightsdir
             )
             diff_500[:] = [v.replace(coll_prefix, "") for v in diff_500]
             #dict_500[filecat] = diff_500
@@ -3123,6 +2969,7 @@ def make_benchmark_plots(
                 normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_zm,
+                weightsdir=weightsdir
             )
             diff_zm[:] = [v.replace(coll_prefix, "") for v in diff_zm]
             #dict_zm = diff_zm
@@ -3155,6 +3002,7 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 log_color_scale=log_color_scale,
                 normalize_by_area=normalize_by_area,
+                weightsdir=weightsdir
             )
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict,
@@ -3224,6 +3072,7 @@ def make_benchmark_emis_plots(
     flip_dev=False,
     log_color_scale=False,
     sigdiff_files=None,
+    weightsdir='.',
     n_job=-1,
 ):
     """
@@ -3359,6 +3208,9 @@ def make_benchmark_emis_plots(
     # with all missing values (NaNs). And vice-versa.
     [refds, devds] = add_missing_variables(refds, devds)
 
+    # Create regridding files if necessary while not in parallel loop
+    [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
+
     # Combine 2D and 3D variables into an overall list
     quiet = not verbose
     vardict = core.compare_varnames(refds, devds, quiet=quiet)
@@ -3395,6 +3247,7 @@ def make_benchmark_emis_plots(
             pdfname=pdfname,
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
+            weightsdir=weightsdir
         )
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix="Emis", verbose=verbose)
@@ -3460,6 +3313,7 @@ def make_benchmark_emis_plots(
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_emis,
+                weightsdir=weightsdir
             )
 
             add_bookmarks_to_pdf(
@@ -3563,6 +3417,7 @@ def make_benchmark_emis_plots(
                 flip_dev=flip_dev,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
+                weightsdir=weightsdir
             )
             add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
 
@@ -3726,6 +3581,7 @@ def make_benchmark_jvalue_plots(
     flip_dev=False,
     log_color_scale=False,
     sigdiff_files=None,
+    weightsdir='.'
 ):
     """
     Creates PDF files containing plots of J-values for model
@@ -3860,6 +3716,9 @@ def make_benchmark_jvalue_plots(
     # with all missing values (NaNs). And vice-versa.
     [refds, devds] = add_missing_variables(refds, devds)
 
+    # Create regridding files if necessary
+    [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
+
     # Get a list of the 3D variables in both datasets
     if varlist == None:
         quiet = not verbose
@@ -3944,6 +3803,7 @@ def make_benchmark_jvalue_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_sfc,
+            weightsdir=weightsdir
         )
         diff_sfc[:] = [v.replace(prefix, "") for v in diff_sfc]
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
@@ -3970,6 +3830,7 @@ def make_benchmark_jvalue_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_500,
+            weightsdir=weightsdir
         )
         diff_500[:] = [v.replace(prefix, "") for v in diff_500]
         add_bookmarks_to_pdf(pdfname, varlist,
@@ -3998,6 +3859,7 @@ def make_benchmark_jvalue_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_zm,
+            weightsdir=weightsdir
         )
         diff_zm[:] = [v.replace(prefix, "") for v in diff_zm]
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
@@ -4024,6 +3886,7 @@ def make_benchmark_jvalue_plots(
             flip_dev=flip_dev,
             extra_title_txt=extra_title_txt,
             log_color_scale=log_color_scale,
+            weightsdir=weightsdir
         )
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
@@ -4074,6 +3937,7 @@ def make_benchmark_aod_plots(
     verbose=False,
     log_color_scale=False,
     sigdiff_files=None,
+    weightsdir='.'
 ):
     """
     Creates PDF files containing plots of column aerosol optical
@@ -4175,6 +4039,9 @@ def make_benchmark_aod_plots(
         devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
+
+    # Create regridding files if necessary
+    [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
     # NOTE: GCHP diagnostic variable exports are defined before the
     # input.geos file is read.  This means "WL1" will not have been
@@ -4323,6 +4190,7 @@ def make_benchmark_aod_plots(
         log_color_scale=log_color_scale,
         extra_title_txt=extra_title_txt,
         sigdiff_list=diff_aod,
+        weightsdir=weightsdir
     )
     diff_aod[:] = [v.replace("Column_AOD_", "") for v in diff_aod]
     add_bookmarks_to_pdf(
