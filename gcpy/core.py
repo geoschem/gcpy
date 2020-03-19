@@ -14,11 +14,10 @@ import numpy as np
 import xarray as xr
 import xbpch
 import cartopy.crs as ccrs
-from .constants import skip_these_vars
+import gcpy.constants as gcon
 from .plot import WhGrYlRd
 from .grid.horiz import make_grid_LL, make_grid_CS
 from cartopy.mpl.geoaxes import GeoAxes
-
 
 
 # YAML files to read
@@ -88,7 +87,7 @@ def open_dataset(filename, **kwargs):
             '"bpch" or "nc"!'.format(file_extension)
         )
 
-    return _opener(filename, **kwargs, drop_variables=skip_these_vars)
+    return _opener(filename, **kwargs, drop_variables=gcon.skip_these_vars)
 
 
 def open_mfdataset(
@@ -190,7 +189,7 @@ def open_mfdataset(
         compat=compat,
         preprocess=preprocess,
         lock=lock,
-        drop_variables=skip_these_vars,
+        drop_variables=gcon.skip_these_vars,
         **kwargs
     )
 
