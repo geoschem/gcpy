@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''Unit tests for methods in time.py'''
 
 from __future__ import print_function
