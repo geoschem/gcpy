@@ -251,10 +251,14 @@ def sixplot(
         else:
             if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
-
+    
+    try:
+        cb.formatter.set_useOffset(False)
+    except:
+        #not all automatically chosen colorbar formatters properly handle the above method
+        pass
     cb.update_ticks()
     cb.set_label(unit)
-
 
 def compare_single_level(
     refdata,
