@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''Unit tests for functions in benchmark.py'''
 #aerosols, jvalues, restart, budget, concafterchem, speciesconc, HEMCO
 
