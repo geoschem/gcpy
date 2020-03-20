@@ -1,5 +1,6 @@
-'''Unit tests for methods in units.py'''
+#!/usr/bin/env python
 
+'''Unit tests for methods in units.py'''
 
 from gcpy.units import adjust_units
 

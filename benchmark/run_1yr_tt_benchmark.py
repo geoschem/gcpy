@@ -80,6 +80,9 @@ gcc_dev_version = "gcc_dev_version_string"
 gchp_ref_version = "gchp_ref_version_string"
 gchp_dev_version = "gchp_dev_version_string"
 
+# Weights directory (**MUST EDIT**)
+weightsdir = "/path/to/weights/directory"
+
 # Comparisons to run (edit as needed)
 gcc_vs_gcc   = True
 gchp_vs_gcc  = False
@@ -343,6 +346,7 @@ if gcc_vs_gcc:
                                      gcc_vs_gcc_devstr,
                                      dst=gcc_vs_gcc_plotsdir,
                                      subdst=mon_yr_str,
+                                     weightsdir=weightsdir,
                                      benchmark_type=bmk_type,
                                      collection=collection,
                                      restrict_cats=restrict_cats,
@@ -374,6 +378,7 @@ if gcc_vs_gcc:
                                          gcc_vs_gcc_devstr,
                                          dst=gcc_vs_gcc_plotsdir,
                                          subdst=mon_yr_str,
+                                         weigthsdir=weightsdir,
                                          overwrite=True,
                                          benchmark_type=bmk_type,
                                          collection=collection,
@@ -469,6 +474,7 @@ if gchp_vs_gcc:
                                      gchp_vs_gcc_devstr,
                                      dst=gchp_vs_gcc_plotsdir,
                                      subdst=mon_yr_str,
+                                     weightsdir=weightsdir,
                                      benchmark_type=bmk_type,
                                      collection=collection,
                                      restrict_cats=restrict_cats,
@@ -500,6 +506,7 @@ if gchp_vs_gcc:
                                          gchp_vs_gcc_devstr,
                                          dst=gchp_vs_gcc_plotsdir,
                                          subdst=mon_yr_str,
+                                         weightsdir=weightsdir,
                                          overwrite=True,
                                          benchmark_type=bmk_type,
                                          collection=collection,
@@ -583,6 +590,7 @@ if gchp_vs_gchp:
                                      gchp_vs_gchp_devstr,
                                      dst=gchp_vs_gchp_plotsdir,
                                      subdst=mon_yr_str,
+                                     weightsdir=weightsdir,
                                      benchmark_type=bmk_type,
                                      collection=collection,
                                      restrict_cats=restrict_cats,
@@ -614,6 +622,7 @@ if gchp_vs_gchp:
                                          gchp_vs_gchp_devstr,
                                          dst=gchp_vs_gchp_plotsdir,
                                          subdst=mon_yr_str,
+                                         weightsdir=weightsdir,
                                          overwrite=True,
                                          benchmark_type=bmk_type,
                                          collection=collection,

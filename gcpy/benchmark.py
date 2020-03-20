@@ -23,7 +23,7 @@ from .grid.gc_vertical import GEOS_72L_grid
 from . import core
 from .core import gcplot, call_make_grid, get_input_res, all_zero_or_nan, get_grid_extents
 from .units import convert_units
-from .constants import skip_these_vars
+import gcpy.constants as gcon
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
 import warnings
@@ -2052,13 +2052,13 @@ def create_total_emissions_table(
 
     # Make sure that the area variable is present in both refdata and devdata
     if ref_area_varname not in refdata.data_vars.keys():
-        raise ValueError(
-            "Area variable {} is not in the ref Dataset!".format(ref_area_varname)
-        )
+        msg = "Area variable {} is not in the ref Dataset!".format(
+            ref_area_varname)
+        raise ValueError(msg)
     if dev_area_varname not in devdata.data_vars.keys():
-        raise ValueError(
-            "Area variable {} is not in the dev Dataset!".format(dev_area_varname)
-        )
+        msg = "Area variable {} is not in the dev Dataset!".format(
+            dev_area_varname)
+        raise ValueError(msg)
 
     # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
@@ -2116,7 +2116,8 @@ def create_total_emissions_table(
 
         # If no emissions are found, then skip to next species
         if len(varnames) == 0:
-            print("No emissions found for {} ... skippping".format(species_name))
+            msg = "No emissions found for {} ... skippping"
+            print(msg.format(species_name))
             continue
 
         # Check if there is a total emissions variable in the list
@@ -2719,7 +2720,8 @@ def make_benchmark_plots(
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
         msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any.".format(dst)
+            + "files in that directory, if any."
+        msg = msg.format(dst)
         raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
@@ -2733,15 +2735,17 @@ def make_benchmark_plots(
 
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
+        refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
-        raise FileNotFoundError("Could not find Ref file: {}".format(ref))
+        msg ="Could not find Ref file: {}".format(ref)
+        raise FileNotFoundError(msg)
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
+        devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
-        raise FileNotFoundError("Could not find Dev file: {}!".format(dev))
+        msg = "Could not find Dev file: {}!".format(dev)
+        raise FileNotFoundError(msg)
         
     # Create regridding files if necessary while not in parallel loop
     [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
@@ -2755,7 +2759,7 @@ def make_benchmark_plots(
         else:
             msg = "ERROR: normalize_by_area = True but " \
                 + "the 'areas' argument was not passed!"
-            raise(ValueError, msg)
+            raise ValueError(msg)
             
     # ==================================================================
     # If sending plots to one file then do all plots here and return
@@ -2765,6 +2769,7 @@ def make_benchmark_plots(
         var_prefix = 'SpeciesConc_'
         varlist = [k for k in refds.data_vars.keys() if var_prefix in k]
         varlist.sort()
+        
         # Surface
         pdfname = os.path.join(dst,'SpeciesConc_Sfc.pdf')
         compare_single_level(refds, refstr, devds, devstr, 
@@ -2775,6 +2780,7 @@ def make_benchmark_plots(
                              extra_title_txt=extra_title_txt,
                              normalize_by_area=normalize_by_area,
                              weightsdir=weightsdir)
+        
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
         # 500 hPa
@@ -2870,9 +2876,8 @@ def make_benchmark_plots(
                     continue
                 varlist.append(varname)
         if warninglist != []:
-            msg = "\n\nWarning: variables in {} category " \
-                + "not in dataset: {}".format(filecat, warninglist)
-            print(msg)
+            msg = "\n\nWarning: variables in {} category not in dataset: {}"
+            print(msg.format(filecat, warninglist))
 
         # -----------------------
         # Surface plots
@@ -3177,7 +3182,8 @@ def make_benchmark_emis_plots(
     # Create destination folder if it does not exist
     if os.path.isdir(dst) and not overwrite:
         msg = "Directory {} exists. Pass overwrite=True to overwrite "\
-            + "files in that directory, if any.".format(dst)
+            + "files in that directory, if any."
+        msg = msg.format(dst)
         raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
@@ -3197,13 +3203,13 @@ def make_benchmark_emis_plots(
 
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
+        refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Ref file: {}".format(ref))
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
+        devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
 
@@ -3498,12 +3504,10 @@ def make_benchmark_emis_tables(
 
     # Create destination folder
     if os.path.isdir(dst) and not overwrite:
-        print(
-            "Directory {} exists. Pass overwrite=True to overwrite files in that directory, if any.".format(
-                dst
-            )
-        )
-        return
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any."
+        msg = msg.format(dst)
+        raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
@@ -3519,13 +3523,13 @@ def make_benchmark_emis_tables(
     # Read the Ref dataset and make sure that the area variables are present
     if len(reflist) == 1:
         reflist = [reflist]
-    refds = xr.open_mfdataset(reflist, drop_variables=skip_these_vars)
+    refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
     refds = core.check_for_area(refds)
 
     # Read the Dev dataset and make sure that area variables are present
     if len(devlist) == 1:
         devlist = [devlist]
-    devds = xr.open_mfdataset(devlist, drop_variables=skip_these_vars)
+    devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
     devds = core.check_for_area(devds)
 
     # ==================================================================
@@ -3698,20 +3702,21 @@ def make_benchmark_jvalue_plots(
     # Create the destination folder if it does not exist
     if os.path.isdir(dst) and not overwrite:
         msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in tht directory, if any.".format(dst)
+            + "files in tht directory, if any."
+        msg = msg.format(dst)
         raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
     # Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
+        refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Ref file: {}".format(ref))
 
     # Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
+        devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
 
@@ -4013,7 +4018,8 @@ def make_benchmark_aod_plots(
     # Create the destination directory if it does not exist
     if os.path.isdir(dst) and not overwrite:
         msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any.".format(msg)
+            + "files in that directory, if any."
+        msg = msg.format(dst)
         raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
@@ -4034,13 +4040,13 @@ def make_benchmark_aod_plots(
 
     # Read the Ref dataset
     try:
-        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
+        refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Ref file: {}".format(ref))
 
     # Read the Dev dataset
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
+        devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
 
@@ -4287,7 +4293,8 @@ def make_benchmark_mass_tables(
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
         msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any.".format(dst)
+            + "files in that directory, if any."
+        msg = msg.format(dst)
         raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.makedirs(dst)
@@ -4298,13 +4305,13 @@ def make_benchmark_mass_tables(
 
     # Ref
     try:
-        refds = xr.open_mfdataset(reflist, drop_variables=skip_these_vars)
+        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Error opening Ref files: {}".format(reflist))
 
     # Dev dataset
     try:
-        devds = xr.open_mfdataset(devlist, drop_variables=skip_these_vars)
+        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Error opening Dev files: {}!".format(devlist))
 
@@ -4465,7 +4472,8 @@ def make_benchmark_budget_tables(
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
         msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any.".format(dst)
+            + "files in that directory, if any."
+        msg = msg.format(dst)
         raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
@@ -4483,7 +4491,7 @@ def make_benchmark_budget_tables(
 
     # Dev
     try:
-        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
+        devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
 
@@ -4578,8 +4586,9 @@ def make_benchmark_oh_metrics(
     # ==================================================================
     if os.path.isdir(dst) and not overwrite:
         msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any.".format(dst)
-        raise ValueError(dst)
+            + "files in that directory, if any."
+        msg = msg.format(dst)
+        raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.makedirs(dst)
 
@@ -4589,7 +4598,7 @@ def make_benchmark_oh_metrics(
 
     # Ref
     try:
-        refds = xr.open_mfdataset(reflist, drop_variables=skip_these_vars)
+        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError(
             "Could not find one of the Ref files: {}".format(reflist)
@@ -4597,7 +4606,7 @@ def make_benchmark_oh_metrics(
 
     # Dev
     try:
-        devds = xr.open_mfdataset(devlist, drop_variables=skip_these_vars)
+        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
     except FileNotFoundError:
         raise FileNotFoundError(
             "Could not find one of the Dev files: {}".format(devlist)
@@ -4655,9 +4664,9 @@ def make_benchmark_oh_metrics(
     # ==================================================================
 
     # Physical constants
-    Avo = constants.AVOGADRO   # molec/mol
-    mw_air = constants.MW_AIR  # g/mole dry air
-    g0 = constants.G           # m/s2
+    Avo = gcon.AVOGADRO   # molec/mol
+    mw_air = gcon.MW_AIR  # g/mole dry air
+    g0 = gcon.G           # m/s2
 
     # Ref
     ref_oh_trop = np.ma.masked_array(ref_oh.values, ref_tropmask)
