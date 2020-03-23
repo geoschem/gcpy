@@ -378,7 +378,7 @@ if gcc_vs_gcc:
                                          gcc_vs_gcc_devstr,
                                          dst=gcc_vs_gcc_plotsdir,
                                          subdst=mon_yr_str,
-                                         weigthsdir=weightsdir,
+                                         weightsdir=weightsdir,
                                          overwrite=True,
                                          benchmark_type=bmk_type,
                                          collection=collection,
