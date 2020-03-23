@@ -1397,16 +1397,31 @@ def gcplot(plot_vals,
 
     elif gridtype == "ll":
         #Lat/Lon single level
-        ax.coastlines()
         if extent == (None, None, None, None):
-            [minlon, maxlon] = [min(grid["lon_b"]), max(grid["lon_b"])]
-            [minlat, maxlat] = [min(grid["lat_b"]), max(grid["lat_b"])]
-            extent = (minlon, maxlon, minlat, maxlat)
+            extent = get_grid_extents(grid)
+        elif type(plot_vals) is xr.DataArray:
+            [minlon, maxlon, minlat, maxlat] = extent
+            print(minlon,maxlon,minlat,maxlat)
+            #filter data by bounds of extent
+            plot_vals = plot_vals.where(plot_vals.lon>=minlon, 
+                                        drop=True).where(plot_vals.lon<=maxlon,
+                                                         drop=True).where(plot_vals.lat>=minlat, 
+                                                                          drop=True).where(plot_vals.lat<=maxlat, drop=True)
+        else:
+            #for numpy arrays
+            [minlon, maxlon, minlat, maxlat] = extent
+            minlon_ind = np.where(grid["lon"] >= minlon)[0][0]
+            maxlon_ind = np.where(grid["lon"] <= maxlon)[0][-1]
+            minlat_ind = np.where(grid["lat"] >= minlat)[0][0]
+            maxlat_ind = np.where(grid["lat"] <= maxlat)[0][-1]
+            #assume lat comes first in indexing
+            plot_vals = plot_vals[minlat_ind:maxlat_ind+1,minlon_ind:maxlon_ind+1].squeeze()
         # Create a lon/lat plot
         plot = ax.imshow(
             plot_vals, extent=extent,
             transform=ccrs.PlateCarree(), cmap=comap, norm=norm
         )
+        ax.coastlines()
     else:
         #Cubed-sphere single level
         ax.coastlines()

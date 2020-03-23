@@ -32,6 +32,11 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refds)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devds)
+    cmpminlon = min(x for x in [refminlon, devminlon] if x is not None)
+    cmpmaxlon = max(x for x in [refmaxlon, devmaxlon] if x is not None)
+    cmpminlat = min(x for x in [refminlat, devminlat] if x is not None)
+    cmpmaxlat = max(x for x in [refmaxlat, devmaxlat] if x is not None)
+
     # ==================================================================
     # Determine comparison grid resolution and type (if not passed)
     # ==================================================================
@@ -76,15 +81,19 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     # ==================================================================
     # Make grids (ref, dev, and comparison)
     # ==================================================================
-
+    print(refminlon,refmaxlon,refminlat,refmaxlat)
     [refgrid, regrid_list] = call_make_grid(refres, refgridtype, True, False, 
                                             minlon=refminlon, maxlon=refmaxlon,
                                             minlat=refminlat, maxlat=refmaxlat)
+    print(refgrid)
     [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, True, False,
                                             minlon=devminlon, maxlon=devmaxlon,
                                             minlat=devminlat, maxlat=devmaxlat)
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, True, True)
-
+    print(devgrid)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, True, True,
+                                            minlon=cmpminlon, maxlon=cmpmaxlon,
+                                            minlat=cmpminlat, maxlat=cmpmaxlat)
+    print(cmpgrid)
     # =================================================================
     # Make regridders, if applicable
     # TODO: Make CS to CS regridders
