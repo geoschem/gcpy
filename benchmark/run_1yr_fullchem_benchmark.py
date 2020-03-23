@@ -78,6 +78,9 @@ gcc_dev_version = "gcc_dev_version_string"
 gchp_ref_version = "gchp_ref_version_string"
 gchp_dev_version = "gchp_dev_version_string"
 
+# Path to regridding weights (*MUST EDIT*)
+weightsdir = "/path/to/weights/directory"
+
 # Comparisons to run (edit as needed)
 # NOTE: For now, just develop GCC vs GCC and add others later (bmy, 10/11/19)
 gcc_vs_gcc   = True
@@ -244,9 +247,8 @@ if gcc_vs_gcc:
         # GCC vs GCC Concentration plots
         # Includes lumped species and separates plots by category
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} concentration plots %%%".format(
-            bmk_type)
-        print(title)
+        title = "\n%%% Creating GCC vs. GCC {} concentration plots %%%"
+        print(title.format(bmk_type))
    
         # File lists for emissions data (seasonal)
         collection = "SpeciesConc"
@@ -269,6 +271,7 @@ if gcc_vs_gcc:
                                      gcc_vs_gcc_devstr,
                                      dst=gcc_vs_gcc_plotsdir,
                                      subdst=mon_yr_str,
+                                     weightsdir=weightsdir,
                                      benchmark_type=bmk_type,
                                      collection=collection,
                                      plot_by_spc_cat=plot_by_spc_cat,
@@ -280,9 +283,8 @@ if gcc_vs_gcc:
         # --------------------------------------------------------------
         # GCC vs GCC emissions plots
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} emissions plots %%%".format(
-            bmk_type)
-        print(title)
+        title = "\n%%% Creating GCC vs. GCC {} emissions plots %%%"
+        print(title.format(bmk_type))
 
         # File lists for emissions data (seasonal)
         gcc_vs_gcc_refhco = get_filepaths(gcc_vs_gcc_refdir, "Emissions",
@@ -300,6 +302,7 @@ if gcc_vs_gcc:
                                           gcc_vs_gcc_devstr,
                                           dst=gcc_vs_gcc_plotsdir,
                                           subdst=mon_yr_str,
+                                          weightsdir=weightsdir,
                                           plot_by_spc_cat=plot_by_spc_cat,
                                           plot_by_hco_cat=plot_by_hco_cat,
                                           overwrite=True,
@@ -309,8 +312,8 @@ if gcc_vs_gcc:
         # --------------------------------------------------------------
         # GCC vs GCC tables of emission and inventory totals
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} emissions and inventory totals %%%".format(bmk_type)
-        print(title)
+        title = "\n%%% Creating GCC vs. GCC {} emissions & inventory totals %%%"
+        print(title.format(bmk_type))
 
         # File lists for J-values data (monthly)
         gcc_vs_gcc_refhco = get_filepaths(gcc_vs_gcc_refdir, "Emissions",
@@ -331,9 +334,8 @@ if gcc_vs_gcc:
         # --------------------------------------------------------------
         # GCC vs GCC J-value plots
         # --------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} J-value plots %%%".format(
-            bmk_type)
-        print(title)
+        title = "\n%%% Creating GCC vs. GCC {} J-value plots %%%"
+        print(title.format(bmk_type))
 
         # Paths to J-value data (seasonal)
         gcc_vs_gcc_refjv = get_filepaths(gcc_vs_gcc_refdir, "JValues",
@@ -351,6 +353,7 @@ if gcc_vs_gcc:
                                             gcc_vs_gcc_devstr,
                                             dst=gcc_vs_gcc_plotsdir,
                                             subdst=mon_yr_str,
+                                            weightsdir=weightsdir,
                                             overwrite=True,
                                             sigdiff_files=sigdiff_files)
 
@@ -378,6 +381,7 @@ if gcc_vs_gcc:
                                          gcc_vs_gcc_devstr,
                                          dst=gcc_vs_gcc_plotsdir,
                                          subdst=mon_yr_str,
+                                         weightsdir=weightsdir,
                                          overwrite=True,
                                          sigdiff_files=sigdiff_files)
 

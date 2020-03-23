@@ -73,7 +73,7 @@ FullChemBenchmark:
       - IBr
       - ICl
       - IO
-      - INO2
+      - IONO
       - IONO2
       - CH3I
       - CH2I2
@@ -165,12 +165,9 @@ FullChemBenchmark:
       - ASOG3
     Isoprene_SOA:
       - INDIOL
-      - ISN1OA
       - LVOCOA
       - SOAIE
       - SOAGX
-      - SOAME
-      - SOAMG
     Simple_SOA:
       - SOAP
       - SOAS

@@ -5,6 +5,7 @@
 # ======================================================================
 
 from calendar import monthrange
+import gcpy.constants as constants
 import numpy as np
 import os
 from os.path import join
@@ -74,7 +75,8 @@ class _GlobVars:
         # ------------------------------------------
 
         # Read the Budget collection
-        self.ds_bdg = xr.open_mfdataset(files)
+        skip_vars = constants.skip_these_vars
+        self.ds_bdg = xr.open_mfdataset(files, drop_variables=skip_vars)
 
         # Variable list
         self.varlist = [v for v in self.ds_bdg.data_vars.keys() \
