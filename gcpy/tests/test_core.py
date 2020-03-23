@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 '''Unit tests for methods in core.py.'''
 
 from gcpy.core import filter_names

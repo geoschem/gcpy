@@ -14,11 +14,10 @@ import numpy as np
 import xarray as xr
 import xbpch
 import cartopy.crs as ccrs
-from .constants import skip_these_vars
+import gcpy.constants as gcon
 from .plot import WhGrYlRd
 from .grid.horiz import make_grid_LL, make_grid_CS
 from cartopy.mpl.geoaxes import GeoAxes
-
 
 
 # YAML files to read
@@ -88,7 +87,7 @@ def open_dataset(filename, **kwargs):
             '"bpch" or "nc"!'.format(file_extension)
         )
 
-    return _opener(filename, **kwargs, drop_variables=skip_these_vars)
+    return _opener(filename, **kwargs, drop_variables=gcon.skip_these_vars)
 
 
 def open_mfdataset(
@@ -190,7 +189,7 @@ def open_mfdataset(
         compat=compat,
         preprocess=preprocess,
         lock=lock,
-        drop_variables=skip_these_vars,
+        drop_variables=gcon.skip_these_vars,
         **kwargs
     )
 
@@ -447,7 +446,7 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
     """
     Function to convert the non-standard bpch diagnostic names
     to names used in the GEOS-Chem netCDF diagnostic outputs.
-    
+
     Args:
     -----
         ds : xarray Dataset
@@ -728,19 +727,19 @@ def filter_names(names, text=""):
 
         text: str
             Target text string for restricting the search.
-    
+
     Returns:
     --------
         filtered_names: list of str
             Returns all elements of names that contains the substring
             specified by the "text" argument.  If "text" is omitted,
             then the original contents of names will be returned.
-        
+
     Examples:
     ---------
         Obtain a list of variable names that contain the substrings
         "CO", "NO", and "O3":
-        
+
         >>> import gcpy
         >>> import xarray as xr
         >>> refdata = xr.open_dataset("ref_data_file.nc")
@@ -1086,7 +1085,7 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
 def check_for_area(ds, gcc_area_name="AREA", gchp_area_name="Met_AREAM2"):
     """
     Makes sure that a dataset has a surface area variable contained
-    within it.  
+    within it.
 
     GEOS-Chem Classic files all contain surface area as variable AREA.
     GCHP files do not and area must be retrieved from the met-field
@@ -1098,7 +1097,7 @@ def check_for_area(ds, gcc_area_name="AREA", gchp_area_name="Met_AREAM2"):
     -----
         ds : xarray Dataset
             The Dataset object that will be checked.
- 
+
     Keyword Args (optional):
     ------------------------
         gcc_area_name : str
@@ -1131,7 +1130,7 @@ def check_for_area(ds, gcc_area_name="AREA", gchp_area_name="Met_AREAM2"):
     return ds
 
 
-def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
+def get_filepaths(outputdir, collections, dates, is_gcc=False, is_gchp=False):
     """
     Routine to return filepaths for a given GEOS-Chem "Classic"
     (aka "GCC") or GCHP diagnostic collection.
@@ -1170,10 +1169,11 @@ def get_filepaths(outputdir, collections, dates, is_gcc=True, is_gchp=False):
     # ==================================================================
 
     # Error check input flags
-    if (not is_gcc) and (not is_gchp):
+    if is_gcc == is_gchp:
         msg = (
-            "Both is_gcc=False and is_gchp=False!  At present, "
-            + "get_filepaths only works with GCC or GCHP data!"
+            "Both is_gcc={} and is_gchp={}!  At present, "
+            + "get_filepaths returns either GCC or GCHP data! "
+            + "but not both!".format(is_gcc, is_gchp)
         )
         raise ValueError(msg)
 
@@ -1330,6 +1330,12 @@ def gcplot(plot_vals,
            xtick_positions=np.arange(-90,91,30),
            xticklabels = []
 ):
+    """
+    Core plotting routine -- creates a single plot panel.
+    """
+
+    data_is_xr = type(plot_vals) is xr.DataArray
+
     #Generate grid if not passed
     if grid == {}:
         res, gridtype = get_input_res(plot_vals)
@@ -1337,15 +1343,19 @@ def gcplot(plot_vals,
 
     # Normalize colors (put into range [0..1] for matplotlib methods)
     if norm == []:
-        vmin = plot_vals.data.min()
-        vmax = plot_vals.data.max()
+        if data_is_xr:
+            vmin = plot_vals.data.min()
+            vmax = plot_vals.data.max()
+        elif type(plot_vals) is np.ndarray:
+            vmin = np.min(plot_vals)
+            vmax = np.max(plot_vals)
         norm = normalize_colors(
             vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
         )
     if xticklabels == []:
         xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
 
-    if unit == "":
+    if unit == "" and data_is_xr:
         unit = plot_vals.units.strip()
 
     if ax == None:
@@ -1353,15 +1363,15 @@ def gcplot(plot_vals,
             ax = plt.axes()
         if plot_type == "single_level":
             ax = plt.axes(projection = ccrs.PlateCarree())
-            
-    if title == "fill":
+
+    if title == "fill" and data_is_xr:
         title = plot_vals.name
-        
+
     # Create plot
     ax.set_title(title)
     if plot_type == "zonal_mean":
         if pedge.all() == -1:
-            pedge = GEOS_72L_grid.p_edge()            
+            pedge = GEOS_72L_grid.p_edge()
         if pedge_ind.all() == -1:
             pedge_ind = np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))
             pedge_ind = pedge_ind[0]
@@ -1386,81 +1396,91 @@ def gcplot(plot_vals,
         ax.set_xticklabels(xticklabels)
 
     elif gridtype == "ll":
-        #Lat/Lon single level                         
-        ax.coastlines()                                                                                                                
-        if extent == (None, None, None, None):                                                                                         
-            [minlon, maxlon] = [min(grid["lon_b"]), max(grid["lon_b"])]                                                                
-            [minlat, maxlat] = [min(grid["lat_b"]), max(grid["lat_b"])]                                                                
-            extent = (minlon, maxlon, minlat, maxlat)                                                                                  
-        # Create a lon/lat plot                                                                                                        
-        plot = ax.imshow(                                                                                                              
-            plot_vals, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm                                               
-        )                                                                                                                              
-    else:                                                                                                                              
-        #Cubed-sphere single level                                                                                                     
-        ax.coastlines()                                                                                                                
-        try: 
-            if masked_data == None:                                                                                                        
+        #Lat/Lon single level
+        ax.coastlines()
+        if extent == (None, None, None, None):
+            [minlon, maxlon] = [min(grid["lon_b"]), max(grid["lon_b"])]
+            [minlat, maxlat] = [min(grid["lat_b"]), max(grid["lat_b"])]
+            extent = (minlon, maxlon, minlat, maxlat)
+        # Create a lon/lat plot
+        plot = ax.imshow(
+            plot_vals, extent=extent,
+            transform=ccrs.PlateCarree(), cmap=comap, norm=norm
+        )
+    else:
+        #Cubed-sphere single level
+        ax.coastlines()
+        try:
+            if masked_data == None:
                 masked_data = np.ma.masked_where(np.abs(grid["lon"] - 180) < 2, plot_vals.data.reshape(6, res, res))
         except ValueError:
             #Comparison of numpy arrays throws errors
             pass
-        for j in range(6):                                                                                                             
-            plot = ax.pcolormesh(                                                                                                      
-                grid["lon_b"][j, :, :],                                                                                                
-                grid["lat_b"][j, :, :],                                                                                                
-                masked_data[j, :, :],                                                                                                  
-                transform=ccrs.PlateCarree(),                                                                                          
-                cmap=comap,                                                                                                            
-                norm=norm,                                                                                                             
-            )                    
-    if add_cb == True:                                                                                                                 
-        cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)                                                             
-        cb.mappable.set_norm(norm)                                                                                                     
-        all_zero, all_nan = all_zero_or_nan(plot_vals.values)                                                                          
-        if all_zero or all_nan:                                                                                                        
-            if use_cmap_RdBu:                                                                                                          
-                cb.set_ticks([0.0])                                                                                                    
-            else:                                                                                                                      
-                cb.set_ticks([0.5])                                                                                                    
-            if all_nan:                                                                                                                
-                cb.set_ticklabels(["Undefined throughout domain"])                                                                     
-            else:                                                                                                                      
-                cb.set_ticklabels(["Zero throughout domain"])                                                                          
-        else:                                                                                                                          
-            if log_color_scale:                                                                                                        
-                cb.formatter = mticker.LogFormatter(base=10)                                                                           
-            else:                                                                                                                      
+        for j in range(6):
+            plot = ax.pcolormesh(
+                grid["lon_b"][j, :, :],
+                grid["lat_b"][j, :, :],
+                masked_data[j, :, :],
+                transform=ccrs.PlateCarree(),
+                cmap=comap,
+                norm=norm,
+            )
+    if add_cb == True:
+        cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
+        cb.mappable.set_norm(norm)
+        all_zero, all_nan = all_zero_or_nan(plot_vals.values)
+        if all_zero or all_nan:
+            if use_cmap_RdBu:
+                cb.set_ticks([0.0])
+            else:
+                cb.set_ticks([0.5])
+            if all_nan:
+                cb.set_ticklabels(["Undefined throughout domain"])
+            else:
+                cb.set_ticklabels(["Zero throughout domain"])
+        else:
+            if log_color_scale:
+                cb.formatter = mticker.LogFormatter(base=10)
+            else:
                 if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                     cb.locator = mticker.MaxNLocator(nbins=4)
+
+        try:
+            cb.formatter.set_useOffset(False)
+        except:
+            #not all automatically chosen colorbar formatters properly handle the above method
+            pass
         cb.update_ticks()
         cb.set_label(unit)
-        
-    return plot                                                      
 
+    return plot
 
 
 def get_input_res(data):
-    # return resolution of dataset passed to compare_single_level or compare_zonal_means
-
+    """
+    Returns resolution of dataset passed to
+    compare_single_level or compare_zonal_means
+    """
     vdims = data.dims
     if "lat" in vdims and "lon" in vdims:
         lat = data["lat"].values
-        lon = data["lon"].values        
+        lon = data["lon"].values
         if lat.size / 6 == lon.size:
             return lon.size, "cs"
         else:
             lat.sort()
             lon.sort()
-            #use increment of second and third coordinates to avoid polar mischief
+            #use increment of second and third coordinates
+            # to avoid polar mischief
             lat_res = np.abs(lat[2]-lat[1])
             lon_res = np.abs(lon[2]-lon[1])
             return str(lat_res) + "x" + str(lon_res), "ll"
 
     else:
-        print("grid is cs: ", vdims)
+        #print("grid is cs: ", vdims)
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return data.dims["Xdim"], "cs"
+
 
 
 def call_make_grid(res, gridtype, zonal_mean, comparison, minlon=-180, maxlon=180, minlat=-90, maxlat=90):
@@ -1471,11 +1491,16 @@ def call_make_grid(res, gridtype, zonal_mean, comparison, minlon=-180, maxlon=18
         return make_grid_CS(res)
 
 def all_zero_or_nan(ds):
-    # Return whether ds is all zeros, or all nans
+    """
+    Return whether ds is all zeros, or all nans
+    """
     return not np.any(ds), np.isnan(ds).all()
 
 def get_grid_extents(data):
-    #Get min and max lat and lon from an input GEOS-Chem xarray dataset or grid dict
+    """
+    Get min and max lat and lon from an input GEOS-Chem
+    xarray dataset or grid dict
+    """
     if type(data) is dict:
         if "lon" in data:
             return np.min(data["lon"]), np.max(data["lon"]), np.min(data["lat"]), np.max(data["lat"])
