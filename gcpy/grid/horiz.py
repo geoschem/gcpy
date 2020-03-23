@@ -12,11 +12,14 @@ def make_grid_LL(llres, minlon=-180, maxlon=175, minlat=-90, maxlat=90):
     #temporary measure until automatic reading of coordinate descriptions is in place
     #This assumes all longitude coordinates denote western edge of the grid cell
     maxlon = maxlon + dlon
-    lon_b = np.linspace(minlon - dlon/2, maxlon - dlon/2, int((abs(minlon)+abs(maxlon))/dlon) + 1, endpoint=True)
+    #print(minlon, maxlon, minlat, maxlat)
+    #print(minlon-dlon/2, maxlon-dlon/2, int((maxlon-minlon)/dlon)+1)
+    #print(minlat-dlat/2, maxlat+dlat/2, int((maxlat-minlat)/dlat)+2)
+    lon_b = np.linspace(minlon - dlon/2, maxlon - dlon/2, int((maxlon-minlon)/dlon)+1)
     lat_b = np.linspace(minlat - dlat/2, maxlat + dlat/2, 
-                        int((abs(minlat)+abs(maxlat))/dlat) + 2, endpoint=True).clip(minlat,maxlat)
-    lon_b = np.linspace(-180 - dlon/2, 180 - dlon/2, int(360/dlon) + 1, endpoint=True)
-    lat_b = np.linspace(-90 - dlat/2, 90 + dlat/2, int(180/dlat) + 2, endpoint=True).clip(-90,90)
+                        int((maxlat-minlat )/dlat) + 2)
+    #lon_b = np.linspace(-180 - dlon/2, 180 - dlon/2, int(360/dlon) + 1, endpoint=True)
+    #lat_b = np.linspace(-90 - dlat/2, 90 + dlat/2, int(180/dlat) + 2, endpoint=True).clip(-90,90)
     lat = (lat_b[1:] + lat_b[:-1]) / 2
     lon = (lon_b[1:] + lon_b[:-1]) / 2
     llgrid = {'lat': lat, 
