@@ -79,7 +79,7 @@ gchp_ref_version = "gchp_ref_version"
 gchp_dev_version = "gchp_dev_version"
 
 # Path to regridding weights
-weightsdir = "/path/to/regridding/weights"
+weightsdir = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
 # =====================================================================
 # Comparisons to run (**EDIT AS NEEDED**)

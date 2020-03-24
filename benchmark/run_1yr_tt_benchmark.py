@@ -81,7 +81,7 @@ gchp_ref_version = "gchp_ref_version_string"
 gchp_dev_version = "gchp_dev_version_string"
 
 # Weights directory (**MUST EDIT**)
-weightsdir = "/path/to/weights/directory"
+weightsdir = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
 # Comparisons to run (edit as needed)
 gcc_vs_gcc   = True
