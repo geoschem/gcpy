@@ -1397,16 +1397,32 @@ def gcplot(plot_vals,
 
     elif gridtype == "ll":
         #Lat/Lon single level
-        ax.coastlines()
         if extent == (None, None, None, None):
-            [minlon, maxlon] = [min(grid["lon_b"]), max(grid["lon_b"])]
-            [minlat, maxlat] = [min(grid["lat_b"]), max(grid["lat_b"])]
-            extent = (minlon, maxlon, minlat, maxlat)
+            extent = get_grid_extents(grid)
+        elif type(plot_vals) is xr.DataArray:
+            [minlon, maxlon, minlat, maxlat] = extent
+            #filter data by bounds of extent
+            plot_vals = plot_vals.where(plot_vals.lon>=minlon, 
+                                        drop=True).where(plot_vals.lon<=maxlon,
+                                                         drop=True).where(plot_vals.lat>=minlat, 
+                                                                          drop=True).where(plot_vals.lat<=maxlat, drop=True)
+        else:
+            #for numpy arrays
+            [minlon, maxlon, minlat, maxlat] = extent
+            minlon_ind = np.where(grid["lon"] >= minlon)[0][0]
+            maxlon_ind = np.where(grid["lon"] <= maxlon)[0][-1]
+            minlat_ind = np.where(grid["lat"] >= minlat)[0][0]
+            maxlat_ind = np.where(grid["lat"] <= maxlat)[0][-1]
+            #assume lat comes first in indexing
+            plot_vals = plot_vals[minlat_ind:maxlat_ind+1,minlon_ind:maxlon_ind+1].squeeze()
         # Create a lon/lat plot
         plot = ax.imshow(
-            plot_vals, extent=extent,
-            transform=ccrs.PlateCarree(), cmap=comap, norm=norm
+            plot_vals, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm
         )
+        ax.coastlines()
+        ax.set_xticks(xtick_positions)
+        ax.set_xticklabels(xticklabels)
+
     else:
         #Cubed-sphere single level
         ax.coastlines()
@@ -1416,6 +1432,17 @@ def gcplot(plot_vals,
         except ValueError:
             #Comparison of numpy arrays throws errors
             pass
+        [minlon,maxlon,minlat,maxlat] = extent
+
+        #Catch issue with plots extending into both the western and eastern hemisphere
+        if maxlon > 180 and minlon >=0:
+            maxlon = maxlon-180
+            minlon = minlon-180
+        elif minlon > 180:
+            minlon = minlon-180
+        elif maxlon > 180:
+            maxlon=maxlon-180
+
         for j in range(6):
             plot = ax.pcolormesh(
                 grid["lon_b"][j, :, :],
@@ -1423,8 +1450,12 @@ def gcplot(plot_vals,
                 masked_data[j, :, :],
                 transform=ccrs.PlateCarree(),
                 cmap=comap,
-                norm=norm,
+                norm=norm
             )
+        ax.set_extent([minlon,maxlon,minlat,maxlat])
+        ax.set_xticks(xtick_positions)
+        ax.set_xticklabels(xticklabels)
+
     if add_cb == True:
         cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
         cb.mappable.set_norm(norm)
@@ -1482,12 +1513,11 @@ def get_input_res(data):
         return data.dims["Xdim"], "cs"
 
 
-def call_make_grid(res, gridtype, zonal_mean, comparison):
-    """
-    call appropriate make_grid function and return new grid
-    """
+
+def call_make_grid(res, gridtype, zonal_mean, comparison, minlon=-180, maxlon=180, minlat=-90, maxlat=90):
+    # call appropriate make_grid function and return new grid
     if gridtype == "ll" or (zonal_mean and comparison):
-        return [make_grid_LL(res), None]
+        return [make_grid_LL(res, minlon, maxlon, minlat, maxlat), None]
     else:
         return make_grid_CS(res)
 
@@ -1504,18 +1534,29 @@ def get_grid_extents(data):
     """
     if type(data) is dict:
         if "lon_b" in data:
-            return min(refgrid["lon_b"]), max(refgrid["lon_b"]), \
-                   min(refgrid["lat_b"]), max(refgrid["lat_b"])
+            return np.min(data["lon_b"]), np.max(data["lon_b"]), np.min(data["lat_b"]), np.max(data["lat_b"])
         else:
-            return None, None, None, None
+            return -180, 180, -90, 90
     elif "lat" in data.dims and "lon" in data.dims:
         lat = data["lat"].values
         lon = data["lon"].values
         if lat.size / 6 == lon.size:
             #No extents for CS plots right now
-            return None, None, None, None
+            return -180, 180, -90, 90
         else:
-            return np.min(lon), np.max(lon), np.min(lat), np.max(lat)
+            lat = np.sort(lat)
+            minlat = np.min(lat)
+            if abs(abs(lat[1])-abs(lat[0])) != abs(abs(lat[2]) - abs(lat[1])):
+                #pole is cutoff
+                minlat = minlat - 1
+            maxlat = np.max(lat)
+            if abs(abs(lat[-1])-abs(lat[-2])) != abs(abs(lat[-2])- abs(lat[-3])):
+                maxlat = maxlat+1
+            #add longitude res to max longitude
+            lon = np.sort(lon)
+            minlon = np.min(lon)
+            maxlon = np.max(lon)+abs(abs(lon[-1]-abs(lon[-2])))
+            return minlon, maxlon, minlat, maxlat
     else:
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        return None, None, None, None
+        return -180, 180, -90, 90

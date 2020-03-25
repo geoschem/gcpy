@@ -3,13 +3,39 @@
 import os
 import xesmf as xe
 from .horiz import make_grid_LL, make_grid_CS
-from ..core import get_input_res, call_make_grid
+from ..core import get_input_res, call_make_grid, get_grid_extents
+import numpy as np
+
+def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False,
+                        minlon=-180, maxlon=180, minlat=-90, maxlat=90 ):
+    llgrid_in = make_grid_LL(llres_in, minlon, maxlon, minlat, maxlat)
+    llgrid_out = make_grid_LL(llres_out, minlon, maxlon, minlat, maxlat)
+    weightsfile = os.path.join(weightsdir,'conservative_{}_{}.nc'.format(llres_in, llres_out))
+    regridder = xe.Regridder(llgrid_in, llgrid_out, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
+    return regridder
+
+def make_regridder_C2L( csres_in, llres_out, weightsdir='.', reuse_weights=True ):
+    csgrid, csgrid_list = make_grid_CS(csres_in)
+    llgrid = make_grid_LL(llres_out)
+    regridder_list = []
+    for i in range(6):
+        weightsfile = os.path.join(weightsdir, 'conservative_c{}_{}_{}.nc'.format(str(csres_in), llres_out, str(i)))
+        regridder = xe.Regridder(csgrid_list[i], llgrid, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
+        regridder_list.append(regridder)
+    return regridder_list
 
 def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=None, zm=False):
     #Take two lat/lon or cubed-sphere xarray datasets and regrid them if needed
     refres, refgridtype = get_input_res(refds)
     devres, devgridtype = get_input_res(devds)
     
+    refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refds)
+    devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devds)
+    cmpminlon = min(x for x in [refminlon, devminlon] if x is not None)
+    cmpmaxlon = max(x for x in [refmaxlon, devmaxlon] if x is not None)
+    cmpminlat = min(x for x in [refminlat, devminlat] if x is not None)
+    cmpmaxlat = max(x for x in [refmaxlat, devmaxlat] if x is not None)
+
     # ==================================================================
     # Determine comparison grid resolution and type (if not passed)
     # ==================================================================
@@ -54,11 +80,18 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     # ==================================================================
     # Make grids (ref, dev, and comparison)
     # ==================================================================
+    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, True, False, 
+                                            minlon=refminlon, maxlon=refmaxlon,
+                                            minlat=refminlat, maxlat=refmaxlat)
+    
+    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, True, False,
+                                            minlon=devminlon, maxlon=devmaxlon,
+                                            minlat=devminlat, maxlat=devmaxlat)
 
-    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, True, False)
-    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, True, False)
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, True, True)
-
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, True, True,
+                                            minlon=cmpminlon, maxlon=cmpmaxlon,
+                                            minlat=cmpminlat, maxlat=cmpmaxlat)
+    
     # =================================================================
     # Make regridders, if applicable
     # TODO: Make CS to CS regridders
@@ -101,19 +134,3 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     regridref, regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder, 
     devregridder, refregridder_list, devregridder_list]
 
-def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=True ):
-    llgrid_in = make_grid_LL(llres_in)
-    llgrid_out = make_grid_LL(llres_out)
-    weightsfile = os.path.join(weightsdir,'conservative_{}_{}.nc'.format(llres_in, llres_out))
-    regridder = xe.Regridder(llgrid_in, llgrid_out, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
-    return regridder
-
-def make_regridder_C2L( csres_in, llres_out, weightsdir='.', reuse_weights=True ):
-    csgrid, csgrid_list = make_grid_CS(csres_in)
-    llgrid = make_grid_LL(llres_out)
-    regridder_list = []
-    for i in range(6):
-        weightsfile = os.path.join(weightsdir, 'conservative_c{}_{}_{}.nc'.format(str(csres_in), llres_out, str(i)))
-        regridder = xe.Regridder(csgrid_list[i], llgrid, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
-        regridder_list.append(regridder)
-    return regridder_list
