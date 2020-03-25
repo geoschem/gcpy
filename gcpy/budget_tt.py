@@ -32,7 +32,8 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, maindir, devstr, year, dst, is_gchp, overwrite):
+    def __init__(self, devstr, devdir, devrstdir,
+                 year, dst, is_gchp, overwrite):
         """
         Initializes the _GlobVars class.
 
@@ -40,8 +41,10 @@ class _GlobVars:
         -----
             devstr : str
                 Label denoting the "Dev" version.
-            maindir : str
-                Top-level benchmark run directory.
+            devdir : str
+                Directory where diagnostic files are found.
+            devrstdir : str
+                Directory where restart files are found.
             dst : str
                 Directory where plots & tables will be created.
             year : int
@@ -55,7 +58,8 @@ class _GlobVars:
         # Arguments from outside
         # ------------------------------
         self.devstr = devstr
-        self.maindir = maindir
+        self.devdir = devdir
+        self.devrstdir = devrstdir
         self.dst = dst
         self.is_gchp = is_gchp
         self.overwrite = overwrite
@@ -74,40 +78,46 @@ class _GlobVars:
 
         # Restarts
         if self.is_gchp:
-            rstdir = join(self.maindir, self.devstr)
-            RstInit = join(rstdir, "gcchem_internal_checkpoint.{}*nc4".format(
-                self.y0_str))
-            RstFinal = join(rstdir,
-                            "gcchem_internal_checkpoint.restart.{}*.nc4".format(
-                                self.y1_str))
+            RstInit = join(
+                self.devrstdir,
+                "gcchem_internal_checkpoint.{}*nc4".format(self.y0_str)
+            )
+            RstFinal = join(
+                self.devrstdir,
+                "gcchem_internal_checkpoint.restart.{}*.nc4".format(self.y1_str)
+            )
         else:
-            rstdir = join(self.maindir, self.devstr, "restarts")
-            RstInit = join(rstdir, "GEOSChem.Restart.{}*nc4".format(self.y0_str))
-            RstFinal = join(rstdir, "GEOSChem.Restart.{}*.nc4".format(self.y1_str))
+            RstInit = join(
+                self.devrstdir,
+                "GEOSChem.Restart.{}*nc4".format(self.y0_str)
+            )
+            RstFinal = join(
+                self.devrstdir,
+                "GEOSChem.Restart.{}*.nc4".format(self.y1_str)
+            )
 
         # Diagnostics
-        datadir = join(self.maindir, self.devstr, "OutputDir")
-        HemcoDiag = join(datadir, 
+        HemcoDiag = join(self.devdir,
                          "HEMCO_diagnostics.{}*.nc".format(self.y0_str))
-        DryDep = join(datadir, 
+        DryDep = join(self.devdir,
                       "*.DryDep.{}*.nc4".format(self.y0_str))
-        RadioNucl = join(datadir, 
+        RadioNucl = join(self.devdir,
                          "*.RadioNuclide.{}*.nc4".format(self.y0_str))
         if is_gchp:
-            StateMetAvg = join(datadir, 
-                            "*.StateMet_avg.{}*.nc4".format(self.y0_str))
-            StateMetInst = join(datadir, 
-                            "*.StateMet_inst.{}*.nc4".format(self.y0_str))
+            StateMetAvg = join(self.devdir,
+                               "*.StateMet_avg.{}*.nc4".format(self.y0_str))
+            StateMetInst = join(self.devdir,
+                                "*.StateMet_inst.{}*.nc4".format(self.y0_str))
         else:
-            StateMet = join(datadir, 
+            StateMet = join(self.devdir,
                             "*.StateMet.{}*.nc4".format(self.y0_str))
-        SpeciesConc = join(datadir, 
+        SpeciesConc = join(self.devdir,
                            "*.SpeciesConc.{}*.nc4".format(self.y0_str))
-        WetLossConv = join(datadir, 
+        WetLossConv = join(self.devdir,
                            "*.WetLossConv.{}*.nc4".format(self.y0_str))
-        WetLossLS = join(datadir, 
+        WetLossLS = join(self.devdir, 
                          "*.WetLossLS.{}*.nc4".format(self.y0_str))
-        GCHPEmiss =  join(datadir, 
+        GCHPEmiss =  join(self.devdir, 
                          "GCHP.Emissions.{}*.nc4".format(self.y0_str))
       
         # ------------------------------        
@@ -184,7 +194,7 @@ class _GlobVars:
 
         # Read the species database
         #try:
-        #    path = join(datadir, "species_database.yml")
+        #    path = join(devdir, "species_database.yml")
         #    spcdb = yaml_load_file(open(path))
         #    #tmp = spcdb["Pb210"]
         #except KeyError or FileNotFoundError:
@@ -696,7 +706,7 @@ def print_budgets(globvars, data, key):
         f.close()
         
         
-def transport_tracers_budgets(maindir, devstr, year, 
+def transport_tracers_budgets(devstr, devdir, devrstdir, year, 
                               dst='./1yr_benchmark',
                               is_gchp=False,
                               overwrite=True):
@@ -723,7 +733,8 @@ def transport_tracers_budgets(maindir, devstr, year,
     """
 
     # Store global variables in a private class
-    globvars = _GlobVars(maindir, devstr, year, dst, is_gchp, overwrite)
+    globvars = _GlobVars(devstr, devdir, devrstdir, year,
+                         dst, is_gchp, overwrite)
 
     # Data structure for budgets
     data = {}
@@ -809,14 +820,4 @@ def transport_tracers_budgets(maindir, devstr, year,
     for key in ["_f", "_t", "_s"]:
         print_budgets(globvars, data, key)
         
-
-if __name__ == "__main__":
-
-    # Make sure we have enough arguments
-    if  len(sys.argv) != 5:
-        err_msg = "Usage: budgets_tt.py maindir, devstr, dst, year"
-        raise ValueError(err_msg)
-    
-    # Call the driver program
-    transport_tracers_budgets(sys.argv[1:4])
 
