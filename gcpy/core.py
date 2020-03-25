@@ -1401,7 +1401,6 @@ def gcplot(plot_vals,
             extent = get_grid_extents(grid)
         elif type(plot_vals) is xr.DataArray:
             [minlon, maxlon, minlat, maxlat] = extent
-            print(minlon,maxlon,minlat,maxlat)
             #filter data by bounds of extent
             plot_vals = plot_vals.where(plot_vals.lon>=minlon, 
                                         drop=True).where(plot_vals.lon<=maxlon,
@@ -1418,10 +1417,12 @@ def gcplot(plot_vals,
             plot_vals = plot_vals[minlat_ind:maxlat_ind+1,minlon_ind:maxlon_ind+1].squeeze()
         # Create a lon/lat plot
         plot = ax.imshow(
-            plot_vals, extent=extent,
-            transform=ccrs.PlateCarree(), cmap=comap, norm=norm
+            plot_vals, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm
         )
         ax.coastlines()
+        ax.set_xticks(xtick_positions)
+        ax.set_xticklabels(xticklabels)
+
     else:
         #Cubed-sphere single level
         ax.coastlines()
@@ -1431,6 +1432,14 @@ def gcplot(plot_vals,
         except ValueError:
             #Comparison of numpy arrays throws errors
             pass
+        [minlon,maxlon,minlat,maxlat] = extent
+        #lon values in grid 
+        if minlon<0:
+            minlon=360-abs(minlon)
+        if maxlon<0:
+            maxlon=360-abs(maxlon)
+        print(masked_data)
+        print(grid)
         for j in range(6):
             plot = ax.pcolormesh(
                 grid["lon_b"][j, :, :],
@@ -1438,8 +1447,12 @@ def gcplot(plot_vals,
                 masked_data[j, :, :],
                 transform=ccrs.PlateCarree(),
                 cmap=comap,
-                norm=norm,
+                norm=norm
             )
+        ax.set_extent([minlon,maxlon,minlat,maxlat])
+        ax.set_xticks(xtick_positions)
+        ax.set_xticklabels(xticklabels)
+
     if add_cb == True:
         cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
         cb.mappable.set_norm(norm)
@@ -1517,16 +1530,17 @@ def get_grid_extents(data):
     xarray dataset or grid dict
     """
     if type(data) is dict:
-        if "lon" in data:
-            return np.min(data["lon"]), np.max(data["lon"]), np.min(data["lat"]), np.max(data["lat"])
+        print('type is dict')
+        if "lon_b" in data:
+            return np.min(data["lon_b"]), np.max(data["lon_b"]), np.min(data["lat_b"]), np.max(data["lat_b"])
         else:
-            return None, None, None, None
+            return -180, 180, -90, 90
     elif "lat" in data.dims and "lon" in data.dims:
         lat = data["lat"].values
         lon = data["lon"].values
         if lat.size / 6 == lon.size:
             #No extents for CS plots right now
-            return None, None, None, None
+            return -180, 180, -90, 90
         else:
             lat = np.sort(lat)
             minlat = np.min(lat)
@@ -1536,7 +1550,12 @@ def get_grid_extents(data):
             maxlat = np.max(lat)
             if abs(abs(lat[-1])-abs(lat[-2])) != abs(abs(lat[-2])- abs(lat[-3])):
                 maxlat = maxlat+1
-            return np.min(lon), np.max(lon), minlat, maxlat
+            #add longitude res to max longitude
+            lon = np.sort(lon)
+            minlon = np.min(lon)
+            maxlon = np.max(lon)+abs(abs(lon[-1]-abs(lon[-2])))
+            print('maxlon', maxlon)
+            return minlon, maxlon, minlat, maxlat
     else:
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        return None, None, None, None
+        return -180, 180, -90, 90

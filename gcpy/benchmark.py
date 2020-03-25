@@ -17,11 +17,10 @@ import matplotlib.ticker as mticker
 from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd
-from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L, create_regridders
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
-from .core import gcplot, call_make_grid, get_input_res, all_zero_or_nan, get_grid_extents
+from .core import gcplot, all_zero_or_nan, get_grid_extents
 from .units import convert_units
 import gcpy.constants as gcon
 from joblib import Parallel, delayed, cpu_count, parallel_backend
