@@ -1212,10 +1212,10 @@ def get_filepaths(outputdir, collections, dates, is_gcc=False, is_gchp=False):
             # Get the file path template for GCHP
             # ---------------------------------------
             if "Restart" in collection:
-                file_tmpl = "gcchem_internal_checkpoint.restart.{}"
-                file_tmpl = join(outputdir, "GCHP.{}.".format(collection))
+                file_tmpl = join(outputdir,
+                                 "gcchem_internal_checkpoint.restart.")
                 separator = "_"
-                extension = "_000000.nc4"
+                extension = ".nc4"
             else:
                 file_tmpl = join(outputdir, "GCHP.{}.".format(collection))
                 separator = "_"
@@ -1225,7 +1225,10 @@ def get_filepaths(outputdir, collections, dates, is_gcc=False, is_gchp=False):
         # Create a list of files for each date/time
         # --------------------------------------------
         for date in dates:
-            date_time = np.datetime_as_string(date, unit="m")
+            if is_gchp and "Restart" in collection:
+                date_time = np.datetime_as_string(date, unit="s")
+            else:
+                date_time = np.datetime_as_string(date, unit="m")
             date_time = date_time.replace("T", separator)
             date_time = date_time.replace("-", "")
             date_time = date_time.replace(":", "")
