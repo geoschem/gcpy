@@ -876,6 +876,7 @@ def compare_single_level(
                        plot_extent, plot_extent,
                        plot_extent, plot_extent]
         else:
+            print(ref_extent, dev_extent, cmp_extent)
             extents = [ref_extent, dev_extent, 
                        cmp_extent, cmp_extent, 
                        cmp_extent, cmp_extent]

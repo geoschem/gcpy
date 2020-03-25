@@ -1433,13 +1433,16 @@ def gcplot(plot_vals,
             #Comparison of numpy arrays throws errors
             pass
         [minlon,maxlon,minlat,maxlat] = extent
-        #lon values in grid 
-        if minlon<0:
-            minlon=360-abs(minlon)
-        if maxlon<0:
-            maxlon=360-abs(maxlon)
-        print(masked_data)
-        print(grid)
+
+        #Catch issue with plots extending into both the western and eastern hemisphere
+        if maxlon > 180 and minlon >=0:
+            maxlon = maxlon-180
+            minlon = minlon-180
+        elif minlon > 180:
+            minlon = minlon-180
+        elif maxlon > 180:
+            maxlon=maxlon-180
+
         for j in range(6):
             plot = ax.pcolormesh(
                 grid["lon_b"][j, :, :],
@@ -1530,7 +1533,6 @@ def get_grid_extents(data):
     xarray dataset or grid dict
     """
     if type(data) is dict:
-        print('type is dict')
         if "lon_b" in data:
             return np.min(data["lon_b"]), np.max(data["lon_b"]), np.min(data["lat_b"]), np.max(data["lat_b"])
         else:
@@ -1554,7 +1556,6 @@ def get_grid_extents(data):
             lon = np.sort(lon)
             minlon = np.min(lon)
             maxlon = np.max(lon)+abs(abs(lon[-1]-abs(lon[-2])))
-            print('maxlon', maxlon)
             return minlon, maxlon, minlat, maxlat
     else:
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
