@@ -17,11 +17,10 @@ import matplotlib.ticker as mticker
 from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd
-from .grid.horiz import make_grid_LL, make_grid_CS
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L, create_regridders
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
-from .core import gcplot, call_make_grid, get_input_res, all_zero_or_nan, get_grid_extents
+from .core import gcplot, all_zero_or_nan, get_grid_extents
 from .units import convert_units
 import gcpy.constants as gcon
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -281,6 +280,7 @@ def compare_single_level(
     verbose=False,
     log_color_scale=False,
     extra_title_txt=None,
+    plot_extent = [-1000, -1000, -1000, -1000],
     n_job=-1,
     sigdiff_list=[],
 ):
@@ -417,21 +417,9 @@ def compare_single_level(
     # =================================================================
     # Get lat/lon extents, if applicable
     # =================================================================
-    if refgridtype == "ll":
-        [refminlon, refmaxlon] = [min(refgrid["lon_b"]), max(refgrid["lon_b"])]
-        [refminlat, refmaxlat] = [min(refgrid["lat_b"]), max(refgrid["lat_b"])]
-    else:
-        refminlon, refmaxlon, refminlat, refmaxlat = None, None, None, None
-    if devgridtype == "ll":
-        [devminlon, devmaxlon] = [min(devgrid["lon_b"]), max(devgrid["lon_b"])]
-        [devminlat, devmaxlat] = [min(devgrid["lat_b"]), max(devgrid["lat_b"])]
-    else:
-        devminlon, devmaxlon, devminlat, devmaxlat = None, None, None, None
-    if cmpgridtype == "ll":
-        [cmpminlon, cmpmaxlon] = [min(cmpgrid["lon_b"]), max(cmpgrid["lon_b"])]
-        [cmpminlat, cmpmaxlat] = [min(cmpgrid["lat_b"]), max(cmpgrid["lat_b"])]
-    else:
-        cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = None, None, None, None
+    refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
+    devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
+    cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)    
 
     ds_refs = [None] * n_var
     ds_devs = [None] * n_var
@@ -571,7 +559,7 @@ def compare_single_level(
         warnings.filterwarnings('ignore', category=RuntimeWarning)
         warnings.filterwarnings('ignore', category=UserWarning)
 
-        if savepdf:
+        if savepdf and verbose:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
@@ -884,24 +872,20 @@ def compare_single_level(
             fracdiff_is_all_nan,
             fracdiff_is_all_nan,
         ]
-
-        extents = [
-            ref_extent,
-            dev_extent,
-            cmp_extent,
-            cmp_extent,
-            cmp_extent,
-            cmp_extent,
-        ]
+        if not -1000 in plot_extent:
+            extents = [plot_extent, plot_extent,
+                       plot_extent, plot_extent,
+                       plot_extent, plot_extent]
+        else:
+            print(ref_extent, dev_extent, cmp_extent)
+            extents = [ref_extent, dev_extent, 
+                       cmp_extent, cmp_extent, 
+                       cmp_extent, cmp_extent]
 
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
-
         grids = [refgrid, devgrid, cmpgrid, cmpgrid, cmpgrid, cmpgrid]
-
         axs = [ax0, ax1, ax2, ax3, ax4, ax5]
-
         rowcols = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
-
         titles = [
             ref_title,
             dev_title,
@@ -1011,7 +995,8 @@ def compare_single_level(
     # Finish
     # ==================================================================
     if savepdf:
-        print("Closed PDF")
+        if verbose:
+            print("Closed PDF")
         merge = PdfFileMerger()
         for i in range(n_var):
             merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
@@ -1377,7 +1362,7 @@ def compare_zonal_mean(
         warnings.filterwarnings('ignore', category=RuntimeWarning)
         warnings.filterwarnings('ignore', category=UserWarning)
 
-        if savepdf:
+        if savepdf and verbose:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
@@ -1724,7 +1709,8 @@ def compare_zonal_mean(
     # Finish
     # ==================================================================
     if savepdf:
-        print("Closed PDF")
+        if verbose:
+            print("Closed PDF")
         merge = PdfFileMerger()
         for i in range(n_var):
             merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
@@ -3023,12 +3009,10 @@ def make_benchmark_plots(
     results = Parallel(n_jobs=n_job)(
         delayed(createplots)(i, filecat) for i, filecat in enumerate(catdict)
     )
-    dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] \
-                for result in results}
-    dict_500 = {list(result.keys())[0] : result[list(result.keys())[0]]['500'] \
-                for result in results}
-    dict_zm = {list(result.keys())[0] : result[list(result.keys())[0]]['zm'] \
-               for result in results}    
+
+    dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] for result in results}
+    dict_500 = {list(result.keys())[0] : result[list(result.keys())[0]]['500'] for result in results}
+    dict_zm  = {list(result.keys())[0] : result[list(result.keys())[0]]['zm']  for result in results}    
     
     # ==============================================================
     # Write the list of species having significant differences,
