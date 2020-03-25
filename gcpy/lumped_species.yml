@@ -49,7 +49,6 @@ Complex_SOA:
   TSOA2: 1
   TSOA3: 1
 HCFCs:
-  HC187: 1
   HCFC123: 1
   HCFC141b: 1
   HCFC142b: 1
@@ -58,6 +57,11 @@ Halons:
   H1211: 1
   H1301: 1
   H2402: 1
+HPALDs:
+  HPALD1: 1
+  HPALD2: 1
+  HPALD3: 1
+  HPALD4: 1
 IEPOX:
   IEPOXA: 1
   IEPOXB: 1
@@ -129,7 +133,6 @@ NOy:
   INPD: 1
   IONO: 1
   IONO2: 1
-  IPNB: 1
   IPRNO3: 1
   ISOPNOO1: 1
   ISOPNOO2: 1
@@ -189,15 +192,13 @@ Ox:
   IHPNBOO: 1
   IHPNDOO: 1
   INA: 1
-  INO2: 1
   INO2B: 1
   INO2D: 1
+  INPB: 1
   INPD: 1
-  INPN: 1
   IO: 1
   IONO: 1
   IONO2: 2
-  IPNB: 1
   ISOPNOO1: 1
   ISOPNOO2: 1
   ITCN: 1

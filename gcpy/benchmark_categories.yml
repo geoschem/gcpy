@@ -89,7 +89,7 @@ FullChemBenchmark:
       - HNO2
       - HNO3
       - HNO4
-      - IPMN
+      - MPAN
       - NIT
       - 'NO'
       - NO2
@@ -126,13 +126,10 @@ FullChemBenchmark:
       - BENZ
       - CH4
       - C2H6
-      - C2H4
       - C3H8
       - PRPE
       - TOLU
       - XYLE
-    Other:
-      - MBO
   ROy:
     ROy:
       - H2O2
@@ -157,9 +154,6 @@ FullChemBenchmark:
       - TSOG1
       - TSOG2
       - TSOG3
-      - ISOG1
-      - ISOG2
-      - ISOG3
       - ASOG1
       - ASOG2
       - ASOG3
@@ -177,7 +171,7 @@ FullChemBenchmark:
     Aldehydes:
       - ALD2
       - CH2O
-      - HPALD
+      - HPALDs
       - MACR
     Epoxides:
       - IEPOX
