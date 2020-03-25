@@ -117,7 +117,7 @@ class _GlobVars:
             for t in range(self.N_MONTHS):
                 self.mon_name.append("{} {}".format(
                     month_abbr[t + 1], self.y0_str))
-                self.mon_name.append("Annual Mean")
+            self.mon_name.append("Annual Mean")
                     
             # Days in the benchmark year
             self.d_per_yr = np.sum(self.d_per_mon)
