@@ -396,8 +396,9 @@ if gcc_vs_gcc:
 
         # Budgets of Radionuclide species
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
-        ttbdg.transport_tracers_budgets(maindir,
-                                        gcc_dev_version,
+        ttbdg.transport_tracers_budgets(gcc_dev_version,
+                                        gcc_vs_gcc_devdir,
+                                        gcc_vs_gcc_devrstdir,
                                         bmk_year,
                                         dst=plot_dir,
                                         overwrite=True)
@@ -525,8 +526,9 @@ if gchp_vs_gcc:
         # Budgets of Radionuclide species
         print("-- Budgets of radionuclide species")
         plot_dir = join(gchp_vs_gcc_plotsdir, "Tables")
-        ttbdg.transport_tracers_budgets(maindir,
-                                        gchp_dev_version,
+        ttbdg.transport_tracers_budgets(gchp_dev_version,
+                                        gchp_vs_gcc_devdir,
+                                        gchp_vs_gcc_devrstdir,
                                         bmk_year,
                                         dst=plot_dir,
                                         is_gchp=True,
@@ -641,8 +643,9 @@ if gchp_vs_gchp:
         # Budgets of Radionuclide species
         print("-- Budgets of radionuclide species")
         plot_dir = join(gchp_vs_gchp_plotsdir, "Tables")
-        ttbdg.transport_tracers_budgets(maindir,
-                                        gchp_dev_version,
+        ttbdg.transport_tracers_budgets(gchp_dev_version,
+                                        gchp_vs_gchp_devdir,
+                                        gchp_vs_gchp_devrstdir,
                                         bmk_year,
                                         dst=plot_dir,
                                         is_gchp=True,
