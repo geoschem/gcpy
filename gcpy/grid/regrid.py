@@ -72,7 +72,6 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     refregridder_list = None
     devregridder = None
     devregridder_list = None
-
     if regridref:
         if refgridtype == "ll":
             refregridder = make_regridder_L2L(

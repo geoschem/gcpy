@@ -175,6 +175,7 @@ def sixplot(
                     absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
                 else:
                     absmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
+            [vmin, vmax] = [-absmax, absmax]
         else:
             if subplot is "ref":
                 if match_cbar and (not other_all_nan):
@@ -2630,7 +2631,7 @@ def make_benchmark_plots(
     sigdiff_files=None,
     normalize_by_area=False,
     areas=None,
-    weightsdir=None,
+    weightsdir='.',
     n_job=-1,
 ):
     """
