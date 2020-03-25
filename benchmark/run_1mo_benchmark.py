@@ -47,6 +47,7 @@ import os
 from os.path import join
 from gcpy import benchmark as bmk
 from gcpy.core import get_filepaths
+from gcpy.core import compare_varnames
 from gcpy.constants import skip_these_vars
 import gcpy.budget_ops as opbdg
 import gcpy.ste_flux as ste
@@ -912,44 +913,65 @@ if gchp_vs_gcc_diff_of_diffs:
     # Get a list of variables that GCPy should not read
     skip_vars = skip_these_vars
 
+    # Files to read
+    collection = "SpeciesConc"
+    gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
+                                       [gcc_date], is_gcc=True)
+    gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
+                                       [gcc_date], is_gcc=True)
+    gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refdir, collection,
+                                        [gchp_date], is_gchp=True)
+    gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
+                                         [gchp_date], is_gchp=True)
+
     # Target output files
     diff_of_diffs_refspc = "./gcc_diffs_spc.nc4"
     diff_of_diffs_devspc = "./gchp_diffs_spc.nc4"
 
-    # Create a ref file that contains GCC differences
-    gcc_ref  = xr.open_dataset(gcc_vs_gcc_refspc, drop_variables=skip_vars)
-    gcc_dev  = xr.open_dataset(gcc_vs_gcc_devspc, drop_variables=skip_vars)
-    with xr.set_options(keep_attrs=True):
-        gcc_diffs = gcc_dev - gcc_ref
-        for v in gcc_dev.data_vars.keys():
-            # Ensure the gcc_diffs Dataset includes attributes
-            gcc_diffs[v].attrs = gcc_dev[v].attrs
-    gcc_diffs.to_netcdf(diff_of_diffs_refspc)
-
-    # Create a dev file that contains GCHP differences. Include special
-    # handling if cubed sphere grid dimension names are different since they
-    # changed in MAPL v1.0.0.
-    gchp_ref = xr.open_dataset(gchp_vs_gchp_refspc, drop_variables=skip_vars)
-    gchp_dev = xr.open_dataset(gchp_vs_gchp_devspc, drop_variables=skip_vars)
-    refdims = gchp_ref.dims
-    devdims = gchp_dev.dims
-    if "lat" in refdims and "Xdim" in devdims:
-        gchp_ref_newdimnames = gchp_dev.copy()
-        for v in gchp_dev.data_vars.keys():
-            if "Xdim" in gchp_dev[v].dims:
-                gchp_ref_newdimnames[v].values = gchp_ref[v].values.reshape(
-                    gchp_dev[v].values.shape)
-                # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose("time","lev","lat","Xdim").values
-        gchp_ref = gchp_ref_newdimnames.copy()
-    with xr.set_options(keep_attrs=True):
-        gchp_diffs = gchp_dev.copy()
-        for v in gchp_dev.data_vars.keys():
-            if "Xdim" in gchp_dev[v].dims or "lat" in gchp_dev[v].dims:
-                gchp_diffs[v] = gchp_dev[v] - gchp_ref[v]
-                # NOTE: The gchp_diffs Dataset is created without variable
-                # attributes; we have to reattach them
-                gchp_diffs[v].attrs = gchp_dev[v].attrs
-    gchp_diffs.to_netcdf(diff_of_diffs_devspc)
+#    # Create a ref file that contains GCC differences
+#    # Select only common fields between the Ref and Dev datasets
+#    gcc_ref  = xr.open_dataset(gcc_vs_gcc_reflist[0], drop_variables=skip_vars)
+#    gcc_dev  = xr.open_dataset(gcc_vs_gcc_devlist[0], drop_variables=skip_vars)
+#    vardict = compare_varnames(gcc_ref, gcc_dev, quiet=True)
+#    varlist = vardict["commonvars"]
+#    gcc_ref = gcc_ref[varlist]
+#    gcc_dev = gcc_dev[varlist]
+#    with xr.set_options(keep_attrs=True):
+#        gcc_diffs = gcc_dev - gcc_ref
+#        for v in gcc_dev.data_vars.keys():
+#            # Ensure the gcc_diffs Dataset includes attributes
+#            gcc_diffs[v].attrs = gcc_dev[v].attrs
+#    gcc_diffs.to_netcdf(diff_of_diffs_refspc)
+#
+#    # Create a dev file that contains GCHP differences. Include special
+#    # handling if cubed sphere grid dimension names are different since they
+#    # changed in MAPL v1.0.0.
+#    # Select only common fields between the Ref and Dev datasets
+#    gchp_ref = xr.open_dataset(gchp_vs_gchp_reflist[0], drop_variables=skip_vars)
+#    gchp_dev = xr.open_dataset(gchp_vs_gchp_devlist[0], drop_variables=skip_vars)
+#    vardict = compare_varnames(gchp_ref, gchp_dev, quiet=True)
+#    varlist = vardict["commonvars"]
+#    gchp_ref = gchp_ref[varlist]
+#    gchp_dev = gchp_dev[varlist]
+#    refdims = gchp_ref.dims
+#    devdims = gchp_dev.dims
+#    if "lat" in refdims and "Xdim" in devdims:
+#        gchp_ref_newdimnames = gchp_dev.copy()
+#        for v in gchp_dev.data_vars.keys():
+#            if "Xdim" in gchp_dev[v].dims:
+#                gchp_ref_newdimnames[v].values = gchp_ref[v].values.reshape(
+#                    gchp_dev[v].values.shape)
+#                # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose("time","lev","lat","Xdim").values
+#        gchp_ref = gchp_ref_newdimnames.copy()
+#    with xr.set_options(keep_attrs=True):
+#        gchp_diffs = gchp_dev.copy()
+#        for v in gchp_dev.data_vars.keys():
+#            if "Xdim" in gchp_dev[v].dims or "lat" in gchp_dev[v].dims:
+#                gchp_diffs[v] = gchp_dev[v] - gchp_ref[v]
+#                # NOTE: The gchp_diffs Dataset is created without variable
+#                # attributes; we have to reattach them
+#                gchp_diffs[v].attrs = gchp_dev[v].attrs
+#    gchp_diffs.to_netcdf(diff_of_diffs_devspc)
 
 
     # Create diff-of-diff plots for species concentrations
@@ -963,5 +985,6 @@ if gchp_vs_gcc_diff_of_diffs:
                              diff_of_diffs_devspc,
                              diff_of_diffs_devstr,
                              dst=diff_of_diffs_plotsdir,
+                             weightsdir=weightsdir,
                              overwrite=True,
                              use_cmap_RdBu=True)
