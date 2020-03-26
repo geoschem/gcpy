@@ -614,7 +614,7 @@ def print_budgets(globvars, data, key):
         filename = "{}/{}.Pb-Be_budget_trop_strat_{}.txt".format(
             globvars.dst, globvars.devstr, globvars.y0_str)
     elif "_t" in key:
-        filename = "{}/{},Pb-Be_budget_troposphere_{}.txt".format(
+        filename = "{}/{}.Pb-Be_budget_troposphere_{}.txt".format(
             globvars.dst, globvars.devstr, globvars.y0_str)
     elif "_s"in key:
         filename = \
