@@ -542,7 +542,7 @@ def compare_single_level(
     # =================================================================
 
     if savepdf:
-        print("Creating {} for {} variables".format(pdfname, n_var))
+#        print("Creating {} for {} variables".format(pdfname, n_var))
         pdf = PdfPages(pdfname)
         pdf.close()
 
@@ -1343,7 +1343,7 @@ def compare_zonal_mean(
     xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
 
     if savepdf:
-        print("Creating {} for {} variables".format(pdfname, n_var))
+#        print("Creating {} for {} variables".format(pdfname, n_var))
         pdf = PdfPages(pdfname)
         pdf.close()
 
