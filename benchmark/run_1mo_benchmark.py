@@ -601,9 +601,13 @@ if gchp_vs_gcc:
         collection = "Restart"
         gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refrst, collection,
                                             [end_date], is_gcc=True)
-        collection = ["Restart", "StateMet_inst"]
+        collection = "Restart"
         gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devrst, collection,
                                             [end_date], is_gchp=True)
+        collection = "StateMet_inst"
+        devmetfile= get_filepaths(gchp_vs_gcc_devdir, collection,
+                                  [end_date], is_gchp=True)
+        gchp_vs_gcc_devlist.append(devmetfile[0])
 
         # Save to "Tables" subfolder of plot dir
         plot_dir = join(gchp_vs_gcc_plotsdir, "Tables")
@@ -719,7 +723,7 @@ if gchp_vs_gchp:
         #---------------------------------------------------------------
         # GCHP vs. GCHP Emissions plots
         #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} emissions plots %%%"
+        title = "\n%%% Creating GCHP vs. GCHP {} emissions plots %%%"
         print(title.format(bmk_type))
 
         # Files to read
@@ -814,17 +818,24 @@ if gchp_vs_gchp:
 
     if mass_table:
         #---------------------------------------------------------------
-        # GCHP vs GCC global mass tables
+        # GCHP vs GCHP global mass tables
         #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} global mass tables %%%"
+        title = "\n%%% Creating GCHP vs. GCHP {} global mass tables %%%"
         print(title.format(bmk_type))
 
         # Files to read
-        collection = ["Restart", "StateMet_inst"]
+        collection = "Restart"
         gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refrst, collection,
                                             [end_date], is_gchp=True)
         gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devrst, collection,
                                             [end_date], is_gchp=True)
+        collection = "StateMet_inst"
+        refmetfile= get_filepaths(gchp_vs_gchp_refdir, collection,
+                                  [end_date], is_gchp=True)
+        devmetfile= get_filepaths(gchp_vs_gchp_devdir, collection,
+                                  [end_date], is_gchp=True)
+        gchp_vs_gchp_reflist.append(refmetfile[0])
+        gchp_vs_gchp_devlist.append(devmetfile[0])
 
         # Save to "Tables" subfolder of plot dir
         plot_dir = join(gchp_vs_gchp_plotsdir, "Tables")
@@ -839,9 +850,9 @@ if gchp_vs_gchp:
         
     if budget_table:
         #---------------------------------------------------------------
-        # GCHP vs GCC budgets tables 
+        # GCHP vs GCHP budgets tables 
         #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} budget tables %%%"
+        title = "\n%%% Creating GCHP vs. GCHP {} budget tables %%%"
         print(title.format(bmk_type))
 
         # Files to read
@@ -860,7 +871,7 @@ if gchp_vs_gchp:
                                          overwrite=True)
 
         # Print "operations budget" for strat, trop, strat+trop 
-        opbdg.make_operations_budget_table(gcc_dev_version,
+        opbdg.make_operations_budget_table(gchp_dev_version,
                                            gchp_vs_gchp_devlist[0],
                                            bmk_type,
                                            dst=plot_dir,
