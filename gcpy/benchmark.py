@@ -3360,9 +3360,10 @@ def make_benchmark_emis_plots(
             # Get emissions for species in this benchmark category
             varlist = []
             emisdict[filecat] = {}
+            catspc = []
             for subcat in catdict[filecat]:
                 for spc in catdict[filecat][subcat]:
-                    allcatspc.append(spc)
+                    catspc.append(spc)
                     if spc in emis_spc:
                         emisdict[filecat][spc] = []
                         emisvars = [v for v in emis_vars \
@@ -3376,7 +3377,7 @@ def make_benchmark_emis_plots(
                         filecat
                     )
                 )
-                return
+                return catspc
 
             # Use same directory structure as for concentration plots
             catdir = os.path.join(dst, filecat)
@@ -3414,12 +3415,13 @@ def make_benchmark_emis_plots(
                 weightsdir=weightsdir
             )
             add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
-
-        Parallel(n_jobs=n_job)(
+            return catspc
+        results = Parallel(n_jobs=n_job)(
             delayed(createfile_bench_cat)(filecat) \
             for i, filecat in enumerate(catdict)
         )
-
+        
+        allcatspc = [spc for result in results for spc in result]
         # Give warning if emissions species is not assigned a benchmark category
         for spc in emis_spc:
             if spc not in allcatspc:
