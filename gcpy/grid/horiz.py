@@ -7,7 +7,9 @@ from itertools import product
 INV_SQRT_3 = 1.0 / np.sqrt(3.0)
 ASIN_INV_SQRT_3 = np.arcsin(INV_SQRT_3)
 
-def make_grid_LL(llres, minlon=-180, maxlon=180, minlat=-90, maxlat=90):
+def make_grid_LL(llres, in_extent, out_extent=[]):
+    #get initial bounds of grid
+    [minlon, maxlon, minlat, maxlat] = in_extent
     [dlat,dlon] = list(map(float, llres.split('x')))
     lon_b = np.linspace(minlon - dlon/2, maxlon - dlon/2, int((maxlon-minlon)/dlon)+1)
     lat_b = np.linspace(minlat - dlat/2, maxlat + dlat/2, 
@@ -18,6 +20,30 @@ def make_grid_LL(llres, minlon=-180, maxlon=180, minlat=-90, maxlat=90):
         lat_b=lat_b.clip(None,90)
     lat = (lat_b[1:] + lat_b[:-1]) / 2
     lon = (lon_b[1:] + lon_b[:-1]) / 2
+
+    #trim grid bounds when your desired extent is not the same as your initial grid extent
+    if out_extent == []:
+        out_extent = in_extent
+    if out_extent != in_extent:
+        [minlon, maxlon, minlat, maxlat] = out_extent
+        minlon_ind = np.nonzero(lon >= minlon)
+        maxlon_ind = np.nonzero(lon <= maxlon)
+        lon_inds = np.intersect1d(minlon_ind,maxlon_ind)        
+        lon = lon[lon_inds]
+        #make sure to get edges of grid correctly
+        lon_inds = np.append(lon_inds, np.max(lon_inds)+1)
+        lon_b = lon_b[lon_inds]
+
+        minlat_ind = np.nonzero(lat >= minlat)
+        maxlat_ind = np.nonzero(lat <= maxlat)
+        lat_inds = np.intersect1d(minlat_ind,maxlat_ind)        
+        lat = lat[lat_inds]
+        #make sure to get edges of grid correctly
+        lat_inds = np.append(lat_inds, np.max(lat_inds)+1)
+        lat_b = lat_b[lat_inds]
+
+        
+    
     llgrid = {'lat': lat, 
               'lon': lon, 
               'lat_b': lat_b, 
