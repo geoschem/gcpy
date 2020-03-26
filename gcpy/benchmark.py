@@ -4305,6 +4305,13 @@ def make_benchmark_mass_tables(
     # Make sure that all necessary meteorological variables are found
     # ==================================================================
 
+    # Rename "DELP_DRY" to "Met_DELPDRY" for consistency
+    with xr.set_options(keep_attrs=True):
+        if "DELP_DRY" in refds.data_vars.keys():
+            refds = refds.rename({"DELP_DRY": "Met_DELPDRY"})
+        if "DELP_DRY" in devds.data_vars.keys():
+            devds = devds.rename({"DELP_DRY": "Met_DELPDRY"})
+
     # Find the area variables in Ref and Dev
     ref_area = core.get_area_from_dataset(refds)
     dev_area = core.get_area_from_dataset(devds)
