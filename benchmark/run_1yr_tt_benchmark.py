@@ -195,7 +195,7 @@ for m in range(12):
     elif days_per_month[m] == 30:
         delta = np.timedelta64((15 * 24), 'h')
     elif days_per_month[m] == 29:
-        delta = np.timedelta64((14 * 24), 'h')
+        delta = np.timedelta64(((14 * 24) + 12), 'h')
     else:
         delta = np.timedelta64((14 * 24), 'h')
     gchp_months[m] = bmk_months[m].astype("datetime64[h]") + delta
