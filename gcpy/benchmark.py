@@ -420,6 +420,28 @@ def compare_single_level(
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
     cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)    
 
+    # ==============================================================
+    # Set plot bounds for non cubed-sphere regridding and plotting
+    # ==============================================================
+    if cmpgridtype == "ll":
+        ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
+        dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
+        cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
+
+    #Trim data to extent of comparison grid if using ll grids
+    #Get cmp extents in same midpoint format as ll grid
+    cmp_mid_minlon, cmp_mid_maxlon, cmp_mid_minlat, cmp_mid_maxlat = get_grid_extents(cmpgrid,edges=False)
+    if ref_extent != cmp_extent and refgridtype == "ll":
+        refdata = refdata.where(refdata.lon>=cmp_mid_minlon,
+                                drop=True).where(refdata.lon<=cmp_mid_maxlon,
+                                                 drop=True).where(refdata.lat>=cmp_mid_minlat,
+                                                                  drop=True).where(refdata.lat<=cmp_mid_maxlat,drop=True)
+    if dev_extent != cmp_extent and devgridtype == "ll":
+        devdata = devdata.where(devdata.lon>=cmp_mid_minlon,
+                                drop=True).where(devdata.lon<=cmp_mid_maxlon,
+                                                 drop=True).where(devdata.lat>=cmp_mid_minlat,
+                                                                  drop=True).where(devdata.lat<=cmp_mid_maxlat,drop=True)
+    
     ds_refs = [None] * n_var
     ds_devs = [None] * n_var
     for i in range(n_var):
@@ -508,6 +530,7 @@ def compare_single_level(
         if regridref:
             if refgridtype == "ll":
                 # regrid ll to ll
+                print(ds_ref)
                 ds_ref_cmps[i] = refregridder(ds_ref)
             else:
                 # regrid cs to ll
@@ -795,13 +818,6 @@ def compare_single_level(
         cmap_gray = copy.copy(mpl.cm.RdBu_r)
         cmap_gray.set_bad(color="gray")
 
-        # ==============================================================
-        # Set plot bounds for non cubed-sphere plotting
-        # ==============================================================
-        if cmpgridtype == "ll":
-            ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
-            dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
-            cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
 
         # ==============================================================
         # Set titles for plots
