@@ -615,31 +615,32 @@ if gchp_vs_gcc:
         #---------------------------------------------------------------
         # GCHP vs GCC global mass tables
         #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} global mass tables %%%"
-        print(title.format(bmk_type))
-
-        # Files to read
-        collection = "Restart"
-        gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refrst, collection,
-                                            [end_date], is_gcc=True)
-        collection = "Restart"
-        gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devrst, collection,
-                                            [end_date], is_gchp=True)
-        collection = "StateMet_inst"
-        devmetfile= get_filepaths(gchp_vs_gcc_devdir, collection,
-                                  [end_date], is_gchp=True)
-        gchp_vs_gcc_devlist.append(devmetfile[0])
-
-        # Save to "Tables" subfolder of plot dir
-        plot_dir = join(gchp_vs_gcc_plotsdir, "Tables")
-        
-        # Plot mass tables
-        bmk.make_benchmark_mass_tables(gchp_vs_gcc_reflist,
-                                       gchp_vs_gcc_refstr,
-                                       gchp_vs_gcc_devlist,
-                                       gchp_vs_gcc_devstr,
-                                       dst=plot_dir,
-                                       overwrite=True)
+        print("\n%%% Skipping GCHP vs. GCC mass table. Needs more work. %%%")
+        #title = "\n%%% Creating GCHP vs. GCC {} global mass tables %%%"
+        #print(title.format(bmk_type))
+        #
+        ## Files to read
+        #collection = "Restart"
+        #gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refrst, collection,
+        #                                    [end_date], is_gcc=True)
+        #collection = "Restart"
+        #gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devrst, collection,
+        #                                    [end_date], is_gchp=True)
+        #collection = "StateMet_inst"
+        #devmetfile= get_filepaths(gchp_vs_gcc_devdir, collection,
+        #                          [end_date], is_gchp=True)
+        #gchp_vs_gcc_devlist.append(devmetfile[0])
+        #
+        ## Save to "Tables" subfolder of plot dir
+        #plot_dir = join(gchp_vs_gcc_plotsdir, "Tables")
+        #
+        ## Plot mass tables
+        #bmk.make_benchmark_mass_tables(gchp_vs_gcc_reflist,
+        #                               gchp_vs_gcc_refstr,
+        #                               gchp_vs_gcc_devlist,
+        #                               gchp_vs_gcc_devstr,
+        #                               dst=plot_dir,
+        #                               overwrite=True)
 
     if budget_table:
         #---------------------------------------------------------------
@@ -701,7 +702,7 @@ if gchp_vs_gcc:
         # --------------------------------------------------------------
         # GCHP vs GCC Strat-Trop Exchange
         # --------------------------------------------------------------
-        title = "\n%%% Cannot create GCHP vs. GCC Strat-Trop Exchange table %%%"
+        title = "\n%%% Skipping GCHP vs. GCC Strat-Trop Exchange table %%%"
         print(title)
      
 # ======================================================================
@@ -839,33 +840,34 @@ if gchp_vs_gchp:
         #---------------------------------------------------------------
         # GCHP vs GCHP global mass tables
         #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCHP {} global mass tables %%%"
-        print(title.format(bmk_type))
-
-        # Files to read
-        collection = "Restart"
-        gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refrst, collection,
-                                            [end_date], is_gchp=True)
-        gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devrst, collection,
-                                            [end_date], is_gchp=True)
-        collection = "StateMet_inst"
-        refmetfile= get_filepaths(gchp_vs_gchp_refdir, collection,
-                                  [end_date], is_gchp=True)
-        devmetfile= get_filepaths(gchp_vs_gchp_devdir, collection,
-                                  [end_date], is_gchp=True)
-        gchp_vs_gchp_reflist.append(refmetfile[0])
-        gchp_vs_gchp_devlist.append(devmetfile[0])
-
-        # Save to "Tables" subfolder of plot dir
-        plot_dir = join(gchp_vs_gchp_plotsdir, "Tables")
-        
-        # Plot mass tables
-        bmk.make_benchmark_mass_tables(gchp_vs_gchp_reflist[0],
-                                       gchp_vs_gchp_refstr,
-                                       gchp_vs_gchp_devlist[0],
-                                       gchp_vs_gchp_devstr,
-                                       dst=plot_dir,
-                                       overwrite=True)
+        print("\n%%% Skipping GCHP vs. GCHP mass table. Needs more work. %%%")
+        #title = "\n%%% Creating GCHP vs. GCHP {} global mass tables %%%"
+        #print(title.format(bmk_type))
+        #
+        ## Files to read
+        #collection = "Restart"
+        #gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refrst, collection,
+        #                                    [end_date], is_gchp=True)
+        #gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devrst, collection,
+        #                                    [end_date], is_gchp=True)
+        #collection = "StateMet_inst"
+        #refmetfile= get_filepaths(gchp_vs_gchp_refdir, collection,
+        #                          [end_date], is_gchp=True)
+        #devmetfile= get_filepaths(gchp_vs_gchp_devdir, collection,
+        #                          [end_date], is_gchp=True)
+        #gchp_vs_gchp_reflist.append(refmetfile[0])
+        #gchp_vs_gchp_devlist.append(devmetfile[0])
+        #
+        ## Save to "Tables" subfolder of plot dir
+        #plot_dir = join(gchp_vs_gchp_plotsdir, "Tables")
+        #
+        ## Plot mass tables
+        #bmk.make_benchmark_mass_tables(gchp_vs_gchp_reflist[0],
+        #                               gchp_vs_gchp_refstr,
+        #                               gchp_vs_gchp_devlist[0],
+        #                               gchp_vs_gchp_devstr,
+        #                               dst=plot_dir,
+        #                               overwrite=True)
 
     if OH_metrics:
         #---------------------------------------------------------------
@@ -877,7 +879,7 @@ if gchp_vs_gchp:
         # --------------------------------------------------------------
         # GCHP vs GCHP Strat-Trop Exchange
         # --------------------------------------------------------------
-        title = "\n%%% Cannot create GCHP vs. GCHP Strat-Trop Exchange table %%%"
+        title = "\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%"
         print(title)
      
 # =====================================================================
