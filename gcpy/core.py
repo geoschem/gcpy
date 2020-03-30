@@ -1425,7 +1425,7 @@ def gcplot(plot_vals,
         ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
-
+        
     else:
         #Cubed-sphere single level
         ax.coastlines()
@@ -1436,16 +1436,10 @@ def gcplot(plot_vals,
             #Comparison of numpy arrays throws errors
             pass
         [minlon,maxlon,minlat,maxlat] = extent
-
+        
         #Catch issue with plots extending into both the western and eastern hemisphere
-        if maxlon > 180 and minlon >=0:
-            maxlon = maxlon-180
-            minlon = minlon-180
-        elif minlon > 180:
-            minlon = minlon-180
-        elif maxlon > 180:
-            maxlon=maxlon-180
-
+        if np.max(grid["lon_b"] > 180):
+            grid["lon_b"] = (((grid["lon_b"]+180)%360)-180)
         for j in range(6):
             plot = ax.pcolormesh(
                 grid["lon_b"][j, :, :],
@@ -1455,7 +1449,8 @@ def gcplot(plot_vals,
                 cmap=comap,
                 norm=norm
             )
-        ax.set_extent([minlon,maxlon,minlat,maxlat])
+        ax.set_xlim(minlon, maxlon)
+        ax.set_ylim(minlat, maxlat)
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
 
@@ -1517,10 +1512,11 @@ def get_input_res(data):
 
 
 
-def call_make_grid(res, gridtype, zonal_mean, comparison, minlon=-180, maxlon=180, minlat=-90, maxlat=90):
+def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent=[-180,180,-90,90], 
+                   out_extent=[-180,180,-90,90]):
     # call appropriate make_grid function and return new grid
     if gridtype == "ll" or (zonal_mean and comparison):
-        return [make_grid_LL(res, minlon, maxlon, minlat, maxlat), None]
+        return [make_grid_LL(res, in_extent, out_extent), None]
     else:
         return make_grid_CS(res)
 
@@ -1530,14 +1526,16 @@ def all_zero_or_nan(ds):
     """
     return not np.any(ds), np.isnan(ds).all()
 
-def get_grid_extents(data):
+def get_grid_extents(data, edges=True):
     """
     Get min and max lat and lon from an input GEOS-Chem
     xarray dataset or grid dict
     """
     if type(data) is dict:
-        if "lon_b" in data:
+        if "lon_b" in data and edges:
             return np.min(data["lon_b"]), np.max(data["lon_b"]), np.min(data["lat_b"]), np.max(data["lat_b"])
+        elif not edges:
+            return np.min(data["lon"]), np.max(data["lon"]), np.min(data["lat"]), np.max(data["lat"])
         else:
             return -180, 180, -90, 90
     elif "lat" in data.dims and "lon" in data.dims:
