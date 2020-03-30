@@ -4536,11 +4536,14 @@ def make_benchmark_budget_tables(
     #    if interval == None:
     #        interval = 86400.0 * 31.0
 
-    # Get budget variable and regions
-    budget_vars = [k for k in devds.data_vars.keys() if k[:6] == "Budget"]
-    budget_regions = sorted(set([v.split("_")[0][-4:] for v in budget_vars]))
+    # Get budget variables in dataset
+    budget_vars = [k for k in devds.data_vars.keys() if k.startswith("Budget")]
 
-    # for region in budget_regions:
+    # Define budget regions in GEOS-Chem
+    budget_regions = ['Full','Trop','PBL']
+
+    # Function to allow parallelization across regions when making budget
+    # table files
     def createfile(region):
 
         # Suppress harmless run-time warnings from all threads
@@ -4554,17 +4557,18 @@ def make_benchmark_budget_tables(
         region_vars = [k for k in budget_vars if region in k]
         region_spc = sorted(set([v.split("_")[1] for v in region_vars]))
 
-        # Write to file
-        create_budget_table(
-            devds,
-            devstr,
-            region,
-            region_spc,
-            region_vars,
-            file_budget,
-            interval,
-            template="Budget_{}",
-        )
+        # Write to file if species are found for this region
+        if region_spc:
+            create_budget_table(
+                devds,
+                devstr,
+                region,
+                region_spc,
+                region_vars,
+                file_budget,
+                interval,
+                template="Budget_{}",
+            )
 
     # Create budget tables in parallel
     Parallel(n_jobs=n_job)(delayed(createfile)(region) \
