@@ -1422,7 +1422,7 @@ def gcplot(plot_vals,
         ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
-
+        
     else:
         #Cubed-sphere single level
         ax.coastlines()
@@ -1433,16 +1433,10 @@ def gcplot(plot_vals,
             #Comparison of numpy arrays throws errors
             pass
         [minlon,maxlon,minlat,maxlat] = extent
-
+        
         #Catch issue with plots extending into both the western and eastern hemisphere
-        if maxlon > 180 and minlon >=0:
-            maxlon = maxlon-180
-            minlon = minlon-180
-        elif minlon > 180:
-            minlon = minlon-180
-        elif maxlon > 180:
-            maxlon=maxlon-180
-
+        if np.max(grid["lon_b"] > 180):
+            grid["lon_b"] = (((grid["lon_b"]+180)%360)-180)
         for j in range(6):
             plot = ax.pcolormesh(
                 grid["lon_b"][j, :, :],
@@ -1452,7 +1446,8 @@ def gcplot(plot_vals,
                 cmap=comap,
                 norm=norm
             )
-        ax.set_extent([minlon,maxlon,minlat,maxlat])
+        ax.set_xlim(minlon, maxlon)
+        ax.set_ylim(minlat, maxlat)
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
 
@@ -1514,7 +1509,8 @@ def get_input_res(data):
 
 
 
-def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent, out_extent):
+def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent=[-180,180,-90,90], 
+                   out_extent=[-180,180,-90,90]):
     # call appropriate make_grid function and return new grid
     if gridtype == "ll" or (zonal_mean and comparison):
         return [make_grid_LL(res, in_extent, out_extent), None]

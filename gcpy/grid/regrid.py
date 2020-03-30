@@ -12,12 +12,13 @@ def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False
     [out_minlon, out_maxlon, out_minlat, out_maxlat] = out_extent
     llgrid_in = make_grid_LL(llres_in, in_extent, out_extent)
     llgrid_out = make_grid_LL(llres_out, out_extent)
-    print(llgrid_in)
-    #print(llgrid_out)
-    print(llres_in, llres_out)
-    print(llgrid_in['lon'].size, llgrid_in['lat'].size, llgrid_in['lon_b'].size, llgrid_in['lat_b'].size)
-    print(llgrid_out['lon'].size, llgrid_out['lat'].size, llgrid_out['lon_b'].size, llgrid_out['lat_b'].size)
-    weightsfile = os.path.join(weightsdir,'conservative_{}_{}.nc'.format(llres_in, llres_out))
+    if in_extent == [-180,180,-90,90] and out_extent == [-180,180,-90,90]:
+        weightsfile = os.path.join(weightsdir,'conservative_{}_{}.nc'.format(llres_in, llres_out))
+    else:
+        in_extent_str = str(in_extent).replace('[', '').replace(']','').replace(', ', 'x')
+        out_extent_str = str(out_extent).replace('[', '').replace(']','').replace(', ', 'x')
+        weightsfile = os.path.join(weightsdir,'conservative_{}_{}_{}_{}.nc'.format(llres_in, llres_out, 
+                                                                                   in_extent_str, out_extent_str))
     regridder = xe.Regridder(llgrid_in, llgrid_out, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
     return regridder
 
@@ -44,9 +45,6 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     cmpminlat = max(x for x in [refminlat, devminlat] if x is not None)
     cmpmaxlat = min(x for x in [refmaxlat, devmaxlat] if x is not None)
     
-    print(refminlon, refmaxlon, refminlat, refmaxlat)
-    print(devminlon, devmaxlon, devminlat, devmaxlat)
-    print(cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
     ref_extent = [refminlon, refmaxlon, refminlat, refmaxlat]
     cmp_extent = [cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat]
     dev_extent = [devminlon, devmaxlon, devminlat, devmaxlat]    
@@ -72,9 +70,16 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
             # cmpgridtype = 'cs'
             cmpres = "1x1.25"
             cmpgridtype = "ll"
+        elif refgridtype == "ll" and float(refres.split('x')[0])<1 and float(refres.split('x')[1])<1.25:
+            cmpres = refres
+            cmpgridtype = "ll"
+        elif devgridtype == "ll" and float(devres.split('x')[0])<1 and float(devres.split('x')[1])<1.25:
+            cmpres = devres
+            cmpgridtype = "ll"
         else:
             cmpres = "1x1.25"
             cmpgridtype = "ll"
+
     elif "x" in cmpres:
         cmpgridtype = "ll"
     else:
@@ -140,6 +145,7 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
                 devregridder_list = make_regridder_C2L(
                     devres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights
                 )
+
 
     return [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype,
     regridref, regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder, 

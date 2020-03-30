@@ -7,7 +7,7 @@ from itertools import product
 INV_SQRT_3 = 1.0 / np.sqrt(3.0)
 ASIN_INV_SQRT_3 = np.arcsin(INV_SQRT_3)
 
-def make_grid_LL(llres, in_extent, out_extent=[]):
+def make_grid_LL(llres, in_extent=[-180,180,-90,90], out_extent=[]):
     #get initial bounds of grid
     [minlon, maxlon, minlat, maxlat] = in_extent
     [dlat,dlon] = list(map(float, llres.split('x')))
@@ -50,7 +50,7 @@ def make_grid_LL(llres, in_extent, out_extent=[]):
               'lon_b': lon_b}
     return llgrid
 
-def make_grid_CS(csres):
+def make_grid_CS(csres,out_extent=[0,360,-90,90]):
     csgrid = csgrid_GMAO(csres)
     csgrid_list = [None]*6
     for i in range(6):
@@ -58,7 +58,9 @@ def make_grid_CS(csres):
                           'lon': csgrid['lon'][i],
                           'lat_b': csgrid['lat_b'][i], 
                           'lon_b': csgrid['lon_b'][i]}
+
     return [csgrid, csgrid_list]
+
 
 def calc_rectilinear_lon_edge(lon_stride, center_at_180):
     """ Compute longitude edge vector for a rectilinear grid.

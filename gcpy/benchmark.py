@@ -20,7 +20,7 @@ from .plot import WhGrYlRd
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L, create_regridders
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
-from .core import gcplot, all_zero_or_nan, get_grid_extents
+from .core import gcplot, all_zero_or_nan, get_grid_extents, call_make_grid
 from .units import convert_units
 import gcpy.constants as gcon
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -441,7 +441,6 @@ def compare_single_level(
                                 drop=True).where(devdata.lon<=cmp_mid_maxlon,
                                                  drop=True).where(devdata.lat>=cmp_mid_minlat,
                                                                   drop=True).where(devdata.lat<=cmp_mid_maxlat,drop=True)
-    
     ds_refs = [None] * n_var
     ds_devs = [None] * n_var
     for i in range(n_var):
@@ -522,6 +521,12 @@ def compare_single_level(
     # ==================================================================   
     ds_ref_cmps = [None] * n_var
     ds_dev_cmps = [None] * n_var
+    global_cmp_grid = call_make_grid(cmpres, 'll', False, False)[0]
+    cmpminlon_ind = np.where(global_cmp_grid["lon"] >= cmpminlon)[0][0]
+    cmpmaxlon_ind = np.where(global_cmp_grid["lon"] <= cmpmaxlon)[0][-1]
+    cmpminlat_ind = np.where(global_cmp_grid["lat"] >= cmpminlat)[0][0]
+    cmpmaxlat_ind = np.where(global_cmp_grid["lat"] <= cmpmaxlat)[0][-1]
+
     for i in range(n_var):
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
@@ -530,16 +535,19 @@ def compare_single_level(
         if regridref:
             if refgridtype == "ll":
                 # regrid ll to ll
-                print(ds_ref)
                 ds_ref_cmps[i] = refregridder(ds_ref)
             else:
                 # regrid cs to ll
-                ds_ref_cmps[i] = np.zeros([cmpgrid["lat"].size,
-                                           cmpgrid["lon"].size])
+                #ds_ref_cmps[i] = np.zeros([cmpgrid["lat"].size,
+                #                           cmpgrid["lon"].size])
+                ds_ref_cmps[i] = np.zeros([global_cmp_grid['lat'].size,
+                                           global_cmp_grid['lon'].size])
                 ds_ref_reshaped = ds_ref.data.reshape(6, refres, refres)
                 for j in range(6):
                     regridder = refregridder_list[j]
                     ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])
+                #limit to extent of cmpgrid
+                ds_ref_cmps[i] = ds_ref_cmps[i][cmpminlat_ind:cmpmaxlat_ind+1,cmpminlon_ind:cmpmaxlon_ind+1].squeeze()
         else:
             ds_ref_cmps[i] = ds_ref
 
@@ -550,12 +558,16 @@ def compare_single_level(
                 ds_dev_cmps[i] = devregridder(ds_dev)
             else:
                 # regrid cs to ll
-                ds_dev_cmps[i] = np.zeros([cmpgrid["lat"].size,
-                                           cmpgrid["lon"].size])
+                #ds_dev_cmps[i] = np.zeros([cmpgrid["lat"].size,
+                #                           cmpgrid["lon"].size])
+                ds_dev_cmps[i] = np.zeros([global_cmp_grid['lat'].size,
+                                           global_cmp_grid['lon'].size])
+
                 ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
                 for j in range(6):
                     regridder = devregridder_list[j]
                     ds_dev_cmps[i] += regridder(ds_dev_reshaped[j])
+                ds_dev_cmps[i] = ds_dev_cmps[i][cmpminlat_ind:cmpmaxlat_ind+1,cmpminlon_ind:cmpmaxlon_ind+1].squeeze()
         else:
             ds_dev_cmps[i] = ds_dev
 
@@ -892,8 +904,7 @@ def compare_single_level(
                        plot_extent, plot_extent,
                        plot_extent, plot_extent]
         else:
-            print(ref_extent, dev_extent, cmp_extent)
-            extents = [ref_extent, dev_extent, 
+            extents = [cmp_extent, cmp_extent, 
                        cmp_extent, cmp_extent, 
                        cmp_extent, cmp_extent]
 
