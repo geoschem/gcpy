@@ -143,10 +143,12 @@ gchp_vs_gchp_devrst = join(maindir, gchp_dev_version)
 
 # Plots directories (edit as needed)
 if gcpy_test:
-    gcc_vs_gcc_plotsdir    = './Plots'
-    gchp_vs_gchp_plotsdir  = './Plots/GCHP_version_comparison'
-    gchp_vs_gcc_plotsdir   = './Plots/GCHP_GCC_comparison'
-    diff_of_diffs_plotsdir = './Plots/GCHP_GCC_diff_of_diffs'
+    mainplotsdir          = './Plots'
+    gcc_vs_gcc_plotsdir    = join(mainplotsdir,'GCC_version_comparison')
+    gchp_vs_gchp_plotsdir  = join(mainplotsdir,'GCHP_version_comparison')
+    gchp_vs_gcc_plotsdir   = join(mainplotsdir,'GCHP_GCC_comparison')
+    diff_of_diffs_plotsdir = join(mainplotsdir,'GCHP_GCC_diff_of_diffs')
+    if not os.path.exists(mainplotsdir): os.mkdir(mainplotsdir)
 else:
     gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_version, "Plots")
     gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_version,
@@ -892,10 +894,10 @@ if gchp_vs_gcc_diff_of_diffs:
         # NOTE: This can be expanded to differences beyond species
         # concentrations by following how this is done for conc plots.
         print("%\n%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%")
-
+        
         # Get a list of variables that GCPy should not read
         skip_vars = skip_these_vars
-
+        
         # Files to read
         collection = "SpeciesConc"
         gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
@@ -906,11 +908,11 @@ if gchp_vs_gcc_diff_of_diffs:
                                             [gchp_date], is_gchp=True)
         gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
                                              [gchp_date], is_gchp=True)
-
+        
         # Target output files
         diff_of_diffs_refspc = "./gcc_diffs_spc.nc4"
         diff_of_diffs_devspc = "./gchp_diffs_spc.nc4"
-
+        
         # Create a ref file that contains GCC differences
         # Select only common fields between the Ref and Dev datasets
         gcc_ref  = xr.open_dataset(gcc_vs_gcc_reflist[0], drop_variables=skip_vars)
@@ -925,7 +927,7 @@ if gchp_vs_gcc_diff_of_diffs:
                 # Ensure the gcc_diffs Dataset includes attributes
                 gcc_diffs[v].attrs = gcc_dev[v].attrs
         gcc_diffs.to_netcdf(diff_of_diffs_refspc)
-
+        
         # Create a dev file that contains GCHP differences. Include special
         # handling if cubed sphere grid dimension names are different since they
         # changed in MAPL v1.0.0.
@@ -955,7 +957,8 @@ if gchp_vs_gcc_diff_of_diffs:
                     # attributes; we have to reattach them
                     gchp_diffs[v].attrs = gchp_dev[v].attrs
         gchp_diffs.to_netcdf(diff_of_diffs_devspc)
-
+        
+        
         # Create diff-of-diff plots for species concentrations
         # (includes lumped species and separates by category)
         #
@@ -970,7 +973,8 @@ if gchp_vs_gcc_diff_of_diffs:
                                  weightsdir=weightsdir,
                                  overwrite=True,
                                  use_cmap_RdBu=True)
-
+        
+        
         # Remove the separate GCC and GCHP diff files
         os.remove(diff_of_diffs_refspc)
         os.remove(diff_of_diffs_devspc)
