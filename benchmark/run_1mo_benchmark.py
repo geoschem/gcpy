@@ -971,3 +971,6 @@ if gchp_vs_gcc_diff_of_diffs:
                                  overwrite=True,
                                  use_cmap_RdBu=True)
 
+        # Remove the separate GCC and GCHP diff files
+        os.remove(diff_of_diffs_refspc)
+        os.remove(diff_of_diffs_devspc)
