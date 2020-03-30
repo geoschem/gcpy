@@ -991,15 +991,6 @@ def compare_single_level(
             )
 
         # ==============================================================
-        # Update the list of variables with significant differences.
-        # Criterion: abs(max(fracdiff)) > 0.1
-        # Do not include NaNs in the criterion, because these indicate
-        # places where fracdiff could not be computed (div-by-zero).
-        # ==============================================================
-        if np.abs(np.nanmax(fracdiff)) > 0.1:
-            sigdiff_list.append(varname)
-
-        # ==============================================================
         # Add this page of 6-panel plots to a PDF file
         # ==============================================================
         if savepdf:
@@ -1007,12 +998,28 @@ def compare_single_level(
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
-
+        # ==============================================================
+        # Update the list of variables with significant differences.
+        # Criterion: abs(max(fracdiff)) > 0.1
+        # Do not include NaNs in the criterion, because these indicate
+        # places where fracdiff could not be computed (div-by-zero).
+        # ==============================================================
+        if np.abs(np.nanmax(fracdiff)) > 0.1:
+            sigdiff_list.append(varname)
+            return varname
+        else:
+            return
+        
     #do not attempt nested thread parallelization due to issues with matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
     if savepdf:
-        Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+        results = Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+        #update sig diffs after parallel calls
+        if current_process().name == "MainProcess":
+            for varname in results:
+                if type(varname) is str:
+                    sigdiff_list.append(varname)
     else:
         #disable parallel plotting to allow interactive figure plotting
         for i in range(n_var):
@@ -1701,15 +1708,6 @@ def compare_zonal_mean(
             )
 
         # ==============================================================
-        # Update the list of variables with significant differences.
-        # Criterion: abs(max(fracdiff)) > 0.1
-        # Do not include NaNs in the criterion, because these indicate
-        # places where fracdiff could not be computed (div-by-zero).
-        # ==============================================================
-        if np.abs(np.nanmax(zm_fracdiff)) > 0.1:
-            sigdiff_list.append(varname)
-
-        # ==============================================================
         # Add this page of 6-panel plots to the PDF file
         # ==============================================================
         if savepdf:
@@ -1718,15 +1716,29 @@ def compare_zonal_mean(
             pdf.close()
             plt.close(figs)
 
-    # for i in range(n_var):
-    #    createfig(i)
-
+        # ==============================================================
+        # Update the list of variables with significant differences.
+        # Criterion: abs(max(fracdiff)) > 0.1
+        # Do not include NaNs in the criterion, because these indicate
+        # places where fracdiff could not be computed (div-by-zero).
+        # ==============================================================
+        if np.abs(np.nanmax(zm_fracdiff)) > 0.1:
+            sigdiff_list.append(varname)
+            return varname
+        else:
+            return
     # do not attempt nested thread parallelization due to issues with matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
 
     if savepdf:
-        Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+        results = Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+        #update sig diffs after parallel calls
+        if current_process().name == "MainProcess":
+            for varname in results:
+                if type(varname) is str:
+                    sigdiff_list.append(varname)
+
     else:
         #disable parallel plotting to allow interactive figure plotting
         for i in range(n_var):
@@ -3858,7 +3870,6 @@ def make_benchmark_jvalue_plots(
         diff_500[:] = [v.replace(prefix, "") for v in diff_500]
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
-
     # Full-column zonal mean plots
     if "zonalmean" in plots:
         if subdst is not None:
@@ -3913,7 +3924,7 @@ def make_benchmark_jvalue_plots(
         )
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
-
+        
         # ==============================================================
         # Write the lists of J-values that have significant differences,
         # which we need to fill out the benchmark approval forms.
@@ -3946,7 +3957,7 @@ def make_benchmark_jvalue_plots(
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
                             f.close()
-
+                        
 
 def make_benchmark_aod_plots(
     ref,
