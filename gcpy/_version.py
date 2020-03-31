@@ -18,11 +18,6 @@ def show_versions(as_yaml=False):
         Set this switch to True to return the list of versions
         as a YAML object instead of printing them to stdout.
         Default value: False
-
-    Example:
-    --------
-    >>> import gcpy
-    >>> gcpy.show_versions()
     '''
     
     # List of dependent packages
@@ -75,12 +70,6 @@ def get_version_number(modname):
     --------
     version : str
        Version number corresponding to module.
-
-    Example:
-    --------
-    >>> import yaml
-    >>> print(get_version_number('yaml')
-    >>> 2.0.9
     '''
 
     # Search in this order: Python, system modules, imported modules
