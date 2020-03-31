@@ -23,27 +23,6 @@ def date_to_ymd(date):
     Returns
     -------
     dict containing the timestamp components
-
-    Notes
-    -----
-    N/A
-
-    Examples
-    --------
-
-    >>> from gcpy.time import date_to_ymd
-
-    Separate a date into year, month, and day
-
-    >>> ymd = date_to_ymd("20170113")
-    >>> ymd['year'], ymd['month'], ymd['day']
-    2017 1 13
-
-    Separate a time into hour, minute, and second
-    >>> hms = date_to_ymd("134505")
-    >>> hms['hour'], hms['minute'], hms['second']
-    13 45 5
-
     """
 
     typ = 'ymd' if len(date) > 6 else 'hms'

@@ -24,15 +24,6 @@ def adjust_units(units):
     Remarks:
         Unit list is incomplete -- currently is geared to units from
         common model diagnostics (e.g. kg/m2/s, kg, and variants).
-
-    Examples:
-        >>> import gcpy
-        >>> print(gcpy.adjust_units('kg/m2/s'))
-        kg/m2/s
-        >>> print(gcpy.adjust_units('kg m-2 s-1'))
-        kg/m2/s
-        >>> print(gcpy.adjust_units('kg m^-2 s^-1))
-        kg/m2/s
     """
 
     # Error check arguments
@@ -186,18 +177,6 @@ def convert_units(
         At present, only certain types of unit conversions have been
         implemented (corresponding to the most commonly used unit
         conversions for model benchmark output).
-
-    Example:
-    --------
-        >>> import.gcpy
-        >>> import xarray as xr
-        >>> import yaml
-        >>> ds = xr.open_dataset("myfile.nc")
-        >>> dr = ds["CO"]
-        >>> properties = yaml.load(open(species_database.yaml))
-        >>> dr_new = convert_units(dr, "CO", properties.get("CO"),
-                     "Tg", interval=86400.0, ds["AREA"])
-
     """
 
     # Get species molecular weight information

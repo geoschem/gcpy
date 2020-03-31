@@ -32,7 +32,7 @@ def open_dataset(filename, **kwargs):
     This method inspects a GEOS-Chem output file and chooses a way to
     load it into memory as an xarray Dataset. Because two different
     libraries to support BPCH and netCDF outputs, you may need to pass
-    additional keyword arguments to the function. See the Examples below.
+    additional keyword arguments to the function.
 
     Args:
     -----
@@ -56,18 +56,6 @@ def open_dataset(filename, **kwargs):
         xarray.open_dataset
         xbpch.open_bpchdataset
         open_mfdataset
-
-    Examples
-    --------
-        Open a legacy BPCH output file:
-
-        >>> ds = open_dataset("my_GEOS-Chem_run.bpch",
-        ...                   tracerinfo_file='tracerinfo.dat',
-        ...                   diaginfo_file='diaginfo.dat')
-
-        Open a netCDF output file, but disable metadata decoding:
-        >>> ds = open_dataset("my_GCHP_data.nc",
-        ...                   decode_times=False, decode_cf=False)
     """
 
     basename, file_extension = os.path.splitext(filename)
@@ -266,14 +254,6 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
 
             devonly          List of 2D or 3D variables that are only
                              present in devdata
-
-    Examples:
-    ---------
-        >>> from gcpy import core
-        >>> import xarray as xr
-        >>> refdata = xr.open_dataset("ref_data_file.nc")
-        >>> devdata = xr.open_dataset("dev_data_file.nc")
-        >>> vardict = core.compare_varnames(refdata, devdata)
     """
     refvars = [k for k in refdata.data_vars.keys()]
     devvars = [k for k in devdata.data_vars.keys()]
@@ -373,34 +353,6 @@ def compare_stats(refdata, refstr, devdata, devstr, varname):
 
         varname : str
             Variable name for which global statistics will be printed out.
-
-    Examples:
-    ---------
-        >>> import gcpy
-        >>> import xarray as xr
-        >>> refdata = xr.open_dataset("ref_data_file.nc")
-        >>> devdata = xr.open_dataset("dev_data_file.nc")
-        >>> gcpy.compare_stats(ds_ref, "Ref", ds_dev, "Dev", "EmisNO2_Anthro")
-
-        Data units:
-            Ref:  molec/cm2/s
-            Dev:  molec/cm2/s
-        Array sizes:
-            Ref:  (1, 47, 46, 72)
-            Dev:  (1, 47, 46, 72)
-        Global stats:
-          Mean:
-            Ref:  1770774.125
-            Dev:  1770774.125
-          Min:
-            Ref:  0.0
-            Dev:  0.0
-          Max:
-            Ref:  11548288000.0
-            Dev:  11548288000.0
-          Sum:
-            Ref:  275645792256.0
-            Dev:  275645792256.0
     """
 
     refvar = refdata[varname]
@@ -469,11 +421,6 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
     --------
         To add more diagnostic names, edit the dictionary contained
         in the bpch_to_nc_names.yml.
-
-    Examples:
-    -----------------
-       >>> import gcpy
-       >>> ds_new = gcpy.convert_bpch_names_to_netcdf_names(ds)
     """
 
     # Names dictionary (key = bpch id, value[0] = netcdf id,
@@ -734,20 +681,6 @@ def filter_names(names, text=""):
             Returns all elements of names that contains the substring
             specified by the "text" argument.  If "text" is omitted,
             then the original contents of names will be returned.
-
-    Examples:
-    ---------
-        Obtain a list of variable names that contain the substrings
-        "CO", "NO", and "O3":
-
-        >>> import gcpy
-        >>> import xarray as xr
-        >>> refdata = xr.open_dataset("ref_data_file.nc")
-        >>> devdata = xr.open_dataset("dev_data_file.nc")
-        >>> vardict = gcpy.compare_varnames(refdata, devdata)
-        >>> var_CO = gcpy.filter_names(vardict['commonvars'], "CO")
-        >>> var_NO = gcpy.filter_names(vardict['commonvars'], "NO")
-        >>> var_O3 = gcpy.filter_names(vardict['commonvars'], "O3")
     """
 
     if text != "":
