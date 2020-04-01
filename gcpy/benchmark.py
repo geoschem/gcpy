@@ -77,24 +77,24 @@ def sixplot(
     WBD MOVE TO core.py and RENAME?
     Args:
     -----
-    
+
     ^subplot : str
        Type of plot to create (ref, dev, absolute difference or fractional difference)
-    
+
     ^all_zero : boolean
        Set this flag to True if the data to be plotted consist only of zeros
-    
+
     ^all_nan : boolean
        Set this flag to True if the data to be plotted consist only of NaNs
 
     *plot_val : xarray DataArray
        Single variable GEOS-Chem output values to plot
-    
+
     grid : dict
        Dictionary mapping plot_val to plottable coordinates
 
     WBD VVVVV
-    ax : matplotlib axes 
+    ax : matplotlib axes
        Axes object to plot information. Will create a new axes if none is passed.
 
     ^rowcol : tuple
@@ -104,24 +104,24 @@ def sixplot(
        Title to print on axes
 
     comap : matplotlib Colormap
-       Colormap for plotting data values    
+       Colormap for plotting data values
 
     unit : str
        Units of plotted data
-    
+
     extent : tuple (minlon, maxlon, minlat, maxlat) WBD SHOULD BE KEYWORD?
-       Describes minimum and maximum latitude and longitude of input data 
+       Describes minimum and maximum latitude and longitude of input data
 
     masked_data : numpy array
        Masked area for cubed-sphere plotting
-    
+
     #Need to modify this name
     ^other_all_nan : boolean
         Set this flag to True if plotting ref/dev and the other of ref/dev is all nan
 
     gridtype : str
        "ll" for lat/lon or "cs" for cubed-sphere
-    
+
     ^vmins: list of float
        list of length 3 of minimum ref value, dev value, and absdiff value
 
@@ -129,22 +129,22 @@ def sixplot(
        list of length 3 of maximum ref value, dev value, and absdiff value
 
     use_cmap_RdBu : boolean
-       Set this flag to True to use a blue-white-red colormap 
+       Set this flag to True to use a blue-white-red colormap
 
     ^match_cbar : boolean
        Set this flag to True if you are plotting with the same colorbar for ref and dev
 
     verbose : boolean
-       Set this flag to True to enable informative printout.    
+       Set this flag to True to enable informative printout.
 
     log_color_scale : boolean
        Set this flag to True to enable log-scale colormapping
 
-    pedge : 
+    pedge :
        Edge pressures of grid cells in data to be plotted
 
     pedge_ind : int
-       Index of edge pressure values within pressure range  in data to be plotted 
+       Index of edge pressure values within pressure range  in data to be plotted
 
     log_yaxis : boolean
        Set this flag to True to enable log scaling of pressure in zonal mean plots
@@ -223,7 +223,7 @@ def sixplot(
         )
     else:
         norm = core.normalize_colors(vmin, vmax, is_difference=True)
-        
+
     #Create plot
     plot = gcplot(plot_val, ax, plot_type, grid, gridtype, title, comap,
                   norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
@@ -251,7 +251,7 @@ def sixplot(
         else:
             if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
-    
+
     try:
         cb.formatter.set_useOffset(False)
     except:
@@ -285,8 +285,8 @@ def compare_single_level(
     sigdiff_list=[],
 ):
     """
-    Create single-level 3x2 comparison map plots for variables common 
-    in two xarray Datasets. Optionally save to PDF. 
+    Create single-level 3x2 comparison map plots for variables common
+    in two xarray Datasets. Optionally save to PDF.
 
     Args:
     -----
@@ -295,13 +295,13 @@ def compare_single_level(
 
         refstr  : str
             String description for reference data to be used in plots
-     
+
         devdata : xarray dataset
             Dataset used as development in comparison
 
         devstr  : str
             String description for development data to be used in plots
- 
+
     Keyword Args (optional):
     ------------------------
         varlist : list of strings
@@ -310,7 +310,7 @@ def compare_single_level(
 
         ilev : integer
             Dataset level dimension index using 0-based system
-            Default value: 0   
+            Default value: 0
 
         itime : integer
             Dataset time dimension index using 0-based system
@@ -318,7 +318,7 @@ def compare_single_level(
 
         weightsdir : str
             Directory path for storing regridding weights
-            Default value: None (will create/store weights in 
+            Default value: None (will create/store weights in
             current directory)
 
         pdfname : str
@@ -326,9 +326,9 @@ def compare_single_level(
             Default value: Empty string (will not create PDF)
 
         cmpres : str
-            String description of grid resolution at which 
+            String description of grid resolution at which
             to compare datasets
-            Default value: None (will compare at highest resolution 
+            Default value: None (will compare at highest resolution
             of ref and dev)
 
         match_cbar : boolean
@@ -347,7 +347,7 @@ def compare_single_level(
             Default value: True
 
         flip_ref : boolean
-            Set this flag to True to flip the vertical dimension of 
+            Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
             Default value: False
 
@@ -357,7 +357,7 @@ def compare_single_level(
             Default value: False
 
         use_cmap_RdBu : boolean
-            Set this flag to True to use a blue-white-red colormap 
+            Set this flag to True to use a blue-white-red colormap
             for plotting the raw data in both the Ref and Dev datasets.
             Default value: False
 
@@ -365,7 +365,7 @@ def compare_single_level(
             Set this flag to True to enable informative printout.
             Default value: False
 
-        log_color_scale: boolean         
+        log_color_scale: boolean
             Set this flag to True to plot data (not diffs)
             on a log color scale.
             Default value: False
@@ -376,7 +376,7 @@ def compare_single_level(
             Default value: None
 
         sigdiff_list: list of str
-            Returns a list of all quantities having significant 
+            Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
     """
@@ -419,7 +419,7 @@ def compare_single_level(
     # =================================================================
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
-    cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)    
+    cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)
 
     # ==============================================================
     # Set plot bounds for non cubed-sphere regridding and plotting
@@ -492,14 +492,14 @@ def compare_single_level(
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
 
-    # ==================================================================   
+    # ==================================================================
     # Also reshape the area variables if normalize_by_area=True
     # ==================================================================
     if normalize_by_area:
         if "AREAM2" in refdata.data_vars.keys():
             ref_area = refdata["AREAM2"]
             if "time" in ref_area.dims:
-                ref_area = ref_area.isel(time=0)                
+                ref_area = ref_area.isel(time=0)
             ref_area = reshape_MAPL_CS(ref_area, ref_area.dims)
         else:
             msg = "normalize_by_area = True but AREAM2 is not " \
@@ -509,17 +509,17 @@ def compare_single_level(
         if "AREAM2" in devdata.data_vars.keys():
             dev_area = devdata["AREAM2"]
             if "time" in dev_area.dims:
-                dev_area = dev_area.isel(time=0)                
+                dev_area = dev_area.isel(time=0)
             dev_area = reshape_MAPL_CS(dev_area, dev_area.dims)
         else:
             msg = "normalize_by_area = True but AREAM2 is not " \
                 + "present in the Dev dataset!"
             raise ValueError(msg)
 
-    # ==================================================================   
+    # ==================================================================
     # Create arrays for each variable in Ref and Dev datasets
     # and do any necessary regridding.
-    # ==================================================================   
+    # ==================================================================
     ds_ref_cmps = [None] * n_var
     ds_dev_cmps = [None] * n_var
     global_cmp_grid = call_make_grid(cmpres, 'll', False, False)[0]
@@ -605,7 +605,7 @@ def compare_single_level(
 
         ds_ref = ds_refs[ivar]
         ds_dev = ds_devs[ivar]
-        
+
         # ==============================================================
         # Area normalization, if normalize_by_area=True
         # ==============================================================
@@ -615,8 +615,8 @@ def compare_single_level(
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
-                ds_ref.values = ds_ref.values / ref_area.values 
-                ds_dev.values = ds_dev.values / dev_area.values 
+                ds_ref.values = ds_ref.values / ref_area.values
+                ds_dev.values = ds_dev.values / dev_area.values
                 if "/" in units:
                     units = "{}/m2".format(units)
                 else:
@@ -905,8 +905,8 @@ def compare_single_level(
                        plot_extent, plot_extent,
                        plot_extent, plot_extent]
         else:
-            extents = [cmp_extent, cmp_extent, 
-                       cmp_extent, cmp_extent, 
+            extents = [cmp_extent, cmp_extent,
+                       cmp_extent, cmp_extent,
                        cmp_extent, cmp_extent]
 
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
@@ -1009,7 +1009,7 @@ def compare_single_level(
             return varname
         else:
             return
-        
+
     #do not attempt nested thread parallelization due to issues with matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
@@ -1067,7 +1067,7 @@ def compare_zonal_mean(
 
     """
     Create single-level 3x2 comparison zonal-mean plots for variables
-    common in two xarray Daatasets. Optionally save to PDF. 
+    common in two xarray Daatasets. Optionally save to PDF.
 
     Args:
     -----
@@ -1076,13 +1076,13 @@ def compare_zonal_mean(
 
         refstr  : str
             String description for reference data to be used in plots
-     
+
         devdata : xarray dataset
             Dataset used as development in comparison
 
         devstr  : str
             String description for development data to be used in plots
- 
+
     Keyword Args (optional):
     ------------------------
         varlist : list of strings
@@ -1095,7 +1095,7 @@ def compare_zonal_mean(
 
         weightsdir : str
             Directory path for storing regridding weights
-            Default value: None (will create/store weights in 
+            Default value: None (will create/store weights in
             current directory)
 
         pdfname : str
@@ -1105,7 +1105,7 @@ def compare_zonal_mean(
         cmpres : str
             String description of grid resolution at which
             to compare datasets
-            Default value: None (will compare at highest resolution 
+            Default value: None (will compare at highest resolution
             of Ref and Dev)
 
         match_cbar : boolean
@@ -1115,7 +1115,7 @@ def compare_zonal_mean(
 
         pres_range : list of two integers
             Pressure range of levels to plot [hPa]. The vertical axis will
-            span the outer pressure edges of levels that contain pres_range 
+            span the outer pressure edges of levels that contain pres_range
             endpoints.
             Default value: [0,2000]
 
@@ -1148,7 +1148,7 @@ def compare_zonal_mean(
             Set this flag to True to enable informative printout.
             Default value: False
 
-        log_color_scale: boolean         
+        log_color_scale: boolean
             Set this flag to True to enable plotting data (not diffs)
             on a log color scale.
             Default value: False
@@ -1164,7 +1164,7 @@ def compare_zonal_mean(
             Default value: None
 
         sigdiff_list: list of str
-            Returns a list of all quantities having significant 
+            Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
     """
@@ -1255,7 +1255,7 @@ def compare_zonal_mean(
 
     refdata = refdata.isel(lev=pmid_ind_ref)
     devdata = devdata.isel(lev=pmid_ind_dev)
-            
+
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, regriddev,
      regridany, refgrid, devgrid, cmpgrid, refregridder, devregridder,
      refregridder_list, devregridder_list] = create_regridders(refdata, devdata, weightsdir=weightsdir,
@@ -1264,7 +1264,7 @@ def compare_zonal_mean(
     ds_devs = [None] * n_var
     for i in range(n_var):
         varname = varlist[i]
-        units_ref, units_dev = check_units(refdata, devdata, varname)        
+        units_ref, units_dev = check_units(refdata, devdata, varname)
 
         # ==============================================================
         # Slice the data, allowing for the
@@ -1298,14 +1298,14 @@ def compare_zonal_mean(
         if flip_dev:
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
 
-    # ==================================================================   
+    # ==================================================================
     # Also reshape the area variables if normalize_by_area=True
     # ==================================================================
     if normalize_by_area:
         if "AREAM2" in refdata.data_vars.keys():
             ref_area = refdata["AREAM2"]
             if "time" in ref_area.dims:
-                ref_area = ref_area.isel(time=0)                
+                ref_area = ref_area.isel(time=0)
             ref_area = reshape_MAPL_CS(ref_area, ref_area.dims)
         else:
             msg = "normalize_by_area = True but AREAM2 is not " \
@@ -1315,14 +1315,14 @@ def compare_zonal_mean(
         if "AREAM2" in devdata.data_vars.keys():
             dev_area = devdata["AREAM2"]
             if "time" in dev_area.dims:
-                dev_area = dev_area.isel(time=0)                
+                dev_area = dev_area.isel(time=0)
             dev_area = reshape_MAPL_CS(dev_area, dev_area.dims)
         else:
             msg = "normalize_by_area = True but AREAM2 is not " \
                 + "present in the Dev dataset!"
             raise ValueError(msg)
 
-    # ==================================================================   
+    # ==================================================================
     # Create arrays for each variable in the Ref and Dev dataset
     # and regrid to the comparison grid.
     # ==================================================================
@@ -1420,10 +1420,10 @@ def compare_zonal_mean(
         varndim = varndim_ref
         subtitle_extra = ""
         if normalize_by_area:
-            exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]            
+            exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
-                ds_ref.values = ds_ref.values / ref_area.values 
-                ds_dev.values = ds_dev.values / dev_area.values 
+                ds_ref.values = ds_ref.values / ref_area.values
+                ds_dev.values = ds_dev.values / dev_area.values
                 if "/" in units:
                     units = "{}/m2".format(units)
                 else:
@@ -1431,7 +1431,7 @@ def compare_zonal_mean(
                 units_ref = units
                 units_dev = units
                 subtitle_extra = ", Normalized by Area"
-   
+
         # ==============================================================
         # Calculate zonal mean
         # ==============================================================
@@ -1613,7 +1613,7 @@ def compare_zonal_mean(
             "dyn_frac_diff",
             "res_frac_diff",
         ]
-        
+
         all_zeros = [
             ref_is_all_zero,
             dev_is_all_zero,
@@ -2312,7 +2312,7 @@ def create_global_mass_table(
         met_and_masks : dict of xarray DataArray
             Dictionary containing the meterological variables and
             masks for the Ref and Dev datasets.
-        
+
         label : str
             Label to go in the header string.  Can be used to
             pass the month & year.
@@ -2418,24 +2418,28 @@ def create_global_mass_table(
 
         # If no properties are found, then skip to next species
         if species_properties is None:
-            print("No properties found for {} ... skippping".format(spc_name))
+            if verbose:
+                msg = "No properties found for {} ... skippping"
+                print(msg.format(spc_name))
             continue
 
         # Specify target units
         target_units = "Gg"
         mol_wt_g = species_properties.get("MW_g")
         if mol_wt_g is None:
-            #            print('No molecular weight found for {} ... skippping'.format(
-            #                  spc_name))
+            if verbose:
+                msg = "No molecular weight found for {} ... skippping"
+                print(msg.format(spc_name))
             continue
 
         # ==============================================================
         # Convert units of Ref and save to a DataArray
         # (or skip if Ref contains NaNs everywhere)
         # ==============================================================
+        refarray = refdata[v]
         if not np.isnan(refdata[v].values).all():
             refarray = convert_units(
-                refdata[v],
+                refarray,
                 spc_name,
                 species_properties,
                 target_units,
@@ -2448,9 +2452,10 @@ def create_global_mass_table(
         # Convert units of Dev and save to a DataArray
         # (or skip if Dev contains NaNs everywhere)
         # ==============================================================
+        devarray = devdata[v]
         if not np.isnan(devdata[v].values).all():
             devarray = convert_units(
-                devdata[v],
+                devarray,
                 spc_name,
                 species_properties,
                 target_units,
@@ -2474,7 +2479,14 @@ def create_global_mass_table(
                 masks=met_and_masks,
             )
         else:
-            print_totals(refarray, refstr, devarray, devstr, f, mass_tables=True)
+            print_totals(
+                refarray,
+                refstr,
+                devarray,
+                devstr,
+                f,
+                mass_tables=True
+            )
 
     # ==================================================================
     # Close files
@@ -2527,8 +2539,8 @@ def create_budget_table(
         template : str
             Template for the diagnostic names that are contained in the
             data set. If not specified, template will be set to "Budget_{}",
-            where {} will be replaced by the species name.     
-            
+            where {} will be replaced by the species name.
+
     Remarks:
     --------
         This method is mainly intended for model benchmarking purposes,
@@ -2602,7 +2614,7 @@ def get_species_categories(benchmark_type="FullChemBenchmark"):
     Args:
     -----
         benchmark_type : str
-            Specifies the type of the benchmark (either 
+            Specifies the type of the benchmark (either
             FullChemBenchmark (default) or TransportTracersBenchmark).
 
     Returns:
@@ -2717,7 +2729,7 @@ def make_benchmark_plots(
             List of plot types to create.
             Default value: ['sfc', '500hpa', 'zonalmean']
 
-        log_color_scale: boolean         
+        log_color_scale: boolean
             Set this flag to True to enable plotting data (not diffs)
             on a log color scale.
             Default value: False
@@ -2772,7 +2784,7 @@ def make_benchmark_plots(
     except FileNotFoundError:
         msg = "Could not find Dev file: {}!".format(dev)
         raise FileNotFoundError(msg)
-        
+
     # Create regridding files if necessary while not in parallel loop
     [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
@@ -2786,7 +2798,7 @@ def make_benchmark_plots(
             msg = "ERROR: normalize_by_area = True but " \
                 + "the 'areas' argument was not passed!"
             raise ValueError(msg)
-            
+
     # ==================================================================
     # If sending plots to one file then do all plots here and return
     # ==================================================================
@@ -2795,10 +2807,10 @@ def make_benchmark_plots(
         var_prefix = 'SpeciesConc_'
         varlist = [k for k in refds.data_vars.keys() if var_prefix in k]
         varlist.sort()
-        
+
         # Surface
         pdfname = os.path.join(dst,'SpeciesConc_Sfc.pdf')
-        compare_single_level(refds, refstr, devds, devstr, 
+        compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist,
                              pdfname=pdfname,
                              use_cmap_RdBu=use_cmap_RdBu,
@@ -2806,7 +2818,7 @@ def make_benchmark_plots(
                              extra_title_txt=extra_title_txt,
                              normalize_by_area=normalize_by_area,
                              weightsdir=weightsdir)
-        
+
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
         # 500 hPa
@@ -3051,8 +3063,8 @@ def make_benchmark_plots(
 
     dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] for result in results}
     dict_500 = {list(result.keys())[0] : result[list(result.keys())[0]]['500'] for result in results}
-    dict_zm  = {list(result.keys())[0] : result[list(result.keys())[0]]['zm']  for result in results}    
-    
+    dict_zm  = {list(result.keys())[0] : result[list(result.keys())[0]]['zm']  for result in results}
+
     # ==============================================================
     # Write the list of species having significant differences,
     # which we need to fill out the benchmark approval forms.
@@ -3110,7 +3122,7 @@ def make_benchmark_emis_plots(
 ):
     """
     Creates PDF files containing plots of emissions for model
-    benchmarking purposes. This function is compatiblity with benchmark 
+    benchmarking purposes. This function is compatiblity with benchmark
     simulation output only. It is not compatible with transport tracers
     emissions diagnostics.
 
@@ -3178,7 +3190,7 @@ def make_benchmark_emis_plots(
             from the top of atmosphere instead of the surface).
             Default value: False
 
-        log_color_scale: boolean         
+        log_color_scale: boolean
             Set this flag to True to enable plotting data (not diffs)
             on a log color scale.
             Default value: False
@@ -3365,7 +3377,7 @@ def make_benchmark_emis_plots(
 
         dict_emis = {list(result.keys())[0] : result[list(result.keys())[0]] \
                      for result in results}
-        
+
         # =============================================================
         # Write the list of species having significant differences,
         # which we need to fill out the benchmark approval forms.
@@ -3460,7 +3472,7 @@ def make_benchmark_emis_plots(
             delayed(createfile_bench_cat)(filecat) \
             for i, filecat in enumerate(catdict)
         )
-        
+
         allcatspc = [spc for result in results for spc in result]
         # Give warning if emissions species is not assigned a benchmark category
         for spc in emis_spc:
@@ -3489,7 +3501,7 @@ def make_benchmark_emis_tables(
     -----
         reflist: list of str
              List with the path names of the emissions file, or emissions
-             and met field files, that will constitute the "Ref" (aka 
+             and met field files, that will constitute the "Ref" (aka
              "Reference") data set. If two files are passed in the list,
              the met field file must be second.
 
@@ -3628,7 +3640,7 @@ def make_benchmark_jvalue_plots(
 
         refstr : str
             A string to describe ref (e.g. version number)
-    
+
         dev : str
             Path name for the "Dev" (aka "Development") data set.
             This data set will be compared against the "Reference"
@@ -3636,12 +3648,12 @@ def make_benchmark_jvalue_plots(
 
         devstr : str
             A string to describe dev (e.g. version number)
-    
+
     Keyword Args (optional):
     ------------------------
         varlist : list of str
-            List of J-value variables to plot.  If not passed, 
-            then all J-value variables common to both dev 
+            List of J-value variables to plot.  If not passed,
+            then all J-value variables common to both dev
             and ref will be plotted.  The varlist argument can be
             a useful way of restricting the number of variables
             plotted to the pdf file when debugging.
@@ -3692,8 +3704,8 @@ def make_benchmark_jvalue_plots(
             from the top of atmosphere instead of the surface).
             Default value: False
 
-        log_color_scale: boolean         
-            Set this flag to True if you wish to enable plotting data 
+        log_color_scale: boolean
+            Set this flag to True if you wish to enable plotting data
             (not diffs) on a log color scale.
             Default value: False
 
@@ -3715,10 +3727,10 @@ def make_benchmark_jvalue_plots(
 
          At present, we do not yet have the capability to split the
          plots up into separate files per category (e.g. Oxidants,
-         Aerosols, etc.).  This is primarily due to the fact that 
+         Aerosols, etc.).  This is primarily due to the fact that
          we archive J-values from GEOS-Chem for individual species
-         but not family species.  We could attempt to add this 
-         functionality later if there is sufficient demand. 
+         but not family species.  We could attempt to add this
+         functionality later if there is sufficient demand.
     """
 
     # ==================================================================
@@ -3924,7 +3936,7 @@ def make_benchmark_jvalue_plots(
         )
         add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
-        
+
         # ==============================================================
         # Write the lists of J-values that have significant differences,
         # which we need to fill out the benchmark approval forms.
@@ -3957,7 +3969,7 @@ def make_benchmark_jvalue_plots(
                                 print("{} ".format(v), file=f, end="")
                             print(file=f)
                             f.close()
-                        
+
 
 def make_benchmark_aod_plots(
     ref,
@@ -4024,7 +4036,7 @@ def make_benchmark_aod_plots(
             Set this flag to True to print extra informational output.
             Default value: False
 
-        log_color_scale: boolean         
+        log_color_scale: boolean
             Set this flag to True to enable plotting data (not diffs)
             on a log color scale.
             Default value: False
@@ -4365,12 +4377,14 @@ def make_benchmark_mass_tables(
     # Make sure that all necessary species are found
     # ==================================================================
 
+    # Add arrays of NaN for missing variables in Ref or Dev
+    [refds, devds] = add_missing_variables(refds, devds)
+
     # If varlist has not been passed as an argument, then use all
     # species concentration variables that are present in Ref or Dev.
     # For species that are in Ref but not in Dev, create a
     # variable of missing values (NaNs). in Dev.  Ditto for Ref.
     if varlist is None:
-        [refds, devds] = add_missing_variables(refds, devds)
         quiet = not verbose
         vardict = core.compare_varnames(refds, devds, quiet=quiet)
         varlist = vardict["commonvars3D"]
@@ -4951,10 +4965,10 @@ def add_nested_bookmarks_to_pdf(
     Keyword Args (optional):
     ------------------------
         remove_prefix : str
-            Prefix to be remove from warninglist names before comparing with 
+            Prefix to be remove from warninglist names before comparing with
             level 2 bookmark names in catdict.
-            Default value: empty string (warninglist names match names 
-            in catdict) 
+            Default value: empty string (warninglist names match names
+            in catdict)
     """
 
     # ==================================================================
@@ -5019,7 +5033,7 @@ def add_nested_bookmarks_to_pdf(
     pdfobj.close()
 
 
-def add_missing_variables(refdata, devdata, **kwargs):
+def add_missing_variables(refdata, devdata, verbose=False, **kwargs):
     """
     Compares two xarray Datasets, "Ref", and "Dev".  For each variable
     that is present  in "Ref" but not in "Dev", a DataArray of missing
@@ -5038,6 +5052,11 @@ def add_missing_variables(refdata, devdata, **kwargs):
 
         devdata : xarray Dataset
             The "Development" (aka "Dev") dataset
+
+    Keyword Args (optional):
+        verbose : bool
+            Toggles extra debug print output.
+            Default value = False.
 
     Returns:
     --------
@@ -5070,6 +5089,8 @@ def add_missing_variables(refdata, devdata, **kwargs):
         # variables as missing values # when we plot against refdata.
         # ==============================================================
         for v in refonly:
+            if verbose:
+                print("Creating array of NaN in devdata for: {}".format(v))
             dr = core.create_dataarray_of_nan(
                 name=refdata[v].name,
                 sizes=devdata.sizes,
@@ -5086,6 +5107,8 @@ def add_missing_variables(refdata, devdata, **kwargs):
         # variables as missing values # when we plot against devdata.
         # ==================================================================
         for v in devonly:
+            if verbose:
+                print("Creating array of NaN in refdata for: {}".format(v))
             dr = core.create_dataarray_of_nan(
                 name=devdata[v].name,
                 sizes=refdata.sizes,
@@ -5101,7 +5124,7 @@ def add_missing_variables(refdata, devdata, **kwargs):
 def get_troposphere_mask(ds):
     """
     Returns a mask array for picking out the tropospheric grid boxes.
-    
+
     Args:
     -----
         ds : xarray Dataset
@@ -5240,4 +5263,3 @@ def reshape_MAPL_CS(ds, vdims):
         else:
             ds = ds.transpose("lat", "lon")
     return ds
-
