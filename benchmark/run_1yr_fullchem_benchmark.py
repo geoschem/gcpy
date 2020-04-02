@@ -215,7 +215,7 @@ for mon_yr_str in bmk_seasons_names:
         join(sigdiff_dir, "{}/{}.sig_diffs_zonalmean.txt".format(sigdiff_dir, vstr)),
         join(sigdiff_dir, "{}/{}.sig_diffs_emissions.txt".format(sigdiff_dir, vstr))
     ]
-    
+
     gcc_vs_gcc_sigdiff[mon_yr_str] = sigdiff_files
 
 ##############################################################################
@@ -249,7 +249,7 @@ if gcc_vs_gcc:
         # --------------------------------------------------------------
         title = "\n%%% Creating GCC vs. GCC {} concentration plots %%%"
         print(title.format(bmk_type))
-   
+
         # File lists for emissions data (seasonal)
         collection = "SpeciesConc"
         gcc_vs_gcc_refspc = get_filepaths(gcc_vs_gcc_refdir, collection,
@@ -422,33 +422,30 @@ if gcc_vs_gcc:
             bmk_type)
         print(title)
 
-        # Paths to budget data
-        gcc_vs_gcc_devbgt = get_filepaths(gcc_vs_gcc_devdir, "Budget",
-                                          bmk_seasons, is_gcc=True)
+        # Change in mass of species after each operation
+        print("-- Change in mass after each operation")
+        collection = "Budget"
+        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
+                                           bmk_months, is_gcc=True)
+        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
+                                           bmk_months, is_gcc=True)
 
         # Compute change in mass after each operation
         for s in range(bmk_nseasons):
             mon_yr_str = bmk_seasons_names[s]
-            plot_dir = join(gcc_vs_gcc_plotsdir, 'Budget', mon_yr_str)      
-            opbdg.make_operations_budget_table(gcc_dev_version,
-                                               gcc_vs_gcc_devbgt[s],
+            plot_dir = join(gcc_vs_gcc_plotsdir, 'Budget', mon_yr_str)
+            opbdg.make_operations_budget_table(gcc_ref_version,
+                                               gcc_vs_gcc_reflist[s],
+                                               gcc_dev_version,
+                                               gcc_vs_gcc_devlist[s],
                                                bmk_type,
                                                dst=plot_dir,
                                                label=mon_yr_str,
                                                interval=sec_per_month[s*3],
                                                overwrite=True)
 
-#==============================================================================
-# Preserve prior code for now (bmy, 3/10/20)
-#            bmk.make_benchmark_budget_tables(gcc_vs_gcc_devbgt[s],
-#                                             gcc_vs_gcc_devstr,
-#                                             dst=gcc_vs_gcc_plotsdir,
-#                                             overwrite=True,
-#                                             interval=sec_per_month[s*3],
-#                                             subdst=mon_yr_str)
-#==============================================================================
-
         # Compute annual mean AOD budgets and aerosol burdens
+        print("-- AOD budgets and aerosol burdens")
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
         aerbdg.aerosol_budgets_and_burdens(gcc_dev_version,
                                            gcc_vs_gcc_devdir,
@@ -503,7 +500,7 @@ if gcc_vs_gcc:
         #                              dst=plot_dir,
         #                              overwrite=True)
         #####################################################################
-        
+
         # Compute mean OH from the log files
         # NOTE: Only works for GEOS-Chem "Classic" benchmarks!
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
@@ -515,7 +512,7 @@ if gcc_vs_gcc:
                                         dst=plot_dir,
                                         overwrite=True)
 
-    
+
 ###############################################################################
 # NOTE: For now, we are developing the GCC vs. GCC 1-yr benchmark plots.
 # Leave this commented out for now.
@@ -597,7 +594,7 @@ if gcc_vs_gcc:
 ##                                       gchp_vs_gcc_devstr,
 ##                                       dst=gchp_vs_gcc_plotsdir,
 ##                                       overwrite=True)
-#        
+#
 #    if OH_metrics:
 #        # Global mean OH, MCF Lifetime, CH4 Lifetime
 #        print("\n%%% Creating GCHP vs. GCC OH metrics %%%")
@@ -609,7 +606,7 @@ if gcc_vs_gcc:
 #                                      gchp_vs_gcc_devstr,
 #                                      dst=gchp_vs_gcc_plotsdir,
 #                                      overwrite=True)
-#        
+#
 ## =====================================================================
 ## Create GCHP vs GCHP benchmark plots and tables
 ## =====================================================================
