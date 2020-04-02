@@ -339,7 +339,7 @@ if gcc_vs_gcc:
                                            [gcc_date], is_gcc=True)
         gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
                                            [gcc_date], is_gcc=True)
-        
+
         # Plot J-values
         bmk.make_benchmark_jvalue_plots(gcc_vs_gcc_reflist[0],
                                         gcc_vs_gcc_refstr,
@@ -390,7 +390,7 @@ if gcc_vs_gcc:
 
         # Save to "Tables" subfolder of plot dir
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
-        
+
         # Plot mass tables
         bmk.make_benchmark_mass_tables(gcc_vs_gcc_reflist[0],
                                        gcc_vs_gcc_refstr,
@@ -408,36 +408,32 @@ if gcc_vs_gcc:
 
         # Files to read
         collection = "Budget"
+        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
+                                           [gcc_date], is_gcc=True)
         gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
                                            [gcc_date], is_gcc=True)
 
         # Save to "Tables" subfolder of plot dir
         plot_dir = join(gcc_vs_gcc_plotsdir, "Budget")
-        
-        # Print budget tables
-        bmk.make_benchmark_budget_tables(gcc_vs_gcc_devlist[0],
-                                         gcc_vs_gcc_devstr,
-                                         dst=gcc_vs_gcc_plotsdir,
-                                         interval=s_per_mon,
-                                         overwrite=True)
 
-        # Print "operations budget" for strat, trop, strat+trop 
-        opbdg.make_operations_budget_table(gcc_dev_version,
-                                           gcc_vs_gcc_devlist[0],
+        # Print "operations budget" for strat, trop, strat+trop
+        opbdg.make_operations_budget_table(gcc_ref_version,
+                                           gcc_vs_gcc_reflist,
+                                           gcc_dev_version,
+                                           gcc_vs_gcc_devlist,
                                            bmk_type,
                                            dst=plot_dir,
                                            label=mon_yr_str,
                                            interval=s_per_mon[0],
                                            overwrite=True)
 
-        
     if OH_metrics:
         #---------------------------------------------------------------
         # GCC vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
         #---------------------------------------------------------------
         title = "\n%%% Creating GCC vs. GCC {} OH metrics %%%"
         print(title.format(bmk_type))
-        
+
         # Files to read
         collection = ["ConcAfterChem", "StateMet"]
         gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
@@ -447,7 +443,7 @@ if gcc_vs_gcc:
 
         # Save to "Tables" subfolder of plot dir
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
-        
+
         # Print OH metrics
         bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
                                       gcc_vs_gcc_refstr,
@@ -455,7 +451,7 @@ if gcc_vs_gcc:
                                       gcc_vs_gcc_devstr,
                                       dst=plot_dir,
                                       overwrite=True)
-        
+
     if ste_table:
         # --------------------------------------------------------------
         # GCC vs GCC Strat-Trop Exchange
@@ -467,7 +463,7 @@ if gcc_vs_gcc:
         # Compute monthly and annual average strat-trop exchange of O3
         gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, "AdvFluxVert",
                                            [gcc_date], is_gcc=True)
-        
+
         # Save to "Tables" subfolder of plot dir
         plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
 
@@ -578,7 +574,7 @@ if gchp_vs_gcc:
                                             [gcc_date], is_gcc=True)
         gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devdir, collection,
                                             [gchp_date], is_gchp=True)
-        
+
         # Plot J-values
         bmk.make_benchmark_jvalue_plots(gchp_vs_gcc_reflist[0],
                                         gchp_vs_gcc_refstr,
@@ -649,24 +645,21 @@ if gchp_vs_gcc:
         # GCHP vs GCC budgets tables (actually only dev)
         #---------------------------------------------------------------
         print("\n%%% Skipping GCHP budget tables. Budget diagnostics not all turned on in GCHP benchmark. %%%")
-        ## Files to read
+        ### Files to read
         #collection = "Budget"
-        #gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devdir, collection,
+        #gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refdir, collection,
+        #                                    [gcc_date], is_gcc=True)
+        #gchp_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
         #                                    [gchp_date], is_gchp=True)
         #
         ## Save to "Tables" subfolder of plot dir
         #plot_dir = join(gchp_vs_gcc_plotsdir, "Budget")
         #
-        ## Print budget tables
-        #bmk.make_benchmark_budget_tables(gchp_vs_gcc_devlist[0],
-        #                                 gchp_vs_gcc_devstr,
-        #                                 dst=gchp_vs_gcc_plotsdir,
-        #                                 interval=s_per_mon,
-        #                                 overwrite=True)
-        #
         ## Print "operations budget" for strat, trop, strat+trop
         #opbdg.make_operations_budget_table(gcc_dev_version,
-        #                                   gchp_vs_gcc_devlist[0],
+        #                                   gchp_vs_vs_gcc_reflist,
+        #                                   gchp_dev_version,
+        #                                   gchp_vs_gcc_devlist,
         #                                   bmk_type,
         #                                   dst=plot_dir,
         #                                   label=mon_yr_str,
@@ -699,14 +692,14 @@ if gchp_vs_gcc:
         #                              gchp_vs_gcc_devstr,
         #                              dst=plot_dir,
         #                              overwrite=True)
-        
+
     if ste_table:
         # --------------------------------------------------------------
         # GCHP vs GCC Strat-Trop Exchange
         # --------------------------------------------------------------
         title = "\n%%% Skipping GCHP vs. GCC Strat-Trop Exchange table %%%"
         print(title)
-     
+
 # ======================================================================
 # Create GCHP vs GCHP benchmark plots and tables
 # ======================================================================
@@ -803,7 +796,7 @@ if gchp_vs_gchp:
                                              [gchp_date], is_gchp=True)
         gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
                                              [gchp_date], is_gchp=True)
-        
+
         # Plot J-values
         bmk.make_benchmark_jvalue_plots(gchp_vs_gchp_reflist[0],
                                         gchp_vs_gchp_refstr,
@@ -876,14 +869,14 @@ if gchp_vs_gchp:
         # GCHP vs. GCHP global mean OH, MCF Lifetime, CH4 Lifetime
         #---------------------------------------------------------------
         print("\n%%% Skipping GCHP vs GCHP OH metrics. Needs further validation. %%%")
-        
+
     if ste_table:
         # --------------------------------------------------------------
         # GCHP vs GCHP Strat-Trop Exchange
         # --------------------------------------------------------------
         title = "\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%"
         print(title)
-     
+
 # =====================================================================
 # Create GCHP vs GCC difference of differences benchmark plots
 # =====================================================================
@@ -894,10 +887,10 @@ if gchp_vs_gcc_diff_of_diffs:
         # NOTE: This can be expanded to differences beyond species
         # concentrations by following how this is done for conc plots.
         print("%\n%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%")
-        
+
         # Get a list of variables that GCPy should not read
         skip_vars = skip_these_vars
-        
+
         # Files to read
         collection = "SpeciesConc"
         gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
@@ -908,11 +901,11 @@ if gchp_vs_gcc_diff_of_diffs:
                                             [gchp_date], is_gchp=True)
         gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
                                              [gchp_date], is_gchp=True)
-        
+
         # Target output files
         diff_of_diffs_refspc = "./gcc_diffs_spc.nc4"
         diff_of_diffs_devspc = "./gchp_diffs_spc.nc4"
-        
+
         # Create a ref file that contains GCC differences
         # Select only common fields between the Ref and Dev datasets
         gcc_ref  = xr.open_dataset(gcc_vs_gcc_reflist[0], drop_variables=skip_vars)
@@ -927,7 +920,7 @@ if gchp_vs_gcc_diff_of_diffs:
                 # Ensure the gcc_diffs Dataset includes attributes
                 gcc_diffs[v].attrs = gcc_dev[v].attrs
         gcc_diffs.to_netcdf(diff_of_diffs_refspc)
-        
+
         # Create a dev file that contains GCHP differences. Include special
         # handling if cubed sphere grid dimension names are different since they
         # changed in MAPL v1.0.0.
@@ -957,8 +950,8 @@ if gchp_vs_gcc_diff_of_diffs:
                     # attributes; we have to reattach them
                     gchp_diffs[v].attrs = gchp_dev[v].attrs
         gchp_diffs.to_netcdf(diff_of_diffs_devspc)
-        
-        
+
+
         # Create diff-of-diff plots for species concentrations
         # (includes lumped species and separates by category)
         #
@@ -973,8 +966,8 @@ if gchp_vs_gcc_diff_of_diffs:
                                  weightsdir=weightsdir,
                                  overwrite=True,
                                  use_cmap_RdBu=True)
-        
-        
+
+
         # Remove the separate GCC and GCHP diff files
         os.remove(diff_of_diffs_refspc)
         os.remove(diff_of_diffs_devspc)
