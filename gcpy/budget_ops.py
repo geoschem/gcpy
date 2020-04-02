@@ -165,8 +165,9 @@ class _GlobVars:
         self.regimes = [self.FULL, self.TROP, self.PBL]
 
         # List of budget operations (rows of the dataframe)
+        self.ACCUM = "ACCUMULATION"
         self.ops = ["Chemistry", "Convection", "EmisDryDep",
-                    "Mixing", "Transport", "WetDep"]
+                     "Mixing", "Transport", "WetDep", self.ACCUM]
 
         # Columns of the dataframe
         self.REF = "Ref"
@@ -174,9 +175,6 @@ class _GlobVars:
         self.DIFF = "Dev - Ref"
         self.PCTDIFF = "% diff"
         self.columns = [self.REF, self.DEV, self.DIFF, self.PCTDIFF]
-
-        # Title for the accumulation term
-        self.ACCUM = "{} ACCUMULATION"
 
 # ======================================================================
 # Methods
@@ -204,7 +202,7 @@ def short_name(spc):
     return spc_short
 
 
-def create_dataframe(globvars, spc):
+def create_dataframe(globvars):
     """
     Returns budget information for a given species
     as a DataFrame object.
@@ -223,8 +221,7 @@ def create_dataframe(globvars, spc):
     # Operations (e.g. chemistry, wetdep) will be rows
     rows = []
     for op in globvars.ops:
-        rows.append("{} {}".format(spc, op).ljust(globvars.pad))
-    rows.append(globvars.ACCUM.format(spc).ljust(globvars.pad))
+        rows.append("{}".format(op).ljust(globvars.pad))
     n_rows = len(rows)
 
     # Columns will be Ref, Dev, Dev-Ref, %diff
@@ -255,7 +252,7 @@ def compute_operations_budgets(globvars, varlist, regime):
     # Passive tracer species names will be shortened
     frames = {}
     for spc in globvars.species:
-        frames[spc] = create_dataframe(globvars, short_name(spc))
+        frames[spc] = create_dataframe(globvars)
 
     # Loop over all variables in the data file
     for v in varlist:
@@ -275,7 +272,7 @@ def compute_operations_budgets(globvars, varlist, regime):
             op = op.replace(regime, "")
         else:
             continue
-        row = "{} {}".format(spc_short, op).ljust(globvars.pad)
+        row = "{}".format(op).ljust(globvars.pad)
 
         # Compute the total change in mass from each operation [kg/s]
         # and convert to [kg/yr] or [Tg/yr] depending on the species
@@ -292,7 +289,7 @@ def compute_operations_budgets(globvars, varlist, regime):
 
     # Compute the column sum over each atmospheric regime
     for k in frames.keys():
-        row = globvars.ACCUM.format(short_name(k)).ljust(globvars.pad)
+        row = globvars.ACCUM.ljust(globvars.pad)
         for column in globvars.columns:
             frames[k].loc[row, column] = frames[k][column].sum()
 
@@ -319,30 +316,46 @@ def print_operations_budgets(globvars, dataframes, regime):
     elif not os.path.isdir(globvars.dst):
         os.makedirs(globvars.dst)
 
-    # Filename to contain budget info
-    filename = "{}/{}_operations_budgets_{}_{}.txt".format(
-        globvars.dst, globvars.devstr, regime, globvars.label)
-
     # Define a dictionary for the regime descriptions
-    desc = { "Full": "Full atm",  "Trop": "Trop only",
-             "PBL": "PBL only", "Strat": "Strat only"}
+    desc = "{}Column".format(regime)
+        
+    # Filename to contain budget info
+    filename = "{}/Budgets_After_Operations_{}_{}.txt".format(
+        globvars.dst, regime, globvars.label)
 
     # Print budgets to the file
     with open(filename, "w+") as f:
+
+        # Header
+        print("#"*78, file=f)
+        print(" {} budget diagnostics for {}".format(
+            desc, globvars.label), file=f)
+        print("#"*78, file=f)
+        print(file=f)
+
+        # Data
         for k in dataframes.keys():
-            print("{} budget diagnostics ({}) from {} for {}".format(
-                globvars.devstr, desc[regime], k, globvars.label), file=f)
+            print("{} budget diagnostics".format(k), file=f)
             print("Units : {}".format(globvars.units[k]), file=f)
             print(dataframes[k], file=f)
             print("\n", file=f)
+
         f.close()
 
 
-def make_operations_budget_table(refstr, reffiles, devstr, devfiles,
-                                 bmk_type, label,
-                                 dst=None, interval=None,
-                                 species=None, overwrite=True,
-                                 pd_float_format="{:13.6f}"):
+def make_operations_budget_table(
+    refstr,
+    reffiles,
+    devstr,
+    devfiles,
+    bmk_type,
+    label,
+    dst=None,
+    interval=None,
+    species=None,
+    overwrite=True,
+    pd_float_format="{:13.6f}"
+):
     """
     Prints the "operations budget" (i.e. change in mass after
     each operation) from a GEOS-Chem benchmark simulation.
@@ -391,7 +404,7 @@ def make_operations_budget_table(refstr, reffiles, devstr, devfiles,
 
     # ==================================================================
     # Compute operations budgets for Full, Trop, PBL regimes
-    # TODO: Parallelize
+    # TODO: Parallelize it
     # ==================================================================
     for regime in globvars.regimes:
 
