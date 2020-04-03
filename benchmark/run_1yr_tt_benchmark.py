@@ -423,9 +423,10 @@ if gcc_vs_gcc:
                                            gcc_vs_gcc_devlist,
                                            bmk_type,
                                            dst=plot_dir,
-                                           label,
+                                           label=label,
                                            interval=sec_per_yr,
-                                           overwrite=True)
+                                           overwrite=True,
+                                           pd_float_format="{:13.6e}")
 
     if ste_table:
         # --------------------------------------------------------------
@@ -564,9 +565,10 @@ if gchp_vs_gcc:
                                            gchp_vs_gcc_devlist,
                                            bmk_type,
                                            dst=plot_dir,
-                                           label,
+                                           label=label,
                                            interval=sec_per_yr,
-                                           overwrite=True)
+                                           overwrite=True,
+                                           pd_float_format="{:13.6e}")
 
     if ste_table:
         # --------------------------------------------------------------
@@ -690,9 +692,10 @@ if gchp_vs_gchp:
                                            gchp_vs_gcc_devlist,
                                            bmk_type,
                                            dst=plot_dir,
-                                           label,
+                                           label=label,
                                            interval=sec_per_yr,
-                                           overwrite=True)
+                                           overwrite=True,
+                                           pd_float_format="{:13.6e}")
     if ste_table:
         # --------------------------------------------------------------
         # GCHP vs GCC Strat-Trop Exchange
