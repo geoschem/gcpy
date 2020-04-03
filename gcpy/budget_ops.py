@@ -155,7 +155,7 @@ class _GlobVars:
         # ------------------------------------------
 
         # Number of characters to pad
-        self.pad = 27
+        self.pad = 20
 
         # Atmospheric regimes for which columns are computed
         self.FULL = "Full"
@@ -335,7 +335,8 @@ def print_operations_budgets(globvars, dataframes, regime):
 
         # Data
         for k in dataframes.keys():
-            print("{} budget diagnostics".format(k), file=f)
+            print("{} budgets (Ref={}; Dev={})".format(
+                k, globvars.refstr, globvars.devstr), file=f)
             print("Units : {}".format(globvars.units[k]), file=f)
             print(dataframes[k], file=f)
             print("\n", file=f)
@@ -392,7 +393,7 @@ def make_operations_budget_table(
     # Initialization
     # ==================================================================
 
-    # Set numeric format to be 16 chars wide with 8 decimals
+    # Set numeric format for Pandas Dataframe
     pd.options.display.float_format = pd_float_format.format
 
     # Initialize a class to hold global variables
@@ -426,7 +427,7 @@ def make_operations_budget_table(
     # First create empty dataframes for the Strat regime
     dfs = {}
     for spc in globvars.species:
-        dfs[spc] = create_dataframe(globvars, short_name(spc))
+        dfs[spc] = create_dataframe(globvars)
     bdg[globvars.STRAT] = dfs
 
     # Then compute Strat as the difference of Full - Trop
