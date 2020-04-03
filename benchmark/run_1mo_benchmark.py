@@ -78,7 +78,12 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
 # =====================================================================
 
+# High-level directory containing subdirectories with data
 maindir  = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon"
+
+# Version strings
+# NOTE: these will be used in some filenames and so should not have spaces
+# or other characters not appropriate for a filename.
 gcc_ref_version = "GCC_ref"
 gcc_dev_version = "GCC_dev"
 gchp_ref_version = "GCHP_ref"
@@ -203,21 +208,21 @@ mon_yr_str = calendar.month_abbr[b_start[1]] + s_start[0]
 # differences -- we need these for the benchmark approval forms.
 # ======================================================================
 
-vstr = "{}_vs_{}".format(gcc_vs_gcc_refstr, gcc_vs_gcc_devstr)
+vstr = "{}_vs_{}".format(gcc_ref_version, gcc_dev_version)
 gcc_vs_gcc_sigdiff = [
     join(gcc_vs_gcc_plotsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
     join(gcc_vs_gcc_plotsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
     join(gcc_vs_gcc_plotsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
     join(gcc_vs_gcc_plotsdir, "{}_sig_diffs_emissions.txt".format(vstr))]
 
-vstr = "{}_vs_{}".format(gchp_vs_gcc_refstr, gchp_vs_gcc_devstr)
+vstr = "{}_vs_{}".format(gcc_dev_version, gchp_dev_version)
 gchp_vs_gcc_sigdiff = [
     join(gchp_vs_gcc_plotsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
     join(gchp_vs_gcc_plotsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
     join(gchp_vs_gcc_plotsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
     join(gchp_vs_gcc_plotsdir, "{}_sig_diffs_emissions.txt".format(vstr))]
 
-vstr = "{}_vs_{}".format(gchp_vs_gchp_refstr, gchp_vs_gchp_devstr)
+vstr = "{}_vs_{}".format(gchp_ref_version, gchp_dev_version)
 gchp_vs_gchp_sigdiff = [
     join(gchp_vs_gchp_plotsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
     join(gchp_vs_gchp_plotsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
