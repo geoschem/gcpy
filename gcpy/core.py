@@ -954,7 +954,7 @@ def create_dataarray_of_nan(name, sizes, coords, attrs, vertical_dim="lev"):
     )
 
 
-def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
+def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, ratio_log=False):
     """
     Normalizes a data range to the colormap range used by matplotlib
     functions.
@@ -993,8 +993,19 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
          For log color scales, we will use a range of 3 orders of
          magnitude (i.e. from vmax/1e3 to vmax).
     """
-    if (vmin == 0 and vmax == 0) or (np.isnan(vmin) and np.isnan(vmax)):
 
+    #Define class for logarithmic non-symmetric color scheme
+    class MidpointLogNorm(mcolors.LogNorm):
+        def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
+            mcolors.LogNorm.__init__(self,vmin=vmin,vmax=vmax,clip=clip)
+            self.midpoint=midpoint
+        def __call__(self,value,clip=None):
+            result, is_scalar = self.process_value(value)
+            x = [np.log(self.vmin), np.log(self.midpoint), np.log(self.vmax)]
+            y = [0, 0.5, 1]
+            return np.ma.array(np.interp(np.log(value), x, y), mask=result.mask, copy = False)
+            
+    if (abs(vmin) == 0 and abs(vmax) == 0) or (np.isnan(vmin) and np.isnan(vmax)):
         # If the data is zero everywhere (vmin=vmax=0) or undefined
         # everywhere (vmin=vmax=NaN), then normalize the data range
         # so that the color corresponding to zero (white) will be
@@ -1006,11 +1017,13 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False):
             return mcolors.Normalize(vmin=0.0, vmax=1.0)
 
     else:
-
+        
         # For log color scales, assume a range 3 orders of magnitude
         # below the maximum value.  Otherwise use a linear scale.
-        if log_color_scale:
+        if log_color_scale and not ratio_log:
             return mcolors.LogNorm(vmin=vmax / 1e3, vmax=vmax)
+        elif log_color_scale:
+            return MidpointLogNorm(vmin=vmin, vmax=vmax, midpoint=1)
         else:
             return mcolors.Normalize(vmin=vmin, vmax=vmax)
 
@@ -1443,6 +1456,12 @@ def get_input_res(data):
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return data.dims["Xdim"], "cs"
 
+def get_nan_mask(data):
+    #remove NaNs
+    fill = np.nanmax(data)+100000
+    new_data = np.where(np.isnan(data), fill, data)
+    new_data = np.ma.masked_where(data == fill, data)
+    return new_data
 
 
 def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent=[-180,180,-90,90], 
