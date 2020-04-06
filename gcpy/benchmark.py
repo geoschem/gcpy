@@ -20,7 +20,7 @@ from .plot import WhGrYlRd
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L, create_regridders
 from .grid.gc_vertical import GEOS_72L_grid
 from . import core
-from .core import gcplot, all_zero_or_nan, get_grid_extents, call_make_grid
+from .core import gcplot, all_zero_or_nan, get_grid_extents, call_make_grid, get_nan_mask
 from .units import convert_units
 import gcpy.constants as gcon
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -67,7 +67,8 @@ def sixplot(
     log_yaxis=False,
     xtick_positions=[],
     xticklabels=[],
-    plot_type="single_level"
+    plot_type="single_level",
+    ratio_log=False
 ):
 
     """
@@ -155,7 +156,6 @@ def sixplot(
     xtick_labels: list of str
        Labels for lat/lon ticks
     """
-
     # Set min and max of the data range
     if subplot in ("ref", "dev"):
         if all_zero or all_nan:
@@ -209,9 +209,13 @@ def sixplot(
                 fracdiffabsmax = np.max(
                     [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
                 )
-                [vmin, vmax] = [-fracdiffabsmax, fracdiffabsmax]
+                [vmin, vmax] = [1/fracdiffabsmax, fracdiffabsmax]
+                if vmin > 0.5:
+                    vmin = 0.5
+                if vmax < 2:
+                    vmax = 2
             else:
-                [vmin, vmax] = [-2, 2]
+                [vmin, vmax] = [0.5, 2]
     if verbose:
         print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
 
@@ -219,11 +223,14 @@ def sixplot(
     if subplot in ("ref", "dev"):
         norm = core.normalize_colors(
             vmin, vmax, is_difference=use_cmap_RdBu,
-            log_color_scale=log_color_scale
+            log_color_scale=log_color_scale, ratio_log=ratio_log
         )
-    else:
+    elif subplot in ("dyn_abs_diff", "res_abs_diff"):
         norm = core.normalize_colors(vmin, vmax, is_difference=True)
-
+    else:
+        #remove NaNs for compatibility with color normalization
+        plot_val = get_nan_mask(plot_val)
+        norm = core.normalize_colors(vmin, vmax, is_difference=True, log_color_scale=True,ratio_log=ratio_log)
     #Create plot
     plot = gcplot(plot_val, ax, plot_type, grid, gridtype, title, comap,
                   norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
@@ -248,6 +255,17 @@ def sixplot(
     else:
         if subplot in ("ref", "dev") and log_color_scale:
             cb.formatter = mticker.LogFormatter(base=10)
+        elif subplot in ("dyn_frac_diff", "res_frac_diff") and np.all(np.isin(plot_val, [1])):
+            cb.set_ticklabels(["Ref and Dev equal throughout domain"])
+        elif subplot in ("dyn_frac_diff", "res_frac_diff"):
+            if subplot is "dyn_frac_diff":
+                cb.locator = mticker.LogLocator(base=10)
+                cb.update_ticks()
+                cb.formatter = mticker.LogFormatter(base=10)
+                cb.update_ticks()
+            else:
+                cb.formatter = mticker.ScalarFormatter()
+                cb.set_ticks([0.5,0.75,1,1.5,2.0])
         else:
             if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
                 cb.locator = mticker.MaxNLocator(nbins=4)
@@ -577,7 +595,7 @@ def compare_single_level(
     # =================================================================
 
     if savepdf:
-#        print("Creating {} for {} variables".format(pdfname, n_var))
+        #print("Creating {} for {} variables".format(pdfname, n_var))
         pdf = PdfPages(pdfname)
         pdf.close()
 
@@ -722,15 +740,13 @@ def compare_single_level(
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
         if cmpgridtype == "ll":
-            fracdiff = (np.array(ds_dev_cmp) - np.array(ds_ref_cmp)) \
-                     / np.array(ds_ref_cmp)
+            fracdiff = np.array(ds_dev_cmp) / np.array(ds_ref_cmp)
         else:
-            fracdiff = (ds_dev_cmp_reshaped - ds_ref_cmp_reshaped) \
-                     / ds_ref_cmp_reshaped
+            fracdiff = ds_dev_cmp_reshaped / ds_ref_cmp_reshaped
 
         # Replace Infinity values with NaN
-        fracdiff = np.where(fracdiff == np.inf, np.nan, fracdiff)
-
+        fracdiff = np.where(np.abs(fracdiff) == np.inf, np.nan, fracdiff)
+        fracdiff[fracdiff>1e308] = np.nan
         # Test if the frac. diff. is zero everywhere or NaN everywhere
         fracdiff_is_all_zero = absdiff_is_all_zero or (
             not np.any(fracdiff) and not ref_is_all_zero
@@ -853,19 +869,19 @@ def compare_single_level(
                 "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
                 cmpres)
             fracdiff_dynam_title = \
-             "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
+             "Ratio ({})\nDev/Ref, Dynamic Range".format(
                 cmpres)
             fracdiff_fixed_title = \
-             "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(
+             "Ratio ({})\nDev/Ref, Fixed Range".format(
                 cmpres)
         else:
             absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
             absdiff_fixed_title = \
                 "Difference\nDev - Ref, Restricted Range [5%,95%]"
             fracdiff_dynam_title = \
-                "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
+                "Ratio \nDev/Ref, Dynamic Range"
             fracdiff_fixed_title = \
-                "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
+                "Ratio \nDev/Ref, Fixed Range"
 
         # ==============================================================
         # Bundle variables for 6 parallel plotting calls
@@ -880,7 +896,7 @@ def compare_single_level(
             "dyn_abs_diff",
             "res_abs_diff",
             "dyn_frac_diff",
-            "frac_abs_diff",
+            "res_frac_diff",
         ]
 
         all_zeros = [
@@ -964,6 +980,8 @@ def compare_single_level(
         mins = [vmin_ref, vmin_dev, vmin_abs]
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
+        ratio_logs = [False, False, False, False, True, True]
+
         # Plot
         for i in range(6):
             sixplot(
@@ -987,7 +1005,8 @@ def compare_single_level(
                 match_cbar,
                 verbose,
                 log_color_scale,
-                plot_type="single_level"
+                plot_type="single_level",
+                ratio_log=ratio_logs[i]
             )
 
         # ==============================================================
@@ -1000,11 +1019,11 @@ def compare_single_level(
             plt.close(figs)
         # ==============================================================
         # Update the list of variables with significant differences.
-        # Criterion: abs(max(fracdiff)) > 0.1
+        # Criterion: abs(1 - max(fracdiff)) > 0.1
         # Do not include NaNs in the criterion, because these indicate
         # places where fracdiff could not be computed (div-by-zero).
         # ==============================================================
-        if np.abs(np.nanmax(fracdiff)) > 0.1:
+        if np.abs(1 - np.nanmax(fracdiff)) > 0.1:
             sigdiff_list.append(varname)
             return varname
         else:
@@ -1378,7 +1397,7 @@ def compare_zonal_mean(
     xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
 
     if savepdf:
-#        print("Creating {} for {} variables".format(pdfname, n_var))
+        #print("Creating {} for {} variables".format(pdfname, n_var))
         pdf = PdfPages(pdfname)
         pdf.close()
 
@@ -1508,11 +1527,9 @@ def compare_zonal_mean(
         # Calculate fractional difference, set divides by zero to Nan
         # ==============================================================
 
-        zm_fracdiff = (np.array(zm_dev_cmp) - np.array(zm_ref_cmp)) / np.array(
-            zm_ref_cmp
-        )
-        zm_fracdiff = np.where(zm_fracdiff == np.inf, np.nan, zm_fracdiff)
-
+        zm_fracdiff = np.array(zm_dev_cmp) / np.array(zm_ref_cmp)
+        zm_fracdiff = np.where(np.abs(zm_fracdiff) == np.inf, np.nan, zm_fracdiff)
+        zm_fracdiff[zm_fracdiff>1e308] = np.nan
         # Test if the frac. diff is zero everywhere or NaN everywhere
         fracdiff_is_all_zero = not np.any(zm_fracdiff)
         fracdiff_is_all_nan = np.isnan(zm_fracdiff).all()
@@ -1583,10 +1600,10 @@ def compare_zonal_mean(
                 "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
                     cmpres)
             fracdiff_dynam_title = \
-             "Fractional Difference ({})\n(Dev-Ref)/Ref, Dynamic Range".format(
+             "Ratio ({})\nDev/Ref, Dynamic Range".format(
                 cmpres)
             fracdiff_fixed_title = \
-                "Fractional Difference ({})\n(Dev-Ref)/Ref, Fixed Range".format(
+                "Ratio ({})\nDev/Ref, Fixed Range".format(
                 cmpres)
         else:
             absdiff_dynam_title = \
@@ -1594,9 +1611,9 @@ def compare_zonal_mean(
             absdiff_fixed_title = \
                 "Difference\nDev - Ref, Restricted Range [5%,95%]"
             fracdiff_dynam_title = \
-                "Fractional Difference\n(Dev-Ref)/Ref, Dynamic Range"
+                "Ratio\nDev/Ref, Dynamic Range"
             fracdiff_fixed_title = \
-                "Fractional Difference\n(Dev-Ref)/Ref, Fixed Range"
+                "Ratio\nDev/Ref, Fixed Range"
 
         # ==============================================================
         # Bundle variables for 6 parallel plotting calls
@@ -1676,6 +1693,7 @@ def compare_zonal_mean(
         mins = [vmin_ref, vmin_dev, vmin_abs]
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
+        ratio_logs = [False, False, False, False, True, True]
         # Plot
         for i in range(6):
             sixplot(
@@ -1704,7 +1722,8 @@ def compare_zonal_mean(
                 log_yaxis,
                 plot_type="zonal_mean",
                 xtick_positions=xtick_positions,
-                xticklabels=xticklabels
+                xticklabels=xticklabels,
+                ratio_log=ratio_logs[i]
             )
 
         # ==============================================================
@@ -1718,11 +1737,11 @@ def compare_zonal_mean(
 
         # ==============================================================
         # Update the list of variables with significant differences.
-        # Criterion: abs(max(fracdiff)) > 0.1
+        # Criterion: abs(1 - max(fracdiff)) > 0.1
         # Do not include NaNs in the criterion, because these indicate
         # places where fracdiff could not be computed (div-by-zero).
         # ==============================================================
-        if np.abs(np.nanmax(zm_fracdiff)) > 0.1:
+        if np.abs(1 - np.nanmax(zm_fracdiff)) > 0.1:
             sigdiff_list.append(varname)
             return varname
         else:
