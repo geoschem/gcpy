@@ -67,6 +67,9 @@ os.environ["QT_QPA_PLATFORM"]="offscreen"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
+# This script has a fixed benchmark type
+bmk_type     = "FullChemBenchmark"
+
 ########################################################################
 ###           CONFIGURABLE SETTINGS: EDIT THESE ACCORDINGLY          ###
 ########################################################################
@@ -100,7 +103,6 @@ gcpy_test = True
 # =====================================================================
 # Comparisons to run (**EDIT AS NEEDED**)
 # =====================================================================
-bmk_type     = "FullChemBenchmark"
 gcc_vs_gcc   = True
 gchp_vs_gcc  = True
 gchp_vs_gchp = True
@@ -130,7 +132,7 @@ plot_by_hco_cat = True
 # For gchp_vs_gcc_refdir use gcc_dev_version, not ref (mps, 6/27/19)
 # =====================================================================
 
-# Diagnostics
+# Diagnostic file directory paths
 gcc_vs_gcc_refdir   = join(maindir, gcc_ref_version,  "OutputDir")
 gcc_vs_gcc_devdir   = join(maindir, gcc_dev_version,  "OutputDir")
 gchp_vs_gcc_refdir  = join(maindir, gcc_dev_version,  "OutputDir")
@@ -138,7 +140,7 @@ gchp_vs_gcc_devdir  = join(maindir, gchp_dev_version, "OutputDir")
 gchp_vs_gchp_refdir = join(maindir, gchp_ref_version, "OutputDir")
 gchp_vs_gchp_devdir = join(maindir, gchp_dev_version, "OutputDir")
 
-# Restart files
+# Restart file directory paths
 gcc_vs_gcc_refrst   = join(maindir, gcc_ref_version )
 gcc_vs_gcc_devrst   = join(maindir, gcc_dev_version )
 gchp_vs_gcc_refrst  = join(maindir, gcc_dev_version )
@@ -177,7 +179,7 @@ diff_of_diffs_devstr = "{} - {}".format(gchp_dev_version,
                                         gchp_ref_version)
 
 # =====================================================================
-# Starting and ending dates (**EDIT AS NEEDED**)
+# Dates and times (**EDIT AS NEEDED**)
 # =====================================================================
 
 # Start and end months of the benchmark
