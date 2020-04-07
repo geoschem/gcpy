@@ -290,9 +290,11 @@ def compute_operations_budgets(globvars, varlist, regime):
     # Compute the column sum over each atmospheric regime
     for k in frames.keys():
         row = globvars.ACCUM.ljust(globvars.pad)
-        for column in globvars.columns:
-            frames[k].loc[row, column] = frames[k][column].sum()
-
+        frames[k].loc[row, "Ref"] = frames[k]["Ref"].sum()
+        frames[k].loc[row, "Dev"] = frames[k]["Dev"].sum()
+        frames[k].loc[row, "Dev - Ref"] = frames[k]["Dev - Ref"].sum()
+        frames[k].loc[row, "% diff"] = ( frames[k].loc[row, "Dev - Ref"] 
+                                         / frames[k].loc[row, "Ref"] ) * 100.0
     return frames
 
 
