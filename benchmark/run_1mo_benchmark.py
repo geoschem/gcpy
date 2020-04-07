@@ -79,7 +79,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # =====================================================================
 
 # High-level directory containing subdirectories with data
-maindir  = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon"
+maindir  = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon"
 
 # Version strings
 # NOTE: these will be used in some filenames and so should not have spaces
@@ -90,7 +90,7 @@ gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
 # Path to regridding weights
-weightsdir = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
+weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
 # =====================================================================
 # Specify if this is a gcpy test validation run
