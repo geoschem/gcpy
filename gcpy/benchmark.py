@@ -258,7 +258,7 @@ def sixplot(
         elif subplot in ("dyn_frac_diff", "res_frac_diff") and np.all(np.isin(plot_val, [1])):
             cb.set_ticklabels(["Ref and Dev equal throughout domain"])
         elif subplot in ("dyn_frac_diff", "res_frac_diff"):
-            if subplot is "dyn_frac_diff":
+            if subplot is "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
                 cb.locator = mticker.LogLocator(base=10)
                 cb.update_ticks()
                 cb.formatter = mticker.LogFormatter(base=10)
@@ -740,9 +740,9 @@ def compare_single_level(
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
         if cmpgridtype == "ll":
-            fracdiff = np.array(ds_dev_cmp) / np.array(ds_ref_cmp)
+            fracdiff = np.abs(np.array(ds_dev_cmp)) / np.abs(np.array(ds_ref_cmp))
         else:
-            fracdiff = ds_dev_cmp_reshaped / ds_ref_cmp_reshaped
+            fracdiff = np.abs(ds_dev_cmp_reshaped) / np.abs(ds_ref_cmp_reshaped)
 
         # Replace Infinity values with NaN
         fracdiff = np.where(np.abs(fracdiff) == np.inf, np.nan, fracdiff)
@@ -1527,7 +1527,7 @@ def compare_zonal_mean(
         # Calculate fractional difference, set divides by zero to Nan
         # ==============================================================
 
-        zm_fracdiff = np.array(zm_dev_cmp) / np.array(zm_ref_cmp)
+        zm_fracdiff = np.abs(np.array(zm_dev_cmp)) / np.abs(np.array(zm_ref_cmp))
         zm_fracdiff = np.where(np.abs(zm_fracdiff) == np.inf, np.nan, zm_fracdiff)
         zm_fracdiff[zm_fracdiff>1e308] = np.nan
         # Test if the frac. diff is zero everywhere or NaN everywhere
