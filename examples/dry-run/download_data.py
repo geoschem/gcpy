@@ -140,6 +140,7 @@ def get_run_info():
             start_time, end_date, end_time, met, grid, and sim.
     """
     run_info = {}
+    run_info["nest"] = ""
 
     try:
         with open(INPUT_GEOS_FILE, "r") as f:
@@ -163,11 +164,18 @@ def get_run_info():
                     if "4.0x5.0" in grid:
                         run_info["grid"] = "4x5"
                     elif "2.0x2.5" in grid:
-                        run_info["grid"] = "2x2.5"
+                        run_info["grid"] = "2x25"
                     elif "0.5x0.625" in grid:
                         run_info["grid"] = "05x0625"
                     elif "0.25x0.3125" in grid:
                         run_info["grid"] = "025x03125"
+                elif "Longitude" in line:
+                    if "-130.0" in line or "-140.0" in line:
+                        run_info["nest"] = "na"                        
+                        break
+                    elif "60.0" in line or "70.0" in line:
+                        run_info["nest"] = "as"
+                        break
                     break
             f.close()
     except FileNotFoundError:
@@ -201,10 +209,23 @@ def expand_restart_file_names(paths, run_info):
 
     # Search for the restart file name in the found files
     new_list = []
+    
+    # Suffix string (takes into account nested grids)
+    if run_info["nest"] == "":
+        suffix = "{}.nc".format(run_info["sim"])
+    else:
+        suffix = "{}_{}.nc".format(run_info["sim"], run_info["nest"])
+    
     for path in paths["found"]:
         if "GEOSChem.Restart" in path:
             realpath = prefix + "initial_GEOSChem_rst." + \
-                       run_info["grid"] + "_" + run_info["sim"] + ".nc"
+                       run_info["grid"] + "_" + suffix
+            # --------------------------------------------------------
+            # KLUDGE to replace geosfp "as" file name with "ch"
+            # since symbolic links do not work on AWS s3://gcgrid
+            realpath = realpath.replace("025x03125_tropchem_as.nc",
+                                        "025x03125_tropchem_ch.nc")
+            # --------------------------------------------------------
             path = path + " --> " + realpath
         new_list.append(path)
     paths["found"] = sorted(new_list)
@@ -214,7 +235,13 @@ def expand_restart_file_names(paths, run_info):
     for path in paths["missing"]:
         if "GEOSChem.Restart" in path:
             realpath = prefix + "initial_GEOSChem_rst." + \
-                       run_info["grid"] + "_" + run_info["sim"] + ".nc"
+                       run_info["grid"] + "_" + suffix
+            # --------------------------------------------------------
+            # KLUDGE to replace geosfp "as" file name with "ch"
+            # since symbolic links do not work on AWS s3://gcgrid
+            realpath = realpath.replace("025x03125_tropchem_as.nc",
+                                        "025x03125_tropchem_ch.nc")
+            # --------------------------------------------------------
             path = path + " --> " + realpath
         new_list.append(path)
     paths["missing"] = sorted(new_list)
