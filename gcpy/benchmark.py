@@ -4954,7 +4954,6 @@ def add_missing_variables(refdata, devdata, verbose=False, **kwargs):
     vardict = core.compare_varnames(refdata, devdata, quiet=True)
     refonly = vardict["refonly"]
     devonly = vardict["devonly"]
-
     # Don't clobber any DataArray attributes
     with xr.set_options(keep_attrs=True):
 
@@ -4964,6 +4963,7 @@ def add_missing_variables(refdata, devdata, verbose=False, **kwargs):
         # containing all NaN's.  This will allow us to represent those
         # variables as missing values # when we plot against refdata.
         # ==============================================================
+        devlist = [devdata]
         for v in refonly:
             if verbose:
                 print("Creating array of NaN in devdata for: {}".format(v))
@@ -4974,14 +4974,16 @@ def add_missing_variables(refdata, devdata, verbose=False, **kwargs):
                 attrs=refdata[v].attrs,
                 **kwargs
             )
-            devdata = xr.merge([devdata, dr])
-
+            devlist.append(dr)           
+        devdata = xr.merge(devlist)
+        
         # ==============================================================
         # For each variable that is in devdata but not in refdata,
         # add a new DataArray to refdata with the same sizes but
         # containing all NaN's.  This will allow us to represent those
         # variables as missing values # when we plot against devdata.
         # ==================================================================
+        reflist = [refdata]
         for v in devonly:
             if verbose:
                 print("Creating array of NaN in refdata for: {}".format(v))
@@ -4992,7 +4994,8 @@ def add_missing_variables(refdata, devdata, verbose=False, **kwargs):
                 attrs=devdata[v].attrs,
                 **kwargs
             )
-            refdata = xr.merge([refdata, dr])
+            reflist.append(dr)
+        refdata = xr.merge(reflist)
 
     return refdata, devdata
 
