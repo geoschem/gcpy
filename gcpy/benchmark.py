@@ -210,10 +210,11 @@ def sixplot(
                     [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
                 )
                 [vmin, vmax] = [1/fracdiffabsmax, fracdiffabsmax]
-                if vmin > 0.5:
-                    vmin = 0.5
-                if vmax < 2:
-                    vmax = 2
+                
+                #if vmin > 0.5:
+                #    vmin = 0.5
+                #if vmax < 2:
+                #    vmax = 2
             else:
                 [vmin, vmax] = [0.5, 2]
     if verbose:
@@ -259,10 +260,13 @@ def sixplot(
             cb.set_ticklabels(["Ref and Dev equal throughout domain"])
         elif subplot in ("dyn_frac_diff", "res_frac_diff"):
             if subplot is "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
-                cb.locator = mticker.LogLocator(base=10)
+                #cb.locator = mticker.LogLocator(base=10, subs='all')
+                cb.locator = mticker.MaxNLocator(nbins=4)
                 cb.update_ticks()
-                cb.formatter = mticker.LogFormatter(base=10)
+                #cb.formatter = mticker.LogFormatter(base=10)
                 cb.update_ticks()
+                print(cb.get_ticks())
+                cb.formatter = mticker.ScalarFormatter()
             else:
                 cb.formatter = mticker.ScalarFormatter()
                 cb.set_ticks([0.5,0.75,1,1.5,2.0])
