@@ -358,33 +358,6 @@ if gcc_vs_gcc:
 # Create GCHP vs GCC benchmark plots and tables
 # ======================================================================
 
-# Functions for area normalization needed for comparing different resolutions
-# if diagnostic units not per unit area
-
-def get_gcc_area(data_dir):
-    '''
-    Returns the area variable for GEOS-Chem "Classic" and renames it to
-    "AREAM2".
-    '''
-    path = get_filepaths(data_dir, "StateMet", [bmk_months[0]], is_gcc=True)
-    with xr.set_options(keep_attrs=True):
-        ds = xr.open_mfdataset(path)
-        ds = ds.rename({"AREA": "AREAM2"})
-        da = ds["AREAM2"]
-    return da
-
-def get_gchp_area(data_dir):
-    '''
-    Returns the area variable for GCHP and renames it to "AREAM2".
-    '''
-    path = get_filepaths(data_dir, "StateMet_avg", [gchp_months[0]],
-                         is_gchp=True)
-    with xr.set_options(keep_attrs=True):
-        ds = xr.open_mfdataset(path)
-        ds = ds.rename({"Met_AREAM2": "AREAM2"})
-        da = ds["AREAM2"]
-    return da
-
 if gchp_vs_gcc:
 
     # --------------------------------------------------------------
@@ -424,11 +397,19 @@ if gchp_vs_gcc:
     if plot_wetdep:
         print("\n%%% Creating GCHP vs. GCC wet deposition plots %%%")
 
+        # Get GCHP area array from StateMet diagnostic file since not in
+        # the wet loss diagnostics file. Must be called 'AREA' and be m2.
+        gchpareapath = get_filepaths(gchp_vs_gcc_devdir, "StateMet_avg",
+                                     [gchp_months[0]], is_gchp=True)
+        ds_gchp = xr.open_mfdataset(gchpareapath)
+        ds_gchp = ds_gchp.rename({'Met_AREAM2': 'AREA'})
 
-        # Get surface area variables on Ref and Dev grids since area
-        # normalization is required to compare units kg/s
-        gchp_vs_gcc_areas = {"Ref": get_gcc_area(gchp_vs_gcc_refdir),
-                             "Dev": get_gchp_area(gchp_vs_gcc_devdir)}
+        # Store area DataArrays as dictionary. The GCC area can be empty
+        # since GCC diagnostics include variable 'AREA' in m2. Since area
+        # is time invariant, drop the time dimension to avoid merge issues
+        # for data files from other seasons.
+        gchp_vs_gcc_areas = {'Ref': [], 
+                             'Dev': ds_gchp['AREA'].isel(time=0).drop('time')}
 
         # Loop over wet deposition collections
         collection_list = ["WetLossConv", "WetLossLS"]
