@@ -85,11 +85,9 @@ class _GlobVars:
         skip_vars = constants.skip_these_vars
         self.ref_bdg = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
         self.dev_bdg = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
-
         # Add NaNs for missing variables in each dataset
         [self.ref_bdg, self.dev_bdg] = \
             add_missing_variables(self.ref_bdg, self.dev_bdg)
-
         # Get the list of common names
         vardict = compare_varnames(self.ref_bdg, self.dev_bdg, quiet=True)
         self.varlist = vardict["commonvars2D"]
@@ -111,7 +109,6 @@ class _GlobVars:
 
         # Also exclude the stratospheric species
         self.species = [s for s in self.species if "Strat" not in s]
-
         # Sort the species alphabetically
         self.species.sort()
 
@@ -392,10 +389,9 @@ def make_operations_budget_table(
     # ==================================================================
     # Initialization
     # ==================================================================
-
+    
     # Set numeric format for Pandas Dataframe
     pd.options.display.float_format = pd_float_format.format
-
     # Initialize a class to hold global variables
     globvars = _GlobVars(refstr, reffiles, devstr, devfiles, dst,
                          bmk_type, label, interval, species, overwrite)
@@ -408,7 +404,6 @@ def make_operations_budget_table(
     # TODO: Parallelize it
     # ==================================================================
     for regime in globvars.regimes:
-
         # Restrict variables to the current atmospheric regime
         # (so we don't waste time looping over variables we won't use here)
         varlist = [v for v in globvars.varlist if regime in v]
