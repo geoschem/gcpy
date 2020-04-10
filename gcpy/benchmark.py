@@ -210,7 +210,6 @@ def sixplot(
                     [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
                 )
                 [vmin, vmax] = [1/fracdiffabsmax, fracdiffabsmax]
-                
                 #if vmin > 0.5:
                 #    vmin = 0.5
                 #if vmax < 2:
@@ -260,13 +259,15 @@ def sixplot(
             cb.set_ticklabels(["Ref and Dev equal throughout domain"])
         elif subplot in ("dyn_frac_diff", "res_frac_diff"):
             if subplot is "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
-                #cb.locator = mticker.LogLocator(base=10, subs='all')
-                cb.locator = mticker.MaxNLocator(nbins=4)
+                if vmin > 0.1 or vmax < 10:
+                    cb.locator = mticker.MaxNLocator(nbins=4)
+                    cb.update_ticks()
+                    cb.formatter = mticker.ScalarFormatter()
+                else:
+                    cb.formatter = mticker.LogFormatter(base=10)
+                    cb.update_ticks()
+                    cb.locator = mticker.LogLocator(base=10, subs='all')
                 cb.update_ticks()
-                #cb.formatter = mticker.LogFormatter(base=10)
-                cb.update_ticks()
-                print(cb.get_ticks())
-                cb.formatter = mticker.ScalarFormatter()
             else:
                 cb.formatter = mticker.ScalarFormatter()
                 cb.set_ticks([0.5,0.75,1,1.5,2.0])
@@ -750,13 +751,11 @@ def compare_single_level(
 
         # Replace Infinity values with NaN
         fracdiff = np.where(np.abs(fracdiff) == np.inf, np.nan, fracdiff)
-        fracdiff[fracdiff>1e308] = np.nan
+        fracdiff[np.abs(fracdiff>1e308)] = np.nan
         # Test if the frac. diff. is zero everywhere or NaN everywhere
-        fracdiff_is_all_zero = absdiff_is_all_zero or (
-            not np.any(fracdiff) and not ref_is_all_zero
-        )
+        fracdiff_is_all_zero = not np.any(fracdiff) or (np.nanmin(fracdiff) == 0 and 
+                                                        np.nanmax(fracdiff) ==0)
         fracdiff_is_all_nan = np.isnan(fracdiff).all() or ref_is_all_zero
-
         # Absolute max value of fracdiff, excluding NaNs
         fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)),
                               np.abs(np.nanmax(fracdiff))])
@@ -1191,7 +1190,6 @@ def compare_zonal_mean(
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
     """
-
     # TODO: refactor this function and single level plot function. There is a lot of overlap and
     # repeated code that could be abstracted.
     warnings.showwarning = warning_format
@@ -1535,7 +1533,8 @@ def compare_zonal_mean(
         zm_fracdiff = np.where(np.abs(zm_fracdiff) == np.inf, np.nan, zm_fracdiff)
         zm_fracdiff[zm_fracdiff>1e308] = np.nan
         # Test if the frac. diff is zero everywhere or NaN everywhere
-        fracdiff_is_all_zero = not np.any(zm_fracdiff)
+        fracdiff_is_all_zero = not np.any(zm_fracdiff) or (np.nanmin(zm_fracdiff) == 0 and 
+                                                           np.nanmax(zm_fracdiff) ==0)
         fracdiff_is_all_nan = np.isnan(zm_fracdiff).all()
 
         # ==============================================================
