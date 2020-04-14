@@ -18,9 +18,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L, create_regridders
-from .grid.gc_vertical import GEOS_72L_grid
+from .grid.gc_vertical import GEOS_72L_grid, GEOS_47L_grid
 from . import core
-from .core import gcplot, all_zero_or_nan, get_grid_extents, call_make_grid, get_nan_mask
+from .core import gcplot, all_zero_or_nan, get_grid_extents, call_make_grid, \
+    get_nan_mask, get_vert_grid, get_pressure_indices
 from .units import convert_units
 import gcpy.constants as gcon
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -1237,28 +1238,29 @@ def compare_zonal_mean(
         except:
             continue
     # Get mid-point pressure and edge pressures for this grid (assume 72-level)
-    pmid = GEOS_72L_grid.p_mid()
-    pedge = GEOS_72L_grid.p_edge()
+
+    ref_pedge, ref_pmid = get_vert_grid(refdata)
+    dev_pedge, dev_pmid = get_vert_grid(devdata)
 
     # Get indexes of pressure subrange (full range is default)
-    pedge_ind = np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))
-    pedge_ind = pedge_ind[0]
+    ref_pedge_ind = get_pressure_indices(ref_pedge, pres_range)
+    dev_pedge_ind = get_pressure_indices(dev_pedge, pres_range)
     # Pad edges if subset does not include surface or TOA so data spans entire subrange
-    if min(pedge_ind) != 0:
-        pedge_ind = np.append(min(pedge_ind) - 1, pedge_ind)
-    if max(pedge_ind) != 72:
-        pedge_ind = np.append(pedge_ind, max(pedge_ind) + 1)
+    ref_pedge_ind = pad_pressure_edges(ref_pedge_ind, refdata.sizes["lev"])
+    dev_pedge_ind = pad_pressure_edges(dev_pedge_ind, devdata.sizes["lev"])
     # pmid indexes do not include last pedge index
-    pmid_ind = pedge_ind[:-1]
-    nlev = len(pmid_ind)
+    ref_pmid_ind = ref_pedge_ind[:-1]
+    dev_pmid_ind = dev_pedge_ind[:1]
+    ref_nlev = len(ref_pmid_ind)
+    dev_nlev = len(dev_pmid_ind)
 
     # Convert levels to pressures in ref and dev data
-    if refdata.sizes["lev"] == 72:
+    if refdata.sizes["lev"] in (72, 47):
         refdata["lev"] = pmid
-    elif refdata.sizes["lev"] == 73:
+    elif refdata.sizes["lev"] in (73, 48):
         refdata["lev"] = pedge
     else:
-        msg = "compare_zonal_mean implemented for 72 or 73 levels only. " \
+        msg = "compare_zonal_mean implemented for 72, 73, 47, or 48 levels only. " \
             + "Other values found in Ref."
         raise ValueError(msg)
     refdata["lev"].attrs["units"] = "hPa"

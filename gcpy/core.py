@@ -17,6 +17,7 @@ import cartopy.crs as ccrs
 import gcpy.constants as gcon
 from .plot import WhGrYlRd
 from .grid.horiz import make_grid_LL, make_grid_CS
+from .grid.gc_vertical import GEOS_72L_grid, GEOS_47L_grid
 from cartopy.mpl.geoaxes import GeoAxes
 
 
@@ -1513,3 +1514,25 @@ def get_grid_extents(data, edges=True):
     else:
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return -180, 180, -90, 90
+
+
+def get_vert_grid(dataset):
+    if dataset.sizes["lev"] in (72, 73):
+        return GEOS_72L_grid.p_edge(), GEOS_72L_grid.pmid()
+    elif dataset.sizes["lev"] in (47, 48):
+        return GEOS_47L_grid.p_edge(), GEOS_47L_grid.pmid()
+    else:
+        raise ValueError("Only 72/73 or 47/48 level vertical grids are supported")
+
+def get_pressure_indices(pedge, pres_range):
+    return np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))[0]
+
+def pad_pressure_edges(pedge_ind, max_ind):
+    if max_ind in (48, 73)
+        max_ind = max_ind - 1
+    if min(pedge_ind) != 0:
+        pedge_ind = np.append(min(pedge_ind) - 1, pedge_ind)
+    if max(pedge_ind) != max_ind:
+        pedge_ind = np.append(pedge_ind, max(pedge_ind) + 1)
+
+    
