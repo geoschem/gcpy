@@ -18,10 +18,10 @@ from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd
 from .grid.regrid import make_regridder_C2L, make_regridder_L2L, create_regridders
-from .grid.gc_vertical import GEOS_72L_grid, GEOS_47L_grid
+from .grid.gc_vertical import GEOS_72L_grid, GEOS_47L_grid, xmat_72to47
 from . import core
 from .core import gcplot, all_zero_or_nan, get_grid_extents, call_make_grid, \
-    get_nan_mask, get_vert_grid, get_pressure_indices
+    get_nan_mask, get_vert_grid, get_pressure_indices, pad_pressure_edges, convert_lev_to_pres
 from .units import convert_units
 import gcpy.constants as gcon
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -1237,66 +1237,67 @@ def compare_zonal_mean(
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         except:
             continue
-    # Get mid-point pressure and edge pressures for this grid (assume 72-level)
 
-    ref_pedge, ref_pmid = get_vert_grid(refdata)
-    dev_pedge, dev_pmid = get_vert_grid(devdata)
+    # Get mid-point pressure and edge pressures for this grid (assume 72-level)
+    ref_pedge, ref_pmid, ref_grid_cat = get_vert_grid(refdata)
+    dev_pedge, dev_pmid, dev_grid_cat = get_vert_grid(devdata)
 
     # Get indexes of pressure subrange (full range is default)
     ref_pedge_ind = get_pressure_indices(ref_pedge, pres_range)
     dev_pedge_ind = get_pressure_indices(dev_pedge, pres_range)
+
+
     # Pad edges if subset does not include surface or TOA so data spans entire subrange
     ref_pedge_ind = pad_pressure_edges(ref_pedge_ind, refdata.sizes["lev"])
     dev_pedge_ind = pad_pressure_edges(dev_pedge_ind, devdata.sizes["lev"])
+
     # pmid indexes do not include last pedge index
     ref_pmid_ind = ref_pedge_ind[:-1]
-    dev_pmid_ind = dev_pedge_ind[:1]
-    ref_nlev = len(ref_pmid_ind)
-    dev_nlev = len(dev_pmid_ind)
-
+    dev_pmid_ind = dev_pedge_ind[:-1]
     # Convert levels to pressures in ref and dev data
-    if refdata.sizes["lev"] in (72, 47):
-        refdata["lev"] = pmid
-    elif refdata.sizes["lev"] in (73, 48):
-        refdata["lev"] = pedge
-    else:
-        msg = "compare_zonal_mean implemented for 72, 73, 47, or 48 levels only. " \
-            + "Other values found in Ref."
-        raise ValueError(msg)
-    refdata["lev"].attrs["units"] = "hPa"
-    refdata["lev"].attrs["long_name"] = "level pressure"
-
-    if devdata.sizes["lev"] == 72:
-        devdata["lev"] = pmid
-    elif devdata.sizes["lev"] == 73:
-        devdata["lev"] = pedge
-    else:
-        msg = "compare_zonal_mean implemented for 72 or 73 levels only. " \
-            + "Other values found in Dev."
-        raise ValueError(msg)
-    devdata["lev"].attrs["units"] = "hPa"
-    devdata["lev"].attrs["long_name"] = "level pressure"
+    refdata = convert_lev_to_pres(refdata, ref_pmid, ref_pedge)
+    devdata = convert_lev_to_pres(devdata, dev_pmid, dev_pedge)
 
     # ==================================================================
     # Reduce pressure range if reduced range passed as input. Indices
     # must be flipped if flipping vertical axis.
     # ==================================================================
-
-    pmid_ind_ref = pmid_ind
-    pmid_ind_dev = pmid_ind
-    pmid_ind_flipped = 72 - pmid_ind[::-1] - 1
+    #this may require checking for 48 / 73 levels
+    ref_pmid_ind_flipped = refdata.sizes["lev"] - ref_pmid_ind[::-1] - 1
+    dev_pmid_ind_flipped = devdata.sizes["lev"] - dev_pmid_ind[::-1] - 1
     if flip_ref:
-        pmid_ind_ref = pmid_ind_flipped
+        ref_pmid_ind = pmid_ind_flipped
     if flip_dev:
-        pmid_ind_dev = pmid_ind_flipped
+        dev_pmid_ind = pmid_ind_flipped
 
-    refdata = refdata.isel(lev=pmid_ind_ref)
-    devdata = devdata.isel(lev=pmid_ind_dev)
+    refdata = refdata.isel(lev=ref_pmid_ind)
+    devdata = devdata.isel(lev=dev_pmid_ind)
 
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, regriddev,
      regridany, refgrid, devgrid, cmpgrid, refregridder, devregridder,
      refregridder_list, devregridder_list] = create_regridders(refdata, devdata, weightsdir=weightsdir,
                                                                cmpres=cmpres, zm=True)
+
+
+    ref_to_47 = False
+    dev_to_47 = False
+
+    # Determine whether one grid must be reduced to 47 levels and assign plotting variables
+    if ref_grid_cat is 72 and dev_grid_cat is 47:
+        ref_to_47 = True
+        pedge = dev_pedge
+        pedge_ind = dev_pedge_ind
+    elif ref_grid_cat is 47 and dev_grid_cat is 72:
+        dev_to_47 = True
+        pedge = ref_pedge
+        pedge_ind = ref_pedge_ind
+    else:
+        pedge = ref_pedge
+        pedge_ind = ref_pedge_ind
+
+    if ref_to_47 or dev_to_47:
+        conv_dict = dict_72_to_47()
+
     ds_refs = [None] * n_var
     ds_devs = [None] * n_var
     for i in range(n_var):
@@ -1321,7 +1322,6 @@ def compare_zonal_mean(
             ds_devs[i] = devdata[varname].isel(time=itime)
         else:
             ds_devs[i] = devdata[varname]
-
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
@@ -1335,6 +1335,7 @@ def compare_zonal_mean(
         if flip_dev:
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
 
+    
     # ==================================================================
     # Get the area variables if normalize_by_area=True
     # NOTE: expect areas to be in dataset. For GC-Classic 'AREA' is
@@ -1376,6 +1377,16 @@ def compare_zonal_mean(
     for i in range(n_var):
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
+        # ==============================================================
+        # Reduce variables to 47L from 72L if necessary for comparison
+        # ==============================================================
+        if ref_to_47:
+            ds_ref = reduce_72_to_47(ds_ref, conv_dict, ref_pmid_ind, dev_pmid_ind)
+        if dev_to_47:
+            ds_dev = reduce_72_to_47(ds_dev, conv_dict, dev_pmid_ind, ref_pmid_ind)
+
+        ref_nlev = len(ds_ref['lev'])
+        dev_nlev = len(ds_dev['lev'])
 
         # Do area normalization before regridding if normalize_by_area=True
         if normalize_by_area:
@@ -1394,9 +1405,9 @@ def compare_zonal_mean(
             else:
                 # regrid cs to ll
                 ds_ref_reshaped = \
-                    ds_ref.data.reshape(nlev, 6, refres, refres).swapaxes(0, 1)
+                    ds_ref.data.reshape(ref_nlev, 6, refres, refres).swapaxes(0, 1)
                 ds_ref_cmps[i] = np.zeros(
-                    [nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
+                    [ref_nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
                 )
                 for j in range(6):
                     regridder = refregridder_list[j]
@@ -1412,9 +1423,9 @@ def compare_zonal_mean(
             else:
                 # regrid cs to ll
                 ds_dev_reshaped = \
-                    ds_dev.data.reshape(nlev, 6, devres, devres).swapaxes(0, 1)
+                    ds_dev.data.reshape(dev_nlev, 6, devres, devres).swapaxes(0, 1)
                 ds_dev_cmps[i] = np.zeros(
-                    [nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
+                    [dev_nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
                 )
                 for j in range(6):
                     regridder = devregridder_list[j]
@@ -1723,6 +1734,10 @@ def compare_zonal_mean(
             cmpgridtype,
         ]
 
+        pedges = [ref_pedge, dev_pedge, pedge, pedge, pedge, pedge]
+
+        pedge_inds = [ref_pedge_ind, dev_pedge_ind, pedge_ind, pedge_ind, pedge_ind, pedge_ind]
+
         mins = [vmin_ref, vmin_dev, vmin_abs]
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
@@ -1750,8 +1765,8 @@ def compare_zonal_mean(
                 match_cbar,
                 verbose,
                 log_color_scale,
-                pedge,
-                pedge_ind,
+                pedges[i],
+                pedge_inds[i],
                 log_yaxis,
                 plot_type="zonal_mean",
                 xtick_positions=xtick_positions,
@@ -5197,3 +5212,32 @@ def reshape_MAPL_CS(ds, vdims):
         else:
             ds = ds.transpose("lat", "lon")
     return ds
+
+
+def dict_72_to_47():
+    #Get 72L-to-47L conversion dict which stores weights from 72 levels to 47 levels
+    conv_dict = {L72 : (xmat_72to47.col[L72], xmat_72to47.data[L72]) for L72 in xmat_72to47.row}
+    return conv_dict
+
+def reduce_72_to_47(DataArray, conv_dict, pmid_ind_72, pmid_ind_47):
+    #reduce 72 level DataArray to 47 level-equivalent
+    #This function works for both full and restricted pressure ranges
+    new_shape = list(DataArray.data.shape)
+    #assumes first dim is level
+    new_shape[0] = len(pmid_ind_47)
+    reduced_offset = min(pmid_ind_47)
+    reduced_data = np.zeros(new_shape)
+    for i in range(0, len(pmid_ind_72)):
+        lev = pmid_ind_72[i]
+        reduced_data[conv_dict[lev][0]-reduced_offset] = reduced_data[conv_dict[lev][0]-reduced_offset] + DataArray.data[i]*conv_dict[lev][1]
+    new_coords = {coord : DataArray.coords[coord].data for coord in DataArray.coords if coord != 'lev'}
+    new_coords['lev'] = np.array(pmid_ind_47)
+    #GCHP-specific
+    if 'lats' in DataArray.coords:
+        new_coords['lats'] = (('lon', 'lat'), DataArray.coords['lats'].data)
+    if 'lons' in DataArray.coords:
+        new_coords['lons'] = (('lon', 'lat'), DataArray.coords['lons'].data)
+    #print(new_coords, tuple([ dim for dim in DataArray.dims]),  DataArray)
+    return xr.DataArray(reduced_data, dims=tuple([dim for dim in DataArray.dims]),
+                        coords = new_coords, attrs = DataArray.attrs)
+        
