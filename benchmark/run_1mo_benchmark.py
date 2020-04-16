@@ -400,9 +400,9 @@ if gcc_vs_gcc:
 
         # Plot mass tables
         bmk.make_benchmark_mass_tables(gcc_vs_gcc_reflist[0],
-                                       gcc_vs_gcc_refstr,
+                                       gcc_ref_version,
                                        gcc_vs_gcc_devlist[0],
-                                       gcc_vs_gcc_devstr,
+                                       gcc_dev_version,
                                        dst=plot_dir,
                                        overwrite=True)
 
@@ -453,9 +453,9 @@ if gcc_vs_gcc:
 
         # Print OH metrics
         bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
-                                      gcc_vs_gcc_refstr,
+                                      gcc_ref_version,
                                       gcc_vs_gcc_devlist,
-                                      gcc_vs_gcc_devstr,
+                                      gcc_dev_version,
                                       dst=plot_dir,
                                       overwrite=True)
 
