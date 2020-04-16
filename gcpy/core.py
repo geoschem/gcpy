@@ -1518,9 +1518,9 @@ def get_grid_extents(data, edges=True):
 
 def get_vert_grid(dataset):
     if dataset.sizes["lev"] in (72, 73):
-        return GEOS_72L_grid.p_edge(), GEOS_72L_grid.pmid()
+        return GEOS_72L_grid.p_edge(), GEOS_72L_grid.p_mid(), 72
     elif dataset.sizes["lev"] in (47, 48):
-        return GEOS_47L_grid.p_edge(), GEOS_47L_grid.pmid()
+        return GEOS_47L_grid.p_edge(), GEOS_47L_grid.p_mid(), 47
     else:
         raise ValueError("Only 72/73 or 47/48 level vertical grids are supported")
 
@@ -1528,11 +1528,23 @@ def get_pressure_indices(pedge, pres_range):
     return np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))[0]
 
 def pad_pressure_edges(pedge_ind, max_ind):
-    if max_ind in (48, 73)
+    if max_ind in (48, 73):
         max_ind = max_ind - 1
     if min(pedge_ind) != 0:
         pedge_ind = np.append(min(pedge_ind) - 1, pedge_ind)
     if max(pedge_ind) != max_ind:
         pedge_ind = np.append(pedge_ind, max(pedge_ind) + 1)
-
+    return pedge_ind
     
+def convert_lev_to_pres(dataset, pmid, pedge):
+    if dataset.sizes["lev"] in (72, 47):
+        dataset["lev"] = pmid
+    elif dataset.sizes["lev"] in (73, 48):
+        dataset["lev"] = pedge
+    else:
+        msg = "compare_zonal_mean implemented for 72, 73, 47, or 48 levels only. " \
+              + "Other values found in Ref."
+        raise ValueError(msg)
+    dataset["lev"].attrs["unit"] = "hPa"
+    dataset["lev"].attrs["long_name"] = "level pressure"
+    return dataset
