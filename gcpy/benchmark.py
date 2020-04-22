@@ -307,6 +307,8 @@ def compare_single_level(
     plot_extent = [-1000, -1000, -1000, -1000],
     n_job=-1,
     sigdiff_list=[],
+    second_ref=None,
+    second_dev=None
 ):
     """
     Create single-level 3x2 comparison map plots for variables common
@@ -433,6 +435,7 @@ def compare_single_level(
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         except:
             continue
+
 
     # Get grid info and regrid if necessary
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref,
@@ -5241,3 +5244,41 @@ def reduce_72_to_47(DataArray, conv_dict, pmid_ind_72, pmid_ind_47):
     return xr.DataArray(reduced_data, dims=tuple([dim for dim in DataArray.dims]),
                         coords = new_coords, attrs = DataArray.attrs)
         
+
+
+def get_diff_of_diffs(ref1, ref2, dev1, dev2):
+    skip_vars = skip_these_vars
+    vardict = compare_varnames(ref1, ref2, quiet=True)
+    varlist = vardict["commonvars"]
+    ref1 = ref1[varlist]
+    ref2 = ref2[varlist]
+    with xr.set_options(keep_attrs=True):
+        ref_diffs = ref2 - ref1
+        for v in ref2.data_vars.keys():
+            # Ensure the ref_diffs Dataset includes attributes
+            ref_diffs[v].attrs = ref2[v].attrs
+
+    
+    # Create a dev file that contains GCHP differences. Include special
+    # handling if cubed sphere grid dimension names are different since they
+    # changed in MAPL v1.0.0.
+    # Select only common fields between the Ref and Dev datasets
+    gchp_ref = xr.open_dataset(gchp_vs_gchp_reflist[0], drop_variables=skip_vars)
+    gchp_dev = xr.open_dataset(gchp_vs_gchp_devlist[0], drop_variables=skip_vars)
+    vardict = compare_varnames(gchp_ref, gchp_dev, quiet=True)
+    varlist = vardict["commonvars"]
+    gchp_ref = gchp_ref[varlist]
+    gchp_dev = gchp_dev[varlist]
+    refdims = gchp_ref.dims
+    devdims = gchp_dev.dims
+    if "lat" in refdims and "Xdim" in devdims:
+        gchp_ref_newdimnames = gchp_dev.copy()
+        for v in gchp_dev.data_vars.keys():
+            if "Xdim" in gchp_dev[v].dims:
+                gchp_ref_newdimnames[v].values = gchp_ref[v].values.reshape(
+                    gchp_dev[v].values.shape)
+                # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose(
+                #                                                                      "time","lev","lat","Xdim").values
+    
+    
+    
