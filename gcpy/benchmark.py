@@ -416,6 +416,14 @@ def compare_single_level(
 
     if not isinstance(devdata, xr.Dataset):
         raise TypeError("The devdata argument must be an xarray Dataset!")
+    
+    #Prepare diff-of-diffs datasets if needed
+    fracrefdata = None
+    fracdevdata = None
+    if second_ref is not None:
+        refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
+    if second_dev is not None:
+        devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
 
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
@@ -471,7 +479,9 @@ def compare_single_level(
                                                  drop=True).where(devdata.lat>=cmp_mid_minlat,
                                                                   drop=True).where(devdata.lat<=cmp_mid_maxlat,drop=True)
     ds_refs = [None] * n_var
+    frac_ds_refs = [None] * n_var
     ds_devs = [None] * n_var
+    frac_ds_devs = [None] * n_var
     for i in range(n_var):
         # ==============================================================
         # Slice the data, allowing for the
@@ -480,38 +490,13 @@ def compare_single_level(
         varname = varlist[i]
         units_ref, units_dev = check_units(refdata, devdata, varname)
         # Ref
-        vdims = refdata[varname].dims
-        if "time" in vdims and "lev" in vdims:
-            if flip_ref:
-                ds_refs[i] = refdata[varname].isel(time=itime, lev=71 - ilev)
-            else:
-                ds_refs[i] = refdata[varname].isel(time=itime, lev=ilev)
-        elif "time" not in vdims and "lev" in vdims:
-            if flip_ref:
-                ds_refs[i] = refdata[varname].isel(lev=71 - ilev)
-            else:
-                ds_refs[i] = refdata[varname].isel(lev=ilev)
-        elif "time" in vdims and "lev" not in vdims:
-            ds_refs[i] = refdata[varname].isel(time=itime)
-        else:
-            ds_refs[i] = refdata[varname]
-
+        ds_refs[i] = slice_by_lev_and_time(refdata, varname, itime, ilev, flip_ref)
+        if fracrefdata is not None:
+            frac_ds_refs[i] = slice_by_lev_and_time(fracrefdata, varname, itime, ilev, flip_ref)
         # Dev
-        vdims = devdata[varname].dims
-        if "time" in vdims and "lev" in vdims:
-            if flip_dev:
-                ds_devs[i] = devdata[varname].isel(time=itime, lev=71 - ilev)
-            else:
-                ds_devs[i] = devdata[varname].isel(time=itime, lev=ilev)
-        elif "time" not in vdims and "lev" in vdims:
-            if flip_dev:
-                ds_devs[i] = devdata[varname].isel(lev=71 - ilev)
-            else:
-                ds_devs[i] = devdata[varname].isel(lev=ilev)
-        elif "time" in vdims and "lev" not in vdims:
-            ds_devs[i] = devdata[varname].isel(time=itime)
-        else:
-            ds_devs[i] = devdata[varname]
+        ds_devs[i] = slice_by_lev_and_time(devdata, varname, itime, ilev, flip_dev)
+        if fracdevdata is not None:
+            frac_ds_devs[i] = slice_by_lev_and_time(fracdevdata, varname, itime, ilev, flip_dev)
 
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
@@ -519,6 +504,10 @@ def compare_single_level(
         # ==============================================================
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
+        if fracrefdata is not None:
+            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i], fracrefdata[varname].dims)
+        if fracdevdata is not None:
+            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i], fracdevdata[varname].dims)
 
     # ==================================================================
     # Get the area variables if normalize_by_area=True
@@ -555,6 +544,9 @@ def compare_single_level(
     # ==================================================================
     ds_ref_cmps = [None] * n_var
     ds_dev_cmps = [None] * n_var
+    frac_ds_ref_cmps = [None] * n_var
+    frac_ds_dev_cmps = [None] * n_var
+
     global_cmp_grid = call_make_grid(cmpres, 'll', False, False)[0]
     cmpminlon_ind = np.where(global_cmp_grid["lon"] >= cmpminlon)[0][0]
     cmpmaxlon_ind = np.where(global_cmp_grid["lon"] <= cmpmaxlon)[0][-1]
@@ -564,7 +556,7 @@ def compare_single_level(
     for i in range(n_var):
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
-
+        
         # Do area normalization before regridding if normalize_by_area=True
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
@@ -573,46 +565,28 @@ def compare_single_level(
                 ds_dev.values = ds_dev.values / dev_area.values
                 ds_refs[i] = ds_ref
                 ds_devs[i] = ds_dev
+                if fracrefdata is not None:
+                    frac_ds_refs[i] = frac_ds_refs[i].values / ref_area.values
+                if fracdevdata is not None:
+                    frac_ds_devs[i] = frac_ds_devs[i].values / dev_area.values
 
         # Ref
-        if regridref:
-            if refgridtype == "ll":
-                # regrid ll to ll
-                ds_ref_cmps[i] = refregridder(ds_ref)
-            else:
-                # regrid cs to ll
-                #ds_ref_cmps[i] = np.zeros([cmpgrid["lat"].size,
-                #                           cmpgrid["lon"].size])
-                ds_ref_cmps[i] = np.zeros([global_cmp_grid['lat'].size,
-                                           global_cmp_grid['lon'].size])
-                ds_ref_reshaped = ds_ref.data.reshape(6, refres, refres)
-                for j in range(6):
-                    regridder = refregridder_list[j]
-                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])
-                #limit to extent of cmpgrid
-                ds_ref_cmps[i] = ds_ref_cmps[i][cmpminlat_ind:cmpmaxlat_ind+1,cmpminlon_ind:cmpmaxlon_ind+1].squeeze()
-        else:
-            ds_ref_cmps[i] = ds_ref
-
+        ds_ref_cmps[i] = regrid_comparison_data(ds_ref, refres, regridref, refregridder,
+                                                refregridder_list, global_cmp_grid, refgridtype,
+                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlonind)
+        if fracrefdata is not None:
+            frac_ds_ref_cmps[i] = regrid_comparison_data(frac_ds_refs[i], refres, regridref, refregridder,
+                                                refregridder_list, global_cmp_grid, refgridtype,
+                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlonind)
         # Dev
-        if regriddev:
-            if devgridtype == "ll":
-                # regrid ll to ll
-                ds_dev_cmps[i] = devregridder(ds_dev)
-            else:
-                # regrid cs to ll
-                #ds_dev_cmps[i] = np.zeros([cmpgrid["lat"].size,
-                #                           cmpgrid["lon"].size])
-                ds_dev_cmps[i] = np.zeros([global_cmp_grid['lat'].size,
-                                           global_cmp_grid['lon'].size])
+        ds_dev_cmps[i] = regrid_comparison_data(ds_dev, devres, regriddev, devregridder,
+                                                devregridder_list, global_cmp_grid, devgridtype,
+                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlonind)
+        if fracdevdata is not None:
+            frac_ds_dev_cmps[i] = regrid_comparison_data(frac_ds_devs[i], devres, regriddev, devregridder,
+                                                devregridder_list, global_cmp_grid, devgridtype,
+                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlonind)
 
-                ds_dev_reshaped = ds_dev.data.reshape(6, devres, devres)
-                for j in range(6):
-                    regridder = devregridder_list[j]
-                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[j])
-                ds_dev_cmps[i] = ds_dev_cmps[i][cmpminlat_ind:cmpmaxlat_ind+1,cmpminlon_ind:cmpmaxlon_ind+1].squeeze()
-        else:
-            ds_dev_cmps[i] = ds_dev
 
     # =================================================================
     # Create pdf if saving to file
@@ -679,11 +653,17 @@ def compare_single_level(
 
         ds_ref_cmp = ds_ref_cmps[ivar]
         ds_dev_cmp = ds_dev_cmps[ivar]
+        frac_ds_ref_cmp = frac_ds_ref_cmps[ivar]
+        frac_ds_dev_cmp = frac_ds_dev_cmps[ivar]
 
         # Reshape comparison cubed sphere data, if any
         if cmpgridtype == "cs":
             ds_ref_cmp_reshaped = ds_ref_cmp.data.reshape(6, cmpres, cmpres)
             ds_dev_cmp_reshaped = ds_dev_cmp.data.reshape(6, cmpres, cmpres)
+            if frac_ds_ref_cmp is not None:
+                frac_ds_ref_cmp_reshaped = frac_ds_ref_cmp.data.reshape(6, cmpres, cmpres)
+            if frac_ds_dev_cmp is not None:
+                frac_ds_dev_cmp_reshaped = frac_ds_dev_cmp.data.reshape(6, cmpres, cmpres)
 
         # ==============================================================
         # Get min and max values for use in the colorbars
@@ -762,9 +742,16 @@ def compare_single_level(
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
         if cmpgridtype == "ll":
-            fracdiff = np.abs(np.array(ds_dev_cmp)) / np.abs(np.array(ds_ref_cmp))
+            #Replace fractional difference plots with absolute difference of fractional datasets if necessary
+            if frac_ds_dev_cmp is not None and frac_ds_ref_cmp is not None:
+                fracdiff = np.array(frac_ds_dev_cmp) - np.array(frac_ds_ref_cmp)
+            else:
+                fracdiff = np.abs(np.array(ds_dev_cmp)) / np.abs(np.array(ds_ref_cmp))
         else:
-            fracdiff = np.abs(ds_dev_cmp_reshaped) / np.abs(ds_ref_cmp_reshaped)
+            if frac_ds_dev_cmp is not None and frac_ds_ref_cmp is not None:
+                fracdiff = frac_ds_dev_cmp_reshaped - frac_ds_ref_cmp_reshaped
+            else:
+                fracdiff = np.abs(ds_dev_cmp_reshaped) / np.abs(ds_ref_cmp_reshaped)
 
         # Replace Infinity values with NaN
         fracdiff = np.where(np.abs(fracdiff) == np.inf, np.nan, fracdiff)
@@ -1102,6 +1089,8 @@ def compare_zonal_mean(
     extra_title_txt=None,
     n_job=-1,
     sigdiff_list=[],
+    second_ref=None,
+    second_dev=None
 ):
 
     """
@@ -2739,6 +2728,8 @@ def make_benchmark_plots(
     areas=None,
     weightsdir='.',
     n_job=-1,
+    secondref=None,
+    seconddev=None
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -2853,6 +2844,13 @@ def make_benchmark_plots(
     except FileNotFoundError:
         msg = "Could not find Dev file: {}!".format(dev)
         raise FileNotFoundError(msg)
+        
+    secondrefds = None
+    seconddevds = None
+    if secondref is not None:
+        secondrefds = xr.open_dataset(secondref, drop_variables=gcon.skip_these_vars)
+    if seconddev is not None:
+        seconddevds = xr.open_dataset(seconddev, drop_variables=gcon.skip_these_vars)
 
     # Create regridding files if necessary while not in parallel loop
     [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
@@ -2867,6 +2865,10 @@ def make_benchmark_plots(
                 refds = xr.merge([refds, areas["Ref"]])
             if 'AREA' not in devds.data_vars:
                 devds = xr.merge([devds, areas["Dev"]])
+            if secondref is not None and 'AREA' not in secondrefds.data_vars:
+                secondrefds = xr.merge([secondrefds, areas["Ref"]])
+            if seconddev is not None and 'AREA' not in seconddevds.data_vars:
+                seconddevds = xr.merge([seconddevds, areas["Dev"]])
         else:
             msg = "ERROR: normalize_by_area = True but " \
                 + "the 'areas' argument was not passed!"
@@ -2890,7 +2892,9 @@ def make_benchmark_plots(
                              log_color_scale=log_color_scale,
                              extra_title_txt=extra_title_txt,
                              normalize_by_area=normalize_by_area,
-                             weightsdir=weightsdir)
+                             weightsdir=weightsdir,
+                             second_ref=secondrefds, 
+                             second_dev=seconddevds)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -2904,7 +2908,9 @@ def make_benchmark_plots(
                              log_color_scale=log_color_scale,
                              normalize_by_area=normalize_by_area,
                              extra_title_txt=extra_title_txt,
-                             weightsdir=weightsdir)
+                             weightsdir=weightsdir,
+                             second_ref=secondrefds, 
+                             second_dev=seconddevds)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -2917,7 +2923,9 @@ def make_benchmark_plots(
                            log_color_scale=log_color_scale,
                            normalize_by_area=normalize_by_area,
                            extra_title_txt=extra_title_txt,
-                           weightsdir=weightsdir)
+                           weightsdir=weightsdir,
+                           second_ref=secondrefds, 
+                           second_dev=seconddevds)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -2931,6 +2939,10 @@ def make_benchmark_plots(
     if "FullChem" in benchmark_type:
         refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
         devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
+        if secondrefds is not None:
+            core.add_lumped_species_to_dataset(secondrefds, verbose=verbose)
+        if seconddevds is not None:
+            core.add_lumped_species_to_dataset(seconddevds, verbose=verbose)
         core.archive_lumped_species_definitions(dst)
 
     # Get the list of species categories
@@ -2941,6 +2953,11 @@ def make_benchmark_plots(
     # Variables that are in Ref but not in Dev will be added to Dev
     # with all missing values (NaNs). And vice-versa.
     [refds, devds] = add_missing_variables(refds, devds)
+
+    if secondrefds is not None:
+        [refds, secondrefds] = add_missing_variables(refds, secondrefds)
+    if seconddevds is not None:
+        [devds, seconddevds] = add_missing_variables(devds, seconddevds)
 
     # Collection prefix
     coll_prefix = collection.strip() + "_"
@@ -3016,7 +3033,9 @@ def make_benchmark_plots(
                 normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_sfc,
-                weightsdir=weightsdir
+                weightsdir=weightsdir,
+                second_ref=secondrefds,
+                second_dev=seconddevds
             )
             diff_sfc[:] = [v.replace(coll_prefix, "") for v in diff_sfc]
             cat_diff_dict['sfc'] = diff_sfc
@@ -3051,7 +3070,9 @@ def make_benchmark_plots(
                 normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_500,
-                weightsdir=weightsdir
+                weightsdir=weightsdir,
+                second_ref=secondrefds,
+                second_dev=seconddevds
             )
             diff_500[:] = [v.replace(coll_prefix, "") for v in diff_500]
             #dict_500[filecat] = diff_500
@@ -3089,7 +3110,9 @@ def make_benchmark_plots(
                 normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_zm,
-                weightsdir=weightsdir
+                weightsdir=weightsdir,
+                second_ref=secondrefds,
+                second_dev=seconddevds
             )
             diff_zm[:] = [v.replace(coll_prefix, "") for v in diff_zm]
             #dict_zm = diff_zm
@@ -3122,7 +3145,9 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 log_color_scale=log_color_scale,
                 normalize_by_area=normalize_by_area,
-                weightsdir=weightsdir
+                weightsdir=weightsdir,
+                second_ref=secondrefds,
+                second_dev=seconddevds
             )
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict,
@@ -5246,39 +5271,93 @@ def reduce_72_to_47(DataArray, conv_dict, pmid_ind_72, pmid_ind_47):
         
 
 
-def get_diff_of_diffs(ref1, ref2, dev1, dev2):
+def get_diff_of_diffs(ref, dev):
+    #get diff of diffs datasets for 2 datasets
+    #limit each pair to be the same type of output (GEOS-Chem Classic or GCHP)
+    #and same resolution / extent
     skip_vars = skip_these_vars
-    vardict = compare_varnames(ref1, ref2, quiet=True)
+    vardict = compare_varnames(ref, dev, quiet=True)
     varlist = vardict["commonvars"]
-    ref1 = ref1[varlist]
-    ref2 = ref2[varlist]
-    with xr.set_options(keep_attrs=True):
-        ref_diffs = ref2 - ref1
-        for v in ref2.data_vars.keys():
-            # Ensure the ref_diffs Dataset includes attributes
-            ref_diffs[v].attrs = ref2[v].attrs
-
-    
-    # Create a dev file that contains GCHP differences. Include special
-    # handling if cubed sphere grid dimension names are different since they
-    # changed in MAPL v1.0.0.
     # Select only common fields between the Ref and Dev datasets
-    gchp_ref = xr.open_dataset(gchp_vs_gchp_reflist[0], drop_variables=skip_vars)
-    gchp_dev = xr.open_dataset(gchp_vs_gchp_devlist[0], drop_variables=skip_vars)
-    vardict = compare_varnames(gchp_ref, gchp_dev, quiet=True)
-    varlist = vardict["commonvars"]
-    gchp_ref = gchp_ref[varlist]
-    gchp_dev = gchp_dev[varlist]
-    refdims = gchp_ref.dims
-    devdims = gchp_dev.dims
-    if "lat" in refdims and "Xdim" in devdims:
-        gchp_ref_newdimnames = gchp_dev.copy()
-        for v in gchp_dev.data_vars.keys():
-            if "Xdim" in gchp_dev[v].dims:
-                gchp_ref_newdimnames[v].values = gchp_ref[v].values.reshape(
-                    gchp_dev[v].values.shape)
+    ref = ref[varlist]
+    dev = dev[varlist]
+    if 'nf' not in ref.dims and 'nf' not in dev.dims:
+        with xr.set_options(keep_attrs=True):
+            absdiffs = dev - ref
+            fracdiffs = dev / ref
+            for v in dev.data_vars.keys():
+            # Ensure the diffs Dataset includes attributes
+                absdiffs[v].attrs = dev[v].attrs
+                fracdiffs[v].attrs = dev[v].attrs
+    elif 'nf' in ref.dims and 'nf' in dev.dims:
+    
+    # Include special handling if cubed sphere grid dimension names are different 
+    # since they changed in MAPL v1.0.0.
+        if "lat" in ref.dims and "Xdim" in dev.dims:
+            ref_newdimnames = dev.copy()
+            for v in dev.data_vars.keys():
+                if "Xdim" in dev[v].dims:
+                    ref_newdimnames[v].values = ref[v].values.reshape(
+                        dev[v].values.shape)
                 # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose(
                 #                                                                      "time","lev","lat","Xdim").values
     
     
+        with xr.set_options(keep_attrs=True):
+            absdiffs = dev.copy()
+            fracdiffs = dev.copy()
+            for v in dev.data_vars.keys():
+                if "Xdim" in dev[v].dims or "lat" in dev[v].dims:
+                    absdiffs[v] = dev[v] - ref[v]
+                    fracdiffs[v] = dev[v] / ref[v]
+                    # NOTE: The diffs Datasets are created without variable
+                    # attributes; we have to reattach them
+                    absdiffs[v].attrs = dev[v].attrs
+                    fracdiffs[v].attrs = dev[v].attrs
+    else:
+        raise(ValueError, 'Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere) within each dataset pair')
     
+    return absdiffs, fracdiffs
+
+
+
+def slice_by_lev_and_time(ds, varname, itime, ilev, flip):
+    #used in compare_single_level and compare_zonal_mean to get dataset slices
+    #WBD change flip slice to use max level index rather than hardcoded 71
+    vdims = ds[varname].dims
+    if "time" in vdims and "lev" in vdims:
+        if flip:
+            return ds[varname].isel(time=itime, lev=71 - ilev)
+        else:
+            return ds[varname].isel(time=itime, lev=ilev)
+    elif "time" not in vdims and "lev" in vdims:
+        if flip:
+            return ds[varname].isel(lev=71 - ilev)
+        else:
+            return ds[varname].isel(lev=ilev)
+    elif "time" in vdims and "lev" not in vdims:
+        return ds[varname].isel(time=itime)
+    else:
+        return ds[varname]
+
+
+def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_cmp_grid,
+                           gridtype, cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind):
+    if regrid:
+        if gridtype == "ll":
+            # regrid ll to ll
+            return regridder(data)
+        else:
+            new_data = np.zeros([global_cmp_grid['lat'].size,
+                                       global_cmp_grid['lon'].size])
+            data_reshaped = data.data.reshape(6, res, res)
+            for j in range(6):
+                regridder = regridder_list[j]
+                new_data += regridder(data_reshaped[j])
+            #limit to extent of cmpgrid
+            return new_data[cmpminlat_ind:cmpmaxlat_ind+1,cmpminlon_ind:cmpmaxlon_ind+1].squeeze()
+    else:
+        return data
+
+    
+                           
