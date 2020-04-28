@@ -416,7 +416,7 @@ def compare_single_level(
 
     if not isinstance(devdata, xr.Dataset):
         raise TypeError("The devdata argument must be an xarray Dataset!")
-    
+        
     #Prepare diff-of-diffs datasets if needed
     fracrefdata = None
     fracdevdata = None
@@ -424,6 +424,17 @@ def compare_single_level(
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
     if second_dev is not None:
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
+
+    if type(refstr) is list:
+        frac_refstr = '{} / {}'.format(refstr[0], refstr[1])
+        refstr = '{} - {}'.format(refstr[0], refstr[1])
+    else:
+        frac_refstr = 'Ref2 / Ref1'
+    if type(devstr) is list:
+        frac_devstr = '{} / {}'.format(devstr[0], devstr[1])
+        devstr = '{} - {}'.format(devstr[0], devstr[1])
+    else:
+        frac_devstr = 'Dev2 / Dev1'
 
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist == None:
@@ -478,6 +489,18 @@ def compare_single_level(
                                 drop=True).where(devdata.lon<=cmp_mid_maxlon,
                                                  drop=True).where(devdata.lat>=cmp_mid_minlat,
                                                                   drop=True).where(devdata.lat<=cmp_mid_maxlat,drop=True)
+
+    if fracrefdata is not None and ref_extent != cmp_extent and refgridtype == "ll":
+        fracrefdata = fracrefdata.where(fracrefdata.lon>=cmp_mid_minlon,
+                                drop=True).where(fracrefdata.lon<=cmp_mid_maxlon,
+                                                 drop=True).where(fracrefdata.lat>=cmp_mid_minlat,
+                                                                  drop=True).where(fracrefdata.lat<=cmp_mid_maxlat,drop=True)
+    if fracdevdata is not None and dev_extent != cmp_extent and devgridtype == "ll":
+        fracdevdata = fracdevdata.where(fracdevdata.lon>=cmp_mid_minlon,
+                                drop=True).where(fracdevdata.lon<=cmp_mid_maxlon,
+                                                 drop=True).where(fracdevdata.lat>=cmp_mid_minlat,
+                                                                  drop=True).where(fracdevdata.lat<=cmp_mid_maxlat,drop=True)
+
     ds_refs = [None] * n_var
     frac_ds_refs = [None] * n_var
     ds_devs = [None] * n_var
@@ -573,19 +596,19 @@ def compare_single_level(
         # Ref
         ds_ref_cmps[i] = regrid_comparison_data(ds_ref, refres, regridref, refregridder,
                                                 refregridder_list, global_cmp_grid, refgridtype,
-                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlonind)
+                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind)
         if fracrefdata is not None:
             frac_ds_ref_cmps[i] = regrid_comparison_data(frac_ds_refs[i], refres, regridref, refregridder,
                                                 refregridder_list, global_cmp_grid, refgridtype,
-                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlonind)
+                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind)
         # Dev
         ds_dev_cmps[i] = regrid_comparison_data(ds_dev, devres, regriddev, devregridder,
                                                 devregridder_list, global_cmp_grid, devgridtype,
-                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlonind)
+                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind)
         if fracdevdata is not None:
             frac_ds_dev_cmps[i] = regrid_comparison_data(frac_ds_devs[i], devres, regriddev, devregridder,
                                                 devregridder_list, global_cmp_grid, devgridtype,
-                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlonind)
+                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind)
 
 
     # =================================================================
@@ -870,25 +893,23 @@ def compare_single_level(
             dev_title = "{} (Dev){}\nc{}".format(devstr, subtitle_extra, devres)
 
         if regridany:
-            absdiff_dynam_title = \
-                "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
-            absdiff_fixed_title = \
-                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
-                cmpres)
-            fracdiff_dynam_title = \
-             "Ratio ({})\nDev/Ref, Dynamic Range".format(
-                cmpres)
-            fracdiff_fixed_title = \
-             "Ratio ({})\nDev/Ref, Fixed Range".format(
-                cmpres)
+            absdiff_dynam_title = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
+            if fracrefdata is not None:
+                fracdiff_dynam_title = "Difference ({}), Dynamic Range\n{} - {}".format(cmpres,frac_devstr,frac_refstr)
+                fracdiff_fixed_title = "Difference ({}), Restricted Range [5%,95%]\n{} - {}".format(cmpres, frac_devstr, frac_refstr)
+            else:
+                fracdiff_dynam_title = "Ratio ({})\nDev/Ref, Dynamic Range".format(cmpres)
+                fracdiff_fixed_title = "Ratio ({})\nDev/Ref, Fixed Range".format(cmpres)
         else:
             absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
-            absdiff_fixed_title = \
-                "Difference\nDev - Ref, Restricted Range [5%,95%]"
-            fracdiff_dynam_title = \
-                "Ratio \nDev/Ref, Dynamic Range"
-            fracdiff_fixed_title = \
-                "Ratio \nDev/Ref, Fixed Range"
+            absdiff_fixed_title = "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            if fracrefdata is not None:
+                fracdiff_dynam_title = "Difference, Dynamic Range\n{} - {}".format(frac_devstr,frac_refstr)
+                fracdiff_fixed_title = "Difference, Restricted Range [5%,95%]\n{} - {}".format(frac_devstr, frac_refstr)
+            else:
+                fracdiff_dynam_title = "Ratio \nDev/Ref, Dynamic Range"
+                fracdiff_fixed_title = "Ratio \nDev/Ref, Fixed Range"
 
         # ==============================================================
         # Bundle variables for 6 parallel plotting calls
@@ -898,13 +919,14 @@ def compare_single_level(
         # ==============================================================
 
         subplots = [
-            "ref",
-            "dev",
-            "dyn_abs_diff",
-            "res_abs_diff",
-            "dyn_frac_diff",
-            "res_frac_diff",
+            "ref", "dev",
+            "dyn_abs_diff", "res_abs_diff",
+            "dyn_frac_diff", "res_frac_diff",
         ]
+        if fracrefdata is not None and fracrefdata is not None:
+            subplots =  ["ref", "dev",
+                         "dyn_abs_diff", "res_abs_diff",
+                         "dyn_abs_diff", "res_abs_diff"]
 
         all_zeros = [
             ref_is_all_zero,
@@ -1206,6 +1228,25 @@ def compare_zonal_mean(
     if not isinstance(devdata, xr.Dataset):
         raise TypeError("The devdata argument must be an xarray Dataset!")
 
+    #Prepare diff-of-diffs datasets if needed
+    fracrefdata = None
+    fracdevdata = None
+    if second_ref is not None:
+        refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
+    if second_dev is not None:
+        devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
+
+    if type(refstr) is list:
+        frac_refstr = '{} / {}'.format(refstr[0], refstr[1])
+        refstr = '{} - {}'.format(refstr[0], refstr[1])
+    else:
+        frac_refstr = 'Ref2 / Ref1'
+    if type(devstr) is list:
+        frac_devstr = '{} / {}'.format(devstr[0], devstr[1])
+        devstr = '{} - {}'.format(devstr[0], devstr[1])
+    else:
+        frac_devstr = 'Dev2 / Dev1'
+        
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist == None:
         quiet = not verbose
@@ -1249,6 +1290,11 @@ def compare_zonal_mean(
     # Convert levels to pressures in ref and dev data
     refdata = convert_lev_to_pres(refdata, ref_pmid, ref_pedge)
     devdata = convert_lev_to_pres(devdata, dev_pmid, dev_pedge)
+    
+    if fracrefdata is not None:
+        fracrefdata = convert_lev_to_pres(fracrefdata, ref_pmid, ref_pedge)
+    if fracdevdata is not None:
+        fracdevdata = convert_lev_to_pres(fracdevdata, dev_pmid, dev_pedge)
 
     # ==================================================================
     # Reduce pressure range if reduced range passed as input. Indices
@@ -1264,6 +1310,10 @@ def compare_zonal_mean(
 
     refdata = refdata.isel(lev=ref_pmid_ind)
     devdata = devdata.isel(lev=dev_pmid_ind)
+    if fracrefdata is not None:
+        fracrefdata = fracrefdata.isel(lev=ref_pmid_ind)
+    if fracdevdata is not None:
+        fracdevdata = fracdevdata.isel(lev=dev_pmid_ind)
 
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, regriddev,
      regridany, refgrid, devgrid, cmpgrid, refregridder, devregridder,
@@ -1291,7 +1341,9 @@ def compare_zonal_mean(
         conv_dict = dict_72_to_47()
 
     ds_refs = [None] * n_var
+    frac_ds_refs = [None] * n_var
     ds_devs = [None] * n_var
+    frac_ds_devs = [None] * n_var
     for i in range(n_var):
         varname = varlist[i]
         units_ref, units_dev = check_units(refdata, devdata, varname)
@@ -1305,27 +1357,45 @@ def compare_zonal_mean(
         vdims = refdata[varname].dims
         if "time" in vdims:
             ds_refs[i] = refdata[varname].isel(time=itime)
+            if fracrefdata is not None:
+                frac_ds_refs[i] = fracrefdata[varname].isel(time=itime)
         else:
             ds_refs[i] = refdata[varname]
-
+            if fracrefdata is not None:
+                frac_ds_refs[i] = fracrefdata[varname]
+        
         # Dev
         vdims = devdata[varname].dims
         if "time" in vdims:
             ds_devs[i] = devdata[varname].isel(time=itime)
+            if fracdevdata is not None:
+                frac_ds_devs[i] = fracdevdata[varname].isel(time=itime)
+
         else:
             ds_devs[i] = devdata[varname]
+            if fracdevdata is not None:
+                frac_ds_devs[i] = fracdevdata[varname]
+
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
+        if fracrefdata is not None:
+            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i], fracrefdata[varname].dims)
+        if fracdevdata is not None:
+            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i], fracdevdata[varname].dims)        
 
         # Flip in the vertical if applicable
         if flip_ref:
             ds_refs[i].data = ds_refs[i].data[::-1, :, :]
+            if fracrefdata is not None:
+                frac_ds_refs[i].data = frac_ds_refs[i].data[::-1, :, :]
         if flip_dev:
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
+            if fracdevdata is not None:
+                frac_ds_devs[i].data = frac_ds_devs[i].data[::-1, :, :]
 
     
     # ==================================================================
@@ -1365,17 +1435,25 @@ def compare_zonal_mean(
     # ==================================================================
     ds_ref_cmps = [None] * n_var
     ds_dev_cmps = [None] * n_var
+    frac_ds_ref_cmps = [None] * n_var
+    frac_ds_dev_cmps = [None] * n_var
 
     for i in range(n_var):
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
+        frac_ds_ref = frac_ds_refs[i]
+        frac_ds_dev = frac_ds_devs[i]
         # ==============================================================
         # Reduce variables to 47L from 72L if necessary for comparison
         # ==============================================================
         if ref_to_47:
             ds_ref = reduce_72_to_47(ds_ref, conv_dict, ref_pmid_ind, dev_pmid_ind)
+            if fracrefdata is not None:
+                frac_ds_ref = reduce_72_to_47(frac_ds_ref, ref_pmid_ind, dev_pmid_ind)
         if dev_to_47:
             ds_dev = reduce_72_to_47(ds_dev, conv_dict, dev_pmid_ind, ref_pmid_ind)
+            if fracdevdata is not None:
+                frac_ds_dev = reduce_72_to_47(frac_ds_dev, ref_pmid_ind, dev_pmid_ind)
 
         ref_nlev = len(ds_ref['lev'])
         dev_nlev = len(ds_dev['lev'])
@@ -1388,42 +1466,29 @@ def compare_zonal_mean(
                 ds_dev.values = ds_dev.values / dev_area.values
                 ds_refs[i] = ds_ref
                 ds_devs[i] = ds_dev
-
+                if fracrefdata is not None:
+                    frac_ds_ref.values = frac_ds_ref.values / ref_area.values
+                    frac_ds_refs[i] = frac_ds_ref
+                if fracdevdata is not None:
+                    frac_ds_dev.values = frac_ds_dev.values / dev_area.values
+                    frac_ds_devs[i] = frac_ds_dev
+                
         # Ref
-        if regridref:
-            if refgridtype == "ll":
-                # regrid ll to ll
-                ds_ref_cmps[i] = refregridder(ds_ref)
-            else:
-                # regrid cs to ll
-                ds_ref_reshaped = \
-                    ds_ref.data.reshape(ref_nlev, 6, refres, refres).swapaxes(0, 1)
-                ds_ref_cmps[i] = np.zeros(
-                    [ref_nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
-                )
-                for j in range(6):
-                    regridder = refregridder_list[j]
-                    ds_ref_cmps[i] += regridder(ds_ref_reshaped[j])
-        else:
-            ds_ref_cmps[i] = ds_ref
-
+        ds_ref_cmps[i] = regrid_comparison_data(ds_ref, refres, regridref, refregridder,
+                                                refregridder_list, cmpgrid, refgridtype,
+                                                nlev=ref_nlev)
+        if fracrefdata is not None:
+            frac_ds_ref_cmps[i] = regrid_comparison_data(frac_ds_refs[i], refres, regridref, refregridder,
+                                                         refregridder_list, cmpgrid, refgridtype,
+                                                         nlev=ref_nlev)
         # Dev
-        if regriddev:
-            if devgridtype == "ll":
-                # regrid ll to ll
-                ds_dev_cmps[i] = devregridder(ds_dev)
-            else:
-                # regrid cs to ll
-                ds_dev_reshaped = \
-                    ds_dev.data.reshape(dev_nlev, 6, devres, devres).swapaxes(0, 1)
-                ds_dev_cmps[i] = np.zeros(
-                    [dev_nlev, cmpgrid["lat"].size, cmpgrid["lon"].size]
-                )
-                for j in range(6):
-                    regridder = devregridder_list[j]
-                    ds_dev_cmps[i] += regridder(ds_dev_reshaped[j])
-        else:
-            ds_dev_cmps[i] = ds_dev
+        ds_dev_cmps[i] = regrid_comparison_data(ds_dev, devres, regriddev, devregridder,
+                                                devregridder_list, cmpgrid, devgridtype,
+                                                nlev=dev_nlev)
+        if fracdevdata is not None:
+            frac_ds_dev_cmps[i] = regrid_comparison_data(frac_ds_devs[i], devres, regriddev, devregridder,
+                                                         devregridder_list, cmpgrid, devgridtype,
+                                                         nlev=dev_nlev)
 
     # ==================================================================
     # Create pdf, if savepdf is passed as True
@@ -1468,6 +1533,8 @@ def compare_zonal_mean(
         ds_dev = ds_devs[ivar]
         ds_ref_cmp = ds_ref_cmps[ivar]
         ds_dev_cmp = ds_dev_cmps[ivar]
+        frac_ds_ref_cmp = frac_ds_ref_cmps[ivar]
+        frac_ds_dev_cmp = frac_ds_dev_cmps[ivar]
 
         # ==============================================================
         # Area normalization units and subtitle
@@ -1505,7 +1572,10 @@ def compare_zonal_mean(
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
-
+        if fracdevdata is not None:
+            frac_zm_dev_cmp = frac_ds_dev_cmp.mean(axis=2)
+        if fracrefdata is not None:
+            frac_zm_ref_cmp = frac_ds_ref_cmp.mean(axis=2)
         # ==============================================================
         # Get min and max values for use in the colorbars
         # and also flag if Ref and/or Dev are all zero or all NaN
@@ -1561,8 +1631,10 @@ def compare_zonal_mean(
         # ==============================================================
         # Calculate fractional difference, set divides by zero to Nan
         # ==============================================================
-
-        zm_fracdiff = np.abs(np.array(zm_dev_cmp)) / np.abs(np.array(zm_ref_cmp))
+        if fracrefdata is not None:
+            zm_fracdiff = np.array(frac_zm_dev_cmp) - np.array(frac_zm_ref_cmp)
+        else:
+            zm_fracdiff = np.abs(np.array(zm_dev_cmp)) / np.abs(np.array(zm_ref_cmp))
         zm_fracdiff = np.where(np.abs(zm_fracdiff) == np.inf, np.nan, zm_fracdiff)
         zm_fracdiff[zm_fracdiff>1e308] = np.nan
         # Test if the frac. diff is zero everywhere or NaN everywhere
@@ -1630,26 +1702,23 @@ def compare_zonal_mean(
                 devstr, subtitle_extra, cmpres, devres)
 
         if regridany:
-            absdiff_dynam_title = \
-                "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
-            absdiff_fixed_title = \
-                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(
-                    cmpres)
-            fracdiff_dynam_title = \
-             "Ratio ({})\nDev/Ref, Dynamic Range".format(
-                cmpres)
-            fracdiff_fixed_title = \
-                "Ratio ({})\nDev/Ref, Fixed Range".format(
-                cmpres)
+            absdiff_dynam_title = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
+            if fracrefdata is not None:
+                fracdiff_dynam_title = "Difference ({}), Dynamic Range\n{} - {}".format(cmpres,frac_devstr,frac_refstr)
+                fracdiff_fixed_title = "Difference ({}), Restricted Range [5%,95%]\n{} - {}".format(cmpres, frac_devstr, frac_refstr)
+            else:
+                fracdiff_dynam_title = "Ratio ({})\nDev/Ref, Dynamic Range".format(cmpres)
+                fracdiff_fixed_title = "Ratio ({})\nDev/Ref, Fixed Range".format(cmpres)
         else:
-            absdiff_dynam_title = \
-                "Difference\nDev - Ref, Dynamic Range"
-            absdiff_fixed_title = \
-                "Difference\nDev - Ref, Restricted Range [5%,95%]"
-            fracdiff_dynam_title = \
-                "Ratio\nDev/Ref, Dynamic Range"
-            fracdiff_fixed_title = \
-                "Ratio\nDev/Ref, Fixed Range"
+            absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
+            absdiff_fixed_title = "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            if fracrefdata is not None:
+                fracdiff_dynam_title = "Difference, Dynamic Range\n{} - {}".format(frac_devstr,frac_refstr)
+                fracdiff_fixed_title = "Difference, Restricted Range [5%,95%]\n{} - {}".format(frac_devstr, frac_refstr)
+            else:
+                fracdiff_dynam_title = "Ratio \nDev/Ref, Dynamic Range"
+                fracdiff_fixed_title = "Ratio \nDev/Ref, Fixed Range"
 
         # ==============================================================
         # Bundle variables for 6 parallel plotting calls
@@ -1659,13 +1728,14 @@ def compare_zonal_mean(
         # ==============================================================
 
         subplots = [
-            "ref",
-            "dev",
-            "dyn_abs_diff",
-            "res_abs_diff",
-            "dyn_frac_diff",
-            "res_frac_diff",
+            "ref", "dev",
+            "dyn_abs_diff", "res_abs_diff",
+            "dyn_frac_diff", "res_frac_diff",
         ]
+        if fracrefdata is not None and fracrefdata is not None:
+            subplots =  ["ref", "dev",
+                         "dyn_abs_diff", "res_abs_diff",
+                         "dyn_abs_diff", "res_abs_diff"]
 
         all_zeros = [
             ref_is_all_zero,
@@ -2729,7 +2799,9 @@ def make_benchmark_plots(
     weightsdir='.',
     n_job=-1,
     secondref=None,
-    seconddev=None
+    secondrefstr='',
+    seconddev=None,
+    seconddevstr=''
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -2893,7 +2965,8 @@ def make_benchmark_plots(
                              extra_title_txt=extra_title_txt,
                              normalize_by_area=normalize_by_area,
                              weightsdir=weightsdir,
-                             second_ref=secondrefds, 
+                             second_ref=secondrefds,
+                             
                              second_dev=seconddevds)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
@@ -5275,8 +5348,8 @@ def get_diff_of_diffs(ref, dev):
     #get diff of diffs datasets for 2 datasets
     #limit each pair to be the same type of output (GEOS-Chem Classic or GCHP)
     #and same resolution / extent
-    skip_vars = skip_these_vars
-    vardict = compare_varnames(ref, dev, quiet=True)
+    skip_vars = gcon.skip_these_vars
+    vardict = core.compare_varnames(ref, dev, quiet=True)
     varlist = vardict["commonvars"]
     # Select only common fields between the Ref and Dev datasets
     ref = ref[varlist]
@@ -5342,20 +5415,29 @@ def slice_by_lev_and_time(ds, varname, itime, ilev, flip):
 
 
 def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_cmp_grid,
-                           gridtype, cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind):
+                           gridtype, cmpminlat_ind=0, cmpmaxlat_ind=-2, cmpminlon_ind=0, cmpmaxlon_ind=-2,
+                           nlev=1):
     if regrid:
         if gridtype == "ll":
             # regrid ll to ll
             return regridder(data)
         else:
-            new_data = np.zeros([global_cmp_grid['lat'].size,
-                                       global_cmp_grid['lon'].size])
-            data_reshaped = data.data.reshape(6, res, res)
+            if nlev is 1:
+                new_data = np.zeros([global_cmp_grid['lat'].size,
+                                     global_cmp_grid['lon'].size])
+                data_reshaped = data.data.reshape(6, res, res)
+            else:
+                new_data = np.zeros([nlev, global_cmp_grid['lat'].size,
+                                     global_cmp_grid['lon'].size])
+                data_reshaped = data.data.reshape(nlev, 6, res, res).swapaxes(0, 1)
             for j in range(6):
                 regridder = regridder_list[j]
                 new_data += regridder(data_reshaped[j])
-            #limit to extent of cmpgrid
-            return new_data[cmpminlat_ind:cmpmaxlat_ind+1,cmpminlon_ind:cmpmaxlon_ind+1].squeeze()
+            if nlev is 1:
+                #limit to extent of cmpgrid
+                return new_data[cmpminlat_ind:cmpmaxlat_ind+1,cmpminlon_ind:cmpmaxlon_ind+1].squeeze()
+            else:
+                return new_data
     else:
         return data
 

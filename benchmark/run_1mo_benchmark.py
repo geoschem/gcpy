@@ -173,10 +173,8 @@ gchp_vs_gcc_refstr   = "{}".format(gcc_dev_version)
 gchp_vs_gcc_devstr   = "{}".format(gchp_dev_version)
 gchp_vs_gchp_refstr  = "{}".format(gchp_ref_version)
 gchp_vs_gchp_devstr  = "{}".format(gchp_dev_version)
-diff_of_diffs_refstr = "{} - {}".format(gcc_dev_version,
-                                        gcc_ref_version)
-diff_of_diffs_devstr = "{} - {}".format(gchp_dev_version,
-                                        gchp_ref_version)
+diff_of_diffs_refstr = [gcc_dev_version, gcc_ref_version]
+diff_of_diffs_devstr = [gchp_dev_version, gchp_ref_version]
 
 # =====================================================================
 # Dates and times (**EDIT AS NEEDED**)
@@ -908,73 +906,21 @@ if gchp_vs_gcc_diff_of_diffs:
                                             [gchp_date], is_gchp=True)
         gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
                                              [gchp_date], is_gchp=True)
-
-        # Target output files
-        diff_of_diffs_refspc = "./gcc_diffs_spc.nc4"
-        diff_of_diffs_devspc = "./gchp_diffs_spc.nc4"
-
-        # Create a ref file that contains GCC differences
-        # Select only common fields between the Ref and Dev datasets
-        gcc_ref  = xr.open_dataset(gcc_vs_gcc_reflist[0], drop_variables=skip_vars)
-        gcc_dev  = xr.open_dataset(gcc_vs_gcc_devlist[0], drop_variables=skip_vars)
-        vardict = compare_varnames(gcc_ref, gcc_dev, quiet=True)
-        varlist = vardict["commonvars"]
-        gcc_ref = gcc_ref[varlist]
-        gcc_dev = gcc_dev[varlist]
-        with xr.set_options(keep_attrs=True):
-            gcc_diffs = gcc_dev - gcc_ref
-            for v in gcc_dev.data_vars.keys():
-                # Ensure the gcc_diffs Dataset includes attributes
-                gcc_diffs[v].attrs = gcc_dev[v].attrs
-        gcc_diffs.to_netcdf(diff_of_diffs_refspc)
-
-        # Create a dev file that contains GCHP differences. Include special
-        # handling if cubed sphere grid dimension names are different since they
-        # changed in MAPL v1.0.0.
-        # Select only common fields between the Ref and Dev datasets
-        gchp_ref = xr.open_dataset(gchp_vs_gchp_reflist[0], drop_variables=skip_vars)
-        gchp_dev = xr.open_dataset(gchp_vs_gchp_devlist[0], drop_variables=skip_vars)
-        vardict = compare_varnames(gchp_ref, gchp_dev, quiet=True)
-        varlist = vardict["commonvars"]
-        gchp_ref = gchp_ref[varlist]
-        gchp_dev = gchp_dev[varlist]
-        refdims = gchp_ref.dims
-        devdims = gchp_dev.dims
-        if "lat" in refdims and "Xdim" in devdims:
-            gchp_ref_newdimnames = gchp_dev.copy()
-            for v in gchp_dev.data_vars.keys():
-                if "Xdim" in gchp_dev[v].dims:
-                    gchp_ref_newdimnames[v].values = gchp_ref[v].values.reshape(
-                        gchp_dev[v].values.shape)
-                    # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose("time","lev","lat","Xdim").values
-            gchp_ref = gchp_ref_newdimnames.copy()
-        with xr.set_options(keep_attrs=True):
-            gchp_diffs = gchp_dev.copy()
-            for v in gchp_dev.data_vars.keys():
-                if "Xdim" in gchp_dev[v].dims or "lat" in gchp_dev[v].dims:
-                    gchp_diffs[v] = gchp_dev[v] - gchp_ref[v]
-                    # NOTE: The gchp_diffs Dataset is created without variable
-                    # attributes; we have to reattach them
-                    gchp_diffs[v].attrs = gchp_dev[v].attrs
-        gchp_diffs.to_netcdf(diff_of_diffs_devspc)
-
-
         # Create diff-of-diff plots for species concentrations
         # (includes lumped species and separates by category)
         #
         # NOTE: Since at the present time we are only printing out
         # diff-of-diffs for concentration plots, we can take this
         # call out of the "if plot_conc:" block.
-        bmk.make_benchmark_plots(diff_of_diffs_refspc,
+        bmk.make_benchmark_plots(gcc_vs_gcc_reflist[0],
                                  diff_of_diffs_refstr,
-                                 diff_of_diffs_devspc,
+                                 gchp_vs_gchp_reflist[0],
                                  diff_of_diffs_devstr,
                                  dst=diff_of_diffs_plotsdir,
                                  weightsdir=weightsdir,
                                  overwrite=True,
-                                 use_cmap_RdBu=True)
+                                 use_cmap_RdBu=True,
+                                 secondref=gcc_vs_gcc_devlist[0],
+                                 seconddev=gchp_vs_gchp_devlist[0])
 
 
-        # Remove the separate GCC and GCHP diff files
-        os.remove(diff_of_diffs_refspc)
-        os.remove(diff_of_diffs_devspc)
