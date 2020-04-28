@@ -72,7 +72,7 @@ class _GlobVars:
         # ------------------------------
 
         # Directory where diagnostic files are found
-        datadir = join(devstr, "OutputDir")
+        datadir = devdir
 
         # List of species (and subsets for the trop & strat)
         self.species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC" ]
@@ -324,7 +324,7 @@ def print_aerosol_burdens(globvars, data):
         os.makedirs(globvars.dst)
         
     # File name
-    filename = "{}/Aerosol_Burdens_{}.txt".format(table_dir, globvars.devstr)
+    filename = "{}/Aerosol_Burdens_{}.txt".format(globvars.dst, globvars.devstr)
 
     # Open file and print budgets
     with open(filename, "w+") as f:
@@ -369,11 +369,11 @@ def print_annual_average_aod(globvars, data):
         err_str = "Pass overwrite=True to overwrite files in that directory"
         print("Directory {} exists. {}".format(globvars.dst, err_str))
         return
-    elif not os.path.isdir(table_dir):
+    elif not os.path.isdir(globvars.dst):
         os.makedirs(globvars.dst)
         
     # File name
-    filename = "{}/Global_Mean_AOD_{}.txt".format(table_dir, globvars.devstr)
+    filename = "{}/Global_Mean_AOD_{}.txt".format(globvars.dst, globvars.devstr)
 
     # Open file and print budgets
     with open(filename, "w+") as f:

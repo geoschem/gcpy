@@ -259,7 +259,7 @@ if gcc_vs_gcc:
 
         # If need to restrict FullChemBenchmark, categories
         # then add to this list and uncomment
-        #restrict_cats = []
+        restrict_cats = []
 
         # Create seasonal concentration plots
         for s in range(bmk_nseasons):
