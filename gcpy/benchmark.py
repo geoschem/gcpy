@@ -2446,7 +2446,7 @@ def create_global_mass_table(
 
     Keyword Args (optional):
     ------------------------
-        trop_only : book
+        trop_only : bool
             Set this switch to True if you wish to print totals
             only for the troposphere.
             Default value: False (i.e. print whole-atmosphere totals).
@@ -2468,9 +2468,6 @@ def create_global_mass_table(
 
         Species properties (such as molecular weights) are read from a
         YAML file called "species_database.yml".
-
-        The area variable for GEOS-Chem "Classic" will be "AREA",
-        but for GCHP it will be "Met_AREAM2".
     """
 
     # ==================================================================
@@ -5345,8 +5342,6 @@ def reduce_72_to_47(DataArray, conv_dict, pmid_ind_72, pmid_ind_47):
     #print(new_coords, tuple([ dim for dim in DataArray.dims]),  DataArray)
     return xr.DataArray(reduced_data, dims=tuple([dim for dim in DataArray.dims]),
                         coords = new_coords, attrs = DataArray.attrs)
-        
-
 
 def get_diff_of_diffs(ref, dev):
     #get diff of diffs datasets for 2 datasets
@@ -5396,8 +5391,6 @@ def get_diff_of_diffs(ref, dev):
     
     return absdiffs, fracdiffs
 
-
-
 def slice_by_lev_and_time(ds, varname, itime, ilev, flip):
     #used in compare_single_level and compare_zonal_mean to get dataset slices
     #WBD change flip slice to use max level index rather than hardcoded 71
@@ -5445,5 +5438,36 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
     else:
         return data
 
-    
-                           
+
+def rename_and_flip_gchp_rst_vars(ds):
+    '''
+    Transforms a GCHP restart dataset to match GCC names and level convention
+
+    Args:
+    -----
+        ds : xarray Dataset
+            Dataset containing GCHP restart file data, such as variables
+            SPC_{species}, BXHEIGHT, DELP_DRY, and TropLev, with level
+            convention down (level 0 is top-of-atmosphere).
+
+    Returns:
+    --------
+        ds : xarray Dataset
+            Dataset containing GCHP restart file data with names and level
+            convention matching GCC restart. Variables include
+            SpeciesRst_{species}, Met_BXHEIGHT, Met_DELPDRY, and Met_TropLev,
+            with level convention up (level 0 is surface).
+    '''
+    for v in ds.data_vars.keys():
+        if v.startswith('SPC_'):
+            spc = v.replace('SPC_','')
+            ds = ds.rename({v: 'SpeciesRst_'+spc})
+        elif v == 'DELP_DRY':
+            ds = ds.rename({"DELP_DRY": "Met_DELPDRY"})
+        elif v == 'BXHEIGHT':
+            ds = ds.rename({"BXHEIGHT": "Met_BXHEIGHT"})
+        elif v == 'TropLev':
+            ds = ds.rename({"TropLev": "Met_TropLev"})
+    ds['lev'].data = ds['lev'].data[::-1]
+    ds = ds.sortby('lev', ascending=True)
+    return ds
