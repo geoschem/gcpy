@@ -52,8 +52,6 @@ import os
 from os.path import join
 from gcpy import benchmark as bmk
 from gcpy.core import get_filepaths
-from gcpy.core import compare_varnames
-from gcpy.constants import skip_these_vars
 import gcpy.budget_ops as opbdg
 import gcpy.ste_flux as ste
 import numpy as np
@@ -253,16 +251,14 @@ if gchp_vs_gcc_diff_of_diffs: print(" - GCHP vs GCC diff of diffs")
 # ======================================================================
 if gcc_vs_gcc:
 
+    #---------------------------------------------------------------
+    # GCC vs GCC Concentration plots
+    #
+    # Includes lumped species and separates by category if plot_by_spc_cat
+    # is true; otherwise excludes lumped species and writes to one file
+    #---------------------------------------------------------------
     if plot_conc:
-        #---------------------------------------------------------------
-        # GCC vs GCC Concentration plots
-        #
-        # Includes lumped species and separates by category if
-        # plot_by_spc_cat is true; otherwise excludes lumped species
-        # and writes to one file
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} concentration plots %%%"
-        print(title.format(bmk_type))
+        title = "\n%%% Creating GCC vs. GCC concentration plots %%%"
 
         # Files to read
         collection = "SpeciesConc"
@@ -282,12 +278,11 @@ if gcc_vs_gcc:
                                  overwrite=True,
                                  sigdiff_files=gcc_vs_gcc_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCC vs. GCC emissions plots
+    #---------------------------------------------------------------
     if plot_emis:
-        #---------------------------------------------------------------
-        # GCC vs. GCC Emissions plots
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} emissions plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCC vs. GCC emissions plots %%%")
 
         # Files to read
         collection = "Emissions"
@@ -308,12 +303,11 @@ if gcc_vs_gcc:
                                       overwrite=True,
                                       sigdiff_files=gcc_vs_gcc_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCC vs. GCC tables of emission and inventory totals
+    #---------------------------------------------------------------
     if emis_table:
-        #---------------------------------------------------------------
-        # GCC vs. GCC tables of emission and inventory totals
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} emissions/inventory tables %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCC vs. GCC emissions/inventory tables %%%")
 
         # Files to read
         collection = "Emissions"
@@ -331,12 +325,11 @@ if gcc_vs_gcc:
                                        interval=s_per_mon,
                                        overwrite=True)
 
+    # --------------------------------------------------------------
+    # GCC vs GCC J-value plots
+    # --------------------------------------------------------------
     if plot_jvalues:
-        #---------------------------------------------------------------
-        # GCC vs. GCC J-values plots
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} J-value plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCC vs. GCC J-value plots %%%")
 
         # Files to read
         collection = "JValues"
@@ -355,12 +348,11 @@ if gcc_vs_gcc:
                                         overwrite=True,
                                         sigdiff_files=gcc_vs_gcc_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCC vs GCC column AOD plots
+    #---------------------------------------------------------------
     if plot_aod:
-        #---------------------------------------------------------------
-        # GCC vs GCC column AOD plots
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} column AOD plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCC vs. GCC column AOD plots %%%")
 
         # Files to read
         collection = "Aerosols"
@@ -379,12 +371,11 @@ if gcc_vs_gcc:
                                      overwrite=True,
                                      sigdiff_files=gcc_vs_gcc_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCC vs GCC global mass tables
+    #---------------------------------------------------------------
     if mass_table:
-        #---------------------------------------------------------------
-        # GCC vs GCC global mass tables
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} global mass tables %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCC vs. GCC global mass tables %%%")
 
         # Files to read
         collection = "Restart"
@@ -403,13 +394,11 @@ if gcc_vs_gcc:
                                        gcc_dev_version,
                                        dst=plot_dir,
                                        overwrite=True)
-
+    #---------------------------------------------------------------
+    # GCC vs GCC budgets tables
+    #---------------------------------------------------------------
     if budget_table:
-        #---------------------------------------------------------------
-        # GCC vs GCC budgets tables (actually only dev)
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCC {} budget tables %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCC budget tables %%%")
 
         # Files to read
         collection = "Budget"
@@ -432,12 +421,11 @@ if gcc_vs_gcc:
                                            interval=s_per_mon[0],
                                            overwrite=True)
 
+    #---------------------------------------------------------------
+    # GCC vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
+    #---------------------------------------------------------------
     if OH_metrics:
-        #---------------------------------------------------------------
-        # GCC vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} OH metrics %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCC vs. GCC OH metrics %%%")
 
         # Files to read
         collection = ["ConcAfterChem", "StateMet"]
@@ -457,13 +445,11 @@ if gcc_vs_gcc:
                                       dst=plot_dir,
                                       overwrite=True)
 
+    # --------------------------------------------------------------
+    # GCC vs GCC Strat-Trop Exchange
+    # --------------------------------------------------------------
     if ste_table:
-        # --------------------------------------------------------------
-        # GCC vs GCC Strat-Trop Exchange
-        # --------------------------------------------------------------
-        title = "\n%%% Creating GCC vs. GCC {} Strat-Trop Exchange table %%%"
-        print(title.format(bmk_type))
-
+        print("\n%%% Creating GCC vs. GCC Strat-Trop Exchange table %%%")
         # Files to read
         # Compute monthly and annual average strat-trop exchange of O3
         gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, "AdvFluxVert",
@@ -487,16 +473,11 @@ if gcc_vs_gcc:
 # ======================================================================
 if gchp_vs_gcc:
 
+    #---------------------------------------------------------------
+    # GCHP vs GCC Concentration plots
+    #---------------------------------------------------------------
     if plot_conc:
-        #---------------------------------------------------------------
-        # GCHP vs GCC Concentration plots
-        #
-        # Includes lumped species and separates by category if
-        # plot_by_spc_cat is true; otherwise excludes lumped species
-        # and writes to one file
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} concentration plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCC concentration plots %%%")
 
         # Files to read
         collection = "SpeciesConc"
@@ -516,12 +497,11 @@ if gchp_vs_gcc:
                                  overwrite=True,
                                  sigdiff_files=gchp_vs_gcc_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCC Emissions plots
+    #---------------------------------------------------------------
     if plot_emis:
-        #---------------------------------------------------------------
-        # GCHP vs. GCC Emissions plots
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} emissions plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCC emissions plots %%%")
 
         # Files to read
         collection = "Emissions"
@@ -542,12 +522,11 @@ if gchp_vs_gcc:
                                       overwrite=True,
                                       sigdiff_files=gchp_vs_gcc_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCC tables of emission and inventory totals
+    #---------------------------------------------------------------
     if emis_table:
-        #---------------------------------------------------------------
-        # GCHP vs. GCC tables of emission and inventory totals
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} emissions/inventory tables %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCC emissions/inventory tables %%%")
 
         # Files to read
         collection = "Emissions"
@@ -566,12 +545,11 @@ if gchp_vs_gcc:
                                        interval=s_per_mon,
                                        overwrite=True)
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCC J-values plots
+    #---------------------------------------------------------------
     if plot_jvalues:
-        #---------------------------------------------------------------
-        # GCHP vs. GCC J-values plots
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} J-value plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCC J-value plots %%%")
 
         # Files to read
         collection = "JValues"
@@ -590,12 +568,11 @@ if gchp_vs_gcc:
                                         overwrite=True,
                                         sigdiff_files=gchp_vs_gcc_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCHP vs GCC column AOD plots
+    #---------------------------------------------------------------
     if plot_aod:
-        #---------------------------------------------------------------
-        # GCHP vs GCC column AOD plots
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCC {} column AOD plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCC column AOD plots %%%")
 
         # Files to read
         collection = "Aerosols"
@@ -614,42 +591,35 @@ if gchp_vs_gcc:
                                      overwrite=True,
                                      sigdiff_files=gchp_vs_gcc_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCHP vs GCC global mass tables
+    #---------------------------------------------------------------
     if mass_table:
-        #---------------------------------------------------------------
-        # GCHP vs GCC global mass tables
-        #---------------------------------------------------------------
-        print("\n%%% Skipping GCHP vs. GCC mass table. Needs more work. %%%")
-        #title = "\n%%% Creating GCHP vs. GCC {} global mass tables %%%"
-        #print(title.format(bmk_type))
-        #
-        ## Files to read
-        #collection = "Restart"
-        #gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refrst, collection,
-        #                                    [end_date], is_gcc=True)
-        #collection = "Restart"
-        #gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devrst, collection,
-        #                                    [end_date], is_gchp=True)
-        #collection = "StateMet_inst"
-        #devmetfile= get_filepaths(gchp_vs_gcc_devdir, collection,
-        #                          [end_date], is_gchp=True)
-        #gchp_vs_gcc_devlist.append(devmetfile[0])
-        #
-        ## Save to "Tables" subfolder of plot dir
-        #plot_dir = join(gchp_vs_gcc_plotsdir, "Tables")
-        #
-        ## Plot mass tables
-        #bmk.make_benchmark_mass_tables(gchp_vs_gcc_reflist,
-        #                               gchp_vs_gcc_refstr,
-        #                               gchp_vs_gcc_devlist,
-        #                               gchp_vs_gcc_devstr,
-        #                               dst=plot_dir,
-        #                               overwrite=True)
+        print("\n%%% Creating GCHP vs. GCC {} global mass tables %%%")
 
+        # Files to read
+        collection = "Restart"
+        gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refrst, collection,
+                                            [end_date], is_gcc=True)
+        gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devrst, collection,
+                                            [end_date], is_gchp=True)
+
+        # Save to "Tables" subfolder of plot dir
+        plot_dir = join(gchp_vs_gcc_plotsdir, "Tables")
+
+        # Plot mass tables
+        bmk.make_benchmark_mass_tables(gchp_vs_gcc_reflist,
+                                       gchp_vs_gcc_refstr,
+                                       gchp_vs_gcc_devlist,
+                                       gchp_vs_gcc_devstr,
+                                       dst=plot_dir,
+                                       overwrite=True)
+
+    #---------------------------------------------------------------
+    # GCHP vs GCC budgets tables (actually only dev)
+    #---------------------------------------------------------------
     if budget_table:
-        #---------------------------------------------------------------
-        # GCHP vs GCC budgets tables (actually only dev)
-        #---------------------------------------------------------------
-        print("\n%%% Skipping GCHP budget tables. Budget diagnostics not all turned on in GCHP benchmark. %%%")
+        print("\n%%% Skipping GCHP budget tables %%%")
         ### Files to read
         #collection = "Budget"
         #gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refdir, collection,
@@ -661,7 +631,7 @@ if gchp_vs_gcc:
         #plot_dir = join(gchp_vs_gcc_plotsdir, "Budget")
         #
         ## Print "operations budget" for strat, trop, strat+trop
-        #opbdg.make_operations_budget_table(gcc_dev_version,
+        #op.make_operations_budget_table(gcc_dev_version,
         #                                   gchp_vs_vs_gcc_reflist,
         #                                   gchp_dev_version,
         #                                   gchp_vs_gcc_devlist,
@@ -671,11 +641,11 @@ if gchp_vs_gcc:
         #                                   interval=s_per_mon[0],
         #                                   overwrite=True)
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
+    #---------------------------------------------------------------
     if OH_metrics:
-        #---------------------------------------------------------------
-        # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
-        #---------------------------------------------------------------
-        print("\n%%% Skipping GCHP vs GCC OH metrics. Needs further validation. %%%")
+        print("\n%%% Skipping GCHP vs GCC OH metrics %%%")
         #title = "\n%%% Creating GCHP vs. GCC {} OH metrics %%%"
         #print(title.format(bmk_type))
         #
@@ -698,10 +668,10 @@ if gchp_vs_gcc:
         #                              dst=plot_dir,
         #                              overwrite=True)
 
+    # --------------------------------------------------------------
+    # GCHP vs GCC Strat-Trop Exchange
+    # --------------------------------------------------------------
     if ste_table:
-        # --------------------------------------------------------------
-        # GCHP vs GCC Strat-Trop Exchange
-        # --------------------------------------------------------------
         title = "\n%%% Skipping GCHP vs. GCC Strat-Trop Exchange table %%%"
         print(title)
 
@@ -710,16 +680,11 @@ if gchp_vs_gcc:
 # ======================================================================
 if gchp_vs_gchp:
 
+    #---------------------------------------------------------------
+    # GCHP vs GCHP Concentration plots
+    #---------------------------------------------------------------
     if plot_conc:
-        #---------------------------------------------------------------
-        # GCHP vs GCHP Concentration plots
-        #
-        # Includes lumped species and separates by category if
-        # plot_by_spc_cat is true; otherwise excludes lumped species
-        # and writes to one file
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCHP {} concentration plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCHP concentration plots %%%")
 
         # Files to read
         collection = "SpeciesConc"
@@ -739,12 +704,11 @@ if gchp_vs_gchp:
                                  overwrite=True,
                                  sigdiff_files=gchp_vs_gchp_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCHP Emissions plots
+    #---------------------------------------------------------------
     if plot_emis:
-        #---------------------------------------------------------------
-        # GCHP vs. GCHP Emissions plots
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCHP {} emissions plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCHP emissions plots %%%")
 
         # Files to read
         collection = "Emissions"
@@ -765,12 +729,11 @@ if gchp_vs_gchp:
                                       overwrite=True,
                                       sigdiff_files=gchp_vs_gchp_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCHP tables of emission and inventory totals
+    #---------------------------------------------------------------
     if emis_table:
-        #---------------------------------------------------------------
-        # GCHP vs. GCHP tables of emission and inventory totals
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCHP {} emissions/inventory tables %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCHP emissions/inventory tables %%%")
 
         # Files to read
         collection = ["Emissions", "StateMet_avg"]
@@ -788,12 +751,11 @@ if gchp_vs_gchp:
                                        interval=s_per_mon,
                                        overwrite=True)
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCHP J-values plots
+    #---------------------------------------------------------------
     if plot_jvalues:
-        #---------------------------------------------------------------
-        # GCHP vs. GCHP J-values plots
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCHP {} J-value plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCHP J-value plots %%%")
 
         # Files to read
         collection = "JValues"
@@ -812,12 +774,11 @@ if gchp_vs_gchp:
                                         overwrite=True,
                                         sigdiff_files=gchp_vs_gchp_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCHP vs GCHP column AOD plots
+    #---------------------------------------------------------------
     if plot_aod:
-        #---------------------------------------------------------------
-        # GCHP vs GCHP column AOD plots
-        #---------------------------------------------------------------
-        title = "\n%%% Creating GCHP vs. GCHP {} column AOD plots %%%"
-        print(title.format(bmk_type))
+        print("\n%%% Creating GCHP vs. GCHP column AOD plots %%%")
 
         # Files to read
         collection = "Aerosols"
@@ -836,51 +797,41 @@ if gchp_vs_gchp:
                                      overwrite=True,
                                      sigdiff_files=gchp_vs_gchp_sigdiff)
 
+    #---------------------------------------------------------------
+    # GCHP vs GCHP global mass tables
+    #---------------------------------------------------------------
     if mass_table:
-        #---------------------------------------------------------------
-        # GCHP vs GCHP global mass tables
-        #---------------------------------------------------------------
-        print("\n%%% Skipping GCHP vs. GCHP mass table. Needs more work. %%%")
-        #title = "\n%%% Creating GCHP vs. GCHP {} global mass tables %%%"
-        #print(title.format(bmk_type))
-        #
-        ## Files to read
-        #collection = "Restart"
-        #gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refrst, collection,
-        #                                    [end_date], is_gchp=True)
-        #gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devrst, collection,
-        #                                    [end_date], is_gchp=True)
-        #collection = "StateMet_inst"
-        #refmetfile= get_filepaths(gchp_vs_gchp_refdir, collection,
-        #                          [end_date], is_gchp=True)
-        #devmetfile= get_filepaths(gchp_vs_gchp_devdir, collection,
-        #                          [end_date], is_gchp=True)
-        #gchp_vs_gchp_reflist.append(refmetfile[0])
-        #gchp_vs_gchp_devlist.append(devmetfile[0])
-        #
-        ## Save to "Tables" subfolder of plot dir
-        #plot_dir = join(gchp_vs_gchp_plotsdir, "Tables")
-        #
-        ## Plot mass tables
-        #bmk.make_benchmark_mass_tables(gchp_vs_gchp_reflist[0],
-        #                               gchp_vs_gchp_refstr,
-        #                               gchp_vs_gchp_devlist[0],
-        #                               gchp_vs_gchp_devstr,
-        #                               dst=plot_dir,
-        #                               overwrite=True)
+        print("\n%%% Creating GCHP vs. GCHP global mass tables %%%")
 
+        # Files to read
+        collection = "Restart"
+        gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refrst, collection,
+                                            [end_date], is_gchp=True)
+        gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devrst, collection,
+                                            [end_date], is_gchp=True)
+
+        # Save to "Tables" subfolder of plot dir
+        plot_dir = join(gchp_vs_gchp_plotsdir, "Tables")
+
+        # Plot mass tables
+        bmk.make_benchmark_mass_tables(gchp_vs_gchp_reflist[0],
+                                       gchp_vs_gchp_refstr,
+                                       gchp_vs_gchp_devlist[0],
+                                       gchp_vs_gchp_devstr,
+                                       dst=plot_dir,
+                                       overwrite=True)
+
+    #---------------------------------------------------------------
+    # GCHP vs. GCHP global mean OH, MCF Lifetime, CH4 Lifetime
+    #---------------------------------------------------------------
     if OH_metrics:
-        #---------------------------------------------------------------
-        # GCHP vs. GCHP global mean OH, MCF Lifetime, CH4 Lifetime
-        #---------------------------------------------------------------
-        print("\n%%% Skipping GCHP vs GCHP OH metrics. Needs further validation. %%%")
+        print("\n%%% Skipping GCHP vs GCHP OH metrics %%%")
 
+    # --------------------------------------------------------------
+    # GCHP vs GCHP Strat-Trop Exchange
+    # --------------------------------------------------------------
     if ste_table:
-        # --------------------------------------------------------------
-        # GCHP vs GCHP Strat-Trop Exchange
-        # --------------------------------------------------------------
-        title = "\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%"
-        print(title)
+        print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
 
 # =====================================================================
 # Create GCHP vs GCC difference of differences benchmark plots
@@ -891,10 +842,7 @@ if gchp_vs_gcc_diff_of_diffs:
 
         # NOTE: This can be expanded to differences beyond species
         # concentrations by following how this is done for conc plots.
-        print("%\n%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%")
-
-        # Get a list of variables that GCPy should not read
-        skip_vars = skip_these_vars
+        print("\n%%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%")
 
         # Files to read
         collection = "SpeciesConc"

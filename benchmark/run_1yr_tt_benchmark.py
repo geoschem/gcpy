@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 """
-run_1yr_benchmark.py: Driver script for creating benchmark plots
-for the 1-year TransportTracers benchmark.
+run_1yr_benchmark.py: Driver script for creating benchmark plots and testing
+                      gcpy 1-year TransportTracers benchmark capability.
 
 Run this script to generate benchmark comparisons between:
 
     (1) GCC (aka GEOS-Chem "Classic") vs. GCC
-
-Under development:
-
-    (2) GCHP vs GCC
-    (3) GCHP vs GCHP
-
-Note that we currently do not create diff-of-diff plots for the transport
-tracer benchmark.
+    (2) GCHP vs GCC (not yet tested)
+    (3) GCHP vs GCHP (not yet tested)
  
 You can customize this script by editing the following settings in the
 "Configurables" section below:
@@ -26,6 +20,10 @@ You can customize this script by editing the following settings in the
 Calling sequence:
 
     ./run_1yr_tt_benchmark.py
+
+To test gcpy, copy this script anywhere you want to run the test and
+set gcpy_test to True at the top of the script. Benchmark artifacts will
+be created locally in new folder called Plots.
 
 Remarks:
 
@@ -53,7 +51,6 @@ import os
 from os.path import join
 import xarray as xr
 from gcpy import benchmark as bmk
-from gcpy.constants import skip_these_vars
 from gcpy.core import get_filepaths
 import gcpy.budget_ops as opbdg
 import gcpy.budget_tt as ttbdg
@@ -70,9 +67,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 # This script has a fixed benchmark type
 bmk_type     = "TransportTracersBenchmark"
-
-# Path to regridding weights
-weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
 ########################################################################
 ###           CONFIGURABLE SETTINGS: EDIT THESE ACCORDINGLY          ###
@@ -95,6 +89,9 @@ gcc_ref_version = "GCC_ref"
 gcc_dev_version = "GCC_dev"
 gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
+
+# Path to regridding weights
+weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
 # =====================================================================
 # Specify if this is a gcpy test validation run
@@ -177,6 +174,7 @@ gchp_vs_gchp_devstr  = "{}".format(gchp_dev_version)
 # =====================================================================
 # Dates and times
 # =====================================================================
+
 # Start and end of the benchmark year (as numpy.datetime64 dates)
 bmk_year = 2016
 bmk_start_str = "{}-01-01".format(str(bmk_year))
@@ -476,7 +474,7 @@ if gchp_vs_gcc:
 if gchp_vs_gchp:
 
     # --------------------------------------------------------------
-    # GCC vs GCC Concentration plots
+    # GCHP vs GCHP Concentration plots
     # --------------------------------------------------------------
     if plot_conc:
         print("\n%%% Creating GCHP vs. GCHP concentration plots %%%")
