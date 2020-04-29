@@ -177,6 +177,8 @@ def convert_units(
         At present, only certain types of unit conversions have been
         implemented (corresponding to the most commonly used unit
         conversions for model benchmark output).
+
+        When molmol-1 is present as unit, assumes dry air.
     """
 
     # Get species molecular weight information
@@ -221,41 +223,32 @@ def convert_units(
     kg_to_kgC = (emitted_mw_g * moles_C_per_mole_species) / mw_g
 
     # Mass of dry air in kg (required when converting from v/v)
-    if units == "molmol-1dry":
+    if 'molmol-1' in units:
         air_mass = delta_p * 100.0 / g0 * area_m2
 
-    # Conversion factor for v/v to kg
-    # v/v * kg dry air / g/mol dry air * g/mol species = kg species
-    if units == "molmol-1dry" and "g" in target_units:
-        vv_to_kg = air_mass / mw_air * mw_g
+        # Conversion factor for v/v to kg
+        # v/v * kg dry air / g/mol dry air * g/mol species = kg species
+        if "g" in target_units:
+            vv_to_kg = air_mass / mw_air * mw_g
 
-    # Conversion factor for v/v to molec/cm3
-    # v/v * kg dry air * mol/g dry air * molec/mol dry air /
-    #  (area_m2 * box_height ) * 1m3/10^6cm3 = molec/cm3
-    if units == "molmol-1dry" and "molec" in target_units:
-        vv_to_MND = air_mass / mw_air * Avo / (area_m2 * box_height) / 1e6
+        # Conversion factor for v/v to molec/cm3
+        # v/v * kg dry air * mol/g dry air * molec/mol dry air /
+        #  (area_m2 * box_height ) * 1m3/10^6cm3 = molec/cm3
+        if "molec" in target_units:
+            vv_to_MND = air_mass / mw_air * Avo / (area_m2 * box_height) / 1e6
 
     # ==============================
     # Compute target units
     # ==============================
 
-    # Create an array for the number of seconds for broadcasting
-    seconds = np.full(dr.shape, 1)
-    
-    #Assume time is the first dimension
-    for t in range(dr.shape[0]):
-        seconds[t] = seconds[t]*interval[t]
-            
     if units == "kg/m2/s":
-        # Note: multiplying data arrays will broadcast dimensions properly
         data_kg = dr * area_m2
-        data_kg = data_kg.values * seconds
+        data_kg = data_kg.values * interval
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     elif units == "kgC/m2/s":
-        # Note: multiplying data arrays will broadcast dimensions properly
         data_kg = dr * area_m2 / kg_to_kgC
-        data_kg = data_kg.values * seconds
+        data_kg = data_kg.values * interval
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     elif units == "kg":
@@ -272,7 +265,7 @@ def convert_units(
     #    elif units == 'atomsC/cm2/s':
     #         implement later
 
-    elif units == "molmol-1dry":
+    elif 'molmol-1' in units:
 
         if "g" in target_units:
             data_kg = dr.values * vv_to_kg
