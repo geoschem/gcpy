@@ -5,7 +5,6 @@ Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 import os
 import shutil
 import yaml
-from yaml import load as yaml_load_file
 import copy
 import numpy as np
 import xarray as xr
@@ -2219,7 +2218,7 @@ def create_total_emissions_table(
     # This is located in the "data" subfolder of this folder where
     # this benchmark.py file is found.
     properties_path = os.path.join(os.path.dirname(__file__), "species_database.yml")
-    properties = yaml_load_file(open(properties_path))
+    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # ==================================================================
     # Get the list of emission variables for which we will print totals
@@ -2494,7 +2493,7 @@ def create_global_mass_table(
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
     properties_path = os.path.join(os.path.dirname(__file__), "species_database.yml")
-    properties = yaml_load_file(open(properties_path))
+    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # ==================================================================
     # Open file for output
@@ -2755,7 +2754,7 @@ def get_species_categories(benchmark_type="FullChemBenchmark"):
     """
     yamlfile = os.path.join(os.path.dirname(__file__), spc_categories)
     with open(yamlfile, "r") as f:
-        spc_cat_dict = yaml.load(f.read())
+        spc_cat_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
     return spc_cat_dict[benchmark_type]
 
 
@@ -3746,11 +3745,13 @@ def make_benchmark_emis_tables(
     # ==================================================================
 
     # Emissions species dictionary
-    species = yaml_load_file(
-        open(os.path.join(os.path.dirname(__file__), emission_spc))
+    species = yaml.load(
+        open(os.path.join(os.path.dirname(__file__), emission_spc)),
+        Loader=yaml.FullLoader
     )
-    inventories = yaml_load_file(
-        open(os.path.join(os.path.dirname(__file__), emission_inv))
+    inventories = yaml.load(
+        open(os.path.join(os.path.dirname(__file__), emission_inv)),
+        Loader=yaml.FullLoader
     )
 
     # Destination files
@@ -4298,7 +4299,10 @@ def make_benchmark_aod_plots(
         varlist = [v for v in cmn3D if "AOD" in v and "_bin" not in v]
 
     # Dictionary and list for new display names
-    newvars = yaml_load_file(open(os.path.join(os.path.dirname(__file__), aod_spc)))
+    newvars = yaml.load(
+        open(os.path.join(os.path.dirname(__file__), aod_spc)),
+        Loader=yaml.FullLoader
+    )
     newvarlist = []
 
     # ==================================================================
