@@ -4525,15 +4525,20 @@ def make_benchmark_mass_tables(
         raise FileNotFoundError("Error opening Dev files: {}!".format(devlist))
 
     # ==================================================================
-    # Make sure that all necessary meteorological variables are found
+    # Update GCHP restart dataset (if any)
     # ==================================================================
 
-    # Rename "DELP_DRY" to "Met_DELPDRY" for consistency
-    with xr.set_options(keep_attrs=True):
-        if "DELP_DRY" in refds.data_vars.keys():
-            refds = refds.rename({"DELP_DRY": "Met_DELPDRY"})
-        if "DELP_DRY" in devds.data_vars.keys():
-            devds = devds.rename({"DELP_DRY": "Met_DELPDRY"})
+    # Ref
+    if any(v.startswith("SPC_") for v in refds.data_vars.keys()):
+        refds = rename_and_flip_gchp_rst_vars(refds)
+
+    # Dev
+    if any(v.startswith("SPC_") for v in devds.data_vars.keys()):
+        devds = rename_and_flip_gchp_rst_vars(devds)
+
+    # ==================================================================
+    # Make sure that all necessary meteorological variables are found
+    # ==================================================================
 
     # Find the area variables in Ref and Dev
     ref_area = core.get_area_from_dataset(refds)
@@ -4549,22 +4554,45 @@ def make_benchmark_mass_tables(
     # Make sure that all necessary species are found
     # ==================================================================
 
-    # Add arrays of NaN for missing variables in Ref or Dev
-    [refds, devds] = add_missing_variables(refds, devds)
+    # Get lists of variables names in datasets
+    vardict = core.compare_varnames(refds, devds, quiet=(not verbose))
+    commonvars = vardict["commonvars3D"]
+    refonly = vardict['refonly']
+    devonly = vardict['devonly']
 
-    # If varlist has not been passed as an argument, then use all
-    # species concentration variables that are present in Ref or Dev.
-    # For species that are in Ref but not in Dev, create a
-    # variable of missing values (NaNs). in Dev.  Ditto for Ref.
-    if varlist is None:
-        quiet = not verbose
-        vardict = core.compare_varnames(refds, devds, quiet=quiet)
-        varlist = vardict["commonvars3D"]
+    # Narrow down the lists to only include species
+    commonspc = [v for v in commonvars if "SpeciesRst_" in v]
+    refonlyspc = [v for v in refonly if v.startswith('SpeciesRst_')]
+    devonlyspc = [v for v in devonly if v.startswith('SpeciesRst_')]
 
-    # Only use the species concentration variables in the restart
-    # file, as we will pass the meteorology variables separately
-    # to routine create_global_mass_table.
-    varlist = [v for v in varlist if "SpeciesRst_" in v]
+    # Add ref only species to dev dataset with all nan values
+    if refonlyspc:
+        for v in refonlyspc:
+            devds[v] = devds[commonspc[0]]
+            devds[v].data = np.full(devds[v].shape, np.nan)
+            devds[v].attrs['units'] = refds[v].units
+            commonspc.append(v)
+
+    # Add dev only species to ref dataset with all nan values
+    if devonlyspc:
+        for v in devonlyspc:
+            refds[v] = refds[commonspc[0]]
+            refds[v].data = np.full(refds[v].shape, np.nan)
+            devds[v].attrs['units'] = refds[v].units
+            commonspc.append(v)
+
+    # Set list of variables to print in mass table. If this list was passed
+    # as argument, check that all the vars are now in commonspc to ensure
+    # in both datasets.
+    if varlist:
+        for v in varlist:
+            if v not in commonspc:
+                msg = msg.format(dst)
+                raise ValueError('Variable {} in varlist passed to make_benchmark_mass_tables is not present in ref and dev datasets'.format(v))
+    else:
+        varlist = commonspc
+
+    # Sort the list of species to be printed alphabetically
     varlist.sort()
 
     # ==================================================================
@@ -4584,8 +4612,6 @@ def make_benchmark_mass_tables(
         "Dev_Delta_P": devmet["Met_DELPDRY"],
         "Ref_BxHeight": refmet["Met_BXHEIGHT"],
         "Dev_BxHeight": devmet["Met_BXHEIGHT"],
-        #                     'Ref_AirVol'   : refmet['Met_AIRVOL'],
-        #                     'Dev_AirVol'   : devmet['Met_AIRVOL'],
         "Ref_TropMask": ref_tropmask,
         "Dev_TropMask": dev_tropmask,
     }
@@ -4594,13 +4620,10 @@ def make_benchmark_mass_tables(
     # Create global mass table
     # ==================================================================
     if subdst is not None:
-        mass_file = os.path.join(
-            dst, "{}_GlobalMass_TropStrat_{}.txt".format(devstr, subdst)
-        )
+        mass_filename = "GlobalMass_TropStrat_{}.txt".format(subdst)
     else:
-        mass_file = os.path.join(dst, "{}_GlobalMass_TropStrat.txt".format(
-            devstr))
-
+        mass_filename = "GlobalMass_TropStrat.txt"
+    mass_file = os.path.join(dst, mass_filename)
     create_global_mass_table(
         refds,
         refstr,
@@ -4617,12 +4640,10 @@ def make_benchmark_mass_tables(
     # Create tropospheric mass table
     # ==================================================================
     if subdst is not None:
-        mass_file = os.path.join(
-            dst, "{}_GlobalMass_Trop_{}.txt".format(devstr, subdst)
-        )
+        mass_filename = 'GlobalMass_Trop_{}.txt'.format(subdst)
     else:
-        mass_file = os.path.join(dst, "{}_GlobalMass_Trop.txt".format(devstr))
-
+        mass_filename = 'GlobalMass_Trop.txt'
+    mass_file = os.path.join(dst, mass_filename)
     create_global_mass_table(
         refds,
         refstr,
@@ -5092,6 +5113,10 @@ def add_missing_variables(refdata, devdata, verbose=False, **kwargs):
     This routine is mostly intended for benchmark purposes, so that we
     can represent variables that were removed from a new GEOS-Chem
     version by missing values in the benchmark plots.
+
+    NOTE: This function assuming incoming datasets have the same sizes and
+    dimensions, which is not true if comparing datasets with different grid
+    resolutions or types.
 
     Args:
     -----
