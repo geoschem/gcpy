@@ -237,18 +237,38 @@ def convert_units(
         if "molec" in target_units:
             vv_to_MND = air_mass / mw_air * Avo / (area_m2 * box_height) / 1e6
 
+    # ================================================
+    # Get number of seconds per time in dataset
+    # ================================================
+
+    # Number of seconds is passed via the interval argument
+    numsec = interval
+
+    # Special handling is required if multiple times in interval (for broadcast)
+    if len(interval) > 1:
+        if 'time' in dr.dims:
+            # Need to right pad the interval array with new axes up to the
+            # time dim of the dataset to enable broadcasting
+            numnewdims = len(dr.dims) - ( dr.dims.index('time') + 1 )
+            print(numnewdims)
+            for newdim in range(numnewdims):
+                numsec = numsec[:,np.newaxis]
+        else:
+            # Raise an error if no time in dataset but interval has length > 1
+            raise ValueError('Interval passed to convert_units has length greater than one but data array has no time dimension')
+
     # ==============================
     # Compute target units
     # ==============================
 
     if units == "kg/m2/s":
         data_kg = dr * area_m2
-        data_kg = data_kg.values * interval
+        data_kg = data_kg.values * numsec
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     elif units == "kgC/m2/s":
         data_kg = dr * area_m2 / kg_to_kgC
-        data_kg = data_kg.values * interval
+        data_kg = data_kg.values * numsec
         data = convert_kg_to_target_units(data_kg, target_units, kg_to_kgC)
 
     elif units == "kg":
