@@ -15,6 +15,7 @@ import os
 from os.path import join
 import gcpy.constants as constants
 from gcpy.benchmark import get_troposphere_mask
+from gcpy.benchmark import rename_and_flip_gchp_rst_vars
 import warnings
 import xarray as xr
 from yaml import load as yaml_load_file
@@ -80,7 +81,7 @@ class _GlobVars:
         if self.is_gchp:
             RstInit = join(
                 self.devrstdir,
-                "gcchem_internal_checkpoint.{}*nc4".format(self.y0_str)
+                "initial_GEOSChem_rst.c48_TransportTracers.nc"
             )
             RstFinal = join(
                 self.devrstdir,
@@ -126,11 +127,14 @@ class _GlobVars:
 
         # Restarts
         skip_vars = constants.skip_these_vars
-        # For now, don't read restarts from gchp (bmy, 3/16/20)
-        if not self.is_gchp:
-            self.ds_ini = xr.open_mfdataset(RstInit, drop_variables=skip_vars)
-            self.ds_end = xr.open_mfdataset(RstFinal, drop_variables=skip_vars)
+        self.ds_ini = xr.open_mfdataset(RstInit, drop_variables=skip_vars)
+        self.ds_end = xr.open_mfdataset(RstFinal, drop_variables=skip_vars)
 
+        # Change the restart datasets into format similar to GCC, and flip vertical axis
+        if is_gchp:
+            self.ds_ini = rename_and_flip_gchp_rst_vars(self.ds_ini)
+            self.ds_end = rename_and_flip_gchp_rst_vars(self.ds_end)
+        
         # Diagnostics
         self.ds_dcy = xr.open_mfdataset(RadioNucl, drop_variables=skip_vars)
         self.ds_dry = xr.open_mfdataset(DryDep, drop_variables=skip_vars)
@@ -159,11 +163,15 @@ class _GlobVars:
             self.ds_hco = xr.open_mfdataset(HemcoDiag, drop_variables=skip_vars)
         
         # Area and troposphere mask
+        # For gchp, get area in m2 from restart for use in calculating initial
+        # and final mass from restart. Get area in cm2 from diagnostic
+        # file for format compatibility with diagnostic output.
         if self.is_gchp:
-            self.area_m2 = self.ds_met["Met_AREAM2"].isel(time=0)
+            self.area_m2 = self.ds_ini["AREA"]
+            self.area_cm2 = self.ds_met["Met_AREAM2"] * 1.0e4
         else:
             self.area_m2 = self.ds_met["AREA"].isel(time=0)
-        self.area_cm2 = self.area_m2 * 1.0e4
+            self.area_cm2 = self.area_m2 * 1.0e4
         self.tropmask = get_troposphere_mask(self.ds_met)
 
         # ------------------------------       
@@ -325,18 +333,25 @@ def mass_from_rst(globvars, ds, tropmask):
     
     # Conversion factors based on restart-file met fields
     g100    = 100.0 / constants.G
-    airmass = ds["Met_DELPDRY"].isel(time=0) * globvars.area_m2 * g100
+    if 'time' in ds["Met_DELPDRY"].dims:
+        print(ds.dims)
+        airmass = ds["Met_DELPDRY"].isel(time=0) * globvars.area_m2 * g100
+    else:
+        airmass = ds["Met_DELPDRY"] * globvars.area_m2 * g100
     airmass = airmass.values
 
     # Loop over species
+    has_time_dim = 'time' in ds["SpeciesRst_" + globvars.species_list[0]]
     for spc in globvars.species_list:
 
         # Conversion factor from mixing ratio to g, w/ met from rst file
         vv_to_g[spc] = airmass \
                      * (globvars.mw[spc] / globvars.mw["Air"]) * 1000.0
 
-        # Whole-atmosphere mass
-        rst_f[spc] = ds["SpeciesRst_" + spc].isel(time=0).values * vv_to_g[spc]
+        if has_time_dim:
+            rst_f[spc] = ds["SpeciesRst_" + spc].isel(time=0).values * vv_to_g[spc]
+        else:
+            rst_f[spc] = ds["SpeciesRst_" + spc].values * vv_to_g[spc]
 
         # Troposphere-only mass
         rst_t[spc] = np.ma.masked_array(rst_f[spc], tropmask)
@@ -684,11 +699,6 @@ def print_budgets(globvars, data, key):
         print("  Sources - Sinks, g d-1  {:11.6f}  {:11.6f}  {:11.6f}".format(
             *vals), file=f)
 
-        # Skip plotting the accumulation term for GCHP for now
-        if globvars.is_gchp:
-            f.close()
-            return
-        
         print(file=f)
         print("  Accumulation Term", file=f)
 
@@ -743,24 +753,20 @@ def transport_tracers_budgets(devstr, devdir, devrstdir, year,
     # Get the accumulation term (init & final masses) from the restarts
     # ==================================================================
 
-    # For now, skip accumulation term for GCHP, since we need to figure
-    # out how to reliably convert v/v/ to mass (bmy, 3/16/20)
-    if not globvars.is_gchp:
+    # Get initial mass from restart file
+    ds = globvars.ds_ini
+    tropmask = globvars.tropmask[0,:,:,:]
+    data["accum_init"] = mass_from_rst(globvars, ds, tropmask)
 
-        # Get initial mass from restart file
-        ds = globvars.ds_ini
-        tropmask = globvars.tropmask[0,:,:,:]
-        data["accum_init"] = mass_from_rst(globvars, ds, tropmask)
+    # Get initial mass from restart file
+    ds = globvars.ds_end
+    tropmask = globvars.tropmask[globvars.N_MONTHS-1,:,:,:]
+    data["accum_final"] = mass_from_rst(globvars, ds, tropmask)
 
-        # Get initial mass from restart file
-        ds = globvars.ds_end
-        tropmask = globvars.tropmask[globvars.N_MONTHS-1,:,:,:]
-        data["accum_final"] = mass_from_rst(globvars, ds, tropmask)
-
-        # Take the difference final - init
-        data["accum_diff"] = diff(globvars,
-                                  data["accum_init"],
-                                  data["accum_final"])
+    # Take the difference final - init
+    data["accum_diff"] = diff(globvars,
+                              data["accum_init"],
+                              data["accum_final"])
     
     # ==================================================================
     # Burdens [g]
