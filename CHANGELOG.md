@@ -33,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Cleaned up run_1mo_benchmark.py driver scripts
 - Operations budgets are now printed as Ref, Dev, Dev-Ref, %diff
 - Updated examples/compare_diags.py to point to test benchmark data
+- Updated benchmark_categories.yml, species_database.yml, lumped_species.yml, and emission_inventories.yml for recent changes in GEOS-Chem 12.8.0
 
 ### Deprecated
 
