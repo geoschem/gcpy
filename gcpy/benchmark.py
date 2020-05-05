@@ -259,7 +259,7 @@ def sixplot(
             cb.set_ticklabels(["Ref and Dev equal throughout domain"])
         elif subplot in ("dyn_frac_diff", "res_frac_diff"):
             if subplot is "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
-                if vmin > 0.1 or vmax < 10:
+                if vmin > 0.1 and vmax < 10:
                     cb.locator = mticker.MaxNLocator(nbins=4)
                     cb.update_ticks()
                     cb.formatter = mticker.ScalarFormatter()
