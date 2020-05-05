@@ -43,7 +43,7 @@ reffile = join(refdir, "GEOSChem.SpeciesConc.20160701_0000z.nc4")
 
 # Dev version
 devdir  = join(maindir, devstr, "OutputDir")
-devfile = join(refdir, "GEOSChem.SpeciesConc.20160701_0000z.nc4")
+devfile = join(devdir, "GEOSChem.SpeciesConc.20160701_0000z.nc4")
 
 # PDF names
 pdfname_level = join(plotsdir, "single_level_comparison.pdf")
