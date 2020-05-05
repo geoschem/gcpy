@@ -5292,8 +5292,30 @@ def get_troposphere_mask(ds):
 
 def check_units(refdata, devdata, varname):
     """
-    If units are mol/mol then convert to ppb
+    Ensures the units for varname match in refdata and devdata.
+    Currently, if units are in mol/mol, modifies datasets in place to have ppb units.
+
+    Args:
+    -----
+        refdata : xarray Dataset
+            The "Reference" (aka "Ref") dataset.
+
+        devdata : xarray Dataset
+            The "Development" (aka "Dev") dataset
+        
+        varname : str
+            Name of data variable of which to check units.
+        
+    Returns:
+    --------
+        units_ref : str
+            Units of refdata[varname], stripped of whitespace and possibly converted to ppb
+        units_dev : str
+            Units of devdata[varname], stripped of whitespace and possibly converted to ppb
     """
+    
+    #If units are mol/mol then convert to ppb
+    
     conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
     if refdata[varname].units.strip() in conc_units:
         refdata[varname].attrs["units"] = "ppbv"
@@ -5329,24 +5351,70 @@ def check_units(refdata, devdata, varname):
     return units_ref, units_dev
 
 
-def reshape_MAPL_CS(ds, vdims):
+def reshape_MAPL_CS(data, vdims):
+    """
+    Reshapes cubed sphere data if using MAPL v1.0.0+
+    Args:
+    -----
+        data : xarray DataArray
+            DataArray for a GCHP data variable
+
+        vdims : list of str
+            Dimensions of data
+        
+    Returns:
+    --------
+        data : xarray DataArray
+            Data with dimensions possibly renamed and transposed
+    """
+
     # Reshape cubed sphere data if using MAPL v1.0.0+
     if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-        ds = ds.stack(lat=("nf", "Ydim"))
-        ds = ds.rename({"Xdim": "lon"})
-        if "lev" in ds.dims:
-            ds = ds.transpose("lev", "lat", "lon")
+        data = data.stack(lat=("nf", "Ydim"))
+        data = data.rename({"Xdim": "lon"})
+        if "lev" in data.dims:
+            data = data.transpose("lev", "lat", "lon")
         else:
-            ds = ds.transpose("lat", "lon")
-    return ds
+            data = data.transpose("lat", "lon")
+    return data
 
 
 def dict_72_to_47():
-    #Get 72L-to-47L conversion dict which stores weights from 72 levels to 47 levels
+    """
+    Get 72L-to-47L conversion dict which stores weights from 72 levels to 47 levels
+    Returns:
+    --------
+        conv_dict : dict {72L (int) : (47L (int), weight (int))}
+              Mapping of 72L to 47L
+    """
+
     conv_dict = {L72 : (xmat_72to47.col[L72], xmat_72to47.data[L72]) for L72 in xmat_72to47.row}
     return conv_dict
 
 def reduce_72_to_47(DataArray, conv_dict, pmid_ind_72, pmid_ind_47):
+    """
+    Reduce 72 level DataArray to 47 level-equivalent for full or restricted
+    pressure ranges.
+    Args:
+    -----
+        DataArray : xarray DataArray
+            72 level DataArray
+    
+        conv_dict : dict
+            Mapping of 72L to 47L
+
+        pmid_ind_72 : list(int)
+            List of midpoint indices for 72L grid
+
+        pmid_ind_47 : list(int)
+            List of midpoint indices for 47L grid
+        
+    Returns:
+    --------
+         xarray DataArray
+            DataArray now reduced to 47L grid
+    """
+
     #reduce 72 level DataArray to 47 level-equivalent
     #This function works for both full and restricted pressure ranges
     new_shape = list(DataArray.data.shape)
@@ -5364,11 +5432,29 @@ def reduce_72_to_47(DataArray, conv_dict, pmid_ind_72, pmid_ind_47):
         new_coords['lats'] = (('lon', 'lat'), DataArray.coords['lats'].data)
     if 'lons' in DataArray.coords:
         new_coords['lons'] = (('lon', 'lat'), DataArray.coords['lons'].data)
-    #print(new_coords, tuple([ dim for dim in DataArray.dims]),  DataArray)
     return xr.DataArray(reduced_data, dims=tuple([dim for dim in DataArray.dims]),
                         coords = new_coords, attrs = DataArray.attrs)
 
 def get_diff_of_diffs(ref, dev):
+    """
+    Generate datasets containing differences between two datasets
+    Args:
+    -----
+        ref : xarray Dataset
+            The "Reference" (aka "Ref") dataset.
+
+        dev : xarray Dataset
+            The "Development" (aka "Dev") dataset
+        
+    Returns:
+    --------
+         absdiffs: xarray Dataset
+            Dataset containing dev-ref values
+
+         fracdiffs: xarray Dataset
+            Dataset containing dev/ref values
+    """
+
     #get diff of diffs datasets for 2 datasets
     #limit each pair to be the same type of output (GEOS-Chem Classic or GCHP)
     #and same resolution / extent
@@ -5417,6 +5503,30 @@ def get_diff_of_diffs(ref, dev):
     return absdiffs, fracdiffs
 
 def slice_by_lev_and_time(ds, varname, itime, ilev, flip):
+    """
+    Slice a DataArray by desired time and level.
+    Args:
+    -----
+        ds : xarray Dataset
+            Dataset containing GEOS-Chem data.
+
+        varname : str
+            Variable name for data variable to be sliced
+
+        itime : int
+            Index of time by which to slice
+
+        ilev : int
+            Index of level by which to slice
+
+        flip : boolean
+            Whether to flip ilev to be indexed from ground or top of atmosphere 
+        
+    Returns:
+    --------
+        ds[varname] : xarray DataArray
+            DataArray of data variable sliced according to ilev and itime
+    """
     #used in compare_single_level and compare_zonal_mean to get dataset slices
     #WBD change flip slice to use max level index rather than hardcoded 71
     vdims = ds[varname].dims
@@ -5436,9 +5546,53 @@ def slice_by_lev_and_time(ds, varname, itime, ilev, flip):
         return ds[varname]
 
 
-def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_cmp_grid,
-                           gridtype, cmpminlat_ind=0, cmpmaxlat_ind=-2, cmpminlon_ind=0, cmpmaxlon_ind=-2,
-                           nlev=1):
+def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_cmp_grid, gridtype,
+                           cmpminlat_ind=0, cmpmaxlat_ind=-2, cmpminlon_ind=0, cmpmaxlon_ind=-2, nlev=1):
+    """
+    Regrid comparison datasets to lat/lon format.
+    Args:
+    -----
+        data : xarray DataArray
+            DataArray containing a GEOS-Chem data variable
+
+        res : int
+            Cubed-sphere resolution for comparison grid
+        
+        regrid : boolean
+            Set to true to regrid dataset
+
+        regridder : xESMF regridder
+            Regridder between the original data grid and the comparison grid
+     
+        regridder_list : list(xESMFW regridder)
+            List of regridders for cubed-sphere data
+
+        global_cmp_grid : xarray DataArray
+            Comparison grid
+    
+        gridtype : str
+            Type of input data grid (either 'll' or 'cs')
+        
+        cmpminlat_ind : int
+            Index of minimum latitude extent for comparison grid
+
+        cmpmaxlat_ind : int
+            Index (minus 1) of maximum latitude extent for comparison grid
+
+        cmpminlon_ind : int
+            Index of minimum longitude extent for comparison grid
+
+        cmpmaxlon_ind : int
+            Index (minus 1) of maximum longitude extent for comparison grid
+
+        nlev : int
+            Number of levels of input grid and comparison grid
+    Returns:
+    --------
+        data : xarray DataArray
+            Original DataArray regridded to comparison grid (including resolution and extent changes)
+    """
+
     if regrid:
         if gridtype == "ll":
             # regrid ll to ll
