@@ -13,7 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added mean OH from log files for 1-year FullChemBenchmark (GEOS-Chem Classic only).
 - Added function gcplot in core.py for creating individual (rather than six-panel) plots of GEOS-Chem data.
 - 47-level model output can now be plotted in addition to the standard 72-level output.
-	
+- Added Loader=yaml.FullLoader to the yaml.load command to avoid generating excess warnings.
+
+
 ### Changed
 - Significant difference files are now written out to the Plots/Sig_Diffs folder for the 1-year benchmarks.
 - Updated file names for Pb/Be budget tables in gcpy/budgets_tt.py.
@@ -27,6 +29,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Replaced fractional difference plots ((Dev-Ref)/Ref) with ratio plots (Dev/Ref).
 - Moved diff-of-diffs functionality from standalone code in the benchmark scripts to benchmark.py.
 - The bottom row of diff-of-diffs plotting now shows (Dev2/Dev1)-(Ref2/Ref1) values.
+- Paths in example scripts now point to /n/holyscratch01/external_repos/GEOS-CHEM instead of /n/holylfs/EXTERNAL_REPOS/GEOS-CHEM.
+- Cleaned up run_1mo_benchmark.py driver scripts
+- Operations budgets are now printed as Ref, Dev, Dev-Ref, %diff
+- Updated examples/compare_diags.py to point to test benchmark data
 
 ### Deprecated
 
@@ -35,8 +41,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Colorbar tick formatting now never uses offset format, which made colorbar ticks difficult to interpret for small value ranges.
 - The list of non-plotted emissions species now populates properly.
 - Fixed sig diffs file creation for AOD and JValues.
+- Missing values in mass tables are now NaN
 
 ### Removed
+- Removed runnable docstring content.
 
 ## [0.1.1] - 2020-02-28
 
@@ -50,6 +58,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated the value of MW_AIR in constants.py to add more precision.
 - gcpy/benchmark.py now writes OH metrics output to the Plots/Tables folder.
 - Updated CHANGELOG.md for 0.1.1.
+- Updated download_data.py to properly obtain 2 x 2.5 and nested data sets.
 
 ## [0.1.0] - 2020-02-26
 
