@@ -14,6 +14,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added function gcplot in core.py for creating individual (rather than six-panel) plots of GEOS-Chem data.
 - 47-level model output can now be plotted in addition to the standard 72-level output.
 - Added Loader=yaml.FullLoader to the yaml.load command to avoid generating excess warnings.
+- Add benchmark plotting option to write concentration and emissions plots to one file
+- Add gcpy testing mode for all GEOS-Chem benchmark run scripts using test data on gcgrid.
+- Add function to flip and rename GCHP restart files to match GCC names and level convention.
+- Add capability to generate GCHP vs GCC and GCHP vs GCHP mass tables.
+- Add handling in convert_units for datasets without a time dimension.
+- Add initial and final mass to GHCP radionuclide budget tables.
 
 
 ### Changed
@@ -34,6 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Operations budgets are now printed as Ref, Dev, Dev-Ref, %diff
 - Updated examples/compare_diags.py to point to test benchmark data
 - Updated benchmark_categories.yml, species_database.yml, lumped_species.yml, and emission_inventories.yml for recent changes in GEOS-Chem 12.8.0
+- Update benchmark run scripts to use version strings rather than subtitle strings in tables filenames.
 
 ### Deprecated
 
@@ -43,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - The list of non-plotted emissions species now populates properly.
 - Fixed sig diffs file creation for AOD and JValues.
 - Missing values in mass tables are now NaN
+- Fix area normalization issues in benchmark plotting functions when using GCHP data.
 
 ### Removed
 - Removed runnable docstring content.
