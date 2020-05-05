@@ -3289,7 +3289,7 @@ def make_benchmark_emis_plots(
 ):
     """
     Creates PDF files containing plots of emissions for model
-    benchmarking purposes. This function is compatiblity with benchmark
+    benchmarking purposes. This function is compatible with benchmark
     simulation output only. It is not compatible with transport tracers
     emissions diagnostics.
 
