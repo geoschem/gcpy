@@ -400,11 +400,30 @@ def compare_single_level(
             Specifies extra text (e.g. a date string such as "Jan2016")
             for the top-of-plot title.
             Default value: None
+    
+        plot_extent : list
+            Defines the extent of the region to be plotted in form 
+            [minlon, maxlon, minlat, maxlat]. Default value plots extent of input grids.
+            Default value: [-1000, -1000, -1000, -1000]
+            
+        n_job : int
+            Defines the number of simultaneous workers for parallel plotting.
+            Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
+            Default value: -1
 
         sigdiff_list: list of str
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
+
+        second_ref : xarray Dataset
+            A dataset of the same model type / grid as refdata, to be used in diff-of-diffs plotting.
+            Default value: None
+    
+        second_dev : xarray Dataset
+            A dataset of the same model type / grid as devdata, to be used in diff-of-diffs plotting.
+            Default value: None
+
     """
     warnings.showwarning = warning_format
     # TODO: refactor this function and zonal mean plot function.
@@ -1213,10 +1232,23 @@ def compare_zonal_mean(
             for the top-of-plot title.
             Default value: None
 
+        n_job : int
+            Defines the number of simultaneous workers for parallel plotting.
+            Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
+            Default value: -1
+
         sigdiff_list: list of str
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
+
+        second_ref : xarray Dataset
+            A dataset of the same model type / grid as refdata, to be used in diff-of-diffs plotting.
+            Default value: None
+    
+        second_dev : xarray Dataset
+            A dataset of the same model type / grid as devdata, to be used in diff-of-diffs plotting.
+            Default value: None
     """
     # TODO: refactor this function and single level plot function. There is a lot of overlap and
     # repeated code that could be abstracted.
@@ -2876,6 +2908,32 @@ def make_benchmark_plots(
             'zonalmean' plots.  These lists are needed in order to
             fill out the benchmark approval forms.
             Default value: None
+
+        weightsdir : str
+            Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
+            Default value: '.'
+
+        n_job : int
+            Defines the number of simultaneous workers for parallel plotting.
+            Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
+            Default value: -1
+
+        second_ref: str
+            Path name for a second "Ref" (aka "Reference") data set for diff-of-diffs plotting. 
+            This dataset should have the same model type and grid as ref.
+            Default value: None
+
+        second_refstr : str
+            A string to describe second_ref (e.g. version number)
+
+        second_dev: str
+            Path name for a second "Ref" (aka "Reference") data set for diff-of-diffs plotting. 
+            This dataset should have the same model type and grid as ref.
+            Default value: None
+
+        second_devstr : str
+            A string to describe second_dev (e.g. version number)
+
     """
 
     # NOTE: this function could use some refactoring;
@@ -3368,6 +3426,15 @@ def make_benchmark_emis_plots(
             'zonalmean' plots.  These lists are needed in order to
             fill out the benchmark approval forms.
             Default value: None
+
+        weightsdir : str
+            Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
+            Default value: '.'
+
+        n_job : int
+            Defines the number of simultaneous workers for parallel plotting.
+            Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
+            Default value: -1
 
     Remarks:
     --------
@@ -3885,6 +3952,10 @@ def make_benchmark_jvalue_plots(
             fill out the benchmark approval forms.
             Default value: None
 
+        weightsdir : str
+            Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
+            Default value: '.'
+
     Remarks:
     --------
          Will create 4 files containing J-value plots:
@@ -4216,6 +4287,11 @@ def make_benchmark_aod_plots(
             These lists are needed in order to fill out the benchmark
             approval forms.
             Default value: None
+
+        weightsdir : str
+            Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
+            Default value: '.'
+
     """
     # ==================================================================
     # Initialization and also read data
