@@ -3006,12 +3006,13 @@ def make_benchmark_plots(
 
     # FullChemBenchmark has lumped species (TransportTracers does not)
     if "FullChem" in benchmark_type:
-        refds = core.add_lumped_species_to_dataset(refds, verbose=verbose)
-        devds = core.add_lumped_species_to_dataset(devds, verbose=verbose)
-        if secondrefds is not None:
-            core.add_lumped_species_to_dataset(secondrefds, verbose=verbose)
-        if seconddevds is not None:
-            core.add_lumped_species_to_dataset(seconddevds, verbose=verbose)
+        print("\nAdding lumped species to ref dataset:")
+        refds = core.add_lumped_species_to_dataset(refds)
+        print("\nAdding lumped species to dev dataset:")
+        devds = core.add_lumped_species_to_dataset(devds)
+        if diff_of_diffs:
+            second_refds = core.add_lumped_species_to_dataset(second_refds)
+            second_devds = core.add_lumped_species_to_dataset(second_devds)
         core.archive_lumped_species_definitions(dst)
 
     # Get the list of species categories

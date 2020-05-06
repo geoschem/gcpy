@@ -615,10 +615,60 @@ def add_lumped_species_to_dataset(
     ds,
     lspc_dict={},
     lspc_yaml="",
-    verbose=False,
+    verbose=True,
     overwrite=False,
     prefix="SpeciesConc_",
 ):
+
+    """
+    Function to calculate lumped species concentrations and add
+    them to an xarray Dataset. Lumped species definitions may be passed
+    as a dictionary or a path to a yaml file. If neither is passed then
+    the lumped species yaml file stored in gcpy is used. This file is
+    customized for use with benchmark simuation SpeciesConc diagnostic
+    collection output.
+
+    Args:
+    -----
+        ds : xarray Dataset
+            An xarray Dataset object prior to adding lumped species.
+
+    Keyword Args (optional):
+    ------------------------
+
+        lspc_dict : dictionary
+            Dictionary containing list of constituent species and their
+            integer scale factors per lumped species.
+            Default value: False
+
+        lspc_yaml : str
+            Set this flag to True to print informational output.
+            Default value: False
+
+        verbose : boolean
+            Whether to print informational output.
+            Default value: True
+
+        overwrite : boolean
+            Whether to overwrite an existing species dataarray in a dataset
+            if it has the same name as a new lumped species. If False and
+            overlapping names are found then the function will raise an error.
+            Default value: False
+
+        prefix : str
+            Prefix to prepend to new lumped species names. This argument is
+            also used to extract an existing dataarray in the dataset with
+            the correct size and dimensions to use during initialization of
+            new lumped species dataarrays.
+            Default value: SpeciesConc_
+
+    Returns:
+    --------
+        ds_new : xarray Dataset
+            A new xarray Dataset object containing all of the original
+            species plus new lumped species.
+
+    """
 
     # Default is to add all benchmark lumped species.
     # Can overwrite by passing a dictionary
@@ -632,34 +682,61 @@ def add_lumped_species_to_dataset(
         with open(lspc_yaml, "r") as f:
             lspc_dict = yaml.load(f.read())
 
+    # Get a dummy array to use for initialization
+    for var in ds.data_vars:
+        if prefix in var:
+            dummy_darr = ds[var]
+            break
+
+    # Create a new dataset equivalent to the old
+    ds_new = ds
+
     for lspc in lspc_dict:
+
+        # Assemble lumped species variable name
         varname_new = prefix + lspc
-        if varname_new in ds.data_vars and overwrite:
-            ds.drop(varname_new)
+
+        # Check if overlap with existing species
+        if varname_new in ds_new.data_vars and overwrite:
+            ds_new.drop(varname_new)
         else:
-            assert (
-                varname_new not in ds.data_vars
-            ), "{} already in dataset. To overwrite pass overwrite=True.".format(
-                varname_new
-            )
+            assert(varname_new not in ds_new.data_vars), \
+                "{} already in dataset. To overwrite pass overwrite=True.".\
+                format(varname_new)
+
+        # Verbose prints
         if verbose:
             print("Creating {}".format(varname_new))
+
+        # Initialize new dataarray
+        darr = dummy_darr
+        darr.name = varname_new
+        darr.values = np.full(darr.shape, 0.0)
+
+        # Loop over and sum constituent species values
+        num_spc = 0
         for i, spc in enumerate(lspc_dict[lspc]):
             varname = prefix + spc
-            if varname not in ds.data_vars:
-                print("Warning: {} needed for {} not in dataset.".format(spc, lspc))
+            if varname not in ds_new.data_vars:
+                print("Warning: {} needed for {} not in dataset.".\
+                      format(spc, lspc))
                 continue
             if verbose:
-                print(" -> adding {} with scale {}".format(spc, lspc_dict[lspc][spc]))
-            if i == 0:
-                darr = ds[varname] * lspc_dict[lspc][spc]
-                units = ds[varname].units
-            else:
-                darr = darr + ds[varname] * lspc_dict[lspc][spc]
-        darr.name = varname_new
-        darr.attrs["units"] = units
-        ds = xr.merge([ds, darr])
-    return ds
+                print(" -> adding {} with scale {}".\
+                      format(spc, lspc_dict[lspc][spc]))
+            darr.values = darr.values + \
+                          ds_new[varname].values * lspc_dict[lspc][spc]
+            num_spc = num_spc + 1
+
+        # Replace values with NaN is no species found in dataset
+        if num_spc == 0:
+            print('No constituent species found in file. Setting to NaN.')
+            darr.values = np.full(darr.shape, np.nan)
+
+        # Merge new variable into dataset
+        ds_new = xr.merge([ds_new, darr])
+
+    return ds_new
 
 
 def filter_names(names, text=""):
