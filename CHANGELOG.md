@@ -4,7 +4,7 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [Unreleased]
+## [0.2.0] - 2020-05-06
 
 ### Added
 - Added strat/trop exchange fluxes to 1-year benchmark output (gcpy/ste_flux.py)
@@ -20,7 +20,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Add capability to generate GCHP vs GCC and GCHP vs GCHP mass tables.
 - Add handling in convert_units for datasets without a time dimension.
 - Add initial and final mass to GHCP radionuclide budget tables.
-
 
 ### Changed
 - Significant difference files are now written out to the Plots/Sig_Diffs folder for the 1-year benchmarks.
@@ -42,7 +41,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated benchmark_categories.yml, species_database.yml, lumped_species.yml, and emission_inventories.yml for recent changes in GEOS-Chem 12.8.0
 - Update benchmark run scripts to use version strings rather than subtitle strings in tables filenames.
 
-### Deprecated
 
 ### Fixed
 - Latitude ticks again appear in benchmark zonal mean plots.
@@ -79,3 +77,16 @@ This is the first labeled version of GCPy. The primary functionality of GCPy is 
 - Support for plotting benchmark output for both GEOS-Chem Classic (lat/lon data) and GCHP (cubed-sphere data).
 
 The first official release version of GCPy, v1.0.0, will correspond with the release of GEOS-Chem 13.0.0.
+
+
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Fixed
+
+### Removed
