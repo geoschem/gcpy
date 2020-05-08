@@ -116,11 +116,17 @@ def extract_pathnames_from_log(dryrun_log):
     missing = sorted(list(data_missing))
 
     # Find the local data directory prefix (path to ExtData)
+    local_prefix = ""
     for path in found + missing:
         if "ExtData" in path:
             index = path.find("ExtData")
             local_prefix = path[:index]
             break
+
+    # Exit if the local path does not contain ExtData
+    if len(local_prefix) == 0:
+        msg = "Could not locate the ExtData folder in your local disk space!"
+        raise ValueError(msg)
 
     # Close file and return
     # The "sorted" command will return unique values
