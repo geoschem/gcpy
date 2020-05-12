@@ -255,6 +255,8 @@ def print_wetdep_table(metadata):
                         print("|{}".format(spc_db[t][2]), file=f)
                     else:
                         print("| -", file=f)
+                        print("| -", file=f)
+                        print("| -", file=f)
 
                 else:
                     if t in spc_db.keys():
