@@ -81,7 +81,7 @@ def print_species_table(metadata):
                         else:
                             print(file=f)
                     else:
-                        print("|", file=f)
+                        print("| -", file=f)
 
                 elif "Gas/Aer" in t:
                     if "Is_Gas" in spc_db.keys():
@@ -94,15 +94,15 @@ def print_species_table(metadata):
                         if spc_db[t] is True:
                             print("|X", file=f)
                         else:
-                            print("|", file=f)
+                            print("| -", file=f)
                     else:
-                        print("|", file=f)
+                        print("| -", file=f)
 
                 else:
                     if t in spc_db.keys():
                         print("|{}".format(spc_db[t]), file=f)
                     else:
-                        print("|", file=f)
+                        print("| -", file=f)
 
 
         # Close the file
@@ -146,7 +146,7 @@ def print_henry_table(metadata):
                 if t in spc_db.keys():
                     print("|{}".format(spc_db[t]), file=f)
                 else:
-                    print("|", file=f)
+                    print("| -", file=f)
 
         # Close the file
         f.close()
@@ -167,7 +167,7 @@ def print_drydep_table(metadata):
     keys_to_print = [
         "MW_g", "EmMW_g", "MolecRatio", "Radius", "Density",
         "DD_AeroDryDep", "DD_DustDryDep", "DD_DvzAerSnow",
-        "DD_DvzMinVal",  "DD_F0"
+        "DD_DvzMinVal",  "DD_Hstar", "DD_F0"
     ]
 
     # Output file
@@ -198,13 +198,13 @@ def print_drydep_table(metadata):
                             spc_db[t][1]
                         ), file=f)
                     else:
-                        print("|", file=f)
+                        print("| -", file=f)
 
                 else:
                     if t in spc_db.keys():
                         print("|{}".format(spc_db[t]), file=f)
                     else:
-                        print("|", file=f)
+                        print("| -", file=f)
 
         # Close the file
         f.close()
@@ -254,13 +254,13 @@ def print_wetdep_table(metadata):
                         print("|{}".format(spc_db[t][1]), file=f)
                         print("|{}".format(spc_db[t][2]), file=f)
                     else:
-                        print("|", file=f)
+                        print("| -", file=f)
 
                 else:
                     if t in spc_db.keys():
                         print("|{}".format(spc_db[t]), file=f)
                     else:
-                        print("|", file=f)
+                        print("| -", file=f)
 
         # Close the file
         f.close()
