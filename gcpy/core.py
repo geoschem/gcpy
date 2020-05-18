@@ -1213,15 +1213,15 @@ def get_filepath(datadir, col, date, is_gchp=False):
     return path
 
 
+def get_filepaths(datadir, collections, dates, is_gchp=False):
     """
     Routine to return filepaths for a given GEOS-Chem "Classic"
     (aka "GCC") or GCHP diagnostic collection.
 
     Args:
     -----
-        outputdir : str
-            Path name of the directory containing GCC or GCHP data
-            files.
+        datadir : str
+            Path name of the directory containing GCC or GCHP data files.
 
         collections : list of str
             Names of collections (e.g. Emissions, SpeciesConc, etc.)
@@ -1232,32 +1232,20 @@ def get_filepath(datadir, col, date, is_gchp=False):
 
     Keyword Args (optional):
     ------------------------
-        is_gcc : bool
-            Set this switch to True to obtain file pathnames to
-            GEOS-Chem "Classic" diagnostic data files.
-
         is_gchp : bool
             Set this switch to True to obtain file pathnames to
-            GCHP diagnostic data files.
+            GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
 
     Returns:
     --------
-        paths : list of str
+        paths : 2D list of str
             A list of pathnames for each specified collection and date.
+            First dimension is collection, and second is date.
     """
 
     # ==================================================================
     # Initialization
     # ==================================================================
-
-    # Error check input flags
-    if is_gcc == is_gchp:
-        msg = (
-            "Both is_gcc={} and is_gchp={}!  At present, "
-            + "get_filepaths returns either GCC or GCHP data! "
-            + "but not both!".format(is_gcc, is_gchp)
-        )
-        raise ValueError(msg)
 
     # If collections is passed as a scalar
     # make it a list so that we can iterate
@@ -1265,48 +1253,47 @@ def get_filepath(datadir, col, date, is_gchp=False):
         collections = [collections]
 
     # Create the return variable
-    paths = []
-
-    # Alias for the join function
-    join = os.path.join
+    rows, cols = (len(collections), len(dates))
+    paths = [['']*cols]*rows
 
     # ==================================================================
     # Create the file list
     # ==================================================================
-    for collection in collections:
+    for c, collection in enumerate(collections):
 
-        if is_gcc:
-            # ---------------------------------------
-            # Get the file path template for GCC
-            # ---------------------------------------
-            if "Emissions" in collection:
-                file_tmpl = join(outputdir, "HEMCO_diagnostics.")
-                separator = ""
-                extension = ".nc"
-
-            else:
-                file_tmpl = join(outputdir, "GEOSChem.{}.".format(collection))
-                separator = "_"
-                extension = "z.nc4"
-
-        elif is_gchp:
+        if is_gchp:
             # ---------------------------------------
             # Get the file path template for GCHP
             # ---------------------------------------
             if "Restart" in collection:
-                file_tmpl = join(outputdir,
-                                 "gcchem_internal_checkpoint.restart.")
+                file_tmpl = os.path.join(datadir,
+                                         "gcchem_internal_checkpoint.restart.")
                 separator = "_"
                 extension = ".nc4"
             else:
-                file_tmpl = join(outputdir, "GCHP.{}.".format(collection))
+                file_tmpl = os.path.join(datadir,
+                                         "GCHP.{}.".format(collection))
+                separator = "_"
+                extension = "z.nc4"
+        else:
+            # ---------------------------------------
+            # Get the file path template for GCC
+            # ---------------------------------------
+            if "Emissions" in collection:
+                file_tmpl = os.path.join(datadir,
+                                         "HEMCO_diagnostics.")
+                separator = ""
+                extension = ".nc"
+            else:
+                file_tmpl = os.path.join(datadir,
+                                         "GEOSChem.{}.".format(collection))
                 separator = "_"
                 extension = "z.nc4"
 
         # --------------------------------------------
         # Create a list of files for each date/time
         # --------------------------------------------
-        for date in dates:
+        for d, date in enumerate(dates):
             if is_gchp and "Restart" in collection:
                 date_time = np.datetime_as_string(date, unit="s")
             else:
@@ -1314,7 +1301,7 @@ def get_filepath(datadir, col, date, is_gchp=False):
             date_time = date_time.replace("T", separator)
             date_time = date_time.replace("-", "")
             date_time = date_time.replace(":", "")
-            paths.append(file_tmpl + date_time + extension)
+            paths[c][d] = file_tmpl + date_time + extension
 
     return paths
 
