@@ -1154,7 +1154,65 @@ def check_for_area(ds, gcc_area_name="AREA", gchp_area_name="Met_AREAM2"):
     return ds
 
 
-def get_filepaths(outputdir, collections, dates, is_gcc=False, is_gchp=False):
+def get_filepath(datadir, col, date, is_gchp=False):
+    """
+    Routine to return file path for a given GEOS-Chem "Classic"
+    (aka "GCC") or GCHP diagnostic collection and date.
+
+    Args:
+    -----
+        datadir : str
+            Path name of the directory containing GCC or GCHP data files.
+
+        col : str
+            Name of collection (e.g. Emissions, SpeciesConc, etc.)
+            for which file path will be returned.
+
+        date : numpy.datetime64
+            Date for which file paths are requested.
+
+    Keyword Args (optional):
+    ------------------------
+        is_gchp : bool
+            Set this switch to True to obtain file pathnames to
+            GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
+
+    Returns:
+    --------
+        path : str
+            Pathname for the specified collection and date.
+    """
+
+    # Set filename template, extension, separator, and date string from
+    # the collection, date, and data directory arguments
+    separator = "_"
+    date_str = np.datetime_as_string(date, unit="m")
+    if is_gchp:
+        if "Restart" in col:
+            file_tmpl = os.path.join(datadir,
+                                     "gcchem_internal_checkpoint.restart.")
+            extension = ".nc4"
+            date_str = np.datetime_as_string(date, unit="s")
+        else:
+            file_tmpl = os.path.join(datadir, "GCHP.{}.".format(collection))
+            extension = "z.nc4"
+    else:
+        if "Emissions" in col:
+            file_tmpl = os.path.join(datadir, "HEMCO_diagnostics.")
+            extension = ".nc"
+            separator = ""
+        else:
+            file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(col))
+            extension = "z.nc4"
+    date_str = date_str.replace("T", separator)
+    date_str = date_str.replace("-", "")
+    date_str = date_str.replace(":", "")
+
+    # Set file path to return
+    path = file_tmpl + date_str + extension
+    return path
+
+
     """
     Routine to return filepaths for a given GEOS-Chem "Classic"
     (aka "GCC") or GCHP diagnostic collection.
