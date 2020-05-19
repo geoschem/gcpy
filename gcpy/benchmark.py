@@ -3135,7 +3135,7 @@ def archive_species_categories(dst):
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
 
-def make_benchmark_plots(
+def make_benchmark_conc_plots(
     ref,
     refstr,
     dev,
