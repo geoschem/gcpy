@@ -5733,3 +5733,261 @@ def rename_and_flip_gchp_rst_vars(ds):
     ds['lev'].data = ds['lev'].data[::-1]
     ds = ds.sortby('lev', ascending=True)
     return ds
+
+def make_benchmark_wetdep_plots(
+    ref,
+    refstr,
+    dev,
+    devstr,
+    collection,
+    dst="./benchmark",
+    datestr=None,
+    overwrite=False,
+    verbose=False,
+    benchmark_type="TransportTracersBenchmark",
+    plots=["sfc", "500hpa", "zonalmean"],
+    log_color_scale=False,
+    normalize_by_area=False,
+    areas=None,
+    refmet=None,
+    devmet=None,
+    weightsdir='.',
+):
+    """
+    Creates PDF files containing plots of species concentration
+    for model benchmarking purposes.
+
+    Args:
+    -----
+        ref: str
+            Path name for the "Ref" (aka "Reference") data set.
+
+        refstr : str
+            A string to describe ref (e.g. version number)
+
+        dev : str
+            Path name for the "Dev" (aka "Development") data set.
+            This data set will be compared against the "Reference"
+            data set.
+
+        devstr : str
+            A string to describe dev (e.g. version number)
+
+        collection : str
+            String name of collection to plot comparisons for.
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str
+            A string denoting the destination folder where a PDF
+            file containing plots will be written.
+            Default value: ./benchmark
+
+        datestr : str
+            A string with date information to be included in both the
+            plot pdf filename and as a destination folder subdirectory
+            for writing plots
+
+        overwrite : boolean
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False.
+
+        verbose : boolean
+            Set this flag to True to print extra informational output.
+            Default value: False.
+
+        plots : list of strings
+            List of plot types to create.
+            Default value: ['sfc', '500hpa', 'zonalmean']
+
+        normalize_by_area: bool
+            Set this flag to true to enable normalization of data
+            by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
+
+        areas : dict of xarray DataArray:
+            Grid box surface areas in m2 on Ref and Dev grids.
+            Default value: None
+
+        refmet : str
+            Path name for ref meteorology
+            Default value: None
+
+        devmet : str
+            Path name for dev meteorology  
+            Default value: None
+
+    """
+
+    #  Make sure destination directory exists
+    if os.path.isdir(dst) and not overwrite:
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any."
+        msg = msg.format(dst)
+        raise ValueError(msg)
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+        
+    # Make a collection subdirectory
+    targetdst = os.path.join(dst, collection)
+    if not os.path.isdir(targetdst):
+        os.mkdir(targetdst)
+
+    # If datestr is passed, create a further subdirectory
+    if datestr is not None:
+        targetdst = os.path.join(targetdst, datestr)
+        if not os.path.isdir(targetdst):
+            os.mkdir(targetdst)
+
+    # Open datasets
+    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
+    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
+
+    # Open met datasets if passed as arguments
+    refmetds = None
+    devmetds = None
+    if refmet:
+        refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
+    if devmet:
+        devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
+
+    # If we are normalizing by area, then merge the surface areas
+    # on the Ref & Dev grids into the Ref & Dev datasets, but only
+    # if they are not already there. The area variables should both
+    # be called 'AREA' and be in units of m2.
+    if normalize_by_area:
+        if areas is not None:
+            if 'AREA' not in refds.data_vars:
+                refds = xr.merge([refds, areas["Ref"]])
+            if 'AREA' not in devds.data_vars:
+                devds = xr.merge([devds, areas["Dev"]])
+        else:
+            msg = "ERROR: normalize_by_area = True but " \
+                + "the 'areas' argument was not passed!"
+            raise ValueError(msg)
+
+    # Make sure that Ref and Dev datasets have the same variables.
+    # Variables that are in Ref but not in Dev will be added to Dev
+    # with all missing values (NaNs). And vice-versa.
+    [refds, devds] = add_missing_variables(refds, devds)
+
+    # Get list of variables in collection
+    vardict = core.compare_varnames(refds, devds, quiet=True)
+    varlist = [v for v in vardict["commonvars3D"] if collection+"_" in v]
+    varlist.sort()
+
+    # Surface plots
+    if "sfc" in plots:
+        if datestr is not None:
+            plotfilename = "{}_Surface_{}.pdf".format(collection, datestr)
+        else:
+            plotfilename = "{}_Surface.pdf".format(collection)
+        pdfname = os.path.join(targetdst, plotfilename)
+        compare_single_level(
+            refds,
+            refstr,
+            devds,
+            devstr,
+            varlist=varlist,
+            ilev=0,
+            refmet=refmetds,
+            devmet=devmetds,
+            pdfname=pdfname,
+            normalize_by_area=normalize_by_area,
+            extra_title_txt=datestr,
+            weightsdir=weightsdir,
+        )
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=collection+'_',
+                             verbose=verbose)
+        
+    # 500 hPa plots
+    if "500hpa" in plots:
+        if datestr is not None:
+            plotfilename = "{}_500hPa_{}.pdf".format(collection, datestr)
+        else:
+            plotfilename = "{}_500hPa.pdf".format(collection)
+        pdfname = os.path.join(targetdst, plotfilename)
+        compare_single_level(
+            refds,
+            refstr,
+            devds,                 
+            devstr,
+            varlist=varlist,
+            ilev=22,
+            refmet=refmetds,
+            devmet=devmetds,
+            pdfname=pdfname,
+            normalize_by_area=normalize_by_area,
+            extra_title_txt=datestr,
+            weightsdir=weightsdir,
+        )
+        add_bookmarks_to_pdf(
+            pdfname,
+            varlist,
+            remove_prefix=collection+'_',
+            verbose=verbose
+        )
+                
+    # Zonal mean plots
+    if "zonalmean" in plots or "zm" in plots:
+            
+        # Full column
+        if datestr is not None:
+            plotfilename = "{}_FullColumn_ZonalMean_{}.pdf".format(
+                collection,
+                datestr
+            )
+        else:
+            plotfilename = "{}_FullColumn_ZonalMean.pdf".format(collection)
+        pdfname = os.path.join(targetdst, plotfilename)
+        compare_zonal_mean(
+            refds,
+            refstr,
+            devds,
+            devstr,
+            varlist=varlist,
+            refmet=refmetds,
+            devmet=devmetds,
+            pdfname=pdfname,
+            log_color_scale=log_color_scale,
+            normalize_by_area=normalize_by_area,
+            extra_title_txt=datestr,
+            weightsdir=weightsdir,
+        )
+        add_bookmarks_to_pdf(
+            pdfname,
+            varlist,
+            remove_prefix=collection+'_',
+            verbose=verbose
+        )
+        
+        # Stratosphere
+        if datestr is not None:
+            plotfilename = "{}_Strat_ZonalMean_{}.pdf".format(
+                collection,
+                datestr
+            )
+        else:
+            plotfilename = "{}_Strat_ZonalMean.pdf".format(collection)
+        pdfname = os.path.join(targetdst, plotfilename)
+        compare_zonal_mean(
+            refds,
+            refstr,
+            devds,
+            devstr,
+            varlist=varlist,
+            refmet=refmetds,
+            devmet=devmetds,
+            pdfname=pdfname,
+            pres_range=[1, 100],
+            log_yaxis=True,
+            extra_title_txt=datestr,
+            normalize_by_area=normalize_by_area,
+            weightsdir=weightsdir,
+        )
+        add_bookmarks_to_pdf(
+            pdfname,
+            varlist,
+            remove_prefix=collection+'_',
+            verbose=verbose
+        )
