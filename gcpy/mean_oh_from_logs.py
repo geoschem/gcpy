@@ -219,7 +219,7 @@ def make_benchmark_oh_from_logs(reflogdir, refstr, devlogdir, devstr,
             Directory containing log files from  Ref and Dev simulations.
         refstr, devstr : str
             String label for the Ref and Def simulations.
-        year : int
+        year : str
             Year of the Ref and Dev benchmark simulations.
 
     Keyword Args (optional):
@@ -229,6 +229,9 @@ def make_benchmark_oh_from_logs(reflogdir, refstr, devlogdir, devstr,
         overwrite : bool
             If true, will overwrite the existing OH table in dst.
     """
+
+    # Convert year to integer
+    year = int(year)
 
     # Define global variables
     globvars = _GlobVars(reflogdir, refstr, devlogdir, devstr,

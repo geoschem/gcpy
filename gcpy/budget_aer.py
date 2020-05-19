@@ -413,8 +413,8 @@ def aerosol_budgets_and_burdens(devstr, devdir, year,
             Benchmark directory (containing links to data).
         devstr : str
             Denotes the "Dev" benchmark version.
-        year : int
-            The year of the benchmark simulation (e.g. 2016). 
+        year : str
+            The year of the benchmark simulation (e.g. '2016'). 
 
     Keyword Args (optional):
     ------------------------
@@ -424,7 +424,7 @@ def aerosol_budgets_and_burdens(devstr, devdir, year,
             Overwrite burden & budget tables? (default=True)
     """
     # Initialize a private class with required global variables
-    globvars = _GlobVars(devstr, devdir, dst, year, overwrite)
+    globvars = _GlobVars(devstr, devdir, dst, int(year), overwrite)
 
     # Aerosol burdens [Tg]
     burdens = annual_average(globvars)
