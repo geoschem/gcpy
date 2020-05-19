@@ -3619,7 +3619,8 @@ def make_benchmark_conc_plots(
                 pdfname, filecat, catdict,
                 warninglist, remove_prefix=coll_prefix
             )
-            return {filecat : cat_diff_dict}
+        return {filecat : cat_diff_dict}
+
     # Create the plots in parallel
     results = Parallel(n_jobs=n_job)(
         delayed(createplots)(i, filecat) for i, filecat in enumerate(catdict)
