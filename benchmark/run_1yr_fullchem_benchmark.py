@@ -108,20 +108,21 @@ gcpy_test = True
 # Comparisons to run 
 # =====================================================================
 gcc_vs_gcc   = True
-gchp_vs_gcc  = False # not yet tested
-gchp_vs_gchp = False # not yet tested
+gchp_vs_gcc  = True # not yet tested
+gchp_vs_gchp = True # not yet tested
 # GCHP vs GCC diff of diffs not included in 1-yr full chemistry benchmark
 
 # =====================================================================
 # Output to generate (plots/tables will be created in this order):
 # =====================================================================
-plot_conc    = True
-plot_emis    = True
+plot_conc    = False
+plot_emis    = False
 emis_table   = True
-plot_jvalues = True
-plot_aod     = True
+plot_jvalues = False
+plot_aod     = False
 mass_table   = True
-budget_table = True
+ops_budget_table = True
+aer_budget_table = True
 ste_table    = True
 OH_metrics   = True
 
@@ -214,7 +215,7 @@ all_months_mid = np.zeros(12, dtype="datetime64[h]")
 for m in range(12):
     days_in_mon = monthrange(int(bmk_year), m + 1)[1]
     sec_per_month[m-1] = days_in_mon * 86400.0
-    middle_hr = ( int(np.floor(days_in_mon/2)) * 24 ) + 12
+    middle_hr = int(days_in_mon*24/2)
     delta = np.timedelta64(middle_hr, 'h')
     all_months_mid[m] = all_months[m].astype("datetime64[h]") + delta
 
@@ -228,15 +229,16 @@ bmk_sec_per_month = sec_per_month[bmk_mon_inds]
 # ======================================================================
 
 print("The following plots and tables will be created for {}:".format(bmk_type))
-if plot_conc:    print(" - Concentration plots")
-if plot_emis:    print(" - Emissions plots")
-if plot_jvalues: print(" - J-values (photolysis rates) plots")
-if plot_aod:     print(" - Aerosol optical depth plots")
-if budget_table: print(" - Budget tables")
-if emis_table:   print(" - Table of emissions totals by species and inventory")
-if mass_table:   print(" - Table of species mass")
-if OH_metrics:   print(" - Table of OH metrics")
-if ste_table:    print(" - Table of strat-trop exchange")
+if plot_conc:        print(" - Concentration plots")
+if plot_emis:        print(" - Emissions plots")
+if plot_jvalues:     print(" - J-values (photolysis rates) plots")
+if plot_aod:         print(" - Aerosol optical depth plots")
+if ops_budget_table: print(" - Operations budget tables")
+if aer_budget_table: print(" - Aerosol budget/burden tables")
+if emis_table:       print(" - Table of emissions totals by species and inventory")
+if mass_table:       print(" - Table of species mass")
+if OH_metrics:       print(" - Table of OH metrics")
+if ste_table:        print(" - Table of strat-trop exchange")
 print("Comparisons will be made for the following combinations:")
 if gcc_vs_gcc:   print(" - GCC vs GCC")
 if gchp_vs_gcc:  print(" - GCHP vs GCC")
@@ -331,7 +333,6 @@ if gcc_vs_gcc:
             interval=sec_per_month,
             overwrite=True
         )
-        # NOTE from ewl: for budget tables we pass sec per year...
 
     # --------------------------------------------------------------
     # GCC vs GCC J-value plots
@@ -392,11 +393,11 @@ if gcc_vs_gcc:
         # Diagnostic collections to read
         col = "Restart"
 
-        # Create mass table for each benchmark month (ewl???)
+        # Create mass table for each benchmark month
         for s, bmk_mon in enumerate(bmk_mons):
 
-            ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mon)
-            dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mon)
+            ref = get_filepath(gcc_vs_gcc_refrstdir, col, bmk_mon)
+            dev = get_filepath(gcc_vs_gcc_devrstdir, col, bmk_mon)
             label = "at 01{}".format(bmk_mon_yr_strs[s])
             plot_dir = join(gcc_vs_gcc_tablesdir, bmk_mon_yr_strs[s])
             bmk.make_benchmark_mass_tables(
@@ -413,8 +414,8 @@ if gcc_vs_gcc:
     # --------------------------------------------------------------
     # GCC vs GCC operations budgets tables
     # --------------------------------------------------------------
-    if budget_table:
-        print("\n%%% Creating GCC vs. GCC budget tables %%%")
+    if ops_budget_table:
+        print("\n%%% Creating GCC vs. GCC operations budget tables %%%")
 
         # Diagnostic collections to read
         col = "Budget"
@@ -423,7 +424,7 @@ if gcc_vs_gcc:
         for s, bmk_mon in enumerate(bmk_mons):
             ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mon)
             dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mon)
-            plot_dir = join(gcc_vs_gcc_budgetdir, mon_yr_str)
+            plot_dir = join(gcc_vs_gcc_budgetdir, bmk_mon_yr_strs[s])
             opbdg.make_operations_budget_table(
                 gcc_ref_version,
                 ref,
@@ -435,6 +436,12 @@ if gcc_vs_gcc:
                 interval=bmk_sec_per_month[s],
                 overwrite=True
             )
+
+    # --------------------------------------------------------------
+    # GCC vs GCC aerosols budgets/burdens tables
+    # --------------------------------------------------------------
+    if aer_budget_table:
+        print("\n%%% Creating GCC vs. GCC aerosols budget tables %%%")
 
         # Compute annual mean AOD budgets and aerosol burdens
         aerbdg.aerosol_budgets_and_burdens(
@@ -451,9 +458,9 @@ if gcc_vs_gcc:
     if ste_table:
         print("\n%%% Creating GCC vs. GCC Strat-Trop Exchange table %%%")
 
-        # Diagnostic collections to read
+        # Diagnostic collections to read (all 12 months)
         col = "AdvFluxVert"
-        dev = get_filepaths(gcc_vs_gcc_devdir, col, bmk_mons)
+        dev = get_filepaths(gcc_vs_gcc_devdir, col, all_months)
 
         # Compute monthly and annual average strat-trop exchange of O3
         ste.make_benchmark_ste_table(

@@ -113,15 +113,15 @@ gchp_vs_gcc_diff_of_diffs = True
 # =====================================================================
 # Output to generate (plots/tables will be created in this order):
 # =====================================================================
-plot_conc    = True
-plot_emis    = True
-emis_table   = True
-plot_jvalues = True
-plot_aod     = True
-mass_table   = True
-budget_table = True
-OH_metrics   = True
-ste_table    = True
+plot_conc        = True
+plot_emis        = True
+emis_table       = True
+plot_jvalues     = True
+plot_aod         = True
+mass_table       = True
+ops_budget_table = True
+OH_metrics       = True
+ste_table        = True
 
 # Plot concentrations and emissions by category?
 plot_by_spc_cat = True
@@ -238,15 +238,15 @@ gchp_vs_gchp_sigdiff = [
 # Prnt the list of plots & tables to the screen
 # ======================================================================
 print("The following plots and tables will be created for {}:".format(bmk_type))
-if plot_conc:    print(" - Concentration plots")
-if plot_emis:    print(" - Emissions plots")
-if plot_jvalues: print(" - J-values (photolysis rates) plots")
-if plot_aod:     print(" - Aerosol optical depth plots")
-if budget_table: print(" - Budget tables")
-if emis_table:   print(" - Table of emissions totals by species and inventory")
-if mass_table:   print(" - Table of species mass")
-if OH_metrics:   print(" - Table of OH metrics")
-if ste_table:    print(" - Table of strat-trop exchange")
+if plot_conc:        print(" - Concentration plots")
+if plot_emis:        print(" - Emissions plots")
+if plot_jvalues:     print(" - J-values (photolysis rates) plots")
+if plot_aod:         print(" - Aerosol optical depth plots")
+if ops_budget_table: print(" - Operations budget tables")
+if emis_table:       print(" - Table of emissions totals by spc and inventory")
+if mass_table:       print(" - Table of species mass")
+if OH_metrics:       print(" - Table of OH metrics")
+if ste_table:        print(" - Table of strat-trop exchange")
 print("Comparisons will be made for the following combinations:")
 if gcc_vs_gcc:   print(" - GCC vs GCC")
 if gchp_vs_gcc:  print(" - GCHP vs GCC")
@@ -409,7 +409,7 @@ if gcc_vs_gcc:
     #---------------------------------------------------------------
     # GCC vs GCC budgets tables
     #---------------------------------------------------------------
-    if budget_table:
+    if ops_budget_table:
         print("\n%%% Creating GCC vs. GCC budget tables %%%")
 
         # Diagnostic collection files to read
@@ -568,7 +568,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devstr,
             dst=gchp_vs_gcc_plotsdir,
             interval=s_per_mon,
-            overwrite=True
+            overwrite=True,
+            devmet=devmet
         )
 
     #---------------------------------------------------------------
@@ -641,8 +642,8 @@ if gchp_vs_gcc:
     #---------------------------------------------------------------
     # GCHP vs GCC budgets tables (actually only dev)
     #---------------------------------------------------------------
-    if budget_table:
-        print("\n%%% Skipping GCHP budget tables %%%")
+    if ops_budget_table:
+        print("\n%%% Skipping GCHP operations budget tables %%%")
 
     #---------------------------------------------------------------
     # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
@@ -744,7 +745,9 @@ if gchp_vs_gchp:
             gchp_vs_gchp_devstr,
             dst=gchp_vs_gchp_plotsdir,
             interval=s_per_mon,
-            overwrite=True
+            overwrite=True,
+            refmet=refmet,
+            devmet=devmet
         )
 
     #---------------------------------------------------------------
