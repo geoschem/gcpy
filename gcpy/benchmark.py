@@ -299,6 +299,7 @@ def compare_single_level(
     match_cbar=True,
     normalize_by_area=False,
     enforce_units=True,
+    convert_to_ugm3=False,
     flip_ref=False,
     flip_dev=False,
     use_cmap_RdBu=False,
@@ -381,6 +382,10 @@ def compare_single_level(
             Set this flag to True to force an error if Ref and Dev
             variables have different units.
             Default value: True
+
+        convert_to_ugm3 : boolean
+            Whether to convert data units to ug/m3 for plotting.
+            Default value: False
 
         flip_ref : boolean
             Set this flag to True to flip the vertical dimension of
@@ -592,6 +597,52 @@ def compare_single_level(
             ds_refs[i].attrs["units"] = "ppb"
         if ds_devs[i].units.strip() == "ppbv":
             ds_devs[i].attrs["units"] = "ppb"
+
+        # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
+        if convert_to_ugm3:
+
+            # Error checks: must pass met, not normalize by area, and be in ppb
+            if refmet is None or devmet is None:
+                msg = "Met mata ust be passed to convert units to ug/m3."
+                raise ValueError(msg)
+            elif normalize_by_area:
+                msg = "Normalizing by area is now allowed if plotting ug/m3"
+                raise ValueError(msg)
+            elif ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
+                msg = "Units must be mol/mol if converting to ug/m3."
+                raise ValueError(msg)
+
+            # Slice air density data by lev and time
+            # (assume same format and dimensions as refdata and devdata)
+            ref_airden = slice_by_lev_and_time(
+                refmet,
+                "Met_AIRDEN",
+                itime,
+                ilev,
+                False
+            )
+            dev_airden = slice_by_lev_and_time(
+                devmet,
+                "Met_AIRDEN",
+                itime,
+                ilev,
+                False
+            )
+
+            # Convert values from ppb to ug/m3:
+            # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
+            #         * g/mol spc * 1e6ug/g
+            #       = ppb * air density * (spc MW / air MW)
+            gcon.MW_AIR  # g/mole dry air
+            # Eventually put this in a comprehensive unit conversion function.
+            ds_refs[i].values = ds_refs[i].values *              \
+                                ref_airden.values #* ( spc_mw / gcon.MW_AIR )
+            ds_devs[i].values = ds_devs[i].values *              \
+                                dev_airden.values #* ( spc_mw / gcon.MW_AIR )
+
+            # Update units string
+            ds_refs[i].attrs["units"] = "ug/m3"
+            ds_devs[i].attrs["units"] = "ug/m3"
 
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
@@ -1251,6 +1302,7 @@ def compare_zonal_mean(
     pres_range=[0, 2000],
     normalize_by_area=False,
     enforce_units=True,
+    convert_to_ugm3=False,
     flip_ref=False,
     flip_dev=False,
     use_cmap_RdBu=False,
@@ -1336,6 +1388,10 @@ def compare_zonal_mean(
             Set this flag to True force an error if the variables in
             the Ref and Dev datasets have different units.
             Default value: True
+
+        convert_to_ugm3 : str
+            Whether to convert data units to ug/m3 for plotting.
+            Default value: False
 
         flip_ref : boolean
             Set this flag to True to flip the vertical dimension of
@@ -1560,6 +1616,47 @@ def compare_zonal_mean(
             ds_refs[i].attrs["units"] = "ppb"
         if ds_devs[i].units.strip() == "ppbv":
             ds_devs[i].attrs["units"] = "ppb"
+
+        # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
+        if convert_to_ugm3:
+
+            # Error checks: must pass met, not normalize by area, and be in ppb
+            if refmet is None or devmet is None:
+                msg = "Met mata ust be passed to convert units to ug/m3."
+                raise ValueError(msg)
+            elif normalize_by_area:
+                msg = "Normalizing by area is now allowed if plotting ug/m3"
+                raise ValueError(msg)
+            elif ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
+                msg = "Units must be mol/mol if converting to ug/m3."
+                raise ValueError(msg)
+
+            # Slice air density data by time and lev
+            # (assume same format and dimensions as refdata and devdata)
+            if "time" in refmet["Met_AIRDEN"].dims:
+                ref_airden = refmet["Met_AIRDEN"].isel(time=itime,
+                                                       lev=ref_pmid_ind)
+            else:
+                ref_airden = refmet["Met_AIRDEN"].isel(lev=ref_pmid_ind)
+            if "time" in devmet["Met_AIRDEN"].dims:
+                dev_airden = devmet["Met_AIRDEN"].isel(time=itime,
+                                                       lev=dev_pmid_ind)
+            else:
+                dev_airden = devmet["Met_AIRDEN"].isel(lev=dev_pmid_ind)
+
+            # Convert values from ppb to ug/m3:
+            # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
+            #         * g/mol spc * 1e6ug/g
+            #       = ppb * air density * (spc MW / air MW)
+            # Eventually put this in a comprehensive unit conversion function.
+            ds_refs[i].values = ds_refs[i].values *              \
+                                ref_airden.values #* ( spc_mw / air_mw )
+            ds_devs[i].values = ds_devs[i].values *              \
+                                dev_airden.values #* ( spc_mw / air_mw )
+
+            # Update units string
+            ds_refs[i].attrs["units"] = "ug/m3"
+            ds_devs[i].attrs["units"] = "ug/m3"
 
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
@@ -3284,7 +3381,8 @@ def make_benchmark_plots(
         return
 
     # ==================================================================
-    # Otherwise plot by categories
+    # Otherwise plot by categories. Convert units to ug/m3 for
+    # aerosol categories: Aerosols and Secondary Organic Aerosols.
     # ==================================================================
 
     # FullChemBenchmark has lumped species (TransportTracers does not)
@@ -3324,6 +3422,12 @@ def make_benchmark_plots(
     dict_zm = {}
     def createplots(i, filecat):
         cat_diff_dict = {'sfc' : [], '500' : [], 'zm' : []}
+
+        # Plots units ug/m3 for certain species categories
+        if filecat in ["Aerosols", "Secondary_Organic_Aerosols"]:
+            convert_to_ugm3 = True
+        else:
+            convert_to_ugm3 = False
 
         # Suppress harmless run-time warnings from all threads
         warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -3388,6 +3492,7 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_sfc,
                 weightsdir=weightsdir,
+                convert_to_ugm3=convert_to_ugm3,
                 second_ref=second_refds,
                 second_dev=second_devds
             )
@@ -3427,6 +3532,7 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_500,
                 weightsdir=weightsdir,
+                convert_to_ugm3=convert_to_ugm3,
                 second_ref=second_refds,
                 second_dev=second_devds
             )
@@ -3469,6 +3575,7 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_zm,
                 weightsdir=weightsdir,
+                convert_to_ugm3=convert_to_ugm3,
                 second_ref=second_refds,
                 second_dev=second_devds
             )
@@ -3505,6 +3612,7 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 log_color_scale=log_color_scale,
                 normalize_by_area=normalize_by_area,
+                convert_to_ugm3=convert_to_ugm3,
                 weightsdir=weightsdir,
                 second_ref=second_refds,
                 second_dev=second_devds
