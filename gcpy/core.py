@@ -1194,7 +1194,7 @@ def get_filepath(datadir, col, date, is_gchp=False):
             extension = ".nc4"
             date_str = np.datetime_as_string(date, unit="s")
         else:
-            file_tmpl = os.path.join(datadir, "GCHP.{}.".format(collection))
+            file_tmpl = os.path.join(datadir, "GCHP.{}.".format(col))
             extension = "z.nc4"
     else:
         if "Emissions" in col:

@@ -287,7 +287,7 @@ def make_benchmark_ste_table(devstr, files, year,
             Label denoting the "Dev" version.
         files : str
             List of files containing vertical fluxes.
-        year : int
+        year : str
             Year of the benchmark simulation.
 
     Keyword Args (optional):
@@ -306,7 +306,7 @@ def make_benchmark_ste_table(devstr, files, year,
     """
 
     # Initialize a private class with required global variables
-    globvars = _GlobVars(devstr, files, dst, year,
+    globvars = _GlobVars(devstr, files, dst, int(year),
                          bmk_type, species, overwrite, month)
 
     # Compute the STE fluxes

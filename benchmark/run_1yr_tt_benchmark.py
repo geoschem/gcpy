@@ -106,18 +106,18 @@ gcpy_test = True
 # Comparisons to run
 # =====================================================================
 gcc_vs_gcc   = True
-gchp_vs_gcc  = False
-gchp_vs_gchp = False
+gchp_vs_gcc  = True
+gchp_vs_gchp = True
 # GCHP vs GCC diff of diffs not included in transport tracer benchmark
 
 # =====================================================================
 # Output to generate (plots/tables will be created in this order):
 # =====================================================================
 plot_conc         = False
-plot_wetdep       = True
-rnpbbe_budget     = False
-operations_budget = False
-ste_table         = False # GCC only
+plot_wetdep       = False
+rnpbbe_budget     = True
+operations_budget = True
+ste_table         = True # GCC only
 
 # =====================================================================
 # Data directories
@@ -195,7 +195,7 @@ all_months_mid = np.zeros(12, dtype="datetime64[h]")
 for m in range(12):
     days_in_mon = monthrange(int(bmk_year), m + 1)[1]
     sec_per_yr = sec_per_yr + days_in_mon * 86400.0
-    middle_hr = ( int(np.floor(days_in_mon/2)) * 24 ) + 12
+    middle_hr = int(days_in_mon*24/2)
     delta = np.timedelta64(middle_hr, 'h')
     all_months_mid[m] = all_months[m].astype("datetime64[h]") + delta
 
@@ -487,7 +487,7 @@ if gchp_vs_gcc:
             refs,
             gchp_dev_version,
             devs,
-            bmk_type_int,
+            bmk_type,
             dst=gchp_vs_gcc_tablesdir,
             label=bmk_year,
             interval=sec_per_yr,
@@ -612,7 +612,7 @@ if gchp_vs_gchp:
             refs,
             gchp_dev_version,
             devs,
-            bmk_type_str,
+            bmk_type,
             dst=gchp_vs_gchp_tablesdir,
             label=bmk_year,
             interval=sec_per_yr,
