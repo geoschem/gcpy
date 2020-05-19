@@ -571,6 +571,27 @@ def compare_single_level(
             )
             fracdev_dims = fracdevdata[varname].dims
 
+        # ==================================================================
+        #  Handle units as needed
+        # ==================================================================
+        
+        # Check that units are the same in ref and dev. Will exit with
+        # an error if do not match and enforce_units is true (default).
+        check_units(ds_refs[i], ds_devs[i])
+
+        # Convert to ppb if units string is variation of mol/mol
+        if data_unit_is_mol_per_mol(ds_refs[i]):
+            ds_refs[i].values = ds_refs[i].values * 1e9
+            ds_refs[i].attrs["units"] = "ppb"
+        if data_unit_is_mol_per_mol(ds_devs[i]):
+            ds_devs[i].values = ds_devs[i].values * 1e9
+            ds_devs[i].attrs["units"] = "ppb"
+
+        # If units string is ppbv (true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "ppbv":
+            ds_refs[i].attrs["units"] = "ppb"
+        if ds_devs[i].units.strip() == "ppbv":
+            ds_devs[i].attrs["units"] = "ppb"
 
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
@@ -734,9 +755,6 @@ def compare_single_level(
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
-
-        # Convert mol/mol units to ppb and ensure ref and dev units match
-        units_ref, units_dev = check_units(refdata, devdata, varname)
 
         ds_ref = ds_refs[ivar]
         ds_dev = ds_devs[ivar]
@@ -1521,6 +1539,28 @@ def compare_zonal_mean(
             if diff_of_diffs:
                 frac_ds_devs[i] = fracdevdata[varname]
 
+        # ==================================================================
+        #  Handle units as needed
+        # ==================================================================
+        
+        # Check that units are the same in ref and dev. Will exit with
+        # an error if do not match and enforce_units is true (default).
+        check_units(ds_refs[i], ds_devs[i])
+
+        # Convert to ppb if units string is variation of mol/mol
+        if data_unit_is_mol_per_mol(ds_refs[i]):
+            ds_refs[i].values = ds_refs[i].values * 1e9
+            ds_refs[i].attrs["units"] = "ppb"
+        if data_unit_is_mol_per_mol(ds_devs[i]):
+            ds_devs[i].values = ds_devs[i].values * 1e9
+            ds_devs[i].attrs["units"] = "ppb"
+
+        # If units string is ppbv (true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "ppbv":
+            ds_refs[i].attrs["units"] = "ppb"
+        if ds_devs[i].units.strip() == "ppbv":
+            ds_devs[i].attrs["units"] = "ppb"
+
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
@@ -1719,9 +1759,6 @@ def compare_zonal_mean(
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
-
-        # Convert mol/mol units to ppb and ensure ref and dev units match
-        units_ref, units_dev = check_units(refdata, devdata, varname)
 
         # ==============================================================
         # Assign data variables
@@ -5526,47 +5563,34 @@ def get_troposphere_mask(ds):
     # Reshape into the same shape as Met_BxHeight
     return tropmask.reshape(shape)
 
-
-def check_units(refdata, devdata, varname):
-    """
-    If units are mol/mol then convert to ppb
-    """
+def data_unit_is_mol_per_mol(da):
     conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
-    if refdata[varname].units.strip() in conc_units:
-        refdata[varname].attrs["units"] = "ppbv"
-        refdata[varname].values = refdata[varname].values * 1e9
-    if devdata[varname].units.strip() in conc_units:
-        devdata[varname].attrs["units"] = "ppbv"
-        devdata[varname].values = devdata[varname].values * 1e9
+    is_molmol = False
+    if da.units.strip() in conc_units:
+        is_molmol = True
+    return is_molmol
 
-    # Binary diagnostic concentrations have units ppbv. Change to ppb.
-    if refdata[varname].units.strip() == "ppbv":
-        refdata[varname].attrs["units"] = "ppb"
-    if devdata[varname].units.strip() == "ppbv":
-        devdata[varname].attrs["units"] = "ppb"
+def check_units(ref_da, dev_da):
 
     # Check that units match
-    units_ref = refdata[varname].units.strip()
-    units_dev = devdata[varname].units.strip()
+    units_ref = ref_da.units.strip()
+    units_dev = dev_da.units.strip()
     if units_ref != units_dev:
-        print_units_warning = True
-        if print_units_warning:
-            print("WARNING: ref and dev concentration units do not match!")
-            print("Ref units: {}".format(units_ref))
-            print("Dev units: {}".format(units_dev))
+        units_match = False
+        print("WARNING: ref and dev concentration units do not match!")
+        print("Ref units: {}".format(units_ref))
+        print("Dev units: {}".format(units_dev))
         if enforce_units:
             # if enforcing units, stop the program if
             # units do not match
-            assert units_ref == units_dev, "Units do not match for {}!".format(varname)
-        else:
-            # if not enforcing units, just keep going after
-            # only printing warning once
-            print_units_warning = False
-
-    return units_ref, units_dev
-
+            assert units_ref == units_dev, \
+                "Units do not match for {}!".format(varname)
+    else:
+        units_match = True
+    return units_match
 
 def reshape_MAPL_CS(ds, vdims):
+
     # Reshape cubed sphere data if using MAPL v1.0.0+
     if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
         ds = ds.stack(lat=("nf", "Ydim"))
