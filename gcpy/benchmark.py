@@ -291,6 +291,8 @@ def compare_single_level(
     varlist=None,
     ilev=0,
     itime=0,
+    refmet=None,
+    devmet=None,
     weightsdir='.',
     pdfname="",
     cmpres=None,
@@ -340,6 +342,14 @@ def compare_single_level(
         itime : integer
             Dataset time dimension index using 0-based system
             Default value: 0
+
+        refmet : xarray dataset
+            Dataset containing ref meteorology
+            Default value: None
+
+        devmet : xarray dataset
+            Dataset containing dev meteorology  
+            Default value: None
 
         weightsdir : str
             Directory path for storing regridding weights
@@ -1094,6 +1104,8 @@ def compare_zonal_mean(
     devstr,
     varlist=None,
     itime=0,
+    refmet=None,
+    devmet=None,
     weightsdir='.',
     pdfname="",
     cmpres=None,
@@ -1141,6 +1153,14 @@ def compare_zonal_mean(
         itime : integer
             Dataset time dimension index using 0-based system
             Default value: 0
+
+        refmet : xarray dataset
+            Dataset containing ref meteorology
+            Default value: None
+
+        devmet : xarray dataset
+            Dataset containing dev meteorology  
+            Default value: None
 
         weightsdir : str
             Directory path for storing regridding weights
@@ -2792,6 +2812,8 @@ def make_benchmark_plots(
     sigdiff_files=None,
     normalize_by_area=False,
     areas=None,
+    refmet=None,
+    devmet=None,
     weightsdir='.',
     n_job=-1,
     secondref=None,
@@ -2870,6 +2892,14 @@ def make_benchmark_plots(
             Grid box surface areas in m2 on Ref and Dev grids.
             Default value: None
 
+        refmet : str
+            Path name for ref meteorology
+            Default value: None
+
+        devmet : str
+            Path name for dev meteorology  
+            Default value: None
+
         sigdiff_files : list of str
             Filenames that will contain the lists of species having
             significant differences in the 'sfc', '500hpa', and
@@ -2919,6 +2949,14 @@ def make_benchmark_plots(
         secondrefds = xr.open_dataset(secondref, drop_variables=gcon.skip_these_vars)
     if seconddev is not None:
         seconddevds = xr.open_dataset(seconddev, drop_variables=gcon.skip_these_vars)
+    # Open met datasets if passed as arguments
+    refmetds = None
+    devmetds = None
+    if refmet:
+        refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
+    if devmet:
+        devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
+
 
     # Create regridding files if necessary while not in parallel loop
     [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
@@ -3097,6 +3135,8 @@ def make_benchmark_plots(
                 devstr,
                 varlist=varlist,
                 ilev=0,
+                refmet=refmetds,
+                devmet=devmetds,
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
@@ -3134,6 +3174,8 @@ def make_benchmark_plots(
                 devstr,
                 varlist=varlist,
                 ilev=22,
+                refmet=refmetds,
+                devmet=devmetds,
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
@@ -3174,6 +3216,8 @@ def make_benchmark_plots(
                 devds,
                 devstr,
                 varlist=varlist,
+                refmet=refmetds,
+                devmet=devmetds,
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
@@ -3208,6 +3252,8 @@ def make_benchmark_plots(
                 devds,
                 devstr,
                 varlist=varlist,
+                refmet=refmetds,
+                devmet=devmetds,
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 pres_range=[1, 100],
