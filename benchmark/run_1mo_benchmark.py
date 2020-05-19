@@ -47,16 +47,18 @@ Remarks:
 # Imports and global settings (you should not need to edit these)
 # ====================================q=================================
 
-import calendar
 import os
 from os.path import join
-from gcpy import benchmark as bmk
-from gcpy.core import get_filepaths
-import gcpy.budget_ops as opbdg
-import gcpy.ste_flux as ste
+import warnings
+
+import calendar
 import numpy as np
 import xarray as xr
-import warnings
+
+from gcpy import benchmark as bmk
+from gcpy import budget_ops as opbdg
+from gcpy import ste_flux as ste
+from gcpy.core import get_filepath
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"]="offscreen"
@@ -67,9 +69,11 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 # This script has a fixed benchmark type
 bmk_type     = "FullChemBenchmark"
+bmk_year     = '2016'
+bmk_mon      = '7'
 
 ########################################################################
-###           CONFIGURABLE SETTINGS: EDIT THESE ACCORDINGLY          ###
+###           CONFIGURABLE SETTINGS: ***EDIT AS NEEDED***            ###
 ########################################################################
 
 # =====================================================================
@@ -99,7 +103,7 @@ weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GC
 gcpy_test = True
 
 # =====================================================================
-# Comparisons to run (**EDIT AS NEEDED**)
+# Comparisons to run
 # =====================================================================
 gcc_vs_gcc   = True
 gchp_vs_gcc  = True
@@ -107,8 +111,7 @@ gchp_vs_gchp = True
 gchp_vs_gcc_diff_of_diffs = True
 
 # =====================================================================
-# Output to generate (**EDIT AS NEEDED**)
-# Plots/tables will be created in this order:
+# Output to generate (plots/tables will be created in this order):
 # =====================================================================
 plot_conc    = True
 plot_emis    = True
@@ -126,7 +129,6 @@ plot_by_hco_cat = True
 
 # =====================================================================
 # Data directories (**EDIT AS NEEDED**)
-#
 # For gchp_vs_gcc_refdir use gcc_dev_version, not ref (mps, 6/27/19)
 # =====================================================================
 
@@ -162,25 +164,35 @@ else:
                               "Plots", "GCHP_GCC_comparison")
     diff_of_diffs_plotsdir = join(maindir, gchp_dev_version,
                               "Plots", "GCHP_GCC_diff_of_diffs")
+gcc_vs_gcc_tablesdir    = join(gcc_vs_gcc_plotsdir, "Tables")   
+gchp_vs_gchp_tablesdir  = join(gchp_vs_gchp_plotsdir, "Tables")
+gchp_vs_gcc_tablesdir   = join(gchp_vs_gcc_plotsdir, "Tables")
+gcc_vs_gcc_budgetdir    = join(gcc_vs_gcc_plotsdir, "Budget")   
+gchp_vs_gchp_budgetdir  = join(gchp_vs_gchp_plotsdir, "Budget")
+gchp_vs_gcc_budgetdir   = join(gchp_vs_gcc_plotsdir, "Budget")
 
 # Plot title strings (edit as needed)
 # For gchp_vs_gcc_refstr use gcc_dev_version, not ref (mps, 6/27/19)
-gcc_vs_gcc_refstr    = "{}".format(gcc_ref_version)
-gcc_vs_gcc_devstr    = "{}".format(gcc_dev_version)
-gchp_vs_gcc_refstr   = "{}".format(gcc_dev_version)
-gchp_vs_gcc_devstr   = "{}".format(gchp_dev_version)
-gchp_vs_gchp_refstr  = "{}".format(gchp_ref_version)
-gchp_vs_gchp_devstr  = "{}".format(gchp_dev_version)
+gcc_vs_gcc_refstr    = gcc_ref_version
+gcc_vs_gcc_devstr    = gcc_dev_version
+gchp_vs_gcc_refstr   = gcc_dev_version
+gchp_vs_gcc_devstr   = gchp_dev_version
+gchp_vs_gchp_refstr  = gchp_ref_version
+gchp_vs_gchp_devstr  = gchp_dev_version
 diff_of_diffs_refstr = [gcc_dev_version, gcc_ref_version]
 diff_of_diffs_devstr = [gchp_dev_version, gchp_ref_version]
 
+########################################################################
+###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
+########################################################################
+
 # =====================================================================
-# Dates and times (**EDIT AS NEEDED**)
+# Dates and times
 # =====================================================================
 
 # Start and end months of the benchmark
-b_start   = (2016, 7)
-b_stop    = (2016, 8)
+b_start   = (int(bmk_year), int(bmk_mon))
+b_stop    = (int(bmk_year), int(bmk_mon) + 1)
 
 # Convert to strings
 s_start   = (str(b_start[0]), str(b_start[1]).zfill(2))
@@ -197,13 +209,8 @@ s_per_mon = [(end_date - gcc_date).astype("float64")]
 # String for month and year (e.g. "Jul2016")
 mon_yr_str = calendar.month_abbr[b_start[1]] + s_start[0]
 
-########################################################################
-###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
-########################################################################
-
 # ======================================================================
-# Files that will contain lists of quantities that have significant
-# differences -- we need these for the benchmark approval forms.
+# Significant difference filenames
 # ======================================================================
 
 vstr = "{}_vs_{}".format(gcc_ref_version, gcc_dev_version)
@@ -228,7 +235,7 @@ gchp_vs_gchp_sigdiff = [
     join(gchp_vs_gchp_plotsdir, "{}_sig_diffs_emissions.txt").format(vstr)]
 
 # ======================================================================
-# Echo the list of plots & tables that will be made to the screen
+# Prnt the list of plots & tables to the screen
 # ======================================================================
 print("The following plots and tables will be created for {}:".format(bmk_type))
 if plot_conc:    print(" - Concentration plots")
@@ -260,23 +267,30 @@ if gcc_vs_gcc:
     if plot_conc:
         title = "\n%%% Creating GCC vs. GCC concentration plots %%%"
 
-        # Files to read
-        collection = "SpeciesConc"
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
-                                           [gcc_date], is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
-                                           [gcc_date], is_gcc=True)
+        # Diagnostic collection files to read
+        col = "SpeciesConc"
+        ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
+
+        # Meteorology data needed for calculations
+        colmet = "StateMet"
+        refmet = get_filepath(gcc_vs_gcc_refdir, colmet, gcc_date)
+        devmet = get_filepath(gcc_vs_gcc_devdir, colmet, gcc_date)
 
         # Make concentration plots
-        bmk.make_benchmark_plots(gcc_vs_gcc_reflist[0],
-                                 gcc_vs_gcc_refstr,
-                                 gcc_vs_gcc_devlist[0],
-                                 gcc_vs_gcc_devstr,
-                                 dst=gcc_vs_gcc_plotsdir,
-                                 weightsdir=weightsdir,
-                                 plot_by_spc_cat=plot_by_spc_cat,
-                                 overwrite=True,
-                                 sigdiff_files=gcc_vs_gcc_sigdiff)
+        bmk.make_benchmark_conc_plots(
+            ref,
+            gcc_vs_gcc_refstr,
+            dev,
+            gcc_vs_gcc_devstr,
+            refmet=refmet,
+            devmet=devmet,
+            dst=gcc_vs_gcc_plotsdir,
+            weightsdir=weightsdir,
+            plot_by_spc_cat=plot_by_spc_cat,
+            overwrite=True,
+            sigdiff_files=gcc_vs_gcc_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCC vs. GCC emissions plots
@@ -284,24 +298,24 @@ if gcc_vs_gcc:
     if plot_emis:
         print("\n%%% Creating GCC vs. GCC emissions plots %%%")
 
-        # Files to read
-        collection = "Emissions"
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
-                                           [gcc_date], is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
-                                           [gcc_date], is_gcc=True)
+        # Diagnostic collection files to read
+        col = "Emissions"
+        ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
 
         # Create emissions plots
-        bmk.make_benchmark_emis_plots(gcc_vs_gcc_reflist[0],
-                                      gcc_vs_gcc_refstr,
-                                      gcc_vs_gcc_devlist[0],
-                                      gcc_vs_gcc_devstr,
-                                      dst=gcc_vs_gcc_plotsdir,
-                                      weightsdir=weightsdir,
-                                      plot_by_spc_cat=plot_by_spc_cat,
-                                      plot_by_hco_cat=plot_by_hco_cat,
-                                      overwrite=True,
-                                      sigdiff_files=gcc_vs_gcc_sigdiff)
+        bmk.make_benchmark_emis_plots(
+            ref,
+            gcc_vs_gcc_refstr,
+            dev,
+            gcc_vs_gcc_devstr,
+            dst=gcc_vs_gcc_plotsdir,
+            weightsdir=weightsdir,
+            plot_by_spc_cat=plot_by_spc_cat,
+            plot_by_hco_cat=plot_by_hco_cat,
+            overwrite=True,
+            sigdiff_files=gcc_vs_gcc_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCC vs. GCC tables of emission and inventory totals
@@ -309,21 +323,21 @@ if gcc_vs_gcc:
     if emis_table:
         print("\n%%% Creating GCC vs. GCC emissions/inventory tables %%%")
 
-        # Files to read
-        collection = "Emissions"
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
-                                           [gcc_date], is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
-                                           [gcc_date], is_gcc=True)
+        # Diagnostic collection files to read
+        col = "Emissions"
+        ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
 
         # Print emisisons and inventory tables
-        bmk.make_benchmark_emis_tables(gcc_vs_gcc_reflist,
-                                       gcc_vs_gcc_refstr,
-                                       gcc_vs_gcc_devlist,
-                                       gcc_vs_gcc_devstr,
-                                       dst=gcc_vs_gcc_plotsdir,
-                                       interval=s_per_mon,
-                                       overwrite=True)
+        bmk.make_benchmark_emis_tables(
+            ref,
+            gcc_vs_gcc_refstr,
+            dev,
+            gcc_vs_gcc_devstr,
+            dst=gcc_vs_gcc_plotsdir,
+            interval=s_per_mon,
+            overwrite=True
+        )
 
     # --------------------------------------------------------------
     # GCC vs GCC J-value plots
@@ -331,22 +345,22 @@ if gcc_vs_gcc:
     if plot_jvalues:
         print("\n%%% Creating GCC vs. GCC J-value plots %%%")
 
-        # Files to read
-        collection = "JValues"
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
-                                           [gcc_date], is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
-                                           [gcc_date], is_gcc=True)
+        # Diagnostic collection files to read
+        col = "JValues"
+        ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
 
         # Plot J-values
-        bmk.make_benchmark_jvalue_plots(gcc_vs_gcc_reflist[0],
-                                        gcc_vs_gcc_refstr,
-                                        gcc_vs_gcc_devlist[0],
-                                        gcc_vs_gcc_devstr,
-                                        dst=gcc_vs_gcc_plotsdir,
-                                        weightsdir=weightsdir,
-                                        overwrite=True,
-                                        sigdiff_files=gcc_vs_gcc_sigdiff)
+        bmk.make_benchmark_jvalue_plots(
+            ref,
+            gcc_vs_gcc_refstr,
+            dev,
+            gcc_vs_gcc_devstr,
+            dst=gcc_vs_gcc_plotsdir,
+            weightsdir=weightsdir,
+            overwrite=True,
+            sigdiff_files=gcc_vs_gcc_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCC vs GCC column AOD plots
@@ -354,22 +368,22 @@ if gcc_vs_gcc:
     if plot_aod:
         print("\n%%% Creating GCC vs. GCC column AOD plots %%%")
 
-        # Files to read
-        collection = "Aerosols"
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
-                                           [gcc_date], is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
-                                           [gcc_date], is_gcc=True)
+        # Diagnostic collection files to read
+        col = "Aerosols"
+        ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
 
         # Plot AODs
-        bmk.make_benchmark_aod_plots(gcc_vs_gcc_reflist[0],
-                                     gcc_vs_gcc_refstr,
-                                     gcc_vs_gcc_devlist[0],
-                                     gcc_vs_gcc_devstr,
-                                     dst=gcc_vs_gcc_plotsdir,
-                                     weightsdir=weightsdir,
-                                     overwrite=True,
-                                     sigdiff_files=gcc_vs_gcc_sigdiff)
+        bmk.make_benchmark_aod_plots(
+            ref,
+            gcc_vs_gcc_refstr,
+            dev,
+            gcc_vs_gcc_devstr,
+            dst=gcc_vs_gcc_plotsdir,
+            weightsdir=weightsdir,
+            overwrite=True,
+            sigdiff_files=gcc_vs_gcc_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCC vs GCC global mass tables
@@ -377,49 +391,44 @@ if gcc_vs_gcc:
     if mass_table:
         print("\n%%% Creating GCC vs. GCC global mass tables %%%")
 
-        # Files to read
-        collection = "Restart"
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refrst, collection,
-                                           [end_date], is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devrst, collection,
-                                           [end_date], is_gcc=True)
-
-        # Save to "Tables" subfolder of plot dir
-        plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
+        # Diagnostic collection files to read
+        col = "Restart"
+        ref = get_filepath(gcc_vs_gcc_refrst, col, end_date)
+        dev = get_filepath(gcc_vs_gcc_devrst, col, end_date)
 
         # Plot mass tables
-        bmk.make_benchmark_mass_tables(gcc_vs_gcc_reflist[0],
-                                       gcc_ref_version,
-                                       gcc_vs_gcc_devlist[0],
-                                       gcc_dev_version,
-                                       dst=plot_dir,
-                                       overwrite=True)
+        bmk.make_benchmark_mass_tables(
+            ref,
+            gcc_ref_version,
+            dev,
+            gcc_dev_version,
+            dst=gcc_vs_gcc_tablesdir,
+            overwrite=True
+        )
+
     #---------------------------------------------------------------
     # GCC vs GCC budgets tables
     #---------------------------------------------------------------
     if budget_table:
-        print("\n%%% Creating GCC budget tables %%%")
+        print("\n%%% Creating GCC vs. GCC budget tables %%%")
 
-        # Files to read
-        collection = "Budget"
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
-                                           [gcc_date], is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
-                                           [gcc_date], is_gcc=True)
-
-        # Save to "Tables" subfolder of plot dir
-        plot_dir = join(gcc_vs_gcc_plotsdir, "Budget")
+        # Diagnostic collection files to read
+        col = "Budget"
+        ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
 
         # Print "operations budget" for strat, trop, strat+trop
-        opbdg.make_operations_budget_table(gcc_ref_version,
-                                           gcc_vs_gcc_reflist,
-                                           gcc_dev_version,
-                                           gcc_vs_gcc_devlist,
-                                           bmk_type,
-                                           dst=plot_dir,
-                                           label=mon_yr_str,
-                                           interval=s_per_mon[0],
-                                           overwrite=True)
+        opbdg.make_operations_budget_table(
+            gcc_ref_version,
+            ref,
+            gcc_dev_version,
+            dev,
+            bmk_type,
+            dst=gcc_vs_gcc_budgetdir,
+            label=mon_yr_str,
+            interval=s_per_mon[0],
+            overwrite=True
+        )
 
     #---------------------------------------------------------------
     # GCC vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
@@ -427,46 +436,49 @@ if gcc_vs_gcc:
     if OH_metrics:
         print("\n%%% Creating GCC vs. GCC OH metrics %%%")
 
-        # Files to read
-        collection = ["ConcAfterChem", "StateMet"]
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
-                                           [gcc_date], is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
-                                           [gcc_date], is_gcc=True)
+        # Diagnostic collection files to read
+        col  = "ConcAfterChem"
+        ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
 
-        # Save to "Tables" subfolder of plot dir
-        plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
+        # Meteorology data needed for calculations
+        col = "StateMet"
+        refmet = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
+        devmet = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
 
         # Print OH metrics
-        bmk.make_benchmark_oh_metrics(gcc_vs_gcc_reflist,
-                                      gcc_ref_version,
-                                      gcc_vs_gcc_devlist,
-                                      gcc_dev_version,
-                                      dst=plot_dir,
-                                      overwrite=True)
+        bmk.make_benchmark_oh_metrics(
+            ref,
+            refmet,
+            gcc_ref_version,
+            dev,
+            devmet,
+            gcc_dev_version,
+            dst=gcc_vs_gcc_tablesdir,
+            overwrite=True
+        )
 
     # --------------------------------------------------------------
-    # GCC vs GCC Strat-Trop Exchange
+    # GCC dev Strat-Trop Exchange
     # --------------------------------------------------------------
     if ste_table:
-        print("\n%%% Creating GCC vs. GCC Strat-Trop Exchange table %%%")
-        # Files to read
+        print("\n%%% Creating GCC dev Strat-Trop Exchange table %%%")
+
+        # Diagnostic collection files to read
+        col = "AdvFluxVert"
+        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
+
         # Compute monthly and annual average strat-trop exchange of O3
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, "AdvFluxVert",
-                                           [gcc_date], is_gcc=True)
-
-        # Save to "Tables" subfolder of plot dir
-        plot_dir = join(gcc_vs_gcc_plotsdir, "Tables")
-
-        # Create STE table
-        ste.make_benchmark_ste_table(gcc_dev_version,
-                                     gcc_vs_gcc_devlist[0],
-                                     b_start[0],
-                                     bmk_type=bmk_type,
-                                     dst=plot_dir,
-                                     species=['O3'],
-                                     overwrite=True,
-                                     month=b_start[1])
+        ste.make_benchmark_ste_table(
+            gcc_dev_version,
+            dev,
+            b_start[0],
+            bmk_type=bmk_type,
+            dst=gcc_vs_gcc_tablesdir,
+            species=['O3'],
+            overwrite=True,
+            month=b_start[1]
+        )
 
 # ======================================================================
 # Create GCHP vs GCC benchmark plots and tables
@@ -479,23 +491,34 @@ if gchp_vs_gcc:
     if plot_conc:
         print("\n%%% Creating GCHP vs. GCC concentration plots %%%")
 
-        # Files to read
-        collection = "SpeciesConc"
-        gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refdir, collection,
-                                            [gcc_date], is_gcc=True)
-        gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devdir, collection,
-                                            [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "SpeciesConc"
+        ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
+
+        # Meteorology data needed for GCC calculations
+        col = "StateMet"
+        gchp_vs_gcc_refmet = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
+
+        # Meteorology data needed for GCHP calculations
+        col = "StateMet_avg"
+        gchp_vs_gcc_devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_date,
+                                          is_gchp=True)
 
         # Make concentration plots
-        bmk.make_benchmark_plots(gchp_vs_gcc_reflist[0],
-                                 gchp_vs_gcc_refstr,
-                                 gchp_vs_gcc_devlist[0],
-                                 gchp_vs_gcc_devstr,
-                                 dst=gchp_vs_gcc_plotsdir,
-                                 weightsdir=weightsdir,
-                                 plot_by_spc_cat=plot_by_spc_cat,
-                                 overwrite=True,
-                                 sigdiff_files=gchp_vs_gcc_sigdiff)
+        bmk.make_benchmark_conc_plots(
+            ref,
+            gchp_vs_gcc_refstr,
+            dev,
+            gchp_vs_gcc_devstr,
+            refmet=gchp_vs_gcc_refmet,
+            devmet=gchp_vs_gcc_devmet,
+            dst=gchp_vs_gcc_plotsdir,
+            weightsdir=weightsdir,
+            plot_by_spc_cat=plot_by_spc_cat,
+            overwrite=True,
+            sigdiff_files=gchp_vs_gcc_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCHP vs. GCC Emissions plots
@@ -503,24 +526,24 @@ if gchp_vs_gcc:
     if plot_emis:
         print("\n%%% Creating GCHP vs. GCC emissions plots %%%")
 
-        # Files to read
-        collection = "Emissions"
-        gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refdir, collection,
-                                            [gcc_date], is_gcc=True)
-        gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devdir, collection,
-                                            [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "Emissions"
+        ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
 
         # Create emissions plots
-        bmk.make_benchmark_emis_plots(gchp_vs_gcc_reflist[0],
-                                      gchp_vs_gcc_refstr,
-                                      gchp_vs_gcc_devlist[0],
-                                      gchp_vs_gcc_devstr,
-                                      dst=gchp_vs_gcc_plotsdir,
-                                      weightsdir=weightsdir,
-                                      plot_by_spc_cat=plot_by_spc_cat,
-                                      plot_by_hco_cat=plot_by_hco_cat,
-                                      overwrite=True,
-                                      sigdiff_files=gchp_vs_gcc_sigdiff)
+        bmk.make_benchmark_emis_plots(
+            ref,
+            gchp_vs_gcc_refstr,
+            dev,
+            gchp_vs_gcc_devstr,
+            dst=gchp_vs_gcc_plotsdir,
+            weightsdir=weightsdir,
+            plot_by_spc_cat=plot_by_spc_cat,
+            plot_by_hco_cat=plot_by_hco_cat,
+            overwrite=True,
+            sigdiff_files=gchp_vs_gcc_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCHP vs. GCC tables of emission and inventory totals
@@ -528,22 +551,25 @@ if gchp_vs_gcc:
     if emis_table:
         print("\n%%% Creating GCHP vs. GCC emissions/inventory tables %%%")
 
-        # Files to read
-        collection = "Emissions"
-        gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refdir, collection,
-                                            [gcc_date], is_gcc=True)
-        collection = ["Emissions", "StateMet_avg"]
-        gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devdir, collection,
-                                            [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "Emissions"
+        ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
+
+        # Meteorology needed for GCHP (is this really needed? - ewl)
+        col = "StateMet_avg"
+        devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
 
         # Print emisisons and inventory tables
-        bmk.make_benchmark_emis_tables(gchp_vs_gcc_reflist,
-                                       gchp_vs_gcc_refstr,
-                                       gchp_vs_gcc_devlist,
-                                       gchp_vs_gcc_devstr,
-                                       dst=gchp_vs_gcc_plotsdir,
-                                       interval=s_per_mon,
-                                       overwrite=True)
+        bmk.make_benchmark_emis_tables(
+            ref,
+            gchp_vs_gcc_refstr,
+            dev,
+            gchp_vs_gcc_devstr,
+            dst=gchp_vs_gcc_plotsdir,
+            interval=s_per_mon,
+            overwrite=True
+        )
 
     #---------------------------------------------------------------
     # GCHP vs. GCC J-values plots
@@ -551,22 +577,22 @@ if gchp_vs_gcc:
     if plot_jvalues:
         print("\n%%% Creating GCHP vs. GCC J-value plots %%%")
 
-        # Files to read
-        collection = "JValues"
-        gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refdir, collection,
-                                            [gcc_date], is_gcc=True)
-        gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devdir, collection,
-                                            [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "JValues"
+        ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
 
         # Plot J-values
-        bmk.make_benchmark_jvalue_plots(gchp_vs_gcc_reflist[0],
-                                        gchp_vs_gcc_refstr,
-                                        gchp_vs_gcc_devlist[0],
-                                        gchp_vs_gcc_devstr,
-                                        dst=gchp_vs_gcc_plotsdir,
-                                        weightsdir=weightsdir,
-                                        overwrite=True,
-                                        sigdiff_files=gchp_vs_gcc_sigdiff)
+        bmk.make_benchmark_jvalue_plots(
+            ref,
+            gchp_vs_gcc_refstr,
+            dev,
+            gchp_vs_gcc_devstr,
+            dst=gchp_vs_gcc_plotsdir,
+            weightsdir=weightsdir,
+            overwrite=True,
+            sigdiff_files=gchp_vs_gcc_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCHP vs GCC column AOD plots
@@ -574,22 +600,22 @@ if gchp_vs_gcc:
     if plot_aod:
         print("\n%%% Creating GCHP vs. GCC column AOD plots %%%")
 
-        # Files to read
-        collection = "Aerosols"
-        gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refdir, collection,
-                                            [gcc_date], is_gcc=True)
-        gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devdir, collection,
-                                            [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "Aerosols"
+        ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
 
         # Plot AODs
-        bmk.make_benchmark_aod_plots(gchp_vs_gcc_reflist[0],
-                                     gchp_vs_gcc_refstr,
-                                     gchp_vs_gcc_devlist[0],
-                                     gchp_vs_gcc_devstr,
-                                     dst=gchp_vs_gcc_plotsdir,
-                                     weightsdir=weightsdir,
-                                     overwrite=True,
-                                     sigdiff_files=gchp_vs_gcc_sigdiff)
+        bmk.make_benchmark_aod_plots(
+            ref,
+            gchp_vs_gcc_refstr,
+            dev,
+            gchp_vs_gcc_devstr,
+            dst=gchp_vs_gcc_plotsdir,
+            weightsdir=weightsdir,
+            overwrite=True,
+            sigdiff_files=gchp_vs_gcc_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCHP vs GCC global mass tables
@@ -597,76 +623,32 @@ if gchp_vs_gcc:
     if mass_table:
         print("\n%%% Creating GCHP vs. GCC {} global mass tables %%%")
 
-        # Files to read
-        collection = "Restart"
-        gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refrst, collection,
-                                            [end_date], is_gcc=True)
-        gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devrst, collection,
-                                            [end_date], is_gchp=True)
-
-        # Save to "Tables" subfolder of plot dir
-        plot_dir = join(gchp_vs_gcc_plotsdir, "Tables")
+        # Diagnostic collection files to read
+        col = "Restart"
+        ref = get_filepath(gchp_vs_gcc_refrst, col, end_date)
+        dev = get_filepath(gchp_vs_gcc_devrst, col, end_date, is_gchp=True)
 
         # Plot mass tables
-        bmk.make_benchmark_mass_tables(gchp_vs_gcc_reflist,
-                                       gchp_vs_gcc_refstr,
-                                       gchp_vs_gcc_devlist,
-                                       gchp_vs_gcc_devstr,
-                                       dst=plot_dir,
-                                       overwrite=True)
+        bmk.make_benchmark_mass_tables(
+            ref,
+            gchp_vs_gcc_refstr,
+            dev,
+            gchp_vs_gcc_devstr,
+            dst=gchp_vs_gcc_tablesdir,
+            overwrite=True
+        )
 
     #---------------------------------------------------------------
     # GCHP vs GCC budgets tables (actually only dev)
     #---------------------------------------------------------------
     if budget_table:
         print("\n%%% Skipping GCHP budget tables %%%")
-        ### Files to read
-        #collection = "Budget"
-        #gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refdir, collection,
-        #                                    [gcc_date], is_gcc=True)
-        #gchp_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
-        #                                    [gchp_date], is_gchp=True)
-        #
-        ## Save to "Tables" subfolder of plot dir
-        #plot_dir = join(gchp_vs_gcc_plotsdir, "Budget")
-        #
-        ## Print "operations budget" for strat, trop, strat+trop
-        #op.make_operations_budget_table(gcc_dev_version,
-        #                                   gchp_vs_vs_gcc_reflist,
-        #                                   gchp_dev_version,
-        #                                   gchp_vs_gcc_devlist,
-        #                                   bmk_type,
-        #                                   dst=plot_dir,
-        #                                   label=mon_yr_str,
-        #                                   interval=s_per_mon[0],
-        #                                   overwrite=True)
 
     #---------------------------------------------------------------
     # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
     #---------------------------------------------------------------
     if OH_metrics:
         print("\n%%% Skipping GCHP vs GCC OH metrics %%%")
-        #title = "\n%%% Creating GCHP vs. GCC {} OH metrics %%%"
-        #print(title.format(bmk_type))
-        #
-        ## Files to read
-        #collection = ["ConcAfterChem", "StateMet"]
-        #gchp_vs_gcc_reflist = get_filepaths(gchp_vs_gcc_refdir, collection,
-        #                                    [gcc_date], is_gcc=True)
-        #collection = ["ConcAfterChem", "StateMet_avg"]
-        #gchp_vs_gcc_devlist = get_filepaths(gchp_vs_gcc_devdir, collection,
-        #                                    [gchp_date], is_gchp=True)
-        #
-        ## Save to "Tables" subfolder of plot dir
-        #plot_dir = join(gchp_vs_gcc_plotsdir, "Tables")
-        #
-        ## Print OH metrics
-        #bmk.make_benchmark_oh_metrics(gchp_vs_gcc_reflist,
-        #                              gchp_vs_gcc_refstr,
-        #                              gchp_vs_gcc_devlist,
-        #                              gchp_vs_gcc_devstr,
-        #                              dst=plot_dir,
-        #                              overwrite=True)
 
     # --------------------------------------------------------------
     # GCHP vs GCC Strat-Trop Exchange
@@ -686,23 +668,30 @@ if gchp_vs_gchp:
     if plot_conc:
         print("\n%%% Creating GCHP vs. GCHP concentration plots %%%")
 
-        # Files to read
-        collection = "SpeciesConc"
-        gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refdir, collection,
-                                             [gchp_date], is_gchp=True)
-        gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
-                                             [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "SpeciesConc"
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
+
+        # Meteorology data needed for GCHP calculations
+        col = "StateMet_avg"
+        refmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
+        devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
 
         # Make concentration plots
-        bmk.make_benchmark_plots(gchp_vs_gchp_reflist[0],
-                                 gchp_vs_gchp_refstr,
-                                 gchp_vs_gchp_devlist[0],
-                                 gchp_vs_gchp_devstr,
-                                 dst=gchp_vs_gchp_plotsdir,
-                                 weightsdir=weightsdir,
-                                 plot_by_spc_cat=plot_by_spc_cat,
-                                 overwrite=True,
-                                 sigdiff_files=gchp_vs_gchp_sigdiff)
+        bmk.make_benchmark_conc_plots(
+            ref,
+            gchp_vs_gchp_refstr,
+            dev,
+            gchp_vs_gchp_devstr,
+            refmet=refmet,
+            devmet=devmet,
+            dst=gchp_vs_gchp_plotsdir,
+            weightsdir=weightsdir,
+            plot_by_spc_cat=plot_by_spc_cat,
+            overwrite=True,
+            sigdiff_files=gchp_vs_gchp_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCHP vs. GCHP Emissions plots
@@ -710,24 +699,24 @@ if gchp_vs_gchp:
     if plot_emis:
         print("\n%%% Creating GCHP vs. GCHP emissions plots %%%")
 
-        # Files to read
-        collection = "Emissions"
-        gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refdir, collection,
-                                             [gchp_date], is_gchp=True)
-        gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
-                                             [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "Emissions"
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
 
         # Create emissions plots
-        bmk.make_benchmark_emis_plots(gchp_vs_gchp_reflist[0],
-                                      gchp_vs_gchp_refstr,
-                                      gchp_vs_gchp_devlist[0],
-                                      gchp_vs_gchp_devstr,
-                                      dst=gchp_vs_gchp_plotsdir,
-                                      weightsdir=weightsdir,
-                                      plot_by_spc_cat=plot_by_spc_cat,
-                                      plot_by_hco_cat=plot_by_hco_cat,
-                                      overwrite=True,
-                                      sigdiff_files=gchp_vs_gchp_sigdiff)
+        bmk.make_benchmark_emis_plots(
+            ref,
+            gchp_vs_gchp_refstr,
+            dev,
+            gchp_vs_gchp_devstr,
+            dst=gchp_vs_gchp_plotsdir,
+            weightsdir=weightsdir,
+            plot_by_spc_cat=plot_by_spc_cat,
+            plot_by_hco_cat=plot_by_hco_cat,
+            overwrite=True,
+            sigdiff_files=gchp_vs_gchp_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCHP vs. GCHP tables of emission and inventory totals
@@ -735,21 +724,28 @@ if gchp_vs_gchp:
     if emis_table:
         print("\n%%% Creating GCHP vs. GCHP emissions/inventory tables %%%")
 
-        # Files to read
-        collection = ["Emissions", "StateMet_avg"]
-        gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refdir, collection,
-                                             [gchp_date], is_gchp=True)
-        gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
-                                             [gchp_date], is_gchp=True)
+        # Can this be simplified? (ewl)
+
+        # Diagnostic collection files to read
+        col = "Emissions"
+        ref = get_filepath(gchp_vs_gchp_refdir,col, gchp_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
+
+        # Meteorology needed for GCHP (is this really needed? - ewl)
+        col = "StateMet_avg"
+        refmet = get_filepath(gchp_vs_gchp_refdir,col, gchp_date, is_gchp=True)
+        devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
 
         # Print emisisons and inventory tables
-        bmk.make_benchmark_emis_tables(gchp_vs_gchp_reflist,
-                                       gchp_vs_gchp_refstr,
-                                       gchp_vs_gchp_devlist,
-                                       gchp_vs_gchp_devstr,
-                                       dst=gchp_vs_gchp_plotsdir,
-                                       interval=s_per_mon,
-                                       overwrite=True)
+        bmk.make_benchmark_emis_tables(
+            ref,
+            gchp_vs_gchp_refstr,
+            dev,
+            gchp_vs_gchp_devstr,
+            dst=gchp_vs_gchp_plotsdir,
+            interval=s_per_mon,
+            overwrite=True
+        )
 
     #---------------------------------------------------------------
     # GCHP vs. GCHP J-values plots
@@ -757,22 +753,22 @@ if gchp_vs_gchp:
     if plot_jvalues:
         print("\n%%% Creating GCHP vs. GCHP J-value plots %%%")
 
-        # Files to read
-        collection = "JValues"
-        gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refdir, collection,
-                                             [gchp_date], is_gchp=True)
-        gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
-                                             [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "JValues"
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
 
         # Plot J-values
-        bmk.make_benchmark_jvalue_plots(gchp_vs_gchp_reflist[0],
-                                        gchp_vs_gchp_refstr,
-                                        gchp_vs_gchp_devlist[0],
-                                        gchp_vs_gchp_devstr,
-                                        dst=gchp_vs_gchp_plotsdir,
-                                        weightsdir=weightsdir,
-                                        overwrite=True,
-                                        sigdiff_files=gchp_vs_gchp_sigdiff)
+        bmk.make_benchmark_jvalue_plots(
+            ref,
+            gchp_vs_gchp_refstr,
+            dev,
+            gchp_vs_gchp_devstr,
+            dst=gchp_vs_gchp_plotsdir,
+            weightsdir=weightsdir,
+            overwrite=True,
+            sigdiff_files=gchp_vs_gchp_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCHP vs GCHP column AOD plots
@@ -780,22 +776,22 @@ if gchp_vs_gchp:
     if plot_aod:
         print("\n%%% Creating GCHP vs. GCHP column AOD plots %%%")
 
-        # Files to read
-        collection = "Aerosols"
-        gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refdir, collection,
-                                            [gchp_date], is_gchp=True)
-        gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
-                                            [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "Aerosols"
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
 
         # Plot AODs
-        bmk.make_benchmark_aod_plots(gchp_vs_gchp_reflist[0],
-                                     gchp_vs_gchp_refstr,
-                                     gchp_vs_gchp_devlist[0],
-                                     gchp_vs_gchp_devstr,
-                                     dst=gchp_vs_gchp_plotsdir,
-                                     weightsdir=weightsdir,
-                                     overwrite=True,
-                                     sigdiff_files=gchp_vs_gchp_sigdiff)
+        bmk.make_benchmark_aod_plots(
+            ref,
+            gchp_vs_gchp_refstr,
+            dev,
+            gchp_vs_gchp_devstr,
+            dst=gchp_vs_gchp_plotsdir,
+            weightsdir=weightsdir,
+            overwrite=True,
+            sigdiff_files=gchp_vs_gchp_sigdiff
+        )
 
     #---------------------------------------------------------------
     # GCHP vs GCHP global mass tables
@@ -803,23 +799,20 @@ if gchp_vs_gchp:
     if mass_table:
         print("\n%%% Creating GCHP vs. GCHP global mass tables %%%")
 
-        # Files to read
-        collection = "Restart"
-        gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refrst, collection,
-                                            [end_date], is_gchp=True)
-        gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devrst, collection,
-                                            [end_date], is_gchp=True)
-
-        # Save to "Tables" subfolder of plot dir
-        plot_dir = join(gchp_vs_gchp_plotsdir, "Tables")
+        # Diagnostic collection files to read
+        col = "Restart"
+        ref = get_filepath(gchp_vs_gchp_refrst, col, end_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devrst, col, end_date, is_gchp=True)
 
         # Plot mass tables
-        bmk.make_benchmark_mass_tables(gchp_vs_gchp_reflist[0],
-                                       gchp_vs_gchp_refstr,
-                                       gchp_vs_gchp_devlist[0],
-                                       gchp_vs_gchp_devstr,
-                                       dst=plot_dir,
-                                       overwrite=True)
+        bmk.make_benchmark_mass_tables(
+            ref,
+            gchp_vs_gchp_refstr,
+            dev,
+            gchp_vs_gchp_devstr,
+            dst=gchp_vs_gchp_tablesdir,
+            overwrite=True
+        )
 
     #---------------------------------------------------------------
     # GCHP vs. GCHP global mean OH, MCF Lifetime, CH4 Lifetime
@@ -842,33 +835,33 @@ if gchp_vs_gcc_diff_of_diffs:
 
         # NOTE: This can be expanded to differences beyond species
         # concentrations by following how this is done for conc plots.
-        print("\n%%% Creating GCHP vs. GCC diff-of-diffs concentration plots %%%")
+        print("\n%%% Creating GCHP vs. GCC diff-of-diffs conc plots %%%")
 
-        # Files to read
-        collection = "SpeciesConc"
-        gcc_vs_gcc_reflist = get_filepaths(gcc_vs_gcc_refdir, collection,
-                                           [gcc_date], is_gcc=True)
-        gcc_vs_gcc_devlist = get_filepaths(gcc_vs_gcc_devdir, collection,
-                                           [gcc_date], is_gcc=True)
-        gchp_vs_gchp_reflist = get_filepaths(gchp_vs_gchp_refdir, collection,
-                                            [gchp_date], is_gchp=True)
-        gchp_vs_gchp_devlist = get_filepaths(gchp_vs_gchp_devdir, collection,
-                                             [gchp_date], is_gchp=True)
+        # Diagnostic collection files to read
+        col = "SpeciesConc"
+        gcc_ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
+        gcc_dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
+        gchp_ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_date,
+                                is_gchp=True)
+        gchp_dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_date,
+                                is_gchp=True)
         # Create diff-of-diff plots for species concentrations
         # (includes lumped species and separates by category)
         #
         # NOTE: Since at the present time we are only printing out
         # diff-of-diffs for concentration plots, we can take this
         # call out of the "if plot_conc:" block.
-        bmk.make_benchmark_plots(gcc_vs_gcc_reflist[0],
-                                 diff_of_diffs_refstr,
-                                 gchp_vs_gchp_reflist[0],
-                                 diff_of_diffs_devstr,
-                                 dst=diff_of_diffs_plotsdir,
-                                 weightsdir=weightsdir,
-                                 overwrite=True,
-                                 use_cmap_RdBu=True,
-                                 secondref=gcc_vs_gcc_devlist[0],
-                                 seconddev=gchp_vs_gchp_devlist[0])
+        bmk.make_benchmark_conc_plots(
+            gcc_ref,
+            diff_of_diffs_refstr,
+            gchp_ref,
+            diff_of_diffs_devstr,
+            dst=diff_of_diffs_plotsdir,
+            weightsdir=weightsdir,
+            overwrite=True,
+            use_cmap_RdBu=True,
+            secondref=gcc_dev,
+            seconddev=gchp_dev
+        )
 
 
