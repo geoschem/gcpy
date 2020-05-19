@@ -5056,9 +5056,11 @@ def make_benchmark_mass_tables(
 
 
 def make_benchmark_oh_metrics(
-    reflist,
+    ref,
+    refmet,
     refstr,
-    devlist,
+    dev,
+    devmet,
     devstr,
     dst="./benchmark",
     overwrite=False,
@@ -5069,17 +5071,21 @@ def make_benchmark_oh_metrics(
 
     Args:
     -----
-        reflist: list of str
-            List with the path names of files that will constitute the
-            "Ref" (aka "Reference") data set.
+        ref : str
+            Path name of "Ref" (aka "Reference") data set file.
+
+        refmet : str
+            Path name of ref meteorology data set.
 
         refstr : str
             A string to describe ref (e.g. version number)
 
-        devlist : list of str
-            List with the path names of files that will constitute the
-            "Dev" (aka "Development") data set.  The "Dev" data set will be
-            compared against the "Ref" data set.
+        dev : str
+            Path name of "Dev" (aka "Development") data set file. 
+            The "Dev" data set will be compared against the "Ref" data set.
+
+        devmet : list of str
+            Path name of dev meteorology data set.
 
         devstr : str
             A string to describe dev (e.g. version number)
@@ -5118,45 +5124,11 @@ def make_benchmark_oh_metrics(
     devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
 
     # ==================================================================
-    # Make sure that all necessary variables are found
+    # Get tropopause mask
     # ==================================================================
-
-    # Find the area variables in Ref and Dev
-    ref_area = core.get_area_from_dataset(refds)
-    dev_area = core.get_area_from_dataset(devds)
-
-    # Find required meteorological variables in Ref
-    # (or exit with an error if we can't find them)
-    metvar_list = [
-        "Met_AD",
-        "Met_AIRDEN",
-        "Met_BXHEIGHT",
-        "Met_T",
-        "Met_TropLev",
-        "FracOfTimeInTrop",
-    ]
-    refmet = core.get_variables_from_dataset(refds, metvar_list)
-    devmet = core.get_variables_from_dataset(devds, metvar_list)
-
     # Create the mask arrays for the troposphere for Ref and Dev
-    ref_tropmask = get_troposphere_mask(refmet)
-    dev_tropmask = get_troposphere_mask(devmet)
-
-    # Get the OH concentration
-    ref_oh = refds["OHconcAfterChem"]
-    dev_oh = devds["OHconcAfterChem"]
-
-    # ==================================================================
-    # Open file for output
-    # ==================================================================
-
-    # Create file
-    outfilename = os.path.join(dst, "{}_OH_metrics.txt".format(devstr))
-    try:
-        f = open(outfilename, "w")
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not open {} for writing!".format(
-            outfilename))
+    ref_tropmask = get_troposphere_mask(refmetds)
+    dev_tropmask = get_troposphere_mask(devmetds)
 
     # ==================================================================
     # Compute mass-weighted OH in the troposphere
@@ -5168,50 +5140,28 @@ def make_benchmark_oh_metrics(
     g0 = gcon.G           # m/s2
 
     # Ref
-    ref_oh_trop = np.ma.masked_array(ref_oh.values, ref_tropmask)
-    ref_airmass_trop = np.ma.masked_array(refmet["Met_AD"].values, ref_tropmask)
+    ref_oh_trop = np.ma.masked_array(refds["OHconcAfterChem"].values,
+                                     ref_tropmask)
+    ref_airmass_trop = np.ma.masked_array(refmetds["Met_AD"].values,
+                                          ref_tropmask)
     ref_oh_mass = ref_oh_trop * ref_airmass_trop
     ref_total_ohmass = np.sum(ref_oh_mass)
     ref_total_airmass = np.sum(ref_airmass_trop)
     ref_mean_oh = (ref_total_ohmass / ref_total_airmass) / 1e5
 
     # Dev
-    dev_oh_trop = np.ma.masked_array(dev_oh.values, dev_tropmask)
-    dev_airmass_trop = np.ma.masked_array(devmet["Met_AD"].values, dev_tropmask)
+    dev_oh_trop = np.ma.masked_array(devds["OHconcAfterChem"].values,
+                                     dev_tropmask)
+    dev_airmass_trop = np.ma.masked_array(devmetds["Met_AD"].values,
+                                          dev_tropmask)
     dev_oh_mass = dev_oh_trop * dev_airmass_trop
     dev_total_ohmass = np.sum(dev_oh_mass)
     dev_total_airmass = np.sum(dev_airmass_trop)
     dev_mean_oh = (dev_total_ohmass / dev_total_airmass) / 1e5
 
+    # Diff
     oh_diff = dev_mean_oh - ref_mean_oh
     oh_pctdiff = ((dev_mean_oh - ref_mean_oh) / ref_mean_oh) * 100.0
-
-    # Title strings
-    title1 = "### Global mass-weighted OH concentration [1e5 molec/cm3]"
-    title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
-
-    # Print header to file
-    print("#" * 79, file=f)
-    print("{}{}".format(title1.ljust(76), "###"), file=f)
-    print("{}{}".format(title2.ljust(76), "###"), file=f)
-    print("#" * 79, file=f)
-
-    # Write results to file
-    print(
-        "{}{}{}{}".format(
-            "  Ref".ljust(15),
-            "Dev".ljust(13),
-            "Dev - Ref".ljust(13),
-            "% diff".ljust(11),
-        ),
-        file=f,
-    )
-    print(
-        "{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}".format(
-            ref_mean_oh, dev_mean_oh, oh_diff, oh_pctdiff
-        ),
-        file=f,
-    )
 
     # ==================================================================
     # Compute MCF and CH4 lifetimes
@@ -5219,12 +5169,12 @@ def make_benchmark_oh_metrics(
 
     # Select only boxes that are purely tropospheric
     # This excludes influence from the stratosphere
-    ref_timetrop_mask = refmet["FracOfTimeInTrop"].values != 1.0
-    dev_timetrop_mask = devmet["FracOfTimeInTrop"].values != 1.0
+    ref_timetrop_mask = refmetds["FracOfTimeInTrop"].values != 1.0
+    dev_timetrop_mask = devmetds["FracOfTimeInTrop"].values != 1.0
 
     # Get grid box volumes [cm3] (trop + strat)
-    ref_vol = (refmet["Met_BXHEIGHT"] * ref_area) * 1e6
-    dev_vol = (devmet["Met_BXHEIGHT"] * dev_area) * 1e6
+    ref_vol = (refmetds["Met_BXHEIGHT"] * refmetds["AREA"]) * 1e6
+    dev_vol = (devmetds["Met_BXHEIGHT"] * devmetds["AREA"]) * 1e6
 
     # Get grid box volumes [cm3] (trop only)
     ref_vol_trop = np.ma.masked_array(ref_vol.values, ref_timetrop_mask)
@@ -5233,16 +5183,16 @@ def make_benchmark_oh_metrics(
     # Get MCF and CH4 density [molec/cm3] (trop + strat)
     # Assume that species is evenly distributed in air, with
     # a mixing ratio of 1. Thus species density = air density.
-    ref_dens = refmet["Met_AIRDEN"] / 1e6
-    dev_dens = devmet["Met_AIRDEN"] / 1e6
+    ref_dens = refmetds["Met_AIRDEN"] / 1e6
+    dev_dens = devmetds["Met_AIRDEN"] / 1e6
 
     # Get MCF and CH4 density [molec/cm3] (trop only)
     ref_dens_trop = np.ma.masked_array(ref_dens.values, ref_timetrop_mask)
     dev_dens_trop = np.ma.masked_array(dev_dens.values, dev_timetrop_mask)
 
     # Get temperature [K] (trop only)
-    ref_temp = np.ma.masked_array(refmet["Met_T"].values, ref_timetrop_mask)
-    dev_temp = np.ma.masked_array(devmet["Met_T"].values, dev_timetrop_mask)
+    ref_temp = np.ma.masked_array(refmetds["Met_T"].values, ref_timetrop_mask)
+    dev_temp = np.ma.masked_array(devmetds["Met_T"].values, dev_timetrop_mask)
 
     # Compute Arrhenius parameter K [cm3/molec/s]
     ref_mcf_k = 1.64e-12 * np.exp(-1520e0 / ref_temp)
@@ -5257,10 +5207,12 @@ def make_benchmark_oh_metrics(
     # Denominator: Loss rate in troposphere
     ref_mcf_denom = np.sum(ref_mcf_k * ref_oh_trop * \
                            ref_dens_trop * ref_vol_trop)
-
-    dev_mcf_denom = np.sum(dev_mcf_k * dev_oh_trop * dev_dens_trop * dev_vol_trop)
-    ref_ch4_denom = np.sum(ref_ch4_k * ref_oh_trop * ref_dens_trop * ref_vol_trop)
-    dev_ch4_denom = np.sum(dev_ch4_k * dev_oh_trop * dev_dens_trop * dev_vol_trop)
+    dev_mcf_denom = np.sum(dev_mcf_k * dev_oh_trop * \
+                           dev_dens_trop * dev_vol_trop)
+    ref_ch4_denom = np.sum(ref_ch4_k * ref_oh_trop * \
+                           ref_dens_trop * ref_vol_trop)
+    dev_ch4_denom = np.sum(dev_ch4_k * dev_oh_trop * \
+                           dev_dens_trop * dev_vol_trop)
 
     # Compute lifetimes [years]
     sec_to_year = 365.25 * 86400.0
@@ -5273,64 +5225,51 @@ def make_benchmark_oh_metrics(
     mcf_diff = dev_mcf_lifetime - ref_mcf_lifetime
     ch4_diff = dev_ch4_lifetime - ref_ch4_lifetime
 
-    mcf_pctdiff = ((dev_mcf_lifetime - ref_mcf_lifetime) / ref_mcf_lifetime) * 100.0
-    ch4_pctdiff = ((dev_ch4_lifetime - ref_ch4_lifetime) / ref_ch4_lifetime) * 100.0
+    mcf_pctdiff = ((dev_mcf_lifetime - ref_mcf_lifetime) / \
+                   ref_mcf_lifetime) * 100.0
+    ch4_pctdiff = ((dev_ch4_lifetime - ref_ch4_lifetime) / \
+                   ref_ch4_lifetime) * 100.0
 
-    # Title strings
+    # ==================================================================
+    #  Define function for writing metrics to file
+    # ==================================================================
+
+    def print_metrics_to_file(f, title1, title2, ref, dev, diff, pctdiff):
+        print("#" * 79, file=f)
+        print("{}{}".format(title1.ljust(76), "###"), file=f)
+        print("{}{}".format(title2.ljust(76), "###"), file=f)
+        print("#" * 79, file=f)
+        print("{}{}{}{}".format("  Ref".ljust(15),
+                                "Dev".ljust(13), "Dev - Ref".ljust(13),
+                                "% diff".ljust(11),), file=f)
+        print("{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}".format(ref, dev, diff,
+                                                             pctdiff), file=f,)
+
+    # ==================================================================
+    # Print metrics to file
+    # ==================================================================
+
+    # Create file
+    outfilename = os.path.join(dst, "OH_metrics.txt")
+    f = open(outfilename, "w")
+
+    # Write mean OH
+    title1 = "### Global mass-weighted OH concentration [1e5 molec/cm3]"
+    title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+    print_metrics_to_file(f, title1, title2, ref_mean_oh, dev_mean_oh,
+                          oh_diff, oh_pctdiff)
+
+    # Write MCF lifetime
     title1 = "### MCF lifetime w/r/t tropospheric OH [years]"
     title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+    print_metrics_to_file(f, title1, title2, ref_mcf_lifetime,
+                          dev_mcf_lifetime, mcf_diff, mcf_pctdiff)
 
-    # Print header to file
-    print("", file=f)
-    print("#" * 79, file=f)
-    print("{}{}".format(title1.ljust(76), "###"), file=f)
-    print("{}{}".format(title2.ljust(76), "###"), file=f)
-    print("#" * 79, file=f)
-
-    # Write results to file
-    print(
-        "{}{}{}{}".format(
-            "  Ref".ljust(15),
-            "Dev".ljust(13),
-            "Dev - Ref".ljust(13),
-            "% diff".ljust(11),
-        ),
-        file=f,
-    )
-    print(
-        "{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}".format(
-            ref_mcf_lifetime, dev_mcf_lifetime, mcf_diff, mcf_pctdiff
-        ),
-        file=f,
-    )
-
-    # Title strings
+    # Write CH4 lifetime
     title1 = "### CH4 lifetime w/r/t tropospheric OH [years]"
     title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
-
-    # Print header to file
-    print("", file=f)
-    print("#" * 79, file=f)
-    print("{}{}".format(title1.ljust(76), "###"), file=f)
-    print("{}{}".format(title2.ljust(76), "###"), file=f)
-    print("#" * 79, file=f)
-
-    # Write results to file
-    print(
-        "{}{}{}{}".format(
-            "  Ref".ljust(15),
-            "Dev".ljust(13),
-            "Dev - Ref".ljust(13),
-            "% diff".ljust(11),
-        ),
-        file=f,
-    )
-    print(
-        "{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}".format(
-            ref_ch4_lifetime, dev_ch4_lifetime, ch4_diff, ch4_pctdiff
-        ),
-        file=f,
-    )
+    print_metrics_to_file(f, title1, title2, ref_ch4_lifetime,
+                          dev_ch4_lifetime, ch4_diff, ch4_pctdiff)
 
 
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
