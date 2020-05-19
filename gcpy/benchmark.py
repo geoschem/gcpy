@@ -811,20 +811,22 @@ def compare_single_level(
         ds_dev = ds_devs[ivar]
 
         # ==============================================================
-        # Area normalization units and subtitle
+        # Set units and subtitle, including modification if normalizing
+        # area. Note if enforce_units is False (non-default) then
+        # units on difference plots will be wrong.
         # ==============================================================
-        units = units_ref
+        cmn_units = ds_ref.attrs["units"]
         subtitle_extra = ""
         varndim = varndim_ref
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
                 if "/" in units:
-                    units = "{}/m2".format(units)
+                    cmn_units = "{}/m2".format(units)
                 else:
-                    units = "{} m-2".format(units)
-                units_ref = units
-                units_dev = units
+                    cmn_units = "{} m-2".format(units)
+                ds_ref.attrs["units"] = cmn_units
+                ds_dev.attrs["units"] = cmn_units
                 subtitle_extra = ", Normalized by Area"
 
         # ==============================================================
@@ -1838,13 +1840,9 @@ def compare_zonal_mean(
         pdf.close()
 
     # ==================================================================
-    # Loop over variables
+    # Define function to create a single page figure to be called
+    # in a parallel loop
     # ==================================================================
-
-    # Loop over variables
-    print_units_warning = True
-
-    # This loop is written as a function so it can be called in parallel
     def createfig(ivar):
 
         # Suppress harmless run-time warnings (mostly about underflow)
