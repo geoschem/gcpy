@@ -2483,8 +2483,8 @@ def create_total_emissions_table(
     outfilename,
     interval=[2678400.0],
     template="Emis{}_",
-    ref_area_varname="AREA",
-    dev_area_varname="AREA",
+    refmetdata=None,
+    devmetdata=None
 ):
     """
     Creates a table of emissions totals (by sector and by inventory)
@@ -2544,6 +2544,15 @@ def create_total_emissions_table(
             (in m2) in the dev dataset.
             Default value: 'AREA'
 
+        refmetdata : xarray dataset
+            Dataset containing ref meteorology and area
+            Default value: None
+
+        devmetdata : xarray dataset
+            Dataset containing dev meteorology and area
+            Default value: None
+
+
     Remarks:
     --------
         This method is mainly intended for model benchmarking purposes,
@@ -2563,14 +2572,22 @@ def create_total_emissions_table(
     if not isinstance(devdata, xr.Dataset):
         raise TypeError("The devdata argument must be an xarray Dataset!")
 
-    # Make sure that the area variable is present in both refdata and devdata
-    if ref_area_varname not in refdata.data_vars.keys():
-        msg = "Area variable {} is not in the ref Dataset!".format(
-            ref_area_varname)
+    # Get ref area [m2]
+    if "AREA" in refdata.data_vars.keys():
+        refarea = refdata["AREA"]
+    elif refmetdata is not None:
+        refarea = refmetdata["Met_AREAM2"]
+    else:
+        msg = "AREA variable is not in the ref Dataset and met dataset containing Met_AREAM2 is not passed!"
         raise ValueError(msg)
-    if dev_area_varname not in devdata.data_vars.keys():
-        msg = "Area variable {} is not in the dev Dataset!".format(
-            dev_area_varname)
+
+    # Get dev area [m2]
+    if "AREA" in devdata.data_vars.keys():
+        devarea = devdata["AREA"]
+    elif devmetdata is not None:
+        devarea = devmetdata["Met_AREAM2"]
+    else:
+        msg = "AREA variable is not in the dev Dataset and met dataset containing Met_AREAM2 is not passed!"
         raise ValueError(msg)
 
     # Load a YAML file containing species properties (such as
@@ -2693,7 +2710,7 @@ def create_total_emissions_table(
                     species_properties,
                     target_units,
                     interval,
-                    refdata[ref_area_varname],
+                    refarea,
                 )
 
                 # Set Dev to NaN (missing values) everywhere
@@ -2713,7 +2730,7 @@ def create_total_emissions_table(
                     species_properties,
                     target_units,
                     interval,
-                    devdata[dev_area_varname],
+                    devarea,
                 )
 
                 # Set Ref to NaN (missing values) everywhere
@@ -2733,7 +2750,7 @@ def create_total_emissions_table(
                     species_properties,
                     target_units,
                     interval,
-                    refdata[ref_area_varname],
+                    refarea,
                 )
                 devarray = convert_units(
                     devdata[v],
@@ -2741,7 +2758,7 @@ def create_total_emissions_table(
                     species_properties,
                     target_units,
                     interval,
-                    devdata[dev_area_varname],
+                    devarea,
                 )
 
             # ==========================================================
@@ -4055,6 +4072,8 @@ def make_benchmark_emis_tables(
     devlist,
     devstr,
     dst="./benchmark",
+    refmet=None,
+    devmet=None,
     overwrite=False,
     interval=[2678400.0],
 ):
@@ -4089,6 +4108,14 @@ def make_benchmark_emis_tables(
             A string denoting the destination folder where the file
             containing emissions totals will be written.
             Default value: ./benchmark
+
+        refmet : str
+            Path name for ref meteorology
+            Default value: None
+
+        devmet : str
+            Path name for dev meteorology  
+            Default value: None
 
         overwrite : boolean
             Set this flag to True to overwrite files in the
@@ -4127,13 +4154,23 @@ def make_benchmark_emis_tables(
     if len(reflist) == 1:
         reflist = [reflist]
     refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
-    refds = core.check_for_area(refds)
 
     # Read the Dev dataset and make sure that area variables are present
     if len(devlist) == 1:
         devlist = [devlist]
     devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
-    devds = core.check_for_area(devds)
+
+    # Read the meteorology datasets if passed. These are optional since it
+    # the refds and devds have variable AREA already (always true) and
+    # unit conversions do not require any meteorology.
+    if refmet is not None:
+        refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
+    else:
+        refmetds = None
+    if devmet is not None:
+        devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
+    else:
+        devmetds = None
 
     # ==================================================================
     # Create table of emissions
@@ -4163,6 +4200,8 @@ def make_benchmark_emis_tables(
         file_emis_totals,
         interval,
         template="Emis{}_",
+        refmetdata=refmetds,
+        devmetdata=devmetds
     )
 
     # Create table of emissions by inventory
@@ -4175,6 +4214,8 @@ def make_benchmark_emis_tables(
         file_inv_totals,
         interval,
         template="Inv{}_",
+        refmetdata=refmetds,
+        devmetdata=devmetds
     )
 
 
