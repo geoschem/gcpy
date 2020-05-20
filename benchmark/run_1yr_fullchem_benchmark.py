@@ -250,7 +250,6 @@ if gchp_vs_gchp: print(" - GCHP vs GCHP")
 # ======================================================================
 # Create GCC vs GCC benchmark plots and tables
 # ======================================================================
-
 if gcc_vs_gcc:
 
     # --------------------------------------------------------------
@@ -514,9 +513,11 @@ if gcc_vs_gcc:
 # ======================================================================
 # Create GCHP vs GCC benchmark plots and tables
 # ======================================================================
-
 if gchp_vs_gcc:
 
+    #---------------------------------------------------------------
+    # GCHP vs GCC Concentration plots
+    #---------------------------------------------------------------
     if plot_conc:
         print("\n%%% Creating GCHP vs. GCC concentration plots %%%")
 
@@ -529,10 +530,11 @@ if gchp_vs_gcc:
         for s, bmk_mon in enumerate(bmk_mons):
 
             ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mon, is_gchp=True)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
+                               is_gchp=True)
             refmet = get_filepath(gchp_vs_gcc_refdir, colmetgcc, bmk_mon)
-            devmet = get_filepath(gchp_vs_gcc_devdir, colmetgchp, bmk_mon,
-                                  is_gchp=True)
+            devmet = get_filepath(gchp_vs_gcc_devdir, colmetgchp,
+                                  bmk_mons_mid[s], is_gchp=True)
             bmk.make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gcc_refstr,
@@ -548,6 +550,9 @@ if gchp_vs_gcc:
                 overwrite=True
             )
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCC Emissions plots
+    #---------------------------------------------------------------
     if plot_emis:
         print("\n%%% Creating GCHP vs. GCC emissions plots %%%")
 
@@ -558,7 +563,8 @@ if gchp_vs_gcc:
         for s, bmk_mon in enumerate(bmk_mons):
 
             ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mon, is_gchp=True)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
+                               is_gchp=True)
             bmk.make_benchmark_emis_plots(
                 ref,
                 gcc_vs_gcc_refstr,
@@ -572,6 +578,9 @@ if gchp_vs_gcc:
                 overwrite=True
             )
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCC tables of emission and inventory totals
+    #---------------------------------------------------------------
     if emis_table:
         print("\n%%% Creating GCHP vs. GCC emissions tables %%%")
 
@@ -591,8 +600,10 @@ if gchp_vs_gcc:
             interval=sec_per_month,
             overwrite=True
         )
-        # NOTE from ewl: for budget tables we pass sec per year...
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCC J-values plots
+    #---------------------------------------------------------------
     if plot_jvalues:
         print("\n%%% Creating GCHP vs. GCC J-values plots %%%")
 
@@ -603,7 +614,8 @@ if gchp_vs_gcc:
         for s, bmk_mon in enumerate(bmk_mons):
 
             ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mon, is_gchp=True)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
+                               is_gchp=True)
             bmk.make_benchmark_jvalue_plots(
                 ref,
                 gchp_vs_gcc_refstr,
@@ -615,6 +627,9 @@ if gchp_vs_gcc:
                 overwrite=True
             )
 
+    #---------------------------------------------------------------
+    # GCHP vs GCC column AOD plots
+    #---------------------------------------------------------------
     if plot_aod:
         print("\n%%% Skipping GCHP vs. GCC AOD plots %%%")
 
@@ -625,7 +640,8 @@ if gchp_vs_gcc:
         for s, bmk_mon in enumerate(bmk_mons):
 
             ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mon, is_gchp=True)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
+                               is_gchp=True)
             bmk.make_benchmark_aod_plots(
                 ref,
                 gchp_vs_gcc_refstr,
@@ -637,6 +653,9 @@ if gchp_vs_gcc:
                 overwrite=True
             )
 
+    #---------------------------------------------------------------
+    # GCHP vs GCC global mass tables
+    #---------------------------------------------------------------
     if mass_table:
         print("\n%%% Creating GCHP vs. GCC mass tables %%%")
 
@@ -647,21 +666,22 @@ if gchp_vs_gcc:
         for s, bmk_mon in enumerate(bmk_mons):
 
             ref = get_filepath(gchp_vs_gcc_refrstdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devrstdir, col, bmk_mon,
+            dev = get_filepath(gchp_vs_gcc_devrstdir, col, bmk_mons_mid[s],
                                is_gchp=True)
-            label = "at 01{}".format(bmk_mon_yr_strs[s])
-            plot_dir = join(gchp_vs_gcc_tablesdir, bmk_mon_yr_strs[s])
             bmk.make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
-                dst=plot_dir,
-                label=label,
-                overwrite=True,
-                subdst=bmk_mon_yr_strs[s]
+                dst=gchp_vs_gcc_tablesdir,
+                subdst=bmk_mon_yr_strs[s],
+                label="at 01{}".format(bmk_mon_yr_strs[s]),
+                overwrite=True
             )
 
+    #---------------------------------------------------------------
+    # GCHP vs GCC operations budgets tables
+    #---------------------------------------------------------------
     if ops_budget_table:
         print("\n%%% Creating GCHP vs. GCC operations budget tables %%%")
 
@@ -685,6 +705,9 @@ if gchp_vs_gcc:
                 overwrite=True
             )
 
+    #---------------------------------------------------------------
+    # GCHP vs GCC aerosol budgets and burdens tables
+    #---------------------------------------------------------------
     if aer_budget_table:
         print("\n%%% Creating GCHP vs. GCC aerosol budget tables %%%")
 
@@ -697,13 +720,21 @@ if gchp_vs_gcc:
             overwrite=True
         )
 
+    #---------------------------------------------------------------
+    # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
+    #---------------------------------------------------------------
     if OH_metrics:
         print("\n%%% Skipping GCHP vs. GCC OH metrics %%%")
+
+    # --------------------------------------------------------------
+    # GCHP Strat-Trop Exchange
+    # --------------------------------------------------------------
+    if ste_table:
+        print("\n%%% Skipping GCHP vs. GCC Strat-Trop Exchange table %%%")
 
 # =====================================================================
 # Create GCHP vs GCHP benchmark plots and tables
 # =====================================================================
-
 if gchp_vs_gchp:
 
     if plot_conc:
@@ -732,4 +763,7 @@ if gchp_vs_gchp:
 
     if OH_metrics:
         print("\n%%% Skipping GCHP vs. GCHP OH metrics %%%")
+
+    if ste_table:
+        print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
 
