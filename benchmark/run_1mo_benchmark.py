@@ -120,15 +120,15 @@ plot_jvalues     = True
 plot_aod         = True
 mass_table       = True
 ops_budget_table = True
-OH_metrics       = True
-ste_table        = True
+OH_metrics       = True # GCC only
+ste_table        = True # GCC only
 
 # Plot concentrations and emissions by category?
 plot_by_spc_cat = True
 plot_by_hco_cat = True
 
 # =====================================================================
-# Data directories (**EDIT AS NEEDED**)
+# Data directories
 # For gchp_vs_gcc_refdir use gcc_dev_version, not ref (mps, 6/27/19)
 # =====================================================================
 
@@ -148,7 +148,10 @@ gchp_vs_gcc_devrst  = join(maindir, gchp_dev_version)
 gchp_vs_gchp_refrst = join(maindir, gchp_ref_version)
 gchp_vs_gchp_devrst = join(maindir, gchp_dev_version)
 
-# Plots directories (edit as needed)
+# =====================================================================
+# Benchmark output directories
+# =====================================================================
+# Plots directories
 if gcpy_test:
     mainplotsdir          = './Plots'
     gcc_vs_gcc_plotsdir    = join(mainplotsdir,'GCC_version_comparison')
@@ -171,8 +174,10 @@ gcc_vs_gcc_budgetdir    = join(gcc_vs_gcc_plotsdir, "Budget")
 gchp_vs_gchp_budgetdir  = join(gchp_vs_gchp_plotsdir, "Budget")
 gchp_vs_gcc_budgetdir   = join(gchp_vs_gcc_plotsdir, "Budget")
 
-# Plot title strings (edit as needed)
+# =====================================================================
+# Plot title strings
 # For gchp_vs_gcc_refstr use gcc_dev_version, not ref (mps, 6/27/19)
+# =====================================================================
 gcc_vs_gcc_refstr    = gcc_ref_version
 gcc_vs_gcc_devstr    = gcc_dev_version
 gchp_vs_gcc_refstr   = gcc_dev_version
@@ -204,7 +209,7 @@ gchp_date = np.datetime64("{}-{}-16T12:00:00".format(s_start[0], s_start[1]))
 end_date  = np.datetime64("{}-{}-01T00:00:00".format(s_stop[0], s_stop[1]))
 
 # Seconds per month
-s_per_mon = [(end_date - gcc_date).astype("float64")]
+sec_per_month = [(end_date - gcc_date).astype("float64")]
 
 # String for month and year (e.g. "Jul2016")
 mon_yr_str = calendar.month_abbr[b_start[1]] + s_start[0]
@@ -235,7 +240,7 @@ gchp_vs_gchp_sigdiff = [
     join(gchp_vs_gchp_plotsdir, "{}_sig_diffs_emissions.txt").format(vstr)]
 
 # ======================================================================
-# Prnt the list of plots & tables to the screen
+# Print the list of plots & tables to the screen
 # ======================================================================
 print("The following plots and tables will be created for {}:".format(bmk_type))
 if plot_conc:        print(" - Concentration plots")
@@ -335,7 +340,7 @@ if gcc_vs_gcc:
             dev,
             gcc_vs_gcc_devstr,
             dst=gcc_vs_gcc_plotsdir,
-            interval=s_per_mon,
+            interval=sec_per_month,
             overwrite=True
         )
 
@@ -426,7 +431,7 @@ if gcc_vs_gcc:
             bmk_type,
             dst=gcc_vs_gcc_budgetdir,
             label=mon_yr_str,
-            interval=s_per_mon[0],
+            interval=sec_per_month[0],
             overwrite=True
         )
 
@@ -498,12 +503,11 @@ if gchp_vs_gcc:
 
         # Meteorology data needed for GCC calculations
         col = "StateMet"
-        gchp_vs_gcc_refmet = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
+        refmet = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
 
         # Meteorology data needed for GCHP calculations
         col = "StateMet_avg"
-        gchp_vs_gcc_devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_date,
-                                          is_gchp=True)
+        devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
 
         # Make concentration plots
         bmk.make_benchmark_conc_plots(
@@ -511,8 +515,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_refstr,
             dev,
             gchp_vs_gcc_devstr,
-            refmet=gchp_vs_gcc_refmet,
-            devmet=gchp_vs_gcc_devmet,
+            refmet=refmet,
+            devmet=devmet,
             dst=gchp_vs_gcc_plotsdir,
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
@@ -567,7 +571,7 @@ if gchp_vs_gcc:
             dev,
             gchp_vs_gcc_devstr,
             dst=gchp_vs_gcc_plotsdir,
-            interval=s_per_mon,
+            interval=sec_per_month,
             overwrite=True,
             devmet=devmet
         )
@@ -640,10 +644,25 @@ if gchp_vs_gcc:
         )
 
     #---------------------------------------------------------------
-    # GCHP vs GCC budgets tables (actually only dev)
+    # GCHP vs GCC operations budgets tables
     #---------------------------------------------------------------
     if ops_budget_table:
-        print("\n%%% Skipping GCHP operations budget tables %%%")
+        print("\n%%% Creating GCHP operations budget tables %%%")
+
+        # Diagnostic collections to read
+        col = "Budget"
+        ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
+        opbdg.make_operations_budget_table(
+            gcc_ref_version,
+            ref,
+            gchp_dev_version,
+            dev,
+            bmk_type,
+            dst=gchp_vs_gcc_budgetdir,
+            interval=sec_per_month,
+            overwrite=True
+        )
 
     #---------------------------------------------------------------
     # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
@@ -744,7 +763,7 @@ if gchp_vs_gchp:
             dev,
             gchp_vs_gchp_devstr,
             dst=gchp_vs_gchp_plotsdir,
-            interval=s_per_mon,
+            interval=sec_per_month,
             overwrite=True,
             refmet=refmet,
             devmet=devmet

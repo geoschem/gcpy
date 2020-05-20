@@ -109,22 +109,22 @@ gcpy_test = True
 # =====================================================================
 gcc_vs_gcc   = True
 gchp_vs_gcc  = True # not yet tested
-gchp_vs_gchp = True # not yet tested
+gchp_vs_gchp = True # not yet implemented
 # GCHP vs GCC diff of diffs not included in 1-yr full chemistry benchmark
 
 # =====================================================================
 # Output to generate (plots/tables will be created in this order):
 # =====================================================================
-plot_conc    = False
-plot_emis    = False
-emis_table   = True
-plot_jvalues = False
-plot_aod     = False
-mass_table   = True
+plot_conc        = True
+plot_emis        = True
+emis_table       = True
+plot_jvalues     = True
+plot_aod         = True
+mass_table       = True
 ops_budget_table = True
 aer_budget_table = True
-ste_table    = True
-OH_metrics   = True
+ste_table        = True # GCC only
+OH_metrics       = True # GCC only
 
 # Plot concentrations and emissions by category?
 plot_by_spc_cat = True
@@ -155,7 +155,10 @@ gchp_vs_gchp_devrstdir = join(maindir, gchp_dev_version)
 gcc_vs_gcc_reflogdir   = join(maindir, gcc_ref_version,  "logs")
 gcc_vs_gcc_devlogdir   = join(maindir, gcc_dev_version,  "logs")
 
-# Plots directories
+# =====================================================================
+# Benchmark output directories
+# =====================================================================
+# Plot directories
 if gcpy_test:
     mainplotsdir          = './Plots'
     gcc_vs_gcc_plotsdir    = join(mainplotsdir,'GCC_version_comparison')
@@ -398,17 +401,15 @@ if gcc_vs_gcc:
 
             ref = get_filepath(gcc_vs_gcc_refrstdir, col, bmk_mon)
             dev = get_filepath(gcc_vs_gcc_devrstdir, col, bmk_mon)
-            label = "at 01{}".format(bmk_mon_yr_strs[s])
-            plot_dir = join(gcc_vs_gcc_tablesdir, bmk_mon_yr_strs[s])
             bmk.make_benchmark_mass_tables(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
-                dst=plot_dir,
-                label=label,
-                overwrite=True,
-                subdst=bmk_mon_yr_strs[s]
+                dst=gcc_vs_gcc_tablesdir,
+                subdst=bmk_mon_yr_strs[s],
+                label="at 01{}".format(bmk_mon_yr_strs[s]),
+                overwrite=True
             )
 
     # --------------------------------------------------------------
