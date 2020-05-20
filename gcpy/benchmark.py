@@ -4871,9 +4871,9 @@ def make_benchmark_aod_plots(
 
 
 def make_benchmark_mass_tables(
-    reflist,
+    ref,
     refstr,
-    devlist,
+    dev,
     devstr,
     varlist=None,
     dst="./benchmark",
@@ -4951,17 +4951,9 @@ def make_benchmark_mass_tables(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Ref
-    try:
-        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Error opening Ref files: {}".format(reflist))
-
-    # Dev dataset
-    try:
-        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Error opening Dev files: {}!".format(devlist))
+    # Read data
+    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
+    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
 
     # ==================================================================
     # Update GCHP restart dataset (if any)
