@@ -2578,7 +2578,7 @@ def create_total_emissions_table(
     elif refmetdata is not None:
         refarea = refmetdata["Met_AREAM2"]
     else:
-        msg = "AREA variable is not in the ref Dataset and met dataset containing Met_AREAM2 is not passed!"
+        msg = "AREA variable is not in the ref Dataset and optional dataset containing Met_AREAM2 is not passed!"
         raise ValueError(msg)
 
     # Get dev area [m2]
@@ -2587,7 +2587,7 @@ def create_total_emissions_table(
     elif devmetdata is not None:
         devarea = devmetdata["Met_AREAM2"]
     else:
-        msg = "AREA variable is not in the dev Dataset and met dataset containing Met_AREAM2 is not passed!"
+        msg = "AREA variable is not in the dev Dataset and optional dataset containing Met_AREAM2 is not passed!"
         raise ValueError(msg)
 
     # Load a YAML file containing species properties (such as
@@ -4084,20 +4084,17 @@ def make_benchmark_emis_tables(
     Args:
     -----
         reflist: list of str
-             List with the path names of the emissions file, or emissions
-             and met field files, that will constitute the "Ref" (aka
-             "Reference") data set. If two files are passed in the list,
-             the met field file must be second.
+             List with the path names of the emissions file or files
+             (multiple months) that will constitute the "Ref"
+             (aka "Reference") data set.
 
         refstr : str
             A string to describe ref (e.g. version number)
 
         devlist : list of str
-             List with the path names of the emissions file, or emissions
-             and met field files, that will constitute the "Dev" (aka
-             "Development") data set. If two files are passed in the list,
-             the met field file must be second. The "Dev" data set will
-             be compared against the "Ref" data set.
+             List with the path names of the emissions file or files
+             (multiple months) that will constitute the "Dev"
+             (aka "Development") data set
 
         devstr : str
             A string to describe dev (e.g. version number)
@@ -4150,12 +4147,12 @@ def make_benchmark_emis_tables(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Read the Ref dataset and make sure that the area variables are present
+    # Read the Ref dataset
     if len(reflist) == 1:
         reflist = [reflist]
     refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
 
-    # Read the Dev dataset and make sure that area variables are present
+    # Read the Dev dataset
     if len(devlist) == 1:
         devlist = [devlist]
     devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
