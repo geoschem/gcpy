@@ -210,15 +210,16 @@ bmk_end = np.datetime64("{}-01-01".format(int(bmk_year)+1))
 all_months = np.arange(bmk_start, bmk_end, step=np.timedelta64(1, "M"),
                        dtype="datetime64[M]")
 
-# Get all months array of mid-point datetime per month for benchmark year
-# and # sec per month
+# Get all months array of mid-point datetime per month for benchmark year,
+# and # sec and # days per month
 # NOTE: GCHP time-averaged files have time in the middle of the month
 sec_per_month = np.zeros(12)
+days_per_month = np.zeros(12)
 all_months_mid = np.zeros(12, dtype="datetime64[h]")
 for m in range(12):
-    days_in_mon = monthrange(int(bmk_year), m + 1)[1]
-    sec_per_month[m-1] = days_in_mon * 86400.0
-    middle_hr = int(days_in_mon*24/2)
+    days_per_month[m] = monthrange(int(bmk_year), m+1)[1]
+    sec_per_month[m] = days_per_month[m] * 86400.0
+    middle_hr = int(days_per_month[m]*24/2)
     delta = np.timedelta64(middle_hr, 'h')
     all_months_mid[m] = all_months[m].astype("datetime64[h]") + delta
 
@@ -443,11 +444,23 @@ if gcc_vs_gcc:
     if aer_budget_table:
         print("\n%%% Creating GCC vs. GCC aerosols budget tables %%%")
 
-        # Compute annual mean AOD budgets and aerosol burdens
-        aerbdg.aerosol_budgets_and_burdens(
-            gcc_dev_version,
+        # Diagnostic collections to read
+        col_aero = "Aerosols"
+        col_spc = "SpeciesConc"
+        col_met = "StateMet"
+        dev_aero = get_filepaths(gcc_vs_gcc_devdir, col_aero, all_months)
+        dev_spc = get_filepaths(gcc_vs_gcc_devdir, col_spc, all_months)
+        dev_met = get_filepaths(gcc_vs_gcc_devdir, col_met, all_months)
+
+        # Compute global aerosol budgets and burdens 
+        bmk.make_benchmark_aerosol_tables(
             gcc_vs_gcc_devdir,
+            dev_aero,
+            dev_spc,
+            dev_met,
+            gcc_dev_version,
             bmk_year,
+            days_per_month,
             dst=gcc_vs_gcc_tablesdir,
             overwrite=True
         )

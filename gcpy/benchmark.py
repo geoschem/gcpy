@@ -23,6 +23,7 @@ from .core import gcplot, all_zero_or_nan, get_grid_extents, call_make_grid, \
     get_nan_mask, get_vert_grid, get_pressure_indices, pad_pressure_edges, convert_lev_to_pres
 from .units import convert_units
 import gcpy.constants as gcon
+from yaml import load as yaml_load_file
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
 import warnings
@@ -6093,14 +6094,15 @@ def make_benchmark_wetdep_plots(
         )
 
 def make_benchmark_aerosol_tables(
-        aerofiles,
-        spcfiles,
-        metfiles,
+        devdir,
+        devlist_aero,
+        devlist_spc,
+        devlist_met,
         devstr,
         year, 
-        days_in_month,
+        days_per_mon,
         dst='./benchmark',
-        overwrite=True,
+        overwrite=False,
         is_gchp=False
     ):
     """
@@ -6108,12 +6110,20 @@ def make_benchmark_aerosol_tables(
 
     Args:
     -----
-        devdir : str
-            Benchmark directory (containing links to data).
+        devdir: str
+            Path to development ("Dev") data directory
+        devlist_aero : list of str
+            List of Aerosols collection files (different months)
+        devlist_spc : list of str
+            List of SpeciesConc collection files (different months)
+        devlist_met : list of str
+            List of meteorology collection files (different months)
         devstr : str
-            Denotes the "Dev" benchmark version.
+            Descriptive string for datasets (e.g. version number)
         year : str
             The year of the benchmark simulation (e.g. '2016'). 
+        days_per_month : list of int
+            List of number of days per month for all months
 
     Keyword Args (optional):
     ------------------------
@@ -6121,6 +6131,8 @@ def make_benchmark_aerosol_tables(
             Directory where budget tables will be created.
         overwrite : bool
             Overwrite burden & budget tables? (default=True)
+        is_gchp : bool
+            Whether datasets are for GCHP
     """
 
     # Create the plot directory hierarchy if it doesn't already exist
@@ -6136,10 +6148,10 @@ def make_benchmark_aerosol_tables(
 
     # Read the species database
     try:
-        path = join(devdir, "species_database.yml")
+        path = os.path.join(devdir, "species_database.yml")
         spcdb = yaml_load_file(open(path))
     except FileNotFoundError:
-        path = join(os.path.dirname(__file__), "species_database.yml")
+        path = os.path.join(os.path.dirname(__file__), "species_database.yml")
         spcdb = yaml_load_file(open(path))
 
     # Molecular weights [g mol-1], as taken from the species database
@@ -6149,7 +6161,7 @@ def make_benchmark_aerosol_tables(
     mw["Air"] = gcon.MW_AIR * 1.0e3
 
     # Get the list of relevant AOD diagnostics from a YAML file
-    path = join(os.path.dirname(__file__), "aod_species.yml")
+    path = os.path.join(os.path.dirname(__file__), "aod_species.yml")
     aod = yaml_load_file(open(path))
     aod_list = [v for v in aod.keys() if "Dust" in v or "Hyg" in v]
 
@@ -6163,16 +6175,19 @@ def make_benchmark_aerosol_tables(
     }
     
     # Read data collections
-    ds_aer = xr.open_mfdataset(aerofiles, data_vars=aod_list)
-    ds_spc = xr.open_mfdataset(spcfiles, drop_variables=gcon.skip_these_vars)
-    ds_met = xr.open_mfdataset(metfiles, drop_variables=gcon.skip_these_vars)
+    ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list)
+    ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)
+    ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)
 
     # Get troposphere mask
     tropmask = get_troposphere_mask(ds_met)
 
+    # Get number of months
+    n_mon = len(days_per_mon)
+
     # --------------------------------
     # Surface area
-    # (kludgey but it works)
+    # (kludgey but it works - revisit this)
     # --------------------------------
 
     # Get number of vertical levels
@@ -6182,7 +6197,7 @@ def make_benchmark_aerosol_tables(
         area = ds_met["Met_AREAM2"].values
         a = area.shape
         area_m2 = np.zeros([a[0], N_LEVS, a[1], a[2], a[3]])
-        for t in range(12):
+        for t in range(n_mon):
             for k in range(N_LEVS):
                 area_m2[t,k,:,:,:] = area[t,:,:,:]
         total_area_m2 = np.sum(area_m2[0,0,:,:,:])
@@ -6190,27 +6205,26 @@ def make_benchmark_aerosol_tables(
         area = ds_met["AREA"].values
         a = area.shape
         area_m2 = np.zeros([a[0], N_LEVS, a[1], a[2]])
-        for t in range(12):
+        for t in range(n_mon):
             for k in range(N_LEVS):
                 area_m2[t,k,:,:] = area[t,:,:]
         total_area_m2 = np.sum(area_m2[0,0,:,:])
 
-
     # ------------------------------
-    # Conversion factors
+    # Conversion factors and time increments
     # ------------------------------
     # v/v dry --> Tg
     vv_to_Tg = {}
     for spc in species_list:
         vv_to_Tg[spc] = ds_met["Met_AD"].values * (mw[spc] / mw["Air"]) * 1e-9
 
-    # Days in the benchmark year
-    d_per_yr = np.sum(days_in_month)
+    # Days in the benchmark duration
+    days_per_yr = np.sum(days_per_mon)
 
     # ------------------------------
     # Define function to print tables
     # ------------------------------
-    def print_aerosol_budgets(data, species_list, filename, title, label):
+    def print_aerosol_metrics(data, species_list, filename, title, label):
         
         with open(filename, "w+") as f:
             
@@ -6219,13 +6233,15 @@ def make_benchmark_aerosol_tables(
             print(" {} for {} in {}".format(title, year, devstr), file=f) 
             print(" (weighted by the number of days per month)", file=f)
             print("%"*79, file=f)
-            line = "\n"+" "*25+"Strat         Trop    Strat+Trop\n"
-            line += " "*20+"----------   ----------   ----------"
+            line = "\n"+" "*40+"Strat         Trop         Strat+Trop\n"
+            line += " "*40+"-----------   ----------   ----------"
             print(line, file=f)
             
             # Print data
             for spc in species_list:
-                line = "{} :  {:10.8f}   {:10.8f}   {:10.8f}\n".format(
+                line = "{} ({}) {} :  {:11.9f}   {:10.8f}   {:10.8f}\n".format(
+                    spc2name[spc].ljust(17),
+                    spc.ljust(4),
                     label,
                     data[spc + "_s"],
                     data[spc + "_t"],
@@ -6238,14 +6254,17 @@ def make_benchmark_aerosol_tables(
 
     # Table info
     filename = "{}/Aerosol_Burdens_{}.txt".format(dst, devstr)
-    title = "Annual average global aerosol burdens"
-    label = "{} burden [Tg]".format(spc.ljust(4))
+    if n_mon == 12:
+        title = "Annual average global aerosol burdens"
+    else: 
+        title = "Average global aerosol burdens across {} months".format(n_mon)
+    label = "burden [Tg]"
 
     # Initialize
     q = {}
-    q_sum_f = np.zeros(12)
-    q_sum_t = np.zeros(12)
-    q_sum_s = np.zeros(12)
+    q_sum_f = np.zeros(n_mon)
+    q_sum_t = np.zeros(n_mon)
+    q_sum_s = np.zeros(n_mon)
     burdens = {}
 
     # Define the axes we need to sum over to make monthly sums
@@ -6264,31 +6283,34 @@ def make_benchmark_aerosol_tables(
         q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
 
         # Compute monthly sums, weighted by the number of days per month
-        q_sum_f = np.sum(q[spc + "_f"], axis=sum_axes) * days_in_mon
-        q_sum_t = np.sum(q[spc + "_t"], axis=sum_axes) * days_in_mon
+        q_sum_f = np.sum(q[spc + "_f"], axis=sum_axes) * days_per_mon
+        q_sum_t = np.sum(q[spc + "_t"], axis=sum_axes) * days_per_mon
         q_sum_s = q_sum_f - q_sum_t
 
         # Compute annual averages
-        burdens[spc + "_f"] = np.sum(q_sum_f) / d_per_yr
-        burdens[spc + "_t"] = np.sum(q_sum_t) / d_per_yr
-        burdens[spc + "_s"] = np.sum(q_sum_s) / d_per_yr
+        burdens[spc + "_f"] = np.sum(q_sum_f) / days_per_yr
+        burdens[spc + "_t"] = np.sum(q_sum_t) / days_per_yr
+        burdens[spc + "_s"] = np.sum(q_sum_s) / days_per_yr
 
-    print_aerosol_burdens(burdens, species_list, filename, title, label)
+    print_aerosol_metrics(burdens, species_list, filename, title, label)
     
     # -------------------------------------------
-    # Compute annual average AOD's [Tg] and print
+    # Compute average AOD's [Tg] and print
     # -------------------------------------------
 
     # Table info
     filename = "{}/Global_Mean_AOD_{}.txt".format(dst, devstr)
-    title = "Annual average global AODs"
-    label = "{} mean AOD [1]".format(spc2name[spc].ljust(17))
+    if n_mon == 12:
+        title = "Annual average global AODs"
+    else:
+        title = "Average global AODs across {} months".format(n_mon)
+    label = "mean AOD [1]"
 
     # Initialize
     q = {}
-    q_sum_f = np.zeros(12)
-    q_sum_t = np.zeros(12)
-    q_sum_s = np.zeros(12)
+    q_sum_f = np.zeros(n_mon)
+    q_sum_t = np.zeros(n_mon)
+    q_sum_s = np.zeros(n_mon)
     aods = {}
 
     # Define axes to sum over, and total surface area
@@ -6313,15 +6335,15 @@ def make_benchmark_aerosol_tables(
         q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
 
         # Create monthly sums, weighted by the number of days per month
-        q_sum_f = np.sum(q[spc + "_f"] * area_m2, axis=sum_axes) * days_in_mon
-        q_sum_t = np.sum(q[spc + "_t"] * area_m2, axis=sum_axes) * days_in_mon
+        q_sum_f = np.sum(q[spc + "_f"] * area_m2, axis=sum_axes)*days_per_mon
+        q_sum_t = np.sum(q[spc + "_t"] * area_m2, axis=sum_axes)*days_per_mon
         q_sum_s = q_sum_f - q_sum_t
         
         # Take annual averages
-        aods[spc + "_f"] = np.sum(q_sum_f) / total_area_m2 / d_per_yr
-        aods[spc + "_t"] = np.sum(q_sum_t) / total_area_m2 / d_per_yr
-        aods[spc + "_s"] = np.sum(q_sum_s) / total_area_m2 / d_per_yr
+        aods[spc + "_f"] = np.sum(q_sum_f) / total_area_m2 / days_per_yr
+        aods[spc + "_t"] = np.sum(q_sum_t) / total_area_m2 / days_per_yr
+        aods[spc + "_s"] = np.sum(q_sum_s) / total_area_m2 / days_per_yr
 
-    print_aerosol_burdens(aods, species_list, filename, title, label)
+    print_aerosol_metrics(aods, species_list, filename, title, label)
 
 
