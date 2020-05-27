@@ -108,8 +108,8 @@ gcpy_test = True
 # Comparisons to run 
 # =====================================================================
 gcc_vs_gcc   = True
-gchp_vs_gcc  = True # not yet tested
-gchp_vs_gchp = True # not yet implemented
+gchp_vs_gcc  = False # not yet functional
+gchp_vs_gchp = False # not yet functional
 # GCHP vs GCC diff of diffs not included in 1-yr full chemistry benchmark
 
 # =====================================================================
@@ -599,9 +599,15 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "Emissions"
-        ref = get_filepaths(gcc_vs_gcc_refdir, col, all_months)
-        dev = get_filepaths(gcc_vs_gcc_devdir, col, all_months_mid,
+        ref = get_filepaths(gchp_vs_gcc_refdir, col, all_months)
+        dev = get_filepaths(gchp_vs_gcc_devdir, col, all_months_mid,
                             is_gchp=True)
+
+        # Pass StateMet collection as source of GCHP area. Since area is
+        # time-invariant, only need to pass for one month.
+        colmet = "StateMet_avg"
+        devmet = get_filepaths(gchp_vs_gcc_devdir, colmet, all_months_mid,
+                               is_gchp=True
 
         # Create emissions table that spans entire year
         bmk.make_benchmark_emis_tables(
@@ -609,6 +615,7 @@ if gchp_vs_gcc:
             gchp_vs_gcc_refstr,
             dev,
             gchp_vs_gcc_devstr,
+            devmet=devmet,
             dst=gchp_vs_gcc_plotsdir,
             interval=sec_per_month,
             overwrite=True
@@ -679,7 +686,7 @@ if gchp_vs_gcc:
         for s, bmk_mon in enumerate(bmk_mons):
 
             ref = get_filepath(gchp_vs_gcc_refrstdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devrstdir, col, bmk_mons_mid[s],
+            dev = get_filepath(gchp_vs_gcc_devrstdir, col, bmk_mons[s],
                                is_gchp=True)
             bmk.make_benchmark_mass_tables(
                 ref,
@@ -704,7 +711,8 @@ if gchp_vs_gcc:
         # Create budget table for each benchmark month (ewl??)
         for s, bmk_mon in enumerate(bmk_mons):
             ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mon, is_gchp=True)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
+                               is_gchp=True)
             plot_dir = join(gchp_vs_gcc_budgetdir, bmk_mon_yr_strs[s])
             opbdg.make_operations_budget_table(
                 gcc_ref_version,
