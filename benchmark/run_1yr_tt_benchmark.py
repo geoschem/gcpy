@@ -113,8 +113,8 @@ gchp_vs_gchp = True
 # =====================================================================
 # Output to generate (plots/tables will be created in this order):
 # =====================================================================
-plot_conc         = False
-plot_wetdep       = False
+plot_conc         = True
+plot_wetdep       = True
 rnpbbe_budget     = True
 operations_budget = True
 ste_table         = True # GCC only
@@ -377,17 +377,16 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        colmet = "StateMet"
+        colmet = "StateMet_avg"
 
         # Create concentration plots for each benchmark month
         for s, bmk_mon in enumerate(bmk_mons):
 
             # Seasonal diagnostic collection files to read
-            ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mon)
-            dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mon_mid,
+            ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
                                is_gchp=True)
-            refmet = get_filepath(gcc_vs_gcc_refdir, colmet, bmk_mon)
-            devmet = get_filepath(gcc_vs_gcc_devdir, colmet, bmk_mon_mid,
+            devmet = get_filepath(gchp_vs_gcc_devdir, colmet, bmk_mons_mid[s],
                                   is_gchp=True)
 
             bmk.make_benchmark_conc_plots(
@@ -395,7 +394,6 @@ if gchp_vs_gcc:
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
-                refmet=refmet,
                 devmet=devmet,
                 dst=gchp_vs_gcc_plotsdir,
                 subdst=bmk_mon_yr_strs[s],
@@ -411,45 +409,34 @@ if gchp_vs_gcc:
     if plot_wetdep:
         print("\n%%% Creating GCHP vs. GCC wet deposition plots %%%")
 
-        # Get GCHP area array from StateMet diagnostic file since not in
-        # the wet loss diagnostics file. Must be called 'AREA' and be m2.
-        gchpareapath = get_filepaths(gchp_vs_gcc_devdir, "StateMet_avg",
-                                     [gchp_months[0]], is_gchp=True)
-        ds_gchp = xr.open_mfdataset(gchpareapath)
-        ds_gchp = ds_gchp.rename({'Met_AREAM2': 'AREA'})
-
-        # Store area DataArrays as dictionary. The GCC area can be empty
-        # since GCC diagnostics include variable 'AREA' in m2. Since area
-        # is time invariant, drop the time dimension to avoid merge issues
-        # for data files from other seasons.
-        gchp_vs_gcc_areas = {'Ref': [], 
-                             'Dev': ds_gchp['AREA'].isel(time=0).drop('time')}
-
         # Create separate set of plots for each wetdep collection
         cols = ["WetLossConv", "WetLossLS"]
+        colmet = "StateMet_avg"
+
         for col in cols:
 
             # Create plots for each benchmark month
             for s, bmk_mon in enumerate(bmk_mons):
 
-                ref = get_filepaths(gchp_vs_gcc_refdir, col, bmk_mon)
-                dev = get_filepaths(gchp_vs_gcc_devdir, col, bmk_mon_mid,
-                                    is_gchp=True)
+                ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
+                dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
+                                   is_gchp=True)
+                devmet = get_filepath(gchp_vs_gcc_devdir, colmet,
+                                      bmk_mons_mid[s], is_gchp=True)
 
-                bmk.make_benchmark_conc_plots(
-                    ref[:,s],
+                bmk.make_benchmark_wetdep_plots(
+                    ref,
                     gchp_vs_gcc_refstr,
-                    dev[:,s],
+                    dev,
                     gchp_vs_gcc_devstr,
+                    devmet=devmet,
+                    collection=col,
                     dst=gchp_vs_gcc_plotsdir,
-                    subdst=bmk_mon_yr_strs[s],
+                    datestr=bmk_mon_yr_strs[s],
                     weightsdir=weightsdir,
                     overwrite=True,
                     benchmark_type=bmk_type,
-                    collection=col,
-                    restrict_cats=[col],
-                    normalize_by_area=True,
-                    areas=gchp_vs_gcc_areas
+                    normalize_by_area=True
                 )
 
     # --------------------------------------------------------------
@@ -512,10 +499,10 @@ if gchp_vs_gchp:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        colmet = "StateMet"
+        colmet = "StateMet_avg"
 
         # Create concentration plots for each benchmark month
-        for s, bmk_mon in enumerate(bmk_mons):
+        for s, bmk_mon_mid in enumerate(bmk_mons_mid):
 
             # Seasonal diagnostic collection files to read
             ref = get_filepath(gchp_vs_gchp_refdir, col, bmk_mon_mid,
@@ -552,28 +539,36 @@ if gchp_vs_gchp:
 
         # Create separate set of plots for each wetdep collection
         cols = ["WetLossConv", "WetLossLS"]
+        colmet = "StateMet_avg"
+
         for col in cols:
-            ref = get_filepaths(gchp_vs_gchp_refdir, col, gchp_seasons,
-                                is_gchp=True)
-            dev = get_filepaths(gchp_vs_gchp_devdir, col, gchp_seasons,
-                                is_gchp=True)
 
-            # Create plots for for each benchmark month
-            for s, bmk_mon in enumemrate(bmk_mons):
+            # Create plots for each benchmark month
+            for s, bmk_mon_mid in enumerate(bmk_mons_mid):
 
-                # Make plots
-                bmk.make_benchmark_conc_plots(
+                ref = get_filepath(gchp_vs_gchp_refdir, col, bmk_mon_mid,
+                                   is_gchp=True)
+                dev = get_filepath(gchp_vs_gchp_devdir, col, bmk_mon_mid,
+                                   is_gchp=True)
+                refmet = get_filepath(gchp_vs_gchp_refdir, colmet, bmk_mon_mid,
+                                      is_gchp=True)
+                devmet = get_filepath(gchp_vs_gchp_devdir, colmet, bmk_mon_mid,
+                                      is_gchp=True)
+
+                bmk.make_benchmark_wetdep_plots(
                     ref,
                     gchp_vs_gchp_refstr,
                     dev,
                     gchp_vs_gchp_devstr,
+                    refmet=refmet,
+                    devmet=devmet,
+                    collection=col,
                     dst=gchp_vs_gchp_plotsdir,
-                    subdst=bmk_mon_yr_strs[s],
+                    datestr=bmk_mon_yr_strs[s],
                     weightsdir=weightsdir,
                     overwrite=True,
-                    benchmark_type=bmk_type[s],
-                    collection=col,
-                    restrict_cats=[col]
+                    benchmark_type=bmk_type,
+                    normalize_by_area=True
                 )
 
     # --------------------------------------------------------------
