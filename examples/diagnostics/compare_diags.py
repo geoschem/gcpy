@@ -27,12 +27,12 @@ warnings.filterwarnings("ignore", category=UserWarning)
 ########################################################################
 
 # Main data directory
-maindir  = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon/"
+maindir  = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon/"
 refstr = "GCC_ref"
 devstr = "GCC_dev"
 
 # Regridding weights directory
-weightsdir = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
+weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
 # Directory where PDF files will be sent
 plotsdir = join(".", "Plots")
@@ -42,8 +42,8 @@ refdir  = join(maindir, refstr, "OutputDir")
 reffile = join(refdir, "GEOSChem.SpeciesConc.20160701_0000z.nc4")
 
 # Dev version
-devdir  = join(maindir, "GCC_ref", "OutputDir")
-devfile = join(refdir, "GEOSChem.SpeciesConc.20160701_0000z.nc4")
+devdir  = join(maindir, devstr, "OutputDir")
+devfile = join(devdir, "GEOSChem.SpeciesConc.20160701_0000z.nc4")
 
 # PDF names
 pdfname_level = join(plotsdir, "single_level_comparison.pdf")

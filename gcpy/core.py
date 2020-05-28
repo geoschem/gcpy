@@ -1404,6 +1404,78 @@ def gcplot(plot_vals,
 ):
     """
     Core plotting routine -- creates a single plot panel.
+
+    Args:
+    -----
+
+        plot_vals : xarray DataArray or numpy array
+            Single data variable GEOS-Chem output to plot
+
+    Keyword Args (Optional):
+    -----
+    
+        ax : matplotlib axes
+            Axes object to plot information. Will create a new axes if None is passed.
+
+        plot_type : str
+            Either "single_level" or "zonal_mean"
+
+        grid : dict
+            Dictionary mapping plot_vals to plottable coordinates
+
+        gridtype : str
+            "ll" for lat/lon or "cs" for cubed-sphere
+
+        title : str
+            Title to put at top of plot
+    
+        comap : matplotlib Colormap
+            Colormap for plotting data values
+
+        norm : list
+            List with range [0..1] normalizing color range for matplotlib methods
+
+        unit : ""
+            Units of plotted data
+
+        extent : tuple (minlon, maxlon, minlat, maxlat)
+            Describes minimum and maximum latitude and longitude of input data
+    
+        masked_data : numpy array
+            Masked area for cubed-sphere plotting
+
+        use_cmap_RdBu : boolean
+            Set this flag to True to use a blue-white-red colormap
+
+        log_color_scale : boolean
+            Set this flag to True to use a log-scale colormap
+
+        add_cb : boolean
+            Set this flag to True to add a colorbar to the plot 
+
+        pres_range : list(int)
+            Range from minimum to maximum pressure for zonal mean plotting
+
+        pedge : numpy array
+            Edge pressures of vertical grid cells in plot_vals
+
+        pedge_ind : numpy array
+            Index of edge pressure values within pressure range in plot_vals
+
+        log_yaxis : boolean
+            Set this flag to True to enable log scaling of pressure in zonal mean plots
+
+        xtick_positions : list(float)
+            Locations of lat/lon or lon ticks on plot
+
+        xtick_labels: list(str)
+            Labels for lat/lon ticks
+
+    Returns:
+    -----
+    
+    plot : matplotlib plot
+        Plot object created from input
     """
 
     data_is_xr = type(plot_vals) is xr.DataArray
@@ -1556,8 +1628,23 @@ def gcplot(plot_vals,
 
 def get_input_res(data):
     """
-    Returns resolution of dataset passed to
-    compare_single_level or compare_zonal_means
+    Returns resolution of dataset passed to compare_single_level or compare_zonal_means
+    
+    Args:
+    -----
+    
+        data : xarray Dataset
+            Input GEOS-Chem dataset
+
+    Returns:
+    -----
+        
+        res : str or int
+            Lat/lon res of the form 'latresxlonres' or cubed-sphere resolution
+        
+        gridtype : str
+            'll' for lat/lon or 'cs' for cubed-sphere
+    
     """
     vdims = data.dims
     if "lat" in vdims and "lon" in vdims:
@@ -1580,6 +1667,21 @@ def get_input_res(data):
         return data.dims["Xdim"], "cs"
 
 def get_nan_mask(data):
+    """
+    Create a mask with NaN values removed from an input array
+    
+    Args:
+    -----
+    
+        data : numpy array
+            Input array possibly containing NaNs
+
+    Returns:
+    -----
+        new_data : numpy array
+            Original array with NaN values removed
+    """
+
     #remove NaNs
     fill = np.nanmax(data)+100000
     new_data = np.where(np.isnan(data), fill, data)
@@ -1589,6 +1691,36 @@ def get_nan_mask(data):
 
 def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent=[-180,180,-90,90], 
                    out_extent=[-180,180,-90,90]):
+    """
+    Create a mask with NaN values removed from an input array
+    
+    Args:
+    -----
+    
+        res : str or int
+            Resolution of grid (format 'latxlon' or csres)
+
+        gridtype : str
+            'll' for lat/lon or 'cs' for cubed-sphere
+
+        zonal_mean : boolean
+            Set to True if the output grid is for a zonal mean plot
+
+        comparison : boolean
+            Set to True if the output grid is a comparison grid
+
+        in_extent : list (minlon, maxlon, minlat, maxlat)
+            Describes minimum and maximum latitude and longitude of input data
+
+        out_extent : list (minlon, maxlon, minlat, maxlat)
+            Desired minimum and maximum latitude and longitude of output grid
+
+    Returns:
+    -----
+        [grid, grid_list] : list(dict, list(dict))
+            Returns the created grid. grid_list is a list of grids if gridtype is 'cs', else it is None
+    """
+
     # call appropriate make_grid function and return new grid
     if gridtype == "ll" or (zonal_mean and comparison):
         return [make_grid_LL(res, in_extent, out_extent), None]
@@ -1598,14 +1730,42 @@ def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent=[-180,180,-9
 def all_zero_or_nan(ds):
     """
     Return whether ds is all zeros, or all nans
+    
+    Args:
+    -----
+        ds : numpy array
+            Input GEOS-Chem data
+    Returns:
+    -----
+        all_zero, all_nan : boolean, boolean
+            All_zero is whether ds is all zeros, all_nan is whether ds is all NaNs
     """
+
     return not np.any(ds), np.isnan(ds).all()
 
 def get_grid_extents(data, edges=True):
     """
-    Get min and max lat and lon from an input GEOS-Chem
-    xarray dataset or grid dict
+    Get min and max lat and lon from an input GEOS-Chem xarray dataset or grid dict
+    
+    Args:
+    -----
+        data : xarray Dataset or dict
+            A GEOS-Chem dataset or a grid dict
+    Returns:
+    -----
+        minlon : float
+            Minimum longitude of data grid
+
+        maxlon : float
+            Maximum longitude of data grid
+
+        minlat : float
+            Minimum latitude of data grid
+
+        maxlat : float
+            Maximum latitude of data grid
     """
+
     if type(data) is dict:
         if "lon_b" in data and edges:
             return np.min(data["lon_b"]), np.max(data["lon_b"]), np.min(data["lat_b"]), np.max(data["lat_b"])
@@ -1639,6 +1799,25 @@ def get_grid_extents(data, edges=True):
 
 
 def get_vert_grid(dataset):
+    """
+    Determine vertical grid of input dataset
+    
+    Args:
+    -----
+        dataset : xarray Dataset
+            A GEOS-Chem output dataset
+    Returns:
+    -----
+        p_edge : numpy array
+            Edge pressure values for vertical grid
+        
+        p_mid  : numpy array
+            Midpoint pressure values for vertical grid
+        
+        nlev : int
+            Number of levels in vertical grid
+    """
+
     if dataset.sizes["lev"] in (72, 73):
         return GEOS_72L_grid.p_edge(), GEOS_72L_grid.p_mid(), 72
     elif dataset.sizes["lev"] in (47, 48):
@@ -1647,9 +1826,43 @@ def get_vert_grid(dataset):
         raise ValueError("Only 72/73 or 47/48 level vertical grids are supported")
 
 def get_pressure_indices(pedge, pres_range):
+    """
+    Get indices where edge pressure values are within a given pressure range
+    
+    Args:
+    -----
+        pedge : numpy array
+            A GEOS-Chem output dataset
+
+        pres_range : list(float, float)
+            Contains minimum and maximum pressure
+
+    Returns:
+    -----
+        numpy array
+            Indices where edge pressure values are within a given pressure range
+    """
+
     return np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))[0]
 
 def pad_pressure_edges(pedge_ind, max_ind):
+    """
+    Add outer indices to edge pressure index list
+    
+    Args:
+    -----
+        pedge_ind : list
+            List of edge pressure indices
+
+        max_ind : int
+            Maximum index
+
+    Returns:
+    -----
+        pedge_ind : list
+            List of edge pressure indices, possibly with new minimum and maximum indices
+    """
+
     if max_ind in (48, 73):
         max_ind = max_ind - 1
     if min(pedge_ind) != 0:
@@ -1659,6 +1872,26 @@ def pad_pressure_edges(pedge_ind, max_ind):
     return pedge_ind
     
 def convert_lev_to_pres(dataset, pmid, pedge):
+    """
+    Convert lev dimension to pressure in a GEOS-Chem dataset
+    
+    Args:
+    -----
+        dataset : xarray Dataset
+            GEOS-Chem dataset
+
+        pmid : np.array
+            Midpoint pressure values
+        
+        pedge : np.array
+            Edge pressure values
+
+    Returns:
+    -----
+        dataset : xarray Dataset
+            Input dataset with "lev" dimension values replaced with pressure values
+    """
+
     if dataset.sizes["lev"] in (72, 47):
         dataset["lev"] = pmid
     elif dataset.sizes["lev"] in (73, 48):
