@@ -209,7 +209,7 @@ gchp_date = np.datetime64("{}-{}-16T12:00:00".format(s_start[0], s_start[1]))
 end_date  = np.datetime64("{}-{}-01T00:00:00".format(s_stop[0], s_stop[1]))
 
 # Seconds per month
-sec_per_month = [(end_date - gcc_date).astype("float64")]
+sec_in_bmk_month = (end_date - gcc_date).astype("float64")
 
 # String for month and year (e.g. "Jul2016")
 mon_yr_str = calendar.month_abbr[b_start[1]] + s_start[0]
@@ -340,7 +340,7 @@ if gcc_vs_gcc:
             dev,
             gcc_vs_gcc_devstr,
             dst=gcc_vs_gcc_plotsdir,
-            interval=sec_per_month,
+            interval=[sec_in_bmk_month],
             overwrite=True
         )
 
@@ -415,7 +415,7 @@ if gcc_vs_gcc:
     # GCC vs GCC budgets tables
     #---------------------------------------------------------------
     if ops_budget_table:
-        print("\n%%% Creating GCC vs. GCC budget tables %%%")
+        print("\n%%% Creating GCC vs. GCC operations budget tables %%%")
 
         # Diagnostic collection files to read
         col = "Budget"
@@ -429,9 +429,9 @@ if gcc_vs_gcc:
             gcc_dev_version,
             dev,
             bmk_type,
+            mon_yr_str,
             dst=gcc_vs_gcc_budgetdir,
-            label=mon_yr_str,
-            interval=sec_per_month[0],
+            interval=sec_in_bmk_month,
             overwrite=True
         )
 
@@ -571,7 +571,7 @@ if gchp_vs_gcc:
             dev,
             gchp_vs_gcc_devstr,
             dst=gchp_vs_gcc_plotsdir,
-            interval=sec_per_month,
+            interval=[sec_in_bmk_month],
             overwrite=True,
             devmet=devmet
         )
@@ -626,7 +626,7 @@ if gchp_vs_gcc:
     # GCHP vs GCC global mass tables
     #---------------------------------------------------------------
     if mass_table:
-        print("\n%%% Creating GCHP vs. GCC {} global mass tables %%%")
+        print("\n%%% Creating GCHP vs. GCC global mass tables %%%")
 
         # Diagnostic collection files to read
         col = "Restart"
@@ -647,7 +647,7 @@ if gchp_vs_gcc:
     # GCHP vs GCC operations budgets tables
     #---------------------------------------------------------------
     if ops_budget_table:
-        print("\n%%% Creating GCHP operations budget tables %%%")
+        print("\n%%% Creating GCHP vs GCC operations budget tables %%%")
 
         # Diagnostic collections to read
         col = "Budget"
@@ -659,8 +659,9 @@ if gchp_vs_gcc:
             gchp_dev_version,
             dev,
             bmk_type,
+            mon_yr_str,
             dst=gchp_vs_gcc_budgetdir,
-            interval=sec_per_month,
+            interval=sec_in_bmk_month,
             overwrite=True
         )
 
@@ -763,7 +764,7 @@ if gchp_vs_gchp:
             dev,
             gchp_vs_gchp_devstr,
             dst=gchp_vs_gchp_plotsdir,
-            interval=sec_per_month,
+            interval=[sec_in_bmk_month],
             overwrite=True,
             refmet=refmet,
             devmet=devmet
@@ -833,6 +834,28 @@ if gchp_vs_gchp:
             dev,
             gchp_vs_gchp_devstr,
             dst=gchp_vs_gchp_tablesdir,
+            overwrite=True
+        )
+
+    #---------------------------------------------------------------
+    # GCHP vs GCHP operations budgets tables
+    #---------------------------------------------------------------
+    if ops_budget_table:
+        print("\n%%% Creating GCHP vs GCC operations budget tables %%%")
+
+        # Diagnostic collections to read
+        col = "Budget"
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
+        opbdg.make_operations_budget_table(
+            gchp_ref_version,
+            ref,
+            gchp_dev_version,
+            dev,
+            bmk_type,
+            mon_yr_str,
+            dst=gchp_vs_gchp_budgetdir,
+            interval=sec_in_bmk_month,
             overwrite=True
         )
 
