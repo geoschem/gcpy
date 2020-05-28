@@ -658,35 +658,46 @@ def compare_single_level(
                                               fracdev_dimsdims)
 
     # ==================================================================
-    # Get the area variables if normalize_by_area=True
+    # Get the area variables if normalize_by_area=True. They can be
+    # either in the main datasets as variable AREA or in the optionally
+    # passed meteorology datasets as Met_AREAM2.
     # ==================================================================
-    # NOTE: expect areas to be in dataset. For GC-Classic 'AREA' is
-    # included in all diagnostic files. For GCHP it needs to be added
-    # to the dataset beforehand and named 'AREA'.
-    # SECOND NOTE: can bypass this in the future by passing met data
-    # which contains area as Met_AREAM2.
     if normalize_by_area:
         if "AREA" in refdata.data_vars.keys():
             ref_area = refdata["AREA"]
-            if "time" in ref_area.dims:
-                ref_area = ref_area.isel(time=0)
-            if refgridtype == 'cs':
-                ref_area = reshape_MAPL_CS(ref_area, ref_area.dims)
+        elif refmet is not None:
+            if "Met_AREAM2" in refmet.data_vars.keys():
+                ref_area = refmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
-                + "present in the Ref dataset!"
+                + "present in the Ref dataset and ref met with Met_AREAM2" \
+                + " not passed!"
             raise ValueError(msg)
+        if "time" in ref_area.dims:
+            ref_area = ref_area.isel(time=0)
+        if refgridtype == 'cs':
+            ref_area = reshape_MAPL_CS(ref_area, ref_area.dims)
 
         if "AREA" in devdata.data_vars.keys():
             dev_area = devdata["AREA"]
-            if "time" in dev_area.dims:
-                dev_area = dev_area.isel(time=0)
-            if devgridtype == 'cs':
-                dev_area = reshape_MAPL_CS(dev_area, dev_area.dims)
+        elif devmet is not None:
+            if "Met_AREAM2" in devmet.data_vars.keys():
+                dev_area = devmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
-                + "present in the Dev dataset!"
+                + "present in the Dev dataset and dev met with Met_AREAM2" \
+                | " not passed!"
             raise ValueError(msg)
+        if "time" in dev_area.dims:
+            dev_area = dev_area.isel(time=0)
+        if devgridtype == 'cs':
+            dev_area = reshape_MAPL_CS(dev_area, dev_area.dims)
+
+        # Make sure the areas do not have a lev dimension
+        if "lev" in ref_area.dims:
+            ref_area = ref_area.isel(lev=0)
+        if "lev" in dev_area.dims:
+            dev_area = dev_area.isel(lev=0)
 
     # ==================================================================
     # Create arrays for each variable in Ref and Dev datasets
@@ -822,10 +833,10 @@ def compare_single_level(
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
-                if "/" in units:
-                    cmn_units = "{}/m2".format(units)
+                if "/" in cmn_units:
+                    cmn_units = "{}/m2".format(cmn_units)
                 else:
-                    cmn_units = "{} m-2".format(units)
+                    cmn_units = "{} m-2".format(cmn_units)
                 ds_ref.attrs["units"] = cmn_units
                 ds_dev.attrs["units"] = cmn_units
                 subtitle_extra = ", Normalized by Area"
@@ -1683,43 +1694,47 @@ def compare_zonal_mean(
             if diff_of_diffs:
                 frac_ds_devs[i].data = frac_ds_devs[i].data[::-1, :, :]
 
-    
     # ==================================================================
-    # Get the area variables if normalize_by_area=True
-    # NOTE: expect areas to be in dataset. For GC-Classic 'AREA' is
-    # included in all diagnostic files. For GCHP it needs to be added
-    # to the dataset beforehand and named 'AREA'.
+    # Get the area variables if normalize_by_area=True. They can be
+    # either in the main datasets as variable AREA or in the optionally
+    # passed meteorology datasets as Met_AREAM2.
     # ==================================================================
     if normalize_by_area:
         if "AREA" in refdata.data_vars.keys():
             ref_area = refdata["AREA"]
-            if "time" in ref_area.dims:
-                ref_area = ref_area.isel(time=0)
-            if "lev" in ref_area.dims:
-                ref_area = ref_area.isel(lev=0)
-            if refgridtype == 'cs': ref_area = reshape_MAPL_CS(
-                    ref_area,
-                    ref_area.dims
-            )
+        elif refmet is not None:
+            if "Met_AREAM2" in refmet.data_vars.keys():
+                ref_area = refmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
-                + "present in the Ref dataset!"
+                + "present in the Ref dataset and ref met with Met_AREAM2" \
+                + " not passed!"
             raise ValueError(msg)
+        if "time" in ref_area.dims:
+            ref_area = ref_area.isel(time=0)
+        if refgridtype == 'cs':
+            ref_area = reshape_MAPL_CS(ref_area, ref_area.dims)
 
         if "AREA" in devdata.data_vars.keys():
             dev_area = devdata["AREA"]
-            if "time" in dev_area.dims:
-                dev_area = dev_area.isel(time=0)
-            if "lev" in dev_area.dims:
-                dev_area = dev_area.isel(lev=0)
-            if devgridtype == 'cs': dev_area = reshape_MAPL_CS(
-                    dev_area,
-                    dev_area.dims
-            )
+        elif devmet is not None:
+            if "Met_AREAM2" in devmet.data_vars.keys():
+                dev_area = devmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
-                + "present in the Dev dataset!"
+                + "present in the Dev dataset and dev met with Met_AREAM2" \
+                | " not passed!"
             raise ValueError(msg)
+        if "time" in dev_area.dims:
+            dev_area = dev_area.isel(time=0)
+        if devgridtype == 'cs':
+            dev_area = reshape_MAPL_CS(dev_area, dev_area.dims)
+
+        # Make sure the areas do not have a lev dimension
+        if "lev" in ref_area.dims:
+            ref_area = ref_area.isel(lev=0)
+        if "lev" in dev_area.dims:
+            dev_area = dev_area.isel(lev=0)
 
     # ==================================================================
     # Create arrays for each variable in the Ref and Dev dataset
@@ -1878,10 +1893,10 @@ def compare_zonal_mean(
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
-                if "/" in units:
-                    cmn_units = "{}/m2".format(units)
+                if "/" in cmn_units:
+                    cmn_units = "{}/m2".format(cmn_units)
                 else:
-                    cmn_units = "{} m-2".format(units)
+                    cmn_units = "{} m-2".format(cmn_units)
                 ds_ref.attrs["units"] = cmn_units
                 ds_dev.attrs["units"] = cmn_units
                 subtitle_extra = ", Normalized by Area"
@@ -5952,20 +5967,21 @@ def make_benchmark_wetdep_plots(
     if devmet:
         devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
 
+# ewl: might not need this anymore
     # If we are normalizing by area, then merge the surface areas
     # on the Ref & Dev grids into the Ref & Dev datasets, but only
     # if they are not already there. The area variables should both
     # be called 'AREA' and be in units of m2.
-    if normalize_by_area:
-        if areas is not None:
-            if 'AREA' not in refds.data_vars:
-                refds = xr.merge([refds, areas["Ref"]])
-            if 'AREA' not in devds.data_vars:
-                devds = xr.merge([devds, areas["Dev"]])
-        else:
-            msg = "ERROR: normalize_by_area = True but " \
-                + "the 'areas' argument was not passed!"
-            raise ValueError(msg)
+#3    if normalize_by_area:
+#3        if areas is not None:
+#3            if 'AREA' not in refds.data_vars:
+#3                refds = xr.merge([refds, areas["Ref"]])
+#3            if 'AREA' not in devds.data_vars:
+#3                devds = xr.merge([devds, areas["Dev"]])
+#3        else:
+#3            msg = "ERROR: normalize_by_area = True but " \
+#3                + "the 'areas' argument was not passed!"
+#3            raise ValueError(msg)
 
     # Make sure that Ref and Dev datasets have the same variables.
     # Variables that are in Ref but not in Dev will be added to Dev
