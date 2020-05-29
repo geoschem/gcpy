@@ -14,7 +14,7 @@ import numpy as np
 import os
 from os.path import join
 import gcpy.constants as constants
-from gcpy.benchmark import get_troposphere_mask
+from gcpy.grid import get_troposphere_mask
 import warnings
 import xarray as xr
 from yaml import load as yaml_load_file

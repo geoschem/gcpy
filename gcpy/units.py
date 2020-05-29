@@ -313,3 +313,63 @@ def convert_units(
 
     # Return to calling routine
     return dr_new
+
+def check_units(refdata, devdata, varname):
+    """
+    Ensures the units for varname match in refdata and devdata.
+    Currently, if units are in mol/mol, modifies datasets in place to have ppb units.
+
+    Args:
+    -----
+        refdata : xarray Dataset
+            The "Reference" (aka "Ref") dataset.
+
+        devdata : xarray Dataset
+            The "Development" (aka "Dev") dataset
+
+        varname : str
+            Name of data variable of which to check units.
+
+    Returns:
+    --------
+        units_ref : str
+            Units of refdata[varname], stripped of whitespace and possibly converted to ppb
+        units_dev : str
+            Units of devdata[varname], stripped of whitespace and possibly converted to ppb
+    """
+
+    #If units are mol/mol then convert to ppb
+
+    conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
+    if refdata[varname].units.strip() in conc_units:
+        refdata[varname].attrs["units"] = "ppbv"
+        refdata[varname].values = refdata[varname].values * 1e9
+    if devdata[varname].units.strip() in conc_units:
+        devdata[varname].attrs["units"] = "ppbv"
+        devdata[varname].values = devdata[varname].values * 1e9
+
+    # Binary diagnostic concentrations have units ppbv. Change to ppb.
+    if refdata[varname].units.strip() == "ppbv":
+        refdata[varname].attrs["units"] = "ppb"
+    if devdata[varname].units.strip() == "ppbv":
+        devdata[varname].attrs["units"] = "ppb"
+
+    # Check that units match
+    units_ref = refdata[varname].units.strip()
+    units_dev = devdata[varname].units.strip()
+    if units_ref != units_dev:
+        print_units_warning = True
+        if print_units_warning:
+            print("WARNING: ref and dev concentration units do not match!")
+            print("Ref units: {}".format(units_ref))
+            print("Dev units: {}".format(units_dev))
+        if enforce_units:
+            # if enforcing units, stop the program if
+            # units do not match
+            assert units_ref == units_dev, "Units do not match for {}!".format(varname)
+        else:
+            # if not enforcing units, just keep going after
+            # only printing warning once
+            print_units_warning = False
+
+    return units_ref, units_dev
