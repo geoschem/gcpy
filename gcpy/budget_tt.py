@@ -15,7 +15,7 @@ import os
 from os.path import join
 import gcpy.constants as constants
 from gcpy.grid import get_troposphere_mask
-from gcpy.util import rename_and_flip_gchp_rst_vars
+from gcpy.util import rename_and_flip_gchp_rst_vars, dict_diff
 import warnings
 import xarray as xr
 from yaml import load as yaml_load_file
