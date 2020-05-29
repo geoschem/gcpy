@@ -1,8 +1,498 @@
-""" Horizontal grid definitions and helper functions """
-
 import numpy as np
+import xarray as xr
 from numpy import asarray
+import scipy.sparse
 from itertools import product
+from .util import get_shape_of_data
+
+
+def get_troposphere_mask(ds):
+    """
+    Returns a mask array for picking out the tropospheric grid boxes.
+    Args:
+    -----
+        ds : xarray Dataset
+            Dataset containing certain met field variables (i.e.
+            Met_TropLev, Met_BXHEIGHT).
+    Returns:
+    --------
+        tropmask : numpy ndarray
+            Tropospheric mask.  False denotes grid boxes that are
+            in the troposphere and True in the stratosphere
+            (as per Python masking logic).
+    """
+
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
+    # Make sure ds is an xarray Dataset object
+    if not isinstance(ds, xr.Dataset):
+        raise TypeError("The ds argument must be an xarray Dataset!")
+
+    # Make sure certain variables are found
+    if "Met_BXHEIGHT" not in ds.data_vars.keys():
+        raise ValueError("Met_BXHEIGHT could not be found!")
+    if "Met_TropLev" not in ds.data_vars.keys():
+        raise ValueError("Met_TropLev could not be found!")
+
+    # Mask of tropospheric grid boxes in the Ref dataset
+    shape = get_shape_of_data(np.squeeze(ds["Met_BXHEIGHT"]))
+
+    # Determine if this is GCHP data
+    is_gchp = "nf" in ds["Met_BXHEIGHT"].dims
+
+    # ==================================================================
+    # Create the mask arrays for the troposphere
+    #
+    # Convert the Met_TropLev DataArray objects to numpy ndarrays of
+    # integer.  Also subtract 1 to convert from Fortran to Python
+    # array index notation.
+    # ==================================================================
+
+    multi_time_slices = (is_gchp and len(shape) == 5) or \
+                        (not is_gchp and len(shape) == 4)
+
+    if multi_time_slices:
+        # --------------------------------------------------------------
+        # GCC: There are multiple time slices
+        # --------------------------------------------------------------
+
+        # Create the tropmask array with dims
+        # (time, lev, nf*lat*lon) for GCHP, or
+        # (time, lev, lat*lon   ) for GCC
+        tropmask = np.ones((shape[0], shape[1],
+                            np.prod(np.array(shape[2:]))), bool)
+
+        # Loop over each time
+        for t in range(tropmask.shape[0]):
+
+            # Pick the tropopause level and make a 1-D array
+            values = ds["Met_TropLev"].isel(time=t).values
+            lev = np.int_(np.squeeze(values) - 1)
+            lev_1d = lev.flatten()
+
+            # Create the tropospheric mask array
+            for x in range(tropmask.shape[2]):
+                tropmask[t, 0 : lev_1d[x], x] = False
+
+    else:
+        # --------------------------------------------------------------
+        # There is only one time slice
+        # --------------------------------------------------------------
+
+        # Create the tropmask array with dims (lev, lat*lon)
+        tropmask = np.ones((shape[0], np.prod(np.array(shape[1:]))), bool)
+
+        # Pick the tropopause level and make a 1-D array
+        values = ds["Met_TropLev"].values
+        lev = np.int_(np.squeeze(values) - 1)
+        lev_1d = lev.flatten()
+
+        # Create the tropospheric mask array
+        for x in range(tropmask.shape[1]):
+            tropmask[0 : lev_1d[x], x] = False
+
+    # Reshape into the same shape as Met_BxHeight
+    return tropmask.reshape(shape)
+
+def get_input_res(data):
+    """
+    Returns resolution of dataset passed to compare_single_level or compare_zonal_means
+
+    Args:
+    -----
+
+        data : xarray Dataset
+            Input GEOS-Chem dataset
+
+    Returns:
+    -----
+
+        res : str or int
+            Lat/lon res of the form 'latresxlonres' or cubed-sphere resolution
+
+        gridtype : str
+            'll' for lat/lon or 'cs' for cubed-sphere
+
+    """
+    vdims = data.dims
+    if "lat" in vdims and "lon" in vdims:
+        lat = data["lat"].values
+        lon = data["lon"].values
+        if lat.size / 6 == lon.size:
+            return lon.size, "cs"
+        else:
+            lat.sort()
+            lon.sort()
+            #use increment of second and third coordinates
+            # to avoid polar mischief
+            lat_res = np.abs(lat[2]-lat[1])
+            lon_res = np.abs(lon[2]-lon[1])
+            return str(lat_res) + "x" + str(lon_res), "ll"
+
+    else:
+        #print("grid is cs: ", vdims)
+        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        return data.dims["Xdim"], "cs"
+
+def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent=[-180,180,-90,90],
+                   out_extent=[-180,180,-90,90]):
+    """
+    Create a mask with NaN values removed from an input array
+
+    Args:
+    -----
+
+        res : str or int
+            Resolution of grid (format 'latxlon' or csres)
+
+        gridtype : str
+            'll' for lat/lon or 'cs' for cubed-sphere
+
+        zonal_mean : boolean
+            Set to True if the output grid is for a zonal mean plot
+
+        comparison : boolean
+            Set to True if the output grid is a comparison grid
+
+        in_extent : list (minlon, maxlon, minlat, maxlat)
+            Describes minimum and maximum latitude and longitude of input data
+
+        out_extent : list (minlon, maxlon, minlat, maxlat)
+            Desired minimum and maximum latitude and longitude of output grid
+
+    Returns:
+    -----
+        [grid, grid_list] : list(dict, list(dict))
+            Returns the created grid. grid_list is a list of grids if gridtype is 'cs', else it is None
+    """
+
+    # call appropriate make_grid function and return new grid
+    if gridtype == "ll" or (zonal_mean and comparison):
+        return [make_grid_LL(res, in_extent, out_extent), None]
+    else:
+        return make_grid_CS(res)
+def get_grid_extents(data, edges=True):
+    """
+    Get min and max lat and lon from an input GEOS-Chem xarray dataset or grid dict
+
+    Args:
+    -----
+        data : xarray Dataset or dict
+            A GEOS-Chem dataset or a grid dict
+    Returns:
+    -----
+        minlon : float
+            Minimum longitude of data grid
+
+        maxlon : float
+            Maximum longitude of data grid
+
+        minlat : float
+            Minimum latitude of data grid
+
+        maxlat : float
+            Maximum latitude of data grid
+    """
+
+    if type(data) is dict:
+        if "lon_b" in data and edges:
+            return np.min(data["lon_b"]), np.max(data["lon_b"]), np.min(data["lat_b"]), np.max(data["lat_b"])
+        elif not edges:
+            return np.min(data["lon"]), np.max(data["lon"]), np.min(data["lat"]), np.max(data["lat"])
+        else:
+            return -180, 180, -90, 90
+    elif "lat" in data.dims and "lon" in data.dims:
+        lat = data["lat"].values
+        lon = data["lon"].values
+        if lat.size / 6 == lon.size:
+            #No extents for CS plots right now
+            return -180, 180, -90, 90
+        else:
+            lat = np.sort(lat)
+            minlat = np.min(lat)
+            if abs(abs(lat[1])-abs(lat[0])) != abs(abs(lat[2]) - abs(lat[1])):
+                #pole is cutoff
+                minlat = minlat - 1
+            maxlat = np.max(lat)
+            if abs(abs(lat[-1])-abs(lat[-2])) != abs(abs(lat[-2])- abs(lat[-3])):
+                maxlat = maxlat+1
+            #add longitude res to max longitude
+            lon = np.sort(lon)
+            minlon = np.min(lon)
+            maxlon = np.max(lon)+abs(abs(lon[-1]-abs(lon[-2])))
+            return minlon, maxlon, minlat, maxlat
+    else:
+        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+        return -180, 180, -90, 90
+def get_vert_grid(dataset):
+    """
+    Determine vertical grid of input dataset
+
+    Args:
+    -----
+        dataset : xarray Dataset
+            A GEOS-Chem output dataset
+    Returns:
+    -----
+        p_edge : numpy array
+            Edge pressure values for vertical grid
+
+        p_mid  : numpy array
+            Midpoint pressure values for vertical grid
+
+        nlev : int
+            Number of levels in vertical grid
+    """
+
+    if dataset.sizes["lev"] in (72, 73):
+        return GEOS_72L_grid.p_edge(), GEOS_72L_grid.p_mid(), 72
+    elif dataset.sizes["lev"] in (47, 48):
+        return GEOS_47L_grid.p_edge(), GEOS_47L_grid.p_mid(), 47
+    else:
+        raise ValueError("Only 72/73 or 47/48 level vertical grids are supported")
+
+def get_pressure_indices(pedge, pres_range):
+    """
+    Get indices where edge pressure values are within a given pressure range
+
+    Args:
+    -----
+        pedge : numpy array
+            A GEOS-Chem output dataset
+
+        pres_range : list(float, float)
+            Contains minimum and maximum pressure
+
+    Returns:
+    -----
+        numpy array
+            Indices where edge pressure values are within a given pressure range
+    """
+
+    return np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))[0]
+def pad_pressure_edges(pedge_ind, max_ind):
+    """
+    Add outer indices to edge pressure index list
+
+    Args:
+    -----
+        pedge_ind : list
+            List of edge pressure indices
+
+        max_ind : int
+            Maximum index
+
+    Returns:
+    -----
+        pedge_ind : list
+            List of edge pressure indices, possibly with new minimum and maximum indices
+    """
+
+    if max_ind in (48, 73):
+        max_ind = max_ind - 1
+    if min(pedge_ind) != 0:
+        pedge_ind = np.append(min(pedge_ind) - 1, pedge_ind)
+    if max(pedge_ind) != max_ind:
+        pedge_ind = np.append(pedge_ind, max(pedge_ind) + 1)
+    return pedge_ind
+def convert_lev_to_pres(dataset, pmid, pedge):
+    """
+    Convert lev dimension to pressure in a GEOS-Chem dataset
+
+    Args:
+    -----
+        dataset : xarray Dataset
+            GEOS-Chem dataset
+
+        pmid : np.array
+            Midpoint pressure values
+
+        pedge : np.array
+            Edge pressure values
+
+    Returns:
+    -----
+        dataset : xarray Dataset
+            Input dataset with "lev" dimension values replaced with pressure values
+    """
+
+    if dataset.sizes["lev"] in (72, 47):
+        dataset["lev"] = pmid
+    elif dataset.sizes["lev"] in (73, 48):
+        dataset["lev"] = pedge
+    else:
+        msg = "compare_zonal_mean implemented for 72, 73, 47, or 48 levels only. " \
+              + "Other values found in Ref."
+        raise ValueError(msg)
+    dataset["lev"].attrs["unit"] = "hPa"
+    dataset["lev"].attrs["long_name"] = "level pressure"
+    return dataset
+
+#Begin gc_vertical.py - incorporate this functionality into functions WBD
+class vert_grid:
+    def __init__(self,AP=None,BP=None,p_sfc=1013.25):
+        if (AP.size != BP.size) or (AP is None):
+            # Throw error?
+            print('Inconsistent vertical grid specification')
+        self.AP = np.array(AP)
+        self.BP = np.array(BP)
+        self.p_sfc = p_sfc
+    def p_edge(self):
+        # Calculate pressure edges using eta coordinate
+        return self.AP + self.BP * self.p_sfc
+    def p_mid(self):
+        p_edge = self.p_edge()
+        return (p_edge[1:]+p_edge[:-1])/2.0
+
+# Standard vertical grids
+GEOS_72L_AP = np.array([ 0.000000e+00, 4.804826e-02, 6.593752e+00, 1.313480e+01,
+         1.961311e+01, 2.609201e+01, 3.257081e+01, 3.898201e+01,
+         4.533901e+01, 5.169611e+01, 5.805321e+01, 6.436264e+01,
+         7.062198e+01, 7.883422e+01, 8.909992e+01, 9.936521e+01,
+         1.091817e+02, 1.189586e+02, 1.286959e+02, 1.429100e+02,
+         1.562600e+02, 1.696090e+02, 1.816190e+02, 1.930970e+02,
+         2.032590e+02, 2.121500e+02, 2.187760e+02, 2.238980e+02,
+         2.243630e+02, 2.168650e+02, 2.011920e+02, 1.769300e+02,
+         1.503930e+02, 1.278370e+02, 1.086630e+02, 9.236572e+01,
+         7.851231e+01, 6.660341e+01, 5.638791e+01, 4.764391e+01,
+         4.017541e+01, 3.381001e+01, 2.836781e+01, 2.373041e+01,
+         1.979160e+01, 1.645710e+01, 1.364340e+01, 1.127690e+01,
+         9.292942e+00, 7.619842e+00, 6.216801e+00, 5.046801e+00,
+         4.076571e+00, 3.276431e+00, 2.620211e+00, 2.084970e+00,
+         1.650790e+00, 1.300510e+00, 1.019440e+00, 7.951341e-01,
+         6.167791e-01, 4.758061e-01, 3.650411e-01, 2.785261e-01,
+         2.113490e-01, 1.594950e-01, 1.197030e-01, 8.934502e-02,
+         6.600001e-02, 4.758501e-02, 3.270000e-02, 2.000000e-02,
+         1.000000e-02 ])
+
+GEOS_72L_BP = np.array([ 1.000000e+00, 9.849520e-01, 9.634060e-01, 9.418650e-01,
+         9.203870e-01, 8.989080e-01, 8.774290e-01, 8.560180e-01,
+         8.346609e-01, 8.133039e-01, 7.919469e-01, 7.706375e-01,
+         7.493782e-01, 7.211660e-01, 6.858999e-01, 6.506349e-01,
+         6.158184e-01, 5.810415e-01, 5.463042e-01, 4.945902e-01,
+         4.437402e-01, 3.928911e-01, 3.433811e-01, 2.944031e-01,
+         2.467411e-01, 2.003501e-01, 1.562241e-01, 1.136021e-01,
+         6.372006e-02, 2.801004e-02, 6.960025e-03, 8.175413e-09,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
+         0.000000e+00 ])
+
+GEOS_72L_grid = vert_grid(GEOS_72L_AP, GEOS_72L_BP)
+
+# Reduced grid
+GEOS_47L_AP = np.zeros(48)
+GEOS_47L_BP = np.zeros(48)
+
+# Fill in the values for the surface
+GEOS_47L_AP[0] = GEOS_72L_AP[0]
+GEOS_47L_BP[0] = GEOS_72L_BP[0]
+
+# Build the GEOS 72-layer to 47-layer mapping matrix at the same time
+xmat_i = np.zeros((72))
+xmat_j = np.zeros((72))
+xmat_s = np.zeros((72))
+
+# Index here is the 1-indexed layer number
+for i_lev in range(1,37):
+    # Map from 1-indexing to 0-indexing
+    x_lev = i_lev - 1
+    # Sparse matrix for regridding
+    # Below layer 37, it's 1:1
+    xct = x_lev
+    xmat_i[xct] = x_lev
+    xmat_j[xct] = x_lev
+    xmat_s[xct] = 1.0
+    # Copy over the pressure edge for the top of the grid cell
+    GEOS_47L_AP[i_lev] = GEOS_72L_AP[i_lev]
+    GEOS_47L_BP[i_lev] = GEOS_72L_BP[i_lev]
+
+# Now deal with the lumped layers
+skip_size_vec = [2,4]
+number_lumped = [4,7]
+
+# Initialize
+i_lev = 36
+i_lev_72 = 36
+for lump_seg in range(2):
+    skip_size = skip_size_vec[lump_seg]
+    # 1-indexed starting point in the 47-layer grid
+    first_lev_47 = i_lev + 1
+    first_lev_72 = i_lev_72 + 1
+    
+    # Loop over the coarse vertical levels (47-layer grid)
+    for i_lev_offset in range(number_lumped[lump_seg]):
+        # i_lev is the index for the current level on the 47-level grid
+        i_lev = first_lev_47 + i_lev_offset
+        # Map from 1-indexing to 0-indexing
+        x_lev = i_lev - 1
+        
+        # Get the 1-indexed location of the last layer in the 72-layer grid 
+        # which is below the start of the current lumping region
+        i_lev_72_base = first_lev_72 + (i_lev_offset*skip_size) - 1
+        
+        # Get the 1-indexed location of the uppermost level in the 72-layer
+        # grid which is within the target layer on the 47-layer grid
+        i_lev_72 = i_lev_72_base + skip_size
+        
+        # Do the pressure edges first
+        # These are the 0-indexed locations of the upper edge for the 
+        # target layers in 47- and 72-layer grids
+        GEOS_47L_AP[i_lev] = GEOS_72L_AP[i_lev_72]
+        GEOS_47L_BP[i_lev] = GEOS_72L_BP[i_lev_72]
+        
+        # Get the total pressure delta across the layer on the lumped grid
+        # We are within the fixed pressure levels so don't need to account
+        # for variations in surface pressure
+        dp_total = GEOS_47L_AP[i_lev-1] - GEOS_47L_AP[i_lev]
+        
+        # Now figure out the mapping
+        for i_lev_offset_72 in range(skip_size):
+            # Source layer in the 72 layer grid (0-indexed)
+            x_lev_72 = i_lev_72_base + i_lev_offset_72
+            xct = x_lev_72
+            xmat_i[xct] = x_lev_72
+            # Target in the 47 layer grid
+            xmat_j[xct] = x_lev
+            
+            # Proportion of 72-layer grid cell, by pressure, within expanded layer
+            xmat_s[xct] = (GEOS_72L_AP[x_lev_72] - GEOS_72L_AP[x_lev_72+1])/dp_total
+    start_pt = i_lev
+
+# Do last entry separately (no layer to go with it)
+xmat_72to47 = scipy.sparse.coo_matrix((xmat_s,(xmat_i,xmat_j)),shape=(72,47))
+
+GEOS_47L_grid = vert_grid(GEOS_47L_AP, GEOS_47L_BP)
+
+# CAM 26-layer grid
+CAM_26L_AP = np.flip(np.array([ 219.4067,   489.5209,   988.2418,   1805.201,        
+                                2983.724,   4462.334,   6160.587,   7851.243,        
+                                7731.271,   7590.131,   7424.086,   7228.744,        
+                                6998.933,   6728.574,   6410.509,   6036.322,        
+                                5596.111,   5078.225,   4468.96,    3752.191,        
+                                2908.949,   2084.739,   1334.443,   708.499,         
+                                252.136,    0.,         0.  ]),axis=0)*0.01
+CAM_26L_BP = np.flip(np.array([ 0.,         0.,         0.,         0.,             
+                                0.,         0.,         0.,         0.,             
+                                0.01505309, 0.03276228, 0.05359622, 0.07810627,     
+                                0.1069411,  0.14086370, 0.180772,   0.227722,       
+                                0.2829562,  0.3479364,  0.4243822,  0.5143168,      
+                                0.6201202,  0.7235355,  0.8176768,  0.8962153,      
+                                0.9534761,  0.9851122,  1.        ]),axis=0)
+
+CAM_26L_grid = vert_grid(CAM_26L_AP, CAM_26L_BP)
+
+
+#horiz.py begins here - WBD 
 
 INV_SQRT_3 = 1.0 / np.sqrt(3.0)
 ASIN_INV_SQRT_3 = np.arcsin(INV_SQRT_3)
@@ -64,38 +554,31 @@ def make_grid_CS(csres,out_extent=[0,360,-90,90]):
 
 def calc_rectilinear_lon_edge(lon_stride, center_at_180):
     """ Compute longitude edge vector for a rectilinear grid.
-
     Parameters
     ----------
     lon_stride : float
         Stride length in degrees. For example, for a standard GEOS-Chem Classic
         4x5 grid, lon_stride would be 5.
-
     center_at_180: boolean
         Whether or not the grid should have a cell center at 180 degrees (i.e.
         on the date line). If true, the first grid cell is centered on the date
         line; if false, the first grid edge is on the date line.
-
     Returns
     -------
     Longitudes of cell edges in degrees East.
-
     Notes
     -----
     All values are forced to be between [-180,180]. For a grid with N cells in
     each band, N+1 edges will be returned, with the first and last value being
     duplicates.
-
     Examples
     --------
     >>> from gcpy.grid.horiz import calc_rectilinear_lon_edge
     >>> calc_rectilinear_lon_edge(5.0,true)
     np.array([177.5,-177.5,-172.5,...,177.5])
-
     See Also
     --------
     [NONE]
-
     """
 
     n_lon = np.round(360.0/lon_stride)
@@ -110,39 +593,32 @@ def calc_rectilinear_lon_edge(lon_stride, center_at_180):
 
 def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
     """ Compute latitude edge vector for a rectilinear grid.
-
     Parameters
     ----------
     lat_stride : float
         Stride length in degrees. For example, for a standard GEOS-Chem Classic
         4x5 grid, lat_stride would be 4.
-
     half_polar_grid: boolean
         Whether or not the grid should be "half-polar" (i.e. bands at poles are
         half the size). In either case the grid will start and end at -/+ 90,
         but when half_polar_grid is True, the first and last bands will have a
         width of 1/2 the normal lat_stride.
-
     Returns
     -------
     Latitudes of cell edges in degrees North.
-
     Notes
     -----
     All values are forced to be between [-90,90]. For a grid with N cells in
     each band, N+1 edges will be returned, with the first and last value being
     duplicates.
-
     Examples
     --------
     >>> from gcpy.grid.horiz import calc_rectilinear_lat_edge
     >>> calc_rectilinear_lat_edge(4.0,true)
     np.array([-90,-88,-84,-80,...,84,88,90])
-
     See Also
     --------
     [NONE]
-
     """
 
     if half_polar_grid:
@@ -161,27 +637,21 @@ def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
 
 def calc_rectilinear_grid_area(lon_edge,lat_edge):
     """ Compute grid cell areas (in m2) for a rectilinear grid.
-
     Parameters
     ----------
     #TODO
-
     Returns
     -------
     #TODO
-
     Notes
     -----
     #TODO
-
     Examples
     --------
     #TODO
-
     See Also
     --------
     [NONE]
-
     """
     from .. constants import R_EARTH
 
@@ -215,20 +685,16 @@ def calc_rectilinear_grid_area(lon_edge,lat_edge):
 
 def calc_delta_lon(lon_edge):
     """ Compute grid cell longitude widths from an edge vector.
-
     Parameters
     ----------
     lon_edge: float
         Vector of longitude edges, in degrees East.
-
     Returns
     -------
     Width of each cell, degrees East
-
     Notes
     -----
     Accounts for looping over the domain.
-
     Examples
     --------
     #TODO
@@ -256,14 +722,11 @@ def calc_delta_lon(lon_edge):
 def csgrid_GMAO(res, offset=-10):
     """
     Return cubedsphere coordinates with GMAO face orientation
-
     Parameters
     ----------
     res : cubed-sphere Resolution
-
     This function was originally written by Jiawei Zhuange and included 
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
-
     """
 
     CS = CSGrid(res, offset=offset)
@@ -292,11 +755,9 @@ def csgrid_GMAO(res, offset=-10):
 
 class CSGrid(object):
     """Generator for cubed-sphere grid geometries.
-
     CSGrid computes the latitutde and longitudes of cell centers and edges
     on a cubed-sphere grid, providing a way to retrieve these geometries
     on-the-fly if your model output data does not include them.
-
     Attributes
     ----------
     {lon,lat}_center : np.ndarray
@@ -308,10 +769,8 @@ class CSGrid(object):
         As above, except coordinates are projected into a 3D cartesian space
         with common origin to the original lat/lon coordinate system, assuming
         a unit sphere.
-
     This class was originally written by Jiawei Zhuange and included 
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
-
     """
 
     def __init__(self, c, offset=None):
@@ -333,10 +792,8 @@ class CSGrid(object):
             Degrees to offset the first faces' edge in the latitudinal
             direction. If not passed, then the western edge of the first face
             will align with the prime meridian.
-
        This function was originally written by Jiawei Zhuange and included 
        in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
-
         """
         self.c = c
         self.delta_y = 2. * ASIN_INV_SQRT_3 / c
@@ -601,10 +1058,8 @@ def latlon_to_cartesian(lon, lat):
     """ Convert latitude/longitude coordinates along the unit sphere to cartesian
     coordinates defined by a vector pointing from the sphere's center to its
     surface.
-
     This function was originally written by Jiawei Zhuange and included 
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
-
     """
 
     x = np.cos(lat) * np.cos(lon)
@@ -617,12 +1072,9 @@ vec_latlon_to_cartesian = np.vectorize(latlon_to_cartesian)
 
 def cartesian_to_latlon(x, y, z, ret_xyz=False):
     """ Convert a cartesian coordinate to latitude/longitude coordinates.
-
     Optionally return the original cartesian coordinate as a tuple.
-
     This function was originally written by Jiawei Zhuange and included 
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
-
     """
 
     xyz = np.array([x, y, z])
@@ -651,10 +1103,8 @@ def spherical_to_cartesian(theta, phi, r=1):
     """ Convert spherical coordinates in the form (theta, phi[, r]) to
     cartesian, with the origin at the center of the original spherical
     coordinate system.
-
     This function was originally written by Jiawei Zhuange and included 
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
-
     """
     x = r * np.cos(phi) * np.cos(theta)
     y = r * np.cos(phi) * np.sin(theta)
@@ -667,10 +1117,8 @@ def cartesian_to_spherical(x, y, z):
     """ Convert cartesian coordinates to spherical in the form
     (theta, phi[, r]) with the origin remaining at the center of the
     original spherical coordinate system.
-
     This function was originally written by Jiawei Zhuange and included 
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
-
     """
     r = np.sqrt(x**2 + y**2 + z**2)
     #theta = np.arccos(z / r)
@@ -688,14 +1136,11 @@ vec_cartesian_to_spherical = np.vectorize(cartesian_to_spherical)
 def rotate_sphere_3D(theta, phi, r, rot_ang, rot_axis='x'):
     """ Rotate a spherical coordinate in the form (theta, phi[, r])
     about the indicating axis, 'rot_axis'.
-
     This method accomplishes the rotation by projecting to a
     cartesian coordinate system and performing a solid body rotation
     around the requested axis.
-
     This function was originally written by Jiawei Zhuange and included 
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
-
     """
     cos_ang = np.cos(rot_ang)
     sin_ang = np.sin(rot_ang)

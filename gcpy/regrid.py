@@ -2,8 +2,7 @@
 
 import os
 import xesmf as xe
-from .horiz import make_grid_LL, make_grid_CS
-from ..core import get_input_res, call_make_grid, get_grid_extents
+from .grid import make_grid_LL, make_grid_CS, get_input_res, call_make_grid, get_grid_extents
 import numpy as np
 
 def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False,
@@ -150,3 +149,120 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     regridref, regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder, 
     devregridder, refregridder_list, devregridder_list]
 
+def dict_72_to_47():
+    """
+    Get 72L-to-47L conversion dict which stores weights from 72 levels to 47 levels
+    Returns:
+    --------
+        conv_dict : dict {72L (int) : (47L (int), weight (int))}
+              Mapping of 72L to 47L
+    """
+
+    conv_dict = {L72 : (xmat_72to47.col[L72], xmat_72to47.data[L72]) for L72 in xmat_72to47.row}
+    return conv_dict
+
+def reduce_72_to_47(DataArray, conv_dict, pmid_ind_72, pmid_ind_47):
+    """
+    Reduce 72 level DataArray to 47 level-equivalent for full or restricted
+    pressure ranges.
+    Args:
+    -----
+        DataArray : xarray DataArray
+            72 level DataArray
+    
+        conv_dict : dict
+            Mapping of 72L to 47L
+        pmid_ind_72 : list(int)
+            List of midpoint indices for 72L grid
+        pmid_ind_47 : list(int)
+            List of midpoint indices for 47L grid
+        
+    Returns:
+    --------
+         xarray DataArray
+            DataArray now reduced to 47L grid
+    """
+
+    #reduce 72 level DataArray to 47 level-equivalent
+    #This function works for both full and restricted pressure ranges
+    new_shape = list(DataArray.data.shape)
+    #assumes first dim is level
+    new_shape[0] = len(pmid_ind_47)
+    reduced_offset = min(pmid_ind_47)
+    reduced_data = np.zeros(new_shape)
+    for i in range(0, len(pmid_ind_72)):
+        lev = pmid_ind_72[i]
+        reduced_data[conv_dict[lev][0]-reduced_offset] = reduced_data[conv_dict[lev][0]-reduced_offset] + DataArray.data[i]*conv_dict[lev][1]
+    new_coords = {coord : DataArray.coords[coord].data for coord in DataArray.coords if coord != 'lev'}
+    new_coords['lev'] = np.array(pmid_ind_47)
+    #GCHP-specific
+    if 'lats' in DataArray.coords:
+        new_coords['lats'] = (('lon', 'lat'), DataArray.coords['lats'].data)
+    if 'lons' in DataArray.coords:
+        new_coords['lons'] = (('lon', 'lat'), DataArray.coords['lons'].data)
+    return xr.DataArray(reduced_data, dims=tuple([dim for dim in DataArray.dims]),
+                        coords = new_coords, attrs = DataArray.attrs)
+
+def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_cmp_grid, gridtype,
+                           cmpminlat_ind=0, cmpmaxlat_ind=-2, cmpminlon_ind=0, cmpmaxlon_ind=-2, nlev=1):
+    """
+    Regrid comparison datasets to lat/lon format.
+    Args:
+    -----
+        data : xarray DataArray
+            DataArray containing a GEOS-Chem data variable
+        res : int
+            Cubed-sphere resolution for comparison grid
+        
+        regrid : boolean
+            Set to true to regrid dataset
+        regridder : xESMF regridder
+            Regridder between the original data grid and the comparison grid
+     
+        regridder_list : list(xESMFW regridder)
+            List of regridders for cubed-sphere data
+        global_cmp_grid : xarray DataArray
+            Comparison grid
+    
+        gridtype : str
+            Type of input data grid (either 'll' or 'cs')
+        
+        cmpminlat_ind : int
+            Index of minimum latitude extent for comparison grid
+        cmpmaxlat_ind : int
+            Index (minus 1) of maximum latitude extent for comparison grid
+        cmpminlon_ind : int
+            Index of minimum longitude extent for comparison grid
+        cmpmaxlon_ind : int
+            Index (minus 1) of maximum longitude extent for comparison grid
+        nlev : int
+            Number of levels of input grid and comparison grid
+    Returns:
+    --------
+        data : xarray DataArray
+            Original DataArray regridded to comparison grid (including resolution and extent changes)
+    """
+
+    if regrid:
+        if gridtype == "ll":
+            # regrid ll to ll
+            return regridder(data)
+        else:
+            if nlev is 1:
+                new_data = np.zeros([global_cmp_grid['lat'].size,
+                                     global_cmp_grid['lon'].size])
+                data_reshaped = data.data.reshape(6, res, res)
+            else:
+                new_data = np.zeros([nlev, global_cmp_grid['lat'].size,
+                                     global_cmp_grid['lon'].size])
+                data_reshaped = data.data.reshape(nlev, 6, res, res).swapaxes(0, 1)
+            for j in range(6):
+                regridder = regridder_list[j]
+                new_data += regridder(data_reshaped[j])
+            if nlev is 1:
+                #limit to extent of cmpgrid
+                return new_data[cmpminlat_ind:cmpmaxlat_ind+1,cmpminlon_ind:cmpmaxlon_ind+1].squeeze()
+            else:
+                return new_data
+    else:
+        return data

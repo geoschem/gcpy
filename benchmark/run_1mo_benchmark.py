@@ -51,7 +51,7 @@ import calendar
 import os
 from os.path import join
 from gcpy import benchmark as bmk
-from gcpy.core import get_filepaths
+from gcpy.util import get_filepaths
 import gcpy.budget_ops as opbdg
 import gcpy.ste_flux as ste
 import numpy as np
