@@ -334,7 +334,6 @@ def mass_from_rst(globvars, ds, tropmask):
     # Conversion factors based on restart-file met fields
     g100    = 100.0 / constants.G
     if 'time' in ds["Met_DELPDRY"].dims:
-        print(ds.dims)
         airmass = ds["Met_DELPDRY"].isel(time=0) * globvars.area_m2 * g100
     else:
         airmass = ds["Met_DELPDRY"] * globvars.area_m2 * g100

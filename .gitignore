@@ -14,7 +14,7 @@ gcpy/version.py
 auto-save-list
 tramp
 .\#*
-
+gcpy/bin/*
 # Org-mode
 .org-id-locations
 *_archive

@@ -260,7 +260,6 @@ def convert_units(
             # Need to right pad the interval array with new axes up to the
             # time dim of the dataset to enable broadcasting
             numnewdims = len(dr.dims) - ( dr.dims.index('time') + 1 )
-            print(numnewdims)
             for newdim in range(numnewdims):
                 numsec = numsec[:,np.newaxis]
         else:

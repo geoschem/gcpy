@@ -23,6 +23,7 @@ from .core import gcplot, all_zero_or_nan, get_grid_extents, call_make_grid, \
     get_nan_mask, get_vert_grid, get_pressure_indices, pad_pressure_edges, convert_lev_to_pres
 from .units import convert_units
 import gcpy.constants as gcon
+from yaml import load as yaml_load_file
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
 import warnings
@@ -291,12 +292,15 @@ def compare_single_level(
     varlist=None,
     ilev=0,
     itime=0,
+    refmet=None,
+    devmet=None,
     weightsdir='.',
     pdfname="",
     cmpres=None,
     match_cbar=True,
     normalize_by_area=False,
     enforce_units=True,
+    convert_to_ugm3=False,
     flip_ref=False,
     flip_dev=False,
     use_cmap_RdBu=False,
@@ -341,6 +345,14 @@ def compare_single_level(
             Dataset time dimension index using 0-based system
             Default value: 0
 
+        refmet : xarray dataset
+            Dataset containing ref meteorology
+            Default value: None
+
+        devmet : xarray dataset
+            Dataset containing dev meteorology  
+            Default value: None
+
         weightsdir : str
             Directory path for storing regridding weights
             Default value: None (will create/store weights in
@@ -371,6 +383,10 @@ def compare_single_level(
             Set this flag to True to force an error if Ref and Dev
             variables have different units.
             Default value: True
+
+        convert_to_ugm3 : boolean
+            Whether to convert data units to ug/m3 for plotting.
+            Default value: False
 
         flip_ref : boolean
             Set this flag to True to flip the vertical dimension of
@@ -426,162 +442,287 @@ def compare_single_level(
 
     """
     warnings.showwarning = warning_format
-    # TODO: refactor this function and zonal mean plot function.
-    # There is a lot of overlap and repeated code that could be abstracted.
+
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
 
     if not isinstance(devdata, xr.Dataset):
         raise TypeError("The devdata argument must be an xarray Dataset!")
-        
-    #Prepare diff-of-diffs datasets if needed
-    fracrefdata = None
-    fracdevdata = None
-    if second_ref is not None:
-        refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
-    if second_dev is not None:
-        devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
+                
+    # Determine if doing diff-of-diffs
+    if second_ref is not None and second_dev is not None:
+        diff_of_diffs = True
+    else:
+        diff_of_diffs = False
 
-    if type(refstr) is list:
-        frac_refstr = '{} / {}'.format(refstr[0], refstr[1])
-        refstr = '{} - {}'.format(refstr[0], refstr[1])
-    else:
-        frac_refstr = 'Ref2 / Ref1'
-    if type(devstr) is list:
-        frac_devstr = '{} / {}'.format(devstr[0], devstr[1])
-        devstr = '{} - {}'.format(devstr[0], devstr[1])
-    else:
-        frac_devstr = 'Dev2 / Dev1'
+    # Prepare diff-of-diffs datasets if needed
+    if diff_of_diffs:
+        refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
+        devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
+        if type(refstr) is list:
+            frac_refstr = '{} / {}'.format(refstr[0], refstr[1])
+            refstr = '{} - {}'.format(refstr[0], refstr[1])
+        else:
+            frac_refstr = 'Ref2 / Ref1'
+        if type(devstr) is list:
+            frac_devstr = '{} / {}'.format(devstr[0], devstr[1])
+            devstr = '{} - {}'.format(devstr[0], devstr[1])
+        else:
+            frac_devstr = 'Dev2 / Dev1'
 
     # If no varlist is passed, plot all (surface only for 3D)
-    if varlist == None:
+    if varlist is None:
         quiet = not verbose
         vardict = core.compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict["commonvars3D"] + vardict["commonvars2D"]
         print("Plotting all common variables")
     n_var = len(varlist)
 
-    # If no pdf name passed, then do not save to PDF
+    # If no PDF name passed, then do not save to PDF
     savepdf = True
     if pdfname == "":
         savepdf = False
-    # Cleanup previous temp PDFs
+
+    # Cleanup previous temporary PDFs produced during parallelization
     for i in range(n_var):
         try:
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
         except:
             continue
 
-
     # Get grid info and regrid if necessary
-    [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref,
-    regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder, devregridder,
-    refregridder_list, devregridder_list] = create_regridders(refdata, devdata, weightsdir, cmpres=cmpres)
+    [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, 
+     regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder,
+     devregridder, refregridder_list, devregridder_list] = create_regridders(
+         refdata,
+         devdata,
+         weightsdir,
+         cmpres=cmpres
+     )
 
-    # =================================================================
+    # ==============================================================
+    # Handle grid extents for lat-lon grids
+    # ==============================================================
+
     # Get lat/lon extents, if applicable
-    # =================================================================
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
     cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)
 
-    # ==============================================================
     # Set plot bounds for non cubed-sphere regridding and plotting
-    # ==============================================================
     if cmpgridtype == "ll":
         ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
         dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
         cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
 
-    #Trim data to extent of comparison grid if using ll grids
-    #Get cmp extents in same midpoint format as ll grid
-    cmp_mid_minlon, cmp_mid_maxlon, cmp_mid_minlat, cmp_mid_maxlat = get_grid_extents(cmpgrid,edges=False)
-    if ref_extent != cmp_extent and refgridtype == "ll":
-        refdata = refdata.where(refdata.lon>=cmp_mid_minlon,
-                                drop=True).where(refdata.lon<=cmp_mid_maxlon,
-                                                 drop=True).where(refdata.lat>=cmp_mid_minlat,
-                                                                  drop=True).where(refdata.lat<=cmp_mid_maxlat,drop=True)
-    if dev_extent != cmp_extent and devgridtype == "ll":
-        devdata = devdata.where(devdata.lon>=cmp_mid_minlon,
-                                drop=True).where(devdata.lon<=cmp_mid_maxlon,
-                                                 drop=True).where(devdata.lat>=cmp_mid_minlat,
-                                                                  drop=True).where(devdata.lat<=cmp_mid_maxlat,drop=True)
+    # Trim data to extent of comparison grid if using lat-lon grids.
+    # Get comparison date extents in same midpoint format as lat-lon grid.
+    cmp_mid_minlon, cmp_mid_maxlon, cmp_mid_minlat, cmp_mid_maxlat = \
+                                    get_grid_extents(cmpgrid,edges=False)
+    if refgridtype == "ll" and ref_extent != cmp_extent:
+        refdata = refdata.\
+                      where(refdata.lon >= cmp_mid_minlon, drop=True).\
+                      where(refdata.lon <= cmp_mid_maxlon, drop=True).\
+                      where(refdata.lat >= cmp_mid_minlat, drop=True).\
+                      where(refdata.lat <= cmp_mid_maxlat, drop=True)
+        if diff_of_diffs:
+            fracrefdata = fracrefdata.\
+                            where(fracrefdata.lon >= cmp_mid_minlon,drop=True).\
+                            where(fracrefdata.lon <= cmp_mid_maxlon,drop=True).\
+                            where(fracrefdata.lat >= cmp_mid_minlat,drop=True).\
+                            where(fracrefdata.lat <= cmp_mid_maxlat,drop=True)
+    if devgridtype == "ll" and dev_extent != cmp_extent:
+        devdata = devdata.\
+                      where(devdata.lon >= cmp_mid_minlon, drop=True).\
+                      where(devdata.lon <= cmp_mid_maxlon, drop=True).\
+                      where(devdata.lat >= cmp_mid_minlat, drop=True).\
+                      where(devdata.lat <= cmp_mid_maxlat, drop=True)
+        if diff_of_diffs:
+            fracdevdata = fracdevdata.\
+                            where(fracdevdata.lon >= cmp_mid_minlon,drop=True).\
+                            where(fracdevdata.lon <= cmp_mid_maxlon,drop=True).\
+                            where(fracdevdata.lat >= cmp_mid_minlat,drop=True).\
+                            where(fracdevdata.lat <= cmp_mid_maxlat,drop=True)
 
-    if fracrefdata is not None and ref_extent != cmp_extent and refgridtype == "ll":
-        fracrefdata = fracrefdata.where(fracrefdata.lon>=cmp_mid_minlon,
-                                drop=True).where(fracrefdata.lon<=cmp_mid_maxlon,
-                                                 drop=True).where(fracrefdata.lat>=cmp_mid_minlat,
-                                                                  drop=True).where(fracrefdata.lat<=cmp_mid_maxlat,drop=True)
-    if fracdevdata is not None and dev_extent != cmp_extent and devgridtype == "ll":
-        fracdevdata = fracdevdata.where(fracdevdata.lon>=cmp_mid_minlon,
-                                drop=True).where(fracdevdata.lon<=cmp_mid_maxlon,
-                                                 drop=True).where(fracdevdata.lat>=cmp_mid_minlat,
-                                                                  drop=True).where(fracdevdata.lat<=cmp_mid_maxlat,drop=True)
-
+    # ==============================================================
+    # Loop over all variables
+    # ==============================================================
     ds_refs = [None] * n_var
     frac_ds_refs = [None] * n_var
     ds_devs = [None] * n_var
     frac_ds_devs = [None] * n_var
     for i in range(n_var):
-        # ==============================================================
-        # Slice the data, allowing for the
-        # possibility of no time dimension (bpch)
-        # ==============================================================
+
         varname = varlist[i]
-        units_ref, units_dev = check_units(refdata, devdata, varname)
+        ref_dims = refdata[varname].dims
+        dev_dims = devdata[varname].dims
+
+        # ==============================================================
+        # Slice the data, allowing for no time dimension (bpch)
+        # ==============================================================
         # Ref
-        ds_refs[i] = slice_by_lev_and_time(refdata, varname, itime, ilev, flip_ref)
-        if fracrefdata is not None:
-            frac_ds_refs[i] = slice_by_lev_and_time(fracrefdata, varname, itime, ilev, flip_ref)
+        ds_refs[i] = slice_by_lev_and_time(
+            refdata,
+            varname,
+            itime,
+            ilev,
+            flip_ref
+        )
+        if diff_of_diffs:
+            frac_ds_refs[i] = slice_by_lev_and_time(
+                fracrefdata,
+                varname,
+                itime,
+                ilev,
+                flip_ref
+            )
+            fracref_dims = fracrefdata[varname].dims
         # Dev
-        ds_devs[i] = slice_by_lev_and_time(devdata, varname, itime, ilev, flip_dev)
-        if fracdevdata is not None:
-            frac_ds_devs[i] = slice_by_lev_and_time(fracdevdata, varname, itime, ilev, flip_dev)
+        ds_devs[i] = slice_by_lev_and_time(
+            devdata,
+            varname,
+            itime,
+            ilev,
+            flip_dev
+        )
+        if diff_of_diffs:
+            frac_ds_devs[i] = slice_by_lev_and_time(
+                fracdevdata,
+                varname,
+                itime,
+                ilev,
+                flip_dev
+            )
+            fracdev_dims = fracdevdata[varname].dims
+
+        # ==================================================================
+        #  Handle units as needed
+        # ==================================================================
+        
+        # Check that units are the same in ref and dev. Will exit with
+        # an error if do not match and enforce_units is true (default).
+        check_units(ds_refs[i], ds_devs[i])
+
+        # Convert to ppb if units string is variation of mol/mol
+        if data_unit_is_mol_per_mol(ds_refs[i]):
+            ds_refs[i].values = ds_refs[i].values * 1e9
+            ds_refs[i].attrs["units"] = "ppb"
+        if data_unit_is_mol_per_mol(ds_devs[i]):
+            ds_devs[i].values = ds_devs[i].values * 1e9
+            ds_devs[i].attrs["units"] = "ppb"
+
+        # If units string is ppbv (true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "ppbv":
+            ds_refs[i].attrs["units"] = "ppb"
+        if ds_devs[i].units.strip() == "ppbv":
+            ds_devs[i].attrs["units"] = "ppb"
+
+        # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
+        if convert_to_ugm3:
+
+            # Error checks: must pass met, not normalize by area, and be in ppb
+            if refmet is None or devmet is None:
+                msg = "Met mata ust be passed to convert units to ug/m3."
+                raise ValueError(msg)
+            elif normalize_by_area:
+                msg = "Normalizing by area is now allowed if plotting ug/m3"
+                raise ValueError(msg)
+            elif ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
+                msg = "Units must be mol/mol if converting to ug/m3."
+                raise ValueError(msg)
+
+            # Slice air density data by lev and time
+            # (assume same format and dimensions as refdata and devdata)
+            ref_airden = slice_by_lev_and_time(
+                refmet,
+                "Met_AIRDEN",
+                itime,
+                ilev,
+                False
+            )
+            dev_airden = slice_by_lev_and_time(
+                devmet,
+                "Met_AIRDEN",
+                itime,
+                ilev,
+                False
+            )
+
+            # Convert values from ppb to ug/m3:
+            # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
+            #         * g/mol spc * 1e6ug/g
+            #       = ppb * air density * (spc MW / air MW)
+            gcon.MW_AIR  # g/mole dry air
+            # Eventually put this in a comprehensive unit conversion function.
+            ds_refs[i].values = ds_refs[i].values *              \
+                                ref_airden.values #* ( spc_mw / gcon.MW_AIR )
+            ds_devs[i].values = ds_devs[i].values *              \
+                                dev_airden.values #* ( spc_mw / gcon.MW_AIR )
+
+            # Update units string
+            ds_refs[i].attrs["units"] = "ug/m3"
+            ds_devs[i].attrs["units"] = "ug/m3"
 
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
-        ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
-        ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
-        if fracrefdata is not None:
-            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i], fracrefdata[varname].dims)
-        if fracdevdata is not None:
-            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i], fracdevdata[varname].dims)
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
+        if diff_of_diffs:
+            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
+            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
 
     # ==================================================================
-    # Get the area variables if normalize_by_area=True
-    # NOTE: expect areas to be in dataset. For GC-Classic 'AREA' is
-    # included in all diagnostic files. For GCHP it needs to be added
-    # to the dataset beforehand and named 'AREA'.
+    # Get the area variables if normalize_by_area=True. They can be
+    # either in the main datasets as variable AREA or in the optionally
+    # passed meteorology datasets as Met_AREAM2.
     # ==================================================================
     if normalize_by_area:
+        # ref
         if "AREA" in refdata.data_vars.keys():
             ref_area = refdata["AREA"]
-            if "time" in ref_area.dims:
-                ref_area = ref_area.isel(time=0)
-            if refgridtype == 'cs':
-                ref_area = reshape_MAPL_CS(ref_area, ref_area.dims)
+        elif refmet is not None:
+            if "Met_AREAM2" in refmet.data_vars.keys():
+                ref_area = refmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
-                + "present in the Ref dataset!"
+                + "present in the Ref dataset and ref met with Met_AREAM2" \
+                + " not passed!"
             raise ValueError(msg)
+        if "time" in ref_area.dims:
+            ref_area = ref_area.isel(time=0)
+        if refgridtype == 'cs':
+            ref_area = reshape_MAPL_CS(ref_area)
 
+        # dev
         if "AREA" in devdata.data_vars.keys():
             dev_area = devdata["AREA"]
-            if "time" in dev_area.dims:
-                dev_area = dev_area.isel(time=0)
-            if devgridtype == 'cs':
-                dev_area = reshape_MAPL_CS(dev_area, dev_area.dims)
+        elif devmet is not None:
+            if "Met_AREAM2" in devmet.data_vars.keys():
+                dev_area = devmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
-                + "present in the Dev dataset!"
+                + "present in the Dev dataset and dev met with Met_AREAM2" \
+                | " not passed!"
             raise ValueError(msg)
+        if "time" in dev_area.dims:
+            dev_area = dev_area.isel(time=0)
+        if devgridtype == 'cs':
+            dev_area = reshape_MAPL_CS(dev_area)
+
+        # Make sure the areas do not have a lev dimension
+        if "lev" in ref_area.dims:
+            ref_area = ref_area.isel(lev=0)
+        if "lev" in dev_area.dims:
+            dev_area = dev_area.isel(lev=0)
 
     # ==================================================================
     # Create arrays for each variable in Ref and Dev datasets
-    # and do any necessary regridding.
+    # and do any necessary regridding. 'cmp' stands for comparison
+    # and represents ref and dev data regridded as needed to a common
+    # grid type and resolution for use in difference and ratio plots.
     # ==================================================================
     ds_ref_cmps = [None] * n_var
     ds_dev_cmps = [None] * n_var
@@ -597,8 +738,10 @@ def compare_single_level(
     for i in range(n_var):
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
-        
-        # Do area normalization before regridding if normalize_by_area=True
+
+        # Do area normalization before regridding if normalize_by_area is True.
+        # Assumes units are the same in ref and dev. If enforce_units is passed
+        # as false then normalization may not be correct.
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
@@ -606,27 +749,68 @@ def compare_single_level(
                 ds_dev.values = ds_dev.values / dev_area.values
                 ds_refs[i] = ds_ref
                 ds_devs[i] = ds_dev
-                if fracrefdata is not None:
+                if diff_of_diffs:
                     frac_ds_refs[i] = frac_ds_refs[i].values / ref_area.values
-                if fracdevdata is not None:
                     frac_ds_devs[i] = frac_ds_devs[i].values / dev_area.values
 
         # Ref
-        ds_ref_cmps[i] = regrid_comparison_data(ds_ref, refres, regridref, refregridder,
-                                                refregridder_list, global_cmp_grid, refgridtype,
-                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind)
-        if fracrefdata is not None:
-            frac_ds_ref_cmps[i] = regrid_comparison_data(frac_ds_refs[i], refres, regridref, refregridder,
-                                                refregridder_list, global_cmp_grid, refgridtype,
-                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind)
+        ds_ref_cmps[i] = regrid_comparison_data(
+            ds_ref,
+            refres,
+            regridref,
+            refregridder,
+            refregridder_list,
+            global_cmp_grid,
+            refgridtype,
+            cmpminlat_ind,
+            cmpmaxlat_ind,
+            cmpminlon_ind,
+            cmpmaxlon_ind
+        )
+
         # Dev
-        ds_dev_cmps[i] = regrid_comparison_data(ds_dev, devres, regriddev, devregridder,
-                                                devregridder_list, global_cmp_grid, devgridtype,
-                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind)
-        if fracdevdata is not None:
-            frac_ds_dev_cmps[i] = regrid_comparison_data(frac_ds_devs[i], devres, regriddev, devregridder,
-                                                devregridder_list, global_cmp_grid, devgridtype,
-                                                cmpminlat_ind, cmpmaxlat_ind, cmpminlon_ind, cmpmaxlon_ind)
+        ds_dev_cmps[i] = regrid_comparison_data(
+            ds_dev,
+            devres,
+            regriddev,
+            devregridder,
+            devregridder_list,
+            global_cmp_grid,
+            devgridtype,
+            cmpminlat_ind,
+            cmpmaxlat_ind,
+            cmpminlon_ind,
+            cmpmaxlon_ind
+        )
+
+        # Diff of diffs
+        if diff_of_diffs:
+            frac_ds_ref_cmps[i] = regrid_comparison_data(
+                frac_ds_refs[i],
+                refres,
+                regridref,
+                refregridder,
+                refregridder_list,
+                global_cmp_grid,
+                refgridtype,
+                cmpminlat_ind,
+                cmpmaxlat_ind,
+                cmpminlon_ind, 
+                cmpmaxlon_ind
+            )
+            frac_ds_dev_cmps[i] = regrid_comparison_data(
+                frac_ds_devs[i],
+                devres,
+                regriddev,
+                devregridder,
+                devregridder_list,
+                global_cmp_grid,
+                devgridtype,
+                cmpminlat_ind,
+                cmpmaxlat_ind,
+                cmpminlon_ind,
+                cmpmaxlon_ind
+            )
 
 
     # =================================================================
@@ -639,12 +823,9 @@ def compare_single_level(
         pdf.close()
 
     # =================================================================
-    # Loop over variables
+    # Define function to create a single page figure to be called
+    # in a parallel loop
     # =================================================================
-
-    print_units_warning = True
-
-    # This loop is written as a function so it can be called in parallel
     def createfig(ivar):
 
         # Suppress harmless run-time warnings (mostly about underflow)
@@ -657,27 +838,26 @@ def compare_single_level(
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
 
-        # Convert mol/mol units to ppb and ensure ref and dev units match
-        units_ref, units_dev = check_units(refdata, devdata, varname)
-
         ds_ref = ds_refs[ivar]
         ds_dev = ds_devs[ivar]
 
         # ==============================================================
-        # Area normalization units and subtitle
+        # Set units and subtitle, including modification if normalizing
+        # area. Note if enforce_units is False (non-default) then
+        # units on difference plots will be wrong.
         # ==============================================================
-        units = units_ref
+        cmn_units = ds_ref.attrs["units"]
         subtitle_extra = ""
         varndim = varndim_ref
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
-                if "/" in units:
-                    units = "{}/m2".format(units)
+                if "/" in cmn_units:
+                    cmn_units = "{}/m2".format(cmn_units)
                 else:
-                    units = "{} m-2".format(units)
-                units_ref = units
-                units_dev = units
+                    cmn_units = "{} m-2".format(cmn_units)
+                ds_ref.attrs["units"] = cmn_units
+                ds_dev.attrs["units"] = cmn_units
                 subtitle_extra = ", Normalized by Area"
 
         # ==============================================================
@@ -702,9 +882,11 @@ def compare_single_level(
             ds_ref_cmp_reshaped = ds_ref_cmp.data.reshape(6, cmpres, cmpres)
             ds_dev_cmp_reshaped = ds_dev_cmp.data.reshape(6, cmpres, cmpres)
             if frac_ds_ref_cmp is not None:
-                frac_ds_ref_cmp_reshaped = frac_ds_ref_cmp.data.reshape(6, cmpres, cmpres)
+                frac_ds_ref_cmp_reshaped = \
+                                frac_ds_ref_cmp.data.reshape(6, cmpres, cmpres)
             if frac_ds_dev_cmp is not None:
-                frac_ds_dev_cmp_reshaped = frac_ds_dev_cmp.data.reshape(6, cmpres, cmpres)
+                frac_ds_dev_cmp_reshaped = \
+                                frac_ds_dev_cmp.data.reshape(6, cmpres, cmpres)
 
         # ==============================================================
         # Get min and max values for use in the colorbars
@@ -774,7 +956,9 @@ def compare_single_level(
         absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(absdiff)
 
         # For cubed-sphere, take special care to avoid a spurious
-        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
+        # boundary line, as described here: https://stackoverflow.com/
+        # questions/46527456/preventing-spurious-horizontal-lines-for-
+        # ungridded-pcolormesh-data
         if cmpgridtype == "cs":
             absdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2,
                                          absdiff)
@@ -783,30 +967,40 @@ def compare_single_level(
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
         if cmpgridtype == "ll":
-            #Replace fractional difference plots with absolute difference of fractional datasets if necessary
+            # Replace fractional difference plots with absolute difference
+            # of fractional datasets if necessary
             if frac_ds_dev_cmp is not None and frac_ds_ref_cmp is not None:
-                fracdiff = np.array(frac_ds_dev_cmp) - np.array(frac_ds_ref_cmp)
+                fracdiff = np.array(frac_ds_dev_cmp) -       \
+                           np.array(frac_ds_ref_cmp)
             else:
-                fracdiff = np.abs(np.array(ds_dev_cmp)) / np.abs(np.array(ds_ref_cmp))
+                fracdiff = np.abs(np.array(ds_dev_cmp)) /    \
+                           np.abs(np.array(ds_ref_cmp))
         else:
             if frac_ds_dev_cmp is not None and frac_ds_ref_cmp is not None:
-                fracdiff = frac_ds_dev_cmp_reshaped - frac_ds_ref_cmp_reshaped
+                fracdiff = frac_ds_dev_cmp_reshaped -        \
+                           frac_ds_ref_cmp_reshaped
             else:
-                fracdiff = np.abs(ds_dev_cmp_reshaped) / np.abs(ds_ref_cmp_reshaped)
+                fracdiff = np.abs(ds_dev_cmp_reshaped) /     \
+            np.abs(ds_ref_cmp_reshaped)
 
         # Replace Infinity values with NaN
         fracdiff = np.where(np.abs(fracdiff) == np.inf, np.nan, fracdiff)
         fracdiff[np.abs(fracdiff>1e308)] = np.nan
+
         # Test if the frac. diff. is zero everywhere or NaN everywhere
-        fracdiff_is_all_zero = not np.any(fracdiff) or (np.nanmin(fracdiff) == 0 and 
-                                                        np.nanmax(fracdiff) ==0)
+        fracdiff_is_all_zero = not np.any(fracdiff) or       \
+                               (np.nanmin(fracdiff) == 0 and \
+                                np.nanmax(fracdiff) ==0)
         fracdiff_is_all_nan = np.isnan(fracdiff).all() or ref_is_all_zero
+
         # Absolute max value of fracdiff, excluding NaNs
         fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)),
                               np.abs(np.nanmax(fracdiff))])
 
         # For cubed-sphere, take special care to avoid a spurious
-        # boundary line, as described here: https://stackoverflow.com/questions/46527456/preventing-spurious-horizontal-lines-for-ungridded-pcolormesh-data
+        # boundary line, as described here: https://stackoverflow.com/
+        # questions/46527456/preventing-spurious-horizontal-lines-for-
+        # ungridded-pcolormesh-data
         if cmpgridtype == "cs":
             fracdiff = np.ma.masked_where(np.abs(cmpgrid["lon"] - 180) < 2, \
                                           fracdiff)
@@ -911,20 +1105,34 @@ def compare_single_level(
             dev_title = "{} (Dev){}\nc{}".format(devstr, subtitle_extra, devres)
 
         if regridany:
-            absdiff_dynam_title = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
-            absdiff_fixed_title = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
-            if fracrefdata is not None:
-                fracdiff_dynam_title = "Difference ({}), Dynamic Range\n{} - {}".format(cmpres,frac_devstr,frac_refstr)
-                fracdiff_fixed_title = "Difference ({}), Restricted Range [5%,95%]\n{} - {}".format(cmpres, frac_devstr, frac_refstr)
+            absdiff_dynam_title = \
+                "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title = \
+                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".\
+                format(cmpres)
+            if diff_of_diffs:
+                fracdiff_dynam_title = \
+                        "Difference ({}), Dynamic Range\n{} - {}".\
+                        format(cmpres,frac_devstr,frac_refstr)
+                fracdiff_fixed_title = \
+                        "Difference ({}), Restricted Range [5%,95%]\n{} - {}".\
+                        format(cmpres, frac_devstr, frac_refstr)
             else:
-                fracdiff_dynam_title = "Ratio ({})\nDev/Ref, Dynamic Range".format(cmpres)
-                fracdiff_fixed_title = "Ratio ({})\nDev/Ref, Fixed Range".format(cmpres)
+                fracdiff_dynam_title = \
+                        "Ratio ({})\nDev/Ref, Dynamic Range".format(cmpres)
+                fracdiff_fixed_title = \
+                        "Ratio ({})\nDev/Ref, Fixed Range".format(cmpres)
         else:
             absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
-            absdiff_fixed_title = "Difference\nDev - Ref, Restricted Range [5%,95%]"
-            if fracrefdata is not None:
-                fracdiff_dynam_title = "Difference, Dynamic Range\n{} - {}".format(frac_devstr,frac_refstr)
-                fracdiff_fixed_title = "Difference, Restricted Range [5%,95%]\n{} - {}".format(frac_devstr, frac_refstr)
+            absdiff_fixed_title = \
+                            "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            if diff_of_diffs:
+                fracdiff_dynam_title = \
+                        "Difference, Dynamic Range\n{} - {}".\
+                        format(frac_devstr,frac_refstr)
+                fracdiff_fixed_title = \
+                        "Difference, Restricted Range [5%,95%]\n{} - {}".\
+                        format(frac_devstr, frac_refstr)
             else:
                 fracdiff_dynam_title = "Ratio \nDev/Ref, Dynamic Range"
                 fracdiff_fixed_title = "Ratio \nDev/Ref, Fixed Range"
@@ -941,7 +1149,7 @@ def compare_single_level(
             "dyn_abs_diff", "res_abs_diff",
             "dyn_frac_diff", "res_frac_diff",
         ]
-        if fracrefdata is not None and fracrefdata is not None:
+        if diff_of_diffs:
             subplots =  ["ref", "dev",
                          "dyn_abs_diff", "res_abs_diff",
                          "dyn_abs_diff", "res_abs_diff"]
@@ -1019,7 +1227,8 @@ def compare_single_level(
             cmpgridtype,
         ]
 
-        unit_list = [units_ref, units_dev, units, units, "unitless", "unitless"]
+        unit_list = [ds_ref.units, ds_dev.units, cmn_units,
+                     cmn_units, "unitless", "unitless"]
 
         other_all_nans = [dev_is_all_nan, ref_is_all_nan, \
                           False, False, False, False]
@@ -1076,11 +1285,15 @@ def compare_single_level(
         else:
             return
 
+    # ==================================================================
+    # Call figure generation function in a parallel loop over variables
+    # ==================================================================
     #do not attempt nested thread parallelization due to issues with matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
     if savepdf:
-        results = Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+        results = Parallel(n_jobs = n_job) (delayed(createfig)(i) \
+                                            for i in range(n_var))
         #update sig diffs after parallel calls
         if current_process().name == "MainProcess":
             for varname in results:
@@ -1113,6 +1326,8 @@ def compare_zonal_mean(
     devstr,
     varlist=None,
     itime=0,
+    refmet=None,
+    devmet=None,
     weightsdir='.',
     pdfname="",
     cmpres=None,
@@ -1120,6 +1335,7 @@ def compare_zonal_mean(
     pres_range=[0, 2000],
     normalize_by_area=False,
     enforce_units=True,
+    convert_to_ugm3=False,
     flip_ref=False,
     flip_dev=False,
     use_cmap_RdBu=False,
@@ -1161,6 +1377,14 @@ def compare_zonal_mean(
             Dataset time dimension index using 0-based system
             Default value: 0
 
+        refmet : xarray dataset
+            Dataset containing ref meteorology
+            Default value: None
+
+        devmet : xarray dataset
+            Dataset containing dev meteorology  
+            Default value: None
+
         weightsdir : str
             Directory path for storing regridding weights
             Default value: None (will create/store weights in
@@ -1197,6 +1421,10 @@ def compare_zonal_mean(
             Set this flag to True force an error if the variables in
             the Ref and Dev datasets have different units.
             Default value: True
+
+        convert_to_ugm3 : str
+            Whether to convert data units to ug/m3 for plotting.
+            Default value: False
 
         flip_ref : boolean
             Set this flag to True to flip the vertical dimension of
@@ -1250,8 +1478,6 @@ def compare_zonal_mean(
             A dataset of the same model type / grid as devdata, to be used in diff-of-diffs plotting.
             Default value: None
     """
-    # TODO: refactor this function and single level plot function. There is a lot of overlap and
-    # repeated code that could be abstracted.
     warnings.showwarning = warning_format
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
@@ -1259,27 +1485,29 @@ def compare_zonal_mean(
     if not isinstance(devdata, xr.Dataset):
         raise TypeError("The devdata argument must be an xarray Dataset!")
 
-    #Prepare diff-of-diffs datasets if needed
-    fracrefdata = None
-    fracdevdata = None
-    if second_ref is not None:
-        refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
-    if second_dev is not None:
-        devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
+    # Determine if doing diff-of-diffs
+    if second_ref is not None and second_dev is not None:
+        diff_of_diffs = True
+    else:
+        diff_of_diffs = False
 
-    if type(refstr) is list:
-        frac_refstr = '{} / {}'.format(refstr[0], refstr[1])
-        refstr = '{} - {}'.format(refstr[0], refstr[1])
-    else:
-        frac_refstr = 'Ref2 / Ref1'
-    if type(devstr) is list:
-        frac_devstr = '{} / {}'.format(devstr[0], devstr[1])
-        devstr = '{} - {}'.format(devstr[0], devstr[1])
-    else:
-        frac_devstr = 'Dev2 / Dev1'
+    # Prepare diff-of-diffs datasets if needed
+    if diff_of_diffs:
+        refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
+        devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
+        if type(refstr) is list:
+            frac_refstr = '{} / {}'.format(refstr[0], refstr[1])
+            refstr = '{} - {}'.format(refstr[0], refstr[1])
+        else:
+            frac_refstr = 'Ref2 / Ref1'
+        if type(devstr) is list:
+            frac_devstr = '{} / {}'.format(devstr[0], devstr[1])
+            devstr = '{} - {}'.format(devstr[0], devstr[1])
+        else:
+            frac_devstr = 'Dev2 / Dev1'
         
     # If no varlist is passed, plot all 3D variables in the dataset
-    if varlist == None:
+    if varlist is None:
         quiet = not verbose
         vardict = core.compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict["commonvars3D"]
@@ -1291,11 +1519,12 @@ def compare_zonal_mean(
         print("WARNING: no 3D variables to plot zonal mean for!")
         return
 
-    # If no pdf name passed, then do not save to PDF
+    # If no PDF name passed, then do not save to PDF
     savepdf = True
     if pdfname == "":
         savepdf = False
-    # Cleanup previous temp PDFs
+
+    # Cleanup previous temporary PDFs produced during parallelization
     for i in range(n_var):
         try:
             os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
@@ -1311,7 +1540,8 @@ def compare_zonal_mean(
     dev_pedge_ind = get_pressure_indices(dev_pedge, pres_range)
 
 
-    # Pad edges if subset does not include surface or TOA so data spans entire subrange
+    # Pad edges if subset does not include surface or TOA so data spans
+    # entire subrange
     ref_pedge_ind = pad_pressure_edges(ref_pedge_ind, refdata.sizes["lev"])
     dev_pedge_ind = pad_pressure_edges(dev_pedge_ind, devdata.sizes["lev"])
 
@@ -1322,9 +1552,8 @@ def compare_zonal_mean(
     refdata = convert_lev_to_pres(refdata, ref_pmid, ref_pedge)
     devdata = convert_lev_to_pres(devdata, dev_pmid, dev_pedge)
     
-    if fracrefdata is not None:
+    if diff_of_diffs:
         fracrefdata = convert_lev_to_pres(fracrefdata, ref_pmid, ref_pedge)
-    if fracdevdata is not None:
         fracdevdata = convert_lev_to_pres(fracdevdata, dev_pmid, dev_pedge)
 
     # ==================================================================
@@ -1341,21 +1570,26 @@ def compare_zonal_mean(
 
     refdata = refdata.isel(lev=ref_pmid_ind)
     devdata = devdata.isel(lev=dev_pmid_ind)
-    if fracrefdata is not None:
+    if diff_of_diffs:
         fracrefdata = fracrefdata.isel(lev=ref_pmid_ind)
-    if fracdevdata is not None:
         fracdevdata = fracdevdata.isel(lev=dev_pmid_ind)
 
-    [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, regriddev,
-     regridany, refgrid, devgrid, cmpgrid, refregridder, devregridder,
-     refregridder_list, devregridder_list] = create_regridders(refdata, devdata, weightsdir=weightsdir,
-                                                               cmpres=cmpres, zm=True)
-
+    [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype,
+     regridref, regriddev, regridany, refgrid, devgrid, cmpgrid,
+     refregridder, devregridder,refregridder_list, devregridder_list] = \
+            create_regridders(
+                refdata, 
+                devdata, 
+                weightsdir=weightsdir,
+                cmpres=cmpres,
+                zm=True
+            )
 
     ref_to_47 = False
     dev_to_47 = False
 
-    # Determine whether one grid must be reduced to 47 levels and assign plotting variables
+    # Determine whether one grid must be reduced to 47 levels and assign
+    # plotting variables
     if ref_grid_cat is 72 and dev_grid_cat is 47:
         ref_to_47 = True
         pedge = dev_pedge
@@ -1371,94 +1605,166 @@ def compare_zonal_mean(
     if ref_to_47 or dev_to_47:
         conv_dict = dict_72_to_47()
 
+    # ==================================================================
+    # Loop over all variables
+    # ==================================================================
     ds_refs = [None] * n_var
     frac_ds_refs = [None] * n_var
     ds_devs = [None] * n_var
     frac_ds_devs = [None] * n_var
     for i in range(n_var):
-        varname = varlist[i]
-        units_ref, units_dev = check_units(refdata, devdata, varname)
 
-        # ==============================================================
-        # Slice the data, allowing for the
-        # possibility of no time dimension (bpch)
-        # ==============================================================
+        varname = varlist[i]
+
+        # ==================================================================
+        # Slice the data, allowing for no time dimension (bpch)
+        # ==================================================================
 
         # Ref
-        vdims = refdata[varname].dims
-        if "time" in vdims:
+        if "time" in refdata[varname].dims:
             ds_refs[i] = refdata[varname].isel(time=itime)
-            if fracrefdata is not None:
+            if diff_of_diffs:
                 frac_ds_refs[i] = fracrefdata[varname].isel(time=itime)
         else:
             ds_refs[i] = refdata[varname]
-            if fracrefdata is not None:
+            if diff_of_diffs:
                 frac_ds_refs[i] = fracrefdata[varname]
         
         # Dev
-        vdims = devdata[varname].dims
-        if "time" in vdims:
+        if "time" in devdata[varname].dims:
             ds_devs[i] = devdata[varname].isel(time=itime)
-            if fracdevdata is not None:
+            if diff_of_diffs:
                 frac_ds_devs[i] = fracdevdata[varname].isel(time=itime)
 
         else:
             ds_devs[i] = devdata[varname]
-            if fracdevdata is not None:
+            if diff_of_diffs:
                 frac_ds_devs[i] = fracdevdata[varname]
+
+        # ==================================================================
+        #  Handle units as needed
+        # ==================================================================
+        
+        # Check that units are the same in ref and dev. Will exit with
+        # an error if do not match and enforce_units is true (default).
+        check_units(ds_refs[i], ds_devs[i])
+
+        # Convert to ppb if units string is variation of mol/mol
+        if data_unit_is_mol_per_mol(ds_refs[i]):
+            ds_refs[i].values = ds_refs[i].values * 1e9
+            ds_refs[i].attrs["units"] = "ppb"
+        if data_unit_is_mol_per_mol(ds_devs[i]):
+            ds_devs[i].values = ds_devs[i].values * 1e9
+            ds_devs[i].attrs["units"] = "ppb"
+
+        # If units string is ppbv (true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "ppbv":
+            ds_refs[i].attrs["units"] = "ppb"
+        if ds_devs[i].units.strip() == "ppbv":
+            ds_devs[i].attrs["units"] = "ppb"
+
+        # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
+        if convert_to_ugm3:
+
+            # Error checks: must pass met, not normalize by area, and be in ppb
+            if refmet is None or devmet is None:
+                msg = "Met mata ust be passed to convert units to ug/m3."
+                raise ValueError(msg)
+            elif normalize_by_area:
+                msg = "Normalizing by area is now allowed if plotting ug/m3"
+                raise ValueError(msg)
+            elif ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
+                msg = "Units must be mol/mol if converting to ug/m3."
+                raise ValueError(msg)
+
+            # Slice air density data by time and lev
+            # (assume same format and dimensions as refdata and devdata)
+            if "time" in refmet["Met_AIRDEN"].dims:
+                ref_airden = refmet["Met_AIRDEN"].isel(time=itime,
+                                                       lev=ref_pmid_ind)
+            else:
+                ref_airden = refmet["Met_AIRDEN"].isel(lev=ref_pmid_ind)
+            if "time" in devmet["Met_AIRDEN"].dims:
+                dev_airden = devmet["Met_AIRDEN"].isel(time=itime,
+                                                       lev=dev_pmid_ind)
+            else:
+                dev_airden = devmet["Met_AIRDEN"].isel(lev=dev_pmid_ind)
+
+            # Convert values from ppb to ug/m3:
+            # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
+            #         * g/mol spc * 1e6ug/g
+            #       = ppb * air density * (spc MW / air MW)
+            # Eventually put this in a comprehensive unit conversion function.
+            ds_refs[i].values = ds_refs[i].values *              \
+                                ref_airden.values #* ( spc_mw / air_mw )
+            ds_devs[i].values = ds_devs[i].values *              \
+                                dev_airden.values #* ( spc_mw / air_mw )
+
+            # Update units string
+            ds_refs[i].attrs["units"] = "ug/m3"
+            ds_devs[i].attrs["units"] = "ug/m3"
 
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
-        ds_refs[i] = reshape_MAPL_CS(ds_refs[i], refdata[varname].dims)
-        ds_devs[i] = reshape_MAPL_CS(ds_devs[i], devdata[varname].dims)
-        if fracrefdata is not None:
-            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i], fracrefdata[varname].dims)
-        if fracdevdata is not None:
-            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i], fracdevdata[varname].dims)        
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
+        if diff_of_diffs:
+            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
+            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])        
 
         # Flip in the vertical if applicable
         if flip_ref:
             ds_refs[i].data = ds_refs[i].data[::-1, :, :]
-            if fracrefdata is not None:
+            if diff_of_diffs:
                 frac_ds_refs[i].data = frac_ds_refs[i].data[::-1, :, :]
         if flip_dev:
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
-            if fracdevdata is not None:
+            if diff_of_diffs:
                 frac_ds_devs[i].data = frac_ds_devs[i].data[::-1, :, :]
 
-    
     # ==================================================================
-    # Get the area variables if normalize_by_area=True
-    # NOTE: expect areas to be in dataset. For GC-Classic 'AREA' is
-    # included in all diagnostic files. For GCHP it needs to be added
-    # to the dataset beforehand and named 'AREA'.
+    # Get the area variables if normalize_by_area=True. They can be
+    # either in the main datasets as variable AREA or in the optionally
+    # passed meteorology datasets as Met_AREAM2.
     # ==================================================================
     if normalize_by_area:
         if "AREA" in refdata.data_vars.keys():
             ref_area = refdata["AREA"]
-            if "time" in ref_area.dims:
-                ref_area = ref_area.isel(time=0)
-            if "lev" in ref_area.dims:
-                ref_area = ref_area.isel(lev=0)
-            if refgridtype == 'cs': ref_area = reshape_MAPL_CS(ref_area, ref_area.dims)
+        elif refmet is not None:
+            if "Met_AREAM2" in refmet.data_vars.keys():
+                ref_area = refmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
-                + "present in the Ref dataset!"
+                + "present in the Ref dataset and ref met with Met_AREAM2" \
+                + " not passed!"
             raise ValueError(msg)
+        if "time" in ref_area.dims:
+            ref_area = ref_area.isel(time=0)
+        if refgridtype == 'cs':
+            ref_area = reshape_MAPL_CS(ref_area)
 
         if "AREA" in devdata.data_vars.keys():
             dev_area = devdata["AREA"]
-            if "time" in dev_area.dims:
-                dev_area = dev_area.isel(time=0)
-            if "lev" in dev_area.dims:
-                dev_area = dev_area.isel(lev=0)
-            if devgridtype == 'cs': dev_area = reshape_MAPL_CS(dev_area, dev_area.dims)
+        elif devmet is not None:
+            if "Met_AREAM2" in devmet.data_vars.keys():
+                dev_area = devmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
-                + "present in the Dev dataset!"
+                + "present in the Dev dataset and dev met with Met_AREAM2" \
+                | " not passed!"
             raise ValueError(msg)
+        if "time" in dev_area.dims:
+            dev_area = dev_area.isel(time=0)
+        if devgridtype == 'cs':
+            dev_area = reshape_MAPL_CS(dev_area)
+
+        # Make sure the areas do not have a lev dimension
+        if "lev" in ref_area.dims:
+            ref_area = ref_area.isel(lev=0)
+        if "lev" in dev_area.dims:
+            dev_area = dev_area.isel(lev=0)
 
     # ==================================================================
     # Create arrays for each variable in the Ref and Dev dataset
@@ -1478,13 +1784,31 @@ def compare_zonal_mean(
         # Reduce variables to 47L from 72L if necessary for comparison
         # ==============================================================
         if ref_to_47:
-            ds_ref = reduce_72_to_47(ds_ref, conv_dict, ref_pmid_ind, dev_pmid_ind)
-            if fracrefdata is not None:
-                frac_ds_ref = reduce_72_to_47(frac_ds_ref, ref_pmid_ind, dev_pmid_ind)
+            ds_ref = reduce_72_to_47(
+                ds_ref, 
+                conv_dict, 
+                ref_pmid_ind, 
+                dev_pmid_ind
+            )
+            if diff_of_diffs:
+                frac_ds_ref = reduce_72_to_47(
+                    frac_ds_ref,
+                    ref_pmid_ind,
+                    dev_pmid_ind
+                )
         if dev_to_47:
-            ds_dev = reduce_72_to_47(ds_dev, conv_dict, dev_pmid_ind, ref_pmid_ind)
-            if fracdevdata is not None:
-                frac_ds_dev = reduce_72_to_47(frac_ds_dev, ref_pmid_ind, dev_pmid_ind)
+            ds_dev = reduce_72_to_47(
+                ds_dev,
+                conv_dict,
+                dev_pmid_ind,
+                ref_pmid_ind
+            )
+            if diff_of_diffs:
+                frac_ds_dev = reduce_72_to_47(
+                    frac_ds_dev,
+                    ref_pmid_ind,
+                    dev_pmid_ind
+                )
 
         ref_nlev = len(ds_ref['lev'])
         dev_nlev = len(ds_dev['lev'])
@@ -1497,29 +1821,56 @@ def compare_zonal_mean(
                 ds_dev.values = ds_dev.values / dev_area.values
                 ds_refs[i] = ds_ref
                 ds_devs[i] = ds_dev
-                if fracrefdata is not None:
+                if diff_of_diffs:
                     frac_ds_ref.values = frac_ds_ref.values / ref_area.values
                     frac_ds_refs[i] = frac_ds_ref
-                if fracdevdata is not None:
                     frac_ds_dev.values = frac_ds_dev.values / dev_area.values
                     frac_ds_devs[i] = frac_ds_dev
                 
         # Ref
-        ds_ref_cmps[i] = regrid_comparison_data(ds_ref, refres, regridref, refregridder,
-                                                refregridder_list, cmpgrid, refgridtype,
-                                                nlev=ref_nlev)
-        if fracrefdata is not None:
-            frac_ds_ref_cmps[i] = regrid_comparison_data(frac_ds_refs[i], refres, regridref, refregridder,
-                                                         refregridder_list, cmpgrid, refgridtype,
-                                                         nlev=ref_nlev)
+        ds_ref_cmps[i] = regrid_comparison_data(
+            ds_ref,
+            refres,
+            regridref,
+            refregridder,
+            refregridder_list,
+            cmpgrid,
+            refgridtype,
+            nlev=ref_nlev
+        )
+        if diff_of_diffs:
+            frac_ds_ref_cmps[i] = regrid_comparison_data(
+                frac_ds_refs[i],
+                refres,
+                regridref,
+                refregridder,
+                refregridder_list,
+                cmpgrid,
+                refgridtype,
+                nlev=ref_nlev
+            )
         # Dev
-        ds_dev_cmps[i] = regrid_comparison_data(ds_dev, devres, regriddev, devregridder,
-                                                devregridder_list, cmpgrid, devgridtype,
-                                                nlev=dev_nlev)
-        if fracdevdata is not None:
-            frac_ds_dev_cmps[i] = regrid_comparison_data(frac_ds_devs[i], devres, regriddev, devregridder,
-                                                         devregridder_list, cmpgrid, devgridtype,
-                                                         nlev=dev_nlev)
+        ds_dev_cmps[i] = regrid_comparison_data(
+            ds_dev,
+            devres,
+            regriddev,
+            devregridder,
+            devregridder_list,
+            cmpgrid,
+            devgridtype,
+            nlev=dev_nlev
+        )
+        if diff_of_diffs:
+            frac_ds_dev_cmps[i] = regrid_comparison_data(
+                frac_ds_devs[i],
+                devres,
+                regriddev,
+                devregridder,
+                devregridder_list,
+                cmpgrid,
+                devgridtype,
+                nlev=dev_nlev
+            )
 
     # ==================================================================
     # Create pdf, if savepdf is passed as True
@@ -1535,13 +1886,9 @@ def compare_zonal_mean(
         pdf.close()
 
     # ==================================================================
-    # Loop over variables
+    # Define function to create a single page figure to be called
+    # in a parallel loop
     # ==================================================================
-
-    # Loop over variables
-    print_units_warning = True
-
-    # This loop is written as a function so it can be called in parallel
     def createfig(ivar):
 
         # Suppress harmless run-time warnings (mostly about underflow)
@@ -1553,9 +1900,6 @@ def compare_zonal_mean(
         varname = varlist[ivar]
         varndim_ref = refdata[varname].ndim
         varndim_dev = devdata[varname].ndim
-
-        # Convert mol/mol units to ppb and ensure ref and dev units match
-        units_ref, units_dev = check_units(refdata, devdata, varname)
 
         # ==============================================================
         # Assign data variables
@@ -1569,19 +1913,22 @@ def compare_zonal_mean(
 
         # ==============================================================
         # Area normalization units and subtitle
+        # Set units and subtitle, including modification if normalizing
+        # area. Note if enforce_units is False (non-default) then
+        # units on difference plots will be wrong.
         # ==============================================================
-        units = units_ref
+        cmn_units = ds_ref.attrs["units"]
         varndim = varndim_ref
         subtitle_extra = ""
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
-                if "/" in units:
-                    units = "{}/m2".format(units)
+                if "/" in cmn_units:
+                    cmn_units = "{}/m2".format(cmn_units)
                 else:
-                    units = "{} m-2".format(units)
-                units_ref = units
-                units_dev = units
+                    cmn_units = "{} m-2".format(cmn_units)
+                ds_ref.attrs["units"] = cmn_units
+                ds_dev.attrs["units"] = cmn_units
                 subtitle_extra = ", Normalized by Area"
 
         # ==============================================================
@@ -1603,9 +1950,8 @@ def compare_zonal_mean(
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
-        if fracdevdata is not None:
+        if diff_of_diffs:
             frac_zm_dev_cmp = frac_ds_dev_cmp.mean(axis=2)
-        if fracrefdata is not None:
             frac_zm_ref_cmp = frac_ds_ref_cmp.mean(axis=2)
         # ==============================================================
         # Get min and max values for use in the colorbars
@@ -1662,15 +2008,19 @@ def compare_zonal_mean(
         # ==============================================================
         # Calculate fractional difference, set divides by zero to Nan
         # ==============================================================
-        if fracrefdata is not None:
-            zm_fracdiff = np.array(frac_zm_dev_cmp) - np.array(frac_zm_ref_cmp)
+        if diff_of_diffs:
+            zm_fracdiff = np.array(frac_zm_dev_cmp) -       \
+                          np.array(frac_zm_ref_cmp)
         else:
-            zm_fracdiff = np.abs(np.array(zm_dev_cmp)) / np.abs(np.array(zm_ref_cmp))
-        zm_fracdiff = np.where(np.abs(zm_fracdiff) == np.inf, np.nan, zm_fracdiff)
+            zm_fracdiff = np.abs(np.array(zm_dev_cmp)) /    \
+                          np.abs(np.array(zm_ref_cmp))
+        zm_fracdiff = np.where(np.abs(zm_fracdiff) ==       \
+                               np.inf, np.nan, zm_fracdiff)
         zm_fracdiff[zm_fracdiff>1e308] = np.nan
         # Test if the frac. diff is zero everywhere or NaN everywhere
-        fracdiff_is_all_zero = not np.any(zm_fracdiff) or (np.nanmin(zm_fracdiff) == 0 and 
-                                                           np.nanmax(zm_fracdiff) ==0)
+        fracdiff_is_all_zero = not np.any(zm_fracdiff) or       \
+                               (np.nanmin(zm_fracdiff) == 0 and \
+                                np.nanmax(zm_fracdiff) ==0)
         fracdiff_is_all_nan = np.isnan(zm_fracdiff).all()
 
         # ==============================================================
@@ -1733,20 +2083,34 @@ def compare_zonal_mean(
                 devstr, subtitle_extra, cmpres, devres)
 
         if regridany:
-            absdiff_dynam_title = "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
-            absdiff_fixed_title = "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".format(cmpres)
-            if fracrefdata is not None:
-                fracdiff_dynam_title = "Difference ({}), Dynamic Range\n{} - {}".format(cmpres,frac_devstr,frac_refstr)
-                fracdiff_fixed_title = "Difference ({}), Restricted Range [5%,95%]\n{} - {}".format(cmpres, frac_devstr, frac_refstr)
+            absdiff_dynam_title = \
+                    "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+            absdiff_fixed_title = \
+                    "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".\
+                    format(cmpres)
+            if diff_of_diffs:
+                fracdiff_dynam_title = \
+                    "Difference ({}), Dynamic Range\n{} - {}".\
+                    format(cmpres,frac_devstr,frac_refstr)
+                fracdiff_fixed_title = \
+                    "Difference ({}), Restricted Range [5%,95%]\n{} - {}".\
+                    format(cmpres, frac_devstr, frac_refstr)
             else:
-                fracdiff_dynam_title = "Ratio ({})\nDev/Ref, Dynamic Range".format(cmpres)
-                fracdiff_fixed_title = "Ratio ({})\nDev/Ref, Fixed Range".format(cmpres)
+                fracdiff_dynam_title = \
+                    "Ratio ({})\nDev/Ref, Dynamic Range".format(cmpres)
+                fracdiff_fixed_title = \
+                    "Ratio ({})\nDev/Ref, Fixed Range".format(cmpres)
         else:
             absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
-            absdiff_fixed_title = "Difference\nDev - Ref, Restricted Range [5%,95%]"
-            if fracrefdata is not None:
-                fracdiff_dynam_title = "Difference, Dynamic Range\n{} - {}".format(frac_devstr,frac_refstr)
-                fracdiff_fixed_title = "Difference, Restricted Range [5%,95%]\n{} - {}".format(frac_devstr, frac_refstr)
+            absdiff_fixed_title = \
+                    "Difference\nDev - Ref, Restricted Range [5%,95%]"
+            if diff_of_diffs:
+                fracdiff_dynam_title = \
+                    "Difference, Dynamic Range\n{} - {}".\
+                    format(frac_devstr,frac_refstr)
+                fracdiff_fixed_title = \
+                    "Difference, Restricted Range [5%,95%]\n{} - {}".\
+                    format(frac_devstr, frac_refstr)
             else:
                 fracdiff_dynam_title = "Ratio \nDev/Ref, Dynamic Range"
                 fracdiff_fixed_title = "Ratio \nDev/Ref, Fixed Range"
@@ -1763,7 +2127,7 @@ def compare_zonal_mean(
             "dyn_abs_diff", "res_abs_diff",
             "dyn_frac_diff", "res_frac_diff",
         ]
-        if fracrefdata is not None and fracrefdata is not None:
+        if diff_of_diffs:
             subplots =  ["ref", "dev",
                          "dyn_abs_diff", "res_abs_diff",
                          "dyn_abs_diff", "res_abs_diff"]
@@ -1786,7 +2150,8 @@ def compare_zonal_mean(
             fracdiff_is_all_nan,
         ]
 
-        plot_vals = [zm_ref, zm_dev, zm_diff, zm_diff, zm_fracdiff, zm_fracdiff]
+        plot_vals = [zm_ref, zm_dev, zm_diff, zm_diff,
+                     zm_fracdiff, zm_fracdiff]
 
         axs = [ax0, ax1, ax2, ax3, ax4, ax5]
 
@@ -1814,9 +2179,11 @@ def compare_zonal_mean(
 
         masked = ["ZM", "ZM", "ZM", "ZM", "ZM", "ZM"]
 
-        unit_list = [units, units, units, units, "unitless", "unitless"]
+        unit_list = [ds_ref.units, ds_dev.units, cmn_units, cmn_units,
+                     "unitless", "unitless"]
 
-        other_all_nans = [dev_is_all_nan, ref_is_all_nan, False, False, False, False]
+        other_all_nans = [dev_is_all_nan, ref_is_all_nan, \
+                          False, False, False, False]
 
         gridtypes = [
             cmpgridtype,
@@ -1829,7 +2196,8 @@ def compare_zonal_mean(
 
         pedges = [ref_pedge, dev_pedge, pedge, pedge, pedge, pedge]
 
-        pedge_inds = [ref_pedge_ind, dev_pedge_ind, pedge_ind, pedge_ind, pedge_ind, pedge_ind]
+        pedge_inds = [ref_pedge_ind, dev_pedge_ind, pedge_ind, \
+                      pedge_ind, pedge_ind, pedge_ind]
 
         mins = [vmin_ref, vmin_dev, vmin_abs]
         maxs = [vmax_ref, vmax_dev, vmax_abs]
@@ -1887,12 +2255,18 @@ def compare_zonal_mean(
             return varname
         else:
             return
-    # do not attempt nested thread parallelization due to issues with matplotlib
+
+    # ==================================================================
+    # Call figure generation function in a parallel loop over variables
+    # ==================================================================
+    # do not attempt nested thread parallelization due to issues with
+    # matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
 
     if savepdf:
-        results = Parallel(n_jobs = n_job) (delayed(createfig)(i) for i in range(n_var))
+        results = Parallel(n_jobs = n_job) (delayed(createfig)(i) \
+                                            for i in range(n_var))
         #update sig diffs after parallel calls
         if current_process().name == "MainProcess":
             for varname in results:
@@ -2155,8 +2529,8 @@ def create_total_emissions_table(
     outfilename,
     interval=[2678400.0],
     template="Emis{}_",
-    ref_area_varname="AREA",
-    dev_area_varname="AREA",
+    refmetdata=None,
+    devmetdata=None
 ):
     """
     Creates a table of emissions totals (by sector and by inventory)
@@ -2216,6 +2590,15 @@ def create_total_emissions_table(
             (in m2) in the dev dataset.
             Default value: 'AREA'
 
+        refmetdata : xarray dataset
+            Dataset containing ref meteorology and area
+            Default value: None
+
+        devmetdata : xarray dataset
+            Dataset containing dev meteorology and area
+            Default value: None
+
+
     Remarks:
     --------
         This method is mainly intended for model benchmarking purposes,
@@ -2235,14 +2618,22 @@ def create_total_emissions_table(
     if not isinstance(devdata, xr.Dataset):
         raise TypeError("The devdata argument must be an xarray Dataset!")
 
-    # Make sure that the area variable is present in both refdata and devdata
-    if ref_area_varname not in refdata.data_vars.keys():
-        msg = "Area variable {} is not in the ref Dataset!".format(
-            ref_area_varname)
+    # Get ref area [m2]
+    if "AREA" in refdata.data_vars.keys():
+        refarea = refdata["AREA"]
+    elif refmetdata is not None:
+        refarea = refmetdata["Met_AREAM2"]
+    else:
+        msg = "AREA variable is not in the ref Dataset and optional dataset containing Met_AREAM2 is not passed!"
         raise ValueError(msg)
-    if dev_area_varname not in devdata.data_vars.keys():
-        msg = "Area variable {} is not in the dev Dataset!".format(
-            dev_area_varname)
+
+    # Get dev area [m2]
+    if "AREA" in devdata.data_vars.keys():
+        devarea = devdata["AREA"]
+    elif devmetdata is not None:
+        devarea = devmetdata["Met_AREAM2"]
+    else:
+        msg = "AREA variable is not in the dev Dataset and optional dataset containing Met_AREAM2 is not passed!"
         raise ValueError(msg)
 
     # Load a YAML file containing species properties (such as
@@ -2332,7 +2723,7 @@ def create_total_emissions_table(
             "{}{}{}{}".format(
                 " ".ljust(22), "Ref".rjust(20), "Dev".rjust(20), "Dev - Ref".rjust(15)
             ),
-            file=f,
+            file=f
         )
 
         # =============================================================
@@ -2364,8 +2755,8 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval,
-                    refdata[ref_area_varname],
+                    interval=interval,
+                    area_m2=refarea,
                 )
 
                 # Set Dev to NaN (missing values) everywhere
@@ -2384,8 +2775,8 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval,
-                    devdata[dev_area_varname],
+                    interval=interval,
+                    area_m2=devarea,
                 )
 
                 # Set Ref to NaN (missing values) everywhere
@@ -2404,16 +2795,16 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval,
-                    refdata[ref_area_varname],
+                    interval=interval,
+                    area_m2=refarea,
                 )
                 devarray = convert_units(
                     devdata[v],
                     spc_name,
                     species_properties,
                     target_units,
-                    interval,
-                    devdata[dev_area_varname],
+                    interval=interval,
+                    area_m2=devarea,
                 )
 
             # ==========================================================
@@ -2805,12 +3196,12 @@ def archive_species_categories(dst):
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
 
-def make_benchmark_plots(
+def make_benchmark_conc_plots(
     ref,
     refstr,
     dev,
     devstr,
-    dst="./1mo_benchmark",
+    dst="./benchmark",
     subdst=None,
     overwrite=False,
     verbose=False,
@@ -2823,13 +3214,16 @@ def make_benchmark_plots(
     log_color_scale=False,
     sigdiff_files=None,
     normalize_by_area=False,
+    cats_in_ugm3=["Aerosols", "Secondary_Organic_Aerosols"],
     areas=None,
+    refmet=None,
+    devmet=None,
     weightsdir='.',
     n_job=-1,
-    secondref=None,
-    secondrefstr='',
-    seconddev=None,
-    seconddevstr=''
+    second_ref=None,
+    second_refstr='',
+    second_dev=None,
+    second_devstr=''
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -2856,7 +3250,7 @@ def make_benchmark_plots(
         dst : str
             A string denoting the destination folder where a PDF
             file containing plots will be written.
-            Default value: ./1mo_benchmark
+            Default value: ./benchmark
 
         subdst : str
             A string denoting the sub-directory of dst where PDF
@@ -2898,8 +3292,20 @@ def make_benchmark_plots(
             Set this flag to true to enable normalization of data
             by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
 
+        cats_in_ugm3: list of str
+            List of benchmark categories to to convert to ug/m3
+            Default value: ["Aerosols", "Secondary_Organic_Aerosols"]
+
         areas : dict of xarray DataArray:
             Grid box surface areas in m2 on Ref and Dev grids.
+            Default value: None
+
+        refmet : str
+            Path name for ref meteorology
+            Default value: None
+
+        devmet : str
+            Path name for dev meteorology  
             Default value: None
 
         sigdiff_files : list of str
@@ -2910,25 +3316,29 @@ def make_benchmark_plots(
             Default value: None
 
         weightsdir : str
-            Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
+            Directory in which to place (and possibly reuse) xESMF regridder
+            netCDF files.
             Default value: '.'
 
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
+            Set to 1 to disable parallel plotting. Value of -1 allows the
+            application to decide.
             Default value: -1
 
         second_ref: str
-            Path name for a second "Ref" (aka "Reference") data set for diff-of-diffs plotting. 
-            This dataset should have the same model type and grid as ref.
+            Path name for a second "Ref" (aka "Reference") data set for
+            diff-of-diffs plotting. This dataset should have the same model
+            type and grid as ref.
             Default value: None
 
         second_refstr : str
             A string to describe second_ref (e.g. version number)
 
         second_dev: str
-            Path name for a second "Ref" (aka "Reference") data set for diff-of-diffs plotting. 
-            This dataset should have the same model type and grid as ref.
+            Path name for a second "Ref" (aka "Reference") data set for
+            diff-of-diffs plotting. This dataset should have the same model
+            type and grid as ref.
             Default value: None
 
         second_devstr : str
@@ -2957,26 +3367,33 @@ def make_benchmark_plots(
     else:
         extra_title_txt = None
 
-    # Ref dataset
-    try:
-        refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        msg ="Could not find Ref file: {}".format(ref)
-        raise FileNotFoundError(msg)
+    # Open datasets
+    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
+    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
 
-    # Dev dataset
-    try:
-        devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        msg = "Could not find Dev file: {}!".format(dev)
-        raise FileNotFoundError(msg)
-        
-    secondrefds = None
-    seconddevds = None
-    if secondref is not None:
-        secondrefds = xr.open_dataset(secondref, drop_variables=gcon.skip_these_vars)
-    if seconddev is not None:
-        seconddevds = xr.open_dataset(seconddev, drop_variables=gcon.skip_these_vars)
+    # Open met datasets if passed as arguments
+    refmetds = None
+    devmetds = None
+    if refmet:
+        refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
+    if devmet:
+        devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
+
+    # Determine if doing diff-of-diffs
+    if second_ref is not None and second_dev is not None:
+        diff_of_diffs = True
+    else:
+        diff_of_diffs = False
+    
+    # Open second datasets if passed as arguments (used for diff of diffs)    
+    if diff_of_diffs:
+        second_refds = xr.open_dataset(second_ref,
+                                       drop_variables=gcon.skip_these_vars)
+        second_devds = xr.open_dataset(second_dev,
+                                       drop_variables=gcon.skip_these_vars)
+    else:
+        second_refds = None
+        second_devds = None
 
     # Create regridding files if necessary while not in parallel loop
     [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
@@ -2991,17 +3408,19 @@ def make_benchmark_plots(
                 refds = xr.merge([refds, areas["Ref"]])
             if 'AREA' not in devds.data_vars:
                 devds = xr.merge([devds, areas["Dev"]])
-            if secondref is not None and 'AREA' not in secondrefds.data_vars:
-                secondrefds = xr.merge([secondrefds, areas["Ref"]])
-            if seconddev is not None and 'AREA' not in seconddevds.data_vars:
-                seconddevds = xr.merge([seconddevds, areas["Dev"]])
+            if diff_of_diffs:
+                if 'AREA' not in second_refds.data_vars:
+                    second_refds = xr.merge([second_refds, areas["Ref"]])
+                if 'AREA' not in second_devds.data_vars:
+                    second_devds = xr.merge([second_devds, areas["Dev"]])
         else:
             msg = "ERROR: normalize_by_area = True but " \
                 + "the 'areas' argument was not passed!"
             raise ValueError(msg)
 
     # ==================================================================
-    # If sending plots to one file then do all plots here and return
+    # If sending plots to one file then do all plots here and return.
+    # Keep original units for plots.
     # ==================================================================
     if not plot_by_spc_cat:
         [refds, devds] = add_missing_variables(refds, devds)
@@ -3019,9 +3438,8 @@ def make_benchmark_plots(
                              extra_title_txt=extra_title_txt,
                              normalize_by_area=normalize_by_area,
                              weightsdir=weightsdir,
-                             second_ref=secondrefds,
-                             
-                             second_dev=seconddevds)
+                             second_ref=second_refds,
+                             second_dev=second_devds)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -3036,8 +3454,8 @@ def make_benchmark_plots(
                              normalize_by_area=normalize_by_area,
                              extra_title_txt=extra_title_txt,
                              weightsdir=weightsdir,
-                             second_ref=secondrefds, 
-                             second_dev=seconddevds)
+                             second_ref=second_refds, 
+                             second_dev=second_devds)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -3051,15 +3469,16 @@ def make_benchmark_plots(
                            normalize_by_area=normalize_by_area,
                            extra_title_txt=extra_title_txt,
                            weightsdir=weightsdir,
-                           second_ref=secondrefds, 
-                           second_dev=seconddevds)
+                           second_ref=second_refds, 
+                           second_dev=second_devds)
 
         add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
         return
 
     # ==================================================================
-    # Otherwise plot by categories
+    # Otherwise plot by categories. Convert units to ug/m3 for
+    # aerosol categories: Aerosols and Secondary Organic Aerosols.
     # ==================================================================
 
     # FullChemBenchmark has lumped species (TransportTracers does not)
@@ -3068,10 +3487,9 @@ def make_benchmark_plots(
         refds = core.add_lumped_species_to_dataset(refds)
         print("\nAdding lumped species to dev dataset:")
         devds = core.add_lumped_species_to_dataset(devds)
-        if secondrefds is not None:
-            secondrefds = core.add_lumped_species_to_dataset(secondrefds)
-        if seconddevds is not None:
-            seconddevds = core.add_lumped_species_to_dataset(seconddevds)
+        if diff_of_diffs:
+            second_refds = core.add_lumped_species_to_dataset(second_refds)
+            second_devds = core.add_lumped_species_to_dataset(second_devds)
         core.archive_lumped_species_definitions(dst)
 
     # Get the list of species categories
@@ -3083,10 +3501,9 @@ def make_benchmark_plots(
     # with all missing values (NaNs). And vice-versa.
     [refds, devds] = add_missing_variables(refds, devds)
 
-    if secondrefds is not None:
-        [refds, secondrefds] = add_missing_variables(refds, secondrefds)
-    if seconddevds is not None:
-        [devds, seconddevds] = add_missing_variables(devds, seconddevds)
+    if diff_of_diffs:
+        [refds, second_refds] = add_missing_variables(refds, second_refds)
+        [devds, second_devds] = add_missing_variables(devds, second_devds)
 
     # Collection prefix
     coll_prefix = collection.strip() + "_"
@@ -3101,6 +3518,11 @@ def make_benchmark_plots(
     dict_zm = {}
     def createplots(i, filecat):
         cat_diff_dict = {'sfc' : [], '500' : [], 'zm' : []}
+
+        # Plots units ug/m3 for certain species categories
+        convert_to_ugm3 = False
+        if cats_in_ugm3 is not None and filecat in cats_in_ugm3:
+            convert_to_ugm3 = True
 
         # Suppress harmless run-time warnings from all threads
         warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -3156,6 +3578,8 @@ def make_benchmark_plots(
                 devstr,
                 varlist=varlist,
                 ilev=0,
+                refmet=refmetds,
+                devmet=devmetds,
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
@@ -3163,8 +3587,9 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_sfc,
                 weightsdir=weightsdir,
-                second_ref=secondrefds,
-                second_dev=seconddevds
+                convert_to_ugm3=convert_to_ugm3,
+                second_ref=second_refds,
+                second_dev=second_devds
             )
             diff_sfc[:] = [v.replace(coll_prefix, "") for v in diff_sfc]
             cat_diff_dict['sfc'] = diff_sfc
@@ -3193,6 +3618,8 @@ def make_benchmark_plots(
                 devstr,
                 varlist=varlist,
                 ilev=22,
+                refmet=refmetds,
+                devmet=devmetds,
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
@@ -3200,8 +3627,9 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_500,
                 weightsdir=weightsdir,
-                second_ref=secondrefds,
-                second_dev=seconddevds
+                convert_to_ugm3=convert_to_ugm3,
+                second_ref=second_refds,
+                second_dev=second_devds
             )
             diff_500[:] = [v.replace(coll_prefix, "") for v in diff_500]
             #dict_500[filecat] = diff_500
@@ -3233,6 +3661,8 @@ def make_benchmark_plots(
                 devds,
                 devstr,
                 varlist=varlist,
+                refmet=refmetds,
+                devmet=devmetds,
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
@@ -3240,8 +3670,9 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_zm,
                 weightsdir=weightsdir,
-                second_ref=secondrefds,
-                second_dev=seconddevds
+                convert_to_ugm3=convert_to_ugm3,
+                second_ref=second_refds,
+                second_dev=second_devds
             )
             diff_zm[:] = [v.replace(coll_prefix, "") for v in diff_zm]
             #dict_zm = diff_zm
@@ -3267,6 +3698,8 @@ def make_benchmark_plots(
                 devds,
                 devstr,
                 varlist=varlist,
+                refmet=refmetds,
+                devmet=devmetds,
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 pres_range=[1, 100],
@@ -3274,15 +3707,17 @@ def make_benchmark_plots(
                 extra_title_txt=extra_title_txt,
                 log_color_scale=log_color_scale,
                 normalize_by_area=normalize_by_area,
+                convert_to_ugm3=convert_to_ugm3,
                 weightsdir=weightsdir,
-                second_ref=secondrefds,
-                second_dev=seconddevds
+                second_ref=second_refds,
+                second_dev=second_devds
             )
             add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict,
                 warninglist, remove_prefix=coll_prefix
             )
-            return {filecat : cat_diff_dict}
+        return {filecat : cat_diff_dict}
+
     # Create the plots in parallel
     results = Parallel(n_jobs=n_job)(
         delayed(createplots)(i, filecat) for i, filecat in enumerate(catdict)
@@ -3334,7 +3769,7 @@ def make_benchmark_emis_plots(
     refstr,
     dev,
     devstr,
-    dst="./1mo_benchmark",
+    dst="./benchmark",
     subdst=None,
     plot_by_spc_cat=False,
     plot_by_hco_cat=False,
@@ -3374,7 +3809,7 @@ def make_benchmark_emis_plots(
         dst : str
             A string denoting the destination folder where
             PDF files containing plots will be written.
-            Default value: './1mo_benchmark
+            Default value: './benchmark
 
         subdst : str
             A string denoting the sub-directory of dst where PDF
@@ -3725,7 +4160,9 @@ def make_benchmark_emis_tables(
     refstr,
     devlist,
     devstr,
-    dst="./1mo_benchmark",
+    dst="./benchmark",
+    refmet=None,
+    devmet=None,
     overwrite=False,
     interval=[2678400.0],
 ):
@@ -3736,20 +4173,17 @@ def make_benchmark_emis_tables(
     Args:
     -----
         reflist: list of str
-             List with the path names of the emissions file, or emissions
-             and met field files, that will constitute the "Ref" (aka
-             "Reference") data set. If two files are passed in the list,
-             the met field file must be second.
+             List with the path names of the emissions file or files
+             (multiple months) that will constitute the "Ref"
+             (aka "Reference") data set.
 
         refstr : str
             A string to describe ref (e.g. version number)
 
         devlist : list of str
-             List with the path names of the emissions file, or emissions
-             and met field files, that will constitute the "Dev" (aka
-             "Development") data set. If two files are passed in the list,
-             the met field file must be second. The "Dev" data set will
-             be compared against the "Ref" data set.
+             List with the path names of the emissions file or files
+             (multiple months) that will constitute the "Dev"
+             (aka "Development") data set
 
         devstr : str
             A string to describe dev (e.g. version number)
@@ -3759,7 +4193,15 @@ def make_benchmark_emis_tables(
         dst : str
             A string denoting the destination folder where the file
             containing emissions totals will be written.
-            Default value: ./1mo_benchmark
+            Default value: ./benchmark
+
+        refmet : str
+            Path name for ref meteorology
+            Default value: None
+
+        devmet : str
+            Path name for dev meteorology  
+            Default value: None
 
         overwrite : boolean
             Set this flag to True to overwrite files in the
@@ -3794,17 +4236,27 @@ def make_benchmark_emis_tables(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Read the Ref dataset and make sure that the area variables are present
+    # Read the Ref dataset
     if len(reflist) == 1:
         reflist = [reflist]
     refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
-    refds = core.check_for_area(refds)
 
-    # Read the Dev dataset and make sure that area variables are present
+    # Read the Dev dataset
     if len(devlist) == 1:
         devlist = [devlist]
     devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
-    devds = core.check_for_area(devds)
+
+    # Read the meteorology datasets if passed. These are optional since it
+    # the refds and devds have variable AREA already (always true) and
+    # unit conversions do not require any meteorology.
+    if refmet is not None:
+        refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
+    else:
+        refmetds = None
+    if devmet is not None:
+        devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
+    else:
+        devmetds = None
 
     # ==================================================================
     # Create table of emissions
@@ -3834,6 +4286,8 @@ def make_benchmark_emis_tables(
         file_emis_totals,
         interval,
         template="Emis{}_",
+        refmetdata=refmetds,
+        devmetdata=devmetds
     )
 
     # Create table of emissions by inventory
@@ -3846,6 +4300,8 @@ def make_benchmark_emis_tables(
         file_inv_totals,
         interval,
         template="Inv{}_",
+        refmetdata=refmetds,
+        devmetdata=devmetds
     )
 
 
@@ -3855,7 +4311,7 @@ def make_benchmark_jvalue_plots(
     dev,
     devstr,
     varlist=None,
-    dst="./1mo_benchmark",
+    dst="./benchmark",
     subdst=None,
     local_noon_jvalues=False,
     plots=["sfc", "500hpa", "zonalmean"],
@@ -3900,7 +4356,7 @@ def make_benchmark_jvalue_plots(
         dst : str
             A string denoting the destination folder where a
             PDF file  containing plots will be written.
-            Default value: ./1mo_benchmark.
+            Default value: ./benchmark.
 
         subdst : str
             A string denoting the sub-directory of dst where PDF
@@ -4219,7 +4675,7 @@ def make_benchmark_aod_plots(
     dev,
     devstr,
     varlist=None,
-    dst="./1mo_benchmark",
+    dst="./benchmark",
     subdst=None,
     overwrite=False,
     verbose=False,
@@ -4259,7 +4715,7 @@ def make_benchmark_aod_plots(
         dst : str
             A string denoting the destination folder where a
             PDF file  containing plots will be written.
-            Default value: ./1mo_benchmark.
+            Default value: ./benchmark.
 
         subdst : str
             A string denoting the sub-directory of dst where PDF
@@ -4510,12 +4966,12 @@ def make_benchmark_aod_plots(
 
 
 def make_benchmark_mass_tables(
-    reflist,
+    ref,
     refstr,
-    devlist,
+    dev,
     devstr,
     varlist=None,
-    dst="./1mo_benchmark",
+    dst="./benchmark",
     subdst=None,
     overwrite=False,
     verbose=False,
@@ -4555,7 +5011,7 @@ def make_benchmark_mass_tables(
         dst : str
             A string denoting the destination folder where the file
             containing emissions totals will be written.
-            Default value: ./1mo_benchmark
+            Default value: ./benchmark
 
         subdst : str
             A string denoting the sub-directory of dst where PDF
@@ -4590,17 +5046,9 @@ def make_benchmark_mass_tables(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Ref
-    try:
-        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Error opening Ref files: {}".format(reflist))
-
-    # Dev dataset
-    try:
-        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Error opening Dev files: {}!".format(devlist))
+    # Read data
+    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
+    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
 
     # ==================================================================
     # Update GCHP restart dataset (if any)
@@ -4737,11 +5185,13 @@ def make_benchmark_mass_tables(
 
 
 def make_benchmark_oh_metrics(
-    reflist,
+    ref,
+    refmet,
     refstr,
-    devlist,
+    dev,
+    devmet,
     devstr,
-    dst="./1mo_benchmark",
+    dst="./benchmark",
     overwrite=False,
 ):
     """
@@ -4750,17 +5200,21 @@ def make_benchmark_oh_metrics(
 
     Args:
     -----
-        reflist: list of str
-            List with the path names of files that will constitute the
-            "Ref" (aka "Reference") data set.
+        ref : str
+            Path name of "Ref" (aka "Reference") data set file.
+
+        refmet : str
+            Path name of ref meteorology data set.
 
         refstr : str
             A string to describe ref (e.g. version number)
 
-        devlist : list of str
-            List with the path names of files that will constitute the
-            "Dev" (aka "Development") data set.  The "Dev" data set will be
-            compared against the "Ref" data set.
+        dev : str
+            Path name of "Dev" (aka "Development") data set file. 
+            The "Dev" data set will be compared against the "Ref" data set.
+
+        devmet : list of str
+            Path name of dev meteorology data set.
 
         devstr : str
             A string to describe dev (e.g. version number)
@@ -4770,7 +5224,7 @@ def make_benchmark_oh_metrics(
         dst : str
             A string denoting the destination folder where the file
             containing emissions totals will be written.
-            Default value: ./1mo_benchmark
+            Default value: ./benchmark
 
         overwrite : boolean
             Set this flag to True to overwrite files in the
@@ -4793,68 +5247,17 @@ def make_benchmark_oh_metrics(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Ref
-    try:
-        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            "Could not find one of the Ref files: {}".format(reflist)
-        )
-
-    # Dev
-    try:
-        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError(
-            "Could not find one of the Dev files: {}".format(devlist)
-        )
-
-    # Make sure that required variables are found
-    if "OHconcAfterChem" not in refds.data_vars.keys():
-        raise ValueError('Could not find "OHconcAfterChem" in Ref!')
-    if "OHconcAfterChem" not in devds.data_vars.keys():
-        raise ValueError('Could not find "OHconcAfterChem" in Dev!')
+    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
+    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
+    refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
+    devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
 
     # ==================================================================
-    # Make sure that all necessary variables are found
+    # Get tropopause mask
     # ==================================================================
-
-    # Find the area variables in Ref and Dev
-    ref_area = core.get_area_from_dataset(refds)
-    dev_area = core.get_area_from_dataset(devds)
-
-    # Find required meteorological variables in Ref
-    # (or exit with an error if we can't find them)
-    metvar_list = [
-        "Met_AD",
-        "Met_AIRDEN",
-        "Met_BXHEIGHT",
-        "Met_T",
-        "Met_TropLev",
-        "FracOfTimeInTrop",
-    ]
-    refmet = core.get_variables_from_dataset(refds, metvar_list)
-    devmet = core.get_variables_from_dataset(devds, metvar_list)
-
     # Create the mask arrays for the troposphere for Ref and Dev
-    ref_tropmask = get_troposphere_mask(refmet)
-    dev_tropmask = get_troposphere_mask(devmet)
-
-    # Get the OH concentration
-    ref_oh = refds["OHconcAfterChem"]
-    dev_oh = devds["OHconcAfterChem"]
-
-    # ==================================================================
-    # Open file for output
-    # ==================================================================
-
-    # Create file
-    outfilename = os.path.join(dst, "{}_OH_metrics.txt".format(devstr))
-    try:
-        f = open(outfilename, "w")
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not open {} for writing!".format(
-            outfilename))
+    ref_tropmask = get_troposphere_mask(refmetds)
+    dev_tropmask = get_troposphere_mask(devmetds)
 
     # ==================================================================
     # Compute mass-weighted OH in the troposphere
@@ -4866,50 +5269,28 @@ def make_benchmark_oh_metrics(
     g0 = gcon.G           # m/s2
 
     # Ref
-    ref_oh_trop = np.ma.masked_array(ref_oh.values, ref_tropmask)
-    ref_airmass_trop = np.ma.masked_array(refmet["Met_AD"].values, ref_tropmask)
+    ref_oh_trop = np.ma.masked_array(refds["OHconcAfterChem"].values,
+                                     ref_tropmask)
+    ref_airmass_trop = np.ma.masked_array(refmetds["Met_AD"].values,
+                                          ref_tropmask)
     ref_oh_mass = ref_oh_trop * ref_airmass_trop
     ref_total_ohmass = np.sum(ref_oh_mass)
     ref_total_airmass = np.sum(ref_airmass_trop)
     ref_mean_oh = (ref_total_ohmass / ref_total_airmass) / 1e5
 
     # Dev
-    dev_oh_trop = np.ma.masked_array(dev_oh.values, dev_tropmask)
-    dev_airmass_trop = np.ma.masked_array(devmet["Met_AD"].values, dev_tropmask)
+    dev_oh_trop = np.ma.masked_array(devds["OHconcAfterChem"].values,
+                                     dev_tropmask)
+    dev_airmass_trop = np.ma.masked_array(devmetds["Met_AD"].values,
+                                          dev_tropmask)
     dev_oh_mass = dev_oh_trop * dev_airmass_trop
     dev_total_ohmass = np.sum(dev_oh_mass)
     dev_total_airmass = np.sum(dev_airmass_trop)
     dev_mean_oh = (dev_total_ohmass / dev_total_airmass) / 1e5
 
+    # Diff
     oh_diff = dev_mean_oh - ref_mean_oh
     oh_pctdiff = ((dev_mean_oh - ref_mean_oh) / ref_mean_oh) * 100.0
-
-    # Title strings
-    title1 = "### Global mass-weighted OH concentration [1e5 molec/cm3]"
-    title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
-
-    # Print header to file
-    print("#" * 79, file=f)
-    print("{}{}".format(title1.ljust(76), "###"), file=f)
-    print("{}{}".format(title2.ljust(76), "###"), file=f)
-    print("#" * 79, file=f)
-
-    # Write results to file
-    print(
-        "{}{}{}{}".format(
-            "  Ref".ljust(15),
-            "Dev".ljust(13),
-            "Dev - Ref".ljust(13),
-            "% diff".ljust(11),
-        ),
-        file=f,
-    )
-    print(
-        "{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}".format(
-            ref_mean_oh, dev_mean_oh, oh_diff, oh_pctdiff
-        ),
-        file=f,
-    )
 
     # ==================================================================
     # Compute MCF and CH4 lifetimes
@@ -4917,12 +5298,12 @@ def make_benchmark_oh_metrics(
 
     # Select only boxes that are purely tropospheric
     # This excludes influence from the stratosphere
-    ref_timetrop_mask = refmet["FracOfTimeInTrop"].values != 1.0
-    dev_timetrop_mask = devmet["FracOfTimeInTrop"].values != 1.0
+    ref_timetrop_mask = refmetds["FracOfTimeInTrop"].values != 1.0
+    dev_timetrop_mask = devmetds["FracOfTimeInTrop"].values != 1.0
 
     # Get grid box volumes [cm3] (trop + strat)
-    ref_vol = (refmet["Met_BXHEIGHT"] * ref_area) * 1e6
-    dev_vol = (devmet["Met_BXHEIGHT"] * dev_area) * 1e6
+    ref_vol = (refmetds["Met_BXHEIGHT"] * refmetds["AREA"]) * 1e6
+    dev_vol = (devmetds["Met_BXHEIGHT"] * devmetds["AREA"]) * 1e6
 
     # Get grid box volumes [cm3] (trop only)
     ref_vol_trop = np.ma.masked_array(ref_vol.values, ref_timetrop_mask)
@@ -4931,16 +5312,16 @@ def make_benchmark_oh_metrics(
     # Get MCF and CH4 density [molec/cm3] (trop + strat)
     # Assume that species is evenly distributed in air, with
     # a mixing ratio of 1. Thus species density = air density.
-    ref_dens = refmet["Met_AIRDEN"] / 1e6
-    dev_dens = devmet["Met_AIRDEN"] / 1e6
+    ref_dens = refmetds["Met_AIRDEN"] / 1e6
+    dev_dens = devmetds["Met_AIRDEN"] / 1e6
 
     # Get MCF and CH4 density [molec/cm3] (trop only)
     ref_dens_trop = np.ma.masked_array(ref_dens.values, ref_timetrop_mask)
     dev_dens_trop = np.ma.masked_array(dev_dens.values, dev_timetrop_mask)
 
     # Get temperature [K] (trop only)
-    ref_temp = np.ma.masked_array(refmet["Met_T"].values, ref_timetrop_mask)
-    dev_temp = np.ma.masked_array(devmet["Met_T"].values, dev_timetrop_mask)
+    ref_temp = np.ma.masked_array(refmetds["Met_T"].values, ref_timetrop_mask)
+    dev_temp = np.ma.masked_array(devmetds["Met_T"].values, dev_timetrop_mask)
 
     # Compute Arrhenius parameter K [cm3/molec/s]
     ref_mcf_k = 1.64e-12 * np.exp(-1520e0 / ref_temp)
@@ -4955,10 +5336,12 @@ def make_benchmark_oh_metrics(
     # Denominator: Loss rate in troposphere
     ref_mcf_denom = np.sum(ref_mcf_k * ref_oh_trop * \
                            ref_dens_trop * ref_vol_trop)
-
-    dev_mcf_denom = np.sum(dev_mcf_k * dev_oh_trop * dev_dens_trop * dev_vol_trop)
-    ref_ch4_denom = np.sum(ref_ch4_k * ref_oh_trop * ref_dens_trop * ref_vol_trop)
-    dev_ch4_denom = np.sum(dev_ch4_k * dev_oh_trop * dev_dens_trop * dev_vol_trop)
+    dev_mcf_denom = np.sum(dev_mcf_k * dev_oh_trop * \
+                           dev_dens_trop * dev_vol_trop)
+    ref_ch4_denom = np.sum(ref_ch4_k * ref_oh_trop * \
+                           ref_dens_trop * ref_vol_trop)
+    dev_ch4_denom = np.sum(dev_ch4_k * dev_oh_trop * \
+                           dev_dens_trop * dev_vol_trop)
 
     # Compute lifetimes [years]
     sec_to_year = 365.25 * 86400.0
@@ -4971,64 +5354,51 @@ def make_benchmark_oh_metrics(
     mcf_diff = dev_mcf_lifetime - ref_mcf_lifetime
     ch4_diff = dev_ch4_lifetime - ref_ch4_lifetime
 
-    mcf_pctdiff = ((dev_mcf_lifetime - ref_mcf_lifetime) / ref_mcf_lifetime) * 100.0
-    ch4_pctdiff = ((dev_ch4_lifetime - ref_ch4_lifetime) / ref_ch4_lifetime) * 100.0
+    mcf_pctdiff = ((dev_mcf_lifetime - ref_mcf_lifetime) / \
+                   ref_mcf_lifetime) * 100.0
+    ch4_pctdiff = ((dev_ch4_lifetime - ref_ch4_lifetime) / \
+                   ref_ch4_lifetime) * 100.0
 
-    # Title strings
+    # ==================================================================
+    #  Define function for writing metrics to file
+    # ==================================================================
+
+    def print_metrics_to_file(f, title1, title2, ref, dev, diff, pctdiff):
+        print("#" * 79, file=f)
+        print("{}{}".format(title1.ljust(76), "###"), file=f)
+        print("{}{}".format(title2.ljust(76), "###"), file=f)
+        print("#" * 79, file=f)
+        print("{}{}{}{}".format("  Ref".ljust(15),
+                                "Dev".ljust(13), "Dev - Ref".ljust(13),
+                                "% diff".ljust(11),), file=f)
+        print("{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}".format(ref, dev, diff,
+                                                             pctdiff), file=f,)
+
+    # ==================================================================
+    # Print metrics to file
+    # ==================================================================
+
+    # Create file
+    outfilename = os.path.join(dst, "OH_metrics.txt")
+    f = open(outfilename, "w")
+
+    # Write mean OH
+    title1 = "### Global mass-weighted OH concentration [1e5 molec/cm3]"
+    title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+    print_metrics_to_file(f, title1, title2, ref_mean_oh, dev_mean_oh,
+                          oh_diff, oh_pctdiff)
+
+    # Write MCF lifetime
     title1 = "### MCF lifetime w/r/t tropospheric OH [years]"
     title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+    print_metrics_to_file(f, title1, title2, ref_mcf_lifetime,
+                          dev_mcf_lifetime, mcf_diff, mcf_pctdiff)
 
-    # Print header to file
-    print("", file=f)
-    print("#" * 79, file=f)
-    print("{}{}".format(title1.ljust(76), "###"), file=f)
-    print("{}{}".format(title2.ljust(76), "###"), file=f)
-    print("#" * 79, file=f)
-
-    # Write results to file
-    print(
-        "{}{}{}{}".format(
-            "  Ref".ljust(15),
-            "Dev".ljust(13),
-            "Dev - Ref".ljust(13),
-            "% diff".ljust(11),
-        ),
-        file=f,
-    )
-    print(
-        "{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}".format(
-            ref_mcf_lifetime, dev_mcf_lifetime, mcf_diff, mcf_pctdiff
-        ),
-        file=f,
-    )
-
-    # Title strings
+    # Write CH4 lifetime
     title1 = "### CH4 lifetime w/r/t tropospheric OH [years]"
     title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
-
-    # Print header to file
-    print("", file=f)
-    print("#" * 79, file=f)
-    print("{}{}".format(title1.ljust(76), "###"), file=f)
-    print("{}{}".format(title2.ljust(76), "###"), file=f)
-    print("#" * 79, file=f)
-
-    # Write results to file
-    print(
-        "{}{}{}{}".format(
-            "  Ref".ljust(15),
-            "Dev".ljust(13),
-            "Dev - Ref".ljust(13),
-            "% diff".ljust(11),
-        ),
-        file=f,
-    )
-    print(
-        "{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}".format(
-            ref_ch4_lifetime, dev_ch4_lifetime, ch4_diff, ch4_pctdiff
-        ),
-        file=f,
-    )
+    print_metrics_to_file(f, title1, title2, ref_ch4_lifetime,
+                          dev_ch4_lifetime, ch4_diff, ch4_pctdiff)
 
 
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
@@ -5367,94 +5737,82 @@ def get_troposphere_mask(ds):
     # Reshape into the same shape as Met_BxHeight
     return tropmask.reshape(shape)
 
-
-def check_units(refdata, devdata, varname):
+def data_unit_is_mol_per_mol(da):
     """
-    Ensures the units for varname match in refdata and devdata.
-    Currently, if units are in mol/mol, modifies datasets in place to have ppb units.
+    Check if the units of an xarray DataArray are mol/mol based on a set
+    list of unit strings mol/mol may be.
 
     Args:
     -----
-        refdata : xarray Dataset
-            The "Reference" (aka "Ref") dataset.
-
-        devdata : xarray Dataset
-            The "Development" (aka "Dev") dataset
-        
-        varname : str
-            Name of data variable of which to check units.
+        da : xarray DataArray
+            Data array containing a units attribute
         
     Returns:
     --------
-        units_ref : str
-            Units of refdata[varname], stripped of whitespace and possibly converted to ppb
-        units_dev : str
-            Units of devdata[varname], stripped of whitespace and possibly converted to ppb
+        is_molmol : bool
+            Whether input units are mol/mol
     """
-    
-    #If units are mol/mol then convert to ppb
-    
     conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
-    if refdata[varname].units.strip() in conc_units:
-        refdata[varname].attrs["units"] = "ppbv"
-        refdata[varname].values = refdata[varname].values * 1e9
-    if devdata[varname].units.strip() in conc_units:
-        devdata[varname].attrs["units"] = "ppbv"
-        devdata[varname].values = devdata[varname].values * 1e9
+    is_molmol = False
+    if da.units.strip() in conc_units:
+        is_molmol = True
+    return is_molmol
 
-    # Binary diagnostic concentrations have units ppbv. Change to ppb.
-    if refdata[varname].units.strip() == "ppbv":
-        refdata[varname].attrs["units"] = "ppb"
-    if devdata[varname].units.strip() == "ppbv":
-        devdata[varname].attrs["units"] = "ppb"
+def check_units(ref_da, dev_da):
+    """
+    Ensures the units of two xarray DataArrays are the same.
 
-    # Check that units match
-    units_ref = refdata[varname].units.strip()
-    units_dev = devdata[varname].units.strip()
+    Args:
+    -----
+        ref_da : xarray DataArray
+            First data array containing a units attribute.
+
+        dev_da : xarray DataArray
+            Second data array containing a units attribute.
+        
+    Returns:
+    --------
+        units_match : bool
+    """         
+    units_ref = ref_da.units.strip()
+    units_dev = dev_da.units.strip()
     if units_ref != units_dev:
-        print_units_warning = True
-        if print_units_warning:
-            print("WARNING: ref and dev concentration units do not match!")
-            print("Ref units: {}".format(units_ref))
-            print("Dev units: {}".format(units_dev))
+        units_match = False
+        print("WARNING: ref and dev concentration units do not match!")
+        print("Ref units: {}".format(units_ref))
+        print("Dev units: {}".format(units_dev))
         if enforce_units:
             # if enforcing units, stop the program if
             # units do not match
-            assert units_ref == units_dev, "Units do not match for {}!".format(varname)
-        else:
-            # if not enforcing units, just keep going after
-            # only printing warning once
-            print_units_warning = False
+            assert units_ref == units_dev, \
+                "Units do not match for {}!".format(varname)
+    else:
+        units_match = True
+    return units_match
 
-    return units_ref, units_dev
-
-
-def reshape_MAPL_CS(data, vdims):
+def reshape_MAPL_CS(da):
     """
-    Reshapes cubed sphere data if using MAPL v1.0.0+
+    Reshapes data if contains dimensions indicate MAPL v1.0.0+ output
+
     Args:
     -----
-        data : xarray DataArray
-            DataArray for a GCHP data variable
-
-        vdims : list of str
-            Dimensions of data
+        da : xarray DataArray
+            Data array variable
         
     Returns:
     --------
         data : xarray DataArray
-            Data with dimensions possibly renamed and transposed
+            Data with dimensions renamed and transposed to match old MAPL format
     """
-
-    # Reshape cubed sphere data if using MAPL v1.0.0+
+    vdims = da.dims
     if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-        data = data.stack(lat=("nf", "Ydim"))
-        data = data.rename({"Xdim": "lon"})
-        if "lev" in data.dims:
-            data = data.transpose("lev", "lat", "lon")
+        da = da.stack(lat=("nf", "Ydim"))
+        da = da.rename({"Xdim": "lon"})
+        if "lev" in da.dims:
+            da = da.transpose("lev", "lat", "lon")
         else:
-            data = data.transpose("lat", "lon")
-    return data
+            da = da.transpose("lat", "lon")
+    return da
 
 
 def dict_72_to_47():
@@ -5728,3 +6086,503 @@ def rename_and_flip_gchp_rst_vars(ds):
     ds['lev'].data = ds['lev'].data[::-1]
     ds = ds.sortby('lev', ascending=True)
     return ds
+
+def make_benchmark_wetdep_plots(
+    ref,
+    refstr,
+    dev,
+    devstr,
+    collection,
+    dst="./benchmark",
+    datestr=None,
+    overwrite=False,
+    verbose=False,
+    benchmark_type="TransportTracersBenchmark",
+    plots=["sfc", "500hpa", "zonalmean"],
+    log_color_scale=False,
+    normalize_by_area=False,
+    areas=None,
+    refmet=None,
+    devmet=None,
+    weightsdir='.',
+):
+    """
+    Creates PDF files containing plots of species concentration
+    for model benchmarking purposes.
+
+    Args:
+    -----
+        ref: str
+            Path name for the "Ref" (aka "Reference") data set.
+
+        refstr : str
+            A string to describe ref (e.g. version number)
+
+        dev : str
+            Path name for the "Dev" (aka "Development") data set.
+            This data set will be compared against the "Reference"
+            data set.
+
+        devstr : str
+            A string to describe dev (e.g. version number)
+
+        collection : str
+            String name of collection to plot comparisons for.
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str
+            A string denoting the destination folder where a PDF
+            file containing plots will be written.
+            Default value: ./benchmark
+
+        datestr : str
+            A string with date information to be included in both the
+            plot pdf filename and as a destination folder subdirectory
+            for writing plots
+
+        overwrite : boolean
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False.
+
+        verbose : boolean
+            Set this flag to True to print extra informational output.
+            Default value: False.
+
+        plots : list of strings
+            List of plot types to create.
+            Default value: ['sfc', '500hpa', 'zonalmean']
+
+        normalize_by_area: bool
+            Set this flag to true to enable normalization of data
+            by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
+
+        areas : dict of xarray DataArray:
+            Grid box surface areas in m2 on Ref and Dev grids.
+            Default value: None
+
+        refmet : str
+            Path name for ref meteorology
+            Default value: None
+
+        devmet : str
+            Path name for dev meteorology  
+            Default value: None
+
+    """
+
+    #  Make sure destination directory exists
+    if os.path.isdir(dst) and not overwrite:
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any."
+        msg = msg.format(dst)
+        raise ValueError(msg)
+    elif not os.path.isdir(dst):
+        os.mkdir(dst)
+        
+    # Make a collection subdirectory
+    targetdst = os.path.join(dst, collection)
+    if not os.path.isdir(targetdst):
+        os.mkdir(targetdst)
+
+    # If datestr is passed, create a further subdirectory
+    if datestr is not None:
+        targetdst = os.path.join(targetdst, datestr)
+        if not os.path.isdir(targetdst):
+            os.mkdir(targetdst)
+
+    # Open datasets
+    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
+    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
+
+    # Open met datasets if passed as arguments
+    refmetds = None
+    devmetds = None
+    if refmet is not None:
+        refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
+    if devmet is not None:
+        devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
+
+    # Make sure that Ref and Dev datasets have the same variables.
+    # Variables that are in Ref but not in Dev will be added to Dev
+    # with all missing values (NaNs). And vice-versa.
+    # Turn this off for now since add_missing_variables inserts GCC area into
+    # GCHP files, which causes problems with area normalization (ewl)
+    #[refds, devds] = add_missing_variables(refds, devds)
+
+    # Get list of variables in collection
+    vardict = core.compare_varnames(refds, devds, quiet=True)
+    varlist = [v for v in vardict["commonvars3D"] if collection+"_" in v]
+    varlist.sort()
+
+    # Surface plots
+    if "sfc" in plots:
+        if datestr is not None:
+            plotfilename = "{}_Surface_{}.pdf".format(collection, datestr)
+        else:
+            plotfilename = "{}_Surface.pdf".format(collection)
+        pdfname = os.path.join(targetdst, plotfilename)
+        compare_single_level(
+            refds,
+            refstr,
+            devds,
+            devstr,
+            varlist=varlist,
+            ilev=0,
+            refmet=refmetds,
+            devmet=devmetds,
+            pdfname=pdfname,
+            normalize_by_area=normalize_by_area,
+            extra_title_txt=datestr,
+            weightsdir=weightsdir,
+        )
+        add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=collection+'_',
+                             verbose=verbose)
+        
+    # 500 hPa plots
+    if "500hpa" in plots:
+        if datestr is not None:
+            plotfilename = "{}_500hPa_{}.pdf".format(collection, datestr)
+        else:
+            plotfilename = "{}_500hPa.pdf".format(collection)
+        pdfname = os.path.join(targetdst, plotfilename)
+        compare_single_level(
+            refds,
+            refstr,
+            devds,                 
+            devstr,
+            varlist=varlist,
+            ilev=22,
+            refmet=refmetds,
+            devmet=devmetds,
+            pdfname=pdfname,
+            normalize_by_area=normalize_by_area,
+            extra_title_txt=datestr,
+            weightsdir=weightsdir,
+        )
+        add_bookmarks_to_pdf(
+            pdfname,
+            varlist,
+            remove_prefix=collection+'_',
+            verbose=verbose
+        )
+                
+    # Zonal mean plots
+    if "zonalmean" in plots or "zm" in plots:
+            
+        # Full column
+        if datestr is not None:
+            plotfilename = "{}_FullColumn_ZonalMean_{}.pdf".format(
+                collection,
+                datestr
+            )
+        else:
+            plotfilename = "{}_FullColumn_ZonalMean.pdf".format(collection)
+        pdfname = os.path.join(targetdst, plotfilename)
+        compare_zonal_mean(
+            refds,
+            refstr,
+            devds,
+            devstr,
+            varlist=varlist,
+            refmet=refmetds,
+            devmet=devmetds,
+            pdfname=pdfname,
+            log_color_scale=log_color_scale,
+            normalize_by_area=normalize_by_area,
+            extra_title_txt=datestr,
+            weightsdir=weightsdir,
+        )
+        add_bookmarks_to_pdf(
+            pdfname,
+            varlist,
+            remove_prefix=collection+'_',
+            verbose=verbose
+        )
+        
+        # Stratosphere
+        if datestr is not None:
+            plotfilename = "{}_Strat_ZonalMean_{}.pdf".format(
+                collection,
+                datestr
+            )
+        else:
+            plotfilename = "{}_Strat_ZonalMean.pdf".format(collection)
+        pdfname = os.path.join(targetdst, plotfilename)
+        compare_zonal_mean(
+            refds,
+            refstr,
+            devds,
+            devstr,
+            varlist=varlist,
+            refmet=refmetds,
+            devmet=devmetds,
+            pdfname=pdfname,
+            pres_range=[1, 100],
+            log_yaxis=True,
+            extra_title_txt=datestr,
+            normalize_by_area=normalize_by_area,
+            weightsdir=weightsdir,
+        )
+        add_bookmarks_to_pdf(
+            pdfname,
+            varlist,
+            remove_prefix=collection+'_',
+            verbose=verbose
+        )
+
+def make_benchmark_aerosol_tables(
+        devdir,
+        devlist_aero,
+        devlist_spc,
+        devlist_met,
+        devstr,
+        year, 
+        days_per_mon,
+        dst='./benchmark',
+        overwrite=False,
+        is_gchp=False
+    ):
+    """
+    Compute FullChemBenchmark aerosol budgets & burdens
+
+    Args:
+    -----
+        devdir: str
+            Path to development ("Dev") data directory
+        devlist_aero : list of str
+            List of Aerosols collection files (different months)
+        devlist_spc : list of str
+            List of SpeciesConc collection files (different months)
+        devlist_met : list of str
+            List of meteorology collection files (different months)
+        devstr : str
+            Descriptive string for datasets (e.g. version number)
+        year : str
+            The year of the benchmark simulation (e.g. '2016'). 
+        days_per_month : list of int
+            List of number of days per month for all months
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str 
+            Directory where budget tables will be created.
+        overwrite : bool
+            Overwrite burden & budget tables? (default=True)
+        is_gchp : bool
+            Whether datasets are for GCHP
+    """
+
+    # Create the plot directory hierarchy if it doesn't already exist
+    if os.path.isdir(dst) and not overwrite:
+        err_str = "Pass overwrite=True to overwrite files in that directory"
+        print("Directory {} exists. {}".format(dst, err_str))
+        return
+    elif not os.path.isdir(dst):
+        os.makedirs(dst)
+
+    # List of species (and subsets for the trop & strat)
+    species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC" ]
+
+    # Read the species database
+    try:
+        path = os.path.join(devdir, "species_database.yml")
+        spcdb = yaml_load_file(open(path))
+    except FileNotFoundError:
+        path = os.path.join(os.path.dirname(__file__), "species_database.yml")
+        spcdb = yaml_load_file(open(path))
+
+    # Molecular weights [g mol-1], as taken from the species database
+    mw = {}
+    for v in species_list:
+        mw[v] = spcdb[v]["MW_g"]
+    mw["Air"] = gcon.MW_AIR * 1.0e3
+
+    # Get the list of relevant AOD diagnostics from a YAML file
+    path = os.path.join(os.path.dirname(__file__), "aod_species.yml")
+    aod = yaml_load_file(open(path))
+    aod_list = [v for v in aod.keys() if "Dust" in v or "Hyg" in v]
+
+    # Descriptive names
+    spc2name = {"BCPI": "Black Carbon",
+                "DST1": "Dust",
+                "OCPI": "Organic Carbon",
+                "SO4" : "Sulfate",
+                "SALA": "Sea Salt (accum)",
+                "SALC": "Sea Salt (coarse)"
+    }
+    
+    # Read data collections
+    ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list)
+    ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)
+    ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)
+
+    # Get troposphere mask
+    tropmask = get_troposphere_mask(ds_met)
+
+    # Get number of months
+    n_mon = len(days_per_mon)
+
+    # --------------------------------
+    # Surface area
+    # (kludgey but it works - revisit this)
+    # --------------------------------
+
+    # Get number of vertical levels
+    N_LEVS  = ds_spc.dims["lev"]
+
+    if is_gchp:   
+        area = ds_met["Met_AREAM2"].values
+        a = area.shape
+        area_m2 = np.zeros([a[0], N_LEVS, a[1], a[2], a[3]])
+        for t in range(n_mon):
+            for k in range(N_LEVS):
+                area_m2[t,k,:,:,:] = area[t,:,:,:]
+        total_area_m2 = np.sum(area_m2[0,0,:,:,:])
+    else:
+        area = ds_met["AREA"].values
+        a = area.shape
+        area_m2 = np.zeros([a[0], N_LEVS, a[1], a[2]])
+        for t in range(n_mon):
+            for k in range(N_LEVS):
+                area_m2[t,k,:,:] = area[t,:,:]
+        total_area_m2 = np.sum(area_m2[0,0,:,:])
+
+    # ------------------------------
+    # Conversion factors and time increments
+    # ------------------------------
+    # v/v dry --> Tg
+    vv_to_Tg = {}
+    for spc in species_list:
+        vv_to_Tg[spc] = ds_met["Met_AD"].values * (mw[spc] / mw["Air"]) * 1e-9
+
+    # Days in the benchmark duration
+    days_per_yr = np.sum(days_per_mon)
+
+    # ------------------------------
+    # Define function to print tables
+    # ------------------------------
+    def print_aerosol_metrics(data, species_list, filename, title, label):
+        
+        with open(filename, "w+") as f:
+            
+            # Print top header
+            print("%"*79, file=f)
+            print(" {} for {} in {}".format(title, year, devstr), file=f) 
+            print(" (weighted by the number of days per month)", file=f)
+            print("%"*79, file=f)
+            line = "\n"+" "*40+"Strat         Trop         Strat+Trop\n"
+            line += " "*40+"-----------   ----------   ----------"
+            print(line, file=f)
+            
+            # Print data
+            for spc in species_list:
+                line = "{} ({}) {} :  {:11.9f}   {:10.8f}   {:10.8f}\n".format(
+                    spc2name[spc].ljust(17),
+                    spc.ljust(4),
+                    label,
+                    data[spc + "_s"],
+                    data[spc + "_t"],
+                    data[spc + "_f"])
+                print(line, file=f)
+
+    # --------------------------------------
+    # Compute aerosol burdens [Tg] and print
+    # --------------------------------------
+
+    # Table info
+    filename = "{}/Aerosol_Burdens_{}.txt".format(dst, devstr)
+    if n_mon == 12:
+        title = "Annual average global aerosol burdens"
+    else: 
+        title = "Average global aerosol burdens across {} months".format(n_mon)
+    label = "burden [Tg]"
+
+    # Initialize
+    q = {}
+    q_sum_f = np.zeros(n_mon)
+    q_sum_t = np.zeros(n_mon)
+    q_sum_s = np.zeros(n_mon)
+    burdens = {}
+
+    # Define the axes we need to sum over to make monthly sums
+    if is_gchp:
+        sum_axes = (1,2,3,4)
+    else:
+        sum_axes = (1,2,3)
+
+    # Loop over species
+    for spc in species_list:
+        
+        # Whole-atmosphere and trop-only quantities [g]
+        # NOTE: DryDep is by nature trop-only
+        varname = "SpeciesConc_" + spc
+        q[spc + "_f"] = ds_spc[varname].values * vv_to_Tg[spc]
+        q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
+
+        # Compute monthly sums, weighted by the number of days per month
+        q_sum_f = np.sum(q[spc + "_f"], axis=sum_axes) * days_per_mon
+        q_sum_t = np.sum(q[spc + "_t"], axis=sum_axes) * days_per_mon
+        q_sum_s = q_sum_f - q_sum_t
+
+        # Compute annual averages
+        burdens[spc + "_f"] = np.sum(q_sum_f) / days_per_yr
+        burdens[spc + "_t"] = np.sum(q_sum_t) / days_per_yr
+        burdens[spc + "_s"] = np.sum(q_sum_s) / days_per_yr
+
+    print_aerosol_metrics(burdens, species_list, filename, title, label)
+    
+    # -------------------------------------------
+    # Compute average AOD's [Tg] and print
+    # -------------------------------------------
+
+    # Table info
+    filename = "{}/Global_Mean_AOD_{}.txt".format(dst, devstr)
+    if n_mon == 12:
+        title = "Annual average global AODs"
+    else:
+        title = "Average global AODs across {} months".format(n_mon)
+    label = "mean AOD [1]"
+
+    # Initialize
+    q = {}
+    q_sum_f = np.zeros(n_mon)
+    q_sum_t = np.zeros(n_mon)
+    q_sum_s = np.zeros(n_mon)
+    aods = {}
+
+    # Define axes to sum over, and total surface area
+    if is_gchp:
+        sum_axes = (1,2,3,4)
+    else:
+        sum_axes = (1,2,3)
+
+    # Loop over AOD variables
+    for varname in aod_list:
+        
+        # Get the corresponding species name 
+        if "Dust" in varname:
+            spc = "DST1"
+        else:
+            spc = varname.split("_")[1]
+            
+        # Whole-atmosphere AOD [1]
+        q[spc + "_f"] = ds_aer[varname].values
+
+        # Tropospheric-only AOD [1]
+        q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
+
+        # Create monthly sums, weighted by the number of days per month
+        q_sum_f = np.sum(q[spc + "_f"] * area_m2, axis=sum_axes)*days_per_mon
+        q_sum_t = np.sum(q[spc + "_t"] * area_m2, axis=sum_axes)*days_per_mon
+        q_sum_s = q_sum_f - q_sum_t
+        
+        # Take annual averages
+        aods[spc + "_f"] = np.sum(q_sum_f) / total_area_m2 / days_per_yr
+        aods[spc + "_t"] = np.sum(q_sum_t) / total_area_m2 / days_per_yr
+        aods[spc + "_s"] = np.sum(q_sum_s) / total_area_m2 / days_per_yr
+
+    print_aerosol_metrics(aods, species_list, filename, title, label)
+
+
