@@ -183,8 +183,18 @@ def convert_units(
 
     # Get species molecular weight information
     mw_g = species_properties.get("MW_g")
-    emitted_mw_g = species_properties.get("EmMW_g")
-    moles_C_per_mole_species = species_properties.get("MolecRatio")
+
+    # If the species metadata does not contain EmMW_g, use MW_g instead
+    if "EmMW_g" in species_properties.keys():
+        emitted_mw_g = species_properties.get("EmMW_g")
+    else:
+        emitted_mw_g = mw_g
+
+    # If the species metadata does not containe MolecRatio, use 1.0 instead
+    if "MolecRatio" in species_properties.keys():
+        moles_C_per_mole_species = species_properties.get("MolecRatio")
+    else:
+        moles_C_per_mole_species = 1.0
 
     # ==============================
     # Compute conversion factors
