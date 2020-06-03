@@ -182,7 +182,14 @@ def convert_units(
     """
 
     # Get species molecular weight information
-    mw_g = species_properties.get("MW_g")
+    if "MW_g" in species_properties.keys():
+        mw_g = species_properties.get("MW_g")
+    else:
+        msg =  "Cannot find molecular weight MW_g for species {}".format(
+            species_name)
+        msg += "!\nPlease add the MW_g field for {}".format(species_name)
+        msg += " to the species_database.yml file."
+        raise ValueError(msg)
 
     # If the species metadata does not contain EmMW_g, use MW_g instead
     if "EmMW_g" in species_properties.keys():
