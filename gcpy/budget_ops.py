@@ -329,6 +329,14 @@ def print_operations_budgets(globvars, dataframes, regime):
         print("#"*78, file=f)
         print(" {} budget diagnostics for {}".format(
             desc, globvars.label), file=f)
+        print("\n", file=f)
+        print("NOTES:", file=f)
+        print(" - When using the non-local mixing scheme (default),", file=f)
+        print("   'Mixing' includes emissions and dry deposition", file=f)
+        print("   applied below the PBL. 'EmisDryDep' therefore", file=f)
+        print("   only captures fluxes above the PBL.", file=f)
+        print(" - When using full mixing, 'Mixing' and 'EmisDryDep'", file=f)
+        print("   are fully separated.", file=f)
         print("#"*78, file=f)
         print(file=f)
 
