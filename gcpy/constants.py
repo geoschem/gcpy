@@ -22,6 +22,9 @@ K_BOLTZMANN = 1.381e-23
 # Typical molar mass of air [kg mol-1]
 MW_AIR = 28.9644e-3
 
+# Molar mass of air in [g mol-1]
+MW_AIR_g = 28.9644
+
 # Molar mass of water [kg mol-1]
 MW_H2O = 18.016e-3
 
