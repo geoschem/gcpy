@@ -15,6 +15,7 @@ from os.path import join
 import pandas as pd
 import warnings
 import xarray as xr
+from joblib import Parallel, delayed, cpu_count, parallel_backend
 
 # Tell matplotlib not to look for an X-window
 os.environ['QT_QPA_PLATFORM']='offscreen'
@@ -250,7 +251,6 @@ def compute_operations_budgets(globvars, varlist, regime):
     frames = {}
     for spc in globvars.species:
         frames[spc] = create_dataframe(globvars)
-
     # Loop over all variables in the data file
     for v in varlist:
 
@@ -273,17 +273,16 @@ def compute_operations_budgets(globvars, varlist, regime):
 
         # Compute the total change in mass from each operation [kg/s]
         # and convert to [kg/yr] or [Tg/yr] depending on the species
-        totref = np.sum(globvars.ref_bdg[v].values) * globvars.conv_fac[spc]
-        totdev = np.sum(globvars.dev_bdg[v].values) * globvars.conv_fac[spc]
+        totref = globvars.ref_bdg[v].sum().values * globvars.conv_fac[spc]
+        totdev = globvars.dev_bdg[v].sum().values * globvars.conv_fac[spc]
         diff = totdev - totref
         pctdiff = ( diff / totref ) * 100.0
-
+        
         # Add total into the proper DataFrame element
         frames[spc].loc[row, globvars.REF] = totref
         frames[spc].loc[row, globvars.DEV] = totdev
         frames[spc].loc[row, globvars.DIFF] = diff
         frames[spc].loc[row, globvars.PCTDIFF] = pctdiff
-
     # Compute the column sum over each atmospheric regime
     for k in frames.keys():
         row = globvars.ACCUM.ljust(globvars.pad)
@@ -405,7 +404,6 @@ def make_operations_budget_table(
     # Initialize a class to hold global variables
     globvars = _GlobVars(refstr, reffiles, devstr, devfiles, dst,
                          bmk_type, label, interval, species, overwrite)
-
     # Nested dictionary (dictonary of dictionary of dataframes)
     bdg = {}
 
@@ -413,23 +411,23 @@ def make_operations_budget_table(
     # Compute operations budgets for Full, Trop, PBL regimes
     # TODO: Parallelize it
     # ==================================================================
-    for regime in globvars.regimes:
+    def call_compute(regime):
         # Restrict variables to the current atmospheric regime
         # (so we don't waste time looping over variables we won't use here)
         varlist = [v for v in globvars.varlist if regime in v]
-
         # Return a dictionary of dataframes with all species included
         # and store into the bdg dictonary.
         bdg[regime] = compute_operations_budgets(globvars, varlist, regime)
-
         # Print the budgets for the current atmospheric regime to a file
         print_operations_budgets(globvars, bdg[regime], regime)
-
+        return {regime : bdg[regime]}
+    results = Parallel(n_jobs=-1) (delayed(call_compute)(regime) for regime in globvars.regimes)
+    bdg = {list(result.keys())[0] : result[list(result.keys())[0]] for result in results}
     # ==================================================================
     # Compute the Strat budgets by diffing Full and Trop
     # ==================================================================
-
     # First create empty dataframes for the Strat regime
+
     dfs = {}
     for spc in globvars.species:
         dfs[spc] = create_dataframe(globvars)

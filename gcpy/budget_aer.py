@@ -62,7 +62,7 @@ class _GlobVars:
         # ------------------------------
         # Benchmark year
         # ------------------------------
-        self.y0 = year
+        self.y0 = int(year)
         self.y1 = self.y0 + 1
         self.y0_str = "{}".format(self.y0)
         self.y1_str = "{}".format(self.y1)

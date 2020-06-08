@@ -61,6 +61,7 @@ import gcpy.ste_flux as ste
 import gcpy.budget_aer as aerbdg
 import gcpy.budget_ops as opbdg
 import gcpy.mean_oh_from_logs as moh
+from joblib import Parallel, delayed, cpu_count, parallel_backend
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"]="offscreen"
@@ -97,7 +98,7 @@ gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
 # Path to regridding weights
-weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
+weightsdir = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
 # =====================================================================
 # Specify if this is a gcpy test validation run
@@ -108,7 +109,7 @@ gcpy_test = True
 # Comparisons to run 
 # =====================================================================
 gcc_vs_gcc   = True
-gchp_vs_gcc  = False # not yet functional
+gchp_vs_gcc  = False  # not yet functional
 gchp_vs_gchp = False # not yet functional
 # GCHP vs GCC diff of diffs not included in 1-yr full chemistry benchmark
 
@@ -397,8 +398,7 @@ if gcc_vs_gcc:
         col = "Restart"
 
         # Create mass table for each benchmark month
-        for s, bmk_mon in enumerate(bmk_mons):
-
+        def parallel_mass_table(s, bmk_mon):
             ref = get_filepath(gcc_vs_gcc_refrstdir, col, bmk_mon)
             dev = get_filepath(gcc_vs_gcc_devrstdir, col, bmk_mon)
             bmk.make_benchmark_mass_tables(
@@ -411,6 +411,8 @@ if gcc_vs_gcc:
                 label="at 01{}".format(bmk_mon_yr_strs[s]),
                 overwrite=True
             )
+        results = Parallel(n_jobs=-1)(delayed(parallel_mass_table)(s, bmk_mon) \
+                                      for s, bmk_mon in enumerate(bmk_mons))
 
     # --------------------------------------------------------------
     # GCC vs GCC operations budgets tables
@@ -422,7 +424,7 @@ if gcc_vs_gcc:
         col = "Budget"
 
         # Create budget table for each benchmark month (ewl??)
-        for s, bmk_mon in enumerate(bmk_mons):
+        def parallel_ops_budg(s, bmk_mon):
             ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mon)
             dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mon)
             plot_dir = join(gcc_vs_gcc_budgetdir, bmk_mon_yr_strs[s])
@@ -437,6 +439,8 @@ if gcc_vs_gcc:
                 interval=bmk_sec_per_month[s],
                 overwrite=True
             )
+        results = Parallel(n_jobs=-1)(delayed(parallel_ops_budg)(s, bmk_mon) \
+                                      for s, bmk_mon in enumerate(bmk_mons))
 
     # --------------------------------------------------------------
     # GCC vs GCC aerosols budgets/burdens tables
@@ -538,7 +542,7 @@ if gchp_vs_gcc:
         col = "SpeciesConc"
         colmet_gcc = "StateMet"
         colmet_gchp = "StateMet_avg"
-
+        
         # Create concentration plots for each benchmark month
         for s, bmk_mon in enumerate(bmk_mons):
 
@@ -683,8 +687,7 @@ if gchp_vs_gcc:
         col = "Restart"
 
         # Create mass table for each benchmark month
-        for s, bmk_mon in enumerate(bmk_mons):
-
+        def parallel_mass_table(s, bmk_mon):
             ref = get_filepath(gchp_vs_gcc_refrstdir, col, bmk_mon)
             dev = get_filepath(gchp_vs_gcc_devrstdir, col, bmk_mons[s],
                                is_gchp=True)
@@ -698,6 +701,8 @@ if gchp_vs_gcc:
                 label="at 01{}".format(bmk_mon_yr_strs[s]),
                 overwrite=True
             )
+        results = Parallel(n_jobs=-1)(delayed(parallel_mass_table)(s, bmk_mon) \
+                                      for s, bmk_mon in enumerate(bmk_mons))
 
     #---------------------------------------------------------------
     # GCHP vs GCC operations budgets tables
@@ -707,9 +712,8 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "Budget"
-
-        # Create budget table for each benchmark month (ewl??)
-        for s, bmk_mon in enumerate(bmk_mons):
+        def parallel_ops_budg(s, bmk_mon):
+            # Create budget table for each benchmark month (ewl??)
             ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
             dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
                                is_gchp=True)
@@ -725,6 +729,8 @@ if gchp_vs_gcc:
                 interval=bmk_sec_per_month[s],
                 overwrite=True
             )
+        results = Parallel(n_jobs=-1)(delayed(parallel_ops_budg)(s, bmk_mon) \
+                                      for s, bmk_mon in enumerate(bmk_mons))
 
     #---------------------------------------------------------------
     # GCHP vs GCC aerosol budgets and burdens tables
@@ -787,4 +793,3 @@ if gchp_vs_gchp:
 
     if ste_table:
         print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
-
