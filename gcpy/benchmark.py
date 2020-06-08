@@ -491,6 +491,12 @@ def compare_single_level(
         except:
             continue
 
+    # If converting to ug/m3, load the species database
+    if convert_to_ugm3:
+        properties_path = os.path.join(os.path.dirname(__file__),
+                                       "species_database.yml")
+        properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+
     # Get grid info and regrid if necessary
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, 
      regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder,
@@ -649,20 +655,39 @@ def compare_single_level(
                 False
             )
 
+            # Get a list of properties for the given species
+            spc_name = varname.replace(varname.split("_")[0]+"_", "")
+            species_properties = properties.get(spc_name)
+
+            # If no properties are found, then exit with an error.
+            # Otherwise, get the molecular weight in g/mol.
+            if species_properties is None:
+                # Hack lumped species until we implement a solution
+                if spc_name in ["Simple_SOA","Complex_SOA"]:
+                    spc_mw_g = 150.0
+                else:
+                    msg = "No properties found for {}. Cannot convert" \
+                          + " to ug/m3."
+                    raise ValueError(msg.format(spc_name))
+            else:
+                spc_mw_g = species_properties.get("MW_g")
+                if spc_mw_g is None:
+                    msg = "Molecular weight not found for for species {}!" \
+                          + " Cannot convert to ug/m3.".format(spc_name)
+                    raise ValueError(msg)
+
             # Convert values from ppb to ug/m3:
-            # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
+            # ug/m3 = mol/mol * mol/g air * kg/m3 air * 1e3g/kg
             #         * g/mol spc * 1e6ug/g
             #       = ppb * air density * (spc MW / air MW)
-            gcon.MW_AIR  # g/mole dry air
-            # Eventually put this in a comprehensive unit conversion function.
-            ds_refs[i].values = ds_refs[i].values *              \
-                                ref_airden.values #* ( spc_mw / gcon.MW_AIR )
-            ds_devs[i].values = ds_devs[i].values *              \
-                                dev_airden.values #* ( spc_mw / gcon.MW_AIR )
+            ds_refs[i].values = ds_refs[i].values * ref_airden.values \
+                                * ( spc_mw_g / gcon.MW_AIR_g )
+            ds_devs[i].values = ds_devs[i].values * dev_airden.values \
+                                * ( spc_mw_g / gcon.MW_AIR_g )
 
             # Update units string
-            ds_refs[i].attrs["units"] = "ug/m3"
-            ds_devs[i].attrs["units"] = "ug/m3"
+            ds_refs[i].attrs["units"] = "\u03BCg/m3" # ug/m3 using mu
+            ds_devs[i].attrs["units"] = "\u03BCg/m3"
 
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
@@ -1531,6 +1556,12 @@ def compare_zonal_mean(
         except:
             continue
 
+    # If converting to ug/m3, load the species database
+    if convert_to_ugm3:
+        properties_path = os.path.join(os.path.dirname(__file__),
+                                       "species_database.yml")
+        properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+
     # Get mid-point pressure and edge pressures for this grid (assume 72-level)
     ref_pedge, ref_pmid, ref_grid_cat = get_vert_grid(refdata)
     dev_pedge, dev_pmid, dev_grid_cat = get_vert_grid(devdata)
@@ -1690,19 +1721,40 @@ def compare_zonal_mean(
             else:
                 dev_airden = devmet["Met_AIRDEN"].isel(lev=dev_pmid_ind)
 
+            # Get a list of properties for the given species
+            spc_name = varname.replace(varname.split("_")[0]+"_", "")
+            species_properties = properties.get(spc_name)
+
+            # If no properties are found, then exit with an error.
+            # Otherwise, get the molecular weight in g/mol.
+            if species_properties is None:
+                # Hack lumped species until we implement a solution
+                if spc_name in ["Simple_SOA","Complex_SOA"]:
+                    spc_mw_g = 150.0
+                else:
+                    msg = "No properties found for {}. Cannot convert" \
+                          + " to ug/m3."
+                    raise ValueError(msg.format(spc_name))
+            else:
+                # Get the species molecular weight in g/mol
+                spc_mw_g = species_properties.get("MW_g")
+                if spc_mw_g is None:
+                    msg = "Molecular weight not found for for species {}!" \
+                          + " Cannot convert to ug/m3.".format(spc_name)
+                    raise ValueError(msg)
+
             # Convert values from ppb to ug/m3:
             # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
             #         * g/mol spc * 1e6ug/g
             #       = ppb * air density * (spc MW / air MW)
-            # Eventually put this in a comprehensive unit conversion function.
-            ds_refs[i].values = ds_refs[i].values *              \
-                                ref_airden.values #* ( spc_mw / air_mw )
-            ds_devs[i].values = ds_devs[i].values *              \
-                                dev_airden.values #* ( spc_mw / air_mw )
+            ds_refs[i].values = ds_refs[i].values * ref_airden.values \
+                                * ( spc_mw_g / gcon.MW_AIR_g )
+            ds_devs[i].values = ds_devs[i].values * dev_airden.values \
+                                * ( spc_mw_g / gcon.MW_AIR_g )
 
             # Update units string
-            ds_refs[i].attrs["units"] = "ug/m3"
-            ds_devs[i].attrs["units"] = "ug/m3"
+            ds_refs[i].attrs["units"] = "\u03BCg/m3" # ug/m3 using mu
+            ds_devs[i].attrs["units"] = "\u03BCg/m3"
 
         # ==============================================================
         # Reshape cubed sphere data if using MAPL v1.0.0+
@@ -5263,11 +5315,6 @@ def make_benchmark_oh_metrics(
     # Compute mass-weighted OH in the troposphere
     # ==================================================================
 
-    # Physical constants
-    Avo = gcon.AVOGADRO   # molec/mol
-    mw_air = gcon.MW_AIR  # g/mole dry air
-    g0 = gcon.G           # m/s2
-
     # Ref
     ref_oh_trop = np.ma.masked_array(refds["OHconcAfterChem"].values,
                                      ref_tropmask)
@@ -6397,7 +6444,7 @@ def make_benchmark_aerosol_tables(
     mw = {}
     for v in species_list:
         mw[v] = spcdb[v]["MW_g"]
-    mw["Air"] = gcon.MW_AIR * 1.0e3
+    mw["Air"] = gcon.MW_AIR_g
 
     # Get the list of relevant AOD diagnostics from a YAML file
     path = os.path.join(os.path.dirname(__file__), "aod_species.yml")
