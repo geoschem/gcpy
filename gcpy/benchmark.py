@@ -322,14 +322,16 @@ def compare_single_level(
         refdata : xarray dataset
             Dataset used as reference in comparison
 
-        refstr  : str
+        refstr  : str OR list of str
             String description for reference data to be used in plots
+            OR list containing [ref1str, ref2str] for diff-of-diffs plots
 
         devdata : xarray dataset
             Dataset used as development in comparison
 
-        devstr  : str
+        devstr  : str OR list of str
             String description for development data to be used in plots
+            OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
     ------------------------
@@ -461,16 +463,15 @@ def compare_single_level(
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
         if type(refstr) is list:
-            frac_refstr = '{} / {}'.format(refstr[0], refstr[1])
-            refstr = '{} - {}'.format(refstr[0], refstr[1])
+            frac_refstr = '{} / {}'.format(refstr[1], refstr[0])
+            refstr = '{} - {}'.format(refstr[1], refstr[0])
         else:
             frac_refstr = 'Ref2 / Ref1'
         if type(devstr) is list:
-            frac_devstr = '{} / {}'.format(devstr[0], devstr[1])
-            devstr = '{} - {}'.format(devstr[0], devstr[1])
+            frac_devstr = '{} / {}'.format(devstr[1], devstr[0])
+            devstr = '{} - {}'.format(devstr[1], devstr[0])
         else:
             frac_devstr = 'Dev2 / Dev1'
-
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist is None:
         quiet = not verbose
@@ -1383,14 +1384,16 @@ def compare_zonal_mean(
         refdata : xarray dataset
             Dataset used as reference in comparison
 
-        refstr  : str
+        refstr  : str OR list of str
             String description for reference data to be used in plots
+            OR list containing [ref1str, ref2str] for diff-of-diffs plots
 
         devdata : xarray dataset
             Dataset used as development in comparison
 
-        devstr  : str
+        devstr  : str OR list of str
             String description for development data to be used in plots
+            OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
     ------------------------
@@ -1521,13 +1524,13 @@ def compare_zonal_mean(
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
         if type(refstr) is list:
-            frac_refstr = '{} / {}'.format(refstr[0], refstr[1])
-            refstr = '{} - {}'.format(refstr[0], refstr[1])
+            frac_refstr = '{} / {}'.format(refstr[1], refstr[0])
+            refstr = '{} - {}'.format(refstr[1], refstr[0])
         else:
             frac_refstr = 'Ref2 / Ref1'
         if type(devstr) is list:
-            frac_devstr = '{} / {}'.format(devstr[0], devstr[1])
-            devstr = '{} - {}'.format(devstr[0], devstr[1])
+            frac_devstr = '{} / {}'.format(devstr[1], devstr[0])
+            devstr = '{} - {}'.format(devstr[1], devstr[0])
         else:
             frac_devstr = 'Dev2 / Dev1'
         
@@ -3286,16 +3289,18 @@ def make_benchmark_conc_plots(
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
 
-        refstr : str
+        refstr : str OR list of str
             A string to describe ref (e.g. version number)
+            OR list containing [ref1str, ref2str] for diff-of-diffs plots
 
         dev : str
             Path name for the "Dev" (aka "Development") data set.
             This data set will be compared against the "Reference"
             data set.
 
-        devstr : str
+        devstr : str OR list of str
             A string to describe dev (e.g. version number)
+            OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
     ------------------------
