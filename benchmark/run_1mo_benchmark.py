@@ -184,8 +184,8 @@ gchp_vs_gcc_refstr   = gcc_dev_version
 gchp_vs_gcc_devstr   = gchp_dev_version
 gchp_vs_gchp_refstr  = gchp_ref_version
 gchp_vs_gchp_devstr  = gchp_dev_version
-diff_of_diffs_refstr = [gcc_dev_version, gcc_ref_version]
-diff_of_diffs_devstr = [gchp_dev_version, gchp_ref_version]
+diff_of_diffs_refstr = [gcc_ref_version, gcc_dev_version]
+diff_of_diffs_devstr = [gchp_ref_version, gchp_dev_version]
 
 ########################################################################
 ###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
