@@ -25,7 +25,11 @@ FullChemBenchmark:
       - ISALC
       - NITs
       - SALA
+      - SALAAL
+      - SALACL
       - SALC
+      - SALCAL
+      - SALCCL
       - SO4s
   Bromine:
     Bromine:
