@@ -55,7 +55,7 @@ import numpy as np
 import xarray as xr
 
 from gcpy import benchmark as bmk
-from gcpy.core import get_filepath, get_filepaths
+from gcpy.util import get_filepath, get_filepaths
 import gcpy.budget_ops as opbdg
 import gcpy.budget_tt as ttbdg
 import gcpy.ste_flux as ste

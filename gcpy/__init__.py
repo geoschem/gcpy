@@ -1,19 +1,15 @@
 '''
 GCPY initialization script.  Imports nested packages for convenience.
 '''
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
 
-from .core import *
-from .grid.horiz import *
-from .grid.regrid import *
+from .util import *
+from .grid import *
+from .regrid import *
 from .benchmark import *
 from .units import *
 from . import plot
 from . import grid
-from ._version import *
-
+from .constants import *
 # Figure this out later
 #try:
 #    from .version import __version__

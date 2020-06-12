@@ -329,3 +329,53 @@ def convert_units(
 
     # Return to calling routine
     return dr_new
+
+def check_units(ref_da, dev_da):
+    """
+    Ensures the units of two xarray DataArrays are the same.
+    Args:
+    -----
+        ref_da : xarray DataArray
+            First data array containing a units attribute.
+        dev_da : xarray DataArray
+            Second data array containing a units attribute.
+        
+    Returns:
+    --------
+        units_match : bool
+    """         
+    units_ref = ref_da.units.strip()
+    units_dev = dev_da.units.strip()
+    if units_ref != units_dev:
+        units_match = False
+        print("WARNING: ref and dev concentration units do not match!")
+        print("Ref units: {}".format(units_ref))
+        print("Dev units: {}".format(units_dev))
+        if enforce_units:
+            # if enforcing units, stop the program if
+            # units do not match
+            assert units_ref == units_dev, \
+                "Units do not match for {}!".format(varname)
+    else:
+        units_match = True
+    return units_match
+
+def data_unit_is_mol_per_mol(da):
+    """
+    Check if the units of an xarray DataArray are mol/mol based on a set
+    list of unit strings mol/mol may be.
+    Args:
+    -----
+        da : xarray DataArray
+            Data array containing a units attribute
+
+    Returns:
+    --------
+        is_molmol : bool
+            Whether input units are mol/mol
+    """
+    conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]
+    is_molmol = False
+    if da.units.strip() in conc_units:
+        is_molmol = True
+    return is_molmol
