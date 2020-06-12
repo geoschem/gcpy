@@ -5,9 +5,8 @@
 # ======================================================================
 
 from calendar import monthrange
-from gcpy.benchmark import add_missing_variables
+from gcpy.util import add_missing_variables, compare_varnames
 import gcpy.constants as constants
-from gcpy.core import compare_varnames
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 import numpy as np
 import os

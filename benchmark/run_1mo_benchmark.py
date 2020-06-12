@@ -49,16 +49,15 @@ Remarks:
 
 import os
 from os.path import join
-import warnings
 
+import warnings
 import calendar
 import numpy as np
 import xarray as xr
-
+from gcpy.util import get_filepath
 from gcpy import benchmark as bmk
-from gcpy import budget_ops as opbdg
-from gcpy import ste_flux as ste
-from gcpy.core import get_filepath
+import gcpy.budget_ops as opbdg
+import gcpy.ste_flux as ste
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"]="offscreen"

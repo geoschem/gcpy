@@ -14,8 +14,8 @@ import numpy as np
 import os
 from os.path import join
 import gcpy.constants as constants
-from gcpy.benchmark import get_troposphere_mask
-from gcpy.benchmark import rename_and_flip_gchp_rst_vars
+from gcpy.grid import get_troposphere_mask
+from gcpy.util import rename_and_flip_gchp_rst_vars, dict_diff
 import warnings
 import xarray as xr
 from yaml import load as yaml_load_file
@@ -250,30 +250,6 @@ class _GlobVars:
 # ======================================================================
 # Functions
 # ======================================================================
-
-def diff(globvars, dict0, dict1):
-    """
-    Function to take the difference of two dict objects.
-    Assumes that both objects have the same keys.
-
-    Args:
-    -----
-        globvars : obj of type _GlobVars
-            Global variables needed for budget computations.
-        dict0, dict1 : dict
-            Dictionaries to be subtracted (dict1 - dict0)
-
-    Returns:
-    -------
-        result : dict
-            Key-by-key difference of dict1 - dict0
-    """
-    result = {}
-    for key, value in dict0.items():
-        result[key] = dict1[key] - dict0[key]
-
-    return result
-
 
 def total(globvars, dict_list):
     """
@@ -763,7 +739,7 @@ def transport_tracers_budgets(devstr, devdir, devrstdir, year,
     data["accum_final"] = mass_from_rst(globvars, ds, tropmask)
 
     # Take the difference final - init
-    data["accum_diff"] = diff(globvars,
+    data["accum_diff"] = dict_diff(globvars,
                               data["accum_init"],
                               data["accum_final"])
     
@@ -812,7 +788,7 @@ def transport_tracers_budgets(devstr, devdir, devrstdir, year,
                                data["snk_decay"]])
 
     # Sources - sinks
-    data["src_minus_snk"] = diff(globvars,
+    data["src_minus_snk"] = dict_diff(globvars,
                                  data["snk_total"],
                                  data["src_total"])
 

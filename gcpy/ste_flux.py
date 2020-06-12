@@ -10,7 +10,7 @@ for selected benchmark species.
 
 from calendar import monthrange, month_abbr
 import datetime
-import gcpy.constants as constants
+import gcpy.constants as gcon
 import numpy as np
 import os
 from os.path import join
@@ -86,7 +86,7 @@ class _GlobVars:
             self.data_vars[spc] = "AdvFluxVert_" + spc
 
         # Vertical flux diagnostics
-        skip_vars = constants.skip_these_vars
+        skip_vars = gcon.skip_these_vars
         self.ds_flx = xr.open_mfdataset(files, drop_variables=skip_vars)
 
         # Set a flag to denote if this data is from GCHP
