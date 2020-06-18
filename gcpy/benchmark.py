@@ -1060,7 +1060,8 @@ def make_benchmark_conc_plots(
                 weightsdir=weightsdir,
                 convert_to_ugm3=convert_to_ugm3,
                 second_ref=second_refds,
-                second_dev=second_devds
+                second_dev=second_devds,
+                n_job=n_job
             )
             diff_sfc[:] = [v.replace(coll_prefix, "") for v in diff_sfc]
             cat_diff_dict['sfc'] = diff_sfc
@@ -1100,7 +1101,8 @@ def make_benchmark_conc_plots(
                 weightsdir=weightsdir,
                 convert_to_ugm3=convert_to_ugm3,
                 second_ref=second_refds,
-                second_dev=second_devds
+                second_dev=second_devds,
+                n_job=n_job
             )
             diff_500[:] = [v.replace(coll_prefix, "") for v in diff_500]
             #dict_500[filecat] = diff_500
@@ -1143,7 +1145,8 @@ def make_benchmark_conc_plots(
                 weightsdir=weightsdir,
                 convert_to_ugm3=convert_to_ugm3,
                 second_ref=second_refds,
-                second_dev=second_devds
+                second_dev=second_devds,
+                n_job=n_job
             )
             diff_zm[:] = [v.replace(coll_prefix, "") for v in diff_zm]
             #dict_zm = diff_zm
@@ -1181,7 +1184,8 @@ def make_benchmark_conc_plots(
                 convert_to_ugm3=convert_to_ugm3,
                 weightsdir=weightsdir,
                 second_ref=second_refds,
-                second_dev=second_devds
+                second_dev=second_devds,
+                n_job=n_job
             )
             util.add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict,
@@ -1435,7 +1439,8 @@ def make_benchmark_emis_plots(
             pdfname=pdfname,
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
-            weightsdir=weightsdir
+            weightsdir=weightsdir,
+            n_job=n_job
         )
         util.add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix="Emis", verbose=verbose)
@@ -1501,7 +1506,8 @@ def make_benchmark_emis_plots(
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_emis,
-                weightsdir=weightsdir
+                weightsdir=weightsdir,
+                n_job=n_job
             )
 
             util.add_bookmarks_to_pdf(
@@ -1606,7 +1612,8 @@ def make_benchmark_emis_plots(
                 flip_dev=flip_dev,
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
-                weightsdir=weightsdir
+                weightsdir=weightsdir,
+                n_job=n_job
             )
             util.add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
             return catspc
@@ -1792,7 +1799,8 @@ def make_benchmark_jvalue_plots(
     flip_dev=False,
     log_color_scale=False,
     sigdiff_files=None,
-    weightsdir='.'
+    weightsdir='.',
+    n_job=-1
 ):
     """
     Creates PDF files containing plots of J-values for model
@@ -1884,6 +1892,12 @@ def make_benchmark_jvalue_plots(
         weightsdir : str
             Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
             Default value: '.'
+
+        n_job : int
+            Defines the number of simultaneous workers for parallel plotting.
+            Set to 1 to disable parallel plotting. Value of -1 allows the
+            application to decide.
+            Default value: -1
 
     Remarks:
     --------
@@ -2019,7 +2033,8 @@ def make_benchmark_jvalue_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_sfc,
-            weightsdir=weightsdir
+            weightsdir=weightsdir,
+            n_job=n_job
         )
         diff_sfc[:] = [v.replace(prefix, "") for v in diff_sfc]
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
@@ -2046,7 +2061,8 @@ def make_benchmark_jvalue_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_500,
-            weightsdir=weightsdir
+            weightsdir=weightsdir,
+            n_job=n_job
         )
         diff_500[:] = [v.replace(prefix, "") for v in diff_500]
         util.add_bookmarks_to_pdf(pdfname, varlist,
@@ -2074,7 +2090,8 @@ def make_benchmark_jvalue_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_zm,
-            weightsdir=weightsdir
+            weightsdir=weightsdir,
+            n_job=n_job
         )
         diff_zm[:] = [v.replace(prefix, "") for v in diff_zm]
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
@@ -2101,7 +2118,8 @@ def make_benchmark_jvalue_plots(
             flip_dev=flip_dev,
             extra_title_txt=extra_title_txt,
             log_color_scale=log_color_scale,
-            weightsdir=weightsdir
+            weightsdir=weightsdir,
+            n_job=n_job
         )
         util.add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
@@ -2153,6 +2171,7 @@ def make_benchmark_aod_plots(
     log_color_scale=False,
     sigdiff_files=None,
     weightsdir='.'
+    n_job=-1
 ):
     """
     Creates PDF files containing plots of column aerosol optical
@@ -2220,6 +2239,12 @@ def make_benchmark_aod_plots(
         weightsdir : str
             Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
             Default value: '.'
+
+        n_job : int
+            Defines the number of simultaneous workers for parallel plotting.
+            Set to 1 to disable parallel plotting. Value of -1 allows the
+            application to decide.
+            Default value: -1
 
     """
     # ==================================================================
@@ -2414,7 +2439,8 @@ def make_benchmark_aod_plots(
         log_color_scale=log_color_scale,
         extra_title_txt=extra_title_txt,
         sigdiff_list=diff_aod,
-        weightsdir=weightsdir
+        weightsdir=weightsdir,
+        n_job=n_job
     )
     diff_aod[:] = [v.replace("Column_AOD_", "") for v in diff_aod]
     util.add_bookmarks_to_pdf(
@@ -2994,6 +3020,7 @@ def make_benchmark_wetdep_plots(
     refmet=None,
     devmet=None,
     weightsdir='.',
+    n_job=-1
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -3058,6 +3085,12 @@ def make_benchmark_wetdep_plots(
         devmet : str
             Path name for dev meteorology  
             Default value: None
+
+        n_job : int
+            Defines the number of simultaneous workers for parallel plotting.
+            Set to 1 to disable parallel plotting. Value of -1 allows the
+            application to decide.
+            Default value: -1
 
     """
 
@@ -3125,6 +3158,7 @@ def make_benchmark_wetdep_plots(
             normalize_by_area=normalize_by_area,
             extra_title_txt=datestr,
             weightsdir=weightsdir,
+            n_job=n_job
         )
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=collection+'_',
                              verbose=verbose)
@@ -3149,6 +3183,7 @@ def make_benchmark_wetdep_plots(
             normalize_by_area=normalize_by_area,
             extra_title_txt=datestr,
             weightsdir=weightsdir,
+            n_job=n_job
         )
         util.add_bookmarks_to_pdf(
             pdfname,
@@ -3182,6 +3217,7 @@ def make_benchmark_wetdep_plots(
             normalize_by_area=normalize_by_area,
             extra_title_txt=datestr,
             weightsdir=weightsdir,
+            n_job=n_job
         )
         util.add_bookmarks_to_pdf(
             pdfname,
@@ -3213,6 +3249,7 @@ def make_benchmark_wetdep_plots(
             extra_title_txt=datestr,
             normalize_by_area=normalize_by_area,
             weightsdir=weightsdir,
+            n_job=n_job
         )
         util.add_bookmarks_to_pdf(
             pdfname,
