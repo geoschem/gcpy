@@ -2740,8 +2740,8 @@ def make_benchmark_oh_metrics(
         "Met_TropLev",
         "FracOfTimeInTrop",
     ]
-    refmet = util.get_variables_from_dataset(refds, metvar_list)
-    devmet = util.get_variables_from_dataset(devds, metvar_list)
+    refmet = util.get_variables_from_dataset(refmetds, metvar_list)
+    devmet = util.get_variables_from_dataset(devmetds, metvar_list)
 
     # Create the mask arrays for the troposphere for Ref and Dev
     ref_tropmask = get_troposphere_mask(refmetds)
