@@ -2170,7 +2170,7 @@ def make_benchmark_aod_plots(
     verbose=False,
     log_color_scale=False,
     sigdiff_files=None,
-    weightsdir='.'
+    weightsdir='.',
     n_job=-1
 ):
     """
