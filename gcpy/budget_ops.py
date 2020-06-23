@@ -282,6 +282,10 @@ def compute_operations_budgets(globvars, varlist, regime):
         frames[spc].loc[row, globvars.DEV] = totdev
         frames[spc].loc[row, globvars.DIFF] = diff
         frames[spc].loc[row, globvars.PCTDIFF] = pctdiff
+        totref = pd.DataFrame()
+        totdev = pd.DataFrame()
+        diff = pd.DataFrame()
+        pctdiff = pd.DataFrame()
     # Compute the column sum over each atmospheric regime
     for k in frames.keys():
         row = globvars.ACCUM.ljust(globvars.pad)
@@ -304,14 +308,6 @@ def print_operations_budgets(globvars, dataframes, regime):
         regime : str
             One of "Full", "Trop", or "PBL".
     """
-
-    # Create the plot directory hierarchy if it doesn't already exist
-    if os.path.isdir(globvars.dst) and not globvars.overwrite:
-        msg = "Directory {} exists. ".format(dst)
-        msg += "Pass overwrite=True to overwrite files in that directory"
-        raise ValueError(msg)
-    elif not os.path.isdir(globvars.dst):
-        os.makedirs(globvars.dst)
 
     # Define a dictionary for the regime descriptions
     desc = "{}Column".format(regime)
@@ -405,6 +401,14 @@ def make_operations_budget_table(
                          bmk_type, label, interval, species, overwrite)
     # Nested dictionary (dictonary of dictionary of dataframes)
     bdg = {}
+
+    # Create the plot directory hierarchy if it doesn't already exist
+    if os.path.isdir(globvars.dst) and not globvars.overwrite:
+        msg = "Directory {} exists. ".format(dst)
+        msg += "Pass overwrite=True to overwrite files in that directory"
+        raise ValueError(msg)
+    elif not os.path.isdir(globvars.dst):
+        os.makedirs(globvars.dst)
 
     # ==================================================================
     # Compute operations budgets for Full, Trop, PBL regimes
