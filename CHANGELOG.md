@@ -89,6 +89,9 @@ The first official release version of GCPy, v1.0.0, will correspond with the rel
 
 ### Added
 
+- Add new function to compute budgets and create budget table that incorporates new optional features.
+- Require python package tabulate for generating budget tables.
+
 ### Changed
 
 ### Deprecated

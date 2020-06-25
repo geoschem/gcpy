@@ -5,7 +5,9 @@ Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 import os
 import shutil
 import yaml
+import itertools
 import numpy as np
+import pandas as pd
 import xarray as xr
 from cartopy.mpl.geoaxes import GeoAxes  # for assertion
 from matplotlib.backends.backend_pdf import PdfPages
@@ -21,6 +23,9 @@ from yaml import load as yaml_load_file
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
 import warnings
+
+# test
+from tabulate import tabulate
 
 # Save warnings format to undo overwriting built into PyPDF2
 warning_format = warnings.showwarning
@@ -3511,4 +3516,492 @@ def make_benchmark_aerosol_tables(
 
     print_aerosol_metrics(aods, species_list, filename, title, label)
 
+def make_benchmark_operations_budget(
+    refstr,
+    reffiles,
+    devstr,
+    devfiles,
+    bmk_type,
+    interval,
+    label=None,
+    col_sections=["Full", "Trop", "PBL", "Strat"],
+    operations=["Chemistry","Convection","EmisDryDep","Mixing",\
+                "Transport","WetDep"],
+    compute_accum=True,
+    require_overlap=False
+    dst='.',
+    species=None,
+    overwrite=True,
+):
+    """
+    Prints the "operations budget" (i.e. change in mass after
+    each operation) from a GEOS-Chem benchmark simulation.
 
+    Args:
+    -----
+        refstr : str
+            Labels denoting the "Ref" versions
+        reffiles : list of str
+            Lists of files to read from the "Ref" version.
+        devstr : str
+            Labels denoting the "Dev" versions
+        devfiles : list of str
+            Lists of files to read from "Dev" version.
+        bmk_type : str
+            "TransportTracersBenchmark" or "FullChemBenchmark".
+        interval : float
+            Number of seconds in the diagnostic interval.
+
+    Keyword Args (optional):
+    ------------------------
+        label : str
+            Contains the date or date range for each dataframe title.
+            Default value: None
+        col_sections : list of str
+            List of column sections to calculate global budgets for. May
+            include Strat eventhough not calculated in GEOS-Chem, but Full
+            and Trop must also be present to calculate Strat.
+            Default value: ["Full", "Trop", "PBL", "Strat"]
+        operations : list of str
+            List of operations to calculate global budgets for.
+            Default value: ["Chemistry","Convection","EmisDryDep",
+                            "Mixing","Transport","WetDep"]
+        compute_accum : bool
+            Optionally turn on/off accumulation calculation. If True, will 
+            only compute accumulation if all six GEOS-Chem operations budgets
+            are computed. Otherwise a message will be printed warning that
+            accumulation will not be calculated.
+            Default value: True
+        require_overlap : bool
+            Whether to calculate budgets for only species that are present in
+            both Ref or Dev.
+            Default value: False
+        dst : str
+            Directory where plots & tables will be created.
+            Default value: '.'
+        species : list of str
+            List of species for which budgets will be created.
+            Defautl value: None (all species)
+        overwrite : bool
+            Denotes whether to ovewrite existing budget tables.
+    """
+
+    # ------------------------------------------
+    # Column sections
+    # ------------------------------------------
+
+    # Print info. Only allow Strat if Trop and Full are present
+    print("Column sections:")
+    for col_section in col_sections:
+        print("  {}".format(col_section))
+    n_sections = len(col_sections)
+    compute_strat = False
+    if "Strat" in col_sections:
+        compute_strat = True
+        if "Full" not in col_sections or "Trop" not in col_sections:
+            msg = "Strat budget table requires Full and Trop column sections"
+            raise ValueError(msg)
+        else:
+            print("*** Will compute Strat budget as difference of Full"\
+                  " and Trop ***")
+
+    # Make a subset of column sections not including Strat
+    gc_sections = [r for r in col_sections if "Strat" not in r]
+
+    # ------------------------------------------
+    # Operations
+    # ------------------------------------------
+
+    # Rename the optional argument to be clear it is GEOS-Chem budget operations
+    gc_operations = operations
+
+    # Handle whether to compute accumulation.
+    all_operations = gc_operations
+    if compute_accum and len(gc_operations) == 6:
+            all_operations = gc_operations + ["ACCUMULATION"]
+    n_ops = len(all_operations)
+
+    # Print info
+    print("Operations:")
+    for all_operation in all_operations:
+        print("  {}".format(all_operation))
+    if compute_accum:
+        if "ACCUMULATION" in all_operations:
+            print("*** Will compute ACCUMULATION operation as sum of all "\
+                  "GEOS-Chem operations ***")
+        else:
+            print("***Will not compute ACCUMULATION since not all GEOS-Chem"\
+                  " operation budgets will be computed.")
+    
+    # ------------------------------------------
+    # Read data
+    # ------------------------------------------
+
+    # Read data from disk (either one month or 12 months)
+    skip_vars = gcon.skip_these_vars
+    print('Opening ref data')
+    ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
+    print('Opening dev data')
+    dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
+
+    # ------------------------------------------
+    # Species
+    # ------------------------------------------
+
+    # Get information about variables in data files
+    vardict = util.compare_varnames(ref_ds, dev_ds, quiet=True)
+    refonly = vardict["refonly"]
+    devonly = vardict["devonly"]
+    cmnvars = vardict["commonvars2D"]
+
+    # Reduce each list to only variables containing "Budget" and not "Strat"
+    refonly = [v for v in refonly if "Budget" in v and "Strat" not in v]
+    devonly = [v for v in devonly if "Budget" in v and "Strat" not in v]
+    cmnvars = [v for v in cmnvars if "Budget" in v and "Strat" not in v]
+
+    # Get the species list, depending on if species was passed as argument.
+    if species is not None:
+        spclist = species
+    else:
+        # For each column section, get the union or intersection (depending
+        # on optional argument require_overlap) of all budget diagnostic
+        # species and sort alphabetically. A species is counted even if only
+        # present for as few as one operation.
+        spclists = {}
+        for gc_section in gc_sections:
+            refspc = [v.split("_")[1] for v in refonly if gc_section in v]
+            devspc = [v.split("_")[1] for v in devonly if gc_section in v]
+            cmnspc = [v.split("_")[1] for v in cmnvars if gc_section in v]
+            if require_overlap:
+                section_spc = list(set(cmnspc))
+            else:
+                section_spc =  list(set(refspc + devspc + cmnspc))
+            section_spc.sort()
+            spclists[gc_section] = section_spc
+
+        # If calculating Strat, use intersection of Trop and Full
+        if "Strat" in col_sections:
+            spclists["Strat"] = list(set(spclists["Trop"] + spclists["Full"]))
+
+        # For now, define one species list as species combined across all
+        # column sections. Compute budgets of these species for each section.
+        # NOTE: eventually would want to be able to compute budget for only
+        # species per column section, not all species for all section. If that
+        # is implemented then handling of optional species list needs to be
+        # revisited.
+        spclist = []
+        for s in spclists:
+            spclist = spclist + spclists[s]
+
+    # Make list items unique and put in alphabetical order
+    spclist = list(set(spclist))
+    spclist.sort()
+    n_spc = len(spclist)
+
+    # ------------------------------------------
+    # Concentration units
+    # ------------------------------------------
+    # Get raw data units in file. Assume the same for all budget diagnostics.
+    refunit = ref_ds[cmnvars[0]].units
+    devunit = dev_ds[cmnvars[0]].units
+    if refunit != devunit:
+        print('WARNING: ref and dev species concentrations units are different')
+
+    # Assume this will be annual budget if interval greater than 3e7 sec
+    annual = interval > 3.0e7
+
+    # Determine what the converted units and conversion factor should be
+    # based on benchmark type and species (tracer) name
+    conv_fac = {}
+    units ={}
+    for spc in spclist:
+        conv_fac[spc] = interval * 1e-6
+        units[spc] = '[Gg]'
+        if "TransportTracers" in bmk_type and "Tracer" not in spc:
+            conv_fac[spc] = interval
+            if annual:
+                units[spc] = '[kg/yr]'
+            else:
+                units[spc] = '[kg]'
+        elif annual:
+            conv_fac[spc] = interval * 1e-9
+            units[spc] = '[Tg/yr]'
+
+    # ------------------------------------------
+    # Create dataframe
+    # ------------------------------------------
+    columns = ["Column_Section", "Species", "Operation", "Units_raw", "Ref_raw",
+               "Dev_raw", "Units_converted", "Ref", "Dev",
+               "Diff", "Pct_diff"]
+    n_rows = n_sections * n_spc * n_ops
+
+    # Make column data to initialize with
+    col_section = list(itertools.chain.from_iterable(
+        itertools.repeat(x, n_ops * n_spc) for x in col_sections))
+    col_spc = list(itertools.chain.from_iterable(
+        itertools.repeat(x, n_ops) for x in spclist)) * n_sections
+    col_ops = all_operations * n_sections * n_spc
+    col_unit = [refunit] * n_rows
+
+    # Put the column data together into a dictionary
+    data = {
+        'Species':col_spc,
+        'Operation':col_ops,
+        'Column_Section':col_section,
+        'Units_raw':col_unit
+    }
+
+    # Create the dataframe from the data dictionary and column names list
+    df = pd.DataFrame(data, columns=columns)
+
+    # ------------------------------------------
+    # Populate dataframe for data operations and sections
+    # ------------------------------------------
+    print('Calculating budgets for all data operations and column sections...')
+    
+    # Loop over sections (only those with data in files)
+    for gc_section in gc_sections:
+    
+        # Loop over species in that section
+        for i, spc in enumerate(spclist):
+            
+            # Keep track of progress
+            if (i+1) % 50 == 0:
+                print('  {}: species {} of {}'.format(gc_section, i+1, \
+                                                      n_spc))
+    
+            # Loop over operations (only those with data in files)
+            for gc_operation in gc_operations:
+    
+                # Get the dataframe row to fill. Skip if not found.
+                dfrow = (df["Column_Section"] == gc_section) \
+                        & (df["Species"] == spc) \
+                        & (df["Operation"] == gc_operation)
+                if not any(dfrow):
+                    continue
+    
+                # Get the variable name in the datasets
+                varname= "Budget" + gc_operation + gc_section + "_" + spc
+                    
+                #  Calculate Ref and dev raw as global sum
+                # TODO: add an elseif operation is wetdep and this
+                # species is not a wetdep species then set to 0, and else
+                # set to nan. For now, just set to 0 if wetdep and data
+                # not found.
+                if ( varname in ref_ds.data_vars.keys() ):
+                    refraw = ref_ds[varname].values.sum()
+                elif gc_operation == "WetDep":
+                    refraw = 0.0
+                else:
+                    refraw = np.nan
+                if ( varname in dev_ds.data_vars.keys() ):
+                    devraw = dev_ds[varname].values.sum()
+                elif gc_operation == "WetDep":
+                    devraw = 0.0
+                else:
+                    devraw = np.nan
+    
+                # Convert units
+                refconv = refraw * conv_fac[spc]
+                devconv = devraw * conv_fac[spc]
+                    
+                # Calculate diff and % diff from conc with converted units
+                if not np.isnan(refconv) and not np.isnan(devconv):
+                    diff = devconv - refconv
+                    try:
+                        pctdiff = diff / refconv * 100
+                    except:
+                        pctdiff = np.nan
+                else:
+                    diff = np.nan
+                    pctdiff = np.nan
+    
+                # Fill dataframe
+                df.loc[dfrow, "Ref_raw"] = refraw
+                df.loc[dfrow, "Dev_raw"] = devraw
+                df.loc[dfrow, "Units_converted"] = units[spc]
+                df.loc[dfrow, "Ref"] = refconv
+                df.loc[dfrow, "Dev"] = devconv
+                df.loc[dfrow, "Diff"] = diff
+                df.loc[dfrow, "Pct_diff"] = pctdiff
+    
+    # ------------------------------------------
+    # Compute Strat for each data operation (if applicable)
+    # ------------------------------------------
+    if compute_strat:
+        print('Computing Strat budgets from Trop and Full...')
+    
+        # Loop over species
+        for i, spc in enumerate(spclist):
+            
+            # Keep track of progress
+            if (i+1) % 50 == 0:
+                print('  Strat: species {} of {}'.format(i+1, n_spc))
+    
+            # Loop over operations (only those with data in files)
+            for gc_operation in gc_operations:
+    
+                # Get the strat dataframe row to fill. Skip if not found.
+                dfrow = (df["Column_Section"] == "Strat") \
+                        & (df["Species"] == spc) \
+                        & (df["Operation"] == gc_operation)
+                if not any(dfrow):
+                    continue
+    
+                # Get the "Full" row to use in the calculation
+                dfrow_full = (df["Column_Section"] == "Full") \
+                             & (df["Species"] == spc) \
+                             & (df["Operation"] == gc_operation)
+                if not any(dfrow_full):
+                    continue
+    
+                # Get the "Trop" row to use in the calculation
+                dfrow_trop = (df["Column_Section"] == "Trop") \
+                             & (df["Species"] == spc) \
+                             & (df["Operation"] == gc_operation)
+                if not any(dfrow_trop):
+                    continue
+    
+                # Calculate strat concentrations as Full minus Trop. Do
+                # not bother with raw value computation.
+                refstrat = df.loc[dfrow_full, "Ref"].values[0] \
+                           - df.loc[dfrow_trop, "Ref"].values[0]
+                devstrat = df.loc[dfrow_full, "Dev"].values[0] \
+                           - df.loc[dfrow_trop, "Dev"].values[0]
+
+                # Calculate diff and % diff
+                if not np.isnan(refstrat) and not np.isnan(devstrat):
+                    diff = devstrat - refstrat
+                    try:
+                        pctdiff = diff / refstrat * 100
+                    except:
+                        pctdiff = np.nan
+                else:
+                    diff = np.nan
+                    pctdiff = np.nan
+    
+                # Fill dataframe
+                df.loc[dfrow, "Units_converted"] = units[spc]
+                df.loc[dfrow, "Ref"] = refstrat
+                df.loc[dfrow, "Dev"] = devstrat
+                df.loc[dfrow, "Diff"] = diff
+                df.loc[dfrow, "Pct_diff"] = pctdiff
+    
+    # ------------------------------------------
+    # Compute Accumulation for each column section (if applicable)
+    # ------------------------------------------
+    if compute_accum:
+        print('Computing ACCUMULATION operation budgets...')
+    
+        # Loop over all column sections
+        for col_section in col_sections:
+    
+            # Loop over species
+            for i, spc in enumerate(spclist):
+            
+                # Keep track of progress
+                if (i+1) % 50 == 0:
+                    print('  {}: species {} of {}'.\
+                          format(col_section, i+1, n_spc))
+    
+                # Get the accumulation dataframe row to fill.Skip if not found.
+                dfrow = (df["Column_Section"] == col_section) \
+                        & (df["Species"] == spc) \
+                        & (df["Operation"] == "ACCUMULATION")
+                if not any(dfrow):
+                    continue
+    
+                # Get the rows to sum
+                dfrows_to_sum = (df["Column_Section"] == col_section) \
+                                & (df["Species"] == spc) \
+                                & (df["Operation"].isin(gc_operations))
+    
+                # Sum the concentrations. If there is one or more NaN values
+                # then set to NaN since not enough data for accumulation.
+                refsum = df.loc[dfrows_to_sum, "Ref"].sum()
+                devsum = df.loc[dfrows_to_sum, "Dev"].sum()
+                    
+                # Calculate diff and % diff
+                if not np.isnan(refsum) and not np.isnan(devsum):
+                    diff = devsum - refsum
+                    try:
+                        pctdiff = diff / refsum * 100
+                    except:
+                        pctdiff = np.nan
+                else:
+                    diff = np.nan
+                    pctdiff = np.nan
+    
+                # Fill dataframe
+                df.loc[dfrow, "Units_converted"] = units[spc]
+                df.loc[dfrow, "Ref"] = refsum
+                df.loc[dfrow, "Dev"] = devsum
+                df.loc[dfrow, "Diff"] = diff
+                df.loc[dfrow, "Pct_diff"] = pctdiff
+                
+    #  Sanity check write to csv (for testing. Keep commented out otherwise)
+    #df.to_csv('df.csv', na_rep='NA')
+    
+    # ------------------------------------------
+    # Make tables files
+    # ------------------------------------------
+    
+    # Create the target output directory hierarchy if it doesn't already exist
+    if os.path.isdir(dst) and not overwrite:
+        msg = "Directory {} exists. ".format(dst)
+        msg += "Pass overwrite=True to overwrite files in that directory"
+        raise ValueError(msg)
+    elif not os.path.isdir(dst):
+        os.makedirs(dst)
+    
+    # Print budgets to file
+    filename = "{}/Budgets_After_Operations_{}.txt".format(dst, label)
+    with open(filename, "w+") as f:
+        print("#"*78, file=f)
+        print("{} budget diagnostics for {}".format(bmk_type, label), file=f)
+        print("\n", file=f)
+        print("NOTES:", file=f)
+        print(" - When using the non-local mixing scheme (default),", file=f)
+        print("   'Mixing' includes emissions and dry deposition", file=f)
+        print("   applied below the PBL. 'EmisDryDep' therefore", file=f)
+        print("   only captures fluxes above the PBL.", file=f)
+        print(" - When using full mixing, 'Mixing' and 'EmisDryDep'", file=f)
+        print("   are fully separated.", file=f)
+        print(" - Strat budget is calculated as Full minus Trop", file=f)
+        print(" - ACCUMULATION is calculated as sum of all other"\
+              " operations", file=f)
+        print("#"*78, file=f)
+        print(file=f)
+    
+        # Loop over species
+        for i, spc in enumerate(spclist):
+            print("{} budgets (Ref={}; Dev={})".format(
+                spc, refstr, devstr), file=f)
+
+            # Print a table for each column section
+            for col_section in col_sections:
+
+                # Get the dataframe rows. Skip if none found.
+                dfrows = (df["Column_Section"] == col_section) \
+                         & (df["Species"] == spc) \
+                         & (df["Operation"].isin(all_operations))
+                if not any(dfrows):
+                    continue
+
+                # Print dataframe subset to file
+                print("{} {} {}".format(spc, col_section, units[spc]), file=f)
+                print(tabulate(df.loc[dfrows, ["Operation",
+                                               "Ref",
+                                               "Dev",
+                                               "Diff",
+                                               "Pct_diff"]],
+                               headers='keys',
+                               tablefmt='psql',
+                               showindex=False,
+                               floatfmt=(".6e",".6e",".6e",".6e",".3f"),
+                           ), file=f
+                  )
+            print("\n", file = f)
+
+    # Set the dataframe to empty to reduce residual memory
+    df=pd.DataFrame()
