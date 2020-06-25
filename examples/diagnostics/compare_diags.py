@@ -6,9 +6,9 @@ without having to open a Jupyter notebook.
 """
 
 # Imports
-import gcpy.constants as gcon
-import gcpy.core as core
 import gcpy.benchmark as bmk
+import gcpy.constants as gcon
+import gcpy.util as util
 import os
 from os.path import join
 import numpy as np
@@ -94,7 +94,7 @@ def compare_data(refdata, devdata):
 
     # Get the list of common variable names
     quiet = not verbose
-    vardict = core.compare_varnames(refdata, devdata, quiet=quiet)
+    vardict = util.compare_varnames(refdata, devdata, quiet=quiet)
     varlist_level = vardict["commonvars2D"] + vardict["commonvars3D"]
     varlist_zonal = vardict["commonvars3D"]
 
