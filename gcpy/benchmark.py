@@ -3584,14 +3584,14 @@ def make_benchmark_operations_budget(
     reffiles,
     devstr,
     devfiles,
-    bmk_type,
     interval,
+    benchmark_type=None,
     label=None,
     col_sections=["Full", "Trop", "PBL", "Strat"],
     operations=["Chemistry","Convection","EmisDryDep","Mixing",\
                 "Transport","WetDep"],
     compute_accum=True,
-    require_overlap=False
+    require_overlap=False,
     dst='.',
     species=None,
     overwrite=True,
@@ -3610,13 +3610,14 @@ def make_benchmark_operations_budget(
             Labels denoting the "Dev" versions
         devfiles : list of str
             Lists of files to read from "Dev" version.
-        bmk_type : str
-            "TransportTracersBenchmark" or "FullChemBenchmark".
         interval : float
             Number of seconds in the diagnostic interval.
 
     Keyword Args (optional):
     ------------------------
+        benchmark_type : str
+            "TransportTracersBenchmark" or "FullChemBenchmark".
+            Default value: None
         label : str
             Contains the date or date range for each dataframe title.
             Default value: None
@@ -3626,7 +3627,10 @@ def make_benchmark_operations_budget(
             and Trop must also be present to calculate Strat.
             Default value: ["Full", "Trop", "PBL", "Strat"]
         operations : list of str
-            List of operations to calculate global budgets for.
+            List of operations to calculate global budgets for. Accumulation
+            should not be included. It will automatically be calculated if
+            all GEOS-Chem budget operations are passed and optional arg
+            compute_accum is True.
             Default value: ["Chemistry","Convection","EmisDryDep",
                             "Mixing","Transport","WetDep"]
         compute_accum : bool
@@ -3641,12 +3645,13 @@ def make_benchmark_operations_budget(
             Default value: False
         dst : str
             Directory where plots & tables will be created.
-            Default value: '.'
+            Default value: '.' (directory in which function is called)
         species : list of str
             List of species for which budgets will be created.
-            Defautl value: None (all species)
+            Default value: None (all species)
         overwrite : bool
-            Denotes whether to ovewrite existing budget tables.
+            Denotes whether to overwrite existing budget file.
+            Default value: True
     """
 
     # ------------------------------------------
@@ -3700,12 +3705,18 @@ def make_benchmark_operations_budget(
     # Read data
     # ------------------------------------------
 
+    # Assume this will be annual budget if interval greater than 3e7 sec
+    annual = interval > 3.0e7
+
     # Read data from disk (either one month or 12 months)
+    print('Opening ref and dev data')
     skip_vars = gcon.skip_these_vars
-    print('Opening ref data')
-    ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
-    print('Opening dev data')
-    dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
+    if annual:
+        ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
+        dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
+    else:
+        ref_ds = xr.open_dataset(reffiles, drop_variables=skip_vars)
+        dev_ds = xr.open_dataset(devfiles, drop_variables=skip_vars)
 
     # ------------------------------------------
     # Species
@@ -3762,63 +3773,67 @@ def make_benchmark_operations_budget(
     n_spc = len(spclist)
 
     # ------------------------------------------
-    # Concentration units
+    # Concentration units and if a wetdep species
     # ------------------------------------------
-    # Get raw data units in file. Assume the same for all budget diagnostics.
-    refunit = ref_ds[cmnvars[0]].units
-    devunit = dev_ds[cmnvars[0]].units
-    if refunit != devunit:
-        print('WARNING: ref and dev species concentrations units are different')
 
-    # Assume this will be annual budget if interval greater than 3e7 sec
-    annual = interval > 3.0e7
+    # Load a YAML file containing species properties
+    spc_properties = yaml.load(open(os.path.join(os.path.dirname(__file__),
+                                                 "species_database.yml")),
+                               Loader=yaml.FullLoader)
 
     # Determine what the converted units and conversion factor should be
-    # based on benchmark type and species (tracer) name
+    # based on benchmark type and species (tracer) name. Assume raw data [kg/s]
     conv_fac = {}
-    units ={}
+    units = {}
+    is_wetdep = {}
     for spc in spclist:
+
+        # Identify wetdep species
+        is_wetdep[spc] = None
+        properties = spc_properties.get(spc)
+        if properties is not None:
+            is_wetdep[spc] = properties.get("Is_WetDep")
+
+        # Unit conversion factors and units
         conv_fac[spc] = interval * 1e-6
         units[spc] = '[Gg]'
-        if "TransportTracers" in bmk_type and "Tracer" not in spc:
-            conv_fac[spc] = interval
-            if annual:
-                units[spc] = '[kg/yr]'
-            else:
-                units[spc] = '[kg]'
-        elif annual:
-            conv_fac[spc] = interval * 1e-9
-            units[spc] = '[Tg/yr]'
+        if benchmark_type is not None:
+            if "TransportTracers" in benchmark_type and "Tracer" not in spc:
+                conv_fac[spc] = interval
+                if annual:
+                    units[spc] = '[kg/yr]'
+                else:
+                    units[spc] = '[kg]'
+            elif annual:
+                conv_fac[spc] = interval * 1e-9
+                units[spc] = '[Tg/yr]'
 
     # ------------------------------------------
     # Create dataframe
     # ------------------------------------------
-    columns = ["Column_Section", "Species", "Operation", "Units_raw", "Ref_raw",
-               "Dev_raw", "Units_converted", "Ref", "Dev",
-               "Diff", "Pct_diff"]
+    columns = ["Column_Section", "Species", "Operation", "Ref_raw", "Dev_raw",
+               "Units_converted", "Ref", "Dev", "Diff", "Pct_diff"]
     n_rows = n_sections * n_spc * n_ops
-
+    
     # Make column data to initialize with
     col_section = list(itertools.chain.from_iterable(
         itertools.repeat(x, n_ops * n_spc) for x in col_sections))
     col_spc = list(itertools.chain.from_iterable(
         itertools.repeat(x, n_ops) for x in spclist)) * n_sections
     col_ops = all_operations * n_sections * n_spc
-    col_unit = [refunit] * n_rows
-
+    
     # Put the column data together into a dictionary
     data = {
         'Species':col_spc,
         'Operation':col_ops,
         'Column_Section':col_section,
-        'Units_raw':col_unit
     }
-
+    
     # Create the dataframe from the data dictionary and column names list
     df = pd.DataFrame(data, columns=columns)
-
+    
     # ------------------------------------------
-    # Populate dataframe for data operations and sections
+    # Populate dataframe for GEOS-Chem operations and column sections
     # ------------------------------------------
     print('Calculating budgets for all data operations and column sections...')
     
@@ -3846,20 +3861,16 @@ def make_benchmark_operations_budget(
                 # Get the variable name in the datasets
                 varname= "Budget" + gc_operation + gc_section + "_" + spc
                     
-                #  Calculate Ref and dev raw as global sum
-                # TODO: add an elseif operation is wetdep and this
-                # species is not a wetdep species then set to 0, and else
-                # set to nan. For now, just set to 0 if wetdep and data
-                # not found.
+                # Calculate Ref and dev raw as global sum
                 if ( varname in ref_ds.data_vars.keys() ):
                     refraw = ref_ds[varname].values.sum()
-                elif gc_operation == "WetDep":
+                elif gc_operation == "WetDep" and is_wetdep[spc] == None:
                     refraw = 0.0
                 else:
                     refraw = np.nan
                 if ( varname in dev_ds.data_vars.keys() ):
                     devraw = dev_ds[varname].values.sum()
-                elif gc_operation == "WetDep":
+                elif gc_operation == "WetDep" and is_wetdep[spc] == None:
                     devraw = 0.0
                 else:
                     devraw = np.nan
@@ -3931,7 +3942,7 @@ def make_benchmark_operations_budget(
                            - df.loc[dfrow_trop, "Ref"].values[0]
                 devstrat = df.loc[dfrow_full, "Dev"].values[0] \
                            - df.loc[dfrow_trop, "Dev"].values[0]
-
+    
                 # Calculate diff and % diff
                 if not np.isnan(refstrat) and not np.isnan(devstrat):
                     diff = devstrat - refstrat
@@ -4006,7 +4017,7 @@ def make_benchmark_operations_budget(
     #df.to_csv('df.csv', na_rep='NA')
     
     # ------------------------------------------
-    # Make tables files
+    # Make budget file
     # ------------------------------------------
     
     # Create the target output directory hierarchy if it doesn't already exist
@@ -4018,21 +4029,28 @@ def make_benchmark_operations_budget(
         os.makedirs(dst)
     
     # Print budgets to file
-    filename = "{}/Budgets_After_Operations_{}.txt".format(dst, label)
+    if label is not None:
+        filename = "{}/Budgets_After_Operations_{}.txt".format(dst, label)
+    else:
+        filename = "{}/Budgets_After_Operations.txt".format(dst)
     with open(filename, "w+") as f:
         print("#"*78, file=f)
-        print("{} budget diagnostics for {}".format(bmk_type, label), file=f)
+        if label is not None and benchmark_type is not None:
+            print("{} budgets for {}".format(benchmark_type, label),
+                  file=f)
+        else:
+            print("Budgets across {} sec".format(interval), file=f)
         print("\n", file=f)
         print("NOTES:", file=f)
-        print(" - When using the non-local mixing scheme (default),", file=f)
-        print("   'Mixing' includes emissions and dry deposition", file=f)
-        print("   applied below the PBL. 'EmisDryDep' therefore", file=f)
-        print("   only captures fluxes above the PBL.", file=f)
-        print(" - When using full mixing, 'Mixing' and 'EmisDryDep'", file=f)
-        print("   are fully separated.", file=f)
-        print(" - Strat budget is calculated as Full minus Trop", file=f)
-        print(" - ACCUMULATION is calculated as sum of all other"\
-              " operations", file=f)
+        msg = " - When using the non-local mixing scheme (default), "\
+              "'Mixing' includes\n   emissions and dry deposition "\
+              "applied below the PBL. 'EmisDryDep'\n   therefore only "\
+              "captures fluxes above the PBL.\n - When using full mixing, "\
+              "'Mixing' and 'EmisDryDep' are fully separated.\n - Budgets "\
+              "are calculated as the sum of [kg/s] tendencies\n - Strat "\
+              "budget is calculated as Full minus Trop\n - ACCUMULATION "\
+              "is calculated as sum of all other operations"
+        print(msg, file=f)
         print("#"*78, file=f)
         print(file=f)
     
@@ -4040,19 +4058,19 @@ def make_benchmark_operations_budget(
         for i, spc in enumerate(spclist):
             print("{} budgets (Ref={}; Dev={})".format(
                 spc, refstr, devstr), file=f)
-
+    
             # Print a table for each column section
             for col_section in col_sections:
-
+    
                 # Get the dataframe rows. Skip if none found.
                 dfrows = (df["Column_Section"] == col_section) \
                          & (df["Species"] == spc) \
                          & (df["Operation"].isin(all_operations))
                 if not any(dfrows):
                     continue
-
+    
                 # Print dataframe subset to file
-                print("{} {} {}".format(spc, col_section, units[spc]), file=f)
+                print("{} {} : {}".format(col_section, units[spc], spc), file=f)
                 print(tabulate(df.loc[dfrows, ["Operation",
                                                "Ref",
                                                "Dev",
@@ -4061,13 +4079,11 @@ def make_benchmark_operations_budget(
                                headers='keys',
                                tablefmt='psql',
                                showindex=False,
-                               floatfmt=(".6e",".6e",".6e",".6e",".3f"),
+                               floatfmt=(".5f",".5f",".5f",".5f",".5f"),
                            ), file=f
                   )
             print("\n", file = f)
-
-    # Set the dataframe to empty to reduce residual memory
-    df=pd.DataFrame()
+    
     # ------------------------------------------
     # Clean up
     # ------------------------------------------
