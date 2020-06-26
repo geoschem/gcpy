@@ -1243,6 +1243,15 @@ def make_benchmark_conc_plots(
                             print(file=f)
                         f.close()
 
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    refds = xr.Dataset()
+    devds = xr.Dataset()
+    refmetds = xr.Dataset()
+    devmetds = xr.Dataset()
+    secondrefds = xr.Dataset()
+    seconddevds = xr.Dataset()
 
 def make_benchmark_emis_plots(
     ref,
@@ -1637,6 +1646,11 @@ def make_benchmark_emis_plots(
                     )
                 )
 
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    refds = xr.Dataset()
+    devds = xr.Dataset()
 
 def make_benchmark_emis_tables(
     reflist,
@@ -1786,6 +1800,14 @@ def make_benchmark_emis_tables(
         refmetdata=refmetds,
         devmetdata=devmetds
     )
+
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    refds = xr.Dataset()
+    devds = xr.Dataset()
+    refmetds = xr.Dataset()
+    devmetds = xr.Dataset()
 
 
 def make_benchmark_jvalue_plots(
@@ -2162,6 +2184,12 @@ def make_benchmark_jvalue_plots(
                             print(file=f)
                             f.close()
 
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    refds = xr.Dataset()
+    devds = xr.Dataset()
+
 
 def make_benchmark_aod_plots(
     ref,
@@ -2466,6 +2494,11 @@ def make_benchmark_aod_plots(
                     print(file=f)
                     f.close()
 
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    refds = xr.Dataset()
+    devds = xr.Dataset()
 
 def make_benchmark_mass_tables(
     ref,
@@ -2685,6 +2718,11 @@ def make_benchmark_mass_tables(
         verbose=verbose,
     )
 
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    refds = xr.Dataset()
+    devds = xr.Dataset()
 
 def make_benchmark_oh_metrics(
     ref,
@@ -2913,6 +2951,14 @@ def make_benchmark_oh_metrics(
     title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
     print_metrics_to_file(f, title1, title2, ref_ch4_lifetime,
                           dev_ch4_lifetime, ch4_diff, ch4_pctdiff)
+
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    refds = xr.Dataset()
+    devds = xr.Dataset()
+    refmetds = xr.Dataset()
+    devmetds = xr.Dataset()
 
 
 def get_troposphere_mask(ds):
@@ -3263,6 +3309,15 @@ def make_benchmark_wetdep_plots(
             verbose=verbose
         )
 
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    refds = xr.Dataset()
+    devds = xr.Dataset()
+    refmetds = xr.Dataset()
+    devmetds = xr.Dataset()
+
+
 def make_benchmark_aerosol_tables(
         devdir,
         devlist_aero,
@@ -3515,6 +3570,14 @@ def make_benchmark_aerosol_tables(
         aods[spc + "_s"] = np.sum(q_sum_s) / total_area_m2 / days_per_yr
 
     print_aerosol_metrics(aods, species_list, filename, title, label)
+
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    ds_aer = xr.Dataset()
+    ds_spc = xr.Dataset()
+    ds_met = xr.Dataset()
+
 
 def make_benchmark_operations_budget(
     refstr,
@@ -4005,3 +4068,10 @@ def make_benchmark_operations_budget(
 
     # Set the dataframe to empty to reduce residual memory
     df=pd.DataFrame()
+    # ------------------------------------------
+    # Clean up
+    # ------------------------------------------
+    df = pd.DataFrame()
+    ref_ds = xr.Dataset()
+    dev_ds = xr.Dataset()
+    
