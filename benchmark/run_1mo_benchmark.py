@@ -169,9 +169,6 @@ else:
 gcc_vs_gcc_tablesdir    = join(gcc_vs_gcc_plotsdir, "Tables")   
 gchp_vs_gchp_tablesdir  = join(gchp_vs_gchp_plotsdir, "Tables")
 gchp_vs_gcc_tablesdir   = join(gchp_vs_gcc_plotsdir, "Tables")
-gcc_vs_gcc_budgetdir    = join(gcc_vs_gcc_plotsdir, "Budget")   
-gchp_vs_gchp_budgetdir  = join(gchp_vs_gchp_plotsdir, "Budget")
-gchp_vs_gcc_budgetdir   = join(gchp_vs_gcc_plotsdir, "Budget")
 
 # =====================================================================
 # Plot title strings
@@ -421,17 +418,16 @@ if gcc_vs_gcc:
         ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_date)
         dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_date)
 
-        # Print "operations budget" for strat, trop, strat+trop
-        opbdg.make_operations_budget_table(
+        # Make budget table. Include calculation of Strat and Accumulation
+        bmk.make_benchmark_operations_budget(
             gcc_ref_version,
             ref,
             gcc_dev_version,
             dev,
-            bmk_type,
-            mon_yr_str,
-            dst=gcc_vs_gcc_budgetdir,
-            interval=sec_in_bmk_month,
-            overwrite=True
+            sec_in_bmk_month,
+            benchmark_type=bmk_type,
+            label=mon_yr_str,
+            dst=gcc_vs_gcc_tablesdir
         )
 
     #---------------------------------------------------------------
@@ -559,7 +555,7 @@ if gchp_vs_gcc:
         ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
         dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
 
-        # Meteorology needed for GCHP (is this really needed? - ewl)
+        # Meteorology needed for GCHP
         col = "StateMet_avg"
         devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
 
@@ -652,16 +648,21 @@ if gchp_vs_gcc:
         col = "Budget"
         ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_date)
         dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_date, is_gchp=True)
-        opbdg.make_operations_budget_table(
+
+        # Make budget table. Include calculation of Strat. Exclude Transport
+        # and Accumulation.
+        bmk.make_benchmark_operations_budget(
             gcc_ref_version,
             ref,
             gchp_dev_version,
             dev,
-            bmk_type,
-            mon_yr_str,
-            dst=gchp_vs_gcc_budgetdir,
-            interval=sec_in_bmk_month,
-            overwrite=True
+            sec_in_bmk_month,
+            benchmark_type=bmk_type,
+            label=mon_yr_str,
+            operations=["Chemistry","Convection","EmisDryDep","Mixing",
+                        "WetDep"],
+            compute_accum=False,
+            dst=gchp_vs_gcc_tablesdir
         )
 
     #---------------------------------------------------------------
@@ -744,14 +745,12 @@ if gchp_vs_gchp:
     if emis_table:
         print("\n%%% Creating GCHP vs. GCHP emissions/inventory tables %%%")
 
-        # Can this be simplified? (ewl)
-
         # Diagnostic collection files to read
         col = "Emissions"
         ref = get_filepath(gchp_vs_gchp_refdir,col, gchp_date, is_gchp=True)
         dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
 
-        # Meteorology needed for GCHP (is this really needed? - ewl)
+        # Meteorology needed for GCHP
         col = "StateMet_avg"
         refmet = get_filepath(gchp_vs_gchp_refdir,col, gchp_date, is_gchp=True)
         devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
@@ -846,17 +845,23 @@ if gchp_vs_gchp:
         col = "Budget"
         ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_date, is_gchp=True)
         dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_date, is_gchp=True)
-        opbdg.make_operations_budget_table(
+
+        # Make budget table. Include calculation of Strat. Exclude Transport
+        # and Accumulation.
+        bmk.make_benchmark_operations_budget(
             gchp_ref_version,
             ref,
             gchp_dev_version,
             dev,
-            bmk_type,
-            mon_yr_str,
-            dst=gchp_vs_gchp_budgetdir,
-            interval=sec_in_bmk_month,
-            overwrite=True
+            sec_in_bmk_month,
+            benchmark_type=bmk_type,
+            label=mon_yr_str,
+            operations=["Chemistry","Convection","EmisDryDep","Mixing",
+                        "WetDep"],
+            compute_accum=False,
+            dst=gchp_vs_gchp_tablesdir
         )
+
 
     #---------------------------------------------------------------
     # GCHP vs. GCHP global mean OH, MCF Lifetime, CH4 Lifetime
