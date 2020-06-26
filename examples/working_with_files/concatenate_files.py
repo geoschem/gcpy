@@ -17,7 +17,7 @@ Remarks:
 '''
 
 # Imports
-from gcpy import core
+import gcpy.constants as gcon
 import os
 import numpy as np
 import xarray as xr
@@ -130,11 +130,21 @@ def main():
     # These are mostly variables introduced into GCHP with the MAPL v1.0.0
     # update.  These variables contain either repeated or non-standard
     # dimensions that can cause problems in xarray when combining datasets.
-    skip_vars = core.skip_these_vars()
+    skip_vars = gcon.skip_these_vars()
     
     # Look for all the netCDF files in the path
     file_list = find_files_in_dir(path_to_dir, substrs)
-    ds = xr.open_mfdataset(file_list, drop_variables=skip_vars)
+
+    # Return a single xarray Dataset containing data from all files
+    # NOTE: Need to add combine="nested" for xarray 0.15 and higher
+    v = xr.__version__.split(".")
+    if int(v[0]) == 0 and int(v[1]) >= 15: 
+        return xr.open_mfdataset(file_list,
+                                 drop_variables=skip_vars,
+                                 combine="nested")
+    else:
+        return xr.open_mfdataset(file_list,
+                                 drop_variables=skip_vars)
 
     # Replace NaN values with zeroes
     ds = replace_nans_with_zeroes(ds, verbose=True)
@@ -146,7 +156,6 @@ def main():
 
     # Write concatenated data to a netCDF file
     ds.to_netcdf(outfile)
-
 
 if __name__ == "__main__":
     main()

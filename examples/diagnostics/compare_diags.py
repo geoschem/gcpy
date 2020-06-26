@@ -175,8 +175,8 @@ def main():
 
     # Read the Ref abd Dev data into xarray Dataset objects
     skip_vars = gcon.skip_these_vars
-    refdata = xr.open_mfdataset(reffile, drop_variables=skip_vars)
-    devdata = xr.open_mfdataset(devfile, drop_variables=skip_vars)
+    refdata = xr.open_dataset(reffile, drop_variables=skip_vars)
+    devdata = xr.open_dataset(devfile, drop_variables=skip_vars)
 
     # Create the comparison plots and sums
     # NOTE: all other variables are global and thus
