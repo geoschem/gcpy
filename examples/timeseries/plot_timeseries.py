@@ -32,7 +32,7 @@ yantosca@seas.harvard.edu
 '''
 
 # Imports
-from gcpy import core
+import gcpy.constants as gcon
 import os
 import numpy as np
 import matplotlib.dates as mdates
@@ -145,13 +145,21 @@ def read_geoschem_data(path, collections):
     # These are mostly variables introduced into GCHP with the MAPL v1.0.0
     # update.  These variables contain either repeated or non-standard
     # dimensions that can cause problems in xarray when combining datasets.
-    skip_vars = core.skip_these_vars()
+    skip_vars = gcon.skip_these_vars()
     
     # Find all files in the given 
     file_list = find_files_in_dir(path, collections) 
 
     # Return a single xarray Dataset containing data from all files
-    return xr.open_mfdataset(file_list, drop_variables=skip_vars)
+    # NOTE: Need to add combine="nested" for xarray 0.15 and higher
+    v = xr.__version__.split(".")
+    if int(v[0]) == 0 and int(v[1]) >= 15: 
+        return xr.open_mfdataset(file_list,
+                                 drop_variables=skip_vars,
+                                 combine="nested")
+    else:
+        return xr.open_mfdataset(file_list,
+                                 drop_variables=skip_vars)
 
 
 def plot_timeseries_data(ds, site_coords):
