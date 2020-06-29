@@ -710,8 +710,7 @@ def rename_and_flip_gchp_rst_vars(ds):
             ds = ds.rename({"BXHEIGHT": "Met_BXHEIGHT"})
         elif v == 'TropLev':
             ds = ds.rename({"TropLev": "Met_TropLev"})
-    ds['lev'].data = ds['lev'].data[::-1]
-    ds = ds.sortby('lev', ascending=True)
+    ds = ds.sortby('lev', ascending=False)
     return ds
 
 
