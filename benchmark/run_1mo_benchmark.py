@@ -839,7 +839,7 @@ if gchp_vs_gchp:
     # GCHP vs GCHP operations budgets tables
     #---------------------------------------------------------------
     if ops_budget_table:
-        print("\n%%% Creating GCHP vs GCC operations budget tables %%%")
+        print("\n%%% Creating GCHP vs GCHP operations budget tables %%%")
 
         # Diagnostic collections to read
         col = "Budget"
