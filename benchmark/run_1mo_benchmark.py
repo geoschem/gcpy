@@ -131,21 +131,27 @@ plot_by_hco_cat = True
 # For gchp_vs_gcc_refdir use gcc_dev_version, not ref (mps, 6/27/19)
 # =====================================================================
 
+# Directory names (edit if not same as version strings)
+gcc_ref_dir = gcc_ref_version
+gcc_dev_dir = gcc_dev_version
+gchp_ref_dir = gchp_ref_version
+gchp_dev_dir = gchp_dev_version
+
 # Diagnostic file directory paths
-gcc_vs_gcc_refdir   = join(maindir, gcc_ref_version,  "OutputDir")
-gcc_vs_gcc_devdir   = join(maindir, gcc_dev_version,  "OutputDir")
-gchp_vs_gcc_refdir  = join(maindir, gcc_dev_version,  "OutputDir")
-gchp_vs_gcc_devdir  = join(maindir, gchp_dev_version, "OutputDir")
-gchp_vs_gchp_refdir = join(maindir, gchp_ref_version, "OutputDir")
-gchp_vs_gchp_devdir = join(maindir, gchp_dev_version, "OutputDir")
+gcc_vs_gcc_refdir   = join(maindir, gcc_ref_dir,  "OutputDir")
+gcc_vs_gcc_devdir   = join(maindir, gcc_dev_dir,  "OutputDir")
+gchp_vs_gcc_refdir  = join(maindir, gcc_dev_dir,  "OutputDir")
+gchp_vs_gcc_devdir  = join(maindir, gchp_dev_dir, "OutputDir")
+gchp_vs_gchp_refdir = join(maindir, gchp_ref_dir, "OutputDir")
+gchp_vs_gchp_devdir = join(maindir, gchp_dev_dir, "OutputDir")
 
 # Restart file directory paths
-gcc_vs_gcc_refrst   = join(maindir, gcc_ref_version )
-gcc_vs_gcc_devrst   = join(maindir, gcc_dev_version )
-gchp_vs_gcc_refrst  = join(maindir, gcc_dev_version )
-gchp_vs_gcc_devrst  = join(maindir, gchp_dev_version)
-gchp_vs_gchp_refrst = join(maindir, gchp_ref_version)
-gchp_vs_gchp_devrst = join(maindir, gchp_dev_version)
+gcc_vs_gcc_refrst   = join(maindir, gcc_ref_dir )
+gcc_vs_gcc_devrst   = join(maindir, gcc_dev_dir )
+gchp_vs_gcc_refrst  = join(maindir, gcc_dev_dir )
+gchp_vs_gcc_devrst  = join(maindir, gchp_dev_dir)
+gchp_vs_gchp_refrst = join(maindir, gchp_ref_dir)
+gchp_vs_gchp_devrst = join(maindir, gchp_dev_dir)
 
 # =====================================================================
 # Benchmark output directories
@@ -159,12 +165,12 @@ if gcpy_test:
     diff_of_diffs_plotsdir = join(mainplotsdir,'GCHP_GCC_diff_of_diffs')
     if not os.path.exists(mainplotsdir): os.mkdir(mainplotsdir)
 else:
-    gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_version, "Plots")
-    gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_version,
+    gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_dir, "Plots")
+    gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_dir,
                               "Plots", "GCHP_version_comparison")
-    gchp_vs_gcc_plotsdir   = join(maindir, gchp_dev_version,
+    gchp_vs_gcc_plotsdir   = join(maindir, gchp_dev_dir,
                               "Plots", "GCHP_GCC_comparison")
-    diff_of_diffs_plotsdir = join(maindir, gchp_dev_version,
+    diff_of_diffs_plotsdir = join(maindir, gchp_dev_dir,
                               "Plots", "GCHP_GCC_diff_of_diffs")
 gcc_vs_gcc_tablesdir    = join(gcc_vs_gcc_plotsdir, "Tables")   
 gchp_vs_gchp_tablesdir  = join(gchp_vs_gchp_plotsdir, "Tables")
