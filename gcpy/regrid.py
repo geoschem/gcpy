@@ -67,8 +67,12 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
             # CS to CS regridding is not enabled yet, so default to 1x1.25
             # cmpres = max([refres, devres])
             # cmpgridtype = 'cs'
-            cmpres = "1x1.25"
-            cmpgridtype = "ll"
+            if refres==devres and not zm:
+                cmpres=int(refres)
+                cmpgridtype="cs"
+            else:
+                cmpres = "1x1.25"
+                cmpgridtype = "ll"
         elif refgridtype == "ll" and float(refres.split('x')[0])<1 and float(refres.split('x')[1])<1.25:
             cmpres = refres
             cmpgridtype = "ll"
@@ -94,15 +98,14 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     regridref = refres != cmpres
     regriddev = devres != cmpres
     regridany = regridref or regriddev
-
     # ==================================================================
     # Make grids (ref, dev, and comparison)
     # ==================================================================
-    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, True, False, ref_extent, cmp_extent)
+    [refgrid, regrid_list] = call_make_grid(refres, refgridtype, zm, False, ref_extent, cmp_extent)
     
-    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, True, False, dev_extent, cmp_extent)
+    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, zm, False, dev_extent, cmp_extent)
 
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, True, True, cmp_extent, cmp_extent)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, zm, True, cmp_extent, cmp_extent)
     
     # =================================================================
     # Make regridders, if applicable

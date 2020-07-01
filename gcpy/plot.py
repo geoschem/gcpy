@@ -455,14 +455,16 @@ def compare_single_level(
     # Get lat/lon extents, if applicable
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
-    cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)
+    if cmpgridtype is not "cs":
+        cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)
+    else:
+        cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = [-180, 180, -90, 90]
 
     # Set plot bounds for non cubed-sphere regridding and plotting
-    if cmpgridtype == "ll":
-        ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
-        dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
-        cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
-
+    #if cmpgridtype == "ll":
+    ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
+    dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
+    cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
     # Trim data to extent of comparison grid if using lat-lon grids.
     # Get comparison date extents in same midpoint format as lat-lon grid.
     cmp_mid_minlon, cmp_mid_maxlon, cmp_mid_minlat, cmp_mid_maxlat = \
@@ -695,7 +697,7 @@ def compare_single_level(
     frac_ds_ref_cmps = [None] * n_var
     frac_ds_dev_cmps = [None] * n_var
 
-    global_cmp_grid = call_make_grid(cmpres, 'll', False, False)[0]
+    global_cmp_grid = call_make_grid(cmpres, cmpgridtype, False, True)[0]
     cmpminlon_ind = np.where(global_cmp_grid["lon"] >= cmpminlon)[0][0]
     cmpmaxlon_ind = np.where(global_cmp_grid["lon"] <= cmpmaxlon)[0][-1]
     cmpminlat_ind = np.where(global_cmp_grid["lat"] >= cmpminlat)[0][0]
@@ -857,8 +859,6 @@ def compare_single_level(
         # ==============================================================
         # Get min and max values for use in the colorbars
         # ==============================================================
-
-        # WBD MOVE TO FUNCTION
 
         # Ref
         vmin_ref = float(ds_ref.data.min())
@@ -2501,7 +2501,6 @@ def gcplot(plot_vals,
             #Comparison of numpy arrays throws errors
             pass
         [minlon,maxlon,minlat,maxlat] = extent
-        
         #Catch issue with plots extending into both the western and eastern hemisphere
         if np.max(grid["lon_b"] > 180):
             grid["lon_b"] = (((grid["lon_b"]+180)%360)-180)
