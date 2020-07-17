@@ -4,6 +4,22 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.0] - 2020-07-17
+
+### Added
+
+- Add new function to compute budgets and create budget table that incorporates new optional features.
+- Require python package tabulate for generating budget tables.
+
+### Changed
+
+### Deprecated
+
+### Fixed
+
+### Removed
+
+
 ## [0.2.1] - 2020-05-07
 
 ### Fixed
