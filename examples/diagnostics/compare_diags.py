@@ -90,7 +90,7 @@ def compare_data(refdata, devdata):
     # array of NaN values to refdata. Ditto for devdata.  This will
     # allow us to show that the variable is missing in either
     # refdata or devdata.
-    [refdata, devdata] = bmk.add_missing_variables(refdata, devdata)
+    [refdata, devdata] = util.add_missing_variables(refdata, devdata)
 
     # Get the list of common variable names
     quiet = not verbose
