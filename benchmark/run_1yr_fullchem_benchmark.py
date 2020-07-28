@@ -59,7 +59,6 @@ from gcpy import benchmark as bmk
 from gcpy.util import get_filepath, get_filepaths
 import gcpy.ste_flux as ste
 import gcpy.budget_aer as aerbdg
-import gcpy.budget_ops as opbdg
 import gcpy.mean_oh_from_logs as moh
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 
@@ -99,6 +98,9 @@ gchp_dev_version = "GCHP_dev"
 
 # Path to regridding weights
 weightsdir = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
+
+# Path to species_databse.yml
+spcdb_dir   = join(maindir, gcc_dev_version)
 
 # =====================================================================
 # Specify if this is a gcpy test validation run
@@ -286,7 +288,8 @@ if gcc_vs_gcc:
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
                 plot_by_spc_cat=plot_by_spc_cat,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     # --------------------------------------------------------------
@@ -313,7 +316,8 @@ if gcc_vs_gcc:
                 weightsdir=weightsdir,
                 plot_by_spc_cat=plot_by_spc_cat,
                 plot_by_hco_cat=plot_by_hco_cat,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     # --------------------------------------------------------------
@@ -335,7 +339,8 @@ if gcc_vs_gcc:
             gcc_vs_gcc_devstr,
             dst=gcc_vs_gcc_plotsdir,
             interval=sec_per_month,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     # --------------------------------------------------------------
@@ -360,7 +365,8 @@ if gcc_vs_gcc:
                 dst=gcc_vs_gcc_plotsdir,
                 subdst=bmk_mon_yr_strs[s],
                 weightsdir=weightsdir,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     # --------------------------------------------------------------
@@ -385,7 +391,8 @@ if gcc_vs_gcc:
                 dst=gcc_vs_gcc_plotsdir,
                 subdst=bmk_mon_yr_strs[s],
                 weightsdir=weightsdir,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     # --------------------------------------------------------------
@@ -409,7 +416,8 @@ if gcc_vs_gcc:
                 dst=gcc_vs_gcc_tablesdir,
                 subdst=bmk_mon_yr_strs[s],
                 label="at 01{}".format(bmk_mon_yr_strs[s]),
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
         results = Parallel(n_jobs=-1)(delayed(parallel_mass_table)(s, bmk_mon) \
                                       for s, bmk_mon in enumerate(bmk_mons))
@@ -428,16 +436,15 @@ if gcc_vs_gcc:
             ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mon)
             dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mon)
             plot_dir = join(gcc_vs_gcc_budgetdir, bmk_mon_yr_strs[s])
-            opbdg.make_operations_budget_table(
+            bmk.make_benchmark_operations_budget(
                 gcc_ref_version,
                 ref,
                 gcc_dev_version,
                 dev,
-                bmk_type,
-                dst=plot_dir,
+                bmk_sec_per_month[s],
+                benchmark_type=bmk_type,
                 label=bmk_mon_yr_strs[s],
-                interval=bmk_sec_per_month[s],
-                overwrite=True
+                dst=gcc_vs_gcc_tablesdir
             )
         results = Parallel(n_jobs=-1)(delayed(parallel_ops_budg)(s, bmk_mon) \
                                       for s, bmk_mon in enumerate(bmk_mons))
@@ -466,7 +473,8 @@ if gcc_vs_gcc:
             bmk_year,
             days_per_month,
             dst=gcc_vs_gcc_tablesdir,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     # --------------------------------------------------------------
@@ -564,7 +572,8 @@ if gchp_vs_gcc:
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
                 plot_by_spc_cat=plot_by_spc_cat,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     #---------------------------------------------------------------
@@ -592,7 +601,8 @@ if gchp_vs_gcc:
                 weightsdir=weightsdir,
                 plot_by_spc_cat=plot_by_spc_cat,
                 plot_by_hco_cat=plot_by_hco_cat,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     #---------------------------------------------------------------
@@ -622,7 +632,8 @@ if gchp_vs_gcc:
             devmet=devmet,
             dst=gchp_vs_gcc_plotsdir,
             interval=sec_per_month,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -648,7 +659,8 @@ if gchp_vs_gcc:
                 dst=gchp_vs_gcc_plotsdir,
                 subdst=bmk_mon_yr_strs[s],
                 weightsdir=weightsdir,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     #---------------------------------------------------------------
@@ -674,7 +686,8 @@ if gchp_vs_gcc:
                 dst=gchp_vs_gcc_plotsdir,
                 subdst=bmk_mon_yr_strs[s],
                 weightsdir=weightsdir,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     #---------------------------------------------------------------
@@ -699,7 +712,8 @@ if gchp_vs_gcc:
                 dst=gchp_vs_gcc_tablesdir,
                 subdst=bmk_mon_yr_strs[s],
                 label="at 01{}".format(bmk_mon_yr_strs[s]),
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
         results = Parallel(n_jobs=-1)(delayed(parallel_mass_table)(s, bmk_mon) \
                                       for s, bmk_mon in enumerate(bmk_mons))
@@ -718,17 +732,18 @@ if gchp_vs_gcc:
             dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
                                is_gchp=True)
             plot_dir = join(gchp_vs_gcc_budgetdir, bmk_mon_yr_strs[s])
-            opbdg.make_operations_budget_table(
+            bmk.make_benchmark_operations_budget(
                 gcc_ref_version,
                 ref,
                 gchp_dev_version,
                 dev,
-                bmk_type,
-                dst=plot_dir,
+                bmk_sec_per_month[s],
+                benchmark_type=bmk_type,
                 label=bmk_mon_yr_strs[s],
-                interval=bmk_sec_per_month[s],
-                overwrite=True
-            )
+                operations=["Chemistry", "Convection", "EmisDryDep", "Mixing", "WetDep"],
+                compute_accum=False,
+                dst=gcc_vs_gcc_tablesdir            )
+
         results = Parallel(n_jobs=-1)(delayed(parallel_ops_budg)(s, bmk_mon) \
                                       for s, bmk_mon in enumerate(bmk_mons))
 
@@ -744,7 +759,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devdir,
             bmk_year,
             dst=gchp_vs_gcc_tablesdir,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------

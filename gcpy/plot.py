@@ -276,7 +276,8 @@ def compare_single_level(
     n_job=-1,
     sigdiff_list=[],
     second_ref=None,
-    second_dev=None
+    second_dev=None,
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Create single-level 3x2 comparison map plots for variables common
@@ -361,12 +362,10 @@ def compare_single_level(
             Specifies extra text (e.g. a date string such as "Jan2016")
             for the top-of-plot title.
             Default value: None
-    
         plot_extent : list
             Defines the extent of the region to be plotted in form 
             [minlon, maxlon, minlat, maxlat]. Default value plots extent of input grids.
-            Default value: [-1000, -1000, -1000, -1000]
-            
+            Default value: [-1000, -1000, -1000, -1000]            
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
@@ -378,10 +377,12 @@ def compare_single_level(
         second_ref : xarray Dataset
             A dataset of the same model type / grid as refdata, to be used in diff-of-diffs plotting.
             Default value: None
-    
         second_dev : xarray Dataset
             A dataset of the same model type / grid as devdata, to be used in diff-of-diffs plotting.
             Default value: None
+        spcdb_dir  : str 
+            Directory containing species_database.yml file.
+            Default value: Path of GCPy code repository
     """
     warnings.showwarning = warning_format
 
@@ -434,8 +435,7 @@ def compare_single_level(
 
     # If converting to ug/m3, load the species database
     if convert_to_ugm3:
-        properties_path = os.path.join(os.path.dirname(__file__),
-                                       "species_database.yml")
+        properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # Get grid info and regrid if necessary
@@ -1312,7 +1312,8 @@ def compare_zonal_mean(
     n_job=-1,
     sigdiff_list=[],
     second_ref=None,
-    second_dev=None
+    second_dev=None,
+    spcdb_dir=os.path.dirname(__file__)
 ):
 
     """
@@ -1414,11 +1415,13 @@ def compare_zonal_mean(
             Default value: []
         second_ref : xarray Dataset
             A dataset of the same model type / grid as refdata, to be used in diff-of-diffs plotting.
-            Default value: None
-    
+            Default value: None    
         second_dev : xarray Dataset
             A dataset of the same model type / grid as devdata, to be used in diff-of-diffs plotting.
             Default value: None
+        spcdb_dir  : str 
+            Directory containing species_database.yml file.
+            Default value: Path of GCPy code repository
     """
     warnings.showwarning = warning_format
     if not isinstance(refdata, xr.Dataset):
@@ -1475,8 +1478,7 @@ def compare_zonal_mean(
 
     # If converting to ug/m3, load the species database
     if convert_to_ugm3:
-        properties_path = os.path.join(os.path.dirname(__file__),
-                                       "species_database.yml")
+        properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # Get mid-point pressure and edge pressures for this grid (assume 72-level)
