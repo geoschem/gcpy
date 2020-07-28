@@ -34,7 +34,7 @@ class _GlobVars:
     shared among the methods in this module.
     """
     def __init__(self, devstr, devdir, devrstdir,
-                 year, dst, is_gchp, overwrite):
+                 year, dst, is_gchp, overwrite, spcdb_dir):
         """
         Initializes the _GlobVars class.
 
@@ -54,6 +54,8 @@ class _GlobVars:
                 Denotes if this is GCHP (True) or GCC (False) data.
             overwrite : bool
                 Denotes whether to ovewrite existing budget tables.
+            spcdb_dir : str
+                Directory where species_database.yml is stored.
         """
         # ------------------------------
         # Arguments from outside
@@ -201,16 +203,7 @@ class _GlobVars:
         self.species_list = ["Pb210", "Be7", "Be10" ]
 
         # Read the species database
-        #try:
-        #    path = join(devdir, "species_database.yml")
-        #    spcdb = yaml_load_file(open(path))
-        #    #tmp = spcdb["Pb210"]
-        #except KeyError or FileNotFoundError:
-        #    path = join(os.path.dirname(__file__), "species_database.yml")
-        #    spcdb = yaml_load_file(open(path))
-        #-----------------------------------------------------------------
-        # For now, point to this in the GCPy folder (bmy, 3/13/20)
-        path = join(os.path.dirname(__file__), "species_database.yml")
+        path = join(spcdb_dir, "species_database.yml")
         spcdb = yaml_load_file(open(path))
             
         # Molecular weights [g mol-1], as taken from the species database
@@ -692,9 +685,8 @@ def print_budgets(globvars, data, key):
         
         
 def transport_tracers_budgets(devstr, devdir, devrstdir, year, 
-                              dst='./1yr_benchmark',
-                              is_gchp=False,
-                              overwrite=True):
+                              dst='./1yr_benchmark', is_gchp=False, 
+                              overwrite=True, spcdb_dir=os.path.dirname(__file__)):
     """
     Main program to compute TransportTracersBenchmark budgets
 
@@ -715,11 +707,13 @@ def transport_tracers_budgets(devstr, devdir, devrstdir, year,
             Denotes if data is from GCHP (True) or GCC (false).
         overwrite : bool
             Denotes whether to ovewrite existing budget tables.
+        spcdb_dir : str
+            Directory where species_database.yml is stored. (default: GCPy directory)
     """
 
     # Store global variables in a private class
     globvars = _GlobVars(devstr, devdir, devrstdir, year,
-                         dst, is_gchp, overwrite)
+                         dst, is_gchp, overwrite, spcdb_dir)
 
     # Data structure for budgets
     data = {}

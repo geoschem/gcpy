@@ -96,6 +96,9 @@ gchp_dev_version = "GCHP_dev"
 # Path to regridding weights
 weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
+# Path to species_databse.yml
+spcdb_dir   = join(maindir, gcc_dev_version)
+
 # =====================================================================
 # Specify if this is a gcpy test validation run
 # =====================================================================
@@ -296,7 +299,8 @@ if gcc_vs_gcc:
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
             overwrite=True,
-            sigdiff_files=gcc_vs_gcc_sigdiff
+            sigdiff_files=gcc_vs_gcc_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -321,7 +325,8 @@ if gcc_vs_gcc:
             plot_by_spc_cat=plot_by_spc_cat,
             plot_by_hco_cat=plot_by_hco_cat,
             overwrite=True,
-            sigdiff_files=gcc_vs_gcc_sigdiff
+            sigdiff_files=gcc_vs_gcc_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -343,7 +348,8 @@ if gcc_vs_gcc:
             gcc_vs_gcc_devstr,
             dst=gcc_vs_gcc_plotsdir,
             interval=[sec_in_bmk_month],
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     # --------------------------------------------------------------
@@ -366,7 +372,8 @@ if gcc_vs_gcc:
             dst=gcc_vs_gcc_plotsdir,
             weightsdir=weightsdir,
             overwrite=True,
-            sigdiff_files=gcc_vs_gcc_sigdiff
+            sigdiff_files=gcc_vs_gcc_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -389,7 +396,8 @@ if gcc_vs_gcc:
             dst=gcc_vs_gcc_plotsdir,
             weightsdir=weightsdir,
             overwrite=True,
-            sigdiff_files=gcc_vs_gcc_sigdiff
+            sigdiff_files=gcc_vs_gcc_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -410,7 +418,8 @@ if gcc_vs_gcc:
             dev,
             gcc_dev_version,
             dst=gcc_vs_gcc_tablesdir,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -522,7 +531,8 @@ if gchp_vs_gcc:
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
             overwrite=True,
-            sigdiff_files=gchp_vs_gcc_sigdiff
+            sigdiff_files=gchp_vs_gcc_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -547,7 +557,8 @@ if gchp_vs_gcc:
             plot_by_spc_cat=plot_by_spc_cat,
             plot_by_hco_cat=plot_by_hco_cat,
             overwrite=True,
-            sigdiff_files=gchp_vs_gcc_sigdiff
+            sigdiff_files=gchp_vs_gcc_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -574,7 +585,8 @@ if gchp_vs_gcc:
             dst=gchp_vs_gcc_plotsdir,
             interval=[sec_in_bmk_month],
             overwrite=True,
-            devmet=devmet
+            devmet=devmet,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -597,7 +609,8 @@ if gchp_vs_gcc:
             dst=gchp_vs_gcc_plotsdir,
             weightsdir=weightsdir,
             overwrite=True,
-            sigdiff_files=gchp_vs_gcc_sigdiff
+            sigdiff_files=gchp_vs_gcc_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -620,7 +633,8 @@ if gchp_vs_gcc:
             dst=gchp_vs_gcc_plotsdir,
             weightsdir=weightsdir,
             overwrite=True,
-            sigdiff_files=gchp_vs_gcc_sigdiff
+            sigdiff_files=gchp_vs_gcc_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -641,7 +655,8 @@ if gchp_vs_gcc:
             dev,
             gchp_vs_gcc_devstr,
             dst=gchp_vs_gcc_tablesdir,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -717,7 +732,8 @@ if gchp_vs_gchp:
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
             overwrite=True,
-            sigdiff_files=gchp_vs_gchp_sigdiff
+            sigdiff_files=gchp_vs_gchp_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -742,7 +758,8 @@ if gchp_vs_gchp:
             plot_by_spc_cat=plot_by_spc_cat,
             plot_by_hco_cat=plot_by_hco_cat,
             overwrite=True,
-            sigdiff_files=gchp_vs_gchp_sigdiff
+            sigdiff_files=gchp_vs_gchp_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -771,7 +788,8 @@ if gchp_vs_gchp:
             interval=[sec_in_bmk_month],
             overwrite=True,
             refmet=refmet,
-            devmet=devmet
+            devmet=devmet,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -794,7 +812,8 @@ if gchp_vs_gchp:
             dst=gchp_vs_gchp_plotsdir,
             weightsdir=weightsdir,
             overwrite=True,
-            sigdiff_files=gchp_vs_gchp_sigdiff
+            sigdiff_files=gchp_vs_gchp_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -817,7 +836,8 @@ if gchp_vs_gchp:
             dst=gchp_vs_gchp_plotsdir,
             weightsdir=weightsdir,
             overwrite=True,
-            sigdiff_files=gchp_vs_gchp_sigdiff
+            sigdiff_files=gchp_vs_gchp_sigdiff,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -838,7 +858,8 @@ if gchp_vs_gchp:
             dev,
             gchp_vs_gchp_devstr,
             dst=gchp_vs_gchp_tablesdir,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     #---------------------------------------------------------------
@@ -911,7 +932,8 @@ if gchp_vs_gcc_diff_of_diffs:
             use_cmap_RdBu=True,
             second_ref=gcc_dev,
             second_dev=gchp_dev,
-            cats_in_ugm3=None
+            cats_in_ugm3=None,
+            spcdb_dir=spcdb_dir
         )
 
 

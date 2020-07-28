@@ -97,6 +97,9 @@ gchp_dev_version = "GCHP_dev"
 # Path to regridding weights
 weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
+# Path to species_databse.yml
+spcdb_dir   = join(maindir, gcc_dev_version)
+
 # =====================================================================
 # Specify if this is a gcpy test validation run
 # =====================================================================
@@ -113,11 +116,11 @@ gchp_vs_gchp = True
 # =====================================================================
 # Output to generate (plots/tables will be created in this order):
 # =====================================================================
-plot_conc         = True
-plot_wetdep       = True
-rnpbbe_budget     = True
+plot_conc         = False
+plot_wetdep       = False
+rnpbbe_budget     = False
 operations_budget = True
-ste_table         = True # GCC only
+ste_table         = False # GCC only
 
 # =====================================================================
 # Data directories
@@ -260,7 +263,8 @@ if gcc_vs_gcc:
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
                 restrict_cats=restrict_cats,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     # --------------------------------------------------------------
@@ -298,7 +302,8 @@ if gcc_vs_gcc:
                     weightsdir=weightsdir,
                     benchmark_type=bmk_type,
                     collection=col,
-                    overwrite=True
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir
                 )
 
     # --------------------------------------------------------------
@@ -313,7 +318,8 @@ if gcc_vs_gcc:
                                         gcc_vs_gcc_devrstdir,
                                         int(bmk_year),
                                         dst=gcc_vs_gcc_tablesdir,
-                                        overwrite=True)
+                                        overwrite=True,
+                                        spcdb_dir=spcdb_dir)
 
     # --------------------------------------------------------------
     # GCC vs GCC operations budgets tables
@@ -327,18 +333,16 @@ if gcc_vs_gcc:
         devs = get_filepaths(gcc_vs_gcc_devdir, col, all_months)
 
         # Make operations budget table
-        opbdg.make_operations_budget_table(
+        bmk.make_benchmark_operations_budget(
             gcc_ref_version,
             refs,
             gcc_dev_version,
             devs,
-            bmk_type,
-            dst=gcc_vs_gcc_tablesdir,
+            sec_per_yr,
+            benchmark_type=bmk_type,
             label=bmk_year,
-            interval=sec_per_yr,
-            overwrite=True,
-            pd_float_format="{:13.6e}"
-        )
+            compute_accum=False,
+            dst=gcc_vs_gcc_tablesdir            )
 
     # --------------------------------------------------------------
     # GCC dev strat-trop exchange table
@@ -400,7 +404,8 @@ if gchp_vs_gcc:
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
                 restrict_cats=restrict_cats,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
     # --------------------------------------------------------------
@@ -436,7 +441,8 @@ if gchp_vs_gcc:
                     weightsdir=weightsdir,
                     overwrite=True,
                     benchmark_type=bmk_type,
-                    normalize_by_area=True
+                    normalize_by_area=True,
+                    spcdb_dir=spcdb_dir
                 )
 
     # --------------------------------------------------------------
@@ -453,7 +459,8 @@ if gchp_vs_gcc:
             int(bmk_year),
             dst=gchp_vs_gcc_tablesdir,
             is_gchp=True,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     # --------------------------------------------------------------
@@ -469,18 +476,18 @@ if gchp_vs_gcc:
                              is_gchp=True)
 
         # Make operations budget table
-        opbdg.make_operations_budget_table(
+        bmk.make_benchmark_operations_budget(
             gcc_dev_version,
             refs,
             gchp_dev_version,
             devs,
-            bmk_type,
-            dst=gchp_vs_gcc_tablesdir,
+            sec_per_yr,
+            benchmark_type=bmk_type,
             label=bmk_year,
-            interval=sec_per_yr,
-            overwrite=True,
-            pd_float_format="{:13.6e}"
-        )
+            operations=["Chemistry","Convection","EmisDryDep","Mixing",
+                        "WetDep"],
+            compute_accum=False,
+            dst=gchp_vs_gcc_tablesdir            )        
 
 # =====================================================================
 # Create GCHP vs GCHP benchmark plots and tables
@@ -527,7 +534,8 @@ if gchp_vs_gchp:
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
                 restrict_cats=restrict_cats,
-                overwrite=True
+                overwrite=True,
+                spcdb_dir=spcdb_dir
             )
 
 
@@ -568,7 +576,8 @@ if gchp_vs_gchp:
                     weightsdir=weightsdir,
                     overwrite=True,
                     benchmark_type=bmk_type,
-                    normalize_by_area=True
+                    normalize_by_area=True,
+                    spcdb_dir=spcdb_dir
                 )
 
     # --------------------------------------------------------------
@@ -585,7 +594,8 @@ if gchp_vs_gchp:
             int(bmk_year),
             dst=gchp_vs_gchp_tablesdir,
             is_gchp=True,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     # --------------------------------------------------------------
@@ -602,15 +612,15 @@ if gchp_vs_gchp:
                              is_gchp=True)
 
         # Make operations budget table
-        opbdg.make_operations_budget_table(
+        bmk.make_benchmark_operations_budget(
             gchp_dev_version,
             refs,
             gchp_dev_version,
             devs,
-            bmk_type,
-            dst=gchp_vs_gchp_tablesdir,
+            sec_per_yr,
+            benchmark_type=bmk_type,
             label=bmk_year,
-            interval=sec_per_yr,
-            overwrite=True,
-            pd_float_format="{:13.6e}"
-        )
+            operations=["Chemistry","Convection","EmisDryDep","Mixing",
+                        "WetDep"],
+            compute_accum=False,
+            dst=gchp_vs_gchp_tablesdir            )

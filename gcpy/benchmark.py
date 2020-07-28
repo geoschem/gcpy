@@ -49,7 +49,8 @@ def create_total_emissions_table(
     interval=[2678400.0],
     template="Emis{}_",
     refmetdata=None,
-    devmetdata=None
+    devmetdata=None,
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Creates a table of emissions totals (by sector and by inventory)
@@ -117,6 +118,9 @@ def create_total_emissions_table(
             Dataset containing dev meteorology and area
             Default value: None
 
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
 
     Remarks:
     --------
@@ -159,7 +163,7 @@ def create_total_emissions_table(
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this folder where
     # this benchmark.py file is found.
-    properties_path = os.path.join(os.path.dirname(__file__), "species_database.yml")
+    properties_path = os.path.join(spcdb_dir, "species_database.yml")
     properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # ==================================================================
@@ -352,6 +356,7 @@ def create_global_mass_table(
     trop_only=False,
     outfilename="GlobalMass_TropStrat.txt",
     verbose=False,
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Creates a table of global masses for a list of species in contained in
@@ -403,6 +408,10 @@ def create_global_mass_table(
             informational messages.
             Default value: False
 
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
+
     Remarks:
     --------
         This method is mainly intended for model benchmarking purposes,
@@ -431,7 +440,7 @@ def create_global_mass_table(
     # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
-    properties_path = os.path.join(os.path.dirname(__file__), "species_database.yml")
+    properties_path = os.path.join(spcdb_dir, "species_database.yml")
     properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # ==================================================================
@@ -697,7 +706,8 @@ def make_benchmark_conc_plots(
     second_ref=None,
     second_refstr='',
     second_dev=None,
-    second_devstr=''
+    second_devstr='',
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -820,6 +830,9 @@ def make_benchmark_conc_plots(
         second_devstr : str
             A string to describe second_dev (e.g. version number)
 
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
     """
 
     # NOTE: this function could use some refactoring;
@@ -915,7 +928,8 @@ def make_benchmark_conc_plots(
                              normalize_by_area=normalize_by_area,
                              weightsdir=weightsdir,
                              second_ref=second_refds,
-                             second_dev=second_devds)
+                             second_dev=second_devds,
+                             spcdb_dir=spcdb_dir)
 
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -931,7 +945,8 @@ def make_benchmark_conc_plots(
                              extra_title_txt=extra_title_txt,
                              weightsdir=weightsdir,
                              second_ref=second_refds, 
-                             second_dev=second_devds)
+                             second_dev=second_devds,
+                             spcdb_dir=spcdb_dir)
 
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -946,7 +961,8 @@ def make_benchmark_conc_plots(
                            extra_title_txt=extra_title_txt,
                            weightsdir=weightsdir,
                            second_ref=second_refds, 
-                           second_dev=second_devds)
+                           second_dev=second_devds,
+                           spcdb_dir=spcdb_dir)
 
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
                              verbose=verbose)
@@ -1066,7 +1082,8 @@ def make_benchmark_conc_plots(
                 convert_to_ugm3=convert_to_ugm3,
                 second_ref=second_refds,
                 second_dev=second_devds,
-                n_job=n_job
+                n_job=n_job,
+                spcdb_dir=spcdb_dir
             )
             diff_sfc[:] = [v.replace(coll_prefix, "") for v in diff_sfc]
             cat_diff_dict['sfc'] = diff_sfc
@@ -1107,7 +1124,8 @@ def make_benchmark_conc_plots(
                 convert_to_ugm3=convert_to_ugm3,
                 second_ref=second_refds,
                 second_dev=second_devds,
-                n_job=n_job
+                n_job=n_job,
+                spcdb_dir=spcdb_dir
             )
             diff_500[:] = [v.replace(coll_prefix, "") for v in diff_500]
             #dict_500[filecat] = diff_500
@@ -1151,7 +1169,8 @@ def make_benchmark_conc_plots(
                 convert_to_ugm3=convert_to_ugm3,
                 second_ref=second_refds,
                 second_dev=second_devds,
-                n_job=n_job
+                n_job=n_job,
+                spcdb_dir=spcdb_dir
             )
             diff_zm[:] = [v.replace(coll_prefix, "") for v in diff_zm]
             #dict_zm = diff_zm
@@ -1190,7 +1209,8 @@ def make_benchmark_conc_plots(
                 weightsdir=weightsdir,
                 second_ref=second_refds,
                 second_dev=second_devds,
-                n_job=n_job
+                n_job=n_job,
+                spcdb_dir=spcdb_dir
             )
             util.add_nested_bookmarks_to_pdf(
                 pdfname, filecat, catdict,
@@ -1270,6 +1290,7 @@ def make_benchmark_emis_plots(
     sigdiff_files=None,
     weightsdir='.',
     n_job=-1,
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Creates PDF files containing plots of emissions for model
@@ -1361,6 +1382,10 @@ def make_benchmark_emis_plots(
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
             Default value: -1
+
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
 
     Remarks:
     --------
@@ -1454,7 +1479,8 @@ def make_benchmark_emis_plots(
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
             weightsdir=weightsdir,
-            n_job=n_job
+            n_job=n_job,
+            spcdb_dir=spcdb_dir
         )
         util.add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix="Emis", verbose=verbose)
@@ -1521,7 +1547,8 @@ def make_benchmark_emis_plots(
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_emis,
                 weightsdir=weightsdir,
-                n_job=n_job
+                n_job=n_job,
+                spcdb_dir=spcdb_dir
             )
 
             util.add_bookmarks_to_pdf(
@@ -1627,7 +1654,8 @@ def make_benchmark_emis_plots(
                 log_color_scale=log_color_scale,
                 extra_title_txt=extra_title_txt,
                 weightsdir=weightsdir,
-                n_job=n_job
+                n_job=n_job,
+                spcdb_dir=spcdb_dir
             )
             util.add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
             return catspc
@@ -1662,6 +1690,7 @@ def make_benchmark_emis_tables(
     devmet=None,
     overwrite=False,
     interval=[2678400.0],
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Creates a text file containing emission totals by species and
@@ -1709,6 +1738,11 @@ def make_benchmark_emis_tables(
             The length of the data interval in seconds. By default, interval
             is set to [2678400.0], which is the number of seconds in July
             (our 1-month benchmarking month).
+
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
+
     """
 
     # ==================================================================
@@ -1784,7 +1818,8 @@ def make_benchmark_emis_tables(
         interval,
         template="Emis{}_",
         refmetdata=refmetds,
-        devmetdata=devmetds
+        devmetdata=devmetds,
+        spcdb_dir=spcdb_dir
     )
 
     # Create table of emissions by inventory
@@ -1798,7 +1833,8 @@ def make_benchmark_emis_tables(
         interval,
         template="Inv{}_",
         refmetdata=refmetds,
-        devmetdata=devmetds
+        devmetdata=devmetds,
+        spcdb_dir=spcdb_dir
     )
 
     # -------------------------------------------
@@ -1827,7 +1863,8 @@ def make_benchmark_jvalue_plots(
     log_color_scale=False,
     sigdiff_files=None,
     weightsdir='.',
-    n_job=-1
+    n_job=-1,
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Creates PDF files containing plots of J-values for model
@@ -1925,6 +1962,10 @@ def make_benchmark_jvalue_plots(
             Set to 1 to disable parallel plotting. Value of -1 allows the
             application to decide.
             Default value: -1
+
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
 
     Remarks:
     --------
@@ -2061,7 +2102,8 @@ def make_benchmark_jvalue_plots(
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_sfc,
             weightsdir=weightsdir,
-            n_job=n_job
+            n_job=n_job,
+            spcdb_dir=spcdb_dir
         )
         diff_sfc[:] = [v.replace(prefix, "") for v in diff_sfc]
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
@@ -2089,7 +2131,8 @@ def make_benchmark_jvalue_plots(
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_500,
             weightsdir=weightsdir,
-            n_job=n_job
+            n_job=n_job,
+            spcdb_dir=spcdb_dir
         )
         diff_500[:] = [v.replace(prefix, "") for v in diff_500]
         util.add_bookmarks_to_pdf(pdfname, varlist,
@@ -2118,7 +2161,8 @@ def make_benchmark_jvalue_plots(
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_zm,
             weightsdir=weightsdir,
-            n_job=n_job
+            n_job=n_job,
+            spcdb_dir=spcdb_dir
         )
         diff_zm[:] = [v.replace(prefix, "") for v in diff_zm]
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
@@ -2146,7 +2190,8 @@ def make_benchmark_jvalue_plots(
             extra_title_txt=extra_title_txt,
             log_color_scale=log_color_scale,
             weightsdir=weightsdir,
-            n_job=n_job
+            n_job=n_job,
+            spcdb_dir=spcdb_dir
         )
         util.add_bookmarks_to_pdf(pdfname, varlist,
                              remove_prefix=prefix, verbose=verbose)
@@ -2204,7 +2249,8 @@ def make_benchmark_aod_plots(
     log_color_scale=False,
     sigdiff_files=None,
     weightsdir='.',
-    n_job=-1
+    n_job=-1,
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Creates PDF files containing plots of column aerosol optical
@@ -2278,6 +2324,10 @@ def make_benchmark_aod_plots(
             Set to 1 to disable parallel plotting. Value of -1 allows the
             application to decide.
             Default value: -1
+
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
 
     """
     # ==================================================================
@@ -2473,7 +2523,8 @@ def make_benchmark_aod_plots(
         extra_title_txt=extra_title_txt,
         sigdiff_list=diff_aod,
         weightsdir=weightsdir,
-        n_job=n_job
+        n_job=n_job,
+        spcdb_dir=spcdb_dir
     )
     diff_aod[:] = [v.replace("Column_AOD_", "") for v in diff_aod]
     util.add_bookmarks_to_pdf(
@@ -2511,6 +2562,7 @@ def make_benchmark_mass_tables(
     overwrite=False,
     verbose=False,
     label="at end of simulation",
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Creates a text file containing global mass totals by species and
@@ -2564,6 +2616,11 @@ def make_benchmark_mass_tables(
         verbose : boolean
             Set this flag to True to print extra informational output.
             Default value: False.
+
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
+
     """
 
     # ==================================================================
@@ -2695,6 +2752,7 @@ def make_benchmark_mass_tables(
         label,
         outfilename=mass_file,
         verbose=verbose,
+        spcdb_dir=spcdb_dir
     )
 
     # ==================================================================
@@ -2716,6 +2774,7 @@ def make_benchmark_mass_tables(
         outfilename=mass_file,
         trop_only=True,
         verbose=verbose,
+        spcdb_dir=spcdb_dir
     )
 
     # -------------------------------------------
@@ -3071,7 +3130,8 @@ def make_benchmark_wetdep_plots(
     refmet=None,
     devmet=None,
     weightsdir='.',
-    n_job=-1
+    n_job=-1,
+    spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -3143,6 +3203,10 @@ def make_benchmark_wetdep_plots(
             application to decide.
             Default value: -1
 
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
+
     """
 
     #  Make sure destination directory exists
@@ -3209,7 +3273,8 @@ def make_benchmark_wetdep_plots(
             normalize_by_area=normalize_by_area,
             extra_title_txt=datestr,
             weightsdir=weightsdir,
-            n_job=n_job
+            n_job=n_job,
+            spcdb_dir=spcdb_dir
         )
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=collection+'_',
                              verbose=verbose)
@@ -3234,7 +3299,8 @@ def make_benchmark_wetdep_plots(
             normalize_by_area=normalize_by_area,
             extra_title_txt=datestr,
             weightsdir=weightsdir,
-            n_job=n_job
+            n_job=n_job,
+            spcdb_dir=spcdb_dir
         )
         util.add_bookmarks_to_pdf(
             pdfname,
@@ -3268,7 +3334,8 @@ def make_benchmark_wetdep_plots(
             normalize_by_area=normalize_by_area,
             extra_title_txt=datestr,
             weightsdir=weightsdir,
-            n_job=n_job
+            n_job=n_job,
+            spcdb_dir=spcdb_dir
         )
         util.add_bookmarks_to_pdf(
             pdfname,
@@ -3300,7 +3367,8 @@ def make_benchmark_wetdep_plots(
             extra_title_txt=datestr,
             normalize_by_area=normalize_by_area,
             weightsdir=weightsdir,
-            n_job=n_job
+            n_job=n_job,
+            spcdb_dir=spcdb_dir
         )
         util.add_bookmarks_to_pdf(
             pdfname,
@@ -3328,7 +3396,8 @@ def make_benchmark_aerosol_tables(
         days_per_mon,
         dst='./benchmark',
         overwrite=False,
-        is_gchp=False
+        is_gchp=False,
+        spcdb_dir=os.path.dirname(__file__)
     ):
     """
     Compute FullChemBenchmark aerosol budgets & burdens
@@ -3358,6 +3427,11 @@ def make_benchmark_aerosol_tables(
             Overwrite burden & budget tables? (default=True)
         is_gchp : bool
             Whether datasets are for GCHP
+
+        spcdb_dir : str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
+
     """
 
     # Create the plot directory hierarchy if it doesn't already exist
@@ -3372,12 +3446,8 @@ def make_benchmark_aerosol_tables(
     species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC" ]
 
     # Read the species database
-    try:
-        path = os.path.join(devdir, "species_database.yml")
-        spcdb = yaml_load_file(open(path))
-    except FileNotFoundError:
-        path = os.path.join(os.path.dirname(__file__), "species_database.yml")
-        spcdb = yaml_load_file(open(path))
+    path = os.path.join(spcdb_dir, "species_database.yml")
+    spcdb = yaml_load_file(open(path))
 
     # Molecular weights [g mol-1], as taken from the species database
     mw = {}
@@ -3594,7 +3664,7 @@ def make_benchmark_operations_budget(
     require_overlap=False,
     dst='.',
     species=None,
-    overwrite=True,
+    overwrite=True
 ):
     """
     Prints the "operations budget" (i.e. change in mass after

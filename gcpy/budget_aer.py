@@ -32,7 +32,7 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-    def __init__(self, devstr, devdir, dst, year, overwrite):
+    def __init__(self, devstr, devdir, dst, year, overwrite, spcdb_dir):
         """
         Initializes the _GlobVars class.
 
@@ -48,7 +48,10 @@ class _GlobVars:
                 Year of the benchmark simulation.
             overwrite : bool
                 Denotes whether to ovewrite existing budget tables.
-        """        """
+            spcdb_dir : str
+                Directory where species_database.yml is stored.
+        """
+        """
         Initializes the _GlobVars class.
         """
         # ------------------------------
@@ -79,9 +82,10 @@ class _GlobVars:
 
         # Read the species database
         try:
-            path = join(datadir, "species_database.yml")
+            path = join(spcdb_dir, "species_database.yml")
             spcdb = yaml_load_file(open(path))
         except FileNotFoundError:
+            print('No species_database.yml found in data directory, using file in GCPy repository')
             path = join(os.path.dirname(__file__), "species_database.yml")
             spcdb = yaml_load_file(open(path))
 
@@ -403,7 +407,7 @@ def print_annual_average_aod(globvars, data):
 
 
 def aerosol_budgets_and_burdens(devstr, devdir, year, 
-                                dst='./1yr_benchmark', overwrite=True):
+                                dst='./1yr_benchmark', overwrite=True, spc_db=os.path.dirname(__file__)):
     """
     Compute FullChemBenchmark aerosol budgets & burdens
 
@@ -422,9 +426,11 @@ def aerosol_budgets_and_burdens(devstr, devdir, year,
             Directory where budget tables will be created.
         overwrite : bool
             Overwrite burden & budget tables? (default=True)
+        spcdb_dir : str
+            Directory where species_database.yml is stored. (default=devdir)
     """
     # Initialize a private class with required global variables
-    globvars = _GlobVars(devstr, devdir, dst, year, overwrite)
+    globvars = _GlobVars(devstr, devdir, dst, year, overwrite, spcdb_dir)
 
     # Aerosol burdens [Tg]
     burdens = annual_average(globvars)
