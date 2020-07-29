@@ -4,21 +4,26 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.3.0] - 2020-07-17
+## [0.3.0] - 2020-07-29
 
 ### Added
 
 - Add new function to compute budgets and create budget table that incorporates new optional features.
 - Require python package tabulate for generating budget tables.
+- Added parallel support for mass and budget table creation in 1-year benchmarks.
+- Added capability of completely disabling parallel plotting when calling make_benchmark_*_plots functions.
 
 ### Changed
-
+- Reorganized functions of GCPy into a more logical and streamlined file structure.
+- Updated species_database.yml and benchmark_categories.yml for GEOS-Chem 12.9.2.
+- Replaced "Plots" with "Results" in benchmark directory structure. This value is customizable in the benchmark scripts.
 ### Deprecated
 
 ### Fixed
-
+- Fixed documentation and rearranged argument order for diff-of-diffs plot strings.
+- Fixed accidental regridding to lat/lon in comparison plots where two cubed-sphere datasets share the same resoltuion.
 ### Removed
-
+- Removed budget_ops.py in deference to new make_benchmark_operations_budget function.
 
 ## [0.2.1] - 2020-05-07
 

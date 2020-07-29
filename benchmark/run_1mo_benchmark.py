@@ -56,7 +56,6 @@ import numpy as np
 import xarray as xr
 from gcpy.util import get_filepath
 from gcpy import benchmark as bmk
-import gcpy.budget_ops as opbdg
 import gcpy.ste_flux as ste
 
 # Tell matplotlib not to look for an X-window
