@@ -94,6 +94,9 @@ gcc_dev_version = "GCC_dev"
 gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
+# Name to be used for directory of output from this script
+results_dir = "Results"
+
 # Path to regridding weights
 weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
@@ -116,11 +119,11 @@ gchp_vs_gchp = True
 # =====================================================================
 # Output to generate (plots/tables will be created in this order):
 # =====================================================================
-plot_conc         = False
-plot_wetdep       = False
-rnpbbe_budget     = False
+plot_conc         = True
+plot_wetdep       = True
+rnpbbe_budget     = True
 operations_budget = True
-ste_table         = False # GCC only
+ste_table         = True # GCC only
 
 # =====================================================================
 # Data directories
@@ -145,22 +148,22 @@ gchp_vs_gchp_devrstdir = join(maindir, gchp_dev_version)
 
 # Plots directories
 if gcpy_test:
-    mainplotsdir          = './Plots'
-    gcc_vs_gcc_plotsdir    = join(mainplotsdir,'GCC_version_comparison')
-    gchp_vs_gcc_plotsdir   = join(mainplotsdir,'GCHP_GCC_comparison')
-    gchp_vs_gchp_plotsdir  = join(mainplotsdir,'GCHP_version_comparison')
-    if not os.path.exists(mainplotsdir): os.mkdir(mainplotsdir)
+    mainresultsdir           = join('.', results_dir)
+    gcc_vs_gcc_resultsdir    = join(mainresultsdir,'GCC_version_comparison')
+    gchp_vs_gcc_resultsdir   = join(mainresultsdir,'GCHP_GCC_comparison')
+    gchp_vs_gchp_resultsdir  = join(mainresultsdir,'GCHP_version_comparison')
+    if not os.path.exists(mainresultsdir): os.mkdir(mainresultsdir)
 else:
-    gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_version, "Plots")
-    gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_version,
+    gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_version, "Plots")
+    gchp_vs_gchp_resultsdir  = join(maindir, gchp_dev_version,
                                   "Plots", "GCHP_version_comparison")
-    gchp_vs_gcc_plotsdir   = join(maindir, gchp_dev_version,
+    gchp_vs_gcc_resultsdir   = join(maindir, gchp_dev_version,
                                   "Plots", "GCHP_GCC_comparison")
 
 # Tables directories
-gcc_vs_gcc_tablesdir   = join(gcc_vs_gcc_plotsdir,"Tables") 
-gchp_vs_gcc_tablesdir  = join(gchp_vs_gcc_plotsdir,"Tables") 
-gchp_vs_gchp_tablesdir = join(gchp_vs_gchp_plotsdir,"Tables") 
+gcc_vs_gcc_tablesdir   = join(gcc_vs_gcc_resultsdir,"Tables") 
+gchp_vs_gcc_tablesdir  = join(gchp_vs_gcc_resultsdir,"Tables") 
+gchp_vs_gchp_tablesdir = join(gchp_vs_gchp_resultsdir,"Tables") 
 
 # =====================================================================
 # Plot title strings
@@ -258,7 +261,7 @@ if gcc_vs_gcc:
                 gcc_vs_gcc_devstr,
                 refmet=refmet,
                 devmet=devmet,
-                dst=gcc_vs_gcc_plotsdir,
+                dst=gcc_vs_gcc_resultsdir,
                 subdst=bmk_mon_yr_strs[s],
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
@@ -297,7 +300,7 @@ if gcc_vs_gcc:
                     gcc_vs_gcc_devstr,
                     refmet=refmet,
                     devmet=devmet,
-                    dst=gcc_vs_gcc_plotsdir,
+                    dst=gcc_vs_gcc_resultsdir,
                     datestr=bmk_mon_yr_strs[s],
                     weightsdir=weightsdir,
                     benchmark_type=bmk_type,
@@ -399,7 +402,7 @@ if gchp_vs_gcc:
                 dev,
                 gchp_vs_gcc_devstr,
                 devmet=devmet,
-                dst=gchp_vs_gcc_plotsdir,
+                dst=gchp_vs_gcc_resultsdir,
                 subdst=bmk_mon_yr_strs[s],
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
@@ -436,7 +439,7 @@ if gchp_vs_gcc:
                     gchp_vs_gcc_devstr,
                     devmet=devmet,
                     collection=col,
-                    dst=gchp_vs_gcc_plotsdir,
+                    dst=gchp_vs_gcc_resultsdir,
                     datestr=bmk_mon_yr_strs[s],
                     weightsdir=weightsdir,
                     overwrite=True,
@@ -529,7 +532,7 @@ if gchp_vs_gchp:
                 gchp_vs_gchp_devstr,
                 refmet=refmet,
                 devmet=devmet,
-                dst=gchp_vs_gchp_plotsdir,
+                dst=gchp_vs_gchp_resultsdir,
                 subdst=bmk_mon_yr_strs[s],
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
@@ -571,7 +574,7 @@ if gchp_vs_gchp:
                     refmet=refmet,
                     devmet=devmet,
                     collection=col,
-                    dst=gchp_vs_gchp_plotsdir,
+                    dst=gchp_vs_gchp_resultsdir,
                     datestr=bmk_mon_yr_strs[s],
                     weightsdir=weightsdir,
                     overwrite=True,

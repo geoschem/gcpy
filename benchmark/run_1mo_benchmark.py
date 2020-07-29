@@ -93,6 +93,9 @@ gcc_dev_version = "GCC_dev"
 gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
+# Name to be used for directory of output from this script
+results_dir = "Results"
+
 # Path to regridding weights
 weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
@@ -159,25 +162,25 @@ gchp_vs_gchp_devrst = join(maindir, gchp_dev_dir)
 # =====================================================================
 # Benchmark output directories
 # =====================================================================
-# Plots directories
+# Results directories
 if gcpy_test:
-    mainplotsdir          = './Plots'
-    gcc_vs_gcc_plotsdir    = join(mainplotsdir,'GCC_version_comparison')
-    gchp_vs_gchp_plotsdir  = join(mainplotsdir,'GCHP_version_comparison')
-    gchp_vs_gcc_plotsdir   = join(mainplotsdir,'GCHP_GCC_comparison')
-    diff_of_diffs_plotsdir = join(mainplotsdir,'GCHP_GCC_diff_of_diffs')
-    if not os.path.exists(mainplotsdir): os.mkdir(mainplotsdir)
+    mainresultsdir           = join(".", results_dir)
+    gcc_vs_gcc_resultsdir    = join(mainresultsdir,'GCC_version_comparison')
+    gchp_vs_gchp_resultsdir  = join(mainresultsdir,'GCHP_version_comparison')
+    gchp_vs_gcc_resultsdir   = join(mainresultsdir,'GCHP_GCC_comparison')
+    diff_of_diffs_resultsdir = join(mainresultsdir,'GCHP_GCC_diff_of_diffs')
+    if not os.path.exists(mainresultsdir): os.mkdir(mainresultsdir)
 else:
-    gcc_vs_gcc_plotsdir    = join(maindir, gcc_dev_dir, "Plots")
-    gchp_vs_gchp_plotsdir  = join(maindir, gchp_dev_dir,
-                              "Plots", "GCHP_version_comparison")
-    gchp_vs_gcc_plotsdir   = join(maindir, gchp_dev_dir,
-                              "Plots", "GCHP_GCC_comparison")
-    diff_of_diffs_plotsdir = join(maindir, gchp_dev_dir,
-                              "Plots", "GCHP_GCC_diff_of_diffs")
-gcc_vs_gcc_tablesdir    = join(gcc_vs_gcc_plotsdir, "Tables")   
-gchp_vs_gchp_tablesdir  = join(gchp_vs_gchp_plotsdir, "Tables")
-gchp_vs_gcc_tablesdir   = join(gchp_vs_gcc_plotsdir, "Tables")
+    gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_dir, results_dir)
+    gchp_vs_gchp_resultsdir  = join(maindir, gchp_dev_dir,
+                              results_dir, "GCHP_version_comparison")
+    gchp_vs_gcc_resultsdir   = join(maindir, gchp_dev_dir,
+                              results_dir, "GCHP_GCC_comparison")
+    diff_of_diffs_resultsdir = join(maindir, gchp_dev_dir,
+                              results_dir, "GCHP_GCC_diff_of_diffs")
+gcc_vs_gcc_tablesdir    = join(gcc_vs_gcc_resultsdir, "Tables")   
+gchp_vs_gchp_tablesdir  = join(gchp_vs_gchp_resultsdir, "Tables")
+gchp_vs_gcc_tablesdir   = join(gchp_vs_gcc_resultsdir, "Tables")
 
 # =====================================================================
 # Plot title strings
@@ -225,24 +228,24 @@ mon_yr_str = calendar.month_abbr[b_start[1]] + s_start[0]
 
 vstr = "{}_vs_{}".format(gcc_ref_version, gcc_dev_version)
 gcc_vs_gcc_sigdiff = [
-    join(gcc_vs_gcc_plotsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
-    join(gcc_vs_gcc_plotsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
-    join(gcc_vs_gcc_plotsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
-    join(gcc_vs_gcc_plotsdir, "{}_sig_diffs_emissions.txt".format(vstr))]
+    join(gcc_vs_gcc_resultsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
+    join(gcc_vs_gcc_resultsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
+    join(gcc_vs_gcc_resultsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
+    join(gcc_vs_gcc_resultsdir, "{}_sig_diffs_emissions.txt".format(vstr))]
 
 vstr = "{}_vs_{}".format(gcc_dev_version, gchp_dev_version)
 gchp_vs_gcc_sigdiff = [
-    join(gchp_vs_gcc_plotsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
-    join(gchp_vs_gcc_plotsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
-    join(gchp_vs_gcc_plotsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
-    join(gchp_vs_gcc_plotsdir, "{}_sig_diffs_emissions.txt".format(vstr))]
+    join(gchp_vs_gcc_resultsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
+    join(gchp_vs_gcc_resultsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
+    join(gchp_vs_gcc_resultsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
+    join(gchp_vs_gcc_resultsdir, "{}_sig_diffs_emissions.txt".format(vstr))]
 
 vstr = "{}_vs_{}".format(gchp_ref_version, gchp_dev_version)
 gchp_vs_gchp_sigdiff = [
-    join(gchp_vs_gchp_plotsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
-    join(gchp_vs_gchp_plotsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
-    join(gchp_vs_gchp_plotsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
-    join(gchp_vs_gchp_plotsdir, "{}_sig_diffs_emissions.txt").format(vstr)]
+    join(gchp_vs_gchp_resultsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
+    join(gchp_vs_gchp_resultsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
+    join(gchp_vs_gchp_resultsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
+    join(gchp_vs_gchp_resultsdir, "{}_sig_diffs_emissions.txt").format(vstr)]
 
 # ======================================================================
 # Print the list of plots & tables to the screen
@@ -295,7 +298,7 @@ if gcc_vs_gcc:
             gcc_vs_gcc_devstr,
             refmet=refmet,
             devmet=devmet,
-            dst=gcc_vs_gcc_plotsdir,
+            dst=gcc_vs_gcc_resultsdir,
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
             overwrite=True,
@@ -320,7 +323,7 @@ if gcc_vs_gcc:
             gcc_vs_gcc_refstr,
             dev,
             gcc_vs_gcc_devstr,
-            dst=gcc_vs_gcc_plotsdir,
+            dst=gcc_vs_gcc_resultsdir,
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
             plot_by_hco_cat=plot_by_hco_cat,
@@ -346,7 +349,7 @@ if gcc_vs_gcc:
             gcc_vs_gcc_refstr,
             dev,
             gcc_vs_gcc_devstr,
-            dst=gcc_vs_gcc_plotsdir,
+            dst=gcc_vs_gcc_resultsdir,
             interval=[sec_in_bmk_month],
             overwrite=True,
             spcdb_dir=spcdb_dir
@@ -369,7 +372,7 @@ if gcc_vs_gcc:
             gcc_vs_gcc_refstr,
             dev,
             gcc_vs_gcc_devstr,
-            dst=gcc_vs_gcc_plotsdir,
+            dst=gcc_vs_gcc_resultsdir,
             weightsdir=weightsdir,
             overwrite=True,
             sigdiff_files=gcc_vs_gcc_sigdiff,
@@ -393,7 +396,7 @@ if gcc_vs_gcc:
             gcc_vs_gcc_refstr,
             dev,
             gcc_vs_gcc_devstr,
-            dst=gcc_vs_gcc_plotsdir,
+            dst=gcc_vs_gcc_resultsdir,
             weightsdir=weightsdir,
             overwrite=True,
             sigdiff_files=gcc_vs_gcc_sigdiff,
@@ -527,7 +530,7 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devstr,
             refmet=refmet,
             devmet=devmet,
-            dst=gchp_vs_gcc_plotsdir,
+            dst=gchp_vs_gcc_resultsdir,
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
             overwrite=True,
@@ -552,7 +555,7 @@ if gchp_vs_gcc:
             gchp_vs_gcc_refstr,
             dev,
             gchp_vs_gcc_devstr,
-            dst=gchp_vs_gcc_plotsdir,
+            dst=gchp_vs_gcc_resultsdir,
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
             plot_by_hco_cat=plot_by_hco_cat,
@@ -582,7 +585,7 @@ if gchp_vs_gcc:
             gchp_vs_gcc_refstr,
             dev,
             gchp_vs_gcc_devstr,
-            dst=gchp_vs_gcc_plotsdir,
+            dst=gchp_vs_gcc_resultsdir,
             interval=[sec_in_bmk_month],
             overwrite=True,
             devmet=devmet,
@@ -606,7 +609,7 @@ if gchp_vs_gcc:
             gchp_vs_gcc_refstr,
             dev,
             gchp_vs_gcc_devstr,
-            dst=gchp_vs_gcc_plotsdir,
+            dst=gchp_vs_gcc_resultsdir,
             weightsdir=weightsdir,
             overwrite=True,
             sigdiff_files=gchp_vs_gcc_sigdiff,
@@ -630,7 +633,7 @@ if gchp_vs_gcc:
             gchp_vs_gcc_refstr,
             dev,
             gchp_vs_gcc_devstr,
-            dst=gchp_vs_gcc_plotsdir,
+            dst=gchp_vs_gcc_resultsdir,
             weightsdir=weightsdir,
             overwrite=True,
             sigdiff_files=gchp_vs_gcc_sigdiff,
@@ -728,7 +731,7 @@ if gchp_vs_gchp:
             gchp_vs_gchp_devstr,
             refmet=refmet,
             devmet=devmet,
-            dst=gchp_vs_gchp_plotsdir,
+            dst=gchp_vs_gchp_resultsdir,
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
             overwrite=True,
@@ -753,7 +756,7 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refstr,
             dev,
             gchp_vs_gchp_devstr,
-            dst=gchp_vs_gchp_plotsdir,
+            dst=gchp_vs_gchp_resultsdir,
             weightsdir=weightsdir,
             plot_by_spc_cat=plot_by_spc_cat,
             plot_by_hco_cat=plot_by_hco_cat,
@@ -784,7 +787,7 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refstr,
             dev,
             gchp_vs_gchp_devstr,
-            dst=gchp_vs_gchp_plotsdir,
+            dst=gchp_vs_gchp_resultsdir,
             interval=[sec_in_bmk_month],
             overwrite=True,
             refmet=refmet,
@@ -809,7 +812,7 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refstr,
             dev,
             gchp_vs_gchp_devstr,
-            dst=gchp_vs_gchp_plotsdir,
+            dst=gchp_vs_gchp_resultsdir,
             weightsdir=weightsdir,
             overwrite=True,
             sigdiff_files=gchp_vs_gchp_sigdiff,
@@ -833,7 +836,7 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refstr,
             dev,
             gchp_vs_gchp_devstr,
-            dst=gchp_vs_gchp_plotsdir,
+            dst=gchp_vs_gchp_resultsdir,
             weightsdir=weightsdir,
             overwrite=True,
             sigdiff_files=gchp_vs_gchp_sigdiff,
@@ -926,7 +929,7 @@ if gchp_vs_gcc_diff_of_diffs:
             diff_of_diffs_refstr,
             gchp_ref,
             diff_of_diffs_devstr,
-            dst=diff_of_diffs_plotsdir,
+            dst=diff_of_diffs_resultsdir,
             weightsdir=weightsdir,
             overwrite=True,
             use_cmap_RdBu=True,
