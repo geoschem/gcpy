@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Reorganized functions of GCPy into a more logical and streamlined file structure.
 - Updated species_database.yml and benchmark_categories.yml for GEOS-Chem 12.9.2.
 - Replaced "Plots" with "Results" in benchmark directory structure. This value is customizable in the benchmark scripts.
+- Updated example scripts to use reorganized GCPy functions.
+
 ### Deprecated
 
 ### Fixed
