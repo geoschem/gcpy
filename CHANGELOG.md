@@ -22,8 +22,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Updated example scripts to use reorganized GCPy functions.
 - Updated all benchmark run scripts for consistency, readability, reduced lines of code, and compatibility with reorganized and new GCPy functions
 
-### Deprecated
-
 ### Fixed
 - Fixed documentation and rearranged argument order for diff-of-diffs plot strings.
 - Fixed accidental regridding to lat/lon in comparison plots where two cubed-sphere datasets share the same resoltuion.
@@ -114,9 +112,6 @@ The first official release version of GCPy, v1.0.0, will correspond with the rel
 ## [Unreleased]
 
 ### Added
-
-- Add new function to compute budgets and create budget table that incorporates new optional features.
-- Require python package tabulate for generating budget tables.
 
 ### Changed
 
