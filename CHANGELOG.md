@@ -12,12 +12,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Require python package tabulate for generating budget tables.
 - Added parallel support for mass and budget table creation in 1-year benchmarks.
 - Added capability of completely disabling parallel plotting when calling make_benchmark_*_plots functions.
+- Added capability of converting concentrations to ug/m3 for benchmark plotting.
+- Added new function to make benchmark wet deposition plots, previously done from function to make concentration plots.
 
 ### Changed
 - Reorganized functions of GCPy into a more logical and streamlined file structure.
 - Updated species_database.yml and benchmark_categories.yml for GEOS-Chem 12.9.2.
 - Replaced "Plots" with "Results" in benchmark directory structure. This value is customizable in the benchmark scripts.
 - Updated example scripts to use reorganized GCPy functions.
+- Updated all benchmark run scripts for consistency, readability, reduced lines of code, and compatibility with reorganized and new GCPy functions
 
 ### Deprecated
 
