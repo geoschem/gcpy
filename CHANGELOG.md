@@ -4,7 +4,7 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [0.3.0] - 2020-07-29
+## [0.3.0] - 2020-07-30
 
 ### Added
 
