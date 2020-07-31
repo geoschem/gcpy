@@ -7,13 +7,13 @@ import xarray as xr
 try:
     import xesmf as xe
     from distutils.version import LooseVersion
-    if LooseVersion(xesmf.__version__) < LooseVersion("0.2.1"):
+    if LooseVersion(xe.__version__) < LooseVersion("0.2.1"):
         raise ImportError("cs_regrid.py requires xESMF version 0.2.1 or higher.")
 except ImportError as e:
     print('cs_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
 import pandas as pd
 
-from gcpy.grid.horiz import make_grid_SG
+from .grid import make_grid_SG
 
 
 def sg_hash(cs_res, stretch_factor: float, target_lat: float, target_lon: float):
