@@ -50,27 +50,27 @@ def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlat_in=-90, tlon_in=170, s
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create a restart file for GCHP')
     parser.add_argument('-i', '--filein',
-                        metavar='FILEIN',
+                        metavar='FIN',
                         type=str,
                         required=True,
                         help='input file')
     parser.add_argument('-o', '--fileout',
-                        metavar='RES',
+                        metavar='FOUT',
                         type=str,
                         required=True,
-                        help='output file name')
+                        help='output file')
     parser.add_argument('--sg_params_in',
-                        metavar='SF X Y',
+                        metavar='P',
                         type=float,
                         nargs=3,
                         default=[1.0, 170.0, -90.0],
-                        help='input grid stretched-grid definition')
+                        help='input grid stretched-grid parameters (stretch-factor, target longitude, target latitude)')
     parser.add_argument('--sg_params_out',
-                        metavar='SF X Y',
+                        metavar='P',
                         type=float,
                         nargs=3,
                         default=[1.0, 170.0, -90.0],
-                        help='output grid stretched-grid definition')
+                        help='output grid stretched-grid parameters (stretch-factor, target longitude, target latitude)')
     parser.add_argument('--cs_res_out',
                         metavar='RES',
                         type=int,
@@ -78,14 +78,16 @@ if __name__ == '__main__':
                         help='output grid cubed-sphere resolution')
     parser.add_argument('--stacked_in',
                         action='store_true',
-                        help='output file in stacked format')
+                        help='use this flag if the input grid is in the stacked format')
     parser.add_argument('--stacked_out',
                         action='store_true',
-                        help='output file in stacked format')
+                        help='use this flag if the output grid should be in stacked format')
     args = parser.parse_args()
 
+    # Load dataset
     ds_in = xr.open_dataset(args.filein, decode_cf=False)
 
+    # Format axes to (time, lev, face, Y, X)
     if args.stacked_in:
         cs_res_in = ds_in.dims['lat'] // 6
         y = np.linspace(1, cs_res_in, cs_res_in)
@@ -107,25 +109,28 @@ if __name__ == '__main__':
         })
         ds_in = ds_in.transpose('time', 'lev', 'face', 'Y', 'X')
 
+    # Add an array of ones for a post-regridding conservation check
     ds_in['conservative_check'] = xr.DataArray(
         np.ones((ds_in.dims['time'], ds_in.dims['lev'], ds_in.dims['face'], ds_in.dims['Y'], ds_in.dims['X'])),
         dims=['time', 'lev', 'face', 'Y', 'X']
     )
 
+    # Make regridders
     regridders = make_regridder_S2S(
         cs_res_in, args.cs_res_out,
         sf_in=args.sg_params_in[0], tlon_in=args.sg_params_in[1], tlat_in=args.sg_params_in[2],
         sf_out=args.sg_params_out[0], tlon_out=args.sg_params_out[1], tlat_out=args.sg_params_out[2]
     )
 
+    # For each output face, sum regridded input faces
     oface_datasets = []
     for oface in range(6):
         oface_regridded = [regridder(ds_in.isel(face=iface).drop('face'), keep_attrs=True) for iface, regridder in regridders[oface].items()]
         oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces')
         oface_datasets.append(oface_regridded)
-
     ds_out = xr.concat(oface_datasets, dim='face')
 
+    # Put regridded dataset back into a familiar format
     ds_out = ds_out.rename({
         'face': 'nf',
         'y': 'Ydim',
@@ -134,6 +139,7 @@ if __name__ == '__main__':
     ds_out = ds_out.transpose('time', 'lev', 'nf', 'Ydim', 'Xdim')
     ds_out = ds_out.drop(['lat', 'lon'])
 
+    # Stack the output dataset if requested
     if args.stacked_out:
         cs_res_out = ds_out.dims['Xdim']
         ds_out = ds_out.stack(lat=['nf', 'Ydim'])
