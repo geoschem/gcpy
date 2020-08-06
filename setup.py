@@ -9,13 +9,13 @@ from textwrap import dedent
 
 DESCRIPTION = ""
 LONG_DESCRIPTION = """\
-Python toolkit for working with GEOS-Chem output
+Python toolkit for working with GEOS-Chem output.
 """
 
-DISTNAME = "gcpy"
+DISTNAME = "geoschem-gcpy"
 AUTHOR = "GEOS-Chem Support Team"
-AUTHOR_EMAIL = "geos-chem-support@as.harvard.edu"
-URL = "http://gcpy.readthedocs.io/en/latest/"
+AUTHOR_EMAIL = "geos-chem-support@g.harvard.edu"
+URL = "https://github.com/geoschem/gcpy"
 LICENSE = "MIT"
 
 CLASSIFIERS = [
@@ -27,14 +27,15 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3.4',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
     'Topic :: Scientific/Engineering',
 ]
 
-MAJOR = 0
-MINOR = 1
-MICRO = 1
+MAJOR = 1
+MINOR = 0
+MICRO = 0
 VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
-DEV = True
+DEV = False
 
 
 # Correct versioning with git info if DEV
@@ -83,9 +84,11 @@ setup(
     license = LICENSE,
     url = URL,
     version = VERSION,
-
     packages = find_packages(),
-    package_data = {},
-
+    include_package_data=True,
+    install_requires=["xesmf>=0.2.0", "scipy>=1.3.1", "Cartopy>=0.17.0", "pandas>=0.25.1",
+                      "seaborn>=0.9.0", "matplotlib>=3.1.1", "tabulate>=0.8.3", 
+                      "joblib>=0.15.1", "xbpch>=0.3.5", "numpy>=1.19.1", "PyPDF2>=1.26.0", 
+                      "sphinx_bootstrap_theme>=0.7.1", "sphinx_rtd_theme>=0.5.0"],
     classifiers = CLASSIFIERS
 )
