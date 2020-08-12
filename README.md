@@ -49,7 +49,11 @@ At the moment, the easiest way to install **GCPy** is directly from our GitHub r
 
     $ git clone https://github.com/geoschem/gcpy.git gcpy
 
-Currently, **GCPy** is not available via conda-forge or PyPI, but we anticipate posting early versions of the package to those resources eventually.
+You will need to manually set your PYTHONPATH to include the top-level GCPy directory:
+
+    $ export PYTHONPATH=/path/to/gcpy:$PYTHONPATH
+
+Currently, **GCPy** is not available via conda-forge or PyPI, but will be starting with the release of version 1.0.0.
 
 
 ## License
