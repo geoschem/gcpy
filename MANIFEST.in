@@ -1,8 +1,8 @@
-recursive-include gcpy/*
-recursive-exclude gcpy/__pycache__
-recursive-include benchmark/*
-recursive-include examples/*
-recursive-include docs/*
+recursive-include gcpy/ *
+recursive-exclude gcpy/__pycache__ *
+recursive-include benchmark/ *
+recursive-include examples/ *
+recursive-include docs/ *
 include *.in
 include *.md
 include *.txt
