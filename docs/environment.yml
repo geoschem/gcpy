@@ -19,6 +19,7 @@ dependencies:
     - notebook         # Notebook interface
     - numpy            # N-d array and numerics
     - pandas           # Labeled array library
+    - pip              # Package installer for Python
     - pyresample       # Geographic resampling tools
     - pytest           # Unit/mock testing tools
     - scipy            # Common math/stats/science functions
@@ -38,3 +39,4 @@ dependencies:
         - pycodestyle  # tool to check style conventions (formerly pep8)
         - xesmf        # Universal regridder
         - PyPDF2       # PDF utilities, add bookmarks to PDFs etc.
+        - tabulate     # Pretty-print tabular data in Python
