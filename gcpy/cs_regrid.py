@@ -117,44 +117,46 @@ def reformat_dims(ds, format, towards_common):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Create a restart file for GCHP')
+    parser = argparse.ArgumentParser(description='General cubed-sphere to cubed-sphere regridder.')
     parser.add_argument('-i', '--filein',
                         metavar='FIN',
                         type=str,
                         required=True,
-                        help='input file')
+                        help='input NetCDF file')
     parser.add_argument('-o', '--fileout',
                         metavar='FOUT',
                         type=str,
                         required=True,
-                        help='output file')
+                        help='name of output file')
     parser.add_argument('--sg_params_in',
                         metavar='P',
                         type=float,
                         nargs=3,
                         default=[1.0, 170.0, -90.0],
-                        help='input grid stretched-grid parameters (stretch-factor, target longitude, target latitude)')
+                        help='input grid stretching parameters (stretch-factor, target longitude, target latitude)')
     parser.add_argument('--sg_params_out',
                         metavar='P',
                         type=float,
                         nargs=3,
                         default=[1.0, 170.0, -90.0],
-                        help='output grid stretched-grid parameters (stretch-factor, target longitude, target latitude)')
+                        help='output grid stretching parameters (stretch-factor, target longitude, target latitude)')
     parser.add_argument('--cs_res_out',
                         metavar='RES',
                         type=int,
                         required=True,
-                        help='output grid cubed-sphere resolution')
+                        help='output grid\'s cubed-sphere resolution')
     parser.add_argument('--dim_format_in',
                         metavar='WHICH',
                         type=str,
                         choices=['checkpoint', 'diagnostic'],
-                        required=True)
+                        required=True,
+                        help='format of the input file\'s dimensions (choose from: checkpoint, diagnostic)')
     parser.add_argument('--dim_format_out',
                         metavar='WHICH',
                         type=str,
                         choices=['checkpoint', 'diagnostic'],
-                        required=True)
+                        required=True,
+                        help='format of the output file\'s dimensions (choose from: checkpoint, diagnostic)')
     args = parser.parse_args()
 
     # Load dataset
@@ -175,6 +177,7 @@ if __name__ == '__main__':
 
     if cs_res_in == args.cs_res_out and all([v1 == v2 for v1, v2 in zip(args.sg_params_in, args.sg_params_out)]):
         print('Skipping regridding since grid parameters are identical')
+        ds_out = ds_in
     else:
         # Make regridders
         regridders = make_regridder_S2S(
@@ -196,8 +199,9 @@ if __name__ == '__main__':
             'y': 'Y',
             'x': 'X',
         })
-        ds_out = ds_out.drop(['lat', 'lon'])
+        ds_out = ds_out.drop(['lat', 'lon'])  # lat, lon are from xESMF which we don't want
 
+    # Reformat dimensions to desired output format
     ds_out = reformat_dims(ds_out, format=args.dim_format_out, towards_common=False)
 
     # Write dataset
@@ -206,4 +210,5 @@ if __name__ == '__main__':
         format='NETCDF4_CLASSIC'
     )
 
+    # Print the resulting dataset
     print(ds_out)
