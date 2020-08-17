@@ -2426,19 +2426,23 @@ def gcplot(plot_vals,
 
     if extent == (None, None, None, None):
         extent = get_grid_extents(grid)
-    
+        #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
+        if extent[0] > 180 or extent[1] > 180:
+            extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
     #Account for cross-dateline extent
     if extent[0] > extent[1]:
-        proj = ccrs.PlateCarree(central_longitude=180)
-        extent[0] = extent[0]%360-180        
-        extent[1] = extent[1]%360-180
-        #extent[0] = extent[0] - 180
-        #extent[1] = extent[1] + 180
-        plot_vals = plot_vals.assign_coords(lon=plot_vals.lon%360-180)
-        plot_vals = plot_vals.sortby(plot_vals.lon)
-        #print(plot_vals)
-        #print(extent)
-
+        if gridtype == "ll":
+            proj = ccrs.PlateCarree(central_longitude=180)
+            extent[0] = extent[0]%360-180        
+            extent[1] = extent[1]%360-180
+            plot_vals = plot_vals.assign_coords(lon=plot_vals.lon%360-180)
+            plot_vals = plot_vals.sortby(plot_vals.lon)
+        else:
+            proj = ccrs.PlateCarree(central_longitude=180)
+            extent[0] = extent[0]%360-180        
+            extent[1] = extent[1]%360-180
+            grid["lon_b"]=grid["lon_b"]-180
+            
     if xtick_positions == []:
         #if plot_type == "single_level":
         #    xtick_positions = np.arange(extent[0], extent[1], (extent[1]-extent[0])/12)
@@ -2507,13 +2511,9 @@ def gcplot(plot_vals,
             #assume lat comes first in indexing
             plot_vals = plot_vals[minlat_ind:maxlat_ind+1,minlon_ind:maxlon_ind+1].squeeze()
         # Create a lon/lat plot
-        print(plot_vals)
-        print(plot_vals.lon)
         plot = ax.imshow(
             plot_vals, extent=extent, transform=proj, cmap=comap, norm=norm
         )
-        print(extent)
-        #ax.set_extent(extent, proj)#crs=ccrs.PlateCarree())
         ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
