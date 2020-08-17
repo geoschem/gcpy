@@ -13,7 +13,7 @@ except ImportError as e:
     print('cs_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
 import pandas as pd
 
-from .grid import make_grid_SG
+from gcpy.grid import make_grid_SG
 
 
 def sg_hash(cs_res, stretch_factor: float, target_lat: float, target_lon: float):
@@ -47,6 +47,75 @@ def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlat_in=-90, tlon_in=170, s
     return regridder_list
 
 
+def reformat_dims(ds, format, towards_common):
+
+    def unravel_checkpoint_lat(ds_in):
+        cs_res = ds_in.dims['lon']
+        assert cs_res == ds_in.dims['lat'] // 6
+        mi = pd.MultiIndex.from_product([
+            np.linspace(1, 6, 6),
+            np.linspace(1, cs_res, cs_res)
+        ])
+        ds_in = ds_in.assign_coords({'lat': mi})
+        ds_in = ds_in.unstack('lat')
+        return ds_in
+
+    def ravel_checkpoint_lat(ds_out):
+        assert ds_in.dims['X'] == ds_in.dims['Y']
+        cs_res = ds_in.dims['X']
+        ds_out = ds_out.stack(lat=['lat_level_0', 'lat_level_1'])
+        ds_out = ds_out.assign_coords({
+            'lat': np.linspace(1, 6*cs_res, 6*cs_res)
+        })
+        return ds_out
+
+
+    dim_formats = {
+        'checkpoint': {
+            'unravel': [unravel_checkpoint_lat],
+            'ravel': [ravel_checkpoint_lat],
+            'rename': {
+                'lon': 'X',
+                'lat_level_0': 'F',
+                'lat_level_1': 'Y',
+                'time': 'T',
+                'lev': 'Z',
+            },
+            'transpose': ('time', 'lev', 'lat', 'lon')
+        },
+        'diagnostic': {
+            'rename': {
+                'nf': 'F',
+                'lev': 'Z',
+                'Xdim': 'X',
+                'Ydim': 'Y',
+                'time': 'T',
+            },
+            'transpose': ('time', 'lev', 'nf', 'Ydim', 'Xdim')
+        }
+    }
+    if towards_common:
+        # Unravel dimensions
+        for unravel_callback in dim_formats[format].get('unravel', []):
+            ds = unravel_callback(ds)
+
+        # Rename dimensions
+        ds = ds.rename(dim_formats[format].get('rename', {}))
+
+        return ds
+    else:
+        # Reverse rename
+        ds = ds.rename({v: k for k, v in dim_formats[format].get('rename', {}).items()})
+
+        # Ravel dimensions
+        for ravel_callback in dim_formats[format].get('ravel', []):
+            ds = ravel_callback(ds)
+
+        # Transpose
+        ds = ds.transpose(*dim_formats[format].get('transpose', []))
+        return ds
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Create a restart file for GCHP')
     parser.add_argument('-i', '--filein',
@@ -76,93 +145,60 @@ if __name__ == '__main__':
                         type=int,
                         required=True,
                         help='output grid cubed-sphere resolution')
-    parser.add_argument('--stacked_in',
-                        action='store_true',
-                        help='use this flag if the input grid is in the stacked format')
-    parser.add_argument('--stacked_out',
-                        action='store_true',
-                        help='use this flag if the output grid should be in stacked format')
+    parser.add_argument('--dim_format_in',
+                        metavar='WHICH',
+                        type=str,
+                        choices=['checkpoint', 'diagnostic'],
+                        required=True)
+    parser.add_argument('--dim_format_out',
+                        metavar='WHICH',
+                        type=str,
+                        choices=['checkpoint', 'diagnostic'],
+                        required=True)
     args = parser.parse_args()
 
     # Load dataset
     ds_in = xr.open_dataset(args.filein, decode_cf=False)
 
-    # Format axes to (time, lev, face, Y, X)
-    if args.stacked_in:
-        cs_res_in = ds_in.dims['lat'] // 6
-        y = np.linspace(1, cs_res_in, cs_res_in)
-        nf = np.linspace(1, 6, 6)
-        mi = pd.MultiIndex.from_product([nf, y])
-        ds_in = ds_in.assign_coords({'lat': mi})
-        ds_in = ds_in.unstack('lat').rename({
-            'lat_level_0': 'face',
-            'lat_level_1': 'Y',
-            'lon': 'X',
-        })
-        ds_in = ds_in.transpose('time', 'lev', 'face', 'Y', 'X')
+    # Reformat dimensions to T, Z, F, Y, X
+    ds_in = reformat_dims(ds_in, format=args.dim_format_in, towards_common=True)
+
+    # Drop variables that don't look like fields
+    non_fields = [v for v in ds_in.variables.keys() if len(set(ds_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0]
+    ds_in = ds_in.drop(non_fields)
+
+    # Transpose to T, Z, F, Y, X
+    ds_in = ds_in.transpose('T', 'Z', 'F', 'Y', 'X')
+
+    assert ds_in.dims['X'] == ds_in.dims['Y']
+    cs_res_in = ds_in.dims['X']
+
+    if cs_res_in == args.cs_res_out and all([v1 == v2 for v1, v2 in zip(args.sg_params_in, args.sg_params_out)]):
+        print('Skipping regridding since grid parameters are identical')
     else:
-        cs_res_in = ds_in.dims['Ydim']
-        ds_in = ds_in.unstack('lat').rename({
-            'nf': 'face',
-            'Ydim': 'Y',
-            'Xdim': 'X',
+        # Make regridders
+        regridders = make_regridder_S2S(
+            cs_res_in, args.cs_res_out,
+            sf_in=args.sg_params_in[0], tlon_in=args.sg_params_in[1], tlat_in=args.sg_params_in[2],
+            sf_out=args.sg_params_out[0], tlon_out=args.sg_params_out[1], tlat_out=args.sg_params_out[2]
+        )
+
+        # For each output face, sum regridded input faces
+        oface_datasets = []
+        for oface in range(6):
+            oface_regridded = [regridder(ds_in.isel(F=iface).drop('F'), keep_attrs=True) for iface, regridder in regridders[oface].items()]
+            oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces')
+            oface_datasets.append(oface_regridded)
+        ds_out = xr.concat(oface_datasets, dim='F')
+
+        # Put regridded dataset back into a familiar format
+        ds_out = ds_out.rename({
+            'y': 'Y',
+            'x': 'X',
         })
-        ds_in = ds_in.transpose('time', 'lev', 'face', 'Y', 'X')
+        ds_out = ds_out.drop(['lat', 'lon'])
 
-    # Add an array of ones for a post-regridding conservation check
-    ds_in['conservative_check'] = xr.DataArray(
-        np.ones((ds_in.dims['time'], ds_in.dims['lev'], ds_in.dims['face'], ds_in.dims['Y'], ds_in.dims['X'])),
-        dims=['time', 'lev', 'face', 'Y', 'X']
-    )
-
-    # Make regridders
-    regridders = make_regridder_S2S(
-        cs_res_in, args.cs_res_out,
-        sf_in=args.sg_params_in[0], tlon_in=args.sg_params_in[1], tlat_in=args.sg_params_in[2],
-        sf_out=args.sg_params_out[0], tlon_out=args.sg_params_out[1], tlat_out=args.sg_params_out[2]
-    )
-
-    # For each output face, sum regridded input faces
-    oface_datasets = []
-    for oface in range(6):
-        oface_regridded = [regridder(ds_in.isel(face=iface).drop('face'), keep_attrs=True) for iface, regridder in regridders[oface].items()]
-        oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces')
-        oface_datasets.append(oface_regridded)
-    ds_out = xr.concat(oface_datasets, dim='face')
-
-    # Put regridded dataset back into a familiar format
-    ds_out = ds_out.rename({
-        'face': 'nf',
-        'y': 'Ydim',
-        'x': 'Xdim',
-    })
-    ds_out = ds_out.transpose('time', 'lev', 'nf', 'Ydim', 'Xdim')
-    ds_out = ds_out.drop(['lat', 'lon'])
-
-    # Stack the output dataset if requested
-    if args.stacked_out:
-        cs_res_out = ds_out.dims['Xdim']
-        ds_out = ds_out.stack(lat=['nf', 'Ydim'])
-        ds_out = ds_out.rename({'Xdim': 'lon'})
-        ds_out = ds_out.assign_coords({
-            'lat': np.linspace(1, 6*cs_res_out, 6*cs_res_out), 'lon': np.linspace(1, cs_res_out, cs_res_out)
-        })
-        ds_out = ds_out.transpose('time', 'lev', 'lat', 'lon')
-    else:
-        cs_res_out = ds_out.dims['Xdim']
-        ds_out = ds_out.assign_coords({
-            'nf': np.linspace(1, 6, 6),
-            'Ydim': np.linspace(1, cs_res_out, cs_res_out),
-            'Xdim': np.linspace(1, cs_res_out, cs_res_out),
-        })
-        ds_out = ds_out.transpose('time', 'lev', 'nf', 'Ydim', 'Xdim')
-
-    # Review conservative check
-    score = 1 + (1 - abs(ds_out['conservative_check']))
-    print('Conservative check:')
-    print(f'    - P95 score: {score.quantile(0.95).item()}')
-    print(f'    - P99 score: {score.quantile(0.99).item()}')
-    ds_out = ds_out.drop(['conservative_check'])
+    ds_out = reformat_dims(ds_out, format=args.dim_format_out, towards_common=False)
 
     # Write dataset
     ds_out.to_netcdf(
