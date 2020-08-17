@@ -54,8 +54,8 @@ pdfname_zonal = join(plotsdir, "zonal_mean_level_comparison.pdf")
 ########################################################################
 
 # Plot options
-create_single_level_plot = False
-create_zonal_mean_plot   = False
+create_single_level_plot = True
+create_zonal_mean_plot   = True
 print_totals_and_diffs   = True
 
 # Specify the level that you wish to plot (starting from 0)
@@ -75,7 +75,7 @@ restrict_vars = None
 
 def compare_data(refdata, devdata):
     """
-    Compares data frwom two different xarray datasets.
+    Compares data from two different xarray datasets.
 
     Args:
     -----
