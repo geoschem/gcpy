@@ -11,7 +11,7 @@ import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .grid import GEOS_72L_grid, GEOS_47L_grid, get_vert_grid, get_pressure_indices, \
-     pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid
+     pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, get_input_res
 from .regrid import regrid_comparison_data, create_regridders, dict_72_to_47, reduce_72_to_47
 from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, all_zero_or_nan, slice_by_lev_and_time
 from .units import check_units, data_unit_is_mol_per_mol
@@ -119,7 +119,7 @@ def sixplot(
        Set this flag to True to enable log scaling of pressure in zonal mean plots
     xtick_positions : list of float
        Locations of lat/lon or lon ticks on plot
-    xtick_labels: list of str
+    xticklabels: list of str
        Labels for lat/lon ticks
     """
     # Set min and max of the data range
@@ -2343,12 +2343,13 @@ def gcplot(plot_vals,
            use_cmap_RdBu=False,
            log_color_scale=False,
            add_cb=True,
-           pres_range = [0, 2000],
+           pres_range=[0, 2000],
            pedge=np.full((1, 1), -1),
            pedge_ind=np.full((1,1), -1),
            log_yaxis=False,
-           xtick_positions=np.arange(-90,91,30),
-           xticklabels = []
+           xtick_positions=[],
+           xticklabels=[],
+           proj=ccrs.PlateCarree()
 ):
     """
     Core plotting routine -- creates a single plot panel.
@@ -2395,7 +2396,7 @@ def gcplot(plot_vals,
             Set this flag to True to enable log scaling of pressure in zonal mean plots
         xtick_positions : list(float)
             Locations of lat/lon or lon ticks on plot
-        xtick_labels: list(str)
+        xticklabels: list(str)
             Labels for lat/lon ticks
     Returns:
     -----
@@ -2422,6 +2423,28 @@ def gcplot(plot_vals,
         norm = normalize_colors(
             vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
         )
+
+    if extent == (None, None, None, None):
+        extent = get_grid_extents(grid)
+    
+    #Account for cross-dateline extent
+    if extent[0] > extent[1]:
+        proj = ccrs.PlateCarree(central_longitude=180)
+        extent[0] = extent[0]%360-180        
+        extent[1] = extent[1]%360-180
+        #extent[0] = extent[0] - 180
+        #extent[1] = extent[1] + 180
+        plot_vals = plot_vals.assign_coords(lon=plot_vals.lon%360-180)
+        plot_vals = plot_vals.sortby(plot_vals.lon)
+        #print(plot_vals)
+        #print(extent)
+
+    if xtick_positions == []:
+        #if plot_type == "single_level":
+        #    xtick_positions = np.arange(extent[0], extent[1], (extent[1]-extent[0])/12)
+        if plot_type == "zonal_mean":
+            xtick_positions = np.arange(-90, 90, 30)
+
     if xticklabels == []:
         xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
 
@@ -2432,7 +2455,7 @@ def gcplot(plot_vals,
         if plot_type == "zonal_mean":
             ax = plt.axes()
         if plot_type == "single_level":
-            ax = plt.axes(projection = ccrs.PlateCarree())
+            ax = plt.axes(projection = proj)
 
     if title == "fill" and data_is_xr:
         title = plot_vals.name
@@ -2467,9 +2490,7 @@ def gcplot(plot_vals,
 
     elif gridtype == "ll":
         #Lat/Lon single level
-        if extent == (None, None, None, None):
-            extent = get_grid_extents(grid)
-        elif type(plot_vals) is xr.DataArray:
+        if type(plot_vals) is xr.DataArray:
             [minlon, maxlon, minlat, maxlat] = extent
             #filter data by bounds of extent
             plot_vals = plot_vals.where(plot_vals.lon>=minlon, 
@@ -2486,9 +2507,13 @@ def gcplot(plot_vals,
             #assume lat comes first in indexing
             plot_vals = plot_vals[minlat_ind:maxlat_ind+1,minlon_ind:maxlon_ind+1].squeeze()
         # Create a lon/lat plot
+        print(plot_vals)
+        print(plot_vals.lon)
         plot = ax.imshow(
-            plot_vals, extent=extent, transform=ccrs.PlateCarree(), cmap=comap, norm=norm
+            plot_vals, extent=extent, transform=proj, cmap=comap, norm=norm
         )
+        print(extent)
+        #ax.set_extent(extent, proj)#crs=ccrs.PlateCarree())
         ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
@@ -2511,7 +2536,7 @@ def gcplot(plot_vals,
                 grid["lon_b"][j, :, :],
                 grid["lat_b"][j, :, :],
                 masked_data[j, :, :],
-                transform=ccrs.PlateCarree(),
+                transform=proj,
                 cmap=comap,
                 norm=norm
             )
