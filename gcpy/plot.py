@@ -569,6 +569,12 @@ def compare_single_level(
         if ds_devs[i].units.strip() == "W/m2":
             ds_devs[i].attrs["units"] = "W m-2"
 
+        # If units string is UNITLESS (may be true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "UNITLESS":
+            ds_refs[i].attrs["units"] = "1"
+        if ds_devs[i].units.strip() == "UNITLESS":
+            ds_devs[i].attrs["units"] = "1"
+
         # Check that units are the same in ref and dev. Will exit with
         # an error if do not match and enforce_units is true (default).
         check_units(ds_refs[i], ds_devs[i])
@@ -1601,10 +1607,6 @@ def compare_zonal_mean(
         #  Handle units as needed
         # ==================================================================
         
-        # Check that units are the same in ref and dev. Will exit with
-        # an error if do not match and enforce_units is true (default).
-        check_units(ds_refs[i], ds_devs[i])
-
         # Convert to ppb if units string is variation of mol/mol
         if data_unit_is_mol_per_mol(ds_refs[i]):
             ds_refs[i].values = ds_refs[i].values * 1e9
@@ -1619,6 +1621,22 @@ def compare_zonal_mean(
         if ds_devs[i].units.strip() == "ppbv":
             ds_devs[i].attrs["units"] = "ppb"
 
+        # If units string is W/m2 (may be true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "W/m2":
+            ds_refs[i].attrs["units"] = "W m-2"
+        if ds_devs[i].units.strip() == "W/m2":
+            ds_devs[i].attrs["units"] = "W m-2"
+
+        # If units string is UNITLESS (may be true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "UNITLESS":
+            ds_refs[i].attrs["units"] = "1"
+        if ds_devs[i].units.strip() == "UNITLESS":
+            ds_devs[i].attrs["units"] = "1"
+
+        # Check that units are the same in ref and dev. Will exit with
+        # an error if do not match and enforce_units is true (default).
+        check_units(ds_refs[i], ds_devs[i])
+            
         # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
         if convert_to_ugm3:
 
