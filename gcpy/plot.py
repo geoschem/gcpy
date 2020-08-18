@@ -13,7 +13,7 @@ from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .grid import GEOS_72L_grid, GEOS_47L_grid, get_vert_grid, get_pressure_indices, \
      pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, get_input_res
 from .regrid import regrid_comparison_data, create_regridders, dict_72_to_47, reduce_72_to_47
-from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, all_zero_or_nan, slice_by_lev_and_time
+from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, all_zero_or_nan, slice_by_lev_and_time, compare_varnames
 from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -416,7 +416,7 @@ def compare_single_level(
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist is None:
         quiet = not verbose
-        vardict = util.compare_varnames(refdata, devdata, quiet=quiet)
+        vardict = compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict["commonvars3D"] + vardict["commonvars2D"]
         print("Plotting all common variables")
     n_var = len(varlist)
@@ -1454,7 +1454,7 @@ def compare_zonal_mean(
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist is None:
         quiet = not verbose
-        vardict = util.compare_varnames(refdata, devdata, quiet=quiet)
+        vardict = compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict["commonvars3D"]
         print("Plotting all 3D variables")
     n_var = len(varlist)
