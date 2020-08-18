@@ -2424,7 +2424,7 @@ def gcplot(plot_vals,
             vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
         )
 
-    if extent == (None, None, None, None):
+    if extent == (None, None, None, None) or extent == None:
         extent = get_grid_extents(grid)
         #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
         if extent[0] > 180 or extent[1] > 180:
