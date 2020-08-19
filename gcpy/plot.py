@@ -2140,12 +2140,11 @@ def compare_zonal_mean(
         ]
 
         grids = [refgrid, devgrid, cmpgrid, cmpgrid, cmpgrid, cmpgrid]
-
+        
         if refgridtype != "ll":
             grids[0] = cmpgrid
         if devgridtype != "ll":
             grids[1] = cmpgrid
-
         extents = [None, None, None, None, None, None]
 
         masked = ["ZM", "ZM", "ZM", "ZM", "ZM", "ZM"]
@@ -2405,25 +2404,9 @@ def gcplot(plot_vals,
         Plot object created from input
     """
 
+    #Eliminate 1D level or time dimensions
+    plot_vals=plot_vals.squeeze()
     data_is_xr = type(plot_vals) is xr.DataArray
-
-    #Generate grid if not passed
-    if grid == {}:
-        res, gridtype = get_input_res(plot_vals)
-        [grid, _] = call_make_grid(res, gridtype, False, False)
-
-    # Normalize colors (put into range [0..1] for matplotlib methods)
-    if norm == []:
-        if data_is_xr:
-            vmin = plot_vals.data.min()
-            vmax = plot_vals.data.max()
-        elif type(plot_vals) is np.ndarray:
-            vmin = np.min(plot_vals)
-            vmax = np.max(plot_vals)
-        norm = normalize_colors(
-            vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
-        )
-
     if extent == (None, None, None, None) or extent == None:
         extent = get_grid_extents(grid)
         #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
@@ -2464,20 +2447,81 @@ def gcplot(plot_vals,
     if title == "fill" and data_is_xr:
         title = plot_vals.name
 
+    #Generate grid if not passed
+    if grid == {}:
+        res, gridtype = get_input_res(plot_vals)
+
+        if plot_type == 'single_level':
+            [grid, _] = call_make_grid(res, gridtype, False, False)
+
+        else: #zonal mean
+            if np.all(pedge_ind == -1) or np.all(pedge == -1):
+                
+                # Get mid-point pressure and edge pressures for this grid (assume 72-level)
+                pedge, pmid, grid_cat = get_vert_grid(plot_vals)
+                
+                # Get indexes of pressure subrange (full range is default)
+                pedge_ind = get_pressure_indices(pedge, pres_range)
+                
+                # Pad edges if subset does not include surface or TOA so data spans
+                # entire subrange
+                pedge_ind = pad_pressure_edges(pedge_ind, plot_vals.sizes["lev"])
+                
+                # pmid indexes do not include last pedge index
+                pmid_ind = pedge_ind[:-1]
+                
+                # Convert levels to pressures in ref and dev data
+                plot_vals = convert_lev_to_pres(plot_vals, pmid, pedge)
+                
+                #get proper levels
+                plot_vals = plot_vals.isel(lev=pmid_ind)            
+                
+            [input_res, input_gridtype, _, _,
+             new_res, new_gridtype, regrid, _, _, _, _, 
+             grid, regridder, _, regridder_list, _] = create_regridders(
+                                                      plot_vals, 
+                                                      plot_vals, 
+                                                      weightsdir='.',
+                                                      cmpres=None,
+                                                      zm=True
+                                                   )
+            if gridtype == 'cs':
+                plot_vals = reshape_MAPL_CS(plot_vals)
+                nlev = len(plot_vals['lev'])
+            
+                # Ref
+                plot_vals = regrid_comparison_data(
+                    plot_vals,
+                    input_res,
+                    regrid,
+                    regridder,
+                    regridder_list,
+                    grid,
+                    input_gridtype,
+                    nlev=nlev
+                )
+            #calculate zonal means
+            plot_vals = plot_vals.mean(axis=2)
+
+
+    data_is_xr = type(plot_vals) is xr.DataArray
+    # Normalize colors (put into range [0..1] for matplotlib methods)
+    if norm == []:
+        if data_is_xr:
+            vmin = plot_vals.data.min()
+            vmax = plot_vals.data.max()
+        elif type(plot_vals) is np.ndarray:
+            vmin = np.min(plot_vals)
+            vmax = np.max(plot_vals)
+        norm = normalize_colors(
+            vmin, vmax, is_difference=use_cmap_RdBu, log_color_scale=log_color_scale
+        )
+
+
     # Create plot
     ax.set_title(title)
     if plot_type == "zonal_mean":
-        if pedge.all() == -1:
-            pedge = GEOS_72L_grid.p_edge()
-        if pedge_ind.all() == -1:
-            pedge_ind = np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))
-            pedge_ind = pedge_ind[0]
-            # Pad edges if subset does not include surface or TOA so data spans entire subrange
-            if min(pedge_ind) != 0:
-                pedge_ind = np.append(min(pedge_ind) - 1, pedge_ind)
-            if max(pedge_ind) != 72:
-                pedge_ind = np.append(pedge_ind, max(pedge_ind) + 1)
-        # Zonal mean plot
+        #Zonal mean plot
         plot = ax.pcolormesh(
             grid["lat_b"], pedge[pedge_ind], plot_vals, cmap=comap, norm=norm
         )
@@ -2548,7 +2592,10 @@ def gcplot(plot_vals,
     if add_cb == True:
         cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
         cb.mappable.set_norm(norm)
-        all_zero, all_nan = all_zero_or_nan(plot_vals.values)
+        if data_is_xr:
+            all_zero, all_nan = all_zero_or_nan(plot_vals.values)
+        else:
+            all_zero, all_nan = all_zero_or_nan(plot_vals)
         if all_zero or all_nan:
             if use_cmap_RdBu:
                 cb.set_ticks([0.0])
