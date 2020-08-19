@@ -330,7 +330,7 @@ def convert_units(
     # Return to calling routine
     return dr_new
 
-def check_units(ref_da, dev_da):
+def check_units(ref_da, dev_da, enforce_units=True):
     """
     Ensures the units of two xarray DataArrays are the same.
     Args:
@@ -339,6 +339,11 @@ def check_units(ref_da, dev_da):
             First data array containing a units attribute.
         dev_da : xarray DataArray
             Second data array containing a units attribute.
+
+    Keyword Args (optional):
+    ------------------------
+        enforce_units : boolean
+            Whether to stop program if ref and dev units do not match
         
     Returns:
     --------
@@ -355,7 +360,7 @@ def check_units(ref_da, dev_da):
             # if enforcing units, stop the program if
             # units do not match
             assert units_ref == units_dev, \
-                "Units do not match for {}!".format(varname)
+                "Units do not match: ref {} and dev {}!".format(units_ref, units_dev)
     else:
         units_match = True
     return units_match
