@@ -13,7 +13,7 @@ from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .grid import GEOS_72L_grid, GEOS_47L_grid, get_vert_grid, get_pressure_indices, \
      pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, get_input_res
 from .regrid import regrid_comparison_data, create_regridders, dict_72_to_47, reduce_72_to_47
-from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, all_zero_or_nan, slice_by_lev_and_time
+from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, all_zero_or_nan, slice_by_lev_and_time, compare_varnames
 from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
 from joblib import Parallel, delayed, cpu_count, parallel_backend
@@ -416,7 +416,7 @@ def compare_single_level(
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist is None:
         quiet = not verbose
-        vardict = util.compare_varnames(refdata, devdata, quiet=quiet)
+        vardict = compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict["commonvars3D"] + vardict["commonvars2D"]
         print("Plotting all common variables")
     n_var = len(varlist)
@@ -549,10 +549,6 @@ def compare_single_level(
         #  Handle units as needed
         # ==================================================================
         
-        # Check that units are the same in ref and dev. Will exit with
-        # an error if do not match and enforce_units is true (default).
-        check_units(ds_refs[i], ds_devs[i])
-
         # Convert to ppb if units string is variation of mol/mol
         if data_unit_is_mol_per_mol(ds_refs[i]):
             ds_refs[i].values = ds_refs[i].values * 1e9
@@ -566,6 +562,22 @@ def compare_single_level(
             ds_refs[i].attrs["units"] = "ppb"
         if ds_devs[i].units.strip() == "ppbv":
             ds_devs[i].attrs["units"] = "ppb"
+
+        # If units string is W/m2 (may be true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "W/m2":
+            ds_refs[i].attrs["units"] = "W m-2"
+        if ds_devs[i].units.strip() == "W/m2":
+            ds_devs[i].attrs["units"] = "W m-2"
+
+        # If units string is UNITLESS (may be true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "UNITLESS":
+            ds_refs[i].attrs["units"] = "1"
+        if ds_devs[i].units.strip() == "UNITLESS":
+            ds_devs[i].attrs["units"] = "1"
+
+        # Check that units are the same in ref and dev. Will exit with
+        # an error if do not match and enforce_units is true (default).
+        check_units(ds_refs[i], ds_devs[i])
 
         # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
         if convert_to_ugm3:
@@ -1454,7 +1466,7 @@ def compare_zonal_mean(
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist is None:
         quiet = not verbose
-        vardict = util.compare_varnames(refdata, devdata, quiet=quiet)
+        vardict = compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict["commonvars3D"]
         print("Plotting all 3D variables")
     n_var = len(varlist)
@@ -1595,10 +1607,6 @@ def compare_zonal_mean(
         #  Handle units as needed
         # ==================================================================
         
-        # Check that units are the same in ref and dev. Will exit with
-        # an error if do not match and enforce_units is true (default).
-        check_units(ds_refs[i], ds_devs[i])
-
         # Convert to ppb if units string is variation of mol/mol
         if data_unit_is_mol_per_mol(ds_refs[i]):
             ds_refs[i].values = ds_refs[i].values * 1e9
@@ -1613,6 +1621,22 @@ def compare_zonal_mean(
         if ds_devs[i].units.strip() == "ppbv":
             ds_devs[i].attrs["units"] = "ppb"
 
+        # If units string is W/m2 (may be true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "W/m2":
+            ds_refs[i].attrs["units"] = "W m-2"
+        if ds_devs[i].units.strip() == "W/m2":
+            ds_devs[i].attrs["units"] = "W m-2"
+
+        # If units string is UNITLESS (may be true for bpch data) then rename units
+        if ds_refs[i].units.strip() == "UNITLESS":
+            ds_refs[i].attrs["units"] = "1"
+        if ds_devs[i].units.strip() == "UNITLESS":
+            ds_devs[i].attrs["units"] = "1"
+
+        # Check that units are the same in ref and dev. Will exit with
+        # an error if do not match and enforce_units is true (default).
+        check_units(ds_refs[i], ds_devs[i])
+            
         # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
         if convert_to_ugm3:
 
