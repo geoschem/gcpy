@@ -297,6 +297,34 @@ def pad_pressure_edges(pedge_ind, max_ind):
     if max(pedge_ind) != max_ind:
         pedge_ind = np.append(pedge_ind, max(pedge_ind) + 1)
     return pedge_ind
+
+def get_ind_of_pres(dataset, pres):
+    """
+    Get index of pressure level that contains the requested pressure value.
+    
+    Args:
+    -----
+        dataset : xarray Dataset
+            GEOS-Chem dataset
+
+        pres : int or float
+            Desired pressure value
+
+    Returns:
+    -----
+        index : int
+            Index of level in dataset that corresponds to requested pressure
+
+    """
+    pedge, pmid, nlev = get_vert_grid(dataset)
+    converted_dataset = convert_lev_to_pres(dataset, pmid, pedge)
+    if dataset.sizes["lev"] in (72, 47):
+        dataset["lev"] = pmid
+    elif dataset.sizes["lev"] in (73, 48):
+        dataset["lev"] = pedge
+
+    return np.argmin(np.abs(converted_dataset['lev']-pres).values)
+
 def convert_lev_to_pres(dataset, pmid, pedge):
     """
     Convert lev dimension to pressure in a GEOS-Chem dataset
