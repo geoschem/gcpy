@@ -18,6 +18,8 @@ from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
+from shutil import rmtree
+from tempfile import TemporaryDirectory
 import warnings
 
 # Save warnings format to undo overwriting built into PyPDF2
@@ -425,13 +427,12 @@ def compare_single_level(
     savepdf = True
     if pdfname == "":
         savepdf = False
-
     # Cleanup previous temporary PDFs produced during parallelization
-    for i in range(n_var):
-        try:
-            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
-        except:
-            continue
+    #for i in range(n_var):
+    #    try:
+    #        os.remove(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
+    #    except:
+    #        continue
 
     # If converting to ug/m3, load the species database
     if convert_to_ugm3:
@@ -794,19 +795,10 @@ def compare_single_level(
 
 
     # =================================================================
-    # Create pdf if saving to file
-    # =================================================================
-
-    if savepdf:
-        #print("Creating {} for {} variables".format(pdfname, n_var))
-        pdf = PdfPages(pdfname)
-        pdf.close()
-
-    # =================================================================
     # Define function to create a single page figure to be called
     # in a parallel loop
     # =================================================================
-    def createfig(ivar):
+    def createfig(ivar, temp_dir):
 
         # Suppress harmless run-time warnings (mostly about underflow)
         warnings.filterwarnings('ignore', category=RuntimeWarning)
@@ -1247,7 +1239,14 @@ def compare_single_level(
         # Add this page of 6-panel plots to a PDF file
         # ==============================================================
         if savepdf:
-            pdf = PdfPages(pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar))
+
+            folders = pdfname.split('/')
+            full_path = ''
+            for folder in folders[:-1]:
+                full_path = os.path.join(temp_dir, full_path, folder)
+                if not os.path.isdir(full_path):
+                    os.mkdir(full_path)
+            pdf = PdfPages(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar)))
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
@@ -1269,32 +1268,36 @@ def compare_single_level(
     #do not attempt nested thread parallelization due to issues with matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
-    if savepdf:
-        results = Parallel(n_jobs = n_job) (delayed(createfig)(i) \
-                                            for i in range(n_var))
-        #update sig diffs after parallel calls
-        if current_process().name == "MainProcess":
-            for varname in results:
-                if type(varname) is str:
-                    sigdiff_list.append(varname)
-    else:
+
+    if not savepdf:
         #disable parallel plotting to allow interactive figure plotting
         for i in range(n_var):
             createfig(i)
 
-    # ==================================================================
-    # Finish
-    # ==================================================================
-    if savepdf:
-        if verbose:
-            print("Closed PDF")
-        merge = PdfFileMerger()
-        for i in range(n_var):
-            merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
-            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
-        merge.write(pdfname)
-        merge.close()
-        warnings.showwarning = warning_format
+    else:
+        with TemporaryDirectory() as temp_dir:
+            results = Parallel(n_jobs = n_job) (delayed(createfig)(i, temp_dir) \
+                                                for i in range(n_var))
+            #update sig diffs after parallel calls
+            if current_process().name == "MainProcess":
+                for varname in results:
+                    if type(varname) is str:
+                        sigdiff_list.append(varname)
+
+            # ==================================================================
+            # Finish
+            # ==================================================================
+            if verbose:
+                print("Closed PDF")
+            merge = PdfFileMerger()
+            #print("Creating {} for {} variables".format(pdfname, n_var))
+            pdf = PdfPages(pdfname)
+            pdf.close()
+            for i in range(n_var):
+                merge.append(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
+            merge.write(pdfname)
+            merge.close()
+            warnings.showwarning = warning_format
 
 
 def compare_zonal_mean(
@@ -1480,13 +1483,12 @@ def compare_zonal_mean(
     savepdf = True
     if pdfname == "":
         savepdf = False
-
     # Cleanup previous temporary PDFs produced during parallelization
-    for i in range(n_var):
-        try:
-            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
-        except:
-            continue
+    #for i in range(n_var):
+    #    try:
+    #        os.remove(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
+    #    except:
+    #        continue
 
     # If converting to ug/m3, load the species database
     if convert_to_ugm3:
@@ -1867,24 +1869,15 @@ def compare_zonal_mean(
                 nlev=dev_nlev
             )
 
-    # ==================================================================
-    # Create pdf, if savepdf is passed as True
-    # ==================================================================
-
     # Universal plot setup
     xtick_positions = np.arange(-90, 91, 30)
     xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
-
-    if savepdf:
-        #print("Creating {} for {} variables".format(pdfname, n_var))
-        pdf = PdfPages(pdfname)
-        pdf.close()
 
     # ==================================================================
     # Define function to create a single page figure to be called
     # in a parallel loop
     # ==================================================================
-    def createfig(ivar):
+    def createfig(ivar, temp_dir):
 
         # Suppress harmless run-time warnings (mostly about underflow)
         warnings.filterwarnings('ignore', category=RuntimeWarning)
@@ -2233,7 +2226,14 @@ def compare_zonal_mean(
         # Add this page of 6-panel plots to the PDF file
         # ==============================================================
         if savepdf:
-            pdf = PdfPages(pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar))
+            folders = pdfname.split('/')
+            full_path = ''
+            for folder in folders[:-1]:
+                full_path = os.path.join(temp_dir, full_path, folder)
+                if not os.path.isdir(full_path):
+                    os.mkdir(full_path)
+
+            pdf = PdfPages(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar)))
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
@@ -2258,33 +2258,35 @@ def compare_zonal_mean(
     if current_process().name != "MainProcess":
         n_job = 1
 
-    if savepdf:
-        results = Parallel(n_jobs = n_job) (delayed(createfig)(i) \
-                                            for i in range(n_var))
-        #update sig diffs after parallel calls
-        if current_process().name == "MainProcess":
-            for varname in results:
-                if type(varname) is str:
-                    sigdiff_list.append(varname)
-
-    else:
+    if not savepdf:
         #disable parallel plotting to allow interactive figure plotting
         for i in range(n_var):
             createfig(i)
 
-    # ==================================================================
-    # Finish
-    # ==================================================================
-    if savepdf:
-        if verbose:
-            print("Closed PDF")
-        merge = PdfFileMerger()
-        for i in range(n_var):
-            merge.append(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
-            os.remove(pdfname + "BENCHMARKFIGCREATION.pdf" + str(i))
-        merge.write(pdfname)
-        merge.close()
-        warnings.showwarning = warning_format
+    else:
+        with TemporaryDirectory() as temp_dir:
+            results = Parallel(n_jobs = n_job) (delayed(createfig)(i, temp_dir) \
+                                                for i in range(n_var))
+            #update sig diffs after parallel calls
+            if current_process().name == "MainProcess":
+                for varname in results:
+                    if type(varname) is str:
+                        sigdiff_list.append(varname)
+
+            # ==================================================================
+            # Finish
+            # ==================================================================
+            if verbose:
+                print("Closed PDF")
+            merge = PdfFileMerger()
+            #print("Creating {} for {} variables".format(pdfname, n_var))
+            pdf = PdfPages(pdfname)
+            pdf.close()
+            for i in range(n_var):
+                merge.append(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
+            merge.write(pdfname)
+            merge.close()
+            warnings.showwarning = warning_format
 
 def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, ratio_log=False):
     """
