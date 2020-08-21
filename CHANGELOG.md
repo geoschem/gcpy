@@ -4,6 +4,24 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.3.1] - 2020-08-21
+
+### Added
+- Added instructions on setting PYTHONPATH to include GCPy directory when installing manually.
+- Added cross-dateline regional plotting capability for both lat/lon and cubed-sphere plots.
+- Added function to get lev dimension index that matches a requested pressure value.
+- Added basic up-to-date map plotting examples.
+
+### Changed
+- Temporary PDFs are now generated in the system's temp directory rather than within the working directory.
+
+### Fixed
+- Fixed single panel zonal mean plotting for GCHP.
+- Fixed existing non-deleted examples code.
+
+### Removed
+- Removed several code examples that were out-of-date.
+
 ## [0.3.0] - 2020-07-30
 
 ### Added
