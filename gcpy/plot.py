@@ -798,7 +798,7 @@ def compare_single_level(
     # Define function to create a single page figure to be called
     # in a parallel loop
     # =================================================================
-    def createfig(ivar, temp_dir):
+    def createfig(ivar, temp_dir=''):
 
         # Suppress harmless run-time warnings (mostly about underflow)
         warnings.filterwarnings('ignore', category=RuntimeWarning)
@@ -1877,7 +1877,7 @@ def compare_zonal_mean(
     # Define function to create a single page figure to be called
     # in a parallel loop
     # ==================================================================
-    def createfig(ivar, temp_dir):
+    def createfig(ivar, temp_dir=''):
 
         # Suppress harmless run-time warnings (mostly about underflow)
         warnings.filterwarnings('ignore', category=RuntimeWarning)
