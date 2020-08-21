@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added cross-dateline regional plotting capability for both lat/lon and cubed-sphere plots.
 - Added function to get lev dimension index that matches a requested pressure value.
 - Added basic up-to-date map plotting examples.
+- Added pip and tabulate dependencies in gcpy environment yaml file
+- Added RRTMG netcdf diagnostics names for converting from bpch to nc
+- Added unit string conversion for RRTMG binary diagnostics to compare easily with netcdf
 
 ### Changed
 - Temporary PDFs are now generated in the system's temp directory rather than within the working directory.
@@ -18,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ### Fixed
 - Fixed single panel zonal mean plotting for GCHP.
 - Fixed existing non-deleted examples code.
+- Fixed imports for out-of-scope variables
 
 ### Removed
 - Removed several code examples that were out-of-date.
