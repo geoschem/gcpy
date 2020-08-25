@@ -58,6 +58,23 @@ def create_track_func(args):
     ds2.to_netcdf(args.o, encoding=encoding, format='NETCDF4_CLASSIC')
 
 
+def unravel_func(args):
+    track = xr.open_dataset(args.track)
+    track_mi = pd.MultiIndex.from_arrays([track.nf, track.Ydim, track.Xdim])
+    track = track.drop(['nf', 'Ydim', 'Xdim', 'latitude', 'longitude'])
+
+    ds = xr.open_dataset(args.i)
+
+    ds = ds.reindex({'time': track.time}, method='nearest')
+    ds = xr.merge([ds, track], compat='no_conflicts')
+
+    ds = ds.assign_coords({'time': track_mi})
+    ds = ds.unstack('time')
+    ds = ds.sortby(['nf', 'Ydim', 'Xdim'])
+
+    ds.to_netcdf(args.o)
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Utility for 1D diagnostics')
@@ -95,11 +112,32 @@ if __name__ == '__main__':
                               required=True,
                               help='output filename')
 
+
+    unravel = subparsers.add_parser('unravel', help='Unravel 1D diagnostic file')
+    unravel.add_argument('--track',
+                         metavar='F',
+                         type=str,
+                         required=True,
+                         help='track file')
+    unravel.add_argument('-i',
+                         metavar='F',
+                         type=str,
+                         required=True,
+                         help='input file (1D diagnostic file)')
+    unravel.add_argument('-o',
+                         metavar='F',
+                         type=str,
+                         required=True,
+                         help='output filename')
+
+
     args = parser.parse_args()
     if args.command is None:
         parser.print_help()
     elif args.command == 'create_track':
         create_track_func(args)
+    elif args.command == 'unravel':
+        unravel_func(args)
 
 
 
