@@ -61,8 +61,7 @@ def reformat_dims(ds, format, towards_common):
         return ds_in
 
     def ravel_checkpoint_lat(ds_out):
-        assert ds_in.dims['X'] == ds_in.dims['Y']
-        cs_res = ds_in.dims['X']
+        cs_res = ds_out.dims['lon']
         ds_out = ds_out.stack(lat=['lat_level_0', 'lat_level_1'])
         ds_out = ds_out.assign_coords({
             'lat': np.linspace(1, 6*cs_res, 6*cs_res)
