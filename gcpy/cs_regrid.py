@@ -188,7 +188,12 @@ if __name__ == '__main__':
         # For each output face, sum regridded input faces
         oface_datasets = []
         for oface in range(6):
-            oface_regridded = [regridder(ds_in.isel(F=iface).drop('F'), keep_attrs=True) for iface, regridder in regridders[oface].items()]
+            oface_regridded = []
+            for iface, regridder in regridders[oface].items():
+                ds_iface = ds_in.isel(F=iface)
+                if 'F' in ds_iface.dims:
+                    ds_iface = ds_iface.drop('F')
+                oface_regridded.append(regridder(ds_iface, keep_attrs=True))
             oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces')
             oface_datasets.append(oface_regridded)
         ds_out = xr.concat(oface_datasets, dim='F')
