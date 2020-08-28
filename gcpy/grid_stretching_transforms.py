@@ -60,34 +60,3 @@ def scs_transform(x, y, s, tx, ty):
     x = x * 180 / np.pi
     y = y * 180 / np.pi
     return x, y
-
-
-def rotate_pt(x, y, k, theta):
-    v = spherical_to_cartesian(x * np.pi/180, y * np.pi/180)
-    v = rotate_vectors(*v, np.array([0, 1, 0]), np.pi/4)
-    c = cartesian_to_spherical(*v)
-    c = np.array([*c]).transpose()
-    c *= 180/np.pi
-    return c
-
-if __name__ == '__main__':
-    # print(rotate_vectors(10, 20, 30, np.array([2, 5, 1]), 1.5))
-    # print(cartesian_to_spherical(0.5, 0.3, 0.2))
-    # print(spherical_to_cartesian(0.5404195, 0.20135792))
-    # print(schmidt_transform(0.5404195, 0.20135792, 2))
-    # print(scs_transform(-145.00000000000003, -35.26438968275464, 1, -100, 30))
-    v = rotate_pt(45, 0, [0, 1, 0], np.pi/4)
-    #
-    # v = rotate_vectors(0.9396926207859084, 0.3420201433256687, 0, np.array([0, 1, 0]), np.pi/4)
-    # c = cartesian_to_spherical(*v)
-    # c = np.array([*c]).transpose()
-    # c *= 180/np.pi
-    #
-    # theta = np.pi/4
-    # ry = np.array([
-    #     [np.cos(theta), 0, np.sin(theta)],
-    #     [0, 1, 0],
-    #     [-np.sin(theta), 0, np.cos(theta)]
-    # ])
-
-    print(v)
