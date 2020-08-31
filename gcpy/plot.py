@@ -200,7 +200,7 @@ def sixplot(
         plot_val = get_nan_mask(plot_val)
         norm = normalize_colors(vmin, vmax, is_difference=True, log_color_scale=True,ratio_log=ratio_log)
     #Create plot
-    plot = gcplot(plot_val, ax, plot_type, grid, gridtype, title, comap,
+    plot = single_panel(plot_val, ax, plot_type, grid, gridtype, title, comap,
                   norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
                   add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
                   xtick_positions=xtick_positions, xticklabels=xticklabels)
@@ -2354,7 +2354,7 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, rat
         else:
             return mcolors.Normalize(vmin=vmin, vmax=vmax)
 
-def gcplot(plot_vals,
+def single_panel(plot_vals,
            ax=None,
            plot_type="single_level",
            grid={},
