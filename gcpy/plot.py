@@ -35,7 +35,7 @@ rgb_WhGrYlRd = np.genfromtxt(current_dir+'/colormaps/WhGrYlRd.txt',
 WhGrYlRd = mcolors.ListedColormap(rgb_WhGrYlRd/255.0)
 
 
-def sixplot(
+def six_plot(
     subplot,
     all_zero,
     all_nan,
@@ -1210,7 +1210,7 @@ def compare_single_level(
 
         # Plot
         for i in range(6):
-            sixplot(
+            six_plot(
                 subplots[i],
                 all_zeros[i],
                 all_nans[i],
@@ -2192,7 +2192,7 @@ def compare_zonal_mean(
         ratio_logs = [False, False, False, False, True, True]
         # Plot
         for i in range(6):
-            sixplot(
+            six_plot(
                 subplots[i],
                 all_zeros[i],
                 all_nans[i],
