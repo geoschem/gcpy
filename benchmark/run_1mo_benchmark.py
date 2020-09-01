@@ -98,9 +98,6 @@ results_dir = "Results"
 # Path to regridding weights
 weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
-# Path to species_databse.yml
-spcdb_dir   = join(maindir, gcc_dev_version)
-
 # =====================================================================
 # Specify if this is a gcpy test validation run
 # =====================================================================
@@ -157,6 +154,12 @@ gchp_vs_gcc_refrst  = join(maindir, gcc_dev_dir )
 gchp_vs_gcc_devrst  = join(maindir, gchp_dev_dir)
 gchp_vs_gchp_refrst = join(maindir, gchp_ref_dir)
 gchp_vs_gchp_devrst = join(maindir, gchp_dev_dir)
+
+
+# =====================================================================
+# Path to species_databse.yml
+# =====================================================================
+spcdb_dir   = join(maindir, gcc_dev_dir)
 
 # =====================================================================
 # Benchmark output directories
