@@ -6,3 +6,7 @@ pytest
 scipy
 xarray
 xbpch
+pypdf2
+joblib
+tabulate
+netcdf4
