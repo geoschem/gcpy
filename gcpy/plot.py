@@ -798,8 +798,8 @@ def compare_single_level(
     # Define function to create a single page figure to be called
     # in a parallel loop
     # =================================================================
-    def createfig(ivar, temp_dir=''):
-
+    def createfig(ivar, temp_dir):
+        
         # Suppress harmless run-time warnings (mostly about underflow)
         warnings.filterwarnings('ignore', category=RuntimeWarning)
         warnings.filterwarnings('ignore', category=UserWarning)
@@ -1239,14 +1239,14 @@ def compare_single_level(
         # Add this page of 6-panel plots to a PDF file
         # ==============================================================
         if savepdf:
-
             folders = pdfname.split('/')
+            pdfname_temp = folders[-1] + "BENCHMARKFIGCREATION.pdf" + str(ivar)
             full_path = ''
             for folder in folders[:-1]:
                 full_path = os.path.join(temp_dir, full_path, folder)
                 if not os.path.isdir(full_path):
                     os.mkdir(full_path)
-            pdf = PdfPages(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar)))
+            pdf = PdfPages(os.path.join(full_path, pdfname_temp))
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
@@ -1294,7 +1294,10 @@ def compare_single_level(
             pdf = PdfPages(pdfname)
             pdf.close()
             for i in range(n_var):
-                merge.append(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
+                temp_pdfname=pdfname
+                if pdfname[0] == '/':
+                    temp_pdfname=temp_pdfname[1:]
+                merge.append(os.path.join(str(temp_dir), temp_pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
             merge.write(pdfname)
             merge.close()
             warnings.showwarning = warning_format
@@ -2227,17 +2230,16 @@ def compare_zonal_mean(
         # ==============================================================
         if savepdf:
             folders = pdfname.split('/')
+            pdfname_temp = folders[-1] + "BENCHMARKFIGCREATION.pdf" + str(ivar)
             full_path = ''
             for folder in folders[:-1]:
                 full_path = os.path.join(temp_dir, full_path, folder)
                 if not os.path.isdir(full_path):
                     os.mkdir(full_path)
-
-            pdf = PdfPages(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(ivar)))
+            pdf = PdfPages(os.path.join(full_path, pdfname_temp))
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
-
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(1 - max(fracdiff)) > 0.1
@@ -2283,7 +2285,10 @@ def compare_zonal_mean(
             pdf = PdfPages(pdfname)
             pdf.close()
             for i in range(n_var):
-                merge.append(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
+                temp_pdfname=pdfname
+                if pdfname[0] == '/':
+                    temp_pdfname=temp_pdfname[1:]
+                merge.append(os.path.join(str(temp_dir), temp_pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
             merge.write(pdfname)
             merge.close()
             warnings.showwarning = warning_format
