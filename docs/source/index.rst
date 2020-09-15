@@ -1,16 +1,20 @@
-.. GCPy documentation master file, created by
-   sphinx-quickstart on Tue Sep 15 11:27:20 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
 
 Welcome to GCPy's documentation!
 ================================
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: User documentation:
+
+   sample_page1
+   sample_page2
 
 
+.. toctree::
+   :maxdepth: 1
+   :caption: For developers:
+
+   editing_these_docs
 
 Indices and tables
 ==================
