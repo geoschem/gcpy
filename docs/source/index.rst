@@ -15,10 +15,3 @@ Welcome to GCPy's documentation!
    :caption: For developers:
 
    editing_these_docs
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
