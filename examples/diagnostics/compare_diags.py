@@ -6,17 +6,17 @@ without having to open a Jupyter notebook.
 """
 
 # Imports
+import os
+from os.path import join
+import warnings
+import numpy as np
+import xarray as xr
 import gcpy.benchmark as bmk
 import gcpy.constants as gcon
 import gcpy.util as util
-import os
-from os.path import join
-import numpy as np
-import xarray as xr
-import warnings
 
 # Tell matplotlib not to look for an X-window
-os.environ["QT_QPA_PLATFORM"]="offscreen"
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -27,7 +27,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 ########################################################################
 
 # Main data directory
-maindir  = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon/"
+maindir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon/"
 refstr = "GCC_ref"
 devstr = "GCC_dev"
 
@@ -38,11 +38,11 @@ weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GC
 plotsdir = join(".", "Plots")
 
 # Ref version
-refdir  = join(maindir, refstr, "OutputDir")
+refdir = join(maindir, refstr, "OutputDir")
 reffile = join(refdir, "GEOSChem.SpeciesConc.20160701_0000z.nc4")
 
 # Dev version
-devdir  = join(maindir, devstr, "OutputDir")
+devdir = join(maindir, devstr, "OutputDir")
 devfile = join(devdir, "GEOSChem.SpeciesConc.20160701_0000z.nc4")
 
 # PDF names
@@ -55,8 +55,8 @@ pdfname_zonal = join(plotsdir, "zonal_mean_level_comparison.pdf")
 
 # Plot options
 create_single_level_plot = True
-create_zonal_mean_plot   = True
-print_totals_and_diffs   = True
+create_zonal_mean_plot = True
+print_totals_and_diffs = True
 
 # Specify the level that you wish to plot (starting from 0)
 # NOTE: For single level plots only
@@ -107,8 +107,6 @@ def compare_data(refdata, devdata):
     # Generate the single level comparison plot
     # ==================================================================
     if create_single_level_plot:
-
-        # Create the plot
         bmk.compare_single_level(
             refdata,
             refstr,
@@ -125,16 +123,16 @@ def compare_data(refdata, devdata):
     # Generate the zonal mean comparison plot
     # ==================================================================
     if create_zonal_mean_plot:
-       bmk.compare_zonal_mean(
-           refdata,
-           refstr,
-           devdata,
-           devstr,
-           varlist=varlist_zonal,
-           pdfname=pdfname_zonal,
-           weightsdir=weightsdir,
-           verbose=verbose
-       )
+        bmk.compare_zonal_mean(
+            refdata,
+            refstr,
+            devdata,
+            devstr,
+            varlist=varlist_zonal,
+            pdfname=pdfname_zonal,
+            weightsdir=weightsdir,
+            verbose=verbose
+        )
 
     # ==================================================================
     # Print totals for each quantity
@@ -146,8 +144,8 @@ def compare_data(refdata, devdata):
             "Variable".ljust(22),
             refstr.ljust(20),
             devstr.ljust(20),
-            "Dev-Ref")
-        )
+            "Dev-Ref"
+        ))
 
         # Data
         for v in varlist_level:
@@ -158,9 +156,8 @@ def compare_data(refdata, devdata):
                 v.ljust(20),
                 str(refsum).ljust(22),
                 str(devsum).ljust(22),
-                diff)
-            )
-
+                diff
+            ))
 
 def main():
     """
@@ -168,10 +165,11 @@ def main():
     """
 
     # Create directories for plots and weights if they do not exist
-    if not os.path.isdir(plotsdir):
-        os.mkdir(plotsdir)
-    if not os.path.isdir(weightsdir):
-        os.mkdir(weightsdir)
+    if create_single_level_plot or create_zonal_mean_plot:
+        if not os.path.isdir(plotsdir):
+            os.mkdir(plotsdir)
+        if not os.path.isdir(weightsdir):
+            os.mkdir(weightsdir)
 
     # Read the Ref abd Dev data into xarray Dataset objects
     skip_vars = gcon.skip_these_vars
