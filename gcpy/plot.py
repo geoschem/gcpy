@@ -2586,8 +2586,13 @@ def single_panel(plot_vals,
             #assume lat comes first in indexing
             plot_vals = plot_vals[minlat_ind:maxlat_ind+1,minlon_ind:maxlon_ind+1].squeeze()
         # Create a lon/lat plot
-        plot = ax.imshow(
-            plot_vals, extent=extent, transform=proj, cmap=comap, norm=norm
+        plot = ax.pcolormesh(
+            grid["lon_b"],
+            grid["lat_b"],
+            plot_vals,
+            transform=proj,
+            cmap=comap,
+            norm=norm
         )
         ax.coastlines()
         ax.set_xticks(xtick_positions)
