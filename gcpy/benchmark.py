@@ -13,9 +13,10 @@ from cartopy.mpl.geoaxes import GeoAxes  # for assertion
 from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd, compare_single_level, compare_zonal_mean
-from .regrid import make_regridder_C2L, make_regridder_L2L, create_regridders
+from .regrid import make_regridder_C2L, make_regridder_L2L, create_regridders, regrid_comparison_data
 from .grid import GEOS_72L_grid, GEOS_47L_grid, get_grid_extents, call_make_grid, get_vert_grid, \
-    get_vert_grid, get_pressure_indices, pad_pressure_edges, convert_lev_to_pres, get_troposphere_mask
+    get_vert_grid, get_pressure_indices, pad_pressure_edges, convert_lev_to_pres, get_troposphere_mask, \
+    get_input_res
 import gcpy.util as util
 from .units import convert_units
 import gcpy.constants as gcon
@@ -32,7 +33,6 @@ warning_format = warnings.showwarning
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
-
 # YAML files
 aod_spc = "aod_species.yml"
 spc_categories = "benchmark_categories.yml"
@@ -1639,7 +1639,6 @@ def make_benchmark_emis_plots(
             else:
                 pdfname = os.path.join(catdir, "{}_Emissions.pdf".format(
                     filecat))
-            print(pdfname)
             # Create the PDF
             compare_single_level(
                 refds,
@@ -1781,11 +1780,11 @@ def make_benchmark_emis_tables(
     # the refds and devds have variable AREA already (always true) and
     # unit conversions do not require any meteorology.
     if refmet is not None:
-        refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
+        refmetds = xr.open_mfdataset(refmet, drop_variables=gcon.skip_these_vars)
     else:
         refmetds = None
     if devmet is not None:
-        devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
+        devmetds = xr.open_mfdataset(devmet, drop_variables=gcon.skip_these_vars)
     else:
         devmetds = None
 
@@ -2562,7 +2561,9 @@ def make_benchmark_mass_tables(
     overwrite=False,
     verbose=False,
     label="at end of simulation",
-    spcdb_dir=os.path.dirname(__file__)
+    spcdb_dir=os.path.dirname(__file__),
+    ref_met_extra='',
+    dev_met_extra=''
 ):
     """
     Creates a text file containing global mass totals by species and
@@ -2621,6 +2622,15 @@ def make_benchmark_mass_tables(
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
 
+        ref_met_extra : str
+            Path to ref Met file containing area data for use with restart files
+            which do not contain the Area variable.
+            Default value : ''
+
+        dev_met_extra : str
+            Path to dev Met file containing area data for use with restart files
+            which do not contain the Area variable.
+            Default value : ''            
     """
 
     # ==================================================================
@@ -2632,15 +2642,20 @@ def make_benchmark_mass_tables(
         msg = msg.format(dst)
         raise ValueError(msg)
     elif not os.path.isdir(dst):
-        os.makedirs(dst)
+        try:
+            os.makedirs(dst)
+        except FileExistsError:
+            pass
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
     # Read data
-    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
-    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+        refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
+        devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
 
     # ==================================================================
     # Update GCHP restart dataset (if any)
@@ -2659,9 +2674,22 @@ def make_benchmark_mass_tables(
     # ==================================================================
 
     # Find the area variables in Ref and Dev
-    ref_area = util.get_area_from_dataset(refds)
-    dev_area = util.get_area_from_dataset(devds)
-
+    try:
+        ref_area = util.get_area_from_dataset(refds)
+    except ValueError:
+        if ref_met_extra != '':
+            ref_met_extra = xr.open_dataset(ref_met_extra)
+            ref_area = util.get_area_from_dataset(ref_met_extra)
+        else:
+            raise ValueError('Must pass Met data if using a restart file without area')
+    try:
+        dev_area = util.get_area_from_dataset(devds)
+    except ValueError:
+        if dev_met_extra != '':
+            dev_met_extra = xr.open_dataset(dev_met_extra)
+            dev_area = util.get_area_from_dataset(dev_met_extra)
+        else:
+            raise ValueError('Must pass Met data if using a restart file without area')
     # Find required meteorological variables in Ref
     # (or exit with an error if we can't find them)
     metvar_list = ["Met_DELPDRY", "Met_BXHEIGHT", "Met_TropLev"]
@@ -3459,7 +3487,9 @@ def make_benchmark_aerosol_tables(
     path = os.path.join(os.path.dirname(__file__), "aod_species.yml")
     aod = yaml_load_file(open(path))
     aod_list = [v for v in aod.keys() if "Dust" in v or "Hyg" in v]
-
+    #different names for GCHP
+    if is_gchp:
+        aod_list = [v.replace('550nm', 'WL1') for v in aod_list]
     # Descriptive names
     spc2name = {"BCPI": "Black Carbon",
                 "DST1": "Dust",
@@ -3470,7 +3500,7 @@ def make_benchmark_aerosol_tables(
     }
     
     # Read data collections
-    ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list)
+    ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list, compat='override', coords='all')
     ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)
     ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)
 
