@@ -4,6 +4,7 @@ from numpy import asarray
 import scipy.sparse
 from itertools import product
 from .util import get_shape_of_data
+from .grid_stretching_transforms import scs_transform
 
 
 def get_troposphere_mask(ds):
@@ -577,6 +578,31 @@ def make_grid_CS(csres,out_extent=[0,360,-90,90]):
                           'lat_b': csgrid['lat_b'][i], 
                           'lon_b': csgrid['lon_b'][i]}
 
+    return [csgrid, csgrid_list]
+
+def make_grid_SG(csres, stretch_factor, target_lon, target_lat):
+    csgrid = csgrid_GMAO(csres, offset=0)
+    csgrid_list = [None] * 6
+    for i in range(6):
+        lat = csgrid['lat'][i].flatten()
+        lon = csgrid['lon'][i].flatten()
+        lon, lat = scs_transform(lon, lat, stretch_factor, target_lon, target_lat)
+        lat = lat.reshape((csres, csres))
+        lon = lon.reshape((csres, csres))
+        lat_b = csgrid['lat_b'][i].flatten()
+        lon_b = csgrid['lon_b'][i].flatten()
+        lon_b, lat_b = scs_transform(lon_b, lat_b, stretch_factor, target_lon, target_lat)
+        lat_b = lat_b.reshape((csres + 1, csres + 1))
+        lon_b = lon_b.reshape((csres + 1, csres + 1))
+        csgrid_list[i] = {'lat': lat,
+                          'lon': lon,
+                          'lat_b': lat_b,
+                          'lon_b': lon_b}
+    for i in range(6):
+        csgrid['lat'][i] = csgrid_list[i]['lat']
+        csgrid['lon'][i] = csgrid_list[i]['lon']
+        csgrid['lat_b'][i] = csgrid_list[i]['lat_b']
+        csgrid['lon_b'][i] = csgrid_list[i]['lon_b']
     return [csgrid, csgrid_list]
 
 
