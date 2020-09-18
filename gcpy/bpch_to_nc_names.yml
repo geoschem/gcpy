@@ -470,346 +470,346 @@ RADMAP_S_FSWBATA:
 - RadAllSkySWTOA_BASE
 - replace
 RADMAP_S_FSWO3TA:
-- RadAllSkySWTOA_NOO3
+- RadAllSkySWTOA_O3
 - replace
 RADMAP_S_FSWCHTA:
-- RadAllSkySWTOA_NOME
+- RadAllSkySWTOA_ME
 - replace
 RADMAP_S_FSWSUTA:
-- RadAllSkySWTOA_NOSU
+- RadAllSkySWTOA_SU
 - replace
 RADMAP_S_FSWNITA:
-- RadAllSkySWTOA_NONI
+- RadAllSkySWTOA_NI
 - replace
 RADMAP_S_FSWAMTA:
-- RadAllSkySWTOA_NOAM
+- RadAllSkySWTOA_AM
 - replace
 RADMAP_S_FSWBCTA:
-- RadAllSkySWTOA_NOBC
+- RadAllSkySWTOA_BC
 - replace
 RADMAP_S_FSWOATA:
-- RadAllSkySWTOA_NOOA
+- RadAllSkySWTOA_OA
 - replace
 RADMAP_S_FSWSSTA:
-- RadAllSkySWTOA_NOSS
+- RadAllSkySWTOA_SS
 - replace
 RADMAP_S_FSWDUTA:
-- RadAllSkySWTOA_NODU
+- RadAllSkySWTOA_DU
 - replace
 RADMAP_S_FSWPMTA:
-- RadAllSkySWTOA_NOPM
+- RadAllSkySWTOA_PM
 - replace
 RADMAP_S_FSWBASA:
 - RadAllSkySWSurf_BASE
 - replace
 RADMAP_S_FSWO3SA:
-- RadAllSkySWSurf_NOO3
+- RadAllSkySWSurf_O3
 - replace
 RADMAP_S_FSWCHSA:
-- RadAllSkySWSurf_NOME
+- RadAllSkySWSurf_ME
 - replace
 RADMAP_S_FSWSUSA:
-- RadAllSkySWSurf_NOSU
+- RadAllSkySWSurf_SU
 - replace
 RADMAP_S_FSWNISA:
-- RadAllSkySWSurf_NONI
+- RadAllSkySWSurf_NI
 - replace
 RADMAP_S_FSWAMSA:
-- RadAllSkySWSurf_NOAM
+- RadAllSkySWSurf_AM
 - replace
 RADMAP_S_FSWBCSA:
-- RadAllSkySWSurf_NOBC
+- RadAllSkySWSurf_BC
 - replace
 RADMAP_S_FSWOASA:
-- RadAllSkySWSurf_NOOA
+- RadAllSkySWSurf_OA
 - replace
 RADMAP_S_FSWSSSA:
-- RadAllSkySWSurf_NOSS
+- RadAllSkySWSurf_SS
 - replace
 RADMAP_S_FSWDUSA:
-- RadAllSkySWSurf_NODU
+- RadAllSkySWSurf_DU
 - replace
 RADMAP_S_FSWPMSA:
-- RadAllSkySWSurf_NOPM
+- RadAllSkySWSurf_PM
 - replace
 RADMAP_S_FLWBATA:
 - RadAllSkyLWTOA_BASE
 - replace
 RADMAP_S_FLWO3TA:
-- RadAllSkyLWTOA_NOO3
+- RadAllSkyLWTOA_O3
 - replace
 RADMAP_S_FLWCHTA:
-- RadAllSkyLWTOA_NOME
+- RadAllSkyLWTOA_ME
 - replace
 RADMAP_S_FLWSUTA:
-- RadAllSkyLWTOA_NOSU
+- RadAllSkyLWTOA_SU
 - replace
 RADMAP_S_FLWNITA:
-- RadAllSkyLWTOA_NONI
+- RadAllSkyLWTOA_NI
 - replace
 RADMAP_S_FLWAMTA:
-- RadAllSkyLWTOA_NOAM
+- RadAllSkyLWTOA_AM
 - replace
 RADMAP_S_FLWBCTA:
-- RadAllSkyLWTOA_NOBC
+- RadAllSkyLWTOA_BC
 - replace
 RADMAP_S_FLWOATA:
-- RadAllSkyLWTOA_NOOA
+- RadAllSkyLWTOA_OA
 - replace
 RADMAP_S_FLWSSTA:
-- RadAllSkyLWTOA_NOSS
+- RadAllSkyLWTOA_SS
 - replace
 RADMAP_S_FLWDUTA:
-- RadAllSkyLWTOA_NODU
+- RadAllSkyLWTOA_DU
 - replace
 RADMAP_S_FLWPMTA:
-- RadAllSkyLWTOA_NOPM
+- RadAllSkyLWTOA_PM
 - replace
 RADMAP_S_FLWBASA:
 - RadAllSkyLWSurf_BASE
 - replace
 RADMAP_S_FLWO3SA:
-- RadAllSkyLWSurf_NOO3
+- RadAllSkyLWSurf_O3
 - replace
 RADMAP_S_FLWCHSA:
-- RadAllSkyLWSurf_NOME
+- RadAllSkyLWSurf_ME
 - replace
 RADMAP_S_FLWSUSA:
-- RadAllSkyLWSurf_NOSU
+- RadAllSkyLWSurf_SU
 - replace
 RADMAP_S_FLWNISA:
-- RadAllSkyLWSurf_NONI
+- RadAllSkyLWSurf_NI
 - replace
 RADMAP_S_FLWAMSA:
-- RadAllSkyLWSurf_NOAM
+- RadAllSkyLWSurf_AM
 - replace
 RADMAP_S_FLWBCSA:
-- RadAllSkyLWSurf_NOBC
+- RadAllSkyLWSurf_BC
 - replace
 RADMAP_S_FLWOASA:
-- RadAllSkyLWSurf_NOOA
+- RadAllSkyLWSurf_OA
 - replace
 RADMAP_S_FLWSSSA:
-- RadAllSkyLWSurf_NOSS
+- RadAllSkyLWSurf_SS
 - replace
 RADMAP_S_FLWDUSA:
-- RadAllSkyLWSurf_NODU
+- RadAllSkyLWSurf_DU
 - replace
 RADMAP_S_FLWPMSA:
-- RadAllSkyLWSurf_NOPM
+- RadAllSkyLWSurf_PM
 - replace
 RADMAP_S_FSWBATC:
 - RadClrSkySWTOA_BASE
 - replace
 RADMAP_S_FSWO3TC:
-- RadClrSkySWTOA_NOO3
+- RadClrSkySWTOA_O3
 - replace
 RADMAP_S_FSWCHTC:
-- RadClrSkySWTOA_NOME
+- RadClrSkySWTOA_ME
 - replace
 RADMAP_S_FSWSUTC:
-- RadClrSkySWTOA_NOSU
+- RadClrSkySWTOA_SU
 - replace
 RADMAP_S_FSWNITC:
-- RadClrSkySWTOA_NONI
+- RadClrSkySWTOA_NI
 - replace
 RADMAP_S_FSWAMTC:
-- RadClrSkySWTOA_NOAM
+- RadClrSkySWTOA_AM
 - replace
 RADMAP_S_FSWBCTC:
-- RadClrSkySWTOA_NOBC
+- RadClrSkySWTOA_BC
 - replace
 RADMAP_S_FSWOATC:
-- RadClrSkySWTOA_NOOA
+- RadClrSkySWTOA_OA
 - replace
 RADMAP_S_FSWSSTC:
-- RadClrSkySWTOA_NOSS
+- RadClrSkySWTOA_SS
 - replace
 RADMAP_S_FSWDUTC:
-- RadClrSkySWTOA_NODU
+- RadClrSkySWTOA_DU
 - replace
 RADMAP_S_FSWPMTC:
-- RadClrSkySWTOA_NOPM
+- RadClrSkySWTOA_PM
 - replace
 RADMAP_S_FSWBASC:
 - RadClrSkySWSurf_BASE
 - replace
 RADMAP_S_FSWO3SC:
-- RadClrSkySWSurf_NOO3
+- RadClrSkySWSurf_O3
 - replace
 RADMAP_S_FSWCHSC:
-- RadClrSkySWSurf_NOME
+- RadClrSkySWSurf_ME
 - replace
 RADMAP_S_FSWSUSC:
-- RadClrSkySWSurf_NOSU
+- RadClrSkySWSurf_SU
 - replace
 RADMAP_S_FSWNISC:
-- RadClrSkySWSurf_NONI
+- RadClrSkySWSurf_NI
 - replace
 RADMAP_S_FSWAMSC:
-- RadClrSkySWSurf_NOAM
+- RadClrSkySWSurf_AM
 - replace
 RADMAP_S_FSWBCSC:
-- RadClrSkySWSurf_NOBC
+- RadClrSkySWSurf_BC
 - replace
 RADMAP_S_FSWOASC:
-- RadClrSkySWSurf_NOOA
+- RadClrSkySWSurf_OA
 - replace
 RADMAP_S_FSWSSSC:
-- RadClrSkySWSurf_NOSS
+- RadClrSkySWSurf_SS
 - replace
 RADMAP_S_FSWDUSC:
-- RadClrSkySWSurf_NODU
+- RadClrSkySWSurf_DU
 - replace
 RADMAP_S_FSWPMSC:
-- RadClrSkySWSurf_NOPM
+- RadClrSkySWSurf_PM
 - replace
 RADMAP_S_FLWBATC:
 - RadClrSkyLWTOA_BASE
 - replace
 RADMAP_S_FLWO3TC:
-- RadClrSkyLWTOA_NOO3
+- RadClrSkyLWTOA_O3
 - replace
 RADMAP_S_FLWCHTC:
-- RadClrSkyLWTOA_NOME
+- RadClrSkyLWTOA_ME
 - replace
 RADMAP_S_FLWSUTC:
-- RadClrSkyLWTOA_NOSU
+- RadClrSkyLWTOA_SU
 - replace
 RADMAP_S_FLWNITC:
-- RadClrSkyLWTOA_NONI
+- RadClrSkyLWTOA_NI
 - replace
 RADMAP_S_FLWAMTC:
-- RadClrSkyLWTOA_NOAM
+- RadClrSkyLWTOA_AM
 - replace
 RADMAP_S_FLWBCTC:
-- RadClrSkyLWTOA_NOBC
+- RadClrSkyLWTOA_BC
 - replace
 RADMAP_S_FLWOATC:
-- RadClrSkyLWTOA_NOOA
+- RadClrSkyLWTOA_OA
 - replace
 RADMAP_S_FLWSSTC:
-- RadClrSkyLWTOA_NOSS
+- RadClrSkyLWTOA_SS
 - replace
 RADMAP_S_FLWDUTC:
-- RadClrSkyLWTOA_NODU
+- RadClrSkyLWTOA_DU
 - replace
 RADMAP_S_FLWPMTC:
-- RadClrSkyLWTOA_NOPM
+- RadClrSkyLWTOA_PM
 - replace
 RADMAP_S_FLWBASC:
 - RadClrSkyLWSurf_BASE
 - replace
 RADMAP_S_FLWO3SC:
-- RadClrSkyLWSurf_NOO3
+- RadClrSkyLWSurf_O3
 - replace
 RADMAP_S_FLWCHSC:
-- RadClrSkyLWSurf_NOME
+- RadClrSkyLWSurf_ME
 - replace
 RADMAP_S_FLWSUSC:
-- RadClrSkyLWSurf_NOSU
+- RadClrSkyLWSurf_SU
 - replace
 RADMAP_S_FLWNISC:
-- RadClrSkyLWSurf_NONI
+- RadClrSkyLWSurf_NI
 - replace
 RADMAP_S_FLWAMSC:
-- RadClrSkyLWSurf_NOAM
+- RadClrSkyLWSurf_AM
 - replace
 RADMAP_S_FLWBCSC:
-- RadClrSkyLWSurf_NOBC
+- RadClrSkyLWSurf_BC
 - replace
 RADMAP_S_FLWOASC:
-- RadClrSkyLWSurf_NOOA
+- RadClrSkyLWSurf_OA
 - replace
 RADMAP_S_FLWSSSC:
-- RadClrSkyLWSurf_NOSS
+- RadClrSkyLWSurf_SS
 - replace
 RADMAP_S_FLWDUSC:
-- RadClrSkyLWSurf_NODU
+- RadClrSkyLWSurf_DU
 - replace
 RADMAP_S_FLWPMSC:
-- RadClrSkyLWSurf_NOPM
+- RadClrSkyLWSurf_PM
 - replace
 RADMAP_S_AODSU550:
-- RadAOD550nm_NOSU
+- RadAOD550nm_SU
 - replace
 RADMAP_S_AODNI550:
-- RadAOD550nm_NONI
+- RadAOD550nm_NI
 - replace
 RADMAP_S_AODAM550:
-- RadAOD550nm_NOAM
+- RadAOD550nm_AM
 - replace
 RADMAP_S_AODBC550:
-- RadAOD550nm_NOBC
+- RadAOD550nm_BC
 - replace
 RADMAP_S_AODOA550:
-- RadAOD550nm_NOOA
+- RadAOD550nm_OA
 - replace
 RADMAP_S_AODSS550:
-- RadAOD550nm_NOSS
+- RadAOD550nm_SS
 - replace
 RADMAP_S_AODDU550:
-- RadAOD550nm_NODU
+- RadAOD550nm_DU
 - replace
 RADMAP_S_AODPM550:
-- RadAOD550nm_NOPM
+- RadAOD550nm_PM
 - replace
 RADMAP_S_AODST550:
-- RadAOD550nm_NOST
+- RadAOD550nm_ST
 - replace
 RADMAP_S_SSASU550:
-- RadSSA550nm_NOSU
+- RadSSA550nm_SU
 - replace
 RADMAP_S_SSANI550:
-- RadSSA550nm_NONI
+- RadSSA550nm_NI
 - replace
 RADMAP_S_SSAAM550:
-- RadSSA550nm_NOAM
+- RadSSA550nm_AM
 - replace
 RADMAP_S_SSABC550:
-- RadSSA550nm_NOBC
+- RadSSA550nm_BC
 - replace
 RADMAP_S_SSAOA550:
-- RadSSA550nm_NOOA
+- RadSSA550nm_OA
 - replace
 RADMAP_S_SSASS550:
-- RadSSA550nm_NOSS
+- RadSSA550nm_SS
 - replace
 RADMAP_S_SSADU550:
-- RadSSA550nm_NODU
+- RadSSA550nm_DU
 - replace
 RADMAP_S_SSAPM550:
-- RadSSA550nm_NOPM
+- RadSSA550nm_PM
 - replace
 RADMAP_S_SSAST550:
-- RadSSA550nm_NOST
+- RadSSA550nm_ST
 - replace
 RADMAP_S_ASMSU550:
-- RadAsym550nm_NOSU
+- RadAsym550nm_SU
 - replace
 RADMAP_S_ASMNI550:
-- RadAsym550nm_NONI
+- RadAsym550nm_NI
 - replace
 RADMAP_S_ASMAM550:
-- RadAsym550nm_NOAM
+- RadAsym550nm_AM
 - replace
 RADMAP_S_ASMBC550:
-- RadAsym550nm_NOBC
+- RadAsym550nm_BC
 - replace
 RADMAP_S_ASMOA550:
-- RadAsym550nm_NOOA
+- RadAsym550nm_OA
 - replace
 RADMAP_S_ASMSS550:
-- RadAsym550nm_NOSS
+- RadAsym550nm_SS
 - replace
 RADMAP_S_ASMDU550:
-- RadAsym550nm_NODU
+- RadAsym550nm_DU
 - replace
 RADMAP_S_ASMPM550:
-- RadAsym550nm_NOPM
+- RadAsym550nm_PM
 - replace
 RADMAP_S_ASMST550:
-- RadAsym550nm_NOST
+- RadAsym550nm_ST
 - replace
 RN_DECAY_:
 - RadDecay
