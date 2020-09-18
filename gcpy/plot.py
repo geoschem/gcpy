@@ -1241,9 +1241,9 @@ def compare_single_level(
         if savepdf:
             folders = pdfname.split('/')
             pdfname_temp = folders[-1] + "BENCHMARKFIGCREATION.pdf" + str(ivar)
-            full_path = ''
+            full_path = temp_dir
             for folder in folders[:-1]:
-                full_path = os.path.join(temp_dir, full_path, folder)
+                full_path = os.path.join(full_path, folder)
                 if not os.path.isdir(full_path):
                     os.mkdir(full_path)
             pdf = PdfPages(os.path.join(full_path, pdfname_temp))
@@ -2231,9 +2231,9 @@ def compare_zonal_mean(
         if savepdf:
             folders = pdfname.split('/')
             pdfname_temp = folders[-1] + "BENCHMARKFIGCREATION.pdf" + str(ivar)
-            full_path = ''
+            full_path = temp_dir
             for folder in folders[:-1]:
-                full_path = os.path.join(temp_dir, full_path, folder)
+                full_path = os.path.join(full_path, folder)
                 if not os.path.isdir(full_path):
                     os.mkdir(full_path)
             pdf = PdfPages(os.path.join(full_path, pdfname_temp))
