@@ -137,7 +137,7 @@ def get_input_res(data):
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return data.dims["Xdim"], "cs"
 
-def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent=[-180,180,-90,90],
+def call_make_grid(res, gridtype, in_extent=[-180,180,-90,90],
                    out_extent=[-180,180,-90,90]):
     """
     Create a mask with NaN values removed from an input array
@@ -154,9 +154,6 @@ def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent=[-180,180,-9
         zonal_mean : boolean
             Set to True if the output grid is for a zonal mean plot
 
-        comparison : boolean
-            Set to True if the output grid is a comparison grid
-
         in_extent : list (minlon, maxlon, minlat, maxlat)
             Describes minimum and maximum latitude and longitude of input data
 
@@ -170,10 +167,11 @@ def call_make_grid(res, gridtype, zonal_mean, comparison, in_extent=[-180,180,-9
     """
 
     # call appropriate make_grid function and return new grid
-    if gridtype == "ll" or (zonal_mean and comparison):
+    if gridtype == "ll":
         return [make_grid_LL(res, in_extent, out_extent), None]
     else:
         return make_grid_CS(res)
+
 def get_grid_extents(data, edges=True):
     """
     Get min and max lat and lon from an input GEOS-Chem xarray dataset or grid dict
