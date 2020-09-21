@@ -710,7 +710,7 @@ def compare_single_level(
     frac_ds_ref_cmps = [None] * n_var
     frac_ds_dev_cmps = [None] * n_var
 
-    global_cmp_grid = call_make_grid(cmpres, cmpgridtype, False, True)[0]
+    global_cmp_grid = call_make_grid(cmpres, cmpgridtype)[0]
     cmpminlon_ind = np.where(global_cmp_grid["lon"] >= cmpminlon)[0][0]
     cmpmaxlon_ind = np.where(global_cmp_grid["lon"] <= cmpmaxlon)[0][-1]
     cmpminlat_ind = np.where(global_cmp_grid["lat"] >= cmpminlat)[0][0]
@@ -743,6 +743,7 @@ def compare_single_level(
             refregridder_list,
             global_cmp_grid,
             refgridtype,
+            cmpgridtype,
             cmpminlat_ind,
             cmpmaxlat_ind,
             cmpminlon_ind,
@@ -758,6 +759,7 @@ def compare_single_level(
             devregridder_list,
             global_cmp_grid,
             devgridtype,
+            cmpgridtype,
             cmpminlat_ind,
             cmpmaxlat_ind,
             cmpminlon_ind,
@@ -774,6 +776,7 @@ def compare_single_level(
                 refregridder_list,
                 global_cmp_grid,
                 refgridtype,
+                cmpgridtype,
                 cmpminlat_ind,
                 cmpmaxlat_ind,
                 cmpminlon_ind, 
@@ -787,6 +790,7 @@ def compare_single_level(
                 devregridder_list,
                 global_cmp_grid,
                 devgridtype,
+                cmpgridtype,
                 cmpminlat_ind,
                 cmpmaxlat_ind,
                 cmpminlon_ind,
@@ -798,7 +802,7 @@ def compare_single_level(
     # Define function to create a single page figure to be called
     # in a parallel loop
     # =================================================================
-    def createfig(ivar, temp_dir):
+    def createfig(ivar, temp_dir=''):
         
         # Suppress harmless run-time warnings (mostly about underflow)
         warnings.filterwarnings('ignore', category=RuntimeWarning)
@@ -1836,6 +1840,7 @@ def compare_zonal_mean(
             refregridder_list,
             cmpgrid,
             refgridtype,
+            cmpgridtype,
             nlev=ref_nlev
         )
         if diff_of_diffs:
@@ -1846,6 +1851,7 @@ def compare_zonal_mean(
                 refregridder,
                 refregridder_list,
                 cmpgrid,
+                cmpgridtype,
                 refgridtype,
                 nlev=ref_nlev
             )
@@ -1858,6 +1864,7 @@ def compare_zonal_mean(
             devregridder_list,
             cmpgrid,
             devgridtype,
+            cmpgridtype,
             nlev=dev_nlev
         )
         if diff_of_diffs:
@@ -1869,6 +1876,7 @@ def compare_zonal_mean(
                 devregridder_list,
                 cmpgrid,
                 devgridtype,
+                cmpgridtype,
                 nlev=dev_nlev
             )
 
@@ -2483,7 +2491,7 @@ def single_panel(plot_vals,
         res, gridtype = get_input_res(plot_vals)
 
         if plot_type == 'single_level':
-            [grid, _] = call_make_grid(res, gridtype, False, False)
+            [grid, _] = call_make_grid(res, gridtype)
 
         else: #zonal mean
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
@@ -2529,6 +2537,7 @@ def single_panel(plot_vals,
                     regridder_list,
                     grid,
                     input_gridtype,
+                    new_gridtype,
                     nlev=nlev
                 )
             #calculate zonal means

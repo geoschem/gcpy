@@ -1,5 +1,4 @@
 import argparse
-import hashlib
 import os.path
 
 import numpy as np
@@ -14,38 +13,7 @@ except ImportError as e:
 import pandas as pd
 
 from gcpy.grid import make_grid_SG
-
-
-def sg_hash(cs_res, stretch_factor: float, target_lat: float, target_lon: float):
-    return hashlib.sha1('cs={cs_res},sf={stretch_factor:.5f},tx={target_lon:.5f},ty={target_lat:.5f}'.format(
-        stretch_factor=stretch_factor,
-        target_lat=target_lat,
-        target_lon=target_lon,
-        cs_res=cs_res
-    ).encode()).hexdigest()[:7]
-
-
-def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlat_in=-90, tlon_in=170, sf_out=1, tlat_out=-90, tlon_out=170, weightsdir='.'):
-    igrid, igrid_list = make_grid_SG(csres_in, stretch_factor=sf_in, target_lat=tlat_in, target_lon=tlon_in)
-    ogrid, ogrid_list = make_grid_SG(csres_out, stretch_factor=sf_out, target_lat=tlat_out, target_lon=tlon_out)
-    regridder_list = []
-    for o_face in range(6):
-        regridder_list.append({})
-        for i_face in range(6):
-            weights_fname = f'conservative_sg{sg_hash(csres_in, sf_in, tlat_in, tlon_in)}_F{i_face}_sg{sg_hash(csres_out, sf_out, tlat_out, tlon_out)}_F{o_face}.nc'
-            weights_file = os.path.join(weightsdir, weights_fname)
-            reuse_weights = os.path.exists(weights_file)
-            try:
-                regridder = xe.Regridder(igrid_list[i_face],
-                                         ogrid_list[o_face],
-                                         method='conservative',
-                                         filename=weights_file,
-                                         reuse_weights=reuse_weights)
-                regridder_list[-1][i_face] = regridder
-            except ValueError:
-                print(f"iface {i_face} doesn't intersect oface {o_face}")
-    return regridder_list
-
+from gcpy.regrid import make_regridder_S2S, sg_hash
 
 def reformat_dims(ds, format, towards_common):
 
