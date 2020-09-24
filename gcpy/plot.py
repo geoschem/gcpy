@@ -387,7 +387,7 @@ def compare_single_level(
             Default value: Path of GCPy code repository
     """
     warnings.showwarning = warning_format
-
+    print(refmet)
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
@@ -649,11 +649,11 @@ def compare_single_level(
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
-        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
-        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
-        if diff_of_diffs:
-            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
-            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
+        #ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
+        #ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
+        #if diff_of_diffs:
+        #    frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
+        #    frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
 
     # ==================================================================
     # Get the area variables if normalize_by_area=True. They can be
@@ -796,8 +796,17 @@ def compare_single_level(
                 cmpminlon_ind,
                 cmpmaxlon_ind
             )
-
-
+    for i in range(n_var):
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
+        ds_ref_cmps[i] = reshape_MAPL_CS(ds_ref_cmps[i])
+        ds_dev_cmps[i] = reshape_MAPL_CS(ds_dev_cmps[i])
+        if diff_of_diffs:
+            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
+            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
+            frac_ds_refs_cmps[i] = reshape_MAPL_CS(frac_ds_refs_cmps[i])
+            frac_ds_devs_cmps[i] = reshape_MAPL_CS(frac_ds_devs_cmps[i])
+    
     # =================================================================
     # Define function to create a single page figure to be called
     # in a parallel loop
@@ -1712,12 +1721,13 @@ def compare_zonal_mean(
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
+        
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
         if diff_of_diffs:
             frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
             frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])        
-
+        
         # Flip in the vertical if applicable
         if flip_ref:
             ds_refs[i].data = ds_refs[i].data[::-1, :, :]
@@ -2603,6 +2613,14 @@ def single_panel(plot_vals,
             cmap=comap,
             norm=norm
         )
+        '''plot = ax.imshow(
+            plot_vals,
+            extent=extent,
+            transform=proj,
+            cmap=comap,
+            norm=norm
+        )'''
+
         ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)

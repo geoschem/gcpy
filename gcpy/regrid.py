@@ -5,6 +5,8 @@ import xesmf as xe
 from .grid import make_grid_LL, make_grid_CS, make_grid_SG, get_input_res, call_make_grid, get_grid_extents
 import hashlib
 import numpy as np
+import xarray as xr
+import pandas as pd
 
 def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False,
                         in_extent=[-180,180,-90,90], out_extent=[-180,180,-90,90]):
@@ -19,7 +21,10 @@ def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False
         out_extent_str = str(out_extent).replace('[', '').replace(']','').replace(', ', 'x')
         weightsfile = os.path.join(weightsdir,'conservative_{}_{}_{}_{}.nc'.format(llres_in, llres_out, 
                                                                                    in_extent_str, out_extent_str))
-    regridder = xe.Regridder(llgrid_in, llgrid_out, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
+    try:
+        regridder = xe.Regridder(llgrid_in, llgrid_out, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
+    except:
+        regridder = xe.Regridder(llgrid_in, llgrid_out, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
     return regridder
 
 def make_regridder_C2L( csres_in, llres_out, weightsdir='.', reuse_weights=True ):
@@ -28,11 +33,15 @@ def make_regridder_C2L( csres_in, llres_out, weightsdir='.', reuse_weights=True 
     regridder_list = []
     for i in range(6):
         weightsfile = os.path.join(weightsdir, 'conservative_c{}_{}_{}.nc'.format(str(csres_in), llres_out, str(i)))
-        regridder = xe.Regridder(csgrid_list[i], llgrid, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
+        try:
+            regridder = xe.Regridder(csgrid_list[i], llgrid, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
+        except:
+            regridder = xe.Regridder(csgrid_list[i], llgrid, method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
         regridder_list.append(regridder)
     return regridder_list
 
-def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlat_in=-90, tlon_in=170, sf_out=1, tlat_out=-90, tlon_out=170, weightsdir='.'):
+def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlat_in=-90, tlon_in=170, 
+                       sf_out=1, tlat_out=-90, tlon_out=170, weightsdir='.', verbose=True):
     igrid, igrid_list = make_grid_SG(csres_in, stretch_factor=sf_in, target_lat=tlat_in, target_lon=tlon_in)
     ogrid, ogrid_list = make_grid_SG(csres_out, stretch_factor=sf_out, target_lat=tlat_out, target_lon=tlon_out)
     regridder_list = []
@@ -50,7 +59,9 @@ def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlat_in=-90, tlon_in=170, s
                                          reuse_weights=reuse_weights)
                 regridder_list[-1][i_face] = regridder
             except ValueError:
-                print(f"iface {i_face} doesn't intersect oface {o_face}")
+                if verbose:
+                    print(f"iface {i_face} doesn't intersect oface {o_face}")
+            
     return regridder_list
 
 def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=None, zm=False):
@@ -86,9 +97,13 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
             cmpres = min([refres, devres])
             cmpgridtype = refgridtype
         elif refgridtype == "cs" and devgridtype == "cs":
-            print(refres, devres)
-            cmpres = min([refres, devres])
-            cmpgridtype="cs"
+            if zm:
+                print("Warning: zonal mean comparison must be lat-lon. Defaulting to 1x1.25")
+                cmpres='1x1.25'
+                cmpgridtype = "ll"
+            else:
+                cmpres = max([refres, devres])
+                cmpgridtype="cs"
         elif refgridtype == "ll" and float(refres.split('x')[0])<1 and float(refres.split('x')[1])<1.25:
             cmpres = refres
             cmpgridtype = "ll"
@@ -143,7 +158,7 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
             )
         else:
             if cmpgridtype == "cs":
-                refregridder_list = make_regridder_S2S(refres, cmpres, weightsdir=weightsdir)
+                refregridder_list = make_regridder_S2S(refres, cmpres, weightsdir=weightsdir, verbose=False)
             else:
                 refregridder_list = make_regridder_C2L(
                     refres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights
@@ -156,7 +171,7 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
             )
         else:
             if cmpgridtype == "cs":
-                devregridder_list = make_regridder_S2S(devres, cmpres, weightsdir=weightsdir)
+                devregridder_list = make_regridder_S2S(devres, cmpres, weightsdir=weightsdir, verbose=False)
             else:
                 devregridder_list = make_regridder_C2L(
                     devres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights
@@ -282,23 +297,131 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
             else:
                 return new_data
         elif cmpgridtype == "cs":
-            # For each output face, sum regridded input faces
+
+            # Reformat dimensions to T, Z, F, Y, X
+            if 'Xdim' in data.dims:
+                data_format='diagnostic'
+            else:
+                data_format='checkpoint'
+            new_data = reformat_dims(data, format=data_format, towards_common=True)
+            # Drop variables that don't look like fields
+            #non_fields = [v for v in new_data.variables.keys() if len(set(new_data[v].dims) - {'T', 'Z', 'F', 'Y', 'X'})>0]
+            #new_data = new_data.drop(non_fields)
+            # Transpose to T, Z, F, Y, X
+            if len(new_data.dims) == 5:
+                new_data = new_data.transpose('T', 'Z', 'F', 'Y', 'X')
+            elif len(new_data.dims) == 4:
+                #no time
+                new_data = new_data.transpose('Z', 'F', 'Y', 'X')
+            elif len(new_data.dims) == 3:
+                #no time or vertical
+                new_data = new_data.transpose('F', 'Y', 'X')
+            # For each output face, sum regridded input faces            
             oface_datasets = []
             for oface in range(6):
                 oface_regridded = []
                 for iface, regridder in regridder_list[oface].items():
-                    print(data)
-                    ds_iface = data.isel(nf=iface)
+                    ds_iface = new_data.isel(F=iface)
                     if 'nf' in ds_iface.dims:
-                        ds_iface = ds_iface.drop('nf')
+                        ds_iface = ds_iface.drop('F')
                     oface_regridded.append(regridder(ds_iface, keep_attrs=True))
                 oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces')
                 oface_datasets.append(oface_regridded)
-            return xr.concat(oface_datasets, dim='nf')
+            new_data = xr.concat(oface_datasets, dim='F')
 
+            new_data = new_data.rename({
+                'y': 'Y',
+                'x': 'X',
+            })
+            new_data = new_data.drop(['lat', 'lon'])  # lat, lon are from xESMF which we don't want
+
+            #reformat dimensions to previous format
+            new_data = reformat_dims(new_data, format=data_format, towards_common=False)
+            return new_data
     else:
         return data
 
+
+def reformat_dims(ds, format, towards_common):
+
+    def unravel_checkpoint_lat(ds_in):
+        if type(ds) is xr.Dataset:
+            cs_res = ds_in.dims['lon']
+            assert cs_res == ds_in.dims['lat'] // 6
+        else:
+            cs_res = ds_in['lon'].size
+            assert cs_res == ds_in['lat'].size // 6            
+        mi = pd.MultiIndex.from_product([
+            np.linspace(1, 6, 6),
+            np.linspace(1, cs_res, cs_res)
+        ])
+        ds_in = ds_in.assign_coords({'lat': mi})
+        ds_in = ds_in.unstack('lat')
+        return ds_in
+
+    def ravel_checkpoint_lat(ds_out):
+        if type(ds) is xr.Dataset:
+            cs_res = ds_out.dims['lon']
+        else:
+            cs_res = ds_out['lon'].size
+        ds_out = ds_out.stack(lat=['lat_level_0', 'lat_level_1'])
+        ds_out = ds_out.assign_coords({
+            'lat': np.linspace(1, 6*cs_res, 6*cs_res)
+        })
+        return ds_out
+
+
+    dim_formats = {
+        'checkpoint': {
+            'unravel': [unravel_checkpoint_lat],
+            'ravel': [ravel_checkpoint_lat],
+            'rename': {
+                'lon': 'X',
+                'lat_level_0': 'F',
+                'lat_level_1': 'Y',
+                'time': 'T',
+                'lev': 'Z',
+            },
+            'transpose': ('time', 'lev', 'lat', 'lon')
+        },
+        'diagnostic': {
+            'rename': {
+                'nf': 'F',
+                'lev': 'Z',
+                'Xdim': 'X',
+                'Ydim': 'Y',
+                'time': 'T',
+            },
+            'transpose': ('time', 'lev', 'nf', 'Ydim', 'Xdim')
+        }
+    }
+    if towards_common:
+        # Unravel dimensions
+        for unravel_callback in dim_formats[format].get('unravel', []):
+            ds = unravel_callback(ds)
+
+        # Rename dimensions
+        ds = ds.rename(dim_formats[format].get('rename', {}))
+
+        return ds
+    else:
+        # Reverse rename
+        ds = ds.rename({v: k for k, v in dim_formats[format].get('rename', {}).items()})
+
+        # Ravel dimensions
+        for ravel_callback in dim_formats[format].get('ravel', []):
+            ds = ravel_callback(ds)
+
+        # Transpose            
+        if len(ds.dims)==5:
+            ds = ds.transpose(*dim_formats[format].get('transpose', []))
+        elif len(ds.dims)==4:
+            #single time
+            ds = ds.transpose(*dim_formats[format].get('transpose', [])[1:])
+        elif len(ds.dims)==3:
+            #single level / time
+            ds = ds.transpose(*dim_formats[format].get('transpose', [])[2:])
+        return ds
 
 def sg_hash(cs_res, stretch_factor: float, target_lat: float, target_lon: float):
     return hashlib.sha1('cs={cs_res},sf={stretch_factor:.5f},tx={target_lon:.5f},ty={target_lat:.5f}'.format(
