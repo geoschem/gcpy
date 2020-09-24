@@ -13,75 +13,7 @@ except ImportError as e:
 import pandas as pd
 
 from gcpy.grid import make_grid_SG
-from gcpy.regrid import make_regridder_S2S, sg_hash
-
-def reformat_dims(ds, format, towards_common):
-
-    def unravel_checkpoint_lat(ds_in):
-        cs_res = ds_in.dims['lon']
-        assert cs_res == ds_in.dims['lat'] // 6
-        mi = pd.MultiIndex.from_product([
-            np.linspace(1, 6, 6),
-            np.linspace(1, cs_res, cs_res)
-        ])
-        ds_in = ds_in.assign_coords({'lat': mi})
-        ds_in = ds_in.unstack('lat')
-        return ds_in
-
-    def ravel_checkpoint_lat(ds_out):
-        cs_res = ds_out.dims['lon']
-        ds_out = ds_out.stack(lat=['lat_level_0', 'lat_level_1'])
-        ds_out = ds_out.assign_coords({
-            'lat': np.linspace(1, 6*cs_res, 6*cs_res)
-        })
-        return ds_out
-
-
-    dim_formats = {
-        'checkpoint': {
-            'unravel': [unravel_checkpoint_lat],
-            'ravel': [ravel_checkpoint_lat],
-            'rename': {
-                'lon': 'X',
-                'lat_level_0': 'F',
-                'lat_level_1': 'Y',
-                'time': 'T',
-                'lev': 'Z',
-            },
-            'transpose': ('time', 'lev', 'lat', 'lon')
-        },
-        'diagnostic': {
-            'rename': {
-                'nf': 'F',
-                'lev': 'Z',
-                'Xdim': 'X',
-                'Ydim': 'Y',
-                'time': 'T',
-            },
-            'transpose': ('time', 'lev', 'nf', 'Ydim', 'Xdim')
-        }
-    }
-    if towards_common:
-        # Unravel dimensions
-        for unravel_callback in dim_formats[format].get('unravel', []):
-            ds = unravel_callback(ds)
-
-        # Rename dimensions
-        ds = ds.rename(dim_formats[format].get('rename', {}))
-
-        return ds
-    else:
-        # Reverse rename
-        ds = ds.rename({v: k for k, v in dim_formats[format].get('rename', {}).items()})
-
-        # Ravel dimensions
-        for ravel_callback in dim_formats[format].get('ravel', []):
-            ds = ravel_callback(ds)
-
-        # Transpose
-        ds = ds.transpose(*dim_formats[format].get('transpose', []))
-        return ds
-
+from gcpy.regrid import make_regridder_S2S, sg_hash, reformat_dims
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='General cubed-sphere to cubed-sphere regridder.')
