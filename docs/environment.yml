@@ -36,7 +36,7 @@ dependencies:
         - h5pyd        # HDF5 for Amazon S3
         - h5netcdf     # allow HDF5-backend for xarray
         - graphviz     # visualize dask graph (python package)
-	- joblib=0.15.1# Parallel processing for Python
+        - joblib=0.15.1# Parallel processing for Python
         - pycodestyle  # tool to check style conventions (formerly pep8)
         - xesmf=0.2.0  # Universal regridder
         - PyPDF2=1.26.0# PDF utilities, add bookmarks to PDFs etc.
