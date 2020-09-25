@@ -46,7 +46,8 @@ def create_total_emissions_table(
     devstr,
     species,
     outfilename,
-    interval=[2678400.0],
+    ref_interval=[2678400.0],
+    dev_interval=[2678400.0],
     template="Emis{}_",
     refmetdata=None,
     devmetdata=None,
@@ -89,8 +90,13 @@ def create_total_emissions_table(
 
     Keyword Args (optional):
     ------------------------
-        interval : float
-            The length of the data interval in seconds. By default, interval
+        ref_interval : float
+            The length of the ref data interval in seconds. By default, interval
+            is set to the number of seconds in a 31-day month (86400 * 31),
+            which corresponds to typical benchmark simulation output.
+
+        dev_interval : float
+            The length of the dev data interval in seconds. By default, interval
             is set to the number of seconds in a 31-day month (86400 * 31),
             which corresponds to typical benchmark simulation output.
 
@@ -278,7 +284,7 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval=interval,
+                    interval=ref_interval,
                     area_m2=refarea,
                 )
 
@@ -298,7 +304,7 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval=interval,
+                    interval=dev_interval,
                     area_m2=devarea,
                 )
 
@@ -318,7 +324,7 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval=interval,
+                    interval=ref_interval,
                     area_m2=refarea,
                 )
                 devarray = convert_units(
@@ -326,7 +332,7 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval=interval,
+                    interval=dev_interval,
                     area_m2=devarea,
                 )
 
@@ -1688,7 +1694,8 @@ def make_benchmark_emis_tables(
     refmet=None,
     devmet=None,
     overwrite=False,
-    interval=[2678400.0],
+    ref_interval=[2678400.0],
+    dev_interval=[2678400.0],
     spcdb_dir=os.path.dirname(__file__)
 ):
     """
@@ -1733,8 +1740,13 @@ def make_benchmark_emis_tables(
             destination folder (specified by the dst argument).
             Default value : False
 
-        interval : list of float
-            The length of the data interval in seconds. By default, interval
+        ref_interval : list of float
+            The length of the ref data interval in seconds. By default, interval
+            is set to [2678400.0], which is the number of seconds in July
+            (our 1-month benchmarking month).
+
+        dev_interval : list of float
+            The length of the dev data interval in seconds. By default, interval
             is set to [2678400.0], which is the number of seconds in July
             (our 1-month benchmarking month).
 
@@ -1814,7 +1826,8 @@ def make_benchmark_emis_tables(
         devstr,
         species,
         file_emis_totals,
-        interval,
+        ref_interval,
+        dev_interval,
         template="Emis{}_",
         refmetdata=refmetds,
         devmetdata=devmetds,
@@ -1829,7 +1842,8 @@ def make_benchmark_emis_tables(
         devstr,
         inventories,
         file_inv_totals,
-        interval,
+        ref_interval,
+        dev_interval,
         template="Inv{}_",
         refmetdata=refmetds,
         devmetdata=devmetds,
@@ -3684,7 +3698,8 @@ def make_benchmark_operations_budget(
     reffiles,
     devstr,
     devfiles,
-    interval,
+    ref_interval,
+    dev_interval,
     benchmark_type=None,
     label=None,
     col_sections=["Full", "Trop", "PBL", "Strat"],
@@ -3806,7 +3821,7 @@ def make_benchmark_operations_budget(
     # ------------------------------------------
 
     # Assume this will be annual budget if interval greater than 3e7 sec
-    annual = interval > 3.0e7
+    annual = ref_interval > 3.0e7
 
     # Read data from disk (either one month or 12 months)
     print('Opening ref and dev data')
@@ -3883,7 +3898,8 @@ def make_benchmark_operations_budget(
 
     # Determine what the converted units and conversion factor should be
     # based on benchmark type and species (tracer) name. Assume raw data [kg/s]
-    conv_fac = {}
+    ref_conv_fac = {}
+    dev_conv_fac = {}
     units = {}
     is_wetdep = {}
     for spc in spclist:
@@ -3895,17 +3911,20 @@ def make_benchmark_operations_budget(
             is_wetdep[spc] = properties.get("Is_WetDep")
 
         # Unit conversion factors and units
-        conv_fac[spc] = interval * 1e-6
+        ref_conv_fac[spc] = ref_interval * 1e-6
+        dev_conv_fac[spc] = dev_interval * 1e-6
         units[spc] = '[Gg]'
         if benchmark_type is not None:
             if "TransportTracers" in benchmark_type and "Tracer" not in spc:
-                conv_fac[spc] = interval
+                ref_conv_fac[spc] = ref_interval
+                dev_conv_fac[spc] = dev_interval
                 if annual:
                     units[spc] = '[kg/yr]'
                 else:
                     units[spc] = '[kg]'
             elif annual:
-                conv_fac[spc] = interval * 1e-9
+                ref_conv_fac[spc] = ref_interval * 1e-9
+                dev_conv_fac[spc] = dev_interval * 1e-9
                 units[spc] = '[Tg/yr]'
 
     # ------------------------------------------
@@ -3976,8 +3995,8 @@ def make_benchmark_operations_budget(
                     devraw = np.nan
     
                 # Convert units
-                refconv = refraw * conv_fac[spc]
-                devconv = devraw * conv_fac[spc]
+                refconv = refraw * ref_conv_fac[spc]
+                devconv = devraw * dev_conv_fac[spc]
                     
                 # Calculate diff and % diff from conc with converted units
                 if not np.isnan(refconv) and not np.isnan(devconv):
@@ -4139,7 +4158,7 @@ def make_benchmark_operations_budget(
             print("{} budgets for {}".format(benchmark_type, label),
                   file=f)
         else:
-            print("Budgets across {} sec".format(interval), file=f)
+            print("Budgets across {}/{} sec".format(ref_interval,dev_interval), file=f)
         print("\n", file=f)
         print("NOTES:", file=f)
         msg = " - When using the non-local mixing scheme (default), "\

@@ -345,7 +345,8 @@ if gcc_vs_gcc:
             dev,
             gcc_vs_gcc_devstr,
             dst=gcc_vs_gcc_resultsdir,
-            interval=sec_per_month,
+            ref_interval=sec_per_month,
+            dev_interval=sec_per_month,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
@@ -448,6 +449,7 @@ if gcc_vs_gcc:
                 ref,
                 gcc_dev_version,
                 dev,
+                bmk_sec_per_month[s],
                 bmk_sec_per_month[s],
                 benchmark_type=bmk_type,
                 label=bmk_mon_yr_strs[s],
@@ -638,7 +640,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devstr,
             devmet=devmet,
             dst=gchp_vs_gcc_resultsdir,
-            interval=sec_per_month,
+            ref_interval=sec_per_month,
+            dev_interval=sec_per_month,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
@@ -752,6 +755,7 @@ if gchp_vs_gcc:
                 ref,
                 gchp_dev_version,
                 dev,
+                bmk_sec_per_month[s],
                 bmk_sec_per_month[s],
                 benchmark_type=bmk_type,
                 label=bmk_mon_yr_strs[s],
@@ -901,7 +905,8 @@ if gchp_vs_gchp:
             refmet=refmet,
             devmet=devmet,
             dst=gchp_vs_gchp_resultsdir,
-            interval=sec_per_month,
+            ref_interval=sec_per_month,
+            dev_interval=sec_per_month,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
@@ -1025,6 +1030,7 @@ if gchp_vs_gchp:
                 ref,
                 gchp_dev_version,
                 dev,
+                bmk_sec_per_month[s],
                 bmk_sec_per_month[s],
                 benchmark_type=bmk_type,
                 label=bmk_mon_yr_strs[s],
