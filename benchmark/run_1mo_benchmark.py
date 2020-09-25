@@ -377,7 +377,8 @@ if gcc_vs_gcc:
             dev,
             gcc_vs_gcc_devstr,
             dst=gcc_vs_gcc_resultsdir,
-            interval=[ref_sec_in_bmk_month],
+            ref_interval=[ref_sec_in_bmk_month],
+            dev_interval=[dev_sec_in_bmk_month],
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
@@ -470,6 +471,7 @@ if gcc_vs_gcc:
             gcc_dev_version,
             dev,
             ref_sec_in_bmk_month,
+            dev_sec_in_bmk_month,
             benchmark_type=bmk_type,
             label=mon_yr_str,
             dst=gcc_vs_gcc_tablesdir
@@ -613,7 +615,8 @@ if gchp_vs_gcc:
             dev,
             gchp_vs_gcc_devstr,
             dst=gchp_vs_gcc_resultsdir,
-            interval=[ref_sec_in_bmk_month],
+            ref_interval=[ref_sec_in_bmk_month],
+            dev_interval=[dev_sec_in_bmk_month],
             overwrite=True,
             devmet=devmet,
             spcdb_dir=spcdb_dir
@@ -708,6 +711,7 @@ if gchp_vs_gcc:
             gchp_dev_version,
             dev,
             ref_sec_in_bmk_month,
+            dev_sec_in_bmk_month,
             benchmark_type=bmk_type,
             label=mon_yr_str,
             operations=["Chemistry","Convection","EmisDryDep","Mixing",
@@ -815,7 +819,8 @@ if gchp_vs_gchp:
             dev,
             gchp_vs_gchp_devstr,
             dst=gchp_vs_gchp_resultsdir,
-            interval=[ref_sec_in_bmk_month],
+            ref_interval=[ref_sec_in_bmk_month],
+            dev_interval=[dev_sec_in_bmk_month],
             overwrite=True,
             refmet=refmet,
             devmet=devmet,
@@ -912,6 +917,7 @@ if gchp_vs_gchp:
             gchp_dev_version,
             dev,
             ref_sec_in_bmk_month,
+            dev_sec_in_bmk_month,
             benchmark_type=bmk_type,
             label=mon_yr_str,
             operations=["Chemistry","Convection","EmisDryDep","Mixing",
