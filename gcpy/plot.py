@@ -62,7 +62,8 @@ def six_plot(
     xtick_positions=[],
     xticklabels=[],
     plot_type="single_level",
-    ratio_log=False
+    ratio_log=False,
+    proj=ccrs.PlateCarree()
 ):
 
     """
@@ -123,6 +124,8 @@ def six_plot(
        Locations of lat/lon or lon ticks on plot
     xticklabels: list of str
        Labels for lat/lon ticks
+    proj : 
+
     """
     # Set min and max of the data range
     if subplot in ("ref", "dev"):
@@ -201,9 +204,9 @@ def six_plot(
         norm = normalize_colors(vmin, vmax, is_difference=True, log_color_scale=True,ratio_log=ratio_log)
     #Create plot
     plot = single_panel(plot_val, ax, plot_type, grid, gridtype, title, comap,
-                  norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
-                  add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
-                  xtick_positions=xtick_positions, xticklabels=xticklabels)
+                        norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
+                        add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
+                        xtick_positions=xtick_positions, xticklabels=xticklabels, proj=proj)
 
     # Define the colorbar for the plot
     cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
@@ -274,7 +277,7 @@ def compare_single_level(
     verbose=False,
     log_color_scale=False,
     extra_title_txt=None,
-    plot_extent = [-1000, -1000, -1000, -1000],
+    extent = [-1000, -1000, -1000, -1000],
     n_job=-1,
     sigdiff_list=[],
     second_ref=None,
@@ -364,7 +367,7 @@ def compare_single_level(
             Specifies extra text (e.g. a date string such as "Jan2016")
             for the top-of-plot title.
             Default value: None
-        plot_extent : list
+        extent : list
             Defines the extent of the region to be plotted in form 
             [minlon, maxlon, minlat, maxlat]. Default value plots extent of input grids.
             Default value: [-1000, -1000, -1000, -1000]            
@@ -387,7 +390,6 @@ def compare_single_level(
             Default value: Path of GCPy code repository
     """
     warnings.showwarning = warning_format
-    print(refmet)
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
@@ -994,9 +996,13 @@ def compare_single_level(
 
         # Create figures and axes objects
         # Also define the map projection that will be shown
+        if extent[0] > extent[1]:
+            proj=ccrs.PlateCarree(central_longitude=180)
+        else:
+            proj=ccrs.PlateCarree()
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(
             3, 2, figsize=[12, 14],
-            subplot_kw={"projection": ccrs.PlateCarree()}
+            subplot_kw={"projection": proj}
         )
         # Ensure subplots don't overlap when invoking plt.show()
         if not savepdf:
@@ -1154,10 +1160,10 @@ def compare_single_level(
             fracdiff_is_all_nan,
             fracdiff_is_all_nan,
         ]
-        if not -1000 in plot_extent:
-            extents = [plot_extent, plot_extent,
-                       plot_extent, plot_extent,
-                       plot_extent, plot_extent]
+        if not -1000 in extent:
+            extents = [extent, extent,
+                       extent, extent,
+                       extent, extent]
         else:
             extents = [cmp_extent, cmp_extent,
                        cmp_extent, cmp_extent,
@@ -1220,7 +1226,8 @@ def compare_single_level(
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
         ratio_logs = [False, False, False, False, True, True]
-
+        for i in range(6):
+            print(extents[i])
         # Plot
         for i in range(6):
             six_plot(
@@ -1245,7 +1252,8 @@ def compare_single_level(
                 verbose,
                 log_color_scale,
                 plot_type="single_level",
-                ratio_log=ratio_logs[i]
+                ratio_log=ratio_logs[i],
+                proj=proj
             )
 
         # ==============================================================
@@ -2446,6 +2454,7 @@ def single_panel(plot_vals,
             Locations of lat/lon or lon ticks on plot
         xticklabels: list(str)
             Labels for lat/lon ticks
+
     Returns:
     -----
     
@@ -2456,25 +2465,6 @@ def single_panel(plot_vals,
     #Eliminate 1D level or time dimensions
     plot_vals=plot_vals.squeeze()
     data_is_xr = type(plot_vals) is xr.DataArray
-    if extent == (None, None, None, None) or extent == None:
-        extent = get_grid_extents(grid)
-        #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
-        if extent[0] > 180 or extent[1] > 180:
-            extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
-    #Account for cross-dateline extent
-    if extent[0] > extent[1]:
-        if gridtype == "ll":
-            proj = ccrs.PlateCarree(central_longitude=180)
-            extent[0] = extent[0]%360-180        
-            extent[1] = extent[1]%360-180
-            plot_vals = plot_vals.assign_coords(lon=plot_vals.lon%360-180)
-            plot_vals = plot_vals.sortby(plot_vals.lon)
-        else:
-            proj = ccrs.PlateCarree(central_longitude=180)
-            extent[0] = extent[0]%360-180        
-            extent[1] = extent[1]%360-180
-            grid["lon_b"]=grid["lon_b"]-180
-            
     if xtick_positions == []:
         #if plot_type == "single_level":
         #    xtick_positions = np.arange(extent[0], extent[1], (extent[1]-extent[0])/12)
@@ -2486,12 +2476,6 @@ def single_panel(plot_vals,
 
     if unit == "" and data_is_xr:
         unit = plot_vals.units.strip()
-
-    if ax == None:
-        if plot_type == "zonal_mean":
-            ax = plt.axes()
-        if plot_type == "single_level":
-            ax = plt.axes(projection = proj)
 
     if title == "fill" and data_is_xr:
         title = plot_vals.name
@@ -2553,6 +2537,32 @@ def single_panel(plot_vals,
             #calculate zonal means
             plot_vals = plot_vals.mean(axis=2)
 
+    if extent == (None, None, None, None) or extent == None:
+        extent = get_grid_extents(grid)
+        #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
+        if extent[0] > 180 or extent[1] > 180:
+            extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
+    #Account for cross-dateline extent
+    if extent[0] > extent[1]:
+        if gridtype == "ll":
+            proj = ccrs.PlateCarree(central_longitude=180)
+            extent[0] = extent[0]%360-180        
+            extent[1] = extent[1]%360-180
+            plot_vals = plot_vals.assign_coords(lon=plot_vals.lon%360-180)
+            plot_vals = plot_vals.sortby(plot_vals.lon)
+        else:
+            print('changing extent as needed')
+            proj = ccrs.PlateCarree(central_longitude=180)
+            extent[0] = extent[0]%360-180        
+            extent[1] = extent[1]%360-180
+            grid["lon_b"]=grid["lon_b"]%360-180
+            grid["lon"]=grid["lon"]%360-180
+
+    if ax == None:
+        if plot_type == "zonal_mean":
+            ax = plt.axes()
+        if plot_type == "single_level":
+            ax = plt.axes(projection = proj)
 
     data_is_xr = type(plot_vals) is xr.DataArray
     # Normalize colors (put into range [0..1] for matplotlib methods)
@@ -2627,7 +2637,6 @@ def single_panel(plot_vals,
         
     else:
         #Cubed-sphere single level
-        ax.coastlines()
         try:
             if masked_data == None:
                 masked_data = np.ma.masked_where(np.abs(grid["lon"] - 180) < 2, plot_vals.data.reshape(6, res, res))
@@ -2647,8 +2656,9 @@ def single_panel(plot_vals,
                 cmap=comap,
                 norm=norm
             )
-        ax.set_xlim(minlon, maxlon)
-        ax.set_ylim(minlat, maxlat)
+        print(extent)
+        ax.set_extent(extent, crs=proj)
+        ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
 

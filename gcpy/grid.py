@@ -135,7 +135,10 @@ def get_input_res(data):
     else:
         #print("grid is cs: ", vdims)
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        return data.dims["Xdim"], "cs"
+        if type(data.dims) == tuple:
+            return len(data["Xdim"].values), "cs"
+        else:
+            return data.dims["Xdim"], "cs"
 
 def call_make_grid(res, gridtype, in_extent=[-180,180,-90,90],
                    out_extent=[-180,180,-90,90]):
