@@ -806,8 +806,8 @@ def compare_single_level(
         if diff_of_diffs:
             frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
             frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
-            frac_ds_refs_cmps[i] = reshape_MAPL_CS(frac_ds_refs_cmps[i])
-            frac_ds_devs_cmps[i] = reshape_MAPL_CS(frac_ds_devs_cmps[i])
+            frac_ds_ref_cmps[i] = reshape_MAPL_CS(frac_ds_ref_cmps[i])
+            frac_ds_dev_cmps[i] = reshape_MAPL_CS(frac_ds_dev_cmps[i])
     
     # =================================================================
     # Define function to create a single page figure to be called
@@ -1161,13 +1161,16 @@ def compare_single_level(
             fracdiff_is_all_nan,
         ]
         if not -1000 in extent:
-            extents = [extent, extent,
-                       extent, extent,
-                       extent, extent]
+            extents = [extent[:], extent[:],
+                       extent[:], extent[:],
+                       extent[:], extent[:]]
         else:
-            extents = [cmp_extent, cmp_extent,
-                       cmp_extent, cmp_extent,
-                       cmp_extent, cmp_extent]
+            plot_extent = [np.max([cmp_extent[0], -180]),
+                          np.min([cmp_extent[1], 180]),
+                          cmp_extent[2], cmp_extent[3]]
+            extents = [plot_extent[:], plot_extent[:],
+                       plot_extent[:], plot_extent[:],
+                       plot_extent[:], plot_extent[:]]
 
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
         grids = [refgrid, devgrid, cmpgrid, cmpgrid, cmpgrid, cmpgrid]
@@ -1226,8 +1229,6 @@ def compare_single_level(
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
         ratio_logs = [False, False, False, False, True, True]
-        for i in range(6):
-            print(extents[i])
         # Plot
         for i in range(6):
             six_plot(
@@ -2548,16 +2549,14 @@ def single_panel(plot_vals,
             proj = ccrs.PlateCarree(central_longitude=180)
             extent[0] = extent[0]%360-180        
             extent[1] = extent[1]%360-180
-            plot_vals = plot_vals.assign_coords(lon=plot_vals.lon%360-180)
-            plot_vals = plot_vals.sortby(plot_vals.lon)
+            grid["lon_b"]=grid["lon_b"]%360-180
+            grid["lon"]=grid["lon"]%360-180
         else:
-            print('changing extent as needed')
             proj = ccrs.PlateCarree(central_longitude=180)
             extent[0] = extent[0]%360-180        
             extent[1] = extent[1]%360-180
             grid["lon_b"]=grid["lon_b"]%360-180
             grid["lon"]=grid["lon"]%360-180
-
     if ax == None:
         if plot_type == "zonal_mean":
             ax = plt.axes()
@@ -2598,22 +2597,6 @@ def single_panel(plot_vals,
 
     elif gridtype == "ll":
         #Lat/Lon single level
-        if type(plot_vals) is xr.DataArray:
-            [minlon, maxlon, minlat, maxlat] = extent
-            #filter data by bounds of extent
-            plot_vals = plot_vals.where(plot_vals.lon>=minlon, 
-                                        drop=True).where(plot_vals.lon<=maxlon,
-                                                         drop=True).where(plot_vals.lat>=minlat, 
-                                                                          drop=True).where(plot_vals.lat<=maxlat, drop=True)
-        else:
-            #for numpy arrays
-            [minlon, maxlon, minlat, maxlat] = extent
-            minlon_ind = np.where(grid["lon"] >= minlon)[0][0]
-            maxlon_ind = np.where(grid["lon"] <= maxlon)[0][-1]
-            minlat_ind = np.where(grid["lat"] >= minlat)[0][0]
-            maxlat_ind = np.where(grid["lat"] <= maxlat)[0][-1]
-            #assume lat comes first in indexing
-            plot_vals = plot_vals[minlat_ind:maxlat_ind+1,minlon_ind:maxlon_ind+1].squeeze()
         # Create a lon/lat plot
         plot = ax.pcolormesh(
             grid["lon_b"],
@@ -2630,7 +2613,7 @@ def single_panel(plot_vals,
             cmap=comap,
             norm=norm
         )'''
-
+        ax.set_extent(extent, crs=proj)
         ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
@@ -2656,7 +2639,6 @@ def single_panel(plot_vals,
                 cmap=comap,
                 norm=norm
             )
-        print(extent)
         ax.set_extent(extent, crs=proj)
         ax.coastlines()
         ax.set_xticks(xtick_positions)
