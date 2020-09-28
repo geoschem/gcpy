@@ -62,7 +62,8 @@ def six_plot(
     xtick_positions=[],
     xticklabels=[],
     plot_type="single_level",
-    ratio_log=False
+    ratio_log=False,
+    proj=ccrs.PlateCarree()
 ):
 
     """
@@ -123,6 +124,8 @@ def six_plot(
        Locations of lat/lon or lon ticks on plot
     xticklabels: list of str
        Labels for lat/lon ticks
+    proj : 
+
     """
     # Set min and max of the data range
     if subplot in ("ref", "dev"):
@@ -201,9 +204,9 @@ def six_plot(
         norm = normalize_colors(vmin, vmax, is_difference=True, log_color_scale=True,ratio_log=ratio_log)
     #Create plot
     plot = single_panel(plot_val, ax, plot_type, grid, gridtype, title, comap,
-                  norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
-                  add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
-                  xtick_positions=xtick_positions, xticklabels=xticklabels)
+                        norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
+                        add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
+                        xtick_positions=xtick_positions, xticklabels=xticklabels, proj=proj)
 
     # Define the colorbar for the plot
     cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
@@ -274,7 +277,7 @@ def compare_single_level(
     verbose=False,
     log_color_scale=False,
     extra_title_txt=None,
-    plot_extent = [-1000, -1000, -1000, -1000],
+    extent = [-1000, -1000, -1000, -1000],
     n_job=-1,
     sigdiff_list=[],
     second_ref=None,
@@ -364,7 +367,7 @@ def compare_single_level(
             Specifies extra text (e.g. a date string such as "Jan2016")
             for the top-of-plot title.
             Default value: None
-        plot_extent : list
+        extent : list
             Defines the extent of the region to be plotted in form 
             [minlon, maxlon, minlat, maxlat]. Default value plots extent of input grids.
             Default value: [-1000, -1000, -1000, -1000]            
@@ -387,7 +390,6 @@ def compare_single_level(
             Default value: Path of GCPy code repository
     """
     warnings.showwarning = warning_format
-
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
@@ -649,11 +651,11 @@ def compare_single_level(
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
-        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
-        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
-        if diff_of_diffs:
-            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
-            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
+        #ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
+        #ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
+        #if diff_of_diffs:
+        #    frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
+        #    frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
 
     # ==================================================================
     # Get the area variables if normalize_by_area=True. They can be
@@ -710,7 +712,7 @@ def compare_single_level(
     frac_ds_ref_cmps = [None] * n_var
     frac_ds_dev_cmps = [None] * n_var
 
-    global_cmp_grid = call_make_grid(cmpres, cmpgridtype, False, True)[0]
+    global_cmp_grid = call_make_grid(cmpres, cmpgridtype)[0]
     cmpminlon_ind = np.where(global_cmp_grid["lon"] >= cmpminlon)[0][0]
     cmpmaxlon_ind = np.where(global_cmp_grid["lon"] <= cmpmaxlon)[0][-1]
     cmpminlat_ind = np.where(global_cmp_grid["lat"] >= cmpminlat)[0][0]
@@ -743,6 +745,7 @@ def compare_single_level(
             refregridder_list,
             global_cmp_grid,
             refgridtype,
+            cmpgridtype,
             cmpminlat_ind,
             cmpmaxlat_ind,
             cmpminlon_ind,
@@ -758,6 +761,7 @@ def compare_single_level(
             devregridder_list,
             global_cmp_grid,
             devgridtype,
+            cmpgridtype,
             cmpminlat_ind,
             cmpmaxlat_ind,
             cmpminlon_ind,
@@ -774,6 +778,7 @@ def compare_single_level(
                 refregridder_list,
                 global_cmp_grid,
                 refgridtype,
+                cmpgridtype,
                 cmpminlat_ind,
                 cmpmaxlat_ind,
                 cmpminlon_ind, 
@@ -787,18 +792,28 @@ def compare_single_level(
                 devregridder_list,
                 global_cmp_grid,
                 devgridtype,
+                cmpgridtype,
                 cmpminlat_ind,
                 cmpmaxlat_ind,
                 cmpminlon_ind,
                 cmpmaxlon_ind
             )
-
-
+    for i in range(n_var):
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
+        ds_ref_cmps[i] = reshape_MAPL_CS(ds_ref_cmps[i])
+        ds_dev_cmps[i] = reshape_MAPL_CS(ds_dev_cmps[i])
+        if diff_of_diffs:
+            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
+            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
+            frac_ds_ref_cmps[i] = reshape_MAPL_CS(frac_ds_ref_cmps[i])
+            frac_ds_dev_cmps[i] = reshape_MAPL_CS(frac_ds_dev_cmps[i])
+    
     # =================================================================
     # Define function to create a single page figure to be called
     # in a parallel loop
     # =================================================================
-    def createfig(ivar, temp_dir):
+    def createfig(ivar, temp_dir=''):
         
         # Suppress harmless run-time warnings (mostly about underflow)
         warnings.filterwarnings('ignore', category=RuntimeWarning)
@@ -981,9 +996,13 @@ def compare_single_level(
 
         # Create figures and axes objects
         # Also define the map projection that will be shown
+        if extent[0] > extent[1]:
+            proj=ccrs.PlateCarree(central_longitude=180)
+        else:
+            proj=ccrs.PlateCarree()
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(
             3, 2, figsize=[12, 14],
-            subplot_kw={"projection": ccrs.PlateCarree()}
+            subplot_kw={"projection": proj}
         )
         # Ensure subplots don't overlap when invoking plt.show()
         if not savepdf:
@@ -1141,14 +1160,17 @@ def compare_single_level(
             fracdiff_is_all_nan,
             fracdiff_is_all_nan,
         ]
-        if not -1000 in plot_extent:
-            extents = [plot_extent, plot_extent,
-                       plot_extent, plot_extent,
-                       plot_extent, plot_extent]
+        if not -1000 in extent:
+            extents = [extent[:], extent[:],
+                       extent[:], extent[:],
+                       extent[:], extent[:]]
         else:
-            extents = [cmp_extent, cmp_extent,
-                       cmp_extent, cmp_extent,
-                       cmp_extent, cmp_extent]
+            plot_extent = [np.max([cmp_extent[0], -180]),
+                          np.min([cmp_extent[1], 180]),
+                          cmp_extent[2], cmp_extent[3]]
+            extents = [plot_extent[:], plot_extent[:],
+                       plot_extent[:], plot_extent[:],
+                       plot_extent[:], plot_extent[:]]
 
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
         grids = [refgrid, devgrid, cmpgrid, cmpgrid, cmpgrid, cmpgrid]
@@ -1207,7 +1229,6 @@ def compare_single_level(
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
         ratio_logs = [False, False, False, False, True, True]
-
         # Plot
         for i in range(6):
             six_plot(
@@ -1232,7 +1253,8 @@ def compare_single_level(
                 verbose,
                 log_color_scale,
                 plot_type="single_level",
-                ratio_log=ratio_logs[i]
+                ratio_log=ratio_logs[i],
+                proj=proj
             )
 
         # ==============================================================
@@ -1708,12 +1730,13 @@ def compare_zonal_mean(
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
+        
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
         if diff_of_diffs:
             frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
             frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])        
-
+        
         # Flip in the vertical if applicable
         if flip_ref:
             ds_refs[i].data = ds_refs[i].data[::-1, :, :]
@@ -1836,6 +1859,7 @@ def compare_zonal_mean(
             refregridder_list,
             cmpgrid,
             refgridtype,
+            cmpgridtype,
             nlev=ref_nlev
         )
         if diff_of_diffs:
@@ -1846,6 +1870,7 @@ def compare_zonal_mean(
                 refregridder,
                 refregridder_list,
                 cmpgrid,
+                cmpgridtype,
                 refgridtype,
                 nlev=ref_nlev
             )
@@ -1858,6 +1883,7 @@ def compare_zonal_mean(
             devregridder_list,
             cmpgrid,
             devgridtype,
+            cmpgridtype,
             nlev=dev_nlev
         )
         if diff_of_diffs:
@@ -1869,6 +1895,7 @@ def compare_zonal_mean(
                 devregridder_list,
                 cmpgrid,
                 devgridtype,
+                cmpgridtype,
                 nlev=dev_nlev
             )
 
@@ -2428,6 +2455,7 @@ def single_panel(plot_vals,
             Locations of lat/lon or lon ticks on plot
         xticklabels: list(str)
             Labels for lat/lon ticks
+
     Returns:
     -----
     
@@ -2438,25 +2466,6 @@ def single_panel(plot_vals,
     #Eliminate 1D level or time dimensions
     plot_vals=plot_vals.squeeze()
     data_is_xr = type(plot_vals) is xr.DataArray
-    if extent == (None, None, None, None) or extent == None:
-        extent = get_grid_extents(grid)
-        #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
-        if extent[0] > 180 or extent[1] > 180:
-            extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
-    #Account for cross-dateline extent
-    if extent[0] > extent[1]:
-        if gridtype == "ll":
-            proj = ccrs.PlateCarree(central_longitude=180)
-            extent[0] = extent[0]%360-180        
-            extent[1] = extent[1]%360-180
-            plot_vals = plot_vals.assign_coords(lon=plot_vals.lon%360-180)
-            plot_vals = plot_vals.sortby(plot_vals.lon)
-        else:
-            proj = ccrs.PlateCarree(central_longitude=180)
-            extent[0] = extent[0]%360-180        
-            extent[1] = extent[1]%360-180
-            grid["lon_b"]=grid["lon_b"]-180
-            
     if xtick_positions == []:
         #if plot_type == "single_level":
         #    xtick_positions = np.arange(extent[0], extent[1], (extent[1]-extent[0])/12)
@@ -2469,12 +2478,6 @@ def single_panel(plot_vals,
     if unit == "" and data_is_xr:
         unit = plot_vals.units.strip()
 
-    if ax == None:
-        if plot_type == "zonal_mean":
-            ax = plt.axes()
-        if plot_type == "single_level":
-            ax = plt.axes(projection = proj)
-
     if title == "fill" and data_is_xr:
         title = plot_vals.name
 
@@ -2483,7 +2486,7 @@ def single_panel(plot_vals,
         res, gridtype = get_input_res(plot_vals)
 
         if plot_type == 'single_level':
-            [grid, _] = call_make_grid(res, gridtype, False, False)
+            [grid, _] = call_make_grid(res, gridtype)
 
         else: #zonal mean
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
@@ -2529,11 +2532,36 @@ def single_panel(plot_vals,
                     regridder_list,
                     grid,
                     input_gridtype,
+                    new_gridtype,
                     nlev=nlev
                 )
             #calculate zonal means
             plot_vals = plot_vals.mean(axis=2)
 
+    if extent == (None, None, None, None) or extent == None:
+        extent = get_grid_extents(grid)
+        #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
+        if extent[0] > 180 or extent[1] > 180:
+            extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
+    #Account for cross-dateline extent
+    if extent[0] > extent[1]:
+        if gridtype == "ll":
+            proj = ccrs.PlateCarree(central_longitude=180)
+            extent[0] = extent[0]%360-180        
+            extent[1] = extent[1]%360-180
+            grid["lon_b"]=grid["lon_b"]%360-180
+            grid["lon"]=grid["lon"]%360-180
+        else:
+            proj = ccrs.PlateCarree(central_longitude=180)
+            extent[0] = extent[0]%360-180        
+            extent[1] = extent[1]%360-180
+            grid["lon_b"]=grid["lon_b"]%360-180
+            grid["lon"]=grid["lon"]%360-180
+    if ax == None:
+        if plot_type == "zonal_mean":
+            ax = plt.axes()
+        if plot_type == "single_level":
+            ax = plt.axes(projection = proj)
 
     data_is_xr = type(plot_vals) is xr.DataArray
     # Normalize colors (put into range [0..1] for matplotlib methods)
@@ -2569,22 +2597,6 @@ def single_panel(plot_vals,
 
     elif gridtype == "ll":
         #Lat/Lon single level
-        if type(plot_vals) is xr.DataArray:
-            [minlon, maxlon, minlat, maxlat] = extent
-            #filter data by bounds of extent
-            plot_vals = plot_vals.where(plot_vals.lon>=minlon, 
-                                        drop=True).where(plot_vals.lon<=maxlon,
-                                                         drop=True).where(plot_vals.lat>=minlat, 
-                                                                          drop=True).where(plot_vals.lat<=maxlat, drop=True)
-        else:
-            #for numpy arrays
-            [minlon, maxlon, minlat, maxlat] = extent
-            minlon_ind = np.where(grid["lon"] >= minlon)[0][0]
-            maxlon_ind = np.where(grid["lon"] <= maxlon)[0][-1]
-            minlat_ind = np.where(grid["lat"] >= minlat)[0][0]
-            maxlat_ind = np.where(grid["lat"] <= maxlat)[0][-1]
-            #assume lat comes first in indexing
-            plot_vals = plot_vals[minlat_ind:maxlat_ind+1,minlon_ind:maxlon_ind+1].squeeze()
         # Create a lon/lat plot
         plot = ax.pcolormesh(
             grid["lon_b"],
@@ -2594,13 +2606,20 @@ def single_panel(plot_vals,
             cmap=comap,
             norm=norm
         )
+        '''plot = ax.imshow(
+            plot_vals,
+            extent=extent,
+            transform=proj,
+            cmap=comap,
+            norm=norm
+        )'''
+        ax.set_extent(extent, crs=proj)
         ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
         
     else:
         #Cubed-sphere single level
-        ax.coastlines()
         try:
             if masked_data == None:
                 masked_data = np.ma.masked_where(np.abs(grid["lon"] - 180) < 2, plot_vals.data.reshape(6, res, res))
@@ -2620,8 +2639,8 @@ def single_panel(plot_vals,
                 cmap=comap,
                 norm=norm
             )
-        ax.set_xlim(minlon, maxlon)
-        ax.set_ylim(minlat, maxlat)
+        ax.set_extent(extent, crs=proj)
+        ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
 
