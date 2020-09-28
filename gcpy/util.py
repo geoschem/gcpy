@@ -566,14 +566,15 @@ def reshape_MAPL_CS(da):
         data : xarray DataArray
             Data with dimensions renamed and transposed to match old MAPL format
     """
-    vdims = da.dims
-    if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-        da = da.stack(lat=("nf", "Ydim"))
-        da = da.rename({"Xdim": "lon"})
-        if "lev" in da.dims:
-            da = da.transpose("lev", "lat", "lon")
-        else:
-            da = da.transpose("lat", "lon")
+    if type(da) != np.ndarray:
+        vdims = da.dims
+        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
+            da = da.stack(lat=("nf", "Ydim"))
+            da = da.rename({"Xdim": "lon"})
+            if "lev" in da.dims:
+                da = da.transpose("lev", "lat", "lon")
+            else:
+                da = da.transpose("lat", "lon")
     return da
 
 def get_diff_of_diffs(ref, dev):
