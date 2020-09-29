@@ -60,7 +60,7 @@ if __name__ == '__main__':
 
     # Load dataset
     ds_in = xr.open_dataset(args.filein, decode_cf=False)
-
+    ds_in = ds_in.load()
     # Reformat dimensions to T, Z, F, Y, X
     ds_in = reformat_dims(ds_in, format=args.dim_format_in, towards_common=True)
 

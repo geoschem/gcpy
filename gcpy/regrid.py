@@ -413,7 +413,8 @@ def reformat_dims(ds, format, towards_common):
             ds = ravel_callback(ds)
 
         # Transpose            
-        if len(ds.dims)==5:
+        if len(ds.dims)==5 or (len(ds.dims)==4 and 'lev' in list(ds.dims) and 'time' in list(ds.dims)):
+            #full dim dataset
             ds = ds.transpose(*dim_formats[format].get('transpose', []))
         elif len(ds.dims)==4:
             #single time
