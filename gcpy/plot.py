@@ -18,7 +18,6 @@ from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
-from shutil import rmtree
 from tempfile import TemporaryDirectory
 import warnings
 
