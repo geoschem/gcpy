@@ -106,6 +106,11 @@ if __name__ == '__main__':
 
     # Reformat dimensions to desired output format
     ds_out = reformat_dims(ds_out, format=args.dim_format_out, towards_common=False)
+    
+    # Store stretched-grid parameters as metadata
+    ds_out.attrs['stretch_factor'] = args.sg_params_out[0]
+    ds_out.attrs['target_longitude'] = args.sg_params_out[1]
+    ds_out.attrs['target_latitude'] = args.sg_params_out[2]
 
     # Write dataset
     ds_out.to_netcdf(
