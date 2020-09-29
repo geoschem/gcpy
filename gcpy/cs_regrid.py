@@ -84,24 +84,19 @@ if __name__ == '__main__':
             sf_in=args.sg_params_in[0], tlon_in=args.sg_params_in[1], tlat_in=args.sg_params_in[2],
             sf_out=args.sg_params_out[0], tlon_out=args.sg_params_out[1], tlat_out=args.sg_params_out[2]
         )
-        print('pre regridders', ds_in)
         # For each output face, sum regridded input faces
         oface_datasets = []
         for oface in range(6):
             oface_regridded = []
             for iface, regridder in regridders[oface].items():
                 ds_iface = ds_in.isel(F=iface)
-                print('ds_iface', ds_iface)
                 if 'F' in ds_iface.dims:
                     ds_iface = ds_iface.drop('F')
                 oface_regridded.append(regridder(ds_iface, keep_attrs=True))
-                print('oface_regridded pre concaat', oface_regridded)
             oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces',
                                                                                         keep_attrs=True)
-            print('oface_regridder', oface_regridded)
             oface_datasets.append(oface_regridded)
         ds_out = xr.concat(oface_datasets, dim='F')
-        print('ds_out', ds_out)
         # Put regridded dataset back into a familiar format
         ds_out = ds_out.rename({
             'y': 'Y',
