@@ -281,7 +281,9 @@ def compare_single_level(
     sigdiff_list=[],
     second_ref=None,
     second_dev=None,
-    spcdb_dir=os.path.dirname(__file__)
+    spcdb_dir=os.path.dirname(__file__),
+    sg_ref_path='',
+    sg_dev_path=''
 ):
     """
     Create single-level 3x2 comparison map plots for variables common
@@ -387,6 +389,12 @@ def compare_single_level(
         spcdb_dir  : str 
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
+        sg_ref_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the ref dataset
+            Default value: '' (will not be read in)
+        sg_dev_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
+            Default value: '' (will not be read in)
     """
     warnings.showwarning = warning_format
     # Error check arguments
@@ -440,6 +448,19 @@ def compare_single_level(
         properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
+    sg_ref_params=[1, -90, 170]
+    sg_dev_params=[1, -90, 170]
+    # Get stretched-grid info if passed
+    if sg_ref_path != '':
+        sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
+        sg_ref_params = [sg_ref_attrs['stretch_factor'], sg_ref_attrs['target_longitude'], 
+                         sg_ref_attrs['target_latitude']]
+
+    if sg_dev_path != '':
+        sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
+        sg_dev_params = [sg_dev_attrs['stretch_factor'], sg_dev_attrs['target_longitude'], 
+                         sg_dev_attrs['target_latitude']]
+                    
     # Get grid info and regrid if necessary
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, 
      regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder,
@@ -447,7 +468,9 @@ def compare_single_level(
          refdata,
          devdata,
          weightsdir,
-         cmpres=cmpres
+         cmpres=cmpres,
+         sg_ref_params=sg_ref_params,
+         sg_dev_params=sg_dev_params
      )
 
     # ==============================================================
@@ -1352,7 +1375,9 @@ def compare_zonal_mean(
     sigdiff_list=[],
     second_ref=None,
     second_dev=None,
-    spcdb_dir=os.path.dirname(__file__)
+    spcdb_dir=os.path.dirname(__file__),
+    sg_ref_path='',
+    sg_dev_path=''
 ):
 
     """
@@ -1461,6 +1486,12 @@ def compare_zonal_mean(
         spcdb_dir  : str 
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
+        sg_ref_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the ref dataset
+            Default value: '' (will not be read in)
+        sg_dev_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
+            Default value: '' (will not be read in)
     """
     warnings.showwarning = warning_format
     if not isinstance(refdata, xr.Dataset):
@@ -2482,7 +2513,7 @@ def single_panel(plot_vals,
 
     #Generate grid if not passed
     if grid == {}:
-        res, gridtype = get_input_res(plot_vals)
+        res, gridtype= get_input_res(plot_vals)
 
         if plot_type == 'single_level':
             [grid, _] = call_make_grid(res, gridtype)

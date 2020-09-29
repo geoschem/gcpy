@@ -107,6 +107,9 @@ def get_input_res(data):
         data : xarray Dataset
             Input GEOS-Chem dataset
 
+        sg_params : list [stretch_factor, target_longitude, target_latitude]
+            Stretched-grid parameters of the dataset (not currently gatherable from grid structure)
+
     Returns:
     -----
 
@@ -141,7 +144,7 @@ def get_input_res(data):
             return data.dims["Xdim"], "cs"
 
 def call_make_grid(res, gridtype, in_extent=[-180,180,-90,90],
-                   out_extent=[-180,180,-90,90]):
+                   out_extent=[-180,180,-90,90], sg_params=[]):
     """
     Create a mask with NaN values removed from an input array
 
@@ -163,6 +166,9 @@ def call_make_grid(res, gridtype, in_extent=[-180,180,-90,90],
         out_extent : list (minlon, maxlon, minlat, maxlat)
             Desired minimum and maximum latitude and longitude of output grid
 
+        sg_params : list (stretch_factor, target_longitude, target_latitude)
+            Desired stretched-grid parameters (will trigger stretched-grid creation if not empty)
+
     Returns:
     -----
         [grid, grid_list] : list(dict, list(dict))
@@ -172,8 +178,11 @@ def call_make_grid(res, gridtype, in_extent=[-180,180,-90,90],
     # call appropriate make_grid function and return new grid
     if gridtype == "ll":
         return [make_grid_LL(res, in_extent, out_extent), None]
-    else:
+    elif sg_params==[]:
+        #standard CS
         return make_grid_CS(res)
+    else:
+        return make_grid_SG(res, *sg_params)
 
 def get_grid_extents(data, edges=True):
     """

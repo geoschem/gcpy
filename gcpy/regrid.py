@@ -64,7 +64,7 @@ def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlat_in=-90, tlon_in=170,
             
     return regridder_list
 
-def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=None, zm=False):
+def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=None, zm=False, sg_ref_params=[1, -90, 170], sg_dev_params=[1, -90, 170]):
     #Take two lat/lon or cubed-sphere xarray datasets and regrid them if needed
     refres, refgridtype = get_input_res(refds)
     devres, devgridtype = get_input_res(devds)
@@ -88,7 +88,7 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     # If one dataset is lat-lon and the other is cubed-sphere, and no comparison
     # grid resolution is passed, then default to 1x1.25. If both cubed-sphere and
     # plotting zonal mean, over-ride to be 1x1.25 lat-lon with a warning
-    
+    sg_cmp_params=[1, -90, 170]
     if cmpres == None:
         if refres == devres and refgridtype == "ll":
             cmpres = refres
@@ -101,7 +101,13 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
                 print("Warning: zonal mean comparison must be lat-lon. Defaulting to 1x1.25")
                 cmpres='1x1.25'
                 cmpgridtype = "ll"
+            elif sg_ref_params!=[] or sg_dev_params!=[]:
+                #pick ref grid when a stretched-grid and non-stretched-grid are passed
+                cmpres=refres
+                cmpgridtype="cs"
+                sg_cmp_params=sg_ref_params
             else:
+                #pick higher resolution CS grid out of two standard cubed-sphere grids
                 cmpres = max([refres, devres])
                 cmpgridtype="cs"
         elif refgridtype == "ll" and float(refres.split('x')[0])<1 and float(refres.split('x')[1])<1.25:
@@ -113,7 +119,6 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
         else:
             cmpres = "1x1.25"
             cmpgridtype = "ll"
-
     elif "x" in cmpres:
         cmpgridtype = "ll"
     elif zm:
@@ -121,7 +126,13 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
         cmpres='1x1.25'
         cmpgridtype = "ll"
     elif refgridtype == "cs" and devgridtype == "cs":
-        cmpres = int(cmpres)  # must cast to integer for cubed-sphere
+        if type(cmpres) is list:
+            #stretched-grid resolution
+            #first element is cubed-sphere resolution, rest are sg params
+            cmpres=int(cmpres[0])
+            sg_cmp_params=cmpres[1:]
+        else:
+            cmpres = int(cmpres)  # must cast to integer for cubed-sphere
         cmpgridtype = "cs"
     else:
         print("Warning: lat/lon to CS regridding not currently implemented. Defaulting to 1x1.25")
@@ -129,17 +140,17 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
         cmpgridtype = "ll"
 
     # Determine what, if any, need regridding.
-    regridref = refres != cmpres
-    regriddev = devres != cmpres
+    regridref = refres != cmpres or sg_ref_params!=sg_cmp_params
+    regriddev = devres != cmpres or sg_dev_params!=sg_cmp_params
     regridany = regridref or regriddev
     # ==================================================================
     # Make grids (ref, dev, and comparison)
     # ==================================================================
-    [refgrid, refgrid_list] = call_make_grid(refres, refgridtype, ref_extent, cmp_extent)
+    [refgrid, refgrid_list] = call_make_grid(refres, refgridtype, ref_extent, cmp_extent, sg_ref_params)
     
-    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, dev_extent, cmp_extent)
+    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, dev_extent, cmp_extent, sg_dev_params)
 
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, cmp_extent, cmp_extent)
+    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, cmp_extent, cmp_extent, sg_cmp_params)
     
     # =================================================================
     # Make regridders, if applicable
@@ -158,7 +169,8 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
             )
         else:
             if cmpgridtype == "cs":
-                refregridder_list = make_regridder_S2S(refres, cmpres, weightsdir=weightsdir, verbose=False)
+                refregridder_list = make_regridder_S2S(refres, cmpres, *sg_ref_params, *sg_cmp_params,
+                                                       weightsdir=weightsdir, verbose=False)
             else:
                 refregridder_list = make_regridder_C2L(
                     refres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights
@@ -171,7 +183,8 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
             )
         else:
             if cmpgridtype == "cs":
-                devregridder_list = make_regridder_S2S(devres, cmpres, weightsdir=weightsdir, verbose=False)
+                devregridder_list = make_regridder_S2S(devres, cmpres, *sg_dev_params, *sg_cmp_params,
+                                                       weightsdir=weightsdir, verbose=False)
             else:
                 devregridder_list = make_regridder_C2L(
                     devres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights
