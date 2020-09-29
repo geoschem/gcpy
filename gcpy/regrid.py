@@ -325,7 +325,8 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
                     if 'nf' in ds_iface.dims:
                         ds_iface = ds_iface.drop('F')
                     oface_regridded.append(regridder(ds_iface, keep_attrs=True))
-                oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces')
+                oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces',
+                                                                                            keep_attrs=True)
                 oface_datasets.append(oface_regridded)
             new_data = xr.concat(oface_datasets, dim='F')
 
