@@ -92,6 +92,7 @@ if __name__ == '__main__':
                 ds_iface = ds_in.isel(F=iface)
                 if 'F' in ds_iface.coords:
                     ds_iface = ds_iface.drop('F')
+                print(ds_iface)
                 oface_regridded.append(regridder(ds_iface, keep_attrs=True))
             oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces',
                                                                                         keep_attrs=True)

@@ -144,7 +144,7 @@ def get_input_res(data):
             return data.dims["Xdim"], "cs"
 
 def call_make_grid(res, gridtype, in_extent=[-180,180,-90,90],
-                   out_extent=[-180,180,-90,90], sg_params=[]):
+                   out_extent=[-180,180,-90,90], sg_params=[1, -90, 170]):
     """
     Create a mask with NaN values removed from an input array
 
@@ -178,7 +178,7 @@ def call_make_grid(res, gridtype, in_extent=[-180,180,-90,90],
     # call appropriate make_grid function and return new grid
     if gridtype == "ll":
         return [make_grid_LL(res, in_extent, out_extent), None]
-    elif sg_params==[]:
+    elif sg_params==[1, -90, 170]:
         #standard CS
         return make_grid_CS(res)
     else:

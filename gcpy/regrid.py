@@ -42,6 +42,12 @@ def make_regridder_C2L( csres_in, llres_out, weightsdir='.', reuse_weights=True 
 
 def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlat_in=-90, tlon_in=170, 
                        sf_out=1, tlat_out=-90, tlon_out=170, weightsdir='.', verbose=True):
+    print('sf_in', sf_in)
+    print('sf_out', sf_out)
+    print('tlat_in', tlat_in)
+    print('tlat_out', tlat_out)
+    print('tlon_in', tlon_in)
+    print('tlon_out', tlon_out)
     igrid, igrid_list = make_grid_SG(csres_in, stretch_factor=sf_in, target_lat=tlat_in, target_lon=tlon_in)
     ogrid, ogrid_list = make_grid_SG(csres_out, stretch_factor=sf_out, target_lat=tlat_out, target_lon=tlon_out)
     regridder_list = []
@@ -147,7 +153,7 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     # Make grids (ref, dev, and comparison)
     # ==================================================================
     [refgrid, refgrid_list] = call_make_grid(refres, refgridtype, ref_extent, cmp_extent, sg_ref_params)
-    
+
     [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, dev_extent, cmp_extent, sg_dev_params)
 
     [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, cmp_extent, cmp_extent, sg_cmp_params)
@@ -156,7 +162,6 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     # Make regridders, if applicable
     # TODO: Make CS to CS regridders
     # =================================================================
-
     refregridder = None
     refregridder_list = None
     devregridder = None
@@ -190,7 +195,17 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
                     devres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights
                 )
 
-
+    print('refres', refres)
+    print('refgridtype', refgridtype)
+    print('devres', devres)
+    print('devgridtype', devgridtype)
+    print('cmpres', cmpres)
+    print('cmpgridtype', cmpgridtype)
+    print('regridref', regridref)
+    print('regriddev', regriddev)
+    print('sg_ref_params', sg_ref_params)
+    print('sg_dev_params', sg_dev_params)
+    print('sg_cmp_params', sg_cmp_params)
     return [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype,
     regridref, regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder, 
     devregridder, refregridder_list, devregridder_list]
@@ -330,17 +345,19 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
                 #no time or vertical
                 new_data = new_data.transpose('F', 'Y', 'X')
             # For each output face, sum regridded input faces            
+            print('new_data', new_data)
             oface_datasets = []
             for oface in range(6):
                 oface_regridded = []
                 for iface, regridder in regridder_list[oface].items():
                     ds_iface = new_data.isel(F=iface)
-                    if 'nf' in ds_iface.dims:
+                    if 'nf' in ds_iface.coords:
                         ds_iface = ds_iface.drop('F')
                     oface_regridded.append(regridder(ds_iface, keep_attrs=True))
                 oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces',
                                                                                             keep_attrs=True)
                 oface_datasets.append(oface_regridded)
+            print('oface  datasets', oface_datasets)
             new_data = xr.concat(oface_datasets, dim='F')
 
             new_data = new_data.rename({
@@ -359,7 +376,7 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
 def reformat_dims(ds, format, towards_common):
 
     def unravel_checkpoint_lat(ds_in):
-        if type(ds) is xr.Dataset:
+        if type(ds_in) is xr.Dataset:
             cs_res = ds_in.dims['lon']
             assert cs_res == ds_in.dims['lat'] // 6
         else:
