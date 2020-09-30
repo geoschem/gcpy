@@ -118,6 +118,5 @@ if __name__ == '__main__':
         args.fileout,
         format='NETCDF4_CLASSIC'
     )
-
     # Print the resulting dataset
     print(ds_out)

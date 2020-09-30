@@ -448,8 +448,8 @@ def compare_single_level(
         properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
-    sg_ref_params=[1, -90, 170]
-    sg_dev_params=[1, -90, 170]
+    sg_ref_params=[1, 170, -90]
+    sg_dev_params=[1, 170, -90]
     # Get stretched-grid info if passed
     if sg_ref_path != '':
         sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
@@ -773,7 +773,6 @@ def compare_single_level(
             cmpminlon_ind,
             cmpmaxlon_ind
         )
-
         # Dev
         ds_dev_cmps[i] = regrid_comparison_data(
             ds_dev,
@@ -789,7 +788,6 @@ def compare_single_level(
             cmpminlon_ind,
             cmpmaxlon_ind
         )
-
         # Diff of diffs
         if diff_of_diffs:
             frac_ds_ref_cmps[i] = regrid_comparison_data(
