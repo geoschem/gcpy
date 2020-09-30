@@ -332,6 +332,7 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
             else:
                 data_format='checkpoint'
             new_data = reformat_dims(data, format=data_format, towards_common=True)
+            print(new_data)
             # Drop variables that don't look like fields
             #non_fields = [v for v in new_data.variables.keys() if len(set(new_data[v].dims) - {'T', 'Z', 'F', 'Y', 'X'})>0]
             #new_data = new_data.drop(non_fields)
@@ -345,7 +346,6 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
                 #no time or vertical
                 new_data = new_data.transpose('F', 'Y', 'X')
             # For each output face, sum regridded input faces            
-            print('new_data', new_data)
             oface_datasets = []
             for oface in range(6):
                 oface_regridded = []
@@ -357,7 +357,6 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
                 oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces',
                                                                                             keep_attrs=True)
                 oface_datasets.append(oface_regridded)
-            print('oface  datasets', oface_datasets)
             new_data = xr.concat(oface_datasets, dim='F')
 
             new_data = new_data.rename({

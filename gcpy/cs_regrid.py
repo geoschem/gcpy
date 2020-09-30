@@ -65,7 +65,8 @@ if __name__ == '__main__':
     ds_in = reformat_dims(ds_in, format=args.dim_format_in, towards_common=True)
 
     # Drop variables that don't look like fields
-    non_fields = [v for v in ds_in.variables.keys() if len(set(ds_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0]
+    non_fields = [v for v in ds_in.variables.keys() if len(set(ds_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0
+                  or len(ds_in[v].dims) == 0]
     ds_in = ds_in.drop(non_fields)
 
     # Transpose to T, Z, F, Y, X
@@ -92,7 +93,6 @@ if __name__ == '__main__':
                 ds_iface = ds_in.isel(F=iface)
                 if 'F' in ds_iface.coords:
                     ds_iface = ds_iface.drop('F')
-                print(ds_iface)
                 oface_regridded.append(regridder(ds_iface, keep_attrs=True))
             oface_regridded = xr.concat(oface_regridded, dim='intersecting_ifaces').sum('intersecting_ifaces',
                                                                                         keep_attrs=True)
