@@ -6,7 +6,7 @@ Mainly used for model benchmarking purposes.
 
 import numpy as np
 import xarray as xr
-
+import gcpy.constants as physconsts
 
 def adjust_units(units):
     """
@@ -37,12 +37,12 @@ def adjust_units(units):
         unit_desc = "kg/m2/s"
 
     elif units_squeezed in [
-        "kgC/m2/s",
-        "kgCm-2s-1",
-        "kgCm^-2s^-1",
-        "kgc/m2/s",
-        "kgcm-2s-1",
-        "kgcm^-2s^-1",
+            "kgC/m2/s",
+            "kgCm-2s-1",
+            "kgCm^-2s^-1",
+            "kgc/m2/s",
+            "kgcm-2s-1",
+            "kgcm^-2s^-1",
     ]:
         unit_desc = "kgC/m2/s"
 
@@ -65,7 +65,7 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
 
         target_units : str
             String containing the name of the units to which the "data_kg"
-            argument will be converted.  Examples: 'Tg', 'Tg C', 'Mg', 
+            argument will be converted.  Examples: 'Tg', 'Tg C', 'Mg',
             'Mg C', 'kg, 'kg C', etc.
 
         kg_to_kg_C : float
@@ -124,14 +124,14 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
 
 
 def convert_units(
-    dr,
-    species_name,
-    species_properties,
-    target_units,
-    interval=[2678400.0],
-    area_m2=None,
-    delta_p=None,
-    box_height=None,
+        dr,
+        species_name,
+        species_properties,
+        target_units,
+        interval=[2678400.0],
+        area_m2=None,
+        delta_p=None,
+        box_height=None,
 ):
     """
     Converts data stored in an xarray DataArray object from its native
@@ -185,7 +185,7 @@ def convert_units(
     if "MW_g" in species_properties.keys():
         mw_g = species_properties.get("MW_g")
     else:
-        msg =  "Cannot find molecular weight MW_g for species {}".format(
+        msg = "Cannot find molecular weight MW_g for species {}".format(
             species_name)
         msg += "!\nPlease add the MW_g field for {}".format(species_name)
         msg += " to the species_database.yml file."
@@ -208,9 +208,9 @@ def convert_units(
     # ==============================
 
     # Physical constants
-    Avo = 6.022140857e23  # molec/mol
-    mw_air = 28.97  # g/mole dry air
-    g0 = 9.80665  # m/s2
+    Avo = physconsts.AVOGADRO       # molecules/mole
+    mw_air = physconsts.MW_AIR_g    # g/mole
+    g0 = physconsts.G               # m/s2
 
     # Get a consistent value for the units string
     # (ignoring minor differences in formatting)
@@ -231,7 +231,7 @@ def convert_units(
         )
     if "g" in target_units and mw_g is None:
         raise ValueError(
-            "Conversion from {} to {} for {} requires MW_g definition in species_database.yaml".format(
+            "Conversion from {} to {} for {} requires MW_g definition in species_database.yml".format(
                 units, target_units, species_name
             )
         )
@@ -266,9 +266,9 @@ def convert_units(
         if 'time' in dr.dims:
             # Need to right pad the interval array with new axes up to the
             # time dim of the dataset to enable broadcasting
-            numnewdims = len(dr.dims) - ( dr.dims.index('time') + 1 )
+            numnewdims = len(dr.dims) - (dr.dims.index('time') + 1)
             for newdim in range(numnewdims):
-                numsec = numsec[:,np.newaxis]
+                numsec = numsec[:, np.newaxis]
         else:
             # Raise an error if no time in dataset but interval has length > 1
             raise ValueError('Interval passed to convert_units has length greater than one but data array has no time dimension')
@@ -344,11 +344,11 @@ def check_units(ref_da, dev_da, enforce_units=True):
     ------------------------
         enforce_units : boolean
             Whether to stop program if ref and dev units do not match
-        
+
     Returns:
     --------
         units_match : bool
-    """         
+    """
     units_ref = ref_da.units.strip()
     units_dev = dev_da.units.strip()
     if units_ref != units_dev:
