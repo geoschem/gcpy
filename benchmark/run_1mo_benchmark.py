@@ -49,7 +49,6 @@ Remarks:
 
 import os
 from os.path import join
-
 import warnings
 import calendar
 import numpy as np
@@ -57,6 +56,7 @@ import xarray as xr
 from gcpy.util import get_filepath
 from gcpy import benchmark as bmk
 import gcpy.ste_flux as ste
+import gcpy.oh_metrics as oh
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"]="offscreen"
@@ -91,9 +91,9 @@ gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
 #dates of ref and dev runs
-ref_bmk_year     = '2016'
+ref_bmk_year     = '2019'
 ref_bmk_mon      = '7'
-dev_bmk_year     = '2016'
+dev_bmk_year     = '2019'
 dev_bmk_mon      = '7'
 
 # Name to be used for directory of output from this script
@@ -184,7 +184,7 @@ else:
                               results_dir, "GCHP_GCC_comparison")
     diff_of_diffs_resultsdir = join(maindir, gchp_dev_dir,
                               results_dir, "GCHP_GCC_diff_of_diffs")
-gcc_vs_gcc_tablesdir    = join(gcc_vs_gcc_resultsdir, "Tables")   
+gcc_vs_gcc_tablesdir    = join(gcc_vs_gcc_resultsdir, "Tables")
 gchp_vs_gchp_tablesdir  = join(gchp_vs_gchp_resultsdir, "Tables")
 gchp_vs_gcc_tablesdir   = join(gchp_vs_gcc_resultsdir, "Tables")
 
@@ -481,28 +481,45 @@ if gcc_vs_gcc:
     # GCC vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
     #---------------------------------------------------------------
     if OH_metrics:
-        print("\n%%% Creating GCC vs. GCC OH metrics %%%")
+        print("\n%%% Creating GCC vs. GCC OH metrics table %%%")
+
+# Use this for benchmarks prior to GEOS-Chem 13.0.0
+#        # Diagnostic collection files to read
+#        col  = "ConcAfterChem"
+#        ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_ref_date)
+#        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_dev_date)
+#
+#        # Meteorology data needed for calculations
+#        col = "StateMet"
+#        refmet = get_filepath(gcc_vs_gcc_refdir, col, gcc_ref_date)
+#        devmet = get_filepath(gcc_vs_gcc_devdir, col, gcc_dev_date)
+#
+#        # Print OH metrics
+#        bmk.make_benchmark_oh_metrics(
+#            ref,
+#            refmet,
+#            gcc_ref_version,
+#            dev,
+#            devmet,
+#            gcc_dev_version,
+#            dst=gcc_vs_gcc_tablesdir,
+#            overwrite=True
+#        )
 
         # Diagnostic collection files to read
-        col  = "ConcAfterChem"
+        col = "Metrics"
         ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_ref_date)
         dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_dev_date)
 
-        # Meteorology data needed for calculations
-        col = "StateMet"
-        refmet = get_filepath(gcc_vs_gcc_refdir, col, gcc_ref_date)
-        devmet = get_filepath(gcc_vs_gcc_devdir, col, gcc_dev_date)
-
-        # Print OH metrics
-        bmk.make_benchmark_oh_metrics(
+        # Create the OH Metrics table
+        oh.make_benchmark_oh_metrics(
             ref,
-            refmet,
             gcc_ref_version,
             dev,
-            devmet,
             gcc_dev_version,
             dst=gcc_vs_gcc_tablesdir,
-            overwrite=True
+            overwrite=True,
+            spcdb_dir=spcdb_dir
         )
 
     # --------------------------------------------------------------
@@ -541,7 +558,8 @@ if gchp_vs_gcc:
         # Diagnostic collection files to read
         col = "SpeciesConc"
         ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_dev_date)
-        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Meteorology data needed for GCC calculations
         col = "StateMet"
@@ -549,7 +567,8 @@ if gchp_vs_gcc:
 
         # Meteorology data needed for GCHP calculations
         col = "StateMet_avg"
-        devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date, is_gchp=True)
+        devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
+                              is_gchp=True)
 
         # Make concentration plots
         bmk.make_benchmark_conc_plots(
@@ -576,7 +595,8 @@ if gchp_vs_gcc:
         # Diagnostic collection files to read
         col = "Emissions"
         ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_dev_date)
-        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Create emissions plots
         bmk.make_benchmark_emis_plots(
@@ -602,11 +622,13 @@ if gchp_vs_gcc:
         # Diagnostic collection files to read
         col = "Emissions"
         ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_dev_date)
-        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Meteorology needed for GCHP
         col = "StateMet_avg"
-        devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date, is_gchp=True)
+        devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
+                              is_gchp=True)
 
         # Print emisisons and inventory tables
         bmk.make_benchmark_emis_tables(
@@ -631,7 +653,8 @@ if gchp_vs_gcc:
         # Diagnostic collection files to read
         col = "JValues"
         ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_dev_date)
-        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Plot J-values
         bmk.make_benchmark_jvalue_plots(
@@ -655,7 +678,8 @@ if gchp_vs_gcc:
         # Diagnostic collection files to read
         col = "Aerosols"
         ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_dev_date)
-        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Plot AODs
         bmk.make_benchmark_aod_plots(
@@ -679,7 +703,8 @@ if gchp_vs_gcc:
         # Diagnostic collection files to read
         col = "Restart"
         ref = get_filepath(gchp_vs_gcc_refrst, col, end_ref_date)
-        dev = get_filepath(gchp_vs_gcc_devrst, col, end_dev_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gcc_devrst, col, end_dev_date,
+                           is_gchp=True)
 
         # Plot mass tables
         bmk.make_benchmark_mass_tables(
@@ -701,7 +726,8 @@ if gchp_vs_gcc:
         # Diagnostic collections to read
         col = "Budget"
         ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_dev_date)
-        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date, is_gchp=True)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Make budget table. Include calculation of Strat. Exclude Transport
         # and Accumulation.
@@ -724,7 +750,24 @@ if gchp_vs_gcc:
     # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
     #---------------------------------------------------------------
     if OH_metrics:
-        print("\n%%% Skipping GCHP vs GCC OH metrics %%%")
+        print("\n%%% Creating GCHP vs GCC OH metrics table %%%")
+
+        # Diagnostic collection files to read
+        col = "Metrics"
+        ref = get_filepath(gchp_vs_gcc_refdir, col, gcc_dev_date)
+        dev = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
+                           is_gchp=True)
+
+        # Create the OH Metrics table
+        oh.make_benchmark_oh_metrics(
+            ref,
+            gchp_vs_gcc_refstr,
+            dev,
+            gchp_vs_gcc_devstr,
+            dst=gchp_vs_gcc_tablesdir,
+            overwrite=True,
+            spcdb_dir=spcdb_dir
+        )
 
     # --------------------------------------------------------------
     # GCHP vs GCC Strat-Trop Exchange
@@ -746,13 +789,17 @@ if gchp_vs_gchp:
 
         # Diagnostic collection files to read
         col = "SpeciesConc"
-        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date, is_gchp=True)
-        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date, is_gchp=True)
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date,
+                           is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Meteorology data needed for GCHP calculations
         col = "StateMet_avg"
-        refmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_ref_date, is_gchp=True)
-        devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date, is_gchp=True)
+        refmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_ref_date,
+                              is_gchp=True)
+        devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
+                              is_gchp=True)
 
         # Make concentration plots
         bmk.make_benchmark_conc_plots(
@@ -804,13 +851,17 @@ if gchp_vs_gchp:
 
         # Diagnostic collection files to read
         col = "Emissions"
-        ref = get_filepath(gchp_vs_gchp_refdir,col, gchp_ref_date, is_gchp=True)
-        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date, is_gchp=True)
+        ref = get_filepath(gchp_vs_gchp_refdir,col, gchp_ref_date,
+                           is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Meteorology needed for GCHP
         col = "StateMet_avg"
-        refmet = get_filepath(gchp_vs_gchp_refdir,col, gchp_ref_date, is_gchp=True)
-        devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date, is_gchp=True)
+        refmet = get_filepath(gchp_vs_gchp_refdir,col, gchp_ref_date,
+                              is_gchp=True)
+        devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
+                              is_gchp=True)
 
         # Print emisisons and inventory tables
         bmk.make_benchmark_emis_tables(
@@ -835,8 +886,10 @@ if gchp_vs_gchp:
 
         # Diagnostic collection files to read
         col = "JValues"
-        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date, is_gchp=True)
-        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date, is_gchp=True)
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date,
+                           is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Plot J-values
         bmk.make_benchmark_jvalue_plots(
@@ -859,8 +912,10 @@ if gchp_vs_gchp:
 
         # Diagnostic collection files to read
         col = "Aerosols"
-        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date, is_gchp=True)
-        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date, is_gchp=True)
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date,
+                           is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
+                           is_gchp=True)
 
         # Plot AODs
         bmk.make_benchmark_aod_plots(
@@ -883,10 +938,11 @@ if gchp_vs_gchp:
 
         # Diagnostic collection files to read
         col = "Restart"
-        ref = get_filepath(gchp_vs_gchp_refrst, col, end_ref_date, is_gchp=True)
-        dev = get_filepath(gchp_vs_gchp_devrst, col, end_dev_date, is_gchp=True)
-        print(ref)
-        print(dev)
+        ref = get_filepath(gchp_vs_gchp_refrst, col, end_ref_date,
+                           is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devrst, col, end_dev_date,
+                           is_gchp=True)
+
         # Plot mass tables
         bmk.make_benchmark_mass_tables(
             ref,
@@ -931,7 +987,24 @@ if gchp_vs_gchp:
     # GCHP vs. GCHP global mean OH, MCF Lifetime, CH4 Lifetime
     #---------------------------------------------------------------
     if OH_metrics:
-        print("\n%%% Skipping GCHP vs GCHP OH metrics %%%")
+        print("\n%%% Creating GCHP vs GCHP OH metrics table %%%")
+
+        # Diagnostic collection files to read
+        col = "Metrics"
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date)
+                           is_gchp=True)
+        dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
+                           is_gchp=True)
+
+        # Create the OH Metrics table
+        oh.make_benchmark_oh_metrics(
+            ref,
+            gchp_ref_version,
+            dev,
+            gchp_dev_version,
+            dst=gchp_vs_gchp_tablesdir,
+            overwrite=True,
+            spcdb_dir=spcdb_dir
 
     # --------------------------------------------------------------
     # GCHP vs GCHP Strat-Trop Exchange
@@ -972,5 +1045,3 @@ if gchp_vs_gcc_diff_of_diffs:
             cats_in_ugm3=None,
             spcdb_dir=spcdb_dir
         )
-
-
