@@ -15,8 +15,7 @@ from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd, compare_single_level, compare_zonal_mean
 from .regrid import make_regridder_C2L, make_regridder_L2L, create_regridders, regrid_comparison_data
 from .grid import GEOS_72L_grid, GEOS_47L_grid, get_grid_extents, call_make_grid, get_vert_grid, \
-    get_vert_grid, get_pressure_indices, pad_pressure_edges, convert_lev_to_pres, get_troposphere_mask, \
-    get_input_res
+    get_vert_grid, get_pressure_indices, pad_pressure_edges, convert_lev_to_pres, get_troposphere_mask
 import gcpy.util as util
 from .units import convert_units
 import gcpy.constants as gcon

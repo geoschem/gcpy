@@ -65,7 +65,8 @@ if __name__ == '__main__':
     ds_in = reformat_dims(ds_in, format=args.dim_format_in, towards_common=True)
 
     # Drop variables that don't look like fields
-    non_fields = [v for v in ds_in.variables.keys() if len(set(ds_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0]
+    non_fields = [v for v in ds_in.variables.keys() if len(set(ds_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0
+                  or len(ds_in[v].dims) == 0]
     ds_in = ds_in.drop(non_fields)
 
     # Transpose to T, Z, F, Y, X
@@ -117,6 +118,5 @@ if __name__ == '__main__':
         args.fileout,
         format='NETCDF4_CLASSIC'
     )
-
     # Print the resulting dataset
     print(ds_out)
