@@ -281,7 +281,9 @@ def compare_single_level(
     sigdiff_list=[],
     second_ref=None,
     second_dev=None,
-    spcdb_dir=os.path.dirname(__file__)
+    spcdb_dir=os.path.dirname(__file__),
+    sg_ref_path='',
+    sg_dev_path=''
 ):
     """
     Create single-level 3x2 comparison map plots for variables common
@@ -387,6 +389,12 @@ def compare_single_level(
         spcdb_dir  : str 
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
+        sg_ref_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the ref dataset
+            Default value: '' (will not be read in)
+        sg_dev_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
+            Default value: '' (will not be read in)
     """
     warnings.showwarning = warning_format
     # Error check arguments
@@ -440,6 +448,19 @@ def compare_single_level(
         properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
+    sg_ref_params=[1, 170, -90]
+    sg_dev_params=[1, 170, -90]
+    # Get stretched-grid info if passed
+    if sg_ref_path != '':
+        sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
+        sg_ref_params = [sg_ref_attrs['stretch_factor'], sg_ref_attrs['target_longitude'], 
+                         sg_ref_attrs['target_latitude']]
+
+    if sg_dev_path != '':
+        sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
+        sg_dev_params = [sg_dev_attrs['stretch_factor'], sg_dev_attrs['target_longitude'], 
+                         sg_dev_attrs['target_latitude']]
+                    
     # Get grid info and regrid if necessary
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, 
      regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder,
@@ -447,7 +468,9 @@ def compare_single_level(
          refdata,
          devdata,
          weightsdir,
-         cmpres=cmpres
+         cmpres=cmpres,
+         sg_ref_params=sg_ref_params,
+         sg_dev_params=sg_dev_params
      )
 
     # ==============================================================
@@ -750,7 +773,6 @@ def compare_single_level(
             cmpminlon_ind,
             cmpmaxlon_ind
         )
-
         # Dev
         ds_dev_cmps[i] = regrid_comparison_data(
             ds_dev,
@@ -766,7 +788,6 @@ def compare_single_level(
             cmpminlon_ind,
             cmpmaxlon_ind
         )
-
         # Diff of diffs
         if diff_of_diffs:
             frac_ds_ref_cmps[i] = regrid_comparison_data(
@@ -1352,7 +1373,9 @@ def compare_zonal_mean(
     sigdiff_list=[],
     second_ref=None,
     second_dev=None,
-    spcdb_dir=os.path.dirname(__file__)
+    spcdb_dir=os.path.dirname(__file__),
+    sg_ref_path='',
+    sg_dev_path=''
 ):
 
     """
@@ -1461,6 +1484,12 @@ def compare_zonal_mean(
         spcdb_dir  : str 
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
+        sg_ref_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the ref dataset
+            Default value: '' (will not be read in)
+        sg_dev_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
+            Default value: '' (will not be read in)
     """
     warnings.showwarning = warning_format
     if not isinstance(refdata, xr.Dataset):
@@ -1562,6 +1591,21 @@ def compare_zonal_mean(
         fracrefdata = fracrefdata.isel(lev=ref_pmid_ind)
         fracdevdata = fracdevdata.isel(lev=dev_pmid_ind)
 
+
+    sg_ref_params=[1, 170, -90]
+    sg_dev_params=[1, 170, -90]
+    # Get stretched-grid info if passed
+    if sg_ref_path != '':
+        sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
+        sg_ref_params = [sg_ref_attrs['stretch_factor'], sg_ref_attrs['target_longitude'], 
+                         sg_ref_attrs['target_latitude']]
+
+    if sg_dev_path != '':
+        sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
+        sg_dev_params = [sg_dev_attrs['stretch_factor'], sg_dev_attrs['target_longitude'], 
+                         sg_dev_attrs['target_latitude']]
+
+
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype,
      regridref, regriddev, regridany, refgrid, devgrid, cmpgrid,
      refregridder, devregridder,refregridder_list, devregridder_list] = \
@@ -1570,7 +1614,9 @@ def compare_zonal_mean(
                 devdata, 
                 weightsdir=weightsdir,
                 cmpres=cmpres,
-                zm=True
+                zm=True,
+                sg_ref_params=sg_ref_params,
+                sg_dev_params=sg_dev_params
             )
 
     ref_to_47 = False
@@ -2386,26 +2432,27 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, rat
             return mcolors.Normalize(vmin=vmin, vmax=vmax)
 
 def single_panel(plot_vals,
-           ax=None,
-           plot_type="single_level",
-           grid={},
-           gridtype="",
-           title="fill",
-           comap=WhGrYlRd,
-           norm=[],
-           unit="",
-           extent=(None, None, None, None),
-           masked_data=None,
-           use_cmap_RdBu=False,
-           log_color_scale=False,
-           add_cb=True,
-           pres_range=[0, 2000],
-           pedge=np.full((1, 1), -1),
-           pedge_ind=np.full((1,1), -1),
-           log_yaxis=False,
-           xtick_positions=[],
-           xticklabels=[],
-           proj=ccrs.PlateCarree()
+                 ax=None,
+                 plot_type="single_level",
+                 grid={},
+                 gridtype="",
+                 title="fill",
+                 comap=WhGrYlRd,
+                 norm=[],
+                 unit="",
+                 extent=(None, None, None, None),
+                 masked_data=None,
+                 use_cmap_RdBu=False,
+                 log_color_scale=False,
+                 add_cb=True,
+                 pres_range=[0, 2000],
+                 pedge=np.full((1, 1), -1),
+                 pedge_ind=np.full((1,1), -1),
+                 log_yaxis=False,
+                 xtick_positions=[],
+                 xticklabels=[],
+                 proj=ccrs.PlateCarree(),
+                 sg_path=''
 ):
     """
     Core plotting routine -- creates a single plot panel.
@@ -2482,10 +2529,16 @@ def single_panel(plot_vals,
 
     #Generate grid if not passed
     if grid == {}:
-        res, gridtype = get_input_res(plot_vals)
+        res, gridtype= get_input_res(plot_vals)
+        
+        sg_params = [1,170,-90]
+        if sg_path != '':
+            sg_attrs = xr.open_dataset(sg_path).attrs
+            sg_params = [sg_attrs['stretch_factor'], sg_attrs['target_longitude'], 
+                         sg_attrs['target_latitude']]
 
         if plot_type == 'single_level':
-            [grid, _] = call_make_grid(res, gridtype)
+            [grid, _] = call_make_grid(res, gridtype, sg_params=sg_params)
 
         else: #zonal mean
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
@@ -2516,7 +2569,8 @@ def single_panel(plot_vals,
                                                       plot_vals, 
                                                       weightsdir='.',
                                                       cmpres=None,
-                                                      zm=True
+                                                      zm=True,
+                 sg_ref_params=sg_params
                                                    )
             if gridtype == 'cs':
                 plot_vals = reshape_MAPL_CS(plot_vals)
@@ -2541,7 +2595,8 @@ def single_panel(plot_vals,
         extent = get_grid_extents(grid)
         #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
         if extent[0] > 180 or extent[1] > 180:
-            extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
+            #extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
+            extent = [extent[0]-180, extent[1]-180, extent[2], extent[3]]
     #Account for cross-dateline extent
     if extent[0] > extent[1]:
         if gridtype == "ll":
