@@ -72,6 +72,27 @@ def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlon_in=170, tlat_in=-90,
             
     return regridder_list
 
+def make_regridder_L2S(llres_in, csres_out, weightsdir='.', reuse_weights=True, sg_params=[1, 170, -90]):
+    llgrid = make_grid_LL(llres_in)
+    if sg_params == [1, 170, -90]:        
+        csgrid, csgrid_list = make_grid_CS(csres_out)
+    else:
+        csgrid, csgrid_list = make_grid_SG(csres_out, stretch_factor=sg_params[0], target_lon=sg_params[1], target_lat=sg_params[2])
+    
+    regridder_list=[]
+    for i in range(6):
+        if sg_params == [1, 170, -90]:
+            weightsfile = os.path.join(weightsdir, 'conservative_{}_c{}_{}.nc'.format(llres_in, str(csres_out), str(i)))
+        else:
+            weights_fname = f'conservative_ll{llres_in}_sg{sg_hash(csres_out, *sg_params)}_F{i}.nc'            
+            weightsfile = os.path.join(weightsdir, weights_fname)
+        try:
+            regridder = xe.Regridder(llgrid, csgrid_list[i], method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
+        except:
+            regridder = xe.Regridder(llgrid, csgrid_list[i], method='conservative', filename=weightsfile, reuse_weights=reuse_weights)
+        regridder_list.append(regridder)
+    return regridder_list        
+    
 def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=None, zm=False, sg_ref_params=[1, 170, -90], sg_dev_params=[1, 170, -90]):
     #Take two lat/lon or cubed-sphere xarray datasets and regrid them if needed
     refres, refgridtype = get_input_res(refds)
@@ -125,6 +146,7 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
             cmpres = devres
             cmpgridtype = "ll"
         else:
+            #default to 1x1.25 lat/lon grid for mixed CS and LL grids
             cmpres = "1x1.25"
             cmpgridtype = "ll"
     elif "x" in cmpres:
@@ -133,19 +155,16 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
         print("Warning: zonal mean comparison must be lat-lon. Defaulting to 1x1.25")
         cmpres='1x1.25'
         cmpgridtype = "ll"
-    elif refgridtype == "cs" and devgridtype == "cs":
+    else:
+        #cubed-sphere cmpres
         if type(cmpres) is list:
             #stretched-grid resolution
             #first element is cubed-sphere resolution, rest are sg params
-            cmpres=int(cmpres[0])
             sg_cmp_params=cmpres[1:]
+            cmpres=int(cmpres[0])
         else:
             cmpres = int(cmpres)  # must cast to integer for cubed-sphere
         cmpgridtype = "cs"
-    else:
-        print("Warning: lat/lon to CS regridding not currently implemented. Defaulting to 1x1.25")
-        cmpres='1x1.25'
-        cmpgridtype = "ll"
 
     # Determine what, if any, need regridding.
     regridref = refres != cmpres or sg_ref_params!=sg_cmp_params
@@ -162,7 +181,6 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     
     # =================================================================
     # Make regridders, if applicable
-    # TODO: Make CS to CS regridders
     # =================================================================
     refregridder = None
     refregridder_list = None
@@ -170,10 +188,15 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     devregridder_list = None
     if regridref:
         if refgridtype == "ll":
-            refregridder = make_regridder_L2L(
-                refres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights,
-                in_extent = ref_extent, out_extent = cmp_extent
-            )
+            if cmpgridtype == "cs":
+                refregridder_list = make_regridder_L2S(
+                    refres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights, sg_params=sg_cmp_params
+                )
+            else:
+                refregridder = make_regridder_L2L(
+                    refres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights,
+                    in_extent = ref_extent, out_extent = cmp_extent
+                )
         else:
             if cmpgridtype == "cs":
                 refregridder_list = make_regridder_S2S(refres, cmpres, *sg_ref_params, *sg_cmp_params,
@@ -184,10 +207,15 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
                 )
     if regriddev:
         if devgridtype == "ll":
-            devregridder = make_regridder_L2L(
-                devres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights,
-                in_extent = dev_extent, out_extent = cmp_extent
-            )
+            if cmpgridtype == "cs":
+                devregridder_list = make_regridder_L2S(
+                    devres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights, sg_params=sg_cmp_params
+                )
+            else:
+                devregridder = make_regridder_L2L(
+                    devres, cmpres, weightsdir=weightsdir, reuse_weights=reuse_weights,
+                    in_extent = dev_extent, out_extent = cmp_extent
+                )
         else:
             if cmpgridtype == "cs":
                 devregridder_list = make_regridder_S2S(devres, cmpres, *sg_dev_params, *sg_cmp_params,
@@ -258,7 +286,7 @@ def reduce_72_to_47(DataArray, conv_dict, pmid_ind_72, pmid_ind_47):
 def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_cmp_grid, gridtype, cmpgridtype,
                            cmpminlat_ind=0, cmpmaxlat_ind=-2, cmpminlon_ind=0, cmpmaxlon_ind=-2, nlev=1):
     """
-    Regrid comparison datasets to cubed-sphere or lat/lon format.
+    Regrid comparison datasets to cubed-sphere (including stretched-grid) or lat/lon format.
     Args:
     -----
         data : xarray DataArray
@@ -295,10 +323,17 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
 
     if regrid:
         if gridtype == "ll":
-            # regrid ll to ll
-            return regridder(data)
+            if cmpgridtype == "ll":
+                # regrid ll to ll
+                return regridder(data)
+            elif cmpgridtype == "cs":
+                # ll to CS
+                new_data = np.zeros([nlev, 6, res, res]).squeeze()
+                for j in range(6):
+                    new_data[j, ...] = regridder_list[j](data)
+                return new_data
         elif cmpgridtype == "ll":
-            #CS to LL
+            #CS to ll
             if nlev is 1:
                 new_data = np.zeros([global_cmp_grid['lat'].size,
                                      global_cmp_grid['lon'].size])
@@ -316,7 +351,7 @@ def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_
             else:
                 return new_data
         elif cmpgridtype == "cs":
-
+            #CS to CS
             # Reformat dimensions to T, Z, F, Y, X
             if 'Xdim' in data.dims:
                 data_format='diagnostic'
