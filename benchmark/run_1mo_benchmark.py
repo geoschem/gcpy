@@ -991,7 +991,7 @@ if gchp_vs_gchp:
 
         # Diagnostic collection files to read
         col = "Metrics"
-        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date)
+        ref = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date,
                            is_gchp=True)
         dev = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
                            is_gchp=True)
@@ -1005,6 +1005,7 @@ if gchp_vs_gchp:
             dst=gchp_vs_gchp_tablesdir,
             overwrite=True,
             spcdb_dir=spcdb_dir
+        )
 
     # --------------------------------------------------------------
     # GCHP vs GCHP Strat-Trop Exchange
