@@ -62,7 +62,8 @@ def six_plot(
     xticklabels=[],
     plot_type="single_level",
     ratio_log=False,
-    proj=ccrs.PlateCarree()
+    proj=ccrs.PlateCarree(),
+    **kwargs
 ):
 
     """
@@ -124,7 +125,8 @@ def six_plot(
     xticklabels: list of str
        Labels for lat/lon ticks
     proj : 
-
+    kwargs : various
+       Any extra keyword arguments are passed through the plotting functions to be used in calls to pcolormesh()
     """
     # Set min and max of the data range
     if subplot in ("ref", "dev"):
@@ -205,7 +207,7 @@ def six_plot(
     plot = single_panel(plot_val, ax, plot_type, grid, gridtype, title, comap,
                         norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
                         add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
-                        xtick_positions=xtick_positions, xticklabels=xticklabels, proj=proj)
+                        xtick_positions=xtick_positions, xticklabels=xticklabels, proj=proj, **kwargs)
 
     # Define the colorbar for the plot
     cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
@@ -283,7 +285,8 @@ def compare_single_level(
     second_dev=None,
     spcdb_dir=os.path.dirname(__file__),
     sg_ref_path='',
-    sg_dev_path=''
+    sg_dev_path='',
+    **pcolormesh_args
 ):
     """
     Create single-level 3x2 comparison map plots for variables common
@@ -395,6 +398,8 @@ def compare_single_level(
         sg_dev_path : str
             Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
             Default value: '' (will not be read in)
+        pcolormesh_args : various
+            Any extra keyword arguments are passed through the plotting functions to be used in calls to pcolormesh()   
     """
     warnings.showwarning = warning_format
     # Error check arguments
@@ -1283,7 +1288,8 @@ def compare_single_level(
                 log_color_scale,
                 plot_type="single_level",
                 ratio_log=ratio_logs[i],
-                proj=proj
+                proj=proj,
+                **pcolormesh_args
             )
 
         # ==============================================================
@@ -1384,7 +1390,8 @@ def compare_zonal_mean(
     second_dev=None,
     spcdb_dir=os.path.dirname(__file__),
     sg_ref_path='',
-    sg_dev_path=''
+    sg_dev_path='',
+    **pcolormesh_args
 ):
 
     """
@@ -1499,6 +1506,8 @@ def compare_zonal_mean(
         sg_dev_path : str
             Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
             Default value: '' (will not be read in)
+        pcolormesh_args : various
+            Any extra keyword arguments are passed through the plotting functions to be used in calls to pcolormesh()
     """
     warnings.showwarning = warning_format
     if not isinstance(refdata, xr.Dataset):
@@ -2303,7 +2312,8 @@ def compare_zonal_mean(
                 plot_type="zonal_mean",
                 xtick_positions=xtick_positions,
                 xticklabels=xticklabels,
-                ratio_log=ratio_logs[i]
+                ratio_log=ratio_logs[i],
+                **pcolormesh_args
             )
 
         # ==============================================================
@@ -2461,7 +2471,8 @@ def single_panel(plot_vals,
                  xtick_positions=[],
                  xticklabels=[],
                  proj=ccrs.PlateCarree(),
-                 sg_path=''
+                 sg_path='',
+                 **pcolormesh_args
 ):
     """
     Core plotting routine -- creates a single plot panel.
@@ -2510,7 +2521,8 @@ def single_panel(plot_vals,
             Locations of lat/lon or lon ticks on plot
         xticklabels: list(str)
             Labels for lat/lon ticks
-
+        pcolormesh_args : various
+            Any extra keyword arguments are passed to calls to pcolormesh()
     Returns:
     -----
     
@@ -2645,7 +2657,7 @@ def single_panel(plot_vals,
     if plot_type == "zonal_mean":
         #Zonal mean plot
         plot = ax.pcolormesh(
-            grid["lat_b"], pedge[pedge_ind], plot_vals, cmap=comap, norm=norm
+            grid["lat_b"], pedge[pedge_ind], plot_vals, cmap=comap, norm=norm, **pcolormesh_args
         )
         ax.set_aspect("auto")
         ax.set_ylabel("Pressure (hPa)")
@@ -2667,7 +2679,8 @@ def single_panel(plot_vals,
             plot_vals,
             transform=proj,
             cmap=comap,
-            norm=norm
+            norm=norm,
+            **pcolormesh_args
         )
         '''plot = ax.imshow(
             plot_vals,
@@ -2700,7 +2713,8 @@ def single_panel(plot_vals,
                 masked_data[j, :, :],
                 transform=proj,
                 cmap=comap,
-                norm=norm
+                norm=norm,
+                **pcolormesh_args
             )
         ax.set_extent(extent, crs=proj)
         ax.coastlines()

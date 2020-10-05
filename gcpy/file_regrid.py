@@ -7,9 +7,9 @@ try:
     import xesmf as xe
     from distutils.version import LooseVersion
     if LooseVersion(xe.__version__) < LooseVersion("0.2.1"):
-        raise ImportError("cs_regrid.py requires xESMF version 0.2.1 or higher.")
+        raise ImportError("file_regrid.py requires xESMF version 0.2.1 or higher.")
 except ImportError as e:
-    print('cs_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
+    print('file_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
 import pandas as pd
 
 from gcpy.grid import make_grid_SG, get_input_res, get_vert_grid, get_grid_extents
