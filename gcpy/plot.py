@@ -494,7 +494,7 @@ def compare_single_level(
     # Get comparison date extents in same midpoint format as lat-lon grid.
     cmp_mid_minlon, cmp_mid_maxlon, cmp_mid_minlat, cmp_mid_maxlat = \
                                     get_grid_extents(cmpgrid,edges=False)
-    if refgridtype == "ll" and ref_extent != cmp_extent:
+    if refgridtype == "ll" and ref_extent != cmp_extent and cmpgridtype =="ll":
         refdata = refdata.\
                       where(refdata.lon >= cmp_mid_minlon, drop=True).\
                       where(refdata.lon <= cmp_mid_maxlon, drop=True).\
@@ -506,7 +506,7 @@ def compare_single_level(
                             where(fracrefdata.lon <= cmp_mid_maxlon,drop=True).\
                             where(fracrefdata.lat >= cmp_mid_minlat,drop=True).\
                             where(fracrefdata.lat <= cmp_mid_maxlat,drop=True)
-    if devgridtype == "ll" and dev_extent != cmp_extent:
+    if devgridtype == "ll" and dev_extent != cmp_extent and cmpgridtype =="ll":
         devdata = devdata.\
                       where(devdata.lon >= cmp_mid_minlon, drop=True).\
                       where(devdata.lon <= cmp_mid_maxlon, drop=True).\
@@ -757,11 +757,16 @@ def compare_single_level(
                 if diff_of_diffs:
                     frac_ds_refs[i] = frac_ds_refs[i].values / ref_area.values
                     frac_ds_devs[i] = frac_ds_devs[i].values / dev_area.values
-
+        ref_cs_res = refres
+        dev_cs_res = devres
+        if cmpgridtype == "cs":
+            ref_cs_res = cmpres
+            dev_cs_res = cmpres
+            
         # Ref
         ds_ref_cmps[i] = regrid_comparison_data(
             ds_ref,
-            refres,
+            ref_cs_res,
             regridref,
             refregridder,
             refregridder_list,
@@ -776,7 +781,7 @@ def compare_single_level(
         # Dev
         ds_dev_cmps[i] = regrid_comparison_data(
             ds_dev,
-            devres,
+            dev_cs_res,
             regriddev,
             devregridder,
             devregridder_list,
@@ -792,7 +797,7 @@ def compare_single_level(
         if diff_of_diffs:
             frac_ds_ref_cmps[i] = regrid_comparison_data(
                 frac_ds_refs[i],
-                refres,
+                ref_cs_res,
                 regridref,
                 refregridder,
                 refregridder_list,
@@ -806,7 +811,7 @@ def compare_single_level(
             )
             frac_ds_dev_cmps[i] = regrid_comparison_data(
                 frac_ds_devs[i],
-                devres,
+                dev_cs_res,
                 regriddev,
                 devregridder,
                 devregridder_list,
@@ -886,14 +891,18 @@ def compare_single_level(
 
         # Reshape comparison cubed sphere data, if any
         if cmpgridtype == "cs":
-            ds_ref_cmp_reshaped = ds_ref_cmp.data.reshape(6, cmpres, cmpres)
-            ds_dev_cmp_reshaped = ds_dev_cmp.data.reshape(6, cmpres, cmpres)
-            if frac_ds_ref_cmp is not None:
-                frac_ds_ref_cmp_reshaped = \
-                                frac_ds_ref_cmp.data.reshape(6, cmpres, cmpres)
-            if frac_ds_dev_cmp is not None:
-                frac_ds_dev_cmp_reshaped = \
-                                frac_ds_dev_cmp.data.reshape(6, cmpres, cmpres)
+            def call_reshape(cmp_data):
+                new_data = None
+                if type(cmp_data) == xr.DataArray:
+                    new_data = cmp_data.data.reshape(6, cmpres, cmpres)
+                elif type(cmp_data) == np.ndarray:
+                    new_data = cmp_data.reshape(6,cmpres,cmpres)
+                return new_data
+                    
+            ds_ref_cmp_reshaped = call_reshape(ds_ref_cmp)
+            ds_dev_cmp_reshaped = call_reshape(ds_dev_cmp)
+            frac_ds_ref_cmp_reshaped = call_reshape(frac_ds_ref_cmp)
+            frac_ds_dev_cmp_reshaped = call_reshape(frac_ds_dev_cmp)
 
         # ==============================================================
         # Get min and max values for use in the colorbars
@@ -909,10 +918,10 @@ def compare_single_level(
 
         # Comparison
         if cmpgridtype == "cs":
-            vmin_ref_cmp = float(ds_ref_cmp.data.min())
-            vmax_ref_cmp = float(ds_ref_cmp.data.max())
-            vmin_dev_cmp = float(ds_dev_cmp.data.min())
-            vmax_dev_cmp = float(ds_dev_cmp.data.max())
+            vmin_ref_cmp = float(ds_ref_cmp.min())
+            vmax_ref_cmp = float(ds_ref_cmp.max())
+            vmin_dev_cmp = float(ds_dev_cmp.min())
+            vmax_dev_cmp = float(ds_dev_cmp.max())
             vmin_cmp = np.min([vmin_ref_cmp, vmin_dev_cmp])
             vmax_cmp = np.max([vmax_ref_cmp, vmax_dev_cmp])
         else:

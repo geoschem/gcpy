@@ -571,10 +571,15 @@ def reshape_MAPL_CS(da):
         if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
             da = da.stack(lat=("nf", "Ydim"))
             da = da.rename({"Xdim": "lon"})
-            if "lev" in da.dims:
-                da = da.transpose("lev", "lat", "lon")
-            else:
-                da = da.transpose("lat", "lon")
+        
+        if "lev" in da.dims and "time" in da.dims:
+            da = da.transpose("time", "lev", "lat", "lon")
+        elif "lev" in da.dims:
+            da = da.transpose("lev", "lat", "lon")
+        elif "time" in da.dims:
+            da = da.transpose("time", "lat", "lon")
+        else:
+            da = da.transpose("lat", "lon")
     return da
 
 def get_diff_of_diffs(ref, dev):
