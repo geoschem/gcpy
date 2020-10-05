@@ -12,8 +12,8 @@ except ImportError as e:
     print('cs_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
 import pandas as pd
 
-from gcpy.grid import make_grid_SG, get_input_res, get_vert_grid
-from gcpy.regrid import make_regridder_S2S, sg_hash, reformat_dims, make_regridder_L2S, make_regridder_C2L
+from gcpy.grid import make_grid_SG, get_input_res, get_vert_grid, get_grid_extents
+from gcpy.regrid import make_regridder_S2S, sg_hash, reformat_dims, make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
 from gcpy.util import reshape_MAPL_CS
 
 def regrid_file(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_out='0x0', sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]):
@@ -22,6 +22,7 @@ def regrid_file(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_o
     ds_in = xr.open_dataset(fin, decode_cf=False)
     ds_in = ds_in.load()
     time = ds_in.time
+    cs_res_in=0
     if dim_format_in != 'classic':
         # Reformat dimensions to T, Z, F, Y, X
         ds_in = reformat_dims(ds_in, format=dim_format_in, towards_common=True)
@@ -39,13 +40,13 @@ def regrid_file(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_o
 
     elif dim_format_in == 'classic' and dim_format_out != 'classic':
         ds_in = drop_and_rename_classic_vars(ds_in)
-        cs_res_in=0
 
     if cs_res_in == cs_res_out and all([v1 == v2 for v1, v2 in zip(sg_params_in, sg_params_out)]):
         print('Skipping regridding since grid parameters are identical')
         ds_out = ds_in
 
     elif dim_format_in != 'classic' and dim_format_out != 'classic':
+        #CS/SG to CS/SG
         # Make regridders
         regridders = make_regridder_S2S(
             cs_res_in, cs_res_out,
@@ -73,6 +74,7 @@ def regrid_file(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_o
         ds_out = ds_out.drop(['lat', 'lon'])  # lat, lon are from xESMF which we don't want
         
     elif dim_format_in == 'classic' and dim_format_out != 'classic':        
+        #LL to SG/CS
         llres_in = get_input_res(ds_in)[0]
         #make regridders
         regridders = make_regridder_L2S(llres_in, cs_res_out, sg_params=sg_params_out)
@@ -111,6 +113,7 @@ def regrid_file(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_o
             print('WARNING: xarray coordinates are not fully implemented for diagnostic format')
 
     elif dim_format_in != 'classic' and dim_format_out == 'classic':
+        #SG/CS to LL
         regridders = make_regridder_C2L(cs_res_in, ll_res_out, sg_params=sg_params_in)
         ds_out = xr.concat([regridders[face](ds_in.isel(F=face), keep_attrs=True) for face in range(6)], dim='F').sum('F', keep_attrs=True)
         #ds_out = xr.sum([regridders[face](ds_in.isel(F=face), keep_attrs=True) for face in range(6)], dim='F', keep_attrs=True)
@@ -127,9 +130,31 @@ def regrid_file(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_o
         ds_out['lon'].attrs = {'long_name': 'Longitude',
                                'units': 'degrees_east',
                                'axis': 'X'}
+    elif dim_format_in == 'classic' and dim_format_out == 'classic':
+        #ll to ll
+        in_extent = get_grid_extents(ds_in)
+        out_extent = in_extent
+        ll_res_in = get_input_res(ds_in)[0]
+        [lat_in,lon_in] = list(map(float, ll_res_in.split('x')))
+        [lat_out,lon_out] = list(map(float, ll_res_out.split('x')))
 
-        
+        if lat_in == lat_out and lon_in == lon_out:
+            print('Skipping regridding since grid parameters are identical')
+            ds_out = ds_in
+        else:
+            lon_attrs = ds_in.lon.attrs
+            lat_attrs = ds_in.lat.attrs
+            #drop non-regriddable variables
+            non_fields = [v for v in ds_in.variables.keys() if 'lat' not in ds_in[v].dims and 'lon' not in ds_in[v].dims]
+            non_fields_ds = ds_in[non_fields]
+            ds_in = ds_in.drop(non_fields)
 
+            regridder = make_regridder_L2L(ll_res_in, ll_res_out, reuse_weights=True,in_extent=in_extent,out_extent=out_extent)
+            ds_out = regridder(ds_in, keep_attrs=True)
+            ds_out = ds_out.merge(non_fields_ds)
+            ds_out['lon'].attrs = lon_attrs
+            ds_out['lat'].attrs = lat_attrs
+            ds_out = ds_out.transpose('time', 'lev', 'ilev', 'lat', 'lon')
 
     if dim_format_in != 'classic' and dim_format_out != 'classic':
         # Reformat dimensions to desired output format
