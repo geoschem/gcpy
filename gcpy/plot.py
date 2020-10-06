@@ -63,7 +63,8 @@ def six_plot(
     plot_type="single_level",
     ratio_log=False,
     proj=ccrs.PlateCarree(),
-    **kwargs
+    ll_plot_func='imshow',
+    **extra_plot_args
 ):
 
     """
@@ -125,8 +126,12 @@ def six_plot(
     xticklabels: list of str
        Labels for lat/lon ticks
     proj : 
-    kwargs : various
-       Any extra keyword arguments are passed through the plotting functions to be used in calls to pcolormesh()
+    ll_plot_func : str 
+       Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
+       imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+    extra_plot_args : various
+       Any extra keyword arguments are passed through the plotting functions to be used 
+       in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     """
     # Set min and max of the data range
     if subplot in ("ref", "dev"):
@@ -207,7 +212,8 @@ def six_plot(
     plot = single_panel(plot_val, ax, plot_type, grid, gridtype, title, comap,
                         norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
                         add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
-                        xtick_positions=xtick_positions, xticklabels=xticklabels, proj=proj, **kwargs)
+                        xtick_positions=xtick_positions, xticklabels=xticklabels, proj=proj, 
+                        ll_plot_func=ll_plot_func, **extra_plot_args)
 
     # Define the colorbar for the plot
     cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
@@ -286,7 +292,8 @@ def compare_single_level(
     spcdb_dir=os.path.dirname(__file__),
     sg_ref_path='',
     sg_dev_path='',
-    **pcolormesh_args
+    ll_plot_func='imshow',
+    **extra_plot_args
 ):
     """
     Create single-level 3x2 comparison map plots for variables common
@@ -398,8 +405,13 @@ def compare_single_level(
         sg_dev_path : str
             Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
             Default value: '' (will not be read in)
-        pcolormesh_args : various
-            Any extra keyword arguments are passed through the plotting functions to be used in calls to pcolormesh()   
+        ll_plot_func : str 
+            Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
+            imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+            Default value: 'imshow'
+        extra_plot_args : various
+            Any extra keyword arguments are passed through the plotting functions to be used 
+            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).   
     """
     warnings.showwarning = warning_format
     # Error check arguments
@@ -1289,7 +1301,8 @@ def compare_single_level(
                 plot_type="single_level",
                 ratio_log=ratio_logs[i],
                 proj=proj,
-                **pcolormesh_args
+                ll_plot_func=ll_plot_func,
+                **extra_plot_args
             )
 
         # ==============================================================
@@ -1391,7 +1404,7 @@ def compare_zonal_mean(
     spcdb_dir=os.path.dirname(__file__),
     sg_ref_path='',
     sg_dev_path='',
-    **pcolormesh_args
+    **extra_plot_args
 ):
 
     """
@@ -1506,8 +1519,9 @@ def compare_zonal_mean(
         sg_dev_path : str
             Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
             Default value: '' (will not be read in)
-        pcolormesh_args : various
-            Any extra keyword arguments are passed through the plotting functions to be used in calls to pcolormesh()
+        extra_plot_args : various
+            Any extra keyword arguments are passed through the plotting functions to be used 
+            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     """
     warnings.showwarning = warning_format
     if not isinstance(refdata, xr.Dataset):
@@ -2313,7 +2327,7 @@ def compare_zonal_mean(
                 xtick_positions=xtick_positions,
                 xticklabels=xticklabels,
                 ratio_log=ratio_logs[i],
-                **pcolormesh_args
+                **extra_plot_args
             )
 
         # ==============================================================
@@ -2472,7 +2486,8 @@ def single_panel(plot_vals,
                  xticklabels=[],
                  proj=ccrs.PlateCarree(),
                  sg_path='',
-                 **pcolormesh_args
+                 ll_plot_func="imshow",
+                 **extra_plot_args
 ):
     """
     Core plotting routine -- creates a single plot panel.
@@ -2519,10 +2534,13 @@ def single_panel(plot_vals,
             Set this flag to True to enable log scaling of pressure in zonal mean plots
         xtick_positions : list(float)
             Locations of lat/lon or lon ticks on plot
-        xticklabels: list(str)
+        xticklabels : list(str)
             Labels for lat/lon ticks
-        pcolormesh_args : various
-            Any extra keyword arguments are passed to calls to pcolormesh()
+        ll_plot_func : str 
+            Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
+            imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+        extra_plot_args : various
+            Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     Returns:
     -----
     
@@ -2548,10 +2566,10 @@ def single_panel(plot_vals,
     if title == "fill" and data_is_xr:
         title = plot_vals.name
 
+
     #Generate grid if not passed
     if grid == {}:
-        res, gridtype= get_input_res(plot_vals)
-        
+        res, gridtype = get_input_res(plot_vals)
         sg_params = [1,170,-90]
         if sg_path != '':
             sg_attrs = xr.open_dataset(sg_path).attrs
@@ -2614,10 +2632,18 @@ def single_panel(plot_vals,
 
     if extent == (None, None, None, None) or extent == None:
         extent = get_grid_extents(grid)
+        print(extent)
         #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
         if extent[0] > 180 or extent[1] > 180:
             #extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
             extent = [extent[0]-180, extent[1]-180, extent[2], extent[3]]
+        '''
+        if extent[0] < -180 and 'x' in res:
+            lon_res = float(res.split('x')[1])
+            extent = [180, 
+        if extent[1] > 180 and 'x' in res:
+            extent[1] = 180
+        '''
     #Account for cross-dateline extent
     if extent[0] > extent[1]:
         if gridtype == "ll":
@@ -2657,7 +2683,7 @@ def single_panel(plot_vals,
     if plot_type == "zonal_mean":
         #Zonal mean plot
         plot = ax.pcolormesh(
-            grid["lat_b"], pedge[pedge_ind], plot_vals, cmap=comap, norm=norm, **pcolormesh_args
+            grid["lat_b"], pedge[pedge_ind], plot_vals, cmap=comap, norm=norm, **extra_plot_args
         )
         ax.set_aspect("auto")
         ax.set_ylabel("Pressure (hPa)")
@@ -2671,24 +2697,76 @@ def single_panel(plot_vals,
         ax.set_xticklabels(xticklabels)
 
     elif gridtype == "ll":
-        #Lat/Lon single level
-        # Create a lon/lat plot
-        plot = ax.pcolormesh(
-            grid["lon_b"],
-            grid["lat_b"],
-            plot_vals,
-            transform=proj,
-            cmap=comap,
-            norm=norm,
-            **pcolormesh_args
-        )
-        '''plot = ax.imshow(
-            plot_vals,
-            extent=extent,
-            transform=proj,
-            cmap=comap,
-            norm=norm
-        )'''
+        if ll_plot_func=='imshow':
+            #Lat/Lon single level
+            [minlon, maxlon, minlat, maxlat] = extent
+            #expand extent to minimize imshow distortion
+            #[dlat,dlon] = list(map(float, res.split('x')))
+            dlon = grid['lon'][2]-grid['lon'][1]
+            dlat = grid['lat'][2]-grid['lat'][1]
+            def get_nearest_extent(val, array, direction, spacing):
+                grid_vals = np.asarray(array)
+                diff = grid_vals-val
+                if direction == 'greater':
+                    diff[diff<0]=np.inf
+                    i = diff.argmin()
+                    if diff[i] == np.inf:
+                        #expand extent to value beyond grid limits if extent is already > max grid value
+                        return grid_vals[(np.abs(grid_vals-val)).argmin()]
+                    else:
+                        return grid_vals[i]
+                else:
+                    diff[diff>0]=-np.inf
+                    i = diff.argmax()
+                    if diff[i] == -np.inf:
+                        #expand extent to value beyond grid limits if extent is already < min grid value
+                        #plot will be distorted if full global to avoid cartopy issues
+                        return grid_vals[(np.abs(grid_vals-val)).argmin()] - spacing                    
+                    else:
+                        return max(grid_vals[i], -180)
+            closest_minlon = get_nearest_extent(minlon, grid['lon_b'], 'less', dlon)
+            closest_maxlon = get_nearest_extent(maxlon, grid['lon_b'], 'greater', dlon)
+            #don't adjust if extent includes poles where points are not evenly spaced anyway
+            if np.abs(grid['lat_b'][0]-grid['lat_b'][1]) != np.abs(grid['lat_b'][1]-grid['lat_b'][2]) \
+               and minlat < grid['lat_b'][1]:            
+                closest_minlat = grid['lat_b'][0]
+            else:
+                closest_minlat = get_nearest_extent(minlat, grid['lat_b'], 'less', dlat)
+
+            if np.abs(grid['lat_b'][-1]-grid['lat_b'][-2]) != np.abs(grid['lat_b'][-2]-grid['lat_b'][-3]) \
+               and maxlat > grid['lat_b'][-2]:            
+                closest_maxlat = grid['lat_b'][-1]
+            else:
+                closest_maxlat = get_nearest_extent(maxlat, grid['lat_b'], 'greater', dlat)
+
+            extent = [closest_minlon, closest_maxlon, closest_minlat, closest_maxlat]
+            if type(plot_vals) is xr.DataArray:
+                #filter data by bounds of extent
+                plot_vals = plot_vals.where(plot_vals.lon>closest_minlon, 
+                                            drop=True).where(plot_vals.lon<closest_maxlon,
+                                                             drop=True).where(plot_vals.lat>minlat, 
+                                                                              drop=True).where(plot_vals.lat<maxlat, drop=True)
+            # Create a lon/lat plot
+            plot = ax.imshow(
+                plot_vals,
+                extent=extent,
+                transform=proj,
+                cmap=comap,
+                norm=norm,
+                origin='lower',
+                interpolation='nearest',
+                **extra_plot_args
+            )
+        else:
+            plot = ax.pcolormesh(
+                grid["lon_b"],
+                grid["lat_b"],
+                plot_vals,
+                transform=proj,
+                cmap=comap,
+                norm=norm,
+                **extra_plot_args
+            )
         ax.set_extent(extent, crs=proj)
         ax.coastlines()
         ax.set_xticks(xtick_positions)
@@ -2714,7 +2792,7 @@ def single_panel(plot_vals,
                 transform=proj,
                 cmap=comap,
                 norm=norm,
-                **pcolormesh_args
+                **extra_plot_args
             )
         ax.set_extent(extent, crs=proj)
         ax.coastlines()
