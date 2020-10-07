@@ -2632,7 +2632,6 @@ def single_panel(plot_vals,
 
     if extent == (None, None, None, None) or extent == None:
         extent = get_grid_extents(grid)
-        print(extent)
         #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
         if extent[0] > 180 or extent[1] > 180:
             #extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
