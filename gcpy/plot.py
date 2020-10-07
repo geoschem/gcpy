@@ -22,16 +22,16 @@ from tempfile import TemporaryDirectory
 import warnings
 
 # Save warnings format to undo overwriting built into PyPDF2
-warning_format = warnings.showwarning
+_warning_format = warnings.showwarning
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
 
-current_dir = os.path.dirname(__file__)
+_current_dir = os.path.dirname(__file__)
 
-rgb_WhGrYlRd = np.genfromtxt(current_dir+'/colormaps/WhGrYlRd.txt',
+_rgb_WhGrYlRd = np.genfromtxt(_current_dir+'/colormaps/WhGrYlRd.txt',
                              delimiter=' ')
-WhGrYlRd = mcolors.ListedColormap(rgb_WhGrYlRd/255.0)
+WhGrYlRd = mcolors.ListedColormap(_rgb_WhGrYlRd/255.0)
 
 
 def six_plot(
@@ -413,7 +413,7 @@ def compare_single_level(
             Any extra keyword arguments are passed through the plotting functions to be used 
             in calls to pcolormesh() (CS) or imshow() (Lat/Lon).   
     """
-    warnings.showwarning = warning_format
+    warnings.showwarning = _warning_format
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
@@ -1370,7 +1370,7 @@ def compare_single_level(
                 merge.append(os.path.join(str(temp_dir), temp_pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
             merge.write(pdfname)
             merge.close()
-            warnings.showwarning = warning_format
+            warnings.showwarning = _warning_format
 
 
 def compare_zonal_mean(
@@ -1523,7 +1523,7 @@ def compare_zonal_mean(
             Any extra keyword arguments are passed through the plotting functions to be used 
             in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     """
-    warnings.showwarning = warning_format
+    warnings.showwarning = _warning_format
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
 
@@ -1568,19 +1568,13 @@ def compare_zonal_mean(
     savepdf = True
     if pdfname == "":
         savepdf = False
-    # Cleanup previous temporary PDFs produced during parallelization
-    #for i in range(n_var):
-    #    try:
-    #        os.remove(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
-    #    except:
-    #        continue
 
     # If converting to ug/m3, load the species database
     if convert_to_ugm3:
         properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
-    # Get mid-point pressure and edge pressures for this grid (assume 72-level)
+    # Get mid-point pressure and edge pressures for this grid
     ref_pedge, ref_pmid, ref_grid_cat = get_vert_grid(refdata)
     dev_pedge, dev_pmid, dev_grid_cat = get_vert_grid(devdata)
 
@@ -1588,15 +1582,15 @@ def compare_zonal_mean(
     ref_pedge_ind = get_pressure_indices(ref_pedge, pres_range)
     dev_pedge_ind = get_pressure_indices(dev_pedge, pres_range)
 
-
     # Pad edges if subset does not include surface or TOA so data spans
     # entire subrange
-    ref_pedge_ind = pad_pressure_edges(ref_pedge_ind, refdata.sizes["lev"])
-    dev_pedge_ind = pad_pressure_edges(dev_pedge_ind, devdata.sizes["lev"])
+    ref_pedge_ind = pad_pressure_edges(ref_pedge_ind, refdata.sizes["lev"], np.size(ref_pmid))
+    dev_pedge_ind = pad_pressure_edges(dev_pedge_ind, devdata.sizes["lev"], np.size(dev_pmid))
 
     # pmid indexes do not include last pedge index
     ref_pmid_ind = ref_pedge_ind[:-1]
     dev_pmid_ind = dev_pedge_ind[:-1]
+
     # Convert levels to pressures in ref and dev data
     refdata = convert_lev_to_pres(refdata, ref_pmid, ref_pedge)
     devdata = convert_lev_to_pres(devdata, dev_pmid, dev_pedge)
@@ -2396,7 +2390,7 @@ def compare_zonal_mean(
                 merge.append(os.path.join(str(temp_dir), temp_pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
             merge.write(pdfname)
             merge.close()
-            warnings.showwarning = warning_format
+            warnings.showwarning = _warning_format
 
 def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, ratio_log=False):
     """
@@ -2582,7 +2576,7 @@ def single_panel(plot_vals,
         else: #zonal mean
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
                 
-                # Get mid-point pressure and edge pressures for this grid (assume 72-level)
+                # Get mid-point pressure and edge pressures for this grid
                 pedge, pmid, grid_cat = get_vert_grid(plot_vals)
                 
                 # Get indexes of pressure subrange (full range is default)

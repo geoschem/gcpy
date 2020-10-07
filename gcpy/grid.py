@@ -237,7 +237,7 @@ def get_grid_extents(data, edges=True):
     else:
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return -180, 180, -90, 90
-def get_vert_grid(dataset):
+def get_vert_grid(dataset, AP=None, BP=None):
     """
     Determine vertical grid of input dataset
 
@@ -245,6 +245,13 @@ def get_vert_grid(dataset):
     -----
         dataset : xarray Dataset
             A GEOS-Chem output dataset
+
+        AP : list-like type
+            Hybrid grid parameter A in hPa
+
+        BP : list-like type
+            Hybrid grid parameter B (unitless)        
+
     Returns:
     -----
         p_edge : numpy array
@@ -261,8 +268,13 @@ def get_vert_grid(dataset):
         return GEOS_72L_grid.p_edge(), GEOS_72L_grid.p_mid(), 72
     elif dataset.sizes["lev"] in (47, 48):
         return GEOS_47L_grid.p_edge(), GEOS_47L_grid.p_mid(), 47
+    elif AP==None or BP==None:
+        raise ValueError("Only 72/73 or 47/48 level vertical grids are automatically determined" +
+                         "from input dataset by get_vert_grid(), please pass grid parameters AP and BP" +
+                         "as keyword arguments")
     else:
-        raise ValueError("Only 72/73 or 47/48 level vertical grids are supported")
+        new_grid = vert_grid(AP, BP)
+        return new_grid.p_edge(), new_grid.p_mid(), np.size(AP)
 
 def get_pressure_indices(pedge, pres_range):
     """
@@ -283,7 +295,8 @@ def get_pressure_indices(pedge, pres_range):
     """
 
     return np.where((pedge <= np.max(pres_range)) & (pedge >= np.min(pres_range)))[0]
-def pad_pressure_edges(pedge_ind, max_ind):
+
+def pad_pressure_edges(pedge_ind, max_ind, pmid_len):
     """
     Add outer indices to edge pressure index list
 
@@ -295,13 +308,17 @@ def pad_pressure_edges(pedge_ind, max_ind):
         max_ind : int
             Maximum index
 
+        pmid_len : int
+            Length of pmid which should not be exceeded by indices
+            
     Returns:
     -----
         pedge_ind : list
             List of edge pressure indices, possibly with new minimum and maximum indices
     """
 
-    if max_ind in (48, 73):
+    if max_ind > pmid_len:
+        #don't overstep array bounds for full array
         max_ind = max_ind - 1
     if min(pedge_ind) != 0:
         pedge_ind = np.append(min(pedge_ind) - 1, pedge_ind)
@@ -329,14 +346,9 @@ def get_ind_of_pres(dataset, pres):
     """
     pedge, pmid, nlev = get_vert_grid(dataset)
     converted_dataset = convert_lev_to_pres(dataset, pmid, pedge)
-    if dataset.sizes["lev"] in (72, 47):
-        dataset["lev"] = pmid
-    elif dataset.sizes["lev"] in (73, 48):
-        dataset["lev"] = pedge
-
     return np.argmin(np.abs(converted_dataset['lev']-pres).values)
 
-def convert_lev_to_pres(dataset, pmid, pedge):
+def convert_lev_to_pres(dataset, pmid, pedge, lev_type='pmid'):
     """
     Convert lev dimension to pressure in a GEOS-Chem dataset
 
@@ -350,6 +362,9 @@ def convert_lev_to_pres(dataset, pmid, pedge):
 
         pedge : np.array
             Edge pressure values
+        
+        lev_type : str
+            Denote whether lev is 'pedge' or 'pmid' if grid is not 72/73 or 47/48 levels
 
     Returns:
     -----
@@ -361,15 +376,15 @@ def convert_lev_to_pres(dataset, pmid, pedge):
         dataset["lev"] = pmid
     elif dataset.sizes["lev"] in (73, 48):
         dataset["lev"] = pedge
+    elif lev_type=='pmid':
+        print('Warning: Assuming levels correspond with midpoint pressures')
+        dataset["lev"] = pmid
     else:
-        msg = "compare_zonal_mean implemented for 72, 73, 47, or 48 levels only. " \
-              + "Other values found in Ref."
-        raise ValueError(msg)
+        dataset["lev"] = pedge
     dataset["lev"].attrs["unit"] = "hPa"
     dataset["lev"].attrs["long_name"] = "level pressure"
     return dataset
 
-#Begin gc_vertical.py - incorporate this functionality into functions WBD
 class vert_grid:
     def __init__(self,AP=None,BP=None,p_sfc=1013.25):
         if (AP.size != BP.size) or (AP is None):
@@ -386,7 +401,7 @@ class vert_grid:
         return (p_edge[1:]+p_edge[:-1])/2.0
 
 # Standard vertical grids
-GEOS_72L_AP = np.array([ 0.000000e+00, 4.804826e-02, 6.593752e+00, 1.313480e+01,
+_GEOS_72L_AP = np.array([ 0.000000e+00, 4.804826e-02, 6.593752e+00, 1.313480e+01,
          1.961311e+01, 2.609201e+01, 3.257081e+01, 3.898201e+01,
          4.533901e+01, 5.169611e+01, 5.805321e+01, 6.436264e+01,
          7.062198e+01, 7.883422e+01, 8.909992e+01, 9.936521e+01,
@@ -406,7 +421,7 @@ GEOS_72L_AP = np.array([ 0.000000e+00, 4.804826e-02, 6.593752e+00, 1.313480e+01,
          6.600001e-02, 4.758501e-02, 3.270000e-02, 2.000000e-02,
          1.000000e-02 ])
 
-GEOS_72L_BP = np.array([ 1.000000e+00, 9.849520e-01, 9.634060e-01, 9.418650e-01,
+_GEOS_72L_BP = np.array([ 1.000000e+00, 9.849520e-01, 9.634060e-01, 9.418650e-01,
          9.203870e-01, 8.989080e-01, 8.774290e-01, 8.560180e-01,
          8.346609e-01, 8.133039e-01, 7.919469e-01, 7.706375e-01,
          7.493782e-01, 7.211660e-01, 6.858999e-01, 6.506349e-01,
@@ -429,98 +444,98 @@ GEOS_72L_BP = np.array([ 1.000000e+00, 9.849520e-01, 9.634060e-01, 9.418650e-01,
 GEOS_72L_grid = vert_grid(GEOS_72L_AP, GEOS_72L_BP)
 
 # Reduced grid
-GEOS_47L_AP = np.zeros(48)
-GEOS_47L_BP = np.zeros(48)
+_GEOS_47L_AP = np.zeros(48)
+_GEOS_47L_BP = np.zeros(48)
 
 # Fill in the values for the surface
-GEOS_47L_AP[0] = GEOS_72L_AP[0]
-GEOS_47L_BP[0] = GEOS_72L_BP[0]
+_GEOS_47L_AP[0] = _GEOS_72L_AP[0]
+_GEOS_47L_BP[0] = _GEOS_72L_BP[0]
 
 # Build the GEOS 72-layer to 47-layer mapping matrix at the same time
-xmat_i = np.zeros((72))
-xmat_j = np.zeros((72))
-xmat_s = np.zeros((72))
+_xmat_i = np.zeros((72))
+_xmat_j = np.zeros((72))
+_xmat_s = np.zeros((72))
 
 # Index here is the 1-indexed layer number
-for i_lev in range(1,37):
+for _i_lev in range(1,37):
     # Map from 1-indexing to 0-indexing
-    x_lev = i_lev - 1
+    _x_lev = i_lev - 1
     # Sparse matrix for regridding
     # Below layer 37, it's 1:1
-    xct = x_lev
-    xmat_i[xct] = x_lev
-    xmat_j[xct] = x_lev
-    xmat_s[xct] = 1.0
+    _xct = _x_lev
+    _xmat_i[_xct] = _x_lev
+    _xmat_j[_xct] = _x_lev
+    _xmat_s[_xct] = 1.0
     # Copy over the pressure edge for the top of the grid cell
-    GEOS_47L_AP[i_lev] = GEOS_72L_AP[i_lev]
-    GEOS_47L_BP[i_lev] = GEOS_72L_BP[i_lev]
+    _GEOS_47L_AP[_i_lev] = _GEOS_72L_AP[_i_lev]
+    _GEOS_47L_BP[_i_lev] = _GEOS_72L_BP[_i_lev]
 
 # Now deal with the lumped layers
-skip_size_vec = [2,4]
-number_lumped = [4,7]
+_skip_size_vec = [2,4]
+_number_lumped = [4,7]
 
 # Initialize
-i_lev = 36
-i_lev_72 = 36
-for lump_seg in range(2):
-    skip_size = skip_size_vec[lump_seg]
+_i_lev = 36
+_i_lev_72 = 36
+for _lump_seg in range(2):
+    _skip_size = _skip_size_vec[_lump_seg]
     # 1-indexed starting point in the 47-layer grid
-    first_lev_47 = i_lev + 1
-    first_lev_72 = i_lev_72 + 1
+    _first_lev_47 = _i_lev + 1
+    _first_lev_72 = _i_lev_72 + 1
     
     # Loop over the coarse vertical levels (47-layer grid)
-    for i_lev_offset in range(number_lumped[lump_seg]):
+    for _i_lev_offset in range(_number_lumped[_lump_seg]):
         # i_lev is the index for the current level on the 47-level grid
-        i_lev = first_lev_47 + i_lev_offset
+        _i_lev = _first_lev_47 + _i_lev_offset
         # Map from 1-indexing to 0-indexing
-        x_lev = i_lev - 1
+        _x_lev = _i_lev - 1
         
         # Get the 1-indexed location of the last layer in the 72-layer grid 
         # which is below the start of the current lumping region
-        i_lev_72_base = first_lev_72 + (i_lev_offset*skip_size) - 1
+        _i_lev_72_base = _first_lev_72 + (_i_lev_offset*_skip_size) - 1
         
         # Get the 1-indexed location of the uppermost level in the 72-layer
         # grid which is within the target layer on the 47-layer grid
-        i_lev_72 = i_lev_72_base + skip_size
+        _i_lev_72 = _i_lev_72_base + _skip_size
         
         # Do the pressure edges first
         # These are the 0-indexed locations of the upper edge for the 
         # target layers in 47- and 72-layer grids
-        GEOS_47L_AP[i_lev] = GEOS_72L_AP[i_lev_72]
-        GEOS_47L_BP[i_lev] = GEOS_72L_BP[i_lev_72]
+        _GEOS_47L_AP[_i_lev] = _GEOS_72L_AP[_i_lev_72]
+        _GEOS_47L_BP[i_lev] = _GEOS_72L_BP[_i_lev_72]
         
         # Get the total pressure delta across the layer on the lumped grid
         # We are within the fixed pressure levels so don't need to account
         # for variations in surface pressure
-        dp_total = GEOS_47L_AP[i_lev-1] - GEOS_47L_AP[i_lev]
+        _dp_total = _GEOS_47L_AP[_i_lev-1] - _GEOS_47L_AP[_i_lev]
         
         # Now figure out the mapping
-        for i_lev_offset_72 in range(skip_size):
+        for _i_lev_offset_72 in range(_skip_size):
             # Source layer in the 72 layer grid (0-indexed)
-            x_lev_72 = i_lev_72_base + i_lev_offset_72
-            xct = x_lev_72
-            xmat_i[xct] = x_lev_72
+            _x_lev_72 = _i_lev_72_base + _i_lev_offset_72
+            _xct = _x_lev_72
+            _xmat_i[_xct] = _x_lev_72
             # Target in the 47 layer grid
-            xmat_j[xct] = x_lev
+            _xmat_j[_xct] = _x_lev
             
             # Proportion of 72-layer grid cell, by pressure, within expanded layer
-            xmat_s[xct] = (GEOS_72L_AP[x_lev_72] - GEOS_72L_AP[x_lev_72+1])/dp_total
-    start_pt = i_lev
+            _xmat_s[_xct] = (_GEOS_72L_AP[_x_lev_72] - _GEOS_72L_AP[_x_lev_72+1])/_dp_total
+    _start_pt = _i_lev
 
 # Do last entry separately (no layer to go with it)
-xmat_72to47 = scipy.sparse.coo_matrix((xmat_s,(xmat_i,xmat_j)),shape=(72,47))
+_xmat_72to47 = scipy.sparse.coo_matrix((_xmat_s,(_xmat_i,_xmat_j)),shape=(72,47))
 
-GEOS_47L_grid = vert_grid(GEOS_47L_AP, GEOS_47L_BP)
+GEOS_47L_grid = vert_grid(_GEOS_47L_AP, _GEOS_47L_BP)
 
 # CAM 26-layer grid
-CAM_26L_AP = np.flip(np.array([ 219.4067,   489.5209,   988.2418,   1805.201,        
+_CAM_26L_AP = np.flip(np.array([ 219.4067,   489.5209,   988.2418,   1805.201,        
                                 2983.724,   4462.334,   6160.587,   7851.243,        
                                 7731.271,   7590.131,   7424.086,   7228.744,        
                                 6998.933,   6728.574,   6410.509,   6036.322,        
                                 5596.111,   5078.225,   4468.96,    3752.191,        
                                 2908.949,   2084.739,   1334.443,   708.499,         
                                 252.136,    0.,         0.  ]),axis=0)*0.01
-CAM_26L_BP = np.flip(np.array([ 0.,         0.,         0.,         0.,             
+_CAM_26L_BP = np.flip(np.array([ 0.,         0.,         0.,         0.,             
                                 0.,         0.,         0.,         0.,             
                                 0.01505309, 0.03276228, 0.05359622, 0.07810627,     
                                 0.1069411,  0.14086370, 0.180772,   0.227722,       
@@ -530,11 +545,6 @@ CAM_26L_BP = np.flip(np.array([ 0.,         0.,         0.,         0.,
 
 CAM_26L_grid = vert_grid(CAM_26L_AP, CAM_26L_BP)
 
-
-#horiz.py begins here - WBD 
-
-INV_SQRT_3 = 1.0 / np.sqrt(3.0)
-ASIN_INV_SQRT_3 = np.arcsin(INV_SQRT_3)
 
 def make_grid_LL(llres, in_extent=[-180,180,-90,90], out_extent=[]):
     #get initial bounds of grid
@@ -836,6 +846,9 @@ class CSGrid(object):
     This class was originally written by Jiawei Zhuange and included 
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
+
+    INV_SQRT_3 = 1.0 / np.sqrt(3.0)
+    ASIN_INV_SQRT_3 = np.arcsin(INV_SQRT_3)
 
     def __init__(self, c, offset=None):
         """
