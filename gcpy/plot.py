@@ -10,9 +10,9 @@ import xarray as xr
 import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
-from .grid import GEOS_72L_grid, GEOS_47L_grid, get_vert_grid, get_pressure_indices, \
+from .grid import get_vert_grid, get_pressure_indices, \
      pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, get_input_res
-from .regrid import regrid_comparison_data, create_regridders, dict_72_to_47, reduce_72_to_47
+from .regrid import regrid_comparison_data, create_regridders, gen_xmat, regrid_vertical
 from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, all_zero_or_nan, slice_by_lev_and_time, compare_varnames
 from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
@@ -686,16 +686,6 @@ def compare_single_level(
             ds_refs[i].attrs["units"] = "\u03BCg/m3" # ug/m3 using mu
             ds_devs[i].attrs["units"] = "\u03BCg/m3"
 
-        # ==============================================================
-        # Reshape cubed sphere data if using MAPL v1.0.0+
-        # TODO: update function to expect data in this format
-        # ==============================================================
-        #ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
-        #ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
-        #if diff_of_diffs:
-        #    frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
-        #    frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
-
     # ==================================================================
     # Get the area variables if normalize_by_area=True. They can be
     # either in the main datasets as variable AREA or in the optionally
@@ -840,6 +830,12 @@ def compare_single_level(
                 cmpminlon_ind,
                 cmpmaxlon_ind
             )
+
+    # ==============================================================
+    # Reshape cubed sphere data if using MAPL v1.0.0+
+    # TODO: update function to expect data in this format
+    # ==============================================================
+
     for i in range(n_var):
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
@@ -1404,6 +1400,8 @@ def compare_zonal_mean(
     spcdb_dir=os.path.dirname(__file__),
     sg_ref_path='',
     sg_dev_path='',
+    ref_vert_params=[[],[]],
+    dev_vert_params=[[],[]],
     **extra_plot_args
 ):
 
@@ -1519,9 +1517,15 @@ def compare_zonal_mean(
         sg_dev_path : str
             Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
             Default value: '' (will not be read in)
+        ref_vert_params : list(AP, BP) of list-like types 
+            Hybrid grid parameter A in hPa and B (unitless). Needed if ref grid is not 47 or 72 levels.
+            Default value: [[], []]
+        dev_vert_params : list(AP, BP) of list-like types 
+            Hybrid grid parameter A in hPa and B (unitless). Needed if dev grid is not 47 or 72 levels.
+            Default value: [[], []]
         extra_plot_args : various
             Any extra keyword arguments are passed through the plotting functions to be used 
-            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
+            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).        
     """
     warnings.showwarning = _warning_format
     if not isinstance(refdata, xr.Dataset):
@@ -1568,15 +1572,14 @@ def compare_zonal_mean(
     savepdf = True
     if pdfname == "":
         savepdf = False
-
     # If converting to ug/m3, load the species database
     if convert_to_ugm3:
         properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # Get mid-point pressure and edge pressures for this grid
-    ref_pedge, ref_pmid, ref_grid_cat = get_vert_grid(refdata)
-    dev_pedge, dev_pmid, dev_grid_cat = get_vert_grid(devdata)
+    ref_pedge, ref_pmid, ref_grid_cat = get_vert_grid(refdata, *ref_vert_params)
+    dev_pedge, dev_pmid, dev_grid_cat = get_vert_grid(devdata, *dev_vert_params)
 
     # Get indexes of pressure subrange (full range is default)
     ref_pedge_ind = get_pressure_indices(ref_pedge, pres_range)
@@ -1607,16 +1610,15 @@ def compare_zonal_mean(
     ref_pmid_ind_flipped = refdata.sizes["lev"] - ref_pmid_ind[::-1] - 1
     dev_pmid_ind_flipped = devdata.sizes["lev"] - dev_pmid_ind[::-1] - 1
     if flip_ref:
-        ref_pmid_ind = pmid_ind_flipped
+        ref_pmid_ind = ref_pmid_ind_flipped
     if flip_dev:
-        dev_pmid_ind = pmid_ind_flipped
+        dev_pmid_ind = dev_pmid_ind_flipped
 
     refdata = refdata.isel(lev=ref_pmid_ind)
     devdata = devdata.isel(lev=dev_pmid_ind)
     if diff_of_diffs:
         fracrefdata = fracrefdata.isel(lev=ref_pmid_ind)
         fracdevdata = fracdevdata.isel(lev=dev_pmid_ind)
-
 
     sg_ref_params=[1, 170, -90]
     sg_dev_params=[1, 170, -90]
@@ -1631,7 +1633,7 @@ def compare_zonal_mean(
         sg_dev_params = [sg_dev_attrs['stretch_factor'], sg_dev_attrs['target_longitude'], 
                          sg_dev_attrs['target_latitude']]
 
-
+    
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype,
      regridref, regriddev, regridany, refgrid, devgrid, cmpgrid,
      refregridder, devregridder,refregridder_list, devregridder_list] = \
@@ -1645,25 +1647,10 @@ def compare_zonal_mean(
                 sg_dev_params=sg_dev_params
             )
 
-    ref_to_47 = False
-    dev_to_47 = False
-
-    # Determine whether one grid must be reduced to 47 levels and assign
-    # plotting variables
-    if ref_grid_cat is 72 and dev_grid_cat is 47:
-        ref_to_47 = True
-        pedge = dev_pedge
-        pedge_ind = dev_pedge_ind
-    elif ref_grid_cat is 47 and dev_grid_cat is 72:
-        dev_to_47 = True
-        pedge = ref_pedge
-        pedge_ind = ref_pedge_ind
-    else:
-        pedge = ref_pedge
-        pedge_ind = ref_pedge_ind
-
-    if ref_to_47 or dev_to_47:
-        conv_dict = dict_72_to_47()
+    #use smaller vertical grid as target for vertical regridding
+    target_index = np.array([len(ref_pedge), len(dev_pedge)]).argmin()
+    pedge = [ref_pedge, dev_pedge][target_index]
+    pedge_ind = [ref_pedge_ind, dev_pedge_ind][target_index]
 
     # ==================================================================
     # Loop over all variables
@@ -1801,13 +1788,13 @@ def compare_zonal_mean(
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
-        
+
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
         if diff_of_diffs:
             frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
             frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])        
-        
+
         # Flip in the vertical if applicable
         if flip_ref:
             ds_refs[i].data = ds_refs[i].data[::-1, :, :]
@@ -1817,7 +1804,6 @@ def compare_zonal_mean(
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
             if diff_of_diffs:
                 frac_ds_devs[i].data = frac_ds_devs[i].data[::-1, :, :]
-
     # ==================================================================
     # Get the area variables if normalize_by_area=True. They can be
     # either in the main datasets as variable AREA or in the optionally
@@ -1868,45 +1854,22 @@ def compare_zonal_mean(
     ds_dev_cmps = [None] * n_var
     frac_ds_ref_cmps = [None] * n_var
     frac_ds_dev_cmps = [None] * n_var
-
+    #store units in case data changes from DataArray to numpy array
+    ref_units = [None] * n_var
+    dev_units = [None] * n_var
+    
+    #regrid vertically if necessary
+    if len(ref_pedge) != len(pedge):
+        xmat = gen_xmat(ref_pedge, pedge)
+    elif len(dev_pedge) != len(pedge):
+        xmat = gen_xmat(dev_pedge, pedge)
+        
     for i in range(n_var):
+
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
         frac_ds_ref = frac_ds_refs[i]
         frac_ds_dev = frac_ds_devs[i]
-        # ==============================================================
-        # Reduce variables to 47L from 72L if necessary for comparison
-        # ==============================================================
-        if ref_to_47:
-            ds_ref = reduce_72_to_47(
-                ds_ref, 
-                conv_dict, 
-                ref_pmid_ind, 
-                dev_pmid_ind
-            )
-            if diff_of_diffs:
-                frac_ds_ref = reduce_72_to_47(
-                    frac_ds_ref,
-                    ref_pmid_ind,
-                    dev_pmid_ind
-                )
-        if dev_to_47:
-            ds_dev = reduce_72_to_47(
-                ds_dev,
-                conv_dict,
-                dev_pmid_ind,
-                ref_pmid_ind
-            )
-            if diff_of_diffs:
-                frac_ds_dev = reduce_72_to_47(
-                    frac_ds_dev,
-                    ref_pmid_ind,
-                    dev_pmid_ind
-                )
-
-        ref_nlev = len(ds_ref['lev'])
-        dev_nlev = len(ds_dev['lev'])
-
         # Do area normalization before regridding if normalize_by_area=True
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
@@ -1920,9 +1883,17 @@ def compare_zonal_mean(
                     frac_ds_refs[i] = frac_ds_ref
                     frac_ds_dev.values = frac_ds_dev.values / dev_area.values
                     frac_ds_devs[i] = frac_ds_dev
-                
+        
+        #save units for later use
+        ref_units[i] = ds_ref.attrs["units"]
+        dev_units[i] = ds_dev.attrs["units"]
+
+        ref_nlev = len(ds_ref['lev'])
+        dev_nlev = len(ds_dev['lev'])
+            
+        # Regrid variables horizontally
         # Ref
-        ds_ref_cmps[i] = regrid_comparison_data(
+        ds_ref = regrid_comparison_data(
             ds_ref,
             refres,
             regridref,
@@ -1934,8 +1905,8 @@ def compare_zonal_mean(
             nlev=ref_nlev
         )
         if diff_of_diffs:
-            frac_ds_ref_cmps[i] = regrid_comparison_data(
-                frac_ds_refs[i],
+            frac_ds_ref = regrid_comparison_data(
+                frac_ds_ref,
                 refres,
                 regridref,
                 refregridder,
@@ -1946,7 +1917,7 @@ def compare_zonal_mean(
                 nlev=ref_nlev
             )
         # Dev
-        ds_dev_cmps[i] = regrid_comparison_data(
+        ds_dev = regrid_comparison_data(
             ds_dev,
             devres,
             regriddev,
@@ -1958,8 +1929,8 @@ def compare_zonal_mean(
             nlev=dev_nlev
         )
         if diff_of_diffs:
-            frac_ds_dev_cmps[i] = regrid_comparison_data(
-                frac_ds_devs[i],
+            frac_ds_dev = regrid_comparison_data(
+                frac_ds_dev,
                 devres,
                 regriddev,
                 devregridder,
@@ -1970,6 +1941,29 @@ def compare_zonal_mean(
                 nlev=dev_nlev
             )
 
+        #store regridded CS data before dealing with vertical regridding        
+        if refgridtype == "cs":
+            ds_refs[i] = ds_ref
+            frac_ds_refs[i] = frac_ds_ref
+        if devgridtype == "cs":
+            ds_devs[i] = ds_dev
+            frac_ds_devs[i] = frac_ds_dev
+
+        # Reduce variables to smaller vert grid if necessary for comparison
+        if len(ref_pedge) != len(pedge):
+            ds_ref = regrid_vertical(ds_ref, xmat, dev_pmid)
+            if diff_of_diffs:
+                frac_ds_ref = regrid_vertical(frac_ds_ref, xmat, dev_pmid)
+            
+        if len(dev_pedge) != len(pedge):
+            ds_dev = regrid_vertical(ds_dev, xmat, ref_pmid)
+            if diff_of_diffs:
+                frac_ds_dev = regrid_vertical(frac_ds_dev, xmat, ref_pmid)
+        ds_ref_cmps[i] = ds_ref
+        ds_dev_cmps[i] = ds_dev
+        if diff_of_diffs:
+            frac_ds_ref_cmps[i] = frac_ds_ref
+            frac_ds_dev_cmps[i] = frac_ds_dev
     # Universal plot setup
     xtick_positions = np.arange(-90, 91, 30)
     xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
@@ -2006,7 +2000,7 @@ def compare_zonal_mean(
         # area. Note if enforce_units is False (non-default) then
         # units on difference plots will be wrong.
         # ==============================================================
-        cmn_units = ds_ref.attrs["units"]
+        cmn_units = ref_units[ivar]
         varndim = varndim_ref
         subtitle_extra = ""
         if normalize_by_area:
@@ -2016,26 +2010,24 @@ def compare_zonal_mean(
                     cmn_units = "{}/m2".format(cmn_units)
                 else:
                     cmn_units = "{} m-2".format(cmn_units)
-                ds_ref.attrs["units"] = cmn_units
-                ds_dev.attrs["units"] = cmn_units
+                ref_units[ivar] = cmn_units
+                dev_units[ivar] = cmn_units
                 subtitle_extra = ", Normalized by Area"
 
         # ==============================================================
         # Calculate zonal mean
         # ==============================================================
-
         # Ref
         if refgridtype == "ll":
             zm_ref = ds_ref.mean(dim="lon")
         else:
-            zm_ref = ds_ref_cmp.mean(axis=2)
+            zm_ref = ds_ref.mean(axis=2)
 
         # Dev
         if devgridtype == "ll":
             zm_dev = ds_dev.mean(dim="lon")
         else:
-            zm_dev = ds_dev_cmp.mean(axis=2)
-
+            zm_dev = ds_dev.mean(axis=2)
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
@@ -2078,9 +2070,10 @@ def compare_zonal_mean(
         # This will have implications as to how we set min and max
         # values for the color ranges below.
         # ==============================================================
-
-        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref.values)
-        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev.values)
+        ref_values = ds_ref.values if type(ds_ref) == xr.DataArray else ds_ref
+        dev_values = ds_dev.values if type(ds_dev) == xr.DataArray else ds_dev
+        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ref_values)
+        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(dev_values)
 
         # ==============================================================
         # Calculate zonal mean difference
@@ -2238,7 +2231,6 @@ def compare_zonal_mean(
             fracdiff_is_all_nan,
             fracdiff_is_all_nan,
         ]
-
         plot_vals = [zm_ref, zm_dev, zm_diff, zm_diff,
                      zm_fracdiff, zm_fracdiff]
 
@@ -2267,7 +2259,7 @@ def compare_zonal_mean(
 
         masked = ["ZM", "ZM", "ZM", "ZM", "ZM", "ZM"]
 
-        unit_list = [ds_ref.units, ds_dev.units, cmn_units, cmn_units,
+        unit_list = [ref_units[ivar], dev_units[ivar], cmn_units, cmn_units,
                      "unitless", "unitless"]
 
         other_all_nans = [dev_is_all_nan, ref_is_all_nan, \
@@ -2481,6 +2473,7 @@ def single_panel(plot_vals,
                  proj=ccrs.PlateCarree(),
                  sg_path='',
                  ll_plot_func="imshow",
+                 vert_params=[[],[]],
                  **extra_plot_args
 ):
     """
@@ -2533,6 +2526,9 @@ def single_panel(plot_vals,
         ll_plot_func : str 
             Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
             imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+        vert_params : list(AP, BP) of list-like types 
+            Hybrid grid parameter A in hPa and B (unitless). Needed if grid is not 47 or 72 levels.
+            Default value: [[], []]
         extra_plot_args : various
             Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     Returns:
@@ -2577,7 +2573,7 @@ def single_panel(plot_vals,
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
                 
                 # Get mid-point pressure and edge pressures for this grid
-                pedge, pmid, grid_cat = get_vert_grid(plot_vals)
+                pedge, pmid, grid_cat = get_vert_grid(plot_vals, vert_params)
                 
                 # Get indexes of pressure subrange (full range is default)
                 pedge_ind = get_pressure_indices(pedge, pres_range)
@@ -2603,8 +2599,8 @@ def single_panel(plot_vals,
                                                       weightsdir='.',
                                                       cmpres=None,
                                                       zm=True,
-                 sg_ref_params=sg_params
-                                                   )
+                                                      sg_ref_params=sg_params
+                                                      ) 
             if gridtype == 'cs':
                 plot_vals = reshape_MAPL_CS(plot_vals)
                 nlev = len(plot_vals['lev'])
@@ -2621,8 +2617,12 @@ def single_panel(plot_vals,
                     new_gridtype,
                     nlev=nlev
                 )
+            #assume z dim is index 0 (no time dim) if a numpy array is passed
+            z_ind = 0
+            if type(plot_vals) is xr.DataArray:
+                z_ind = plot_vals.dims.index('lev')
             #calculate zonal means
-            plot_vals = plot_vals.mean(axis=2)
+            plot_vals = plot_vals.mean(axis=z_ind)
 
     if extent == (None, None, None, None) or extent == None:
         extent = get_grid_extents(grid)
