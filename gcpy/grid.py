@@ -237,7 +237,7 @@ def get_grid_extents(data, edges=True):
     else:
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
         return -180, 180, -90, 90
-def get_vert_grid(dataset, AP=None, BP=None):
+def get_vert_grid(dataset, AP=[[],[]], BP=[[],[]]):
     """
     Determine vertical grid of input dataset
 
@@ -441,7 +441,7 @@ _GEOS_72L_BP = np.array([ 1.000000e+00, 9.849520e-01, 9.634060e-01, 9.418650e-01
          0.000000e+00, 0.000000e+00, 0.000000e+00, 0.000000e+00,
          0.000000e+00 ])
 
-GEOS_72L_grid = vert_grid(GEOS_72L_AP, GEOS_72L_BP)
+GEOS_72L_grid = vert_grid(_GEOS_72L_AP, _GEOS_72L_BP)
 
 # Reduced grid
 _GEOS_47L_AP = np.zeros(48)
@@ -459,7 +459,7 @@ _xmat_s = np.zeros((72))
 # Index here is the 1-indexed layer number
 for _i_lev in range(1,37):
     # Map from 1-indexing to 0-indexing
-    _x_lev = i_lev - 1
+    _x_lev = _i_lev - 1
     # Sparse matrix for regridding
     # Below layer 37, it's 1:1
     _xct = _x_lev
@@ -502,7 +502,7 @@ for _lump_seg in range(2):
         # These are the 0-indexed locations of the upper edge for the 
         # target layers in 47- and 72-layer grids
         _GEOS_47L_AP[_i_lev] = _GEOS_72L_AP[_i_lev_72]
-        _GEOS_47L_BP[i_lev] = _GEOS_72L_BP[_i_lev_72]
+        _GEOS_47L_BP[_i_lev] = _GEOS_72L_BP[_i_lev_72]
         
         # Get the total pressure delta across the layer on the lumped grid
         # We are within the fixed pressure levels so don't need to account
@@ -543,7 +543,7 @@ _CAM_26L_BP = np.flip(np.array([ 0.,         0.,         0.,         0.,
                                 0.6201202,  0.7235355,  0.8176768,  0.8962153,      
                                 0.9534761,  0.9851122,  1.        ]),axis=0)
 
-CAM_26L_grid = vert_grid(CAM_26L_AP, CAM_26L_BP)
+CAM_26L_grid = vert_grid(_CAM_26L_AP, _CAM_26L_BP)
 
 
 def make_grid_LL(llres, in_extent=[-180,180,-90,90], out_extent=[]):
@@ -826,6 +826,9 @@ def csgrid_GMAO(res, offset=-10):
 
     return {'lon': lon, 'lat': lat, 'lon_b': lon_b, 'lat_b': lat_b}
 
+_INV_SQRT_3 = 1.0 / np.sqrt(3.0)
+_ASIN_INV_SQRT_3 = np.arcsin(_INV_SQRT_3)
+
 
 class CSGrid(object):
     """Generator for cubed-sphere grid geometries.
@@ -846,9 +849,6 @@ class CSGrid(object):
     This class was originally written by Jiawei Zhuange and included 
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
-
-    INV_SQRT_3 = 1.0 / np.sqrt(3.0)
-    ASIN_INV_SQRT_3 = np.arcsin(INV_SQRT_3)
 
     def __init__(self, c, offset=None):
         """
@@ -873,7 +873,7 @@ class CSGrid(object):
        in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
         """
         self.c = c
-        self.delta_y = 2. * ASIN_INV_SQRT_3 / c
+        self.delta_y = 2. * _ASIN_INV_SQRT_3 / c
         self.nx = self.ny = c + 1
         self.offset = offset
 
@@ -889,7 +889,7 @@ class CSGrid(object):
         lambda_rad[-1, :] = 5.*np.pi/4. # East edge
 
         theta_rad = np.zeros((nx, ny))
-        theta_rad[ 0, :] = -ASIN_INV_SQRT_3 + (self.delta_y*np.arange(c+1)) # West edge
+        theta_rad[ 0, :] = -_ASIN_INV_SQRT_3 + (self.delta_y*np.arange(c+1)) # West edge
         theta_rad[-1, :] = theta_rad[0, :] # East edge
 
         # Cache the reflection points - our upper-left and lower-right corners
@@ -932,15 +932,15 @@ class CSGrid(object):
         for ij in range(1, c+1):
             # print(ij)
             pp[:, 0, ij] = latlon_to_cartesian(lambda_rad[0, ij], theta_rad[0, ij])
-            pp[1, 0, ij] = -pp[1, 0, ij] * INV_SQRT_3 / pp[0, 0, ij]
-            pp[2, 0, ij] = -pp[2, 0, ij] * INV_SQRT_3 / pp[0, 0, ij]
+            pp[1, 0, ij] = -pp[1, 0, ij] * _INV_SQRT_3 / pp[0, 0, ij]
+            pp[2, 0, ij] = -pp[2, 0, ij] * _INV_SQRT_3 / pp[0, 0, ij]
 
             pp[:, ij, 0] = latlon_to_cartesian(lambda_rad[ij, 0], theta_rad[ij, 0])
-            pp[1, ij, 0] = -pp[1, ij, 0] * INV_SQRT_3 / pp[0, ij, 0]
-            pp[2, ij, 0] = -pp[2, ij, 0] * INV_SQRT_3 / pp[0, ij, 0]
+            pp[1, ij, 0] = -pp[1, ij, 0] * _INV_SQRT_3 / pp[0, ij, 0]
+            pp[2, ij, 0] = -pp[2, ij, 0] * _INV_SQRT_3 / pp[0, ij, 0]
 
         # # Map interiors
-        pp[0, :, :] = -INV_SQRT_3
+        pp[0, :, :] = -_INV_SQRT_3
         # print("INTERIOR")
         for i in range(1, c+1):
             for j in range(1, c+1):

@@ -7,6 +7,7 @@ import hashlib
 import numpy as np
 import xarray as xr
 import pandas as pd
+import scipy.sparse
 
 def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False,
                         in_extent=[-180,180,-90,90], out_extent=[-180,180,-90,90]):
@@ -229,59 +230,6 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     regridref, regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder, 
     devregridder, refregridder_list, devregridder_list]
 
-def dict_72_to_47():
-    """
-    Get 72L-to-47L conversion dict which stores weights from 72 levels to 47 levels
-    Returns:
-    --------
-        conv_dict : dict {72L (int) : (47L (int), weight (int))}
-              Mapping of 72L to 47L
-    """
-
-    conv_dict = {L72 : (xmat_72to47.col[L72], xmat_72to47.data[L72]) for L72 in xmat_72to47.row}
-    return conv_dict
-
-def reduce_72_to_47(DataArray, conv_dict, pmid_ind_72, pmid_ind_47):
-    """
-    Reduce 72 level DataArray to 47 level-equivalent for full or restricted
-    pressure ranges.
-    Args:
-    -----
-        DataArray : xarray DataArray
-            72 level DataArray
-    
-        conv_dict : dict
-            Mapping of 72L to 47L
-        pmid_ind_72 : list(int)
-            List of midpoint indices for 72L grid
-        pmid_ind_47 : list(int)
-            List of midpoint indices for 47L grid
-        
-    Returns:
-    --------
-         xarray DataArray
-            DataArray now reduced to 47L grid
-    """
-
-    #reduce 72 level DataArray to 47 level-equivalent
-    #This function works for both full and restricted pressure ranges
-    new_shape = list(DataArray.data.shape)
-    #assumes first dim is level
-    new_shape[0] = len(pmid_ind_47)
-    reduced_offset = min(pmid_ind_47)
-    reduced_data = np.zeros(new_shape)
-    for i in range(0, len(pmid_ind_72)):
-        lev = pmid_ind_72[i]
-        reduced_data[conv_dict[lev][0]-reduced_offset] = reduced_data[conv_dict[lev][0]-reduced_offset] + DataArray.data[i]*conv_dict[lev][1]
-    new_coords = {coord : DataArray.coords[coord].data for coord in DataArray.coords if coord != 'lev'}
-    new_coords['lev'] = np.array(pmid_ind_47)
-    #GCHP-specific
-    if 'lats' in DataArray.coords:
-        new_coords['lats'] = (('lon', 'lat'), DataArray.coords['lats'].data)
-    if 'lons' in DataArray.coords:
-        new_coords['lons'] = (('lon', 'lat'), DataArray.coords['lons'].data)
-    return xr.DataArray(reduced_data, dims=tuple([dim for dim in DataArray.dims]),
-                        coords = new_coords, attrs = DataArray.attrs)
 
 def regrid_comparison_data(data, res, regrid, regridder, regridder_list, global_cmp_grid, gridtype, cmpgridtype,
                            cmpminlat_ind=0, cmpmaxlat_ind=-2, cmpminlon_ind=0, cmpmaxlon_ind=-2, nlev=1):
@@ -486,3 +434,152 @@ def sg_hash(cs_res, stretch_factor: float, target_lat: float, target_lon: float)
         target_lon=target_lon,
         cs_res=cs_res
     ).encode()).hexdigest()[:7]
+
+
+def regrid_vertical(src_data_3D, xmat_regrid, target_levs=[]):
+    """
+    Performs vertical regridding using a sparse regridding matrix
+    This function was originally written by Sebastian Eastham and included 
+    in package gcgridobj: https://github.com/sdeastham/gcgridobj
+    Args:
+    -----
+        src_data_3D : xarray DataArray or numpy array
+            Data to be regridded
+        xmat_regrid : sparse scipy coordinate matrix
+            Regridding matrix from input data grid to target grid    
+        target_levs : list
+            Values for Z coordinate of returned data (if returned data is of type xr.DataArray)
+            Default value: []
+    Returns:
+    --------
+        out_data : xarray DataArray or numpy array
+            Data regridded to target grid
+    """
+
+    # Assumes that the FIRST dimension of the input data is vertical
+    nlev_in = src_data_3D.shape[0]
+    if xmat_regrid.shape[1] == nlev_in:
+        # Current regridding matrix is for the reverse regrid
+        # Rescale matrix to get the contributions right
+        # Warning: this assumes that the same vertical range is covered
+        warnings.warn('Using inverted regridding matrix. This may cause incorrect extrapolation')
+        xmat_renorm = xmat_regrid.transpose().toarray()
+        for ilev in range(xmat_renorm.shape[1]):
+            norm_fac = np.sum(xmat_renorm[:,ilev])
+            if np.abs(norm_fac) < 1.0e-20:
+                norm_fac = 1.0
+            xmat_renorm[:,ilev] /= norm_fac
+        
+        xmat_renorm = scipy.sparse.coo_matrix(xmat_renorm)
+    elif xmat_regrid.shape[0] == nlev_in:
+        # Matrix correctly dimensioned
+        xmat_renorm = xmat_regrid.copy()
+    else:
+        raise ValueError('Regridding matrix not correctly sized')
+
+    nlev_out = xmat_renorm.shape[1]
+    out_shape = [nlev_out] + list(src_data_3D.shape[1:])
+    n_other = np.product(src_data_3D.shape[1:])
+    temp_data = np.zeros((nlev_out,n_other))
+    in_data = np.reshape(np.array(src_data_3D),(nlev_in,n_other))
+    for ix in range(n_other):
+        in_data_vec = np.matrix(in_data[:,ix])
+        temp_data[:,ix] = in_data_vec * xmat_renorm
+    out_data = np.reshape(temp_data,out_shape)
+
+    #Transfer over old / create new coordinates for xarray DataArrays
+    if type(src_data_3D) == xr.DataArray:
+        new_coords = {coord : src_data_3D.coords[coord].data for coord in src_data_3D.coords if coord != 'lev'}        
+        if target_levs == []:
+            new_coords['lev'] = np.arange(1,out_data.shape[0], out_data.shape[0])
+        else:
+            new_coords['lev'] = target_levs
+        #GCHP-specific        
+        if 'lats' in src_data_3D.coords:
+            new_coords['lats'] = (('lat', 'lon'), src_data_3D.coords['lats'].data)
+        if 'lons' in src_data_3D.coords:
+            new_coords['lons'] = (('lat', 'lon'), src_data_3D.coords['lons'].data)
+        out_data = xr.DataArray(out_data, dims = tuple([dim for dim in src_data_3D.dims]),
+                                coords = new_coords, attrs = src_data_3D.attrs)
+        
+    return out_data
+
+def gen_xmat(p_edge_from,p_edge_to):
+    """
+    Generates regridding matrix from one vertical grid to another.
+    This function was originally written by Sebastian Eastham and included 
+    in package gcgridobj: https://github.com/sdeastham/gcgridobj
+    Args:
+    -----
+        p_edge_from : numpy array
+            Edge pressures of the input grid
+        p_edge_to : numpy array
+            Edge pressures of the target grid
+    Returns:
+    --------
+        xmat : sparse scipy coordinate matrix
+            Regridding matrix from input grid to target grid    
+    """
+    n_from = len(p_edge_from) - 1
+    n_to   = len(p_edge_to) - 1
+    
+    # Guess - max number of entries?
+    n_max = max(n_to,n_from)*5
+    
+    # Index being mapped from
+    xmat_i = np.zeros(n_max)
+    # Index being mapped to
+    xmat_j = np.zeros(n_max)
+    # Weights
+    xmat_s = np.zeros(n_max)
+    
+    # Find the first output box which has any commonality with the input box
+    first_from = 0
+    i_to = 0
+    if p_edge_from[0] > p_edge_to[0]:
+        # "From" grid starts at lower altitude (higher pressure)
+        while p_edge_to[0] < p_edge_from[first_from+1]:
+            first_from += 1
+    else:
+        # "To" grid starts at lower altitude (higher pressure)
+        while p_edge_to[i_to+1] > p_edge_from[0]:
+            i_to += 1
+    
+    p_base_to = p_edge_to[i_to]
+    p_top_to  = p_edge_to[i_to+1]
+    frac_to_total = 0.0
+    
+    i_weight = 0
+    for i_from in range(first_from,n_from):
+        p_base_from = p_edge_from[i_from]
+        p_top_from = p_edge_from[i_from+1]
+        
+        # Climb the "to" pressures until you intersect with this box
+        while i_to < n_to and p_base_from <= p_edge_to[i_to+1]:
+            i_to += 1
+            frac_to_total = 0.0
+
+        # Now, loop over output layers as long as there is any overlap,
+        # i.e. as long as the base of the "to" layer is below the
+        # top of the "from" layer
+        last_box = False
+        
+        while p_edge_to[i_to] >= p_top_from and not last_box and not i_to >= n_to:
+            p_base_common = min(p_base_from,p_edge_to[i_to])
+            p_top_common = max(p_top_from,p_edge_to[i_to+1])
+            # Fraction of source box
+            frac_from = (p_base_common - p_top_common)/(p_base_from-p_top_from)
+            # Fraction of target box
+            frac_to   = (p_base_common - p_top_common)/(p_edge_to[i_to]-p_edge_to[i_to+1])
+            #print(frac_to)
+            
+            xmat_i[i_weight] = i_from
+            xmat_j[i_weight] = i_to
+            xmat_s[i_weight] = frac_to
+            
+            i_weight += 1
+            last_box = p_edge_to[i_to+1] <= p_top_from
+            if not last_box:
+                i_to += 1
+            
+    return scipy.sparse.coo_matrix((xmat_s[:i_weight],(xmat_i[:i_weight],xmat_j[:i_weight])),shape=(n_from,n_to))
