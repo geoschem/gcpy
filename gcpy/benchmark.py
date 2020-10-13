@@ -2084,7 +2084,7 @@ def make_benchmark_jvalue_plots(
             devstr,
             varlist=varlist,
             pdfname=pdfname,
-            pres_range=[0, 100],
+            pres_range=[1, 100],
             log_yaxis=True,
             flip_ref=flip_ref,
             flip_dev=flip_dev,
