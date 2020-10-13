@@ -9,13 +9,13 @@ from textwrap import dedent
 
 DESCRIPTION = ""
 LONG_DESCRIPTION = """\
-Python toolkit for working with GEOS-Chem output
+Python toolkit for working with GEOS-Chem output.
 """
 
-DISTNAME = "gcpy"
+DISTNAME = "geoschem-gcpy"
 AUTHOR = "GEOS-Chem Support Team"
-AUTHOR_EMAIL = "geos-chem-support@as.harvard.edu"
-URL = "http://gcpy.readthedocs.io/en/latest/"
+AUTHOR_EMAIL = "geos-chem-support@g.harvard.edu"
+URL = "https://github.com/geoschem/gcpy"
 LICENSE = "MIT"
 
 CLASSIFIERS = [
@@ -24,20 +24,26 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
     'Intended Audience :: Science/Research',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 3.4',
-    'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
     'Topic :: Scientific/Engineering',
 ]
 
-MAJOR = 0
-MINOR = 1
-MICRO = 1
-VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
+MAJOR = 1
+MINOR = 0
+MICRO = 0
+#for test.pypi (cannot overwrite version files on pypi or test.pypi)
+NANO = '.5'
+VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, NANO)
+#VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
+'''
+#DEV format (using git hash) is intriguing but incompatible with PEP 440
+#No hashes can be used in version field
 DEV = True
 
 
 # Correct versioning with git info if DEV
+
 if DEV:
     import subprocess
 
@@ -55,11 +61,11 @@ if DEV:
         git_rev = git_rev.decode('ascii') # necessary for Python >= 3
 
         VERSION += ".dev-{}".format(git_rev)
-
+'''
 
 def _write_version_file():
 
-    fn = os.path.join(os.path.dirname(__file__), DISTNAME, 'version.py')
+    fn = os.path.join(os.path.dirname(__file__), 'gcpy', '_version.py')
 
     version_str = dedent("""
         __version__ = '{}'
@@ -83,9 +89,19 @@ setup(
     license = LICENSE,
     url = URL,
     version = VERSION,
-
     packages = find_packages(),
-    package_data = {},
-
+    include_package_data=True,
+    install_requires=["xesmf>=0.2.1", "scipy>=1.3.1", "Cartopy>=0.17.0", "pandas>=0.25.1",
+                      "seaborn>=0.9.0", "matplotlib>=3.1.1", "tabulate>=0.8.3", 
+                      "joblib>=0.15.1", "xbpch>=0.3.5", "numpy>=1.19.0", "PyPDF2>=1.26.0", 
+                      "sphinx", "sphinx_bootstrap_theme>=0.7.0", "sphinx_rtd_theme>=0.5.0"],
     classifiers = CLASSIFIERS
 )
+
+
+'''
+Instructions for publishing new version to PyPi:
+
+Test installation in a virtual environment using pip install --extra-index-url https://test.pypi.org/simple/ geoschem-gcpy
+
+'''
