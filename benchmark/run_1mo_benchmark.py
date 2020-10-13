@@ -744,7 +744,7 @@ if gchp_vs_gcc:
         # Make budget table. Include calculation of Strat. Exclude Transport
         # and Accumulation.
         bmk.make_benchmark_operations_budget(
-            gcc_ref_version,
+            gcc_dev_version,
             ref,
             gchp_dev_version,
             dev,
