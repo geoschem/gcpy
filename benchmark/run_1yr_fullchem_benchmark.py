@@ -96,7 +96,7 @@ gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
 # Name to be used for directory of output from this script
-results_dir = "Results"
+results_dir = "BenchmarkResults"
 
 # Path to regridding weights
 weightsdir = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
@@ -175,11 +175,18 @@ if gcpy_test:
     gchp_vs_gcc_resultsdir   = join(mainresultsdir,'GCHP_GCC_comparison')
     if not os.path.exists(mainresultsdir): os.mkdir(mainresultsdir)
 else:
-    gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_version, "Plots")
+    gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_version, results_dir)
     gchp_vs_gchp_resultsdir  = join(maindir, gchp_dev_version,
-                              "Plots", "GCHP_version_comparison")
+                                    results_dir, "GCHP_version_comparison")
     gchp_vs_gcc_resultsdir   = join(maindir, gchp_dev_version,
-                              "Plots", "GCHP_GCC_comparison")
+                                    results_dir, "GCHP_GCC_comparison")
+    base_gchp_resultsdir     = join(maindir, gchp_dev_dir, results_dir)
+    #make results directories that don't exist
+    for resdir, plotting_type in zip([gcc_vs_gcc_resultsdir, base_gchp_resultsdir,
+                                      gchp_vs_gchp_resultsdir, gchp_vs_gcc_resultsdir],
+                                     [gcc_vs_gcc, gchp_vs_gcc or gchp_vs_gchp,
+                                      gchp_vs_gchp, gchp_vs_gcc]):
+        if plotting_type and not os.path.exists(resdir): os.mkdir(resdir)
 
 # Tables directories
 gcc_vs_gcc_tablesdir   = join(gcc_vs_gcc_resultsdir,"Tables") 

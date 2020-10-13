@@ -97,7 +97,7 @@ dev_bmk_year     = '2019'
 dev_bmk_mon      = '7'
 
 # Name to be used for directory of output from this script
-results_dir = "Results"
+results_dir = "BenchmarkResults"
 
 # Path to regridding weights
 weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
@@ -184,6 +184,16 @@ else:
                               results_dir, "GCHP_GCC_comparison")
     diff_of_diffs_resultsdir = join(maindir, gchp_dev_dir,
                               results_dir, "GCHP_GCC_diff_of_diffs")
+    base_gchp_resultsdir     = join(maindir, gchp_dev_dir, results_dir)
+    #make results directories that don't exist
+    for resdir, plotting_type in zip([gcc_vs_gcc_resultsdir, base_gchp_resultsdir,
+                                      gchp_vs_gchp_resultsdir,
+                                      gchp_vs_gcc_resultsdir, diff_of_diffs_resultsdir],
+                                     [gcc_vs_gcc,
+                                      gchp_vs_gcc or gchp_vs_gchp or gchp_vs_gcc_diff_of_diffs,
+                                      gchp_vs_gchp, gchp_vs_gcc, gchp_vs_gcc_diff_of_diffs]):
+        if plotting_type and not os.path.exists(resdir): os.mkdir(resdir)
+
 gcc_vs_gcc_tablesdir    = join(gcc_vs_gcc_resultsdir, "Tables")
 gchp_vs_gchp_tablesdir  = join(gchp_vs_gchp_resultsdir, "Tables")
 gchp_vs_gcc_tablesdir   = join(gchp_vs_gcc_resultsdir, "Tables")
