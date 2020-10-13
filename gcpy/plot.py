@@ -136,12 +136,12 @@ def six_plot(
     # Set min and max of the data range
     if subplot in ("ref", "dev"):
         if all_zero or all_nan:
-            if subplot is "ref":
+            if subplot == "ref":
                 [vmin, vmax] = [vmins[0], vmaxs[0]]
             else:
                 [vmin, vmax] = [vmins[1], vmaxs[1]]
         elif use_cmap_RdBu:
-            if subplot is "ref":
+            if subplot == "ref":
                 if match_cbar and (not other_all_nan):
                     absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
                 else:
@@ -153,7 +153,7 @@ def six_plot(
                     absmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
             [vmin, vmax] = [-absmax, absmax]
         else:
-            if subplot is "ref":
+            if subplot == "ref":
                 if match_cbar and (not other_all_nan):
                     [vmin, vmax] = [vmins[2], vmaxs[2]]
                 else:
@@ -169,20 +169,20 @@ def six_plot(
         elif all_nan:
             [vmin, vmax] = [np.nan, np.nan]
         else:
-            if subplot is "dyn_abs_diff":
+            if subplot == "dyn_abs_diff":
                 # Min and max of abs. diff, excluding NaNs
                 diffabsmax = max(
                     [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
                 )
                 [vmin, vmax] = [-diffabsmax, diffabsmax]
-            elif subplot is "res_abs_diff":
+            elif subplot == "res_abs_diff":
                 [pct5, pct95] = [
                     np.percentile(plot_val, 5),
                     np.percentile(plot_val, 95),
                 ]
                 abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
                 [vmin, vmax] = [-abspctmax, abspctmax]
-            elif subplot is "dyn_frac_diff":
+            elif subplot == "dyn_frac_diff":
                 fracdiffabsmax = np.max(
                     [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
                 )
@@ -216,7 +216,7 @@ def six_plot(
                         ll_plot_func=ll_plot_func, **extra_plot_args)
 
     # Define the colorbar for the plot
-    cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
+    cb = plt.colorbar(plot, ax=ax, orientation="horizontal", norm=norm, pad=0.10)
     cb.mappable.set_norm(norm)
     if all_zero or all_nan:
         if subplot in ("ref", "dev"):
@@ -236,14 +236,12 @@ def six_plot(
         elif subplot in ("dyn_frac_diff", "res_frac_diff") and np.all(np.isin(plot_val, [1])):
             cb.set_ticklabels(["Ref and Dev equal throughout domain"])
         elif subplot in ("dyn_frac_diff", "res_frac_diff"):
-            if subplot is "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
+            if subplot == "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
                 if vmin > 0.1 and vmax < 10:
                     cb.locator = mticker.MaxNLocator(nbins=4)
-                    cb.update_ticks()
                     cb.formatter = mticker.ScalarFormatter()
                 else:
                     cb.formatter = mticker.LogFormatter(base=10)
-                    cb.update_ticks()
                     cb.locator = mticker.LogLocator(base=10, subs='all')
                 cb.update_ticks()
             else:
@@ -258,9 +256,9 @@ def six_plot(
     except:
         #not all automatically chosen colorbar formatters properly handle the above method
         pass
+    cb.minorticks_off()
     cb.update_ticks()
     cb.set_label(unit)
-
 def compare_single_level(
     refdata,
     refstr,
@@ -497,7 +495,7 @@ def compare_single_level(
     # Get lat/lon extents, if applicable
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
-    if cmpgridtype is not "cs":
+    if cmpgridtype == "cs":
         cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)
     else:
         cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = [-180, 180, -90, 90]
@@ -2440,7 +2438,6 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, rat
             return mcolors.Normalize(vmin=0.0, vmax=1.0)
 
     else:
-        
         # For log color scales, assume a range 3 orders of magnitude
         # below the maximum value.  Otherwise use a linear scale.
         if log_color_scale and not ratio_log:
