@@ -761,7 +761,7 @@ if gchp_vs_gcc:
                                is_gchp=True)
             plot_dir = join(gchp_vs_gcc_budgetdir, bmk_mon_yr_strs[s])
             bmk.make_benchmark_operations_budget(
-                gcc_ref_version,
+                gcc_dev_version,
                 ref,
                 gchp_dev_version,
                 dev,
