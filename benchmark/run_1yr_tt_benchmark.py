@@ -391,7 +391,8 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        colmet = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Create concentration plots for each benchmark month
         for s, bmk_mon in enumerate(bmk_mons):
@@ -426,7 +427,8 @@ if gchp_vs_gcc:
 
         # Create separate set of plots for each wetdep collection
         cols = ["WetLossConv", "WetLossLS"]
-        colmet = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         for col in cols:
 
@@ -517,7 +519,8 @@ if gchp_vs_gchp:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        colmet = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet_gchp = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Create concentration plots for each benchmark month
         for s, bmk_mon_mid in enumerate(bmk_mons_mid):
@@ -529,6 +532,9 @@ if gchp_vs_gchp:
                                is_gchp=True)
             refmet = get_filepath(gchp_vs_gchp_refdir, colmet, bmk_mon_mid,
                                   is_gchp=True)
+            # Use this for benchmark prior to 13.0
+            #devmet = get_filepath(gchp_vs_gchp_devdir, colmet_gchp, bmk_mon_mid,
+            #                      is_gchp=True)
             devmet = get_filepath(gchp_vs_gchp_devdir, colmet, bmk_mon_mid,
                                   is_gchp=True)
 
@@ -558,7 +564,8 @@ if gchp_vs_gchp:
 
         # Create separate set of plots for each wetdep collection
         cols = ["WetLossConv", "WetLossLS"]
-        colmet = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         for col in cols:
 
