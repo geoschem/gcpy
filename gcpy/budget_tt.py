@@ -19,6 +19,7 @@ from gcpy.util import rename_and_flip_gchp_rst_vars, dict_diff
 import warnings
 import xarray as xr
 from yaml import load as yaml_load_file
+from distutils.version import LooseVersion
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -58,7 +59,7 @@ class _GlobVars:
                 Directory where species_database.yml is stored.
         """
         # ------------------------------
-        # Arguments from outside
+         # Arguments from outside
         # ------------------------------
         self.devstr = devstr
         self.devdir = devdir
@@ -98,7 +99,6 @@ class _GlobVars:
                 self.devrstdir,
                 "GEOSChem.Restart.{}*.nc4".format(self.y1_str)
             )
-
         # Diagnostics
         HemcoDiag = join(self.devdir,
                          "HEMCO_diagnostics.{}*.nc".format(self.y0_str))
@@ -129,8 +129,12 @@ class _GlobVars:
 
         # Restarts
         skip_vars = constants.skip_these_vars
-        self.ds_ini = xr.open_mfdataset(RstInit, drop_variables=skip_vars)
-        self.ds_end = xr.open_mfdataset(RstFinal, drop_variables=skip_vars)
+        extra_kwargs = {}
+        #if LooseVersion(xr.__version__) >= LooseVersion("0.15.0"):
+        #    extra_kwargs = {'combine' : 'nested', 'concat_dim' : 'time'}
+
+        self.ds_ini = xr.open_mfdataset(RstInit, drop_variables=skip_vars, **extra_kwargs)
+        self.ds_end = xr.open_mfdataset(RstFinal, drop_variables=skip_vars, **extra_kwargs)
 
         # Change the restart datasets into format similar to GCC, and flip vertical axis
         if is_gchp:
@@ -138,16 +142,16 @@ class _GlobVars:
             self.ds_end = rename_and_flip_gchp_rst_vars(self.ds_end)
         
         # Diagnostics
-        self.ds_dcy = xr.open_mfdataset(RadioNucl, drop_variables=skip_vars)
-        self.ds_dry = xr.open_mfdataset(DryDep, drop_variables=skip_vars)
-        self.ds_cnc = xr.open_mfdataset(SpeciesConc, drop_variables=skip_vars)
-        self.ds_wcv = xr.open_mfdataset(WetLossConv, drop_variables=skip_vars)
-        self.ds_wls = xr.open_mfdataset(WetLossLS, drop_variables=skip_vars)
+        self.ds_dcy = xr.open_mfdataset(RadioNucl, drop_variables=skip_vars, **extra_kwargs)
+        self.ds_dry = xr.open_mfdataset(DryDep, drop_variables=skip_vars, **extra_kwargs)
+        self.ds_cnc = xr.open_mfdataset(SpeciesConc, drop_variables=skip_vars, **extra_kwargs)
+        self.ds_wcv = xr.open_mfdataset(WetLossConv, drop_variables=skip_vars, **extra_kwargs)
+        self.ds_wls = xr.open_mfdataset(WetLossLS, drop_variables=skip_vars, **extra_kwargs)
 
         # Met fields
         if is_gchp:
             self.ds_met = xr.open_mfdataset(StateMetAvg,
-                                            drop_variables=skip_vars)
+                                            drop_variables=skip_vars, **extra_kwargs)
             # For now, don't read restarts for GCHP (bmy, 3/16/20)
             #ds_met_inst = xr.open_mfdataset(StateMetInst,
             #                                drop_variables=skip_vars)
@@ -156,13 +160,13 @@ class _GlobVars:
             #self.ds_ini = xr.merge([self.ds_ini, ds_met_inst.isel(time=0)])
             #self.ds_end = xr.merge([self.ds_end, ds_met_inst.isel(time=11)])
         else:
-            self.ds_met = xr.open_mfdataset(StateMet, drop_variables=skip_vars)
+            self.ds_met = xr.open_mfdataset(StateMet, drop_variables=skip_vars, **extra_kwargs)
 
         # Emissions
         if self.is_gchp:
-            self.ds_hco = xr.open_mfdataset(GCHPEmiss, drop_variables=skip_vars)
+            self.ds_hco = xr.open_mfdataset(GCHPEmiss, drop_variables=skip_vars, **extra_kwargs)
         else:
-            self.ds_hco = xr.open_mfdataset(HemcoDiag, drop_variables=skip_vars)
+            self.ds_hco = xr.open_mfdataset(HemcoDiag, drop_variables=skip_vars, **extra_kwargs)
         
         # Area and troposphere mask
         # For gchp, get area in m2 from restart for use in calculating initial
@@ -170,6 +174,9 @@ class _GlobVars:
         # file for format compatibility with diagnostic output.
         if self.is_gchp:
             self.area_m2 = self.ds_ini["AREA"]
+            #using met files for all area because AREA is not always in restarts
+            #actually can't do this because of different dimensions
+            #self.area_m2 = self.ds_met["Met_AREAM2"]
             self.area_cm2 = self.ds_met["Met_AREAM2"] * 1.0e4
         else:
             self.area_m2 = self.ds_met["AREA"].isel(time=0)
@@ -210,7 +217,7 @@ class _GlobVars:
         self.mw = {}
         for v in self.species_list:
             self.mw[v] = spcdb[v]["MW_g"]
-        self.mw["Air"] = constants.MW_AIR * 1.0e3
+        self.mw["Air"] = constants.MW_AIR_g
 
         # kg/s --> g/day
         self.kg_s_to_g_d_value= 86400.0 * 1000.0
@@ -222,7 +229,6 @@ class _GlobVars:
         self.vv_to_g = {}
         self.mcm2s_to_g_d  = {} 
         self.kg_s_to_g_d = {}
-
         for spc in self.species_list:
 
             # kg/s --> g/day (same for all species)
@@ -239,7 +245,6 @@ class _GlobVars:
             self.mcm2s_to_g_d[spc] = self.area_cm2.values \
                                    / self.kg_per_mol[spc] \
                                    * self.kg_s_to_g_d[spc]
-
 # ======================================================================
 # Functions
 # ======================================================================
@@ -717,7 +722,6 @@ def transport_tracers_budgets(devstr, devdir, devrstdir, year,
 
     # Data structure for budgets
     data = {}
-    
     # ==================================================================
     # Get the accumulation term (init & final masses) from the restarts
     # ==================================================================
