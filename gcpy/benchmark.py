@@ -1657,8 +1657,8 @@ def make_benchmark_emis_tables(
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
-    # Create the "Emissions" category folder if it does not exist
-    emisdir = os.path.join(dst, "Emissions")
+    # Create the "Tables" category folder if it does not exist
+    emisdir = os.path.join(dst, "Tables")
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir)
 
