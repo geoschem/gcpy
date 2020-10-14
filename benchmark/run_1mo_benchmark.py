@@ -576,7 +576,8 @@ if gchp_vs_gcc:
         refmet = get_filepath(gchp_vs_gcc_refdir, col, gcc_dev_date)
 
         # Meteorology data needed for GCHP calculations
-        col = "StateMet_avg"
+        col = "StateMet"
+        #col = "StateMet_avg" # use this for benchmarks prior to 13.0
         devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
                               is_gchp=True)
 
@@ -636,7 +637,8 @@ if gchp_vs_gcc:
                            is_gchp=True)
 
         # Meteorology needed for GCHP
-        col = "StateMet_avg"
+        col = "StateMet"
+        #col = "StateMet_avg" # use this for benchmarks prior to 13.0
         devmet = get_filepath(gchp_vs_gcc_devdir, col, gchp_dev_date,
                               is_gchp=True)
 
@@ -742,7 +744,7 @@ if gchp_vs_gcc:
         # Make budget table. Include calculation of Strat. Exclude Transport
         # and Accumulation.
         bmk.make_benchmark_operations_budget(
-            gcc_ref_version,
+            gcc_dev_version,
             ref,
             gchp_dev_version,
             dev,
@@ -805,7 +807,8 @@ if gchp_vs_gchp:
                            is_gchp=True)
 
         # Meteorology data needed for GCHP calculations
-        col = "StateMet_avg"
+        col = "StateMet"
+        #col = "StateMet_avg" # use this for benchmarks prior to 13.0
         refmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_ref_date,
                               is_gchp=True)
         devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
@@ -867,7 +870,8 @@ if gchp_vs_gchp:
                            is_gchp=True)
 
         # Meteorology needed for GCHP
-        col = "StateMet_avg"
+        col = "StateMet"
+        #col = "StateMet_avg" # use this for benchmarks prior to 13.0
         refmet = get_filepath(gchp_vs_gchp_refdir,col, gchp_ref_date,
                               is_gchp=True)
         devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
