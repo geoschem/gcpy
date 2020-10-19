@@ -23,6 +23,7 @@ from yaml import load as yaml_load_file
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
 import warnings
+from distutils.version import LooseVersion
 
 # test
 from tabulate import tabulate
@@ -1666,27 +1667,33 @@ def make_benchmark_emis_tables(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Read the Ref dataset
-    if len(reflist) == 1:
-        reflist = [reflist]
-    refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
-
-    # Read the Dev dataset
-    if len(devlist) == 1:
-        devlist = [devlist]
-    devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
-
-    # Read the meteorology datasets if passed. These are optional since it
+    # Read the input datasets
+    # Also read the meteorology datasets if passed. These are optional since it
     # the refds and devds have variable AREA already (always true) and
     # unit conversions do not require any meteorology.
-    if refmet is not None:
-        refmetds = xr.open_mfdataset(refmet, drop_variables=gcon.skip_these_vars)
-    else:
-        refmetds = None
-    if devmet is not None:
-        devmetds = xr.open_mfdataset(devmet, drop_variables=gcon.skip_these_vars)
-    else:
-        devmetds = None
+    if len(reflist) == 1:
+        reflist = [reflist]
+    if len(devlist) == 1:
+        devlist = [devlist]
+    refmetds = None
+    devmetds = None
+
+    if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):
+        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
+        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
+        if refmet is not None:
+            refmetds = xr.open_mfdataset(refmet, drop_variables=gcon.skip_these_vars)
+        if devmet is not None:
+            devmetds = xr.open_mfdataset(devmet, drop_variables=gcon.skip_these_vars)
+    else:    
+        print(reflist)
+        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+        if refmet is not None:
+            refmetds = xr.open_mfdataset(refmet, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+        if devmet is not None:
+            devmetds = xr.open_mfdataset(devmet, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+
 
     # ==================================================================
     # Create table of emissions
@@ -3402,9 +3409,17 @@ def make_benchmark_aerosol_tables(
     }
     
     # Read data collections
-    ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list, compat='override', coords='all')
-    ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)
-    ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)
+    if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):
+        ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list, compat='override', coords='all')
+        ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)
+        ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)
+    else:
+        ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list, compat='override', coords='all')#,
+                                   #combine="nested", concat_dim="time")
+        ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)#, 
+                                   #combine="nested", concat_dim="time")
+        ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)#, 
+                                   #combine="nested", concat_dim="time")
 
     # Get troposphere mask
     tropmask = get_troposphere_mask(ds_met)
@@ -3715,8 +3730,12 @@ def make_benchmark_operations_budget(
     print('Opening ref and dev data')
     skip_vars = gcon.skip_these_vars
     if annual:
-        ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
-        dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
+        if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):        
+            ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
+            dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
+        else:
+            ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)#, combine="nested", concat_dim="time")
+            dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)#, combine="nested", concat_dim="time")
     else:
         ref_ds = xr.open_dataset(reffiles, drop_variables=skip_vars)
         dev_ds = xr.open_dataset(devfiles, drop_variables=skip_vars)
