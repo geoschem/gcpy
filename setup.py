@@ -92,9 +92,8 @@ setup(
     packages = find_packages(),
     include_package_data=True,
     install_requires=["xesmf>=0.2.1", "scipy>=1.3.1", "Cartopy>=0.17.0", "pandas>=0.25.1",
-                      "seaborn>=0.9.0", "matplotlib>=3.1.1", "tabulate>=0.8.3", 
-                      "joblib>=0.15.1", "xbpch>=0.3.5", "numpy>=1.19.0", "PyPDF2>=1.26.0", 
-                      "sphinx", "sphinx_bootstrap_theme>=0.7.0", "sphinx_rtd_theme>=0.5.0"],
+                      "matplotlib>=3.1.1", "tabulate>=0.8.3", "joblib>=0.17.0", "xbpch>=0.3.5", 
+                      "numpy>=1.19.1", "PyPDF2>=1.26.0"],
     classifiers = CLASSIFIERS
 )
 
