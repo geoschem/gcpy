@@ -13,7 +13,7 @@ from cartopy.mpl.geoaxes import GeoAxes  # for assertion
 from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
 from .plot import WhGrYlRd, compare_single_level, compare_zonal_mean
-from .regrid import make_regridder_C2L, make_regridder_L2L, create_regridders
+from .regrid import make_regridder_C2L, make_regridder_L2L, create_regridders, regrid_comparison_data
 from .grid import GEOS_72L_grid, GEOS_47L_grid, get_grid_extents, call_make_grid, get_vert_grid, \
     get_vert_grid, get_pressure_indices, pad_pressure_edges, convert_lev_to_pres, get_troposphere_mask
 import gcpy.util as util
@@ -23,6 +23,7 @@ from yaml import load as yaml_load_file
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
 import warnings
+from distutils.version import LooseVersion
 
 # test
 from tabulate import tabulate
@@ -32,7 +33,6 @@ warning_format = warnings.showwarning
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
-
 # YAML files
 aod_spc = "aod_species.yml"
 spc_categories = "benchmark_categories.yml"
@@ -46,7 +46,8 @@ def create_total_emissions_table(
     devstr,
     species,
     outfilename,
-    interval=[2678400.0],
+    ref_interval=[2678400.0],
+    dev_interval=[2678400.0],
     template="Emis{}_",
     refmetdata=None,
     devmetdata=None,
@@ -89,8 +90,13 @@ def create_total_emissions_table(
 
     Keyword Args (optional):
     ------------------------
-        interval : float
-            The length of the data interval in seconds. By default, interval
+        ref_interval : float
+            The length of the ref data interval in seconds. By default, interval
+            is set to the number of seconds in a 31-day month (86400 * 31),
+            which corresponds to typical benchmark simulation output.
+
+        dev_interval : float
+            The length of the dev data interval in seconds. By default, interval
             is set to the number of seconds in a 31-day month (86400 * 31),
             which corresponds to typical benchmark simulation output.
 
@@ -278,7 +284,7 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval=interval,
+                    interval=ref_interval,
                     area_m2=refarea,
                 )
 
@@ -298,7 +304,7 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval=interval,
+                    interval=dev_interval,
                     area_m2=devarea,
                 )
 
@@ -318,7 +324,7 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval=interval,
+                    interval=ref_interval,
                     area_m2=refarea,
                 )
                 devarray = convert_units(
@@ -326,7 +332,7 @@ def create_total_emissions_table(
                     spc_name,
                     species_properties,
                     target_units,
-                    interval=interval,
+                    interval=dev_interval,
                     area_m2=devarea,
                 )
 
@@ -566,117 +572,6 @@ def create_global_mass_table(
     # ==================================================================
     # Close files
     # ==================================================================
-    f.close()
-
-
-def create_budget_table(
-    devdata,
-    devstr,
-    region,
-    species,
-    varnames,
-    outfilename,
-    interval=[2678400.0],
-    template="Budget_{}",
-):
-    """
-    Creates a table of budgets by species and component for a data set.
-
-    Args:
-    -----
-        devdata : xarray Dataset
-            The second data set to be compared (aka "Development").
-
-        devstr: str
-            A string that can be used to identify the data set specified
-            by devfile (e.g. a model version number or other identifier).
-
-        region : str
-            Name of region for which budget will be computed.
-
-        species : List of strings
-            List of species  to include in budget tables.
-
-        varnames : List of strings
-            List of variable names in the budget diagnostics.
-
-        outfilename : str
-            Name of the text file which will contain the table of
-            emissions totals.
-
-    Keyword Args (optional):
-    ------------------------
-        interval : list of float
-            The length of the data interval in seconds. By default, interval
-            is set to [2678400.0], which is the number of seconds in July
-            (our 1-month benchmarking month).
-
-        template : str
-            Template for the diagnostic names that are contained in the
-            data set. If not specified, template will be set to "Budget_{}",
-            where {} will be replaced by the species name.
-
-    Remarks:
-    --------
-        This method is mainly intended for model benchmarking purposes,
-        rather than as a general-purpose tool.
-    """
-
-    # ==================================================================
-    # Initialization
-    # ==================================================================
-
-    # Error check arguments
-    if not isinstance(devdata, xr.Dataset):
-        raise TypeError("The devdata argument must be an xarray Dataset!")
-
-    # Open file for output
-    try:
-        f = open(outfilename, "w")
-    except FileNotFoundError:
-        msg = "Could not open {} for writing!".format(outfilename)
-        raise FileNotFoundError(msg)
-
-    # ==================================================================
-    # Loop over species
-    # ==================================================================
-    for spc_name in species:
-
-        # Title string
-        title = "### {} budget totals for species {}".format(devstr, spc_name)
-
-        # Write header to file
-        print("#" * 79, file=f)
-        print("{}{}".format(title.ljust(76), "###"), file=f)
-        print("#" * 79, file=f)
-
-        # Get variable names for this species
-        spc_vars = [v for v in varnames if v.endswith("_" + spc_name)]
-
-        for v in spc_vars:
-
-            # Component name
-            comp_name = v.replace("Budget", "")
-            comp_name = comp_name.replace("_" + spc_name, "")
-            comp_name = comp_name.replace(region, "")
-
-            # Convert from kg/s to Tg
-            devarray = devdata[v] * interval * 1e-9
-            units = "Tg"
-
-            # Compute sum
-            total_dev = np.sum(devarray.values)
-
-            # Write output
-            print(
-                "{} : {:13.6e} {}".format(comp_name.ljust(12), total_dev, units), file=f
-            )
-
-        # Add new lines before going to the next species
-        print(file=f)
-        print(file=f)
-
-    # Close file
     f.close()
 
 def make_benchmark_conc_plots(
@@ -1639,7 +1534,6 @@ def make_benchmark_emis_plots(
             else:
                 pdfname = os.path.join(catdir, "{}_Emissions.pdf".format(
                     filecat))
-            print(pdfname)
             # Create the PDF
             compare_single_level(
                 refds,
@@ -1689,7 +1583,8 @@ def make_benchmark_emis_tables(
     refmet=None,
     devmet=None,
     overwrite=False,
-    interval=[2678400.0],
+    ref_interval=[2678400.0],
+    dev_interval=[2678400.0],
     spcdb_dir=os.path.dirname(__file__)
 ):
     """
@@ -1734,8 +1629,13 @@ def make_benchmark_emis_tables(
             destination folder (specified by the dst argument).
             Default value : False
 
-        interval : list of float
-            The length of the data interval in seconds. By default, interval
+        ref_interval : list of float
+            The length of the ref data interval in seconds. By default, interval
+            is set to [2678400.0], which is the number of seconds in July
+            (our 1-month benchmarking month).
+
+        dev_interval : list of float
+            The length of the dev data interval in seconds. By default, interval
             is set to [2678400.0], which is the number of seconds in July
             (our 1-month benchmarking month).
 
@@ -1758,8 +1658,8 @@ def make_benchmark_emis_tables(
     elif not os.path.isdir(dst):
         os.mkdir(dst)
 
-    # Create the "Emissions" category folder if it does not exist
-    emisdir = os.path.join(dst, "Emissions")
+    # Create the "Tables" category folder if it does not exist
+    emisdir = os.path.join(dst, "Tables")
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir)
 
@@ -1767,27 +1667,33 @@ def make_benchmark_emis_tables(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    # Read the Ref dataset
-    if len(reflist) == 1:
-        reflist = [reflist]
-    refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
-
-    # Read the Dev dataset
-    if len(devlist) == 1:
-        devlist = [devlist]
-    devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
-
-    # Read the meteorology datasets if passed. These are optional since it
+    # Read the input datasets
+    # Also read the meteorology datasets if passed. These are optional since it
     # the refds and devds have variable AREA already (always true) and
     # unit conversions do not require any meteorology.
-    if refmet is not None:
-        refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
-    else:
-        refmetds = None
-    if devmet is not None:
-        devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
-    else:
-        devmetds = None
+    if len(reflist) == 1:
+        reflist = [reflist]
+    if len(devlist) == 1:
+        devlist = [devlist]
+    refmetds = None
+    devmetds = None
+
+    if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):
+        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
+        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
+        if refmet is not None:
+            refmetds = xr.open_mfdataset(refmet, drop_variables=gcon.skip_these_vars)
+        if devmet is not None:
+            devmetds = xr.open_mfdataset(devmet, drop_variables=gcon.skip_these_vars)
+    else:    
+        print(reflist)
+        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+        if refmet is not None:
+            refmetds = xr.open_mfdataset(refmet, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+        if devmet is not None:
+            devmetds = xr.open_mfdataset(devmet, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+
 
     # ==================================================================
     # Create table of emissions
@@ -1815,7 +1721,8 @@ def make_benchmark_emis_tables(
         devstr,
         species,
         file_emis_totals,
-        interval,
+        ref_interval,
+        dev_interval,
         template="Emis{}_",
         refmetdata=refmetds,
         devmetdata=devmetds,
@@ -1830,7 +1737,8 @@ def make_benchmark_emis_tables(
         devstr,
         inventories,
         file_inv_totals,
-        interval,
+        ref_interval,
+        dev_interval,
         template="Inv{}_",
         refmetdata=refmetds,
         devmetdata=devmetds,
@@ -2183,7 +2091,7 @@ def make_benchmark_jvalue_plots(
             devstr,
             varlist=varlist,
             pdfname=pdfname,
-            pres_range=[0, 100],
+            pres_range=[1, 100],
             log_yaxis=True,
             flip_ref=flip_ref,
             flip_dev=flip_dev,
@@ -2562,7 +2470,9 @@ def make_benchmark_mass_tables(
     overwrite=False,
     verbose=False,
     label="at end of simulation",
-    spcdb_dir=os.path.dirname(__file__)
+    spcdb_dir=os.path.dirname(__file__),
+    ref_met_extra='',
+    dev_met_extra=''
 ):
     """
     Creates a text file containing global mass totals by species and
@@ -2621,6 +2531,15 @@ def make_benchmark_mass_tables(
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
 
+        ref_met_extra : str
+            Path to ref Met file containing area data for use with restart files
+            which do not contain the Area variable.
+            Default value : ''
+
+        dev_met_extra : str
+            Path to dev Met file containing area data for use with restart files
+            which do not contain the Area variable.
+            Default value : ''            
     """
 
     # ==================================================================
@@ -2632,15 +2551,20 @@ def make_benchmark_mass_tables(
         msg = msg.format(dst)
         raise ValueError(msg)
     elif not os.path.isdir(dst):
-        os.makedirs(dst)
+        try:
+            os.makedirs(dst)
+        except FileExistsError:
+            pass
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
     # Read data
-    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
-    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+        refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
+        devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
 
     # ==================================================================
     # Update GCHP restart dataset (if any)
@@ -2659,9 +2583,22 @@ def make_benchmark_mass_tables(
     # ==================================================================
 
     # Find the area variables in Ref and Dev
-    ref_area = util.get_area_from_dataset(refds)
-    dev_area = util.get_area_from_dataset(devds)
-
+    try:
+        ref_area = util.get_area_from_dataset(refds)
+    except ValueError:
+        if ref_met_extra != '':
+            ref_met_extra = xr.open_dataset(ref_met_extra)
+            ref_area = util.get_area_from_dataset(ref_met_extra)
+        else:
+            raise ValueError('Must pass Met data if using a restart file without area')
+    try:
+        dev_area = util.get_area_from_dataset(devds)
+    except ValueError:
+        if dev_met_extra != '':
+            dev_met_extra = xr.open_dataset(dev_met_extra)
+            dev_area = util.get_area_from_dataset(dev_met_extra)
+        else:
+            raise ValueError('Must pass Met data if using a restart file without area')
     # Find required meteorological variables in Ref
     # (or exit with an error if we can't find them)
     metvar_list = ["Met_DELPDRY", "Met_BXHEIGHT", "Met_TropLev"]
@@ -3459,7 +3396,9 @@ def make_benchmark_aerosol_tables(
     path = os.path.join(os.path.dirname(__file__), "aod_species.yml")
     aod = yaml_load_file(open(path))
     aod_list = [v for v in aod.keys() if "Dust" in v or "Hyg" in v]
-
+    #different names for GCHP
+    if is_gchp:
+        aod_list = [v.replace('550nm', 'WL1') for v in aod_list]
     # Descriptive names
     spc2name = {"BCPI": "Black Carbon",
                 "DST1": "Dust",
@@ -3470,9 +3409,17 @@ def make_benchmark_aerosol_tables(
     }
     
     # Read data collections
-    ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list)
-    ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)
-    ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)
+    if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):
+        ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list, compat='override', coords='all')
+        ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)
+        ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)
+    else:
+        ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list, compat='override', coords='all')#,
+                                   #combine="nested", concat_dim="time")
+        ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)#, 
+                                   #combine="nested", concat_dim="time")
+        ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)#, 
+                                   #combine="nested", concat_dim="time")
 
     # Get troposphere mask
     tropmask = get_troposphere_mask(ds_met)
@@ -3654,7 +3601,8 @@ def make_benchmark_operations_budget(
     reffiles,
     devstr,
     devfiles,
-    interval,
+    ref_interval,
+    dev_interval,
     benchmark_type=None,
     label=None,
     col_sections=["Full", "Trop", "PBL", "Strat"],
@@ -3776,14 +3724,18 @@ def make_benchmark_operations_budget(
     # ------------------------------------------
 
     # Assume this will be annual budget if interval greater than 3e7 sec
-    annual = interval > 3.0e7
+    annual = ref_interval > 3.0e7
 
     # Read data from disk (either one month or 12 months)
     print('Opening ref and dev data')
     skip_vars = gcon.skip_these_vars
     if annual:
-        ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
-        dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
+        if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):        
+            ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
+            dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
+        else:
+            ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)#, combine="nested", concat_dim="time")
+            dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)#, combine="nested", concat_dim="time")
     else:
         ref_ds = xr.open_dataset(reffiles, drop_variables=skip_vars)
         dev_ds = xr.open_dataset(devfiles, drop_variables=skip_vars)
@@ -3853,7 +3805,8 @@ def make_benchmark_operations_budget(
 
     # Determine what the converted units and conversion factor should be
     # based on benchmark type and species (tracer) name. Assume raw data [kg/s]
-    conv_fac = {}
+    ref_conv_fac = {}
+    dev_conv_fac = {}
     units = {}
     is_wetdep = {}
     for spc in spclist:
@@ -3865,17 +3818,20 @@ def make_benchmark_operations_budget(
             is_wetdep[spc] = properties.get("Is_WetDep")
 
         # Unit conversion factors and units
-        conv_fac[spc] = interval * 1e-6
+        ref_conv_fac[spc] = ref_interval * 1e-6
+        dev_conv_fac[spc] = dev_interval * 1e-6
         units[spc] = '[Gg]'
         if benchmark_type is not None:
             if "TransportTracers" in benchmark_type and "Tracer" not in spc:
-                conv_fac[spc] = interval
+                ref_conv_fac[spc] = ref_interval
+                dev_conv_fac[spc] = dev_interval
                 if annual:
                     units[spc] = '[kg/yr]'
                 else:
                     units[spc] = '[kg]'
             elif annual:
-                conv_fac[spc] = interval * 1e-9
+                ref_conv_fac[spc] = ref_interval * 1e-9
+                dev_conv_fac[spc] = dev_interval * 1e-9
                 units[spc] = '[Tg/yr]'
 
     # ------------------------------------------
@@ -3946,8 +3902,8 @@ def make_benchmark_operations_budget(
                     devraw = np.nan
     
                 # Convert units
-                refconv = refraw * conv_fac[spc]
-                devconv = devraw * conv_fac[spc]
+                refconv = refraw * ref_conv_fac[spc]
+                devconv = devraw * dev_conv_fac[spc]
                     
                 # Calculate diff and % diff from conc with converted units
                 if not np.isnan(refconv) and not np.isnan(devconv):
@@ -4109,7 +4065,7 @@ def make_benchmark_operations_budget(
             print("{} budgets for {}".format(benchmark_type, label),
                   file=f)
         else:
-            print("Budgets across {} sec".format(interval), file=f)
+            print("Budgets across {}/{} sec".format(ref_interval,dev_interval), file=f)
         print("\n", file=f)
         print("NOTES:", file=f)
         msg = " - When using the non-local mixing scheme (default), "\

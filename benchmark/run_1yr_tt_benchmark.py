@@ -153,11 +153,18 @@ if gcpy_test:
     gchp_vs_gchp_resultsdir  = join(mainresultsdir,'GCHP_version_comparison')
     if not os.path.exists(mainresultsdir): os.mkdir(mainresultsdir)
 else:
-    gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_version, "Plots")
+    gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_version, results_dir)
     gchp_vs_gchp_resultsdir  = join(maindir, gchp_dev_version,
-                                  "Plots", "GCHP_version_comparison")
+                                    results_dir, "GCHP_version_comparison")
     gchp_vs_gcc_resultsdir   = join(maindir, gchp_dev_version,
-                                  "Plots", "GCHP_GCC_comparison")
+                                    results_dir, "GCHP_GCC_comparison")
+    base_gchp_resultsdir     = join(maindir, gchp_dev_dir, results_dir)
+    #make results directories that don't exist
+    for resdir, plotting_type in zip([gcc_vs_gcc_resultsdir, base_gchp_resultsdir,
+                                      gchp_vs_gchp_resultsdir, gchp_vs_gcc_resultsdir],
+                                     [gcc_vs_gcc, gchp_vs_gcc or gchp_vs_gchp,
+                                      gchp_vs_gchp, gchp_vs_gcc]):
+        if plotting_type and not os.path.exists(resdir): os.mkdir(resdir)
 
 # Tables directories
 gcc_vs_gcc_tablesdir   = join(gcc_vs_gcc_resultsdir,"Tables") 
@@ -341,6 +348,7 @@ if gcc_vs_gcc:
             gcc_dev_version,
             devs,
             sec_per_yr,
+            sec_per_yr,
             benchmark_type=bmk_type,
             label=bmk_year,
             compute_accum=False,
@@ -383,7 +391,8 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        colmet = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Create concentration plots for each benchmark month
         for s, bmk_mon in enumerate(bmk_mons):
@@ -418,7 +427,8 @@ if gchp_vs_gcc:
 
         # Create separate set of plots for each wetdep collection
         cols = ["WetLossConv", "WetLossLS"]
-        colmet = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         for col in cols:
 
@@ -484,6 +494,7 @@ if gchp_vs_gcc:
             gchp_dev_version,
             devs,
             sec_per_yr,
+            sec_per_yr,
             benchmark_type=bmk_type,
             label=bmk_year,
             operations=["Chemistry","Convection","EmisDryDep","Mixing",
@@ -508,7 +519,8 @@ if gchp_vs_gchp:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        colmet = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet_gchp = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Create concentration plots for each benchmark month
         for s, bmk_mon_mid in enumerate(bmk_mons_mid):
@@ -520,6 +532,9 @@ if gchp_vs_gchp:
                                is_gchp=True)
             refmet = get_filepath(gchp_vs_gchp_refdir, colmet, bmk_mon_mid,
                                   is_gchp=True)
+            # Use this for benchmark prior to 13.0
+            #devmet = get_filepath(gchp_vs_gchp_devdir, colmet_gchp, bmk_mon_mid,
+            #                      is_gchp=True)
             devmet = get_filepath(gchp_vs_gchp_devdir, colmet, bmk_mon_mid,
                                   is_gchp=True)
 
@@ -549,7 +564,8 @@ if gchp_vs_gchp:
 
         # Create separate set of plots for each wetdep collection
         cols = ["WetLossConv", "WetLossLS"]
-        colmet = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         for col in cols:
 
@@ -619,6 +635,7 @@ if gchp_vs_gchp:
             refs,
             gchp_dev_version,
             devs,
+            sec_per_yr,
             sec_per_yr,
             benchmark_type=bmk_type,
             label=bmk_year,

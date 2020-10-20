@@ -7,8 +7,8 @@ run_1yr_fullchem_benchmark.py: Driver script for creating benchmark plots and
 Run this script to generate benchmark comparisons between:
 
     (1) GCC (aka GEOS-Chem "Classic") vs. GCC
-    (2) GCHP vs GCC (not yet tested)
-    (3) GCHP vs GCHP (not yet tested)
+    (2) GCHP vs GCC 
+    (3) GCHP vs GCHP
 
 You can customize this by editing the following settings in the
 "Configurables" section below:
@@ -56,9 +56,8 @@ import numpy as np
 import xarray as xr
 
 from gcpy import benchmark as bmk
-from gcpy.util import get_filepath, get_filepaths
+from gcpy.util import get_filepath, get_filepaths, get_area_from_dataset
 import gcpy.ste_flux as ste
-import gcpy.budget_aer as aerbdg
 import gcpy.mean_oh_from_logs as moh
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 
@@ -97,13 +96,17 @@ gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
 # Name to be used for directory of output from this script
-results_dir = "Results"
+results_dir = "BenchmarkResults"
 
 # Path to regridding weights
 weightsdir = "/n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
 
 # Path to species_databse.yml
 spcdb_dir   = join(maindir, gcc_dev_version)
+
+# GCHP initial restart resolution (for mass tables)
+gchp_ref_res = 'c48'
+gchp_dev_res = 'c48'
 
 # =====================================================================
 # Specify if this is a gcpy test validation run
@@ -114,8 +117,8 @@ gcpy_test = True
 # Comparisons to run 
 # =====================================================================
 gcc_vs_gcc   = True
-gchp_vs_gcc  = False  # not yet functional
-gchp_vs_gchp = False # not yet functional
+gchp_vs_gcc  = True  
+gchp_vs_gchp = True
 # GCHP vs GCC diff of diffs not included in 1-yr full chemistry benchmark
 
 # =====================================================================
@@ -172,11 +175,18 @@ if gcpy_test:
     gchp_vs_gcc_resultsdir   = join(mainresultsdir,'GCHP_GCC_comparison')
     if not os.path.exists(mainresultsdir): os.mkdir(mainresultsdir)
 else:
-    gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_version, "Plots")
+    gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_version, results_dir)
     gchp_vs_gchp_resultsdir  = join(maindir, gchp_dev_version,
-                              "Plots", "GCHP_version_comparison")
+                                    results_dir, "GCHP_version_comparison")
     gchp_vs_gcc_resultsdir   = join(maindir, gchp_dev_version,
-                              "Plots", "GCHP_GCC_comparison")
+                                    results_dir, "GCHP_GCC_comparison")
+    base_gchp_resultsdir     = join(maindir, gchp_dev_dir, results_dir)
+    #make results directories that don't exist
+    for resdir, plotting_type in zip([gcc_vs_gcc_resultsdir, base_gchp_resultsdir,
+                                      gchp_vs_gchp_resultsdir, gchp_vs_gcc_resultsdir],
+                                     [gcc_vs_gcc, gchp_vs_gcc or gchp_vs_gchp,
+                                      gchp_vs_gchp, gchp_vs_gcc]):
+        if plotting_type and not os.path.exists(resdir): os.mkdir(resdir)
 
 # Tables directories
 gcc_vs_gcc_tablesdir   = join(gcc_vs_gcc_resultsdir,"Tables") 
@@ -341,7 +351,8 @@ if gcc_vs_gcc:
             dev,
             gcc_vs_gcc_devstr,
             dst=gcc_vs_gcc_resultsdir,
-            interval=sec_per_month,
+            ref_interval=sec_per_month,
+            dev_interval=sec_per_month,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
@@ -444,6 +455,7 @@ if gcc_vs_gcc:
                 ref,
                 gcc_dev_version,
                 dev,
+                bmk_sec_per_month[s],
                 bmk_sec_per_month[s],
                 benchmark_type=bmk_type,
                 label=bmk_mon_yr_strs[s],
@@ -551,8 +563,8 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        colmet_gcc = "StateMet"
-        colmet_gchp = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet_gchp = "StateMet_avg" # Use this for benchmarks prior to 13.0
         
         # Create concentration plots for each benchmark month
         for s, bmk_mon in enumerate(bmk_mons):
@@ -560,9 +572,12 @@ if gchp_vs_gcc:
             ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
             dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid[s],
                                is_gchp=True)
-            refmet = get_filepath(gchp_vs_gcc_refdir, colmetgcc, bmk_mon)
-            devmet = get_filepath(gchp_vs_gcc_devdir, colmetgchp,
+            refmet = get_filepath(gchp_vs_gcc_refdir, colmet, bmk_mon)
+            devmet = get_filepath(gchp_vs_gcc_devdir, colmet,
                                   bmk_mons_mid[s], is_gchp=True)
+            # Use this for benchmark prior to 13.0
+            #devmet = get_filepath(gchp_vs_gcc_devdir, colmet_gchp,
+            #                      bmk_mons_mid[s], is_gchp=True)
             bmk.make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gcc_refstr,
@@ -622,7 +637,8 @@ if gchp_vs_gcc:
 
         # Pass StateMet collection as source of GCHP area. Since area is
         # time-invariant, only need to pass for one month.
-        colmet = "StateMet_avg"
+        colmet = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
         devmet = get_filepaths(gchp_vs_gcc_devdir, colmet, all_months_mid,
                                is_gchp=True)
 
@@ -634,7 +650,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devstr,
             devmet=devmet,
             dst=gchp_vs_gcc_resultsdir,
-            interval=sec_per_month,
+            ref_interval=sec_per_month,
+            dev_interval=sec_per_month,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
@@ -670,7 +687,7 @@ if gchp_vs_gcc:
     # GCHP vs GCC column AOD plots
     #---------------------------------------------------------------
     if plot_aod:
-        print("\n%%% Skipping GCHP vs. GCC AOD plots %%%")
+        print("\n%%% Creating GCHP vs. GCC AOD plots %%%")
 
         # Diagnostic collections to read
         col = "Aerosols"
@@ -701,12 +718,19 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "Restart"
-
         # Create mass table for each benchmark month
         def parallel_mass_table(s, bmk_mon):
             ref = get_filepath(gchp_vs_gcc_refrstdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devrstdir, col, bmk_mons[s],
+            dev = get_filepath(gchp_vs_gcc_devrstdir, col, bmk_mon,
                                is_gchp=True)
+            #use initial restart if no checkpoint present (intended for first month)
+            #need to pass path of meteorology file with area variable in this scenario
+
+            dev_extra=''
+            if not os.path.isfile(dev):
+                dev = join(gchp_vs_gcc_devrstdir, 'initial_GEOSChem_rst.' + gchp_dev_res + '_benchmark.nc')
+                dev_extra = get_filepath(gchp_vs_gcc_devrstdir, col,
+                                      bmk_mons[s+1], is_gchp=True)
             bmk.make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gcc_refstr,
@@ -716,7 +740,8 @@ if gchp_vs_gcc:
                 subdst=bmk_mon_yr_strs[s],
                 label="at 01{}".format(bmk_mon_yr_strs[s]),
                 overwrite=True,
-                spcdb_dir=spcdb_dir
+                spcdb_dir=spcdb_dir,
+                dev_met_extra=dev_extra
             )
         results = Parallel(n_jobs=-1)(delayed(parallel_mass_table)(s, bmk_mon) \
                                       for s, bmk_mon in enumerate(bmk_mons))
@@ -736,16 +761,17 @@ if gchp_vs_gcc:
                                is_gchp=True)
             plot_dir = join(gchp_vs_gcc_budgetdir, bmk_mon_yr_strs[s])
             bmk.make_benchmark_operations_budget(
-                gcc_ref_version,
+                gcc_dev_version,
                 ref,
                 gchp_dev_version,
                 dev,
+                bmk_sec_per_month[s],
                 bmk_sec_per_month[s],
                 benchmark_type=bmk_type,
                 label=bmk_mon_yr_strs[s],
                 operations=["Chemistry", "Convection", "EmisDryDep", "Mixing", "WetDep"],
                 compute_accum=False,
-                dst=gcc_vs_gcc_tablesdir            )
+                dst=gchp_vs_gcc_tablesdir            )
 
         results = Parallel(n_jobs=-1)(delayed(parallel_ops_budg)(s, bmk_mon) \
                                       for s, bmk_mon in enumerate(bmk_mons))
@@ -757,15 +783,29 @@ if gchp_vs_gcc:
         print("\n%%% Creating GCHP vs. GCC aerosol budget tables %%%")
 
         # Compute annual mean AOD budgets and aerosol burdens
-        aerbdg.aerosol_budgets_and_burdens(
-            gchp_dev_version,
+        # Diagnostic collections to read
+        col_aero = "Aerosols"
+        col_spc = "SpeciesConc"
+        col_met = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
+        dev_aero = get_filepaths(gchp_vs_gcc_devdir, col_aero, all_months_mid, is_gchp=True)
+        dev_spc = get_filepaths(gchp_vs_gcc_devdir, col_spc, all_months_mid, is_gchp=True)
+        dev_met = get_filepaths(gchp_vs_gcc_devdir, col_met, all_months_mid, is_gchp=True)
+
+        # Compute global aerosol budgets and burdens 
+        bmk.make_benchmark_aerosol_tables(
             gchp_vs_gcc_devdir,
+            dev_aero,
+            dev_spc,
+            dev_met,
+            gchp_dev_version,
             bmk_year,
+            days_per_month,
             dst=gchp_vs_gcc_tablesdir,
             overwrite=True,
-            spcdb_dir=spcdb_dir
+            spcdb_dir=spcdb_dir,
+            is_gchp=True
         )
-
     #---------------------------------------------------------------
     # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
     #---------------------------------------------------------------
@@ -784,31 +824,260 @@ if gchp_vs_gcc:
 if gchp_vs_gchp:
 
     if plot_conc:
-        print("\n%%% Skipping GCHP vs. GCHP concentration plots %%%")
+        print("\n%%% Creating GCHP vs. GCHP concentration plots %%%")
 
+        # Diagnostic collections to read
+        col = "SpeciesConc"
+        colmet = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
+        
+        # Create concentration plots for each benchmark month
+        for s, bmk_mon_mid in enumerate(bmk_mons_mid):
+
+            ref = get_filepath(gchp_vs_gchp_refdir, col, bmk_mon_mid, 
+                               is_gchp=True)
+            dev = get_filepath(gchp_vs_gchp_devdir, col, bmk_mon_mid,
+                               is_gchp=True)
+            refmet = get_filepath(gchp_vs_gchp_refdir, colmet,
+                                  bmk_mon_mid, is_gchp=True)
+            devmet = get_filepath(gchp_vs_gchp_devdir, colmet,
+                                  bmk_mon_mid, is_gchp=True)
+            bmk.make_benchmark_conc_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                refmet=refmet,
+                devmet=devmet,
+                dst=gchp_vs_gchp_resultsdir,
+                subdst=bmk_mon_yr_strs[s],
+                weightsdir=weightsdir,
+                benchmark_type=bmk_type,
+                plot_by_spc_cat=plot_by_spc_cat,
+                overwrite=True,
+                spcdb_dir=spcdb_dir
+            )
+
+    #---------------------------------------------------------------
+    # GCHP vs. GCHP Emissions plots
+    #---------------------------------------------------------------
     if plot_emis:
-        print("\n%%% Skipping GCHP vs. GCHP emissions plots %%%")
+        print("\n%%% Creating GCHP vs. GCHP emissions plots %%%")
 
+        # Diagnostic collections to read
+        col = "Emissions"
+
+        # Create concentration plots for each benchmark month
+        for s, bmk_mon_mid in enumerate(bmk_mons_mid):
+
+            ref = get_filepath(gchp_vs_gchp_refdir, col, bmk_mon_mid,
+                               is_gchp=True)
+            dev = get_filepath(gchp_vs_gchp_devdir, col, bmk_mon_mid,
+                               is_gchp=True)
+            bmk.make_benchmark_emis_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                dst=gchp_vs_gchp_resultsdir,
+                subdst=bmk_mon_yr_strs[s],
+                weightsdir=weightsdir,
+                plot_by_spc_cat=plot_by_spc_cat,
+                plot_by_hco_cat=plot_by_hco_cat,
+                overwrite=True,
+                spcdb_dir=spcdb_dir
+            )
+
+    #---------------------------------------------------------------
+    # GCHP vs. GCHP tables of emission and inventory totals
+    #---------------------------------------------------------------
     if emis_table:
-        print("\n%%% Skipping GCHP vs. GCHP emissions tables %%%")
+        print("\n%%% Creating GCHP vs. GCHP emissions tables %%%")
 
+        # Diagnostic collections to read
+        col = "Emissions"
+        ref = get_filepaths(gchp_vs_gchp_refdir, col, all_months_mid,
+                            is_gchp=True)
+        dev = get_filepaths(gchp_vs_gchp_devdir, col, all_months_mid,
+                            is_gchp=True)
+
+        # Pass StateMet collection as source of GCHP area. Since area is
+        # time-invariant, only need to pass for one month.
+        colmet = "StateMet"
+        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
+        refmet = get_filepaths(gchp_vs_gchp_refdir, colmet, all_months_mid,
+                               is_gchp=True)
+        devmet = get_filepaths(gchp_vs_gchp_devdir, colmet, all_months_mid,
+                               is_gchp=True)
+        # Create emissions table that spans entire year
+        bmk.make_benchmark_emis_tables(
+            ref,
+            gchp_vs_gchp_refstr,
+            dev,
+            gchp_vs_gchp_devstr,
+            refmet=refmet,
+            devmet=devmet,
+            dst=gchp_vs_gchp_resultsdir,
+            ref_interval=sec_per_month,
+            dev_interval=sec_per_month,
+            overwrite=True,
+            spcdb_dir=spcdb_dir
+        )
+
+    #---------------------------------------------------------------
+    # GCHP vs. GCHP J-values plots
+    #---------------------------------------------------------------
     if plot_jvalues:
-        print("\n%%% Skipping GCHP vs. GCHP J-values plots %%%")
+        print("\n%%% Creating GCHP vs. GCHP J-values plots %%%")
 
+        # Diagnostic collections to read
+        col = "JValues"
+
+        # Create J-value plots for each benchmark month
+        for s, bmk_mon_mid in enumerate(bmk_mons_mid):
+
+            ref = get_filepath(gchp_vs_gchp_refdir, col, bmk_mon_mid,
+                               is_gchp=True)
+            dev = get_filepath(gchp_vs_gchp_devdir, col, bmk_mon_mid,
+                               is_gchp=True)
+            bmk.make_benchmark_jvalue_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                dst=gchp_vs_gchp_resultsdir,
+                subdst=bmk_mon_yr_strs[s],
+                weightsdir=weightsdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir
+            )
+
+    #---------------------------------------------------------------
+    # GCHP vs GCHP column AOD plots
+    #---------------------------------------------------------------
     if plot_aod:
-        print("\n%%% Skipping GCHP vs. GCHP AOD plots %%%")
+        print("\n%%% Creating GCHP vs. GCHP AOD plots %%%")
 
+        # Diagnostic collections to read
+        col = "Aerosols"
+
+        # Create AOD plots for each benchmark month
+        for s, bmk_mon_mid in enumerate(bmk_mons_mid):
+
+            ref = get_filepath(gchp_vs_gchp_refdir, col, bmk_mon_mid,
+                               is_gchp=True)
+            dev = get_filepath(gchp_vs_gchp_devdir, col, bmk_mon_mid,
+                               is_gchp=True)
+            bmk.make_benchmark_aod_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                dst=gchp_vs_gchp_resultsdir,
+                subdst=bmk_mon_yr_strs[s],
+                weightsdir=weightsdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir
+            )
+
+    #---------------------------------------------------------------
+    # GCHP vs GCHP global mass tables
+    #---------------------------------------------------------------
     if mass_table:
-        print("\n%%% Skipping GCHP vs. GCHP mass tables %%%")
+        print("\n%%% Creating GCHP vs. GCHP mass tables %%%")
 
+        # Diagnostic collections to read
+        col = "Restart"
+
+        # Create mass table for each benchmark month
+        def parallel_mass_table(s, bmk_mon):
+            ref = get_filepath(gchp_vs_gchp_refrstdir, col, bmk_mon,
+                               is_gchp=True)
+            ref_extra=''
+            if not os.path.isfile(ref):
+                ref = join(gchp_vs_gchp_refrstdir, 'initial_GEOSChem_rst.' + gchp_ref_res + '_benchmark.nc')
+                ref_extra = get_filepath(gchp_vs_gchp_refrstdir, col,
+                                      bmk_mons[s+1], is_gchp=True)
+
+            dev = get_filepath(gchp_vs_gchp_devrstdir, col, bmk_mon,
+                               is_gchp=True)
+            dev_extra=''
+            if not os.path.isfile(dev):
+                dev = join(gchp_vs_gchp_devrstdir, 'initial_GEOSChem_rst.' + gchp_dev_res + '_benchmark.nc')
+                dev_extra = get_filepath(gchp_vs_gchp_devrstdir, col,
+                                      bmk_mons[s+1], is_gchp=True)
+
+            bmk.make_benchmark_mass_tables(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                dst=gchp_vs_gchp_tablesdir,
+                subdst=bmk_mon_yr_strs[s],
+                label="at 01{}".format(bmk_mon_yr_strs[s]),
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                ref_met_extra=ref_extra,
+                dev_met_extra=dev_extra
+            )
+        results = Parallel(n_jobs=-1)(delayed(parallel_mass_table)(s, bmk_mon) \
+                                      for s, bmk_mon in enumerate(bmk_mons))
+
+    #---------------------------------------------------------------
+    # GCHP vs GCHP operations budgets tables
+    #---------------------------------------------------------------
     if ops_budget_table:
-        print("\n%%% Skipping GCHP vs. GCHP operations budget tables %%%")
+        print("\n%%% Creating GCHP vs. GCHP operations budget tables %%%")
 
+        # Diagnostic collections to read
+        col = "Budget"
+        def parallel_ops_budg(s, bmk_mon_mid):
+            # Create budget table for each benchmark month (ewl??)
+            ref = get_filepath(gchp_vs_gchp_refdir, col, bmk_mon_mid,
+                               is_gchp=True)
+            dev = get_filepath(gchp_vs_gchp_devdir, col, bmk_mon_mid,
+                               is_gchp=True)
+            plot_dir = join(gchp_vs_gchp_budgetdir, bmk_mon_yr_strs[s])
+            bmk.make_benchmark_operations_budget(
+                gchp_ref_version,
+                ref,
+                gchp_dev_version,
+                dev,
+                bmk_sec_per_month[s],
+                bmk_sec_per_month[s],
+                benchmark_type=bmk_type,
+                label=bmk_mon_yr_strs[s],
+                operations=["Chemistry", "Convection", "EmisDryDep", "Mixing", "WetDep"],
+                compute_accum=False,
+                dst=gchp_vs_gchp_tablesdir            )
+
+        results = Parallel(n_jobs=-1)(delayed(parallel_ops_budg)(s, bmk_mon_mid) \
+                                      for s, bmk_mon_mid in enumerate(bmk_mons_mid))
+
+    #---------------------------------------------------------------
+    # GCHP vs GCHP aerosol budgets and burdens tables
+    #---------------------------------------------------------------
     if aer_budget_table:
-        print("\n%%% Skipping GCHP vs. GCHP aerosol budget tables %%%")
-
+        print("\n%%% Skipping GCHP vs. GCHP aerosol budget tables: Redundant%%%")
+        '''
+        # Compute annual mean AOD budgets and aerosol burdens
+        aerbdg.aerosol_budgets_and_burdens(
+            gchp_dev_version,
+            gchp_vs_gchp_devdir,
+            bmk_year,
+            dst=gchp_vs_gchp_tablesdir,
+            overwrite=True,
+            spcdb_dir=spcdb_dir
+        )
+        '''
+    #---------------------------------------------------------------
+    # GCHP vs. GCHP global mean OH, MCF Lifetime, CH4 Lifetime
+    #---------------------------------------------------------------
     if OH_metrics:
         print("\n%%% Skipping GCHP vs. GCHP OH metrics %%%")
 
+    # --------------------------------------------------------------
+    # GCHP Strat-Trop Exchange
+    # --------------------------------------------------------------
     if ste_table:
         print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
