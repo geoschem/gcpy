@@ -8,16 +8,13 @@ for selected benchmark species.
 # Imports etc.
 # ======================================================================
 
-from calendar import monthrange, month_abbr
-import datetime
-import gcpy.constants as gcon
-import numpy as np
 import os
-from os.path import join
-import pandas as pd
+from calendar import monthrange, month_abbr
 import warnings
+import numpy as np
+import pandas as pd
 import xarray as xr
-from yaml import load as yaml_load_file
+import gcpy.constants as physconsts
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -67,7 +64,7 @@ class _GlobVars:
         self.species = species
         self.month = month
         self.is_TransportTracers = "TransportTracers" in bmk_type
-        
+
         # ------------------------------
         # Benchmark year
         # ------------------------------
@@ -86,8 +83,30 @@ class _GlobVars:
             self.data_vars[spc] = "AdvFluxVert_" + spc
 
         # Vertical flux diagnostics
-        skip_vars = gcon.skip_these_vars
-        self.ds_flx = xr.open_mfdataset(files, drop_variables=skip_vars)
+        # Return a single Dataset containing data from all files.
+        # NOTE: Need to add combine="nested" and concat_dim="time"
+        # for xarray 0.15 and higher!!!
+        v = xr.__version__.split(".")
+        if int(v[0]) == 0 and int(v[1]) >= 15:
+            try:
+                self.ds_flx = xr.open_mfdataset(
+                    files,
+                    drop_variables=physconsts.skip_these_vars,
+                    combine="nested",
+                    concat_dim="time"
+                )
+            except FileNotFoundError:
+                msg = "Could not find one or more files in {}".format(files)
+                raise FileNotFoundError(msg)
+        else:
+            try:
+                self.ds_flx = xr.open_mfdataset(
+                    files,
+                    drop_variables=physconsts.skip_these_vars,
+                )
+            except FileNotFoundError:
+                msg = "Could not find one or more files in {}".format(files)
+                raise FileNotFoundError(msg)
 
         # Set a flag to denote if this data is from GCHP
         self.is_gchp = "nf" in self.ds_flx.dims.keys()
@@ -97,7 +116,7 @@ class _GlobVars:
 
         # Set a flag to denote if this is a 1-year benchmark
         self.is_1yr = self.month is None
-        
+
         # Months and days
         if self.is_1yr:
 
@@ -106,8 +125,8 @@ class _GlobVars:
             # -----------------------------------
             self.N_MONTHS = 12
             self.N_MONTHS_FLOAT = self.N_MONTHS * 1.0
-            
-            # Days per month in the benchmark year 
+
+            # Days per month in the benchmark year
             self.d_per_mon = np.zeros(self.N_MONTHS)
             for t in range(self.N_MONTHS):
                 self.d_per_mon[t] = monthrange(self.y0, t + 1)[1] * 1.0
@@ -118,12 +137,12 @@ class _GlobVars:
                 self.mon_name.append("{} {}".format(
                     month_abbr[t + 1], self.y0_str))
             self.mon_name.append("Annual Mean")
-                    
+
             # Days in the benchmark year
             self.d_per_yr = np.sum(self.d_per_mon)
-            
+
         else:
-            
+
             # -----------------------------------
             # Months and days: 1-month benchmark
             # -----------------------------------
@@ -135,9 +154,9 @@ class _GlobVars:
 
             # Month name
             self.mon_name = ["{} {}".format(month_abbr[self.month],
-                                                       self.y0_str)]
+                                            self.y0_str)]
 
-            # Days in benchmark year 
+            # Days in benchmark year
             self.d_per_yr = 0.0
             for t in range(12):
                 self.d_per_yr += monthrange(self.y0, t + 1)[1] * 1.0
@@ -189,7 +208,7 @@ def compute_ste(globvars):
         n_rows = globvars.N_MONTHS + 1
     else:
         n_rows = globvars.N_MONTHS
-        
+
     # Create a dictionary to define a DataFrame
     df_dict = {}
     for spc in globvars.species:

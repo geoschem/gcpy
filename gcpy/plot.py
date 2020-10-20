@@ -10,29 +10,28 @@ import xarray as xr
 import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
-from .grid import GEOS_72L_grid, GEOS_47L_grid, get_vert_grid, get_pressure_indices, \
+from .grid import get_vert_grid, get_pressure_indices, \
      pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, get_input_res
-from .regrid import regrid_comparison_data, create_regridders, dict_72_to_47, reduce_72_to_47
+from .regrid import regrid_comparison_data, create_regridders, gen_xmat, regrid_vertical
 from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, all_zero_or_nan, slice_by_lev_and_time, compare_varnames
 from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 from multiprocessing import current_process
-from shutil import rmtree
 from tempfile import TemporaryDirectory
 import warnings
 
 # Save warnings format to undo overwriting built into PyPDF2
-warning_format = warnings.showwarning
+_warning_format = warnings.showwarning
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
 
-current_dir = os.path.dirname(__file__)
+_current_dir = os.path.dirname(__file__)
 
-rgb_WhGrYlRd = np.genfromtxt(current_dir+'/colormaps/WhGrYlRd.txt',
+_rgb_WhGrYlRd = np.genfromtxt(_current_dir+'/colormaps/WhGrYlRd.txt',
                              delimiter=' ')
-WhGrYlRd = mcolors.ListedColormap(rgb_WhGrYlRd/255.0)
+WhGrYlRd = mcolors.ListedColormap(_rgb_WhGrYlRd/255.0)
 
 
 def six_plot(
@@ -62,7 +61,10 @@ def six_plot(
     xtick_positions=[],
     xticklabels=[],
     plot_type="single_level",
-    ratio_log=False
+    ratio_log=False,
+    proj=ccrs.PlateCarree(),
+    ll_plot_func='imshow',
+    **extra_plot_args
 ):
 
     """
@@ -123,16 +125,23 @@ def six_plot(
        Locations of lat/lon or lon ticks on plot
     xticklabels: list of str
        Labels for lat/lon ticks
+    proj : 
+    ll_plot_func : str 
+       Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
+       imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+    extra_plot_args : various
+       Any extra keyword arguments are passed through the plotting functions to be used 
+       in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     """
     # Set min and max of the data range
     if subplot in ("ref", "dev"):
         if all_zero or all_nan:
-            if subplot is "ref":
+            if subplot == "ref":
                 [vmin, vmax] = [vmins[0], vmaxs[0]]
             else:
                 [vmin, vmax] = [vmins[1], vmaxs[1]]
         elif use_cmap_RdBu:
-            if subplot is "ref":
+            if subplot == "ref":
                 if match_cbar and (not other_all_nan):
                     absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
                 else:
@@ -144,7 +153,7 @@ def six_plot(
                     absmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
             [vmin, vmax] = [-absmax, absmax]
         else:
-            if subplot is "ref":
+            if subplot == "ref":
                 if match_cbar and (not other_all_nan):
                     [vmin, vmax] = [vmins[2], vmaxs[2]]
                 else:
@@ -160,20 +169,20 @@ def six_plot(
         elif all_nan:
             [vmin, vmax] = [np.nan, np.nan]
         else:
-            if subplot is "dyn_abs_diff":
+            if subplot == "dyn_abs_diff":
                 # Min and max of abs. diff, excluding NaNs
                 diffabsmax = max(
                     [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
                 )
                 [vmin, vmax] = [-diffabsmax, diffabsmax]
-            elif subplot is "res_abs_diff":
+            elif subplot == "res_abs_diff":
                 [pct5, pct95] = [
                     np.percentile(plot_val, 5),
                     np.percentile(plot_val, 95),
                 ]
                 abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
                 [vmin, vmax] = [-abspctmax, abspctmax]
-            elif subplot is "dyn_frac_diff":
+            elif subplot == "dyn_frac_diff":
                 fracdiffabsmax = np.max(
                     [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
                 )
@@ -201,12 +210,13 @@ def six_plot(
         norm = normalize_colors(vmin, vmax, is_difference=True, log_color_scale=True,ratio_log=ratio_log)
     #Create plot
     plot = single_panel(plot_val, ax, plot_type, grid, gridtype, title, comap,
-                  norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
-                  add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
-                  xtick_positions=xtick_positions, xticklabels=xticklabels)
+                        norm, unit, extent, masked_data, use_cmap_RdBu, log_color_scale,
+                        add_cb=False, pedge=pedge, pedge_ind=pedge_ind, log_yaxis=log_yaxis,
+                        xtick_positions=xtick_positions, xticklabels=xticklabels, proj=proj, 
+                        ll_plot_func=ll_plot_func, **extra_plot_args)
 
     # Define the colorbar for the plot
-    cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
+    cb = plt.colorbar(plot, ax=ax, orientation="horizontal", norm=norm, pad=0.10)
     cb.mappable.set_norm(norm)
     if all_zero or all_nan:
         if subplot in ("ref", "dev"):
@@ -226,14 +236,12 @@ def six_plot(
         elif subplot in ("dyn_frac_diff", "res_frac_diff") and np.all(np.isin(plot_val, [1])):
             cb.set_ticklabels(["Ref and Dev equal throughout domain"])
         elif subplot in ("dyn_frac_diff", "res_frac_diff"):
-            if subplot is "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
+            if subplot == "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
                 if vmin > 0.1 and vmax < 10:
                     cb.locator = mticker.MaxNLocator(nbins=4)
-                    cb.update_ticks()
                     cb.formatter = mticker.ScalarFormatter()
                 else:
                     cb.formatter = mticker.LogFormatter(base=10)
-                    cb.update_ticks()
                     cb.locator = mticker.LogLocator(base=10, subs='all')
                 cb.update_ticks()
             else:
@@ -248,9 +256,9 @@ def six_plot(
     except:
         #not all automatically chosen colorbar formatters properly handle the above method
         pass
+    cb.minorticks_off()
     cb.update_ticks()
     cb.set_label(unit)
-
 def compare_single_level(
     refdata,
     refstr,
@@ -274,12 +282,16 @@ def compare_single_level(
     verbose=False,
     log_color_scale=False,
     extra_title_txt=None,
-    plot_extent = [-1000, -1000, -1000, -1000],
+    extent = [-1000, -1000, -1000, -1000],
     n_job=-1,
     sigdiff_list=[],
     second_ref=None,
     second_dev=None,
-    spcdb_dir=os.path.dirname(__file__)
+    spcdb_dir=os.path.dirname(__file__),
+    sg_ref_path='',
+    sg_dev_path='',
+    ll_plot_func='imshow',
+    **extra_plot_args
 ):
     """
     Create single-level 3x2 comparison map plots for variables common
@@ -364,7 +376,7 @@ def compare_single_level(
             Specifies extra text (e.g. a date string such as "Jan2016")
             for the top-of-plot title.
             Default value: None
-        plot_extent : list
+        extent : list
             Defines the extent of the region to be plotted in form 
             [minlon, maxlon, minlat, maxlat]. Default value plots extent of input grids.
             Default value: [-1000, -1000, -1000, -1000]            
@@ -385,9 +397,21 @@ def compare_single_level(
         spcdb_dir  : str 
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
+        sg_ref_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the ref dataset
+            Default value: '' (will not be read in)
+        sg_dev_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
+            Default value: '' (will not be read in)
+        ll_plot_func : str 
+            Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
+            imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+            Default value: 'imshow'
+        extra_plot_args : various
+            Any extra keyword arguments are passed through the plotting functions to be used 
+            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).   
     """
-    warnings.showwarning = warning_format
-
+    warnings.showwarning = _warning_format
     # Error check arguments
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
@@ -439,6 +463,19 @@ def compare_single_level(
         properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
+    sg_ref_params=[1, 170, -90]
+    sg_dev_params=[1, 170, -90]
+    # Get stretched-grid info if passed
+    if sg_ref_path != '':
+        sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
+        sg_ref_params = [sg_ref_attrs['stretch_factor'], sg_ref_attrs['target_longitude'], 
+                         sg_ref_attrs['target_latitude']]
+
+    if sg_dev_path != '':
+        sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
+        sg_dev_params = [sg_dev_attrs['stretch_factor'], sg_dev_attrs['target_longitude'], 
+                         sg_dev_attrs['target_latitude']]
+                    
     # Get grid info and regrid if necessary
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref, 
      regriddev, regridany, refgrid, devgrid, cmpgrid, refregridder,
@@ -446,7 +483,9 @@ def compare_single_level(
          refdata,
          devdata,
          weightsdir,
-         cmpres=cmpres
+         cmpres=cmpres,
+         sg_ref_params=sg_ref_params,
+         sg_dev_params=sg_dev_params
      )
 
     # ==============================================================
@@ -456,7 +495,7 @@ def compare_single_level(
     # Get lat/lon extents, if applicable
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
-    if cmpgridtype is not "cs":
+    if cmpgridtype == "cs":
         cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)
     else:
         cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = [-180, 180, -90, 90]
@@ -470,7 +509,7 @@ def compare_single_level(
     # Get comparison date extents in same midpoint format as lat-lon grid.
     cmp_mid_minlon, cmp_mid_maxlon, cmp_mid_minlat, cmp_mid_maxlat = \
                                     get_grid_extents(cmpgrid,edges=False)
-    if refgridtype == "ll" and ref_extent != cmp_extent:
+    if refgridtype == "ll" and ref_extent != cmp_extent and cmpgridtype =="ll":
         refdata = refdata.\
                       where(refdata.lon >= cmp_mid_minlon, drop=True).\
                       where(refdata.lon <= cmp_mid_maxlon, drop=True).\
@@ -482,7 +521,7 @@ def compare_single_level(
                             where(fracrefdata.lon <= cmp_mid_maxlon,drop=True).\
                             where(fracrefdata.lat >= cmp_mid_minlat,drop=True).\
                             where(fracrefdata.lat <= cmp_mid_maxlat,drop=True)
-    if devgridtype == "ll" and dev_extent != cmp_extent:
+    if devgridtype == "ll" and dev_extent != cmp_extent and cmpgridtype =="ll":
         devdata = devdata.\
                       where(devdata.lon >= cmp_mid_minlon, drop=True).\
                       where(devdata.lon <= cmp_mid_maxlon, drop=True).\
@@ -645,16 +684,6 @@ def compare_single_level(
             ds_refs[i].attrs["units"] = "\u03BCg/m3" # ug/m3 using mu
             ds_devs[i].attrs["units"] = "\u03BCg/m3"
 
-        # ==============================================================
-        # Reshape cubed sphere data if using MAPL v1.0.0+
-        # TODO: update function to expect data in this format
-        # ==============================================================
-        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
-        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
-        if diff_of_diffs:
-            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
-            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
-
     # ==================================================================
     # Get the area variables if normalize_by_area=True. They can be
     # either in the main datasets as variable AREA or in the optionally
@@ -710,7 +739,7 @@ def compare_single_level(
     frac_ds_ref_cmps = [None] * n_var
     frac_ds_dev_cmps = [None] * n_var
 
-    global_cmp_grid = call_make_grid(cmpres, cmpgridtype, False, True)[0]
+    global_cmp_grid = call_make_grid(cmpres, cmpgridtype)[0]
     cmpminlon_ind = np.where(global_cmp_grid["lon"] >= cmpminlon)[0][0]
     cmpmaxlon_ind = np.where(global_cmp_grid["lon"] <= cmpmaxlon)[0][-1]
     cmpminlat_ind = np.where(global_cmp_grid["lat"] >= cmpminlat)[0][0]
@@ -733,47 +762,53 @@ def compare_single_level(
                 if diff_of_diffs:
                     frac_ds_refs[i] = frac_ds_refs[i].values / ref_area.values
                     frac_ds_devs[i] = frac_ds_devs[i].values / dev_area.values
-
+        ref_cs_res = refres
+        dev_cs_res = devres
+        if cmpgridtype == "cs":
+            ref_cs_res = cmpres
+            dev_cs_res = cmpres
+            
         # Ref
         ds_ref_cmps[i] = regrid_comparison_data(
             ds_ref,
-            refres,
+            ref_cs_res,
             regridref,
             refregridder,
             refregridder_list,
             global_cmp_grid,
             refgridtype,
+            cmpgridtype,
             cmpminlat_ind,
             cmpmaxlat_ind,
             cmpminlon_ind,
             cmpmaxlon_ind
         )
-
         # Dev
         ds_dev_cmps[i] = regrid_comparison_data(
             ds_dev,
-            devres,
+            dev_cs_res,
             regriddev,
             devregridder,
             devregridder_list,
             global_cmp_grid,
             devgridtype,
+            cmpgridtype,
             cmpminlat_ind,
             cmpmaxlat_ind,
             cmpminlon_ind,
             cmpmaxlon_ind
         )
-
         # Diff of diffs
         if diff_of_diffs:
             frac_ds_ref_cmps[i] = regrid_comparison_data(
                 frac_ds_refs[i],
-                refres,
+                ref_cs_res,
                 regridref,
                 refregridder,
                 refregridder_list,
                 global_cmp_grid,
                 refgridtype,
+                cmpgridtype,
                 cmpminlat_ind,
                 cmpmaxlat_ind,
                 cmpminlon_ind, 
@@ -781,24 +816,40 @@ def compare_single_level(
             )
             frac_ds_dev_cmps[i] = regrid_comparison_data(
                 frac_ds_devs[i],
-                devres,
+                dev_cs_res,
                 regriddev,
                 devregridder,
                 devregridder_list,
                 global_cmp_grid,
                 devgridtype,
+                cmpgridtype,
                 cmpminlat_ind,
                 cmpmaxlat_ind,
                 cmpminlon_ind,
                 cmpmaxlon_ind
             )
 
+    # ==============================================================
+    # Reshape cubed sphere data if using MAPL v1.0.0+
+    # TODO: update function to expect data in this format
+    # ==============================================================
 
+    for i in range(n_var):
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
+        ds_ref_cmps[i] = reshape_MAPL_CS(ds_ref_cmps[i])
+        ds_dev_cmps[i] = reshape_MAPL_CS(ds_dev_cmps[i])
+        if diff_of_diffs:
+            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
+            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
+            frac_ds_ref_cmps[i] = reshape_MAPL_CS(frac_ds_ref_cmps[i])
+            frac_ds_dev_cmps[i] = reshape_MAPL_CS(frac_ds_dev_cmps[i])
+    
     # =================================================================
     # Define function to create a single page figure to be called
     # in a parallel loop
     # =================================================================
-    def createfig(ivar, temp_dir):
+    def createfig(ivar, temp_dir=''):
         
         # Suppress harmless run-time warnings (mostly about underflow)
         warnings.filterwarnings('ignore', category=RuntimeWarning)
@@ -851,14 +902,18 @@ def compare_single_level(
 
         # Reshape comparison cubed sphere data, if any
         if cmpgridtype == "cs":
-            ds_ref_cmp_reshaped = ds_ref_cmp.data.reshape(6, cmpres, cmpres)
-            ds_dev_cmp_reshaped = ds_dev_cmp.data.reshape(6, cmpres, cmpres)
-            if frac_ds_ref_cmp is not None:
-                frac_ds_ref_cmp_reshaped = \
-                                frac_ds_ref_cmp.data.reshape(6, cmpres, cmpres)
-            if frac_ds_dev_cmp is not None:
-                frac_ds_dev_cmp_reshaped = \
-                                frac_ds_dev_cmp.data.reshape(6, cmpres, cmpres)
+            def call_reshape(cmp_data):
+                new_data = None
+                if type(cmp_data) == xr.DataArray:
+                    new_data = cmp_data.data.reshape(6, cmpres, cmpres)
+                elif type(cmp_data) == np.ndarray:
+                    new_data = cmp_data.reshape(6,cmpres,cmpres)
+                return new_data
+                    
+            ds_ref_cmp_reshaped = call_reshape(ds_ref_cmp)
+            ds_dev_cmp_reshaped = call_reshape(ds_dev_cmp)
+            frac_ds_ref_cmp_reshaped = call_reshape(frac_ds_ref_cmp)
+            frac_ds_dev_cmp_reshaped = call_reshape(frac_ds_dev_cmp)
 
         # ==============================================================
         # Get min and max values for use in the colorbars
@@ -874,10 +929,10 @@ def compare_single_level(
 
         # Comparison
         if cmpgridtype == "cs":
-            vmin_ref_cmp = float(ds_ref_cmp.data.min())
-            vmax_ref_cmp = float(ds_ref_cmp.data.max())
-            vmin_dev_cmp = float(ds_dev_cmp.data.min())
-            vmax_dev_cmp = float(ds_dev_cmp.data.max())
+            vmin_ref_cmp = float(ds_ref_cmp.min())
+            vmax_ref_cmp = float(ds_ref_cmp.max())
+            vmin_dev_cmp = float(ds_dev_cmp.min())
+            vmax_dev_cmp = float(ds_dev_cmp.max())
             vmin_cmp = np.min([vmin_ref_cmp, vmin_dev_cmp])
             vmax_cmp = np.max([vmax_ref_cmp, vmax_dev_cmp])
         else:
@@ -981,9 +1036,13 @@ def compare_single_level(
 
         # Create figures and axes objects
         # Also define the map projection that will be shown
+        if extent[0] > extent[1]:
+            proj=ccrs.PlateCarree(central_longitude=180)
+        else:
+            proj=ccrs.PlateCarree()
         figs, ((ax0, ax1), (ax2, ax3), (ax4, ax5)) = plt.subplots(
             3, 2, figsize=[12, 14],
-            subplot_kw={"projection": ccrs.PlateCarree()}
+            subplot_kw={"projection": proj}
         )
         # Ensure subplots don't overlap when invoking plt.show()
         if not savepdf:
@@ -1141,14 +1200,17 @@ def compare_single_level(
             fracdiff_is_all_nan,
             fracdiff_is_all_nan,
         ]
-        if not -1000 in plot_extent:
-            extents = [plot_extent, plot_extent,
-                       plot_extent, plot_extent,
-                       plot_extent, plot_extent]
+        if not -1000 in extent:
+            extents = [extent[:], extent[:],
+                       extent[:], extent[:],
+                       extent[:], extent[:]]
         else:
-            extents = [cmp_extent, cmp_extent,
-                       cmp_extent, cmp_extent,
-                       cmp_extent, cmp_extent]
+            plot_extent = [np.max([cmp_extent[0], -180]),
+                          np.min([cmp_extent[1], 180]),
+                          cmp_extent[2], cmp_extent[3]]
+            extents = [plot_extent[:], plot_extent[:],
+                       plot_extent[:], plot_extent[:],
+                       plot_extent[:], plot_extent[:]]
 
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
         grids = [refgrid, devgrid, cmpgrid, cmpgrid, cmpgrid, cmpgrid]
@@ -1207,7 +1269,6 @@ def compare_single_level(
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
         ratio_logs = [False, False, False, False, True, True]
-
         # Plot
         for i in range(6):
             six_plot(
@@ -1232,7 +1293,10 @@ def compare_single_level(
                 verbose,
                 log_color_scale,
                 plot_type="single_level",
-                ratio_log=ratio_logs[i]
+                ratio_log=ratio_logs[i],
+                proj=proj,
+                ll_plot_func=ll_plot_func,
+                **extra_plot_args
             )
 
         # ==============================================================
@@ -1241,9 +1305,9 @@ def compare_single_level(
         if savepdf:
             folders = pdfname.split('/')
             pdfname_temp = folders[-1] + "BENCHMARKFIGCREATION.pdf" + str(ivar)
-            full_path = ''
+            full_path = temp_dir
             for folder in folders[:-1]:
-                full_path = os.path.join(temp_dir, full_path, folder)
+                full_path = os.path.join(full_path, folder)
                 if not os.path.isdir(full_path):
                     os.mkdir(full_path)
             pdf = PdfPages(os.path.join(full_path, pdfname_temp))
@@ -1300,7 +1364,7 @@ def compare_single_level(
                 merge.append(os.path.join(str(temp_dir), temp_pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
             merge.write(pdfname)
             merge.close()
-            warnings.showwarning = warning_format
+            warnings.showwarning = _warning_format
 
 
 def compare_zonal_mean(
@@ -1331,7 +1395,12 @@ def compare_zonal_mean(
     sigdiff_list=[],
     second_ref=None,
     second_dev=None,
-    spcdb_dir=os.path.dirname(__file__)
+    spcdb_dir=os.path.dirname(__file__),
+    sg_ref_path='',
+    sg_dev_path='',
+    ref_vert_params=[[],[]],
+    dev_vert_params=[[],[]],
+    **extra_plot_args
 ):
 
     """
@@ -1440,8 +1509,23 @@ def compare_zonal_mean(
         spcdb_dir  : str 
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
+        sg_ref_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the ref dataset
+            Default value: '' (will not be read in)
+        sg_dev_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
+            Default value: '' (will not be read in)
+        ref_vert_params : list(AP, BP) of list-like types 
+            Hybrid grid parameter A in hPa and B (unitless). Needed if ref grid is not 47 or 72 levels.
+            Default value: [[], []]
+        dev_vert_params : list(AP, BP) of list-like types 
+            Hybrid grid parameter A in hPa and B (unitless). Needed if dev grid is not 47 or 72 levels.
+            Default value: [[], []]
+        extra_plot_args : various
+            Any extra keyword arguments are passed through the plotting functions to be used 
+            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).        
     """
-    warnings.showwarning = warning_format
+    warnings.showwarning = _warning_format
     if not isinstance(refdata, xr.Dataset):
         raise TypeError("The refdata argument must be an xarray Dataset!")
 
@@ -1486,35 +1570,28 @@ def compare_zonal_mean(
     savepdf = True
     if pdfname == "":
         savepdf = False
-    # Cleanup previous temporary PDFs produced during parallelization
-    #for i in range(n_var):
-    #    try:
-    #        os.remove(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
-    #    except:
-    #        continue
-
     # If converting to ug/m3, load the species database
     if convert_to_ugm3:
         properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
-    # Get mid-point pressure and edge pressures for this grid (assume 72-level)
-    ref_pedge, ref_pmid, ref_grid_cat = get_vert_grid(refdata)
-    dev_pedge, dev_pmid, dev_grid_cat = get_vert_grid(devdata)
+    # Get mid-point pressure and edge pressures for this grid
+    ref_pedge, ref_pmid, ref_grid_cat = get_vert_grid(refdata, *ref_vert_params)
+    dev_pedge, dev_pmid, dev_grid_cat = get_vert_grid(devdata, *dev_vert_params)
 
     # Get indexes of pressure subrange (full range is default)
     ref_pedge_ind = get_pressure_indices(ref_pedge, pres_range)
     dev_pedge_ind = get_pressure_indices(dev_pedge, pres_range)
 
-
     # Pad edges if subset does not include surface or TOA so data spans
     # entire subrange
-    ref_pedge_ind = pad_pressure_edges(ref_pedge_ind, refdata.sizes["lev"])
-    dev_pedge_ind = pad_pressure_edges(dev_pedge_ind, devdata.sizes["lev"])
+    ref_pedge_ind = pad_pressure_edges(ref_pedge_ind, refdata.sizes["lev"], np.size(ref_pmid))
+    dev_pedge_ind = pad_pressure_edges(dev_pedge_ind, devdata.sizes["lev"], np.size(dev_pmid))
 
     # pmid indexes do not include last pedge index
     ref_pmid_ind = ref_pedge_ind[:-1]
     dev_pmid_ind = dev_pedge_ind[:-1]
+
     # Convert levels to pressures in ref and dev data
     refdata = convert_lev_to_pres(refdata, ref_pmid, ref_pedge)
     devdata = convert_lev_to_pres(devdata, dev_pmid, dev_pedge)
@@ -1531,9 +1608,9 @@ def compare_zonal_mean(
     ref_pmid_ind_flipped = refdata.sizes["lev"] - ref_pmid_ind[::-1] - 1
     dev_pmid_ind_flipped = devdata.sizes["lev"] - dev_pmid_ind[::-1] - 1
     if flip_ref:
-        ref_pmid_ind = pmid_ind_flipped
+        ref_pmid_ind = ref_pmid_ind_flipped
     if flip_dev:
-        dev_pmid_ind = pmid_ind_flipped
+        dev_pmid_ind = dev_pmid_ind_flipped
 
     refdata = refdata.isel(lev=ref_pmid_ind)
     devdata = devdata.isel(lev=dev_pmid_ind)
@@ -1541,6 +1618,20 @@ def compare_zonal_mean(
         fracrefdata = fracrefdata.isel(lev=ref_pmid_ind)
         fracdevdata = fracdevdata.isel(lev=dev_pmid_ind)
 
+    sg_ref_params=[1, 170, -90]
+    sg_dev_params=[1, 170, -90]
+    # Get stretched-grid info if passed
+    if sg_ref_path != '':
+        sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
+        sg_ref_params = [sg_ref_attrs['stretch_factor'], sg_ref_attrs['target_longitude'], 
+                         sg_ref_attrs['target_latitude']]
+
+    if sg_dev_path != '':
+        sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
+        sg_dev_params = [sg_dev_attrs['stretch_factor'], sg_dev_attrs['target_longitude'], 
+                         sg_dev_attrs['target_latitude']]
+
+    
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype,
      regridref, regriddev, regridany, refgrid, devgrid, cmpgrid,
      refregridder, devregridder,refregridder_list, devregridder_list] = \
@@ -1549,28 +1640,15 @@ def compare_zonal_mean(
                 devdata, 
                 weightsdir=weightsdir,
                 cmpres=cmpres,
-                zm=True
+                zm=True,
+                sg_ref_params=sg_ref_params,
+                sg_dev_params=sg_dev_params
             )
 
-    ref_to_47 = False
-    dev_to_47 = False
-
-    # Determine whether one grid must be reduced to 47 levels and assign
-    # plotting variables
-    if ref_grid_cat is 72 and dev_grid_cat is 47:
-        ref_to_47 = True
-        pedge = dev_pedge
-        pedge_ind = dev_pedge_ind
-    elif ref_grid_cat is 47 and dev_grid_cat is 72:
-        dev_to_47 = True
-        pedge = ref_pedge
-        pedge_ind = ref_pedge_ind
-    else:
-        pedge = ref_pedge
-        pedge_ind = ref_pedge_ind
-
-    if ref_to_47 or dev_to_47:
-        conv_dict = dict_72_to_47()
+    #use smaller vertical grid as target for vertical regridding
+    target_index = np.array([len(ref_pedge), len(dev_pedge)]).argmin()
+    pedge = [ref_pedge, dev_pedge][target_index]
+    pedge_ind = [ref_pedge_ind, dev_pedge_ind][target_index]
 
     # ==================================================================
     # Loop over all variables
@@ -1708,6 +1786,7 @@ def compare_zonal_mean(
         # Reshape cubed sphere data if using MAPL v1.0.0+
         # TODO: update function to expect data in this format
         # ==============================================================
+
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
         if diff_of_diffs:
@@ -1723,7 +1802,6 @@ def compare_zonal_mean(
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
             if diff_of_diffs:
                 frac_ds_devs[i].data = frac_ds_devs[i].data[::-1, :, :]
-
     # ==================================================================
     # Get the area variables if normalize_by_area=True. They can be
     # either in the main datasets as variable AREA or in the optionally
@@ -1774,45 +1852,22 @@ def compare_zonal_mean(
     ds_dev_cmps = [None] * n_var
     frac_ds_ref_cmps = [None] * n_var
     frac_ds_dev_cmps = [None] * n_var
-
+    #store units in case data changes from DataArray to numpy array
+    ref_units = [None] * n_var
+    dev_units = [None] * n_var
+    
+    #regrid vertically if necessary
+    if len(ref_pedge) != len(pedge):
+        xmat = gen_xmat(ref_pedge, pedge)
+    elif len(dev_pedge) != len(pedge):
+        xmat = gen_xmat(dev_pedge, pedge)
+        
     for i in range(n_var):
+
         ds_ref = ds_refs[i]
         ds_dev = ds_devs[i]
         frac_ds_ref = frac_ds_refs[i]
         frac_ds_dev = frac_ds_devs[i]
-        # ==============================================================
-        # Reduce variables to 47L from 72L if necessary for comparison
-        # ==============================================================
-        if ref_to_47:
-            ds_ref = reduce_72_to_47(
-                ds_ref, 
-                conv_dict, 
-                ref_pmid_ind, 
-                dev_pmid_ind
-            )
-            if diff_of_diffs:
-                frac_ds_ref = reduce_72_to_47(
-                    frac_ds_ref,
-                    ref_pmid_ind,
-                    dev_pmid_ind
-                )
-        if dev_to_47:
-            ds_dev = reduce_72_to_47(
-                ds_dev,
-                conv_dict,
-                dev_pmid_ind,
-                ref_pmid_ind
-            )
-            if diff_of_diffs:
-                frac_ds_dev = reduce_72_to_47(
-                    frac_ds_dev,
-                    ref_pmid_ind,
-                    dev_pmid_ind
-                )
-
-        ref_nlev = len(ds_ref['lev'])
-        dev_nlev = len(ds_dev['lev'])
-
         # Do area normalization before regridding if normalize_by_area=True
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
@@ -1826,9 +1881,17 @@ def compare_zonal_mean(
                     frac_ds_refs[i] = frac_ds_ref
                     frac_ds_dev.values = frac_ds_dev.values / dev_area.values
                     frac_ds_devs[i] = frac_ds_dev
-                
+        
+        #save units for later use
+        ref_units[i] = ds_ref.attrs["units"]
+        dev_units[i] = ds_dev.attrs["units"]
+
+        ref_nlev = len(ds_ref['lev'])
+        dev_nlev = len(ds_dev['lev'])
+            
+        # Regrid variables horizontally
         # Ref
-        ds_ref_cmps[i] = regrid_comparison_data(
+        ds_ref = regrid_comparison_data(
             ds_ref,
             refres,
             regridref,
@@ -1836,21 +1899,23 @@ def compare_zonal_mean(
             refregridder_list,
             cmpgrid,
             refgridtype,
+            cmpgridtype,
             nlev=ref_nlev
         )
         if diff_of_diffs:
-            frac_ds_ref_cmps[i] = regrid_comparison_data(
-                frac_ds_refs[i],
+            frac_ds_ref = regrid_comparison_data(
+                frac_ds_ref,
                 refres,
                 regridref,
                 refregridder,
                 refregridder_list,
                 cmpgrid,
+                cmpgridtype,
                 refgridtype,
                 nlev=ref_nlev
             )
         # Dev
-        ds_dev_cmps[i] = regrid_comparison_data(
+        ds_dev = regrid_comparison_data(
             ds_dev,
             devres,
             regriddev,
@@ -1858,20 +1923,45 @@ def compare_zonal_mean(
             devregridder_list,
             cmpgrid,
             devgridtype,
+            cmpgridtype,
             nlev=dev_nlev
         )
         if diff_of_diffs:
-            frac_ds_dev_cmps[i] = regrid_comparison_data(
-                frac_ds_devs[i],
+            frac_ds_dev = regrid_comparison_data(
+                frac_ds_dev,
                 devres,
                 regriddev,
                 devregridder,
                 devregridder_list,
                 cmpgrid,
                 devgridtype,
+                cmpgridtype,
                 nlev=dev_nlev
             )
 
+        #store regridded CS data before dealing with vertical regridding        
+        if refgridtype == "cs":
+            ds_refs[i] = ds_ref
+            frac_ds_refs[i] = frac_ds_ref
+        if devgridtype == "cs":
+            ds_devs[i] = ds_dev
+            frac_ds_devs[i] = frac_ds_dev
+
+        # Reduce variables to smaller vert grid if necessary for comparison
+        if len(ref_pedge) != len(pedge):
+            ds_ref = regrid_vertical(ds_ref, xmat, dev_pmid)
+            if diff_of_diffs:
+                frac_ds_ref = regrid_vertical(frac_ds_ref, xmat, dev_pmid)
+            
+        if len(dev_pedge) != len(pedge):
+            ds_dev = regrid_vertical(ds_dev, xmat, ref_pmid)
+            if diff_of_diffs:
+                frac_ds_dev = regrid_vertical(frac_ds_dev, xmat, ref_pmid)
+        ds_ref_cmps[i] = ds_ref
+        ds_dev_cmps[i] = ds_dev
+        if diff_of_diffs:
+            frac_ds_ref_cmps[i] = frac_ds_ref
+            frac_ds_dev_cmps[i] = frac_ds_dev
     # Universal plot setup
     xtick_positions = np.arange(-90, 91, 30)
     xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
@@ -1908,7 +1998,7 @@ def compare_zonal_mean(
         # area. Note if enforce_units is False (non-default) then
         # units on difference plots will be wrong.
         # ==============================================================
-        cmn_units = ds_ref.attrs["units"]
+        cmn_units = ref_units[ivar]
         varndim = varndim_ref
         subtitle_extra = ""
         if normalize_by_area:
@@ -1918,26 +2008,24 @@ def compare_zonal_mean(
                     cmn_units = "{}/m2".format(cmn_units)
                 else:
                     cmn_units = "{} m-2".format(cmn_units)
-                ds_ref.attrs["units"] = cmn_units
-                ds_dev.attrs["units"] = cmn_units
+                ref_units[ivar] = cmn_units
+                dev_units[ivar] = cmn_units
                 subtitle_extra = ", Normalized by Area"
 
         # ==============================================================
         # Calculate zonal mean
         # ==============================================================
-
         # Ref
         if refgridtype == "ll":
             zm_ref = ds_ref.mean(dim="lon")
         else:
-            zm_ref = ds_ref_cmp.mean(axis=2)
+            zm_ref = ds_ref.mean(axis=2)
 
         # Dev
         if devgridtype == "ll":
             zm_dev = ds_dev.mean(dim="lon")
         else:
-            zm_dev = ds_dev_cmp.mean(axis=2)
-
+            zm_dev = ds_dev.mean(axis=2)
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
@@ -1980,9 +2068,10 @@ def compare_zonal_mean(
         # This will have implications as to how we set min and max
         # values for the color ranges below.
         # ==============================================================
-
-        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ds_ref.values)
-        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(ds_dev.values)
+        ref_values = ds_ref.values if type(ds_ref) == xr.DataArray else ds_ref
+        dev_values = ds_dev.values if type(ds_dev) == xr.DataArray else ds_dev
+        ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ref_values)
+        dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(dev_values)
 
         # ==============================================================
         # Calculate zonal mean difference
@@ -2140,7 +2229,6 @@ def compare_zonal_mean(
             fracdiff_is_all_nan,
             fracdiff_is_all_nan,
         ]
-
         plot_vals = [zm_ref, zm_dev, zm_diff, zm_diff,
                      zm_fracdiff, zm_fracdiff]
 
@@ -2169,7 +2257,7 @@ def compare_zonal_mean(
 
         masked = ["ZM", "ZM", "ZM", "ZM", "ZM", "ZM"]
 
-        unit_list = [ds_ref.units, ds_dev.units, cmn_units, cmn_units,
+        unit_list = [ref_units[ivar], dev_units[ivar], cmn_units, cmn_units,
                      "unitless", "unitless"]
 
         other_all_nans = [dev_is_all_nan, ref_is_all_nan, \
@@ -2222,7 +2310,8 @@ def compare_zonal_mean(
                 plot_type="zonal_mean",
                 xtick_positions=xtick_positions,
                 xticklabels=xticklabels,
-                ratio_log=ratio_logs[i]
+                ratio_log=ratio_logs[i],
+                **extra_plot_args
             )
 
         # ==============================================================
@@ -2231,9 +2320,9 @@ def compare_zonal_mean(
         if savepdf:
             folders = pdfname.split('/')
             pdfname_temp = folders[-1] + "BENCHMARKFIGCREATION.pdf" + str(ivar)
-            full_path = ''
+            full_path = temp_dir
             for folder in folders[:-1]:
-                full_path = os.path.join(temp_dir, full_path, folder)
+                full_path = os.path.join(full_path, folder)
                 if not os.path.isdir(full_path):
                     os.mkdir(full_path)
             pdf = PdfPages(os.path.join(full_path, pdfname_temp))
@@ -2291,7 +2380,7 @@ def compare_zonal_mean(
                 merge.append(os.path.join(str(temp_dir), temp_pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
             merge.write(pdfname)
             merge.close()
-            warnings.showwarning = warning_format
+            warnings.showwarning = _warning_format
 
 def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, ratio_log=False):
     """
@@ -2349,7 +2438,6 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, rat
             return mcolors.Normalize(vmin=0.0, vmax=1.0)
 
     else:
-        
         # For log color scales, assume a range 3 orders of magnitude
         # below the maximum value.  Otherwise use a linear scale.
         if log_color_scale and not ratio_log:
@@ -2360,26 +2448,30 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, rat
             return mcolors.Normalize(vmin=vmin, vmax=vmax)
 
 def single_panel(plot_vals,
-           ax=None,
-           plot_type="single_level",
-           grid={},
-           gridtype="",
-           title="fill",
-           comap=WhGrYlRd,
-           norm=[],
-           unit="",
-           extent=(None, None, None, None),
-           masked_data=None,
-           use_cmap_RdBu=False,
-           log_color_scale=False,
-           add_cb=True,
-           pres_range=[0, 2000],
-           pedge=np.full((1, 1), -1),
-           pedge_ind=np.full((1,1), -1),
-           log_yaxis=False,
-           xtick_positions=[],
-           xticklabels=[],
-           proj=ccrs.PlateCarree()
+                 ax=None,
+                 plot_type="single_level",
+                 grid={},
+                 gridtype="",
+                 title="fill",
+                 comap=WhGrYlRd,
+                 norm=[],
+                 unit="",
+                 extent=(None, None, None, None),
+                 masked_data=None,
+                 use_cmap_RdBu=False,
+                 log_color_scale=False,
+                 add_cb=True,
+                 pres_range=[0, 2000],
+                 pedge=np.full((1, 1), -1),
+                 pedge_ind=np.full((1,1), -1),
+                 log_yaxis=False,
+                 xtick_positions=[],
+                 xticklabels=[],
+                 proj=ccrs.PlateCarree(),
+                 sg_path='',
+                 ll_plot_func="imshow",
+                 vert_params=[[],[]],
+                 **extra_plot_args
 ):
     """
     Core plotting routine -- creates a single plot panel.
@@ -2426,8 +2518,16 @@ def single_panel(plot_vals,
             Set this flag to True to enable log scaling of pressure in zonal mean plots
         xtick_positions : list(float)
             Locations of lat/lon or lon ticks on plot
-        xticklabels: list(str)
+        xticklabels : list(str)
             Labels for lat/lon ticks
+        ll_plot_func : str 
+            Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
+            imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+        vert_params : list(AP, BP) of list-like types 
+            Hybrid grid parameter A in hPa and B (unitless). Needed if grid is not 47 or 72 levels.
+            Default value: [[], []]
+        extra_plot_args : various
+            Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     Returns:
     -----
     
@@ -2438,25 +2538,6 @@ def single_panel(plot_vals,
     #Eliminate 1D level or time dimensions
     plot_vals=plot_vals.squeeze()
     data_is_xr = type(plot_vals) is xr.DataArray
-    if extent == (None, None, None, None) or extent == None:
-        extent = get_grid_extents(grid)
-        #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
-        if extent[0] > 180 or extent[1] > 180:
-            extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
-    #Account for cross-dateline extent
-    if extent[0] > extent[1]:
-        if gridtype == "ll":
-            proj = ccrs.PlateCarree(central_longitude=180)
-            extent[0] = extent[0]%360-180        
-            extent[1] = extent[1]%360-180
-            plot_vals = plot_vals.assign_coords(lon=plot_vals.lon%360-180)
-            plot_vals = plot_vals.sortby(plot_vals.lon)
-        else:
-            proj = ccrs.PlateCarree(central_longitude=180)
-            extent[0] = extent[0]%360-180        
-            extent[1] = extent[1]%360-180
-            grid["lon_b"]=grid["lon_b"]-180
-            
     if xtick_positions == []:
         #if plot_type == "single_level":
         #    xtick_positions = np.arange(extent[0], extent[1], (extent[1]-extent[0])/12)
@@ -2469,27 +2550,27 @@ def single_panel(plot_vals,
     if unit == "" and data_is_xr:
         unit = plot_vals.units.strip()
 
-    if ax == None:
-        if plot_type == "zonal_mean":
-            ax = plt.axes()
-        if plot_type == "single_level":
-            ax = plt.axes(projection = proj)
-
     if title == "fill" and data_is_xr:
         title = plot_vals.name
+
 
     #Generate grid if not passed
     if grid == {}:
         res, gridtype = get_input_res(plot_vals)
+        sg_params = [1,170,-90]
+        if sg_path != '':
+            sg_attrs = xr.open_dataset(sg_path).attrs
+            sg_params = [sg_attrs['stretch_factor'], sg_attrs['target_longitude'], 
+                         sg_attrs['target_latitude']]
 
         if plot_type == 'single_level':
-            [grid, _] = call_make_grid(res, gridtype, False, False)
+            [grid, _] = call_make_grid(res, gridtype, sg_params=sg_params)
 
         else: #zonal mean
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
                 
-                # Get mid-point pressure and edge pressures for this grid (assume 72-level)
-                pedge, pmid, grid_cat = get_vert_grid(plot_vals)
+                # Get mid-point pressure and edge pressures for this grid
+                pedge, pmid, grid_cat = get_vert_grid(plot_vals, vert_params)
                 
                 # Get indexes of pressure subrange (full range is default)
                 pedge_ind = get_pressure_indices(pedge, pres_range)
@@ -2514,8 +2595,9 @@ def single_panel(plot_vals,
                                                       plot_vals, 
                                                       weightsdir='.',
                                                       cmpres=None,
-                                                      zm=True
-                                                   )
+                                                      zm=True,
+                                                      sg_ref_params=sg_params
+                                                      ) 
             if gridtype == 'cs':
                 plot_vals = reshape_MAPL_CS(plot_vals)
                 nlev = len(plot_vals['lev'])
@@ -2529,11 +2611,48 @@ def single_panel(plot_vals,
                     regridder_list,
                     grid,
                     input_gridtype,
+                    new_gridtype,
                     nlev=nlev
                 )
+            #assume z dim is index 0 (no time dim) if a numpy array is passed
+            z_ind = 0
+            if type(plot_vals) is xr.DataArray:
+                z_ind = plot_vals.dims.index('lev')
             #calculate zonal means
-            plot_vals = plot_vals.mean(axis=2)
+            plot_vals = plot_vals.mean(axis=z_ind)
 
+    if extent == (None, None, None, None) or extent == None:
+        extent = get_grid_extents(grid)
+        #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
+        if extent[0] > 180 or extent[1] > 180:
+            #extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
+            extent = [extent[0]-180, extent[1]-180, extent[2], extent[3]]
+        '''
+        if extent[0] < -180 and 'x' in res:
+            lon_res = float(res.split('x')[1])
+            extent = [180, 
+        if extent[1] > 180 and 'x' in res:
+            extent[1] = 180
+        '''
+    #Account for cross-dateline extent
+    if extent[0] > extent[1]:
+        if gridtype == "ll":
+            proj = ccrs.PlateCarree(central_longitude=180)
+            extent[0] = extent[0]%360-180        
+            extent[1] = extent[1]%360-180
+            grid["lon_b"]=grid["lon_b"]%360-180
+            grid["lon"]=grid["lon"]%360-180
+        else:
+            proj = ccrs.PlateCarree(central_longitude=180)
+            extent[0] = extent[0]%360-180        
+            extent[1] = extent[1]%360-180
+            grid["lon_b"]=grid["lon_b"]%360-180
+            grid["lon"]=grid["lon"]%360-180
+    if ax == None:
+        if plot_type == "zonal_mean":
+            ax = plt.axes()
+        if plot_type == "single_level":
+            ax = plt.axes(projection = proj)
 
     data_is_xr = type(plot_vals) is xr.DataArray
     # Normalize colors (put into range [0..1] for matplotlib methods)
@@ -2554,7 +2673,7 @@ def single_panel(plot_vals,
     if plot_type == "zonal_mean":
         #Zonal mean plot
         plot = ax.pcolormesh(
-            grid["lat_b"], pedge[pedge_ind], plot_vals, cmap=comap, norm=norm
+            grid["lat_b"], pedge[pedge_ind], plot_vals, cmap=comap, norm=norm, **extra_plot_args
         )
         ax.set_aspect("auto")
         ax.set_ylabel("Pressure (hPa)")
@@ -2568,34 +2687,83 @@ def single_panel(plot_vals,
         ax.set_xticklabels(xticklabels)
 
     elif gridtype == "ll":
-        #Lat/Lon single level
-        if type(plot_vals) is xr.DataArray:
+        if ll_plot_func=='imshow':
+            #Lat/Lon single level
             [minlon, maxlon, minlat, maxlat] = extent
-            #filter data by bounds of extent
-            plot_vals = plot_vals.where(plot_vals.lon>=minlon, 
-                                        drop=True).where(plot_vals.lon<=maxlon,
-                                                         drop=True).where(plot_vals.lat>=minlat, 
-                                                                          drop=True).where(plot_vals.lat<=maxlat, drop=True)
+            #expand extent to minimize imshow distortion
+            #[dlat,dlon] = list(map(float, res.split('x')))
+            dlon = grid['lon'][2]-grid['lon'][1]
+            dlat = grid['lat'][2]-grid['lat'][1]
+            def get_nearest_extent(val, array, direction, spacing):
+                grid_vals = np.asarray(array)
+                diff = grid_vals-val
+                if direction == 'greater':
+                    diff[diff<0]=np.inf
+                    i = diff.argmin()
+                    if diff[i] == np.inf:
+                        #expand extent to value beyond grid limits if extent is already > max grid value
+                        return grid_vals[(np.abs(grid_vals-val)).argmin()]
+                    else:
+                        return grid_vals[i]
+                else:
+                    diff[diff>0]=-np.inf
+                    i = diff.argmax()
+                    if diff[i] == -np.inf:
+                        #expand extent to value beyond grid limits if extent is already < min grid value
+                        #plot will be distorted if full global to avoid cartopy issues
+                        return grid_vals[(np.abs(grid_vals-val)).argmin()] - spacing                    
+                    else:
+                        return max(grid_vals[i], -180)
+            closest_minlon = get_nearest_extent(minlon, grid['lon_b'], 'less', dlon)
+            closest_maxlon = get_nearest_extent(maxlon, grid['lon_b'], 'greater', dlon)
+            #don't adjust if extent includes poles where points are not evenly spaced anyway
+            if np.abs(grid['lat_b'][0]-grid['lat_b'][1]) != np.abs(grid['lat_b'][1]-grid['lat_b'][2]) \
+               and minlat < grid['lat_b'][1]:            
+                closest_minlat = grid['lat_b'][0]
+            else:
+                closest_minlat = get_nearest_extent(minlat, grid['lat_b'], 'less', dlat)
+
+            if np.abs(grid['lat_b'][-1]-grid['lat_b'][-2]) != np.abs(grid['lat_b'][-2]-grid['lat_b'][-3]) \
+               and maxlat > grid['lat_b'][-2]:            
+                closest_maxlat = grid['lat_b'][-1]
+            else:
+                closest_maxlat = get_nearest_extent(maxlat, grid['lat_b'], 'greater', dlat)
+
+            extent = [closest_minlon, closest_maxlon, closest_minlat, closest_maxlat]
+            if type(plot_vals) is xr.DataArray:
+                #filter data by bounds of extent
+                plot_vals = plot_vals.where(plot_vals.lon>closest_minlon, 
+                                            drop=True).where(plot_vals.lon<closest_maxlon,
+                                                             drop=True).where(plot_vals.lat>minlat, 
+                                                                              drop=True).where(plot_vals.lat<maxlat, drop=True)
+            # Create a lon/lat plot
+            plot = ax.imshow(
+                plot_vals,
+                extent=extent,
+                transform=proj,
+                cmap=comap,
+                norm=norm,
+                origin='lower',
+                interpolation='nearest',
+                **extra_plot_args
+            )
         else:
-            #for numpy arrays
-            [minlon, maxlon, minlat, maxlat] = extent
-            minlon_ind = np.where(grid["lon"] >= minlon)[0][0]
-            maxlon_ind = np.where(grid["lon"] <= maxlon)[0][-1]
-            minlat_ind = np.where(grid["lat"] >= minlat)[0][0]
-            maxlat_ind = np.where(grid["lat"] <= maxlat)[0][-1]
-            #assume lat comes first in indexing
-            plot_vals = plot_vals[minlat_ind:maxlat_ind+1,minlon_ind:maxlon_ind+1].squeeze()
-        # Create a lon/lat plot
-        plot = ax.imshow(
-            plot_vals, extent=extent, transform=proj, cmap=comap, norm=norm
-        )
+            plot = ax.pcolormesh(
+                grid["lon_b"],
+                grid["lat_b"],
+                plot_vals,
+                transform=proj,
+                cmap=comap,
+                norm=norm,
+                **extra_plot_args
+            )
+        ax.set_extent(extent, crs=proj)
         ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
         
     else:
         #Cubed-sphere single level
-        ax.coastlines()
         try:
             if masked_data == None:
                 masked_data = np.ma.masked_where(np.abs(grid["lon"] - 180) < 2, plot_vals.data.reshape(6, res, res))
@@ -2613,10 +2781,11 @@ def single_panel(plot_vals,
                 masked_data[j, :, :],
                 transform=proj,
                 cmap=comap,
-                norm=norm
+                norm=norm,
+                **extra_plot_args
             )
-        ax.set_xlim(minlon, maxlon)
-        ax.set_ylim(minlat, maxlat)
+        ax.set_extent(extent, crs=proj)
+        ax.coastlines()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
 
