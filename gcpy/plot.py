@@ -259,6 +259,7 @@ def six_plot(
     cb.minorticks_off()
     cb.update_ticks()
     cb.set_label(unit)
+
 def compare_single_level(
     refdata,
     refstr,
@@ -2471,6 +2472,7 @@ def single_panel(plot_vals,
                  sg_path='',
                  ll_plot_func="imshow",
                  vert_params=[[],[]],
+                 pdfname="",
                  **extra_plot_args
 ):
     """
@@ -2483,49 +2485,76 @@ def single_panel(plot_vals,
     -----
     
         ax : matplotlib axes
-            Axes object to plot information. Will create a new axes if None is passed.
+            Axes object to plot information
+            Default value: None (Will create a new axes)
         plot_type : str
             Either "single_level" or "zonal_mean"
+            Default value: "single_level"
         grid : dict
             Dictionary mapping plot_vals to plottable coordinates
+            Default value: {} (will attempt to read grid from plot_vals)
         gridtype : str
             "ll" for lat/lon or "cs" for cubed-sphere
+            Default value: "" (will automatically determine from grid)
         title : str
-            Title to put at top of plot    
+            Title to put at top of plot
+            Default value: "fill" (will use name attribute of plot_vals if available)
         comap : matplotlib Colormap
             Colormap for plotting data values
+            Default value: WhGrYlRd
         norm : list
             List with range [0..1] normalizing color range for matplotlib methods
-        unit : ""
+            Default value: [] (will determine from plot_vals)
+        unit : str
             Units of plotted data
+            Default value: "" (will use units attribute of plot_vals if available)
         extent : tuple (minlon, maxlon, minlat, maxlat)
             Describes minimum and maximum latitude and longitude of input data
+            Default value: (None, None, None, None) (Will use full extent of plot_vals
+            if plot is single level.
         masked_data : numpy array
-            Masked area for cubed-sphere plotting
+            Masked area for avoiding near-dateline cubed-sphere plotting issues
+            Default value: None (will attempt to determine from plot_vals)
         use_cmap_RdBu : boolean
             Set this flag to True to use a blue-white-red colormap
+            Default value: False
         log_color_scale : boolean
             Set this flag to True to use a log-scale colormap
+            Default value: False
         add_cb : boolean
             Set this flag to True to add a colorbar to the plot 
+            Default value: True
         pres_range : list(int)
             Range from minimum to maximum pressure for zonal mean plotting
+            Default value: [0, 2000] (will plot entire atmosphere)
         pedge : numpy array
-            Edge pressures of vertical grid cells in plot_vals
+            Edge pressures of vertical grid cells in plot_vals for zonal mean plotting
+            Default value: np.full((1, 1), -1) (will determine automatically)
         pedge_ind : numpy array
-            Index of edge pressure values within pressure range in plot_vals
+            Index of edge pressure values within pressure range in plot_vals for zonal mean plotting
+            Default value: np.full((1, 1), -1) (will determine automatically) 
         log_yaxis : boolean
             Set this flag to True to enable log scaling of pressure in zonal mean plots
+            Default value: False
         xtick_positions : list(float)
             Locations of lat/lon or lon ticks on plot
+            Default value: [] (will place automatically for zonal mean plots)
         xticklabels : list(str)
             Labels for lat/lon ticks
+            Default value: [] (will determine automatically from xtick_positions)
+        sg_path : str
+            Path to NetCDF file containing stretched-grid info (in attributes) for plot_vals
+            Default value: '' (will not be read in)
         ll_plot_func : str 
             Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
             imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+            Default value: 'imshow'
         vert_params : list(AP, BP) of list-like types 
             Hybrid grid parameter A in hPa and B (unitless). Needed if grid is not 47 or 72 levels.
             Default value: [[], []]
+        pdfname : str
+            File path to save plots as PDF
+            Default value: "" (will not create PDF)
         extra_plot_args : various
             Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     Returns:
@@ -2548,11 +2577,16 @@ def single_panel(plot_vals,
         xticklabels = ["{}$\degree$".format(x) for x in xtick_positions]
 
     if unit == "" and data_is_xr:
-        unit = plot_vals.units.strip()
+        try:
+            unit = plot_vals.units.strip()
+        except:
+            pass
 
     if title == "fill" and data_is_xr:
-        title = plot_vals.name
-
+        try:
+            title = plot_vals.name
+        except:
+            pass
 
     #Generate grid if not passed
     if grid == {}:
@@ -2620,7 +2654,8 @@ def single_panel(plot_vals,
                 z_ind = plot_vals.dims.index('lev')
             #calculate zonal means
             plot_vals = plot_vals.mean(axis=z_ind)
-
+    if gridtype == "":
+        _, gridtype = get_input_res(plot_vals)
     if extent == (None, None, None, None) or extent == None:
         extent = get_grid_extents(grid)
         #convert to -180 to 180 grid if needed (necessary if going cross-dateline later)
@@ -2653,7 +2688,7 @@ def single_panel(plot_vals,
             ax = plt.axes()
         if plot_type == "single_level":
             ax = plt.axes(projection = proj)
-
+    fig = plt.gcf()
     data_is_xr = type(plot_vals) is xr.DataArray
     # Normalize colors (put into range [0..1] for matplotlib methods)
     if norm == []:
@@ -2819,6 +2854,11 @@ def single_panel(plot_vals,
             pass
         cb.update_ticks()
         cb.set_label(unit)
+        
+    if pdfname != "":
+        pdf = PdfPages(pdfname)
+        pdf.savefig(fig)
+        pdf.close()
 
     return plot
 
