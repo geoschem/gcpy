@@ -301,7 +301,7 @@ def compare_single_level(
     log_color_scale=False,
     extra_title_txt=None,
     extent = [-1000, -1000, -1000, -1000],
-    n_job=-1,
+    n_job=1,
     sigdiff_list=[],
     second_ref=None,
     second_dev=None,
@@ -403,7 +403,7 @@ def compare_single_level(
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
-            Default value: -1
+            Default value: 1
         sigdiff_list: list of str
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
@@ -1412,7 +1412,7 @@ def compare_zonal_mean(
     log_color_scale=False,
     log_yaxis=False,
     extra_title_txt=None,
-    n_job=-1,
+    n_job=1,
     sigdiff_list=[],
     second_ref=None,
     second_dev=None,
@@ -1518,7 +1518,7 @@ def compare_zonal_mean(
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
-            Default value: -1
+            Default value: 1
         sigdiff_list: list of str
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
