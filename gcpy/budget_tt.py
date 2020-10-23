@@ -708,12 +708,16 @@ def transport_tracers_budgets(devstr, devdir, devrstdir, year,
     ------------------------
         dst : str 
             Directory where budget tables will be created.
+            Default value: './1yr_benchmark'
         is_gchp : bool
             Denotes if data is from GCHP (True) or GCC (false).
+            Default value: False
         overwrite : bool
             Denotes whether to ovewrite existing budget tables.
+            Default value: True
         spcdb_dir : str
-            Directory where species_database.yml is stored. (default: GCPy directory)
+            Directory where species_database.yml is stored.
+            Default value: GCPy directory
     """
 
     # Store global variables in a private class

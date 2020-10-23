@@ -63,18 +63,14 @@ def create_total_emissions_table(
     -----
         refdata : xarray Dataset
             The first data set to be compared (aka "Reference" or "Ref").
-
         refstr : str
             A string that can be used to identify refdata
             (e.g. a model version number or other identifier).
-
         devdata : xarray Dataset
             The second data set to be compared (aka "Development" or "Dev").
-
         devstr: str
             A string that can be used to identify the data set specified
             by devfile (e.g. a model version number or other identifier).
-
         species : dict
             Dictionary containing the name of each species and the target
             unit that emissions will be converted to. The format of
@@ -83,7 +79,6 @@ def create_total_emissions_table(
                 { species_name : target_unit", etc. }
 
             where "species_name" and "target_unit" are strs.
-
         outfilename : str
             Name of the text file which will contain the table of
             emissions totals.
@@ -94,36 +89,32 @@ def create_total_emissions_table(
             The length of the ref data interval in seconds. By default, interval
             is set to the number of seconds in a 31-day month (86400 * 31),
             which corresponds to typical benchmark simulation output.
-
+            Default value: [2678400.0]
         dev_interval : float
             The length of the dev data interval in seconds. By default, interval
             is set to the number of seconds in a 31-day month (86400 * 31),
             which corresponds to typical benchmark simulation output.
-
+            Default value: [2678400.0]
         template : str
             Template for the diagnostic names that are contained both
             "Reference" and "Development" data sets.  If not specified,
             template will be set to "Emis{}", where {} will be replaced
             by the species name.
-
+            Default value: "Emis{}_"
         ref_area_varname : str
             Name of the variable containing the grid box surface areas
             (in m2) in the ref dataset.
             Default value: 'AREA'
-
         dev_area_varname : str
             Name of the variable containing the grid box surface areas
             (in m2) in the dev dataset.
             Default value: 'AREA'
-
         refmetdata : xarray dataset
             Dataset containing ref meteorology and area
             Default value: None
-
         devmetdata : xarray dataset
             Dataset containing dev meteorology and area
             Default value: None
-
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
@@ -373,26 +364,20 @@ def create_global_mass_table(
     -----
         refdata : xarray Dataset
             The first data set to be compared (aka "Reference").
-
         refstr : str
             A string that can be used to identify refdata
             (e.g. a model version number or other identifier).
-
         devdata : xarray Dataset
             The second data set to be compared (aka "Development").
-
         devstr: str
             A string that can be used to identify the data set specified
             by devfile (e.g. a model version number or other identifier).
-
         varlist : list of strings
             List of species concentation variable names to include
             in the list of global totals.
-
         met_and_masks : dict of xarray DataArray
             Dictionary containing the meterological variables and
             masks for the Ref and Dev datasets.
-
         label : str
             Label to go in the header string.  Can be used to
             pass the month & year.
@@ -403,17 +388,14 @@ def create_global_mass_table(
             Set this switch to True if you wish to print totals
             only for the troposphere.
             Default value: False (i.e. print whole-atmosphere totals).
-
         outfilename : str
             Name of the text file which will contain the table of
             emissions totals.
             Default value: "GlobalMass_TropStrat.txt"
-
         verbose : bool
             Set this switch to True if you wish to print out extra
             informational messages.
             Default value: False
-
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
@@ -612,16 +594,13 @@ def make_benchmark_conc_plots(
     -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
-
         refstr : str OR list of str
             A string to describe ref (e.g. version number)
             OR list containing [ref1str, ref2str] for diff-of-diffs plots
-
         dev : str
             Path name for the "Dev" (aka "Development") data set.
             This data set will be compared against the "Reference"
             data set.
-
         devstr : str OR list of str
             A string to describe dev (e.g. version number)
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
@@ -632,7 +611,6 @@ def make_benchmark_conc_plots(
             A string denoting the destination folder where a PDF
             file containing plots will be written.
             Default value: ./benchmark
-
         subdst : str
             A string denoting the sub-directory of dst where PDF
             files containing plots will be written.  In practice,
@@ -640,91 +618,74 @@ def make_benchmark_conc_plots(
             and denotes a date string (such as "Jan2016") that
             corresponds to the month that is being plotted.
             Default value: None
-
-        overwrite : boolean
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value: False.
-
-        verbose : boolean
+        verbose : bool
             Set this flag to True to print extra informational output.
             Default value: False.
-
         plot_by_spc_cat: logical
             Set this flag to False to send plots to one file rather
             than separate file per category.
             Default value: True
-
         restrict_cats : list of strings
             List of benchmark categories in benchmark_categories.yml to make
             plots for. If empty, plots are made for all categories.
             Default value: empty
-
         plots : list of strings
             List of plot types to create.
             Default value: ['sfc', '500hpa', 'zonalmean']
-
-        log_color_scale: boolean
+        log_color_scale: bool
             Set this flag to True to enable plotting data (not diffs)
             on a log color scale.
             Default value: False
-
         normalize_by_area: bool
             Set this flag to true to enable normalization of data
             by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
-
         cats_in_ugm3: list of str
             List of benchmark categories to to convert to ug/m3
             Default value: ["Aerosols", "Secondary_Organic_Aerosols"]
-
         areas : dict of xarray DataArray:
             Grid box surface areas in m2 on Ref and Dev grids.
             Default value: None
-
         refmet : str
             Path name for ref meteorology
             Default value: None
-
         devmet : str
             Path name for dev meteorology  
             Default value: None
-
         sigdiff_files : list of str
             Filenames that will contain the lists of species having
             significant differences in the 'sfc', '500hpa', and
             'zonalmean' plots.  These lists are needed in order to
             fill out the benchmark approval forms.
             Default value: None
-
         weightsdir : str
             Directory in which to place (and possibly reuse) xESMF regridder
             netCDF files.
             Default value: '.'
-
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. Value of -1 allows the
             application to decide.
             Default value: -1
-
         second_ref: str
             Path name for a second "Ref" (aka "Reference") data set for
             diff-of-diffs plotting. This dataset should have the same model
             type and grid as ref.
             Default value: None
-
         second_refstr : str
             A string to describe second_ref (e.g. version number)
-
+            Default value: ''
         second_dev: str
             Path name for a second "Ref" (aka "Reference") data set for
             diff-of-diffs plotting. This dataset should have the same model
             type and grid as ref.
             Default value: None
-
         second_devstr : str
             A string to describe second_dev (e.g. version number)
-
+            Default value: ''
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
@@ -1197,15 +1158,12 @@ def make_benchmark_emis_plots(
     -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
-
         refstr : str
             A string to describe ref (e.g. version number)
-
         dev : str
             Path name for the "Dev" (aka "Development") data set.
             This data set will be compared against the "Reference"
             data set.
-
         devstr : str
             A string to describe dev (e.g. version number)
 
@@ -1215,69 +1173,57 @@ def make_benchmark_emis_plots(
             A string denoting the destination folder where
             PDF files containing plots will be written.
             Default value: './benchmark
-
         subdst : str
             A string denoting the sub-directory of dst where PDF
             files containing plots will be written.  In practice,
             and denotes a date string (such as "Jan2016") that
             corresponds to the month that is being plotted.
             Default value: None
-
-        plot_by_spc_cat : boolean
+        plot_by_spc_cat : bool
             Set this flag to True to separate plots into PDF files
             according to the benchmark species categories (e.g. Oxidants,
             Aerosols, Nitrogen, etc.)  These categories are specified
             in the YAML file benchmark_species.yml.
             Default value: False
-
-        plot_by_hco_cat : boolean
+        plot_by_hco_cat : bool
             Set this flag to True to separate plots into PDF files
             according to HEMCO emissions categories (e.g. Anthro,
             Aircraft, Bioburn, etc.)
             Default value: False
-
-        overwrite : boolean
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value: False
-
-        verbose : boolean
+        verbose : bool
             Set this flag to True to print extra informational output.
             Default value: False
-
-        flip_ref : boolean
+        flip_ref : bool
             Set this flag to True to reverse the vertical level
             ordering in the "Ref" dataset (in case "Ref" starts
             from the top of atmosphere instead of the surface).
             Default value: False
-
-        flip_dev : boolean
+        flip_dev : bool
             Set this flag to True to reverse the vertical level
             ordering in the "Dev" dataset (in case "Dev" starts
             from the top of atmosphere instead of the surface).
             Default value: False
-
-        log_color_scale: boolean
+        log_color_scale: bool
             Set this flag to True to enable plotting data (not diffs)
             on a log color scale.
             Default value: False
-
          sigdiff_files : list of str
             Filenames that will contain the lists of species having
             significant differences in the 'sfc', '500hpa', and
             'zonalmean' plots.  These lists are needed in order to
             fill out the benchmark approval forms.
             Default value: None
-
         weightsdir : str
             Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
             Default value: '.'
-
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
             Default value: -1
-
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
@@ -1597,15 +1543,12 @@ def make_benchmark_emis_tables(
              List with the path names of the emissions file or files
              (multiple months) that will constitute the "Ref"
              (aka "Reference") data set.
-
         refstr : str
             A string to describe ref (e.g. version number)
-
         devlist : list of str
              List with the path names of the emissions file or files
              (multiple months) that will constitute the "Dev"
              (aka "Development") data set
-
         devstr : str
             A string to describe dev (e.g. version number)
 
@@ -1615,30 +1558,26 @@ def make_benchmark_emis_tables(
             A string denoting the destination folder where the file
             containing emissions totals will be written.
             Default value: ./benchmark
-
         refmet : str
             Path name for ref meteorology
             Default value: None
-
         devmet : str
             Path name for dev meteorology  
             Default value: None
-
-        overwrite : boolean
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value : False
-
         ref_interval : list of float
             The length of the ref data interval in seconds. By default, interval
             is set to [2678400.0], which is the number of seconds in July
             (our 1-month benchmarking month).
-
+            Default value: [2678400.0]
         dev_interval : list of float
             The length of the dev data interval in seconds. By default, interval
             is set to [2678400.0], which is the number of seconds in July
             (our 1-month benchmarking month).
-
+            Default value: [2678400.0]
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
@@ -1782,15 +1721,12 @@ def make_benchmark_jvalue_plots(
     -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
-
         refstr : str
             A string to describe ref (e.g. version number)
-
         dev : str
             Path name for the "Dev" (aka "Development") data set.
             This data set will be compared against the "Reference"
             data set.
-
         devstr : str
             A string to describe dev (e.g. version number)
 
@@ -1803,12 +1739,10 @@ def make_benchmark_jvalue_plots(
             a useful way of restricting the number of variables
             plotted to the pdf file when debugging.
             Default value: None
-
         dst : str
             A string denoting the destination folder where a
             PDF file  containing plots will be written.
             Default value: ./benchmark.
-
         subdst : str
             A string denoting the sub-directory of dst where PDF
             files containing plots will be written.  In practice,
@@ -1816,61 +1750,50 @@ def make_benchmark_jvalue_plots(
             and denotes a date string (such as "Jan2016") that
             corresponds to the month that is being plotted.
             Default value: None
-
-        local_noon_jvalues : boolean
+        local_noon_jvalues : bool
             Set this flag to plot local noon J-values.  This will
             divide all J-value variables by the JNoonFrac counter,
             which is the fraction of the time that it was local noon
             at each location.
             Default value : False
-
         plots : list of strings
             List of plot types to create.
             Default value: ['sfc', '500hpa', 'zonalmean']
-
-        overwrite : boolean
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value: False.
-
-        verbose : boolean
+        verbose : bool
             Set this flag to True to print extra informational output.
             Default value: False
-
-        flip_ref : boolean
+        flip_ref : bool
             Set this flag to True to reverse the vertical level
             ordering in the "Ref" dataset (in case "Ref" starts
             from the top of atmosphere instead of the surface).
             Default value: False
-
-        flip_dev : boolean
+        flip_dev : bool
             Set this flag to True to reverse the vertical level
             ordering in the "Dev" dataset (in case "Dev" starts
             from the top of atmosphere instead of the surface).
             Default value: False
-
-        log_color_scale: boolean
+        log_color_scale: bool
             Set this flag to True if you wish to enable plotting data
             (not diffs) on a log color scale.
             Default value: False
-
         sigdiff_files : list of str
             Filenames that will contain the lists of J-values having
             significant differences in the 'sfc', '500hpa', and
             'zonalmean' plots.  These lists are needed in order to
             fill out the benchmark approval forms.
             Default value: None
-
         weightsdir : str
             Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
             Default value: '.'
-
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. Value of -1 allows the
             application to decide.
             Default value: -1
-
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
@@ -2168,15 +2091,12 @@ def make_benchmark_aod_plots(
     -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
-
         refstr : str
             A string to describe ref (e.g. version number)
-
         dev : str
             Path name for the "Dev" (aka "Development") data set.
             This data set will be compared against the "Reference"
             data set.
-
         devstr : str
             A string to describe dev (e.g. version number)
 
@@ -2188,12 +2108,10 @@ def make_benchmark_aod_plots(
             Use the varlist argument to restrict the number of
             variables plotted to the pdf file when debugging.
             Default value: None
-
         dst : str
             A string denoting the destination folder where a
             PDF file  containing plots will be written.
             Default value: ./benchmark.
-
         subdst : str
             A string denoting the sub-directory of dst where PDF
             files containing plots will be written.  In practice,
@@ -2201,38 +2119,31 @@ def make_benchmark_aod_plots(
             and denotes a date string (such as "Jan2016") that
             corresponds to the month that is being plotted.
             Default value: None
-
-        overwrite : boolean
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value: False.
-
-        verbose : boolean
+        verbose : bool
             Set this flag to True to print extra informational output.
             Default value: False
-
-        log_color_scale: boolean
+        log_color_scale: bool
             Set this flag to True to enable plotting data (not diffs)
             on a log color scale.
             Default value: False
-
         sigdiff_files : list of str
             Filenames that will contain the list of quantities having
             having significant differences in the column AOD plots.
             These lists are needed in order to fill out the benchmark
             approval forms.
             Default value: None
-
         weightsdir : str
             Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
             Default value: '.'
-
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. Value of -1 allows the
             application to decide.
             Default value: -1
-
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
@@ -2483,15 +2394,12 @@ def make_benchmark_mass_tables(
         reflist : list of str
             List of files (i.e. pathnames) that will constitute
             the "Ref" (aka "Reference") data set.
-
         refstr : str
             A string to describe ref (e.g. version number)
-
         dev : list of str
             List of files (i.e. pathnames) that will constitute
             the "Dev" (aka "Development") data set.  The "Dev"
             data set will be compared against the "Ref" data set.
-
         devstr : str
             A string to describe dev (e.g. version number)
 
@@ -2504,12 +2412,10 @@ def make_benchmark_mass_tables(
             can be a useful way of reducing the number of
             variables during debugging and testing.
             Default value: None
-
         dst : str
             A string denoting the destination folder where the file
             containing emissions totals will be written.
             Default value: ./benchmark
-
         subdst : str
             A string denoting the sub-directory of dst where PDF
             files containing plots will be written.  In practice,
@@ -2517,25 +2423,20 @@ def make_benchmark_mass_tables(
             and denotes a date string (such as "Jan2016") that
             corresponds to the month that is being plotted.
             Default value: None
-
-        overwrite : boolean
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value : False
-
-        verbose : boolean
+        verbose : bool
             Set this flag to True to print extra informational output.
             Default value: False.
-
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
-
         ref_met_extra : str
             Path to ref Met file containing area data for use with restart files
             which do not contain the Area variable.
             Default value : ''
-
         dev_met_extra : str
             Path to dev Met file containing area data for use with restart files
             which do not contain the Area variable.
@@ -2738,20 +2639,15 @@ def make_benchmark_oh_metrics(
     -----
         ref : str
             Path name of "Ref" (aka "Reference") data set file.
-
         refmet : str
             Path name of ref meteorology data set.
-
         refstr : str
             A string to describe ref (e.g. version number)
-
         dev : str
             Path name of "Dev" (aka "Development") data set file. 
             The "Dev" data set will be compared against the "Ref" data set.
-
         devmet : list of str
             Path name of dev meteorology data set.
-
         devstr : str
             A string to describe dev (e.g. version number)
 
@@ -2760,9 +2656,8 @@ def make_benchmark_oh_metrics(
         dst : str
             A string denoting the destination folder where the file
             containing emissions totals will be written.
-            Default value: ./benchmark
-
-        overwrite : boolean
+            Default value: "./benchmark"
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value : False
@@ -2956,99 +2851,6 @@ def make_benchmark_oh_metrics(
     refmetds = xr.Dataset()
     devmetds = xr.Dataset()
 
-
-def get_troposphere_mask(ds):
-    """
-    Returns a mask array for picking out the tropospheric grid boxes.
-
-    Args:
-    -----
-        ds : xarray Dataset
-            Dataset containing certain met field variables (i.e.
-            Met_TropLev, Met_BXHEIGHT).
-
-    Returns:
-    --------
-        tropmask : numpy ndarray
-            Tropospheric mask.  False denotes grid boxes that are
-            in the troposphere and True in the stratosphere
-            (as per Python masking logic).
-    """
-
-    # ==================================================================
-    # Initialization
-    # ==================================================================
-
-    # Make sure ds is an xarray Dataset object
-    if not isinstance(ds, xr.Dataset):
-        raise TypeError("The ds argument must be an xarray Dataset!")
-
-    # Make sure certain variables are found
-    if "Met_BXHEIGHT" not in ds.data_vars.keys():
-        raise ValueError("Met_BXHEIGHT could not be found!")
-    if "Met_TropLev" not in ds.data_vars.keys():
-        raise ValueError("Met_TropLev could not be found!")
-
-    # Mask of tropospheric grid boxes in the Ref dataset
-    shape = util.get_shape_of_data(np.squeeze(ds["Met_BXHEIGHT"]))
-
-    # Determine if this is GCHP data
-    is_gchp = "nf" in ds["Met_BXHEIGHT"].dims
-
-    # ==================================================================
-    # Create the mask arrays for the troposphere
-    #
-    # Convert the Met_TropLev DataArray objects to numpy ndarrays of
-    # integer.  Also subtract 1 to convert from Fortran to Python
-    # array index notation.
-    # ==================================================================
-
-    multi_time_slices = (is_gchp and len(shape) == 5) or \
-                        (not is_gchp and len(shape) == 4)
-
-    if multi_time_slices:
-        # --------------------------------------------------------------
-        # GCC: There are multiple time slices
-        # --------------------------------------------------------------
-
-        # Create the tropmask array with dims
-        # (time, lev, nf*lat*lon) for GCHP, or
-        # (time, lev, lat*lon   ) for GCC
-        tropmask = np.ones((shape[0], shape[1],
-                            np.prod(np.array(shape[2:]))), bool)
-
-        # Loop over each time
-        for t in range(tropmask.shape[0]):
-
-            # Pick the tropopause level and make a 1-D array
-            values = ds["Met_TropLev"].isel(time=t).values
-            lev = np.int_(np.squeeze(values) - 1)
-            lev_1d = lev.flatten()
-
-            # Create the tropospheric mask array
-            for x in range(tropmask.shape[2]):
-                tropmask[t, 0 : lev_1d[x], x] = False
-
-    else:
-        # --------------------------------------------------------------
-        # There is only one time slice
-        # --------------------------------------------------------------
-
-        # Create the tropmask array with dims (lev, lat*lon)
-        tropmask = np.ones((shape[0], np.prod(np.array(shape[1:]))), bool)
-
-        # Pick the tropopause level and make a 1-D array
-        values = ds["Met_TropLev"].values
-        lev = np.int_(np.squeeze(values) - 1)
-        lev_1d = lev.flatten()
-
-        # Create the tropospheric mask array
-        for x in range(tropmask.shape[1]):
-            tropmask[0 : lev_1d[x], x] = False
-
-    # Reshape into the same shape as Met_BxHeight
-    return tropmask.reshape(shape)
-
 def make_benchmark_wetdep_plots(
     ref,
     refstr,
@@ -3078,18 +2880,14 @@ def make_benchmark_wetdep_plots(
     -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
-
         refstr : str
             A string to describe ref (e.g. version number)
-
         dev : str
             Path name for the "Dev" (aka "Development") data set.
             This data set will be compared against the "Reference"
             data set.
-
         devstr : str
             A string to describe dev (e.g. version number)
-
         collection : str
             String name of collection to plot comparisons for.
 
@@ -3099,47 +2897,39 @@ def make_benchmark_wetdep_plots(
             A string denoting the destination folder where a PDF
             file containing plots will be written.
             Default value: ./benchmark
-
         datestr : str
             A string with date information to be included in both the
             plot pdf filename and as a destination folder subdirectory
             for writing plots
-
-        overwrite : boolean
+            Default value: None
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value: False.
-
-        verbose : boolean
+        verbose : bool
             Set this flag to True to print extra informational output.
             Default value: False.
-
         plots : list of strings
             List of plot types to create.
             Default value: ['sfc', '500hpa', 'zonalmean']
-
         normalize_by_area: bool
             Set this flag to true to enable normalization of data
             by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
-
+            Default value: False
         areas : dict of xarray DataArray:
             Grid box surface areas in m2 on Ref and Dev grids.
             Default value: None
-
         refmet : str
             Path name for ref meteorology
             Default value: None
-
         devmet : str
             Path name for dev meteorology  
             Default value: None
-
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. Value of -1 allows the
             application to decide.
             Default value: -1
-
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
@@ -3360,11 +3150,13 @@ def make_benchmark_aerosol_tables(
     ------------------------
         dst : str 
             Directory where budget tables will be created.
+            Default value: './benchmark'            
         overwrite : bool
             Overwrite burden & budget tables? (default=True)
+            Default value: False
         is_gchp : bool
             Whether datasets are for GCHP
-
+            Default value: False
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository

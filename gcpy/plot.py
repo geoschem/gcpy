@@ -55,8 +55,8 @@ def six_plot(
     match_cbar,
     verbose,
     log_color_scale,
-    pedge=None,
-    pedge_ind=0,
+    pedge=np.full((1, 1), -1),
+    pedge_ind=np.full((1,1), -1),
     log_yaxis=False,
     xtick_positions=[],
     xticklabels=[],
@@ -69,69 +69,86 @@ def six_plot(
 
     """
     Plotting function to be called from compare_single_level or
-    compare_zonal_mean.
-    Can also be called on its own
+    compare_zonal_mean. Primarily exists to eliminate code redundancy
+    in the prior listed functions and has not been tested separately.
+
     Args:
     -----
-    ^subplot : str
-       Type of plot to create (ref, dev, absolute difference or fractional difference)
-    ^all_zero : boolean
-       Set this flag to True if the data to be plotted consist only of zeros
-    ^all_nan : boolean
-       Set this flag to True if the data to be plotted consist only of NaNs
-    *plot_val : xarray DataArray
-       Single variable GEOS-Chem output values to plot
-    grid : dict
-       Dictionary mapping plot_val to plottable coordinates
-    WBD VVVVV
-    ax : matplotlib axes
-       Axes object to plot information. Will create a new axes if none is passed.
-    ^rowcol : tuple
-       Subplot position in overall Figure WBD DELETE?
-    title : str
-       Title to print on axes
-    comap : matplotlib Colormap
-       Colormap for plotting data values
-    unit : str
-       Units of plotted data
-    extent : tuple (minlon, maxlon, minlat, maxlat) WBD SHOULD BE KEYWORD?
-       Describes minimum and maximum latitude and longitude of input data
-    masked_data : numpy array
-       Masked area for cubed-sphere plotting
-    #Need to modify this name
-    ^other_all_nan : boolean
-        Set this flag to True if plotting ref/dev and the other of ref/dev is all nan
-    gridtype : str
-       "ll" for lat/lon or "cs" for cubed-sphere
-    ^vmins: list of float
-       list of length 3 of minimum ref value, dev value, and absdiff value
-    ^vmaxs: list of float
-       list of length 3 of maximum ref value, dev value, and absdiff value
-    use_cmap_RdBu : boolean
-       Set this flag to True to use a blue-white-red colormap
-    ^match_cbar : boolean
-       Set this flag to True if you are plotting with the same colorbar for ref and dev
-    verbose : boolean
-       Set this flag to True to enable informative printout.
-    log_color_scale : boolean
-       Set this flag to True to enable log-scale colormapping
-    pedge :
-       Edge pressures of grid cells in data to be plotted
-    pedge_ind : int
-       Index of edge pressure values within pressure range  in data to be plotted
-    log_yaxis : boolean
-       Set this flag to True to enable log scaling of pressure in zonal mean plots
-    xtick_positions : list of float
-       Locations of lat/lon or lon ticks on plot
-    xticklabels: list of str
-       Labels for lat/lon ticks
-    proj : 
-    ll_plot_func : str 
-       Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
-       imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
-    extra_plot_args : various
-       Any extra keyword arguments are passed through the plotting functions to be used 
-       in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
+        subplot : str
+            Type of plot to create (ref, dev, absolute difference or fractional difference)
+        all_zero : bool
+            Set this flag to True if the data to be plotted consist only of zeros
+        all_nan : bool
+            Set this flag to True if the data to be plotted consist only of NaNs
+        plot_val : xarray DataArray
+            Single variable GEOS-Chem output values to plot
+        grid : dict
+            Dictionary mapping plot_val to plottable coordinates
+        ax : matplotlib axes
+            Axes object to plot information. Will create a new axes if none is passed.
+        rowcol : tuple
+            Subplot position in overall Figure
+        title : str
+            Title to print on axes
+        comap : matplotlib Colormap
+            Colormap for plotting data values
+        unit : str
+            Units of plotted data
+        extent : tuple (minlon, maxlon, minlat, maxlat)
+            Describes minimum and maximum latitude and longitude of input data
+        masked_data : numpy array
+            Masked area for cubed-sphere plotting
+        other_all_nan : bool
+            Set this flag to True if plotting ref/dev and the other of ref/dev is all nan
+        gridtype : str
+            "ll" for lat/lon or "cs" for cubed-sphere
+        vmins: list of float
+            list of length 3 of minimum ref value, dev value, and absdiff value
+        vmaxs: list of float
+            list of length 3 of maximum ref value, dev value, and absdiff value
+        use_cmap_RdBu : bool
+            Set this flag to True to use a blue-white-red colormap
+        match_cbar : bool
+            Set this flag to True if you are plotting with the same colorbar for ref and dev
+        verbose : bool
+            Set this flag to True to enable informative printout.
+        log_color_scale : bool
+            Set this flag to True to enable log-scale colormapping
+
+    Keyword Args (optional):
+    ------------------------
+        pedge : numpy array
+            Edge pressures of grid cells in data to be plotted
+            Default value: np.full((1,1), -1)
+        pedge_ind : numpy array
+            Indices where edge pressure values are within a given pressure range
+            Default value: np.full((1,1), -1)
+        log_yaxis : bool
+            Set this flag to True to enable log scaling of pressure in zonal mean plots
+            Default value: False
+        xtick_positions : list of float
+            Locations of lat/lon or lon ticks on plot
+            Default value: []
+        xticklabels: list of str
+            Labels for lat/lon ticks
+            Default value: []
+        plot_type : str
+            Type of plot, either "single_level" or "zonal"mean"
+            Default value: "single_level"
+        ratio_log : bool
+            Set this flag to True to enable log scaling for ratio plots
+            Default value: False        
+        proj : cartopy projection
+            Projection for plotting data
+            Default value: ccrs.PlateCarree()
+        ll_plot_func : str 
+            Function to use for lat/lon single level plotting with possible values 
+            'imshow' and 'pcolormesh'. imshow is much faster but is slightly displaced 
+            when plotting from dateline to dateline and/or pole to pole.
+            Default value: 'imshow'
+        extra_plot_args : various
+            Any extra keyword arguments are passed through the plotting functions to be used 
+            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     """
     # Set min and max of the data range
     if subplot in ("ref", "dev"):
@@ -297,6 +314,7 @@ def compare_single_level(
     """
     Create single-level 3x2 comparison map plots for variables common
     in two xarray Datasets. Optionally save to PDF.
+
     Args:
     -----
         refdata : xarray dataset
@@ -309,6 +327,7 @@ def compare_single_level(
         devstr  : str OR list of str
             String description for development data to be used in plots
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
+
     Keyword Args (optional):
     ------------------------
         varlist : list of strings
@@ -338,38 +357,38 @@ def compare_single_level(
             to compare datasets
             Default value: None (will compare at highest resolution
             of ref and dev)
-        match_cbar : boolean
+        match_cbar : bool
             Set this flag to True if you wish to use the same colorbar
             bounds for the Ref and Dev plots.
             Default value: True
-        normalize_by_area : boolean
+        normalize_by_area : bool
             Set this flag to True if you wish to normalize the Ref and Dev
             raw data by grid area. Input ref and dev datasets must include
             AREA variable in m2 if normalizing by area.
             Default value: False
-        enforce_units : boolean
+        enforce_units : bool
             Set this flag to True to force an error if Ref and Dev
             variables have different units.
             Default value: True
-        convert_to_ugm3 : boolean
+        convert_to_ugm3 : bool
             Whether to convert data units to ug/m3 for plotting.
             Default value: False
-        flip_ref : boolean
+        flip_ref : bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
             Default value: False
-        flip_dev : boolean
+        flip_dev : bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Dev dataset.
             Default value: False
-        use_cmap_RdBu : boolean
+        use_cmap_RdBu : bool
             Set this flag to True to use a blue-white-red colormap
             for plotting the raw data in both the Ref and Dev datasets.
             Default value: False
-        verbose : boolean
+        verbose : bool
             Set this flag to True to enable informative printout.
             Default value: False
-        log_color_scale: boolean
+        log_color_scale: bool
             Set this flag to True to plot data (not diffs)
             on a log color scale.
             Default value: False
@@ -405,8 +424,9 @@ def compare_single_level(
             Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
             Default value: '' (will not be read in)
         ll_plot_func : str 
-            Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
-            imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+            Function to use for lat/lon single level plotting with possible values 
+            'imshow' and 'pcolormesh'. imshow is much faster but is slightly displaced 
+            when plotting from dateline to dateline and/or pole to pole.
             Default value: 'imshow'
         extra_plot_args : various
             Any extra keyword arguments are passed through the plotting functions to be used 
@@ -1407,6 +1427,7 @@ def compare_zonal_mean(
     """
     Create single-level 3x2 comparison zonal-mean plots for variables
     common in two xarray Daatasets. Optionally save to PDF.
+
     Args:
     -----
         refdata : xarray dataset
@@ -1419,6 +1440,7 @@ def compare_zonal_mean(
         devstr  : str OR list of str
             String description for development data to be used in plots
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
+
     Keyword Args (optional):
     ------------------------
         varlist : list of strings
@@ -1445,7 +1467,7 @@ def compare_zonal_mean(
             to compare datasets
             Default value: None (will compare at highest resolution
             of Ref and Dev)
-        match_cbar : boolean
+        match_cbar : bool
             Set this flag to True to use same the colorbar bounds
             for both Ref and Dev plots.
             Default value: True
@@ -1454,38 +1476,38 @@ def compare_zonal_mean(
             span the outer pressure edges of levels that contain pres_range
             endpoints.
             Default value: [0,2000]
-        normalize_by_area : boolean
+        normalize_by_area : bool
             Set this flag to True to to normalize raw data in both
             Ref and Dev datasets by grid area. Input ref and dev datasets
             must include AREA variable in m2 if normalizing by area.
             Default value: False
-        enforce_units : boolean
+        enforce_units : bool
             Set this flag to True force an error if the variables in
             the Ref and Dev datasets have different units.
             Default value: True
         convert_to_ugm3 : str
             Whether to convert data units to ug/m3 for plotting.
             Default value: False
-        flip_ref : boolean
+        flip_ref : bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
             Default value: False
-        flip_dev : boolean
+        flip_dev : bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Dev dataset.
             Default value: False
-        use_cmap_RdBu : boolean
+        use_cmap_RdBu : bool
             Set this flag to True to use a blue-white-red colormap for
             plotting raw reference and development datasets.
             Default value: False
         verbose : logical
             Set this flag to True to enable informative printout.
             Default value: False
-        log_color_scale: boolean
+        log_color_scale: bool
             Set this flag to True to enable plotting data (not diffs)
             on a log color scale.
             Default value: False
-        log_yaxis : boolean
+        log_yaxis : bool
             Set this flag to True if you wish to create zonal mean
             plots with a log-pressure Y-axis.
             Default value: False
@@ -2386,30 +2408,33 @@ def compare_zonal_mean(
 def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, ratio_log=False):
     """
     Normalizes a data range to the colormap range used by matplotlib
-    functions.
-    For log-color scales, special handling is done to prevent
+    functions. For log-color scales, special handling is done to prevent
     taking the log of data that is all zeroes.
+
     Args:
     -----
         vmin : float
             Minimum value of the data range.
         vmax : float
             Maximum value of the data range.
-    Keyword Args:
-    -------------
-        is_difference : boolean
+
+    Keyword Args (optional):
+    ------------------------
+        is_difference : bool
             Set this switch to denote that we are using a difference
             color scale (i.e. with zero in the middle of the range).
             Default value: False
-        log_color_scale : boolean
+        log_color_scale : bool
             Logical flag to denote that we are using a logarithmic
             color scale instead of a linear color scale.
             Default value: False
+
     Returns:
     --------
         norm : matplotlib Norm
             The normalized matplotlib color range, stored in
             a matplotlib Norm object.
+
     Remarks:
     --------
          For log color scales, we will use a range of 3 orders of
@@ -2477,13 +2502,14 @@ def single_panel(plot_vals,
 ):
     """
     Core plotting routine -- creates a single plot panel.
+
     Args:
     -----
         plot_vals : xarray DataArray or numpy array
             Single data variable GEOS-Chem output to plot
+
     Keyword Args (Optional):
-    -----
-    
+    ------------------------    
         ax : matplotlib axes
             Axes object to plot information
             Default value: None (Will create a new axes)
@@ -2515,13 +2541,13 @@ def single_panel(plot_vals,
         masked_data : numpy array
             Masked area for avoiding near-dateline cubed-sphere plotting issues
             Default value: None (will attempt to determine from plot_vals)
-        use_cmap_RdBu : boolean
+        use_cmap_RdBu : bool
             Set this flag to True to use a blue-white-red colormap
             Default value: False
-        log_color_scale : boolean
+        log_color_scale : bool
             Set this flag to True to use a log-scale colormap
             Default value: False
-        add_cb : boolean
+        add_cb : bool
             Set this flag to True to add a colorbar to the plot 
             Default value: True
         pres_range : list(int)
@@ -2533,7 +2559,7 @@ def single_panel(plot_vals,
         pedge_ind : numpy array
             Index of edge pressure values within pressure range in plot_vals for zonal mean plotting
             Default value: np.full((1, 1), -1) (will determine automatically) 
-        log_yaxis : boolean
+        log_yaxis : bool
             Set this flag to True to enable log scaling of pressure in zonal mean plots
             Default value: False
         xtick_positions : list(float)
@@ -2542,12 +2568,16 @@ def single_panel(plot_vals,
         xticklabels : list(str)
             Labels for lat/lon ticks
             Default value: [] (will determine automatically from xtick_positions)
+        proj : cartopy projection
+            Projection for plotting data
+            Default value: ccrs.PlateCarree()
         sg_path : str
             Path to NetCDF file containing stretched-grid info (in attributes) for plot_vals
             Default value: '' (will not be read in)
         ll_plot_func : str 
-            Function to use for lat/lon single level plotting with possible values 'imshow' and 'pcolormesh'.
-            imshow is much faster but is slightly displaced when plotting from dateline to dateline and/or pole to pole.
+            Function to use for lat/lon single level plotting with possible values 
+            'imshow' and 'pcolormesh'. imshow is much faster but is slightly displaced 
+            when plotting from dateline to dateline and/or pole to pole.
             Default value: 'imshow'
         vert_params : list(AP, BP) of list-like types 
             Hybrid grid parameter A in hPa and B (unitless). Needed if grid is not 47 or 72 levels.
@@ -2557,9 +2587,9 @@ def single_panel(plot_vals,
             Default value: "" (will not create PDF)
         extra_plot_args : various
             Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
+
     Returns:
-    -----
-    
+    -----    
     plot : matplotlib plot
         Plot object created from input
     """

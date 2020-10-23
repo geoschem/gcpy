@@ -481,7 +481,7 @@ def make_benchmark_oh_metrics(
             containing emissions totals will be written.
             Default value: ./benchmark
 
-        overwrite : boolean
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value : False
