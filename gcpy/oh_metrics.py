@@ -431,7 +431,7 @@ def print_metrics(common_vars, dst):
         # Write CH4 lifetime [years]
         # ==============================================================
         title = "CH4 lifetime w/r/t tropospheric OH [years]"
-        diff = common_vars["ch4_life_ref"] - common_vars["ch4_life_dev"]
+        absdiff = common_vars["ch4_life_ref"] - common_vars["ch4_life_dev"]
         pctdiff = (absdiff / common_vars["ch4_life_ref"]) * 100.0
         write_to_file(
             f,

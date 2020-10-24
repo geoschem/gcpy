@@ -3,25 +3,20 @@ Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 """
 
 import os
-import shutil
 import yaml
 import itertools
 import numpy as np
 import pandas as pd
 import xarray as xr
 from cartopy.mpl.geoaxes import GeoAxes  # for assertion
-from matplotlib.backends.backend_pdf import PdfPages
-from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
-from .plot import WhGrYlRd, compare_single_level, compare_zonal_mean
-from .regrid import make_regridder_C2L, make_regridder_L2L, create_regridders, regrid_comparison_data
-from .grid import GEOS_72L_grid, GEOS_47L_grid, get_grid_extents, call_make_grid, get_vert_grid, \
-    get_vert_grid, get_pressure_indices, pad_pressure_edges, convert_lev_to_pres, get_troposphere_mask
+from .plot import compare_single_level, compare_zonal_mean
+from .regrid import create_regridders
+from .grid import get_troposphere_mask
 import gcpy.util as util
 from .units import convert_units
 import gcpy.constants as gcon
 from yaml import load as yaml_load_file
-from joblib import Parallel, delayed, cpu_count, parallel_backend
-from multiprocessing import current_process
+from joblib import Parallel, delayed
 import warnings
 from distutils.version import LooseVersion
 
@@ -581,9 +576,7 @@ def make_benchmark_conc_plots(
     weightsdir='.',
     n_job=-1,
     second_ref=None,
-    second_refstr='',
     second_dev=None,
-    second_devstr='',
     spcdb_dir=os.path.dirname(__file__)
 ):
     """
@@ -675,17 +668,11 @@ def make_benchmark_conc_plots(
             diff-of-diffs plotting. This dataset should have the same model
             type and grid as ref.
             Default value: None
-        second_refstr : str
-            A string to describe second_ref (e.g. version number)
-            Default value: ''
         second_dev: str
             Path name for a second "Ref" (aka "Reference") data set for
             diff-of-diffs plotting. This dataset should have the same model
             type and grid as ref.
             Default value: None
-        second_devstr : str
-            A string to describe second_dev (e.g. version number)
-            Default value: ''
         spcdb_dir : str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
@@ -864,7 +851,7 @@ def make_benchmark_conc_plots(
     dict_sfc = {}
     dict_500 = {}
     dict_zm = {}
-    def createplots(i, filecat):
+    def createplots(filecat):
         cat_diff_dict = {'sfc' : [], '500' : [], 'zm' : []}
 
         # Plots units ug/m3 for certain species categories
@@ -1076,7 +1063,7 @@ def make_benchmark_conc_plots(
 
     # Create the plots in parallel
     results = Parallel(n_jobs=n_job)(
-        delayed(createplots)(i, filecat) for i, filecat in enumerate(catdict)
+        delayed(createplots)(filecat) for _, filecat in enumerate(catdict)
     )
 
     dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] for result in results}
@@ -1126,8 +1113,8 @@ def make_benchmark_conc_plots(
     devds = xr.Dataset()
     refmetds = xr.Dataset()
     devmetds = xr.Dataset()
-    secondrefds = xr.Dataset()
-    seconddevds = xr.Dataset()
+    second_ref = xr.Dataset()
+    second_dev = xr.Dataset()
 
 def make_benchmark_emis_plots(
     ref,
@@ -3496,7 +3483,7 @@ def make_benchmark_operations_budget(
     # Handle whether to compute accumulation.
     all_operations = gc_operations
     if compute_accum and len(gc_operations) == 6:
-            all_operations = gc_operations + ["ACCUMULATION"]
+        all_operations = gc_operations + ["ACCUMULATION"]
     n_ops = len(all_operations)
 
     # Print info

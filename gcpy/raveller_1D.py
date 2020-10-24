@@ -1,11 +1,7 @@
 import argparse
-import hashlib
-import os.path
-
 import numpy as np
 import xarray as xr
 import pandas as pd
-
 from gcpy.grid import make_grid_CS
 
 def create_track_func(args):
@@ -13,8 +9,8 @@ def create_track_func(args):
     Ydim = np.linspace(1, args.cs_res, args.cs_res)
     Xdim = np.linspace(1, args.cs_res, args.cs_res)
 
-    grid, gridlist = make_grid_CS(args.cs_res)
-    #grid, gridlist = make_grid_SG(args.cs_res, *args.sg_params)
+    grid, _ = make_grid_CS(args.cs_res)
+    #grid, _ = make_grid_SG(args.cs_res, *args.sg_params)
 
     lon = xr.DataArray(grid['lon'] % 360, coords={'nf': nf, 'Ydim': Ydim, 'Xdim': Xdim}, dims=['nf', 'Ydim', 'Xdim'])
     lon.values[lon.values > 180] -= 360

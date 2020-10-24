@@ -252,7 +252,7 @@ def print_ste(globvars, df):
     # Create plot directory hierarchy if necessary
     if os.path.isdir(globvars.dst) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(table_dir, err_str))
+        print("Directory {} exists. {}".format(globvars.dst, err_str))
         return
     elif not os.path.isdir(globvars.dst):
         os.makedirs(globvars.dst)

@@ -9,14 +9,14 @@ import numpy as np
 import xarray as xr
 import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
-from PyPDF2 import PdfFileWriter, PdfFileReader, PdfFileMerger
+from PyPDF2 import PdfFileMerger
 from .grid import get_vert_grid, get_pressure_indices, \
      pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, get_input_res
 from .regrid import regrid_comparison_data, create_regridders, gen_xmat, regrid_vertical
 from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, all_zero_or_nan, slice_by_lev_and_time, compare_varnames
 from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
-from joblib import Parallel, delayed, cpu_count, parallel_backend
+from joblib import Parallel, delayed
 from multiprocessing import current_process
 from tempfile import TemporaryDirectory
 import warnings
@@ -563,11 +563,7 @@ def compare_single_level(
     ds_devs = [None] * n_var
     frac_ds_devs = [None] * n_var
     for i in range(n_var):
-
         varname = varlist[i]
-        ref_dims = refdata[varname].dims
-        dev_dims = devdata[varname].dims
-
         # ==============================================================
         # Slice the data, allowing for no time dimension (bpch)
         # ==============================================================
@@ -587,7 +583,6 @@ def compare_single_level(
                 ilev,
                 flip_ref
             )
-            fracref_dims = fracrefdata[varname].dims
         # Dev
         ds_devs[i] = slice_by_lev_and_time(
             devdata,
@@ -604,7 +599,6 @@ def compare_single_level(
                 ilev,
                 flip_dev
             )
-            fracdev_dims = fracdevdata[varname].dims
 
         # ==================================================================
         #  Handle units as needed
@@ -638,7 +632,8 @@ def compare_single_level(
 
         # Check that units are the same in ref and dev. Will exit with
         # an error if do not match and enforce_units is true (default).
-        check_units(ds_refs[i], ds_devs[i])
+        if not check_units(ds_refs[i], ds_devs[i]) and enforce_units:
+            raise ValueError('Units in ref and dev must match when enforce_units is True')
 
         # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
         if convert_to_ugm3:
@@ -688,9 +683,9 @@ def compare_single_level(
             else:
                 spc_mw_g = species_properties.get("MW_g")
                 if spc_mw_g is None:
-                    msg = "Molecular weight not found for for species {}!" \
-                          + " Cannot convert to ug/m3.".format(spc_name)
-                    raise ValueError(msg)
+                    msg = "Molecular weight not found for species {}!" \
+                          + " Cannot convert to ug/m3."
+                    raise ValueError(msg.format(spc_name))
 
             # Convert values from ppb to ug/m3:
             # ug/m3 = mol/mol * mol/g air * kg/m3 air * 1e3g/kg
@@ -879,8 +874,6 @@ def compare_single_level(
         if savepdf and verbose:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
-        varndim_ref = refdata[varname].ndim
-        varndim_dev = devdata[varname].ndim
 
         ds_ref = ds_refs[ivar]
         ds_dev = ds_devs[ivar]
@@ -892,7 +885,6 @@ def compare_single_level(
         # ==============================================================
         cmn_units = ds_ref.attrs["units"]
         subtitle_extra = ""
-        varndim = varndim_ref
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
@@ -963,8 +955,6 @@ def compare_single_level(
         # Get overall min & max
         vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
-        if match_cbar:
-            [vmin, vmax] = [vmin_abs, vmax_abs]
 
         if verbose:
             print("vmin_ref: {}".format(vmin_ref))
@@ -1038,10 +1028,6 @@ def compare_single_level(
                                (np.nanmin(fracdiff) == 0 and \
                                 np.nanmax(fracdiff) ==0)
         fracdiff_is_all_nan = np.isnan(fracdiff).all() or ref_is_all_zero
-
-        # Absolute max value of fracdiff, excluding NaNs
-        fracdiffabsmax = max([np.abs(np.nanmin(fracdiff)),
-                              np.abs(np.nanmax(fracdiff))])
 
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/
@@ -1599,8 +1585,8 @@ def compare_zonal_mean(
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # Get mid-point pressure and edge pressures for this grid
-    ref_pedge, ref_pmid, ref_grid_cat = get_vert_grid(refdata, *ref_vert_params)
-    dev_pedge, dev_pmid, dev_grid_cat = get_vert_grid(devdata, *dev_vert_params)
+    ref_pedge, ref_pmid, _ = get_vert_grid(refdata, *ref_vert_params)
+    dev_pedge, dev_pmid, _ = get_vert_grid(devdata, *dev_vert_params)
 
     # Get indexes of pressure subrange (full range is default)
     ref_pedge_ind = get_pressure_indices(ref_pedge, pres_range)
@@ -1741,7 +1727,8 @@ def compare_zonal_mean(
 
         # Check that units are the same in ref and dev. Will exit with
         # an error if do not match and enforce_units is true (default).
-        check_units(ds_refs[i], ds_devs[i])
+        if not check_units(ds_refs[i], ds_devs[i]) and enforce_units:
+            raise ValueError('Units in ref and dev must match when enforce_units is True')
             
         # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
         if convert_to_ugm3:
@@ -1789,8 +1776,8 @@ def compare_zonal_mean(
                 spc_mw_g = species_properties.get("MW_g")
                 if spc_mw_g is None:
                     msg = "Molecular weight not found for for species {}!" \
-                          + " Cannot convert to ug/m3.".format(spc_name)
-                    raise ValueError(msg)
+                          + " Cannot convert to ug/m3."
+                    raise ValueError(msg.format(spc_name))
 
             # Convert values from ppb to ug/m3:
             # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
@@ -2002,8 +1989,6 @@ def compare_zonal_mean(
         if savepdf and verbose:
             print("{} ".format(ivar), end="")
         varname = varlist[ivar]
-        varndim_ref = refdata[varname].ndim
-        varndim_dev = devdata[varname].ndim
 
         # ==============================================================
         # Assign data variables
@@ -2022,7 +2007,6 @@ def compare_zonal_mean(
         # units on difference plots will be wrong.
         # ==============================================================
         cmn_units = ref_units[ivar]
-        varndim = varndim_ref
         subtitle_extra = ""
         if normalize_by_area:
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
@@ -2104,9 +2088,6 @@ def compare_zonal_mean(
 
         # Test if abs. diff is zero everywhere or NaN everywhere
         absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(zm_diff)
-
-        # Absolute maximum difference value
-        diffabsmax = max([np.abs(zm_diff.min()), np.abs(zm_diff.max())])
 
         # ==============================================================
         # Calculate fractional difference, set divides by zero to Nan
@@ -2447,7 +2428,7 @@ def normalize_colors(vmin, vmax, is_difference=False, log_color_scale=False, rat
             mcolors.LogNorm.__init__(self,vmin=vmin,vmax=vmax,clip=clip)
             self.midpoint=midpoint
         def __call__(self,value,clip=None):
-            result, is_scalar = self.process_value(value)
+            result, _ = self.process_value(value)
             x = [np.log(self.vmin), np.log(self.midpoint), np.log(self.vmax)]
             y = [0, 0.5, 1]
             return np.ma.array(np.interp(np.log(value), x, y), mask=result.mask, copy = False)
@@ -2634,14 +2615,14 @@ def single_panel(plot_vals,
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
                 
                 # Get mid-point pressure and edge pressures for this grid
-                pedge, pmid, grid_cat = get_vert_grid(plot_vals, vert_params)
+                pedge, pmid, _ = get_vert_grid(plot_vals, vert_params)
                 
                 # Get indexes of pressure subrange (full range is default)
                 pedge_ind = get_pressure_indices(pedge, pres_range)
                 
                 # Pad edges if subset does not include surface or TOA so data spans
                 # entire subrange
-                pedge_ind = pad_pressure_edges(pedge_ind, plot_vals.sizes["lev"])
+                pedge_ind = pad_pressure_edges(pedge_ind, plot_vals.sizes["lev"], len(pmid))
                 
                 # pmid indexes do not include last pedge index
                 pmid_ind = pedge_ind[:-1]
@@ -2653,7 +2634,7 @@ def single_panel(plot_vals,
                 plot_vals = plot_vals.isel(lev=pmid_ind)            
                 
             [input_res, input_gridtype, _, _,
-             new_res, new_gridtype, regrid, _, _, _, _, 
+             _, new_gridtype, regrid, _, _, _, _, 
              grid, regridder, _, regridder_list, _] = create_regridders(
                                                       plot_vals, 
                                                       plot_vals, 
