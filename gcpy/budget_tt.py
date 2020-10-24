@@ -19,7 +19,6 @@ from gcpy.util import rename_and_flip_gchp_rst_vars, dict_diff
 import warnings
 import xarray as xr
 from yaml import load as yaml_load_file
-from distutils.version import LooseVersion
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -109,8 +108,8 @@ class _GlobVars:
         if is_gchp:
             StateMetAvg = join(self.devdir,
                                "*.StateMet_avg.{}*.nc4".format(self.y0_str))
-            StateMetInst = join(self.devdir,
-                                "*.StateMet_inst.{}*.nc4".format(self.y0_str))
+            #StateMetInst = join(self.devdir,
+            #                    "*.StateMet_inst.{}*.nc4".format(self.y0_str))
         else:
             StateMet = join(self.devdir,
                             "*.StateMet.{}*.nc4".format(self.y0_str))
@@ -130,8 +129,6 @@ class _GlobVars:
         # Restarts
         skip_vars = constants.skip_these_vars
         extra_kwargs = {}
-        #if LooseVersion(xr.__version__) >= LooseVersion("0.15.0"):
-        #    extra_kwargs = {'combine' : 'nested', 'concat_dim' : 'time'}
 
         self.ds_ini = xr.open_mfdataset(RstInit, drop_variables=skip_vars, **extra_kwargs)
         self.ds_end = xr.open_mfdataset(RstFinal, drop_variables=skip_vars, **extra_kwargs)
@@ -373,7 +370,7 @@ def annual_average(globvars, ds, collection, conv_factor):
         q[spc + "_f"] = ds[varname].values * conv_factor[spc]
     
         # Shape of the data
-        q_shape = q[spc + "_f"].shape
+        #q_shape = q[spc + "_f"].shape
         
         if "DryDep" in collection:
             # NOTE: DryDep is by nature trop-only
@@ -622,7 +619,7 @@ def print_budgets(globvars, data, key):
             print("Table 2. {} in the Troposphere for {}\n".format(
                 title, globvars.y0_str), file=f)
         elif "_s" in key:
-            print("Table 3. {} in the Stratosphere for 2016\n".format(
+            print("Table 3. {} in the Stratosphere for {}\n".format(
                 title, globvars.y0_str), file=f)
         print("                                210Pb          7Be         10Be",
               file=f)
@@ -632,7 +629,7 @@ def print_budgets(globvars, data, key):
         vals = [v[1] for v in list(data["burden"].items()) if key in v[0]]
         print("  Burden, g               {:11.4f}  {:11.4f}  {:11.4f}".format(
             *vals), file=f)
-        print(file=f),
+        print(file=f)
 
         if "_t" in key:
             vals = [v[1] for v in list(data["res_time"].items()) if key in v[0]]
@@ -741,9 +738,8 @@ def transport_tracers_budgets(devstr, devdir, devrstdir, year,
     data["accum_final"] = mass_from_rst(globvars, ds, tropmask)
 
     # Take the difference final - init
-    data["accum_diff"] = dict_diff(globvars,
-                              data["accum_init"],
-                              data["accum_final"])
+    data["accum_diff"] = dict_diff(data["accum_init"],
+                                   data["accum_final"])
     
     # ==================================================================
     # Burdens [g]
@@ -790,9 +786,8 @@ def transport_tracers_budgets(devstr, devdir, devrstdir, year,
                                data["snk_decay"]])
 
     # Sources - sinks
-    data["src_minus_snk"] = dict_diff(globvars,
-                                 data["snk_total"],
-                                 data["src_total"])
+    data["src_minus_snk"] = dict_diff(data["snk_total"],
+                                      data["src_total"])
 
     # Tropospheric residence time
     data["res_time"] = trop_residence_time(globvars)

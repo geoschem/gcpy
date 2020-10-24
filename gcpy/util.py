@@ -369,21 +369,21 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
 
     # Setup
     pdfobj = open(pdfname, "rb")
-    input = PdfFileReader(pdfobj, overwriteWarnings=False)
-    output = PdfFileWriter()
+    input_pdf = PdfFileReader(pdfobj, overwriteWarnings=False)
+    output_pdf = PdfFileWriter()
 
     for i, varname in enumerate(varlist):
         bookmarkname = varname.replace(remove_prefix, "")
         if verbose:
             print("Adding bookmark for {} with name {}".format(varname, bookmarkname))
-        output.addPage(input.getPage(i))
-        output.addBookmark(bookmarkname, i)
-        output.setPageMode("/UseOutlines")
+        output_pdf.addPage(input_pdf.getPage(i))
+        output_pdf.addBookmark(bookmarkname, i)
+        output_pdf.setPageMode("/UseOutlines")
 
     # Write to temp file
     pdfname_tmp = pdfname + "_with_bookmarks.pdf"
     outputstream = open(pdfname_tmp, "wb")
-    output.write(outputstream)
+    output_pdf.write(outputstream)
     outputstream.close()
 
     # Rename temp file with the target name
@@ -426,8 +426,8 @@ def add_nested_bookmarks_to_pdf(
     # Setup
     # ==================================================================
     pdfobj = open(pdfname, "rb")
-    input = PdfFileReader(pdfobj, overwriteWarnings=False)
-    output = PdfFileWriter()
+    input_pdf = PdfFileReader(pdfobj, overwriteWarnings=False)
+    output_pdf = PdfFileWriter()
     warninglist = [k.replace(remove_prefix, "") for k in warninglist]
 
     # ==================================================================
@@ -452,9 +452,9 @@ def add_nested_bookmarks_to_pdf(
 
         # There are non-zero variables to plot in this subcategory
         i = i + 1
-        output.addPage(input.getPage(i))
-        parent = output.addBookmark(subcat, i)
-        output.setPageMode("/UseOutlines")
+        output_pdf.addPage(input_pdf.getPage(i))
+        parent = output_pdf.addBookmark(subcat, i)
+        output_pdf.setPageMode("/UseOutlines")
         first = True
 
         # Loop over variables in this subcategory; make children bookmarks
@@ -463,20 +463,20 @@ def add_nested_bookmarks_to_pdf(
                 print("Warning: skipping {}".format(varname))
                 continue
             if first:
-                output.addBookmark(varname, i, parent)
+                output_pdf.addBookmark(varname, i, parent)
                 first = False
             else:
                 i = i + 1
-                output.addPage(input.getPage(i))
-                output.addBookmark(varname, i, parent)
-                output.setPageMode("/UseOutlines")
+                output_pdf.addPage(input_pdf.getPage(i))
+                output_pdf.addBookmark(varname, i, parent)
+                output_pdf.setPageMode("/UseOutlines")
 
     # ==================================================================
     # Write to temp file
     # ==================================================================
     pdfname_tmp = pdfname + "_with_bookmarks.pdf"
     outputstream = open(pdfname_tmp, "wb")
-    output.write(outputstream)
+    output_pdf.write(outputstream)
     outputstream.close()
 
     # Rename temp file with the target name
@@ -627,7 +627,6 @@ def get_diff_of_diffs(ref, dev):
     #get diff of diffs datasets for 2 datasets
     #limit each pair to be the same type of output (GEOS-Chem Classic or GCHP)
     #and same resolution / extent
-    skip_vars = gcon.skip_these_vars
     vardict = compare_varnames(ref, dev, quiet=True)
     varlist = vardict["commonvars"]
     # Select only common fields between the Ref and Dev datasets
@@ -667,7 +666,8 @@ def get_diff_of_diffs(ref, dev):
                     absdiffs[v].attrs = dev[v].attrs
                     fracdiffs[v].attrs = dev[v].attrs
     else:
-        raise(ValueError, 'Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere) within each dataset pair')
+        print('Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere) within each dataset pair')
+        raise ValueError
     
     return absdiffs, fracdiffs
 
@@ -745,15 +745,13 @@ def rename_and_flip_gchp_rst_vars(ds):
     return ds
 
 
-def dict_diff(globvars, dict0, dict1):
+def dict_diff(dict0, dict1):
     """
     Function to take the difference of two dict objects.
     Assumes that both objects have the same keys.
 
     Args:
     -----
-        globvars : obj of type _GlobVars
-            Global variables needed for budget computations.
         dict0, dict1 : dict
             Dictionaries to be subtracted (dict1 - dict0)
 
@@ -763,7 +761,7 @@ def dict_diff(globvars, dict0, dict1):
             Key-by-key difference of dict1 - dict0
     """
     result = {}
-    for key, value in dict0.items():
+    for key, _ in dict0.items():
         result[key] = dict1[key] - dict0[key]
 
     return result
@@ -1039,7 +1037,6 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
 
         # If fullname replacement:
         if idaction == "replace":
-            oldvar = oldid
             newvar = newid
 
             # Update the dictionary of names with this pair
@@ -1050,7 +1047,6 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
         else:
             linearr = variable_name.split("_")
             varstr = linearr[-1]
-            oldvar = oldid + varstr
 
             # These categories use append
             if oldid in [
@@ -1247,7 +1243,7 @@ def add_lumped_species_to_dataset(
 
         # Loop over and sum constituent species values
         num_spc = 0
-        for i, spc in enumerate(lspc_dict[lspc]):
+        for _, spc in enumerate(lspc_dict[lspc]):
             varname = prefix + spc
             if varname not in ds_new.data_vars:
                 print("Warning: {} needed for {} not in dataset.".\

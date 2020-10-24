@@ -1,12 +1,6 @@
 import argparse
-import os.path
-
-import numpy as np
 import xarray as xr
-
 from .grid import make_grid_SG
-
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Append grid-box corners to file')

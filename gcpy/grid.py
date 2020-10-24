@@ -5,7 +5,7 @@ import scipy.sparse
 from itertools import product
 from .util import get_shape_of_data
 from .grid_stretching_transforms import scs_transform
-
+from .constants import R_EARTH_m
 
 def get_troposphere_mask(ds):
     """
@@ -342,7 +342,7 @@ def get_ind_of_pres(dataset, pres):
             Index of level in dataset that corresponds to requested pressure
 
     """
-    pedge, pmid, nlev = get_vert_grid(dataset)
+    pedge, pmid, _ = get_vert_grid(dataset)
     converted_dataset = convert_lev_to_pres(dataset, pmid, pedge)
     return np.argmin(np.abs(converted_dataset['lev']-pres).values)
 
@@ -614,7 +614,7 @@ def make_grid_LL(llres, in_extent=[-180,180,-90,90], out_extent=[]):
               'lon_b': lon_b}
     return llgrid
 
-def make_grid_CS(csres,out_extent=[0,360,-90,90]):
+def make_grid_CS(csres):
     """
     Creates a cubed-sphere grid description.
 
@@ -622,13 +622,6 @@ def make_grid_CS(csres,out_extent=[0,360,-90,90]):
     -----
         csres : int
             cubed-sphere resolution of target grid
-
-    Keyword Args (optional):
-    ------------------------
-        out_extent : list[float, float, float, float]
-            Describes minimum and maximum latitude and longitude of target grid
-            in the format [minlon, maxlon, minlat, maxlat]. Uses a 0-360 lon scale
-            Default value: [0, 360, -90, 90]
 
     Returns:
     -----
@@ -803,10 +796,9 @@ def calc_rectilinear_grid_area(lon_edge,lat_edge):
     --------
     [NONE]
     """
-    from .. constants import R_EARTH
 
     # Convert from km to m
-    _radius_earth_m = R_EARTH * 1000.0
+    _radius_earth_m = R_EARTH_m
 
     lon_edge = asarray(lon_edge, dtype=float)
     lat_edge = asarray(lat_edge, dtype=float)
@@ -1106,7 +1098,7 @@ class CSGrid(object):
 
                         if ((c % 2) != 0) and (j == c//2 - 1):
                             print(i, j, face)
-                            new_xyz[0] = np.pi
+                            new_xyz = (np.pi, *new_xyz)
 
                     elif face == 4:
                         temp_xyz = rotate_sphere_3D(x, y, z, np.pi/2., 'z')

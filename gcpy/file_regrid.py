@@ -1,6 +1,4 @@
 import argparse
-import os.path
-
 import numpy as np
 import xarray as xr
 try:
@@ -12,8 +10,8 @@ except ImportError as e:
     print('file_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
 import pandas as pd
 
-from gcpy.grid import make_grid_SG, get_input_res, get_vert_grid, get_grid_extents
-from gcpy.regrid import make_regridder_S2S, sg_hash, reformat_dims, make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
+from gcpy.grid import get_input_res, get_vert_grid, get_grid_extents
+from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
 from gcpy.util import reshape_MAPL_CS
 
 def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_out='0x0', sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]):

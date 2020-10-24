@@ -8,6 +8,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 import scipy.sparse
+import warnings
 
 def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False,
                         in_extent=[-180,180,-90,90], out_extent=[-180,180,-90,90]):
@@ -44,8 +45,6 @@ def make_regridder_L2L( llres_in, llres_out, weightsdir='.', reuse_weights=False
             regridder object between the two specified grids
     """
 
-    [in_minlon, in_maxlon, in_minlat, in_maxlat] = in_extent
-    [out_minlon, out_maxlon, out_minlat, out_maxlat] = out_extent
     llgrid_in = make_grid_LL(llres_in, in_extent, out_extent)
     llgrid_out = make_grid_LL(llres_out, out_extent)
     if in_extent == [-180,180,-90,90] and out_extent == [-180,180,-90,90]:
@@ -93,9 +92,9 @@ def make_regridder_C2L( csres_in, llres_out, weightsdir='.', reuse_weights=True,
     """
     [sf_in, tlon_in, tlat_in] = sg_params
     if sg_params == [1, 170, -90]:        
-        csgrid, csgrid_list = make_grid_CS(csres_in)
+        _, csgrid_list = make_grid_CS(csres_in)
     else:
-        csgrid, csgrid_list = make_grid_SG(csres_in, stretch_factor=sg_params[0], target_lon=sg_params[1], target_lat=sg_params[2])
+        _, csgrid_list = make_grid_SG(csres_in, stretch_factor=sg_params[0], target_lon=sg_params[1], target_lat=sg_params[2])
     llgrid = make_grid_LL(llres_out)
     regridder_list = []
     for i in range(6):
@@ -159,8 +158,8 @@ def make_regridder_S2S(csres_in, csres_out, sf_in=1, tlon_in=170, tlat_in=-90,
             list of regridder objects (one per cubed-sphere face) between the two specified grids
     """
 
-    igrid, igrid_list = make_grid_SG(csres_in, stretch_factor=sf_in, target_lat=tlat_in, target_lon=tlon_in)
-    ogrid, ogrid_list = make_grid_SG(csres_out, stretch_factor=sf_out, target_lat=tlat_out, target_lon=tlon_out)
+    _, igrid_list = make_grid_SG(csres_in, stretch_factor=sf_in, target_lat=tlat_in, target_lon=tlon_in)
+    _, ogrid_list = make_grid_SG(csres_out, stretch_factor=sf_out, target_lat=tlat_out, target_lon=tlon_out)
     regridder_list = []
     for o_face in range(6):
         regridder_list.append({})
@@ -214,9 +213,9 @@ def make_regridder_L2S(llres_in, csres_out, weightsdir='.', reuse_weights=True, 
 
     llgrid = make_grid_LL(llres_in)
     if sg_params == [1, 170, -90]:        
-        csgrid, csgrid_list = make_grid_CS(csres_out)
+        _, csgrid_list = make_grid_CS(csres_out)
     else:
-        csgrid, csgrid_list = make_grid_SG(csres_out, stretch_factor=sg_params[0], target_lon=sg_params[1], target_lat=sg_params[2])
+        _, csgrid_list = make_grid_SG(csres_out, stretch_factor=sg_params[0], target_lon=sg_params[1], target_lat=sg_params[2])
     
     regridder_list=[]
     for i in range(6):
@@ -366,11 +365,11 @@ def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=N
     # ==================================================================
     # Make grids (ref, dev, and comparison)
     # ==================================================================
-    [refgrid, refgrid_list] = call_make_grid(refres, refgridtype, ref_extent, cmp_extent, sg_ref_params)
+    [refgrid, _] = call_make_grid(refres, refgridtype, ref_extent, cmp_extent, sg_ref_params)
 
-    [devgrid, devgrid_list] = call_make_grid(devres, devgridtype, dev_extent, cmp_extent, sg_dev_params)
+    [devgrid, _] = call_make_grid(devres, devgridtype, dev_extent, cmp_extent, sg_dev_params)
 
-    [cmpgrid, cmpgrid_list] = call_make_grid(cmpres, cmpgridtype, cmp_extent, cmp_extent, sg_cmp_params)
+    [cmpgrid, _] = call_make_grid(cmpres, cmpgridtype, cmp_extent, cmp_extent, sg_cmp_params)
     
     # =================================================================
     # Make regridders, if applicable
@@ -767,8 +766,6 @@ def gen_xmat(p_edge_from,p_edge_to):
         while p_edge_to[i_to+1] > p_edge_from[0]:
             i_to += 1
     
-    p_base_to = p_edge_to[i_to]
-    p_top_to  = p_edge_to[i_to+1]
     frac_to_total = 0.0
     
     i_weight = 0
@@ -789,11 +786,8 @@ def gen_xmat(p_edge_from,p_edge_to):
         while p_edge_to[i_to] >= p_top_from and not last_box and not i_to >= n_to:
             p_base_common = min(p_base_from,p_edge_to[i_to])
             p_top_common = max(p_top_from,p_edge_to[i_to+1])
-            # Fraction of source box
-            frac_from = (p_base_common - p_top_common)/(p_base_from-p_top_from)
             # Fraction of target box
             frac_to   = (p_base_common - p_top_common)/(p_edge_to[i_to]-p_edge_to[i_to+1])
-            #print(frac_to)
             
             xmat_i[i_weight] = i_from
             xmat_j[i_weight] = i_to
