@@ -16,7 +16,7 @@ from gcpy.grid import make_grid_SG, get_input_res, get_vert_grid, get_grid_exten
 from gcpy.regrid import make_regridder_S2S, sg_hash, reformat_dims, make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
 from gcpy.util import reshape_MAPL_CS
 
-def regrid_file(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_out='0x0', sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]):
+def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_out='0x0', sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]):
     
     # Load dataset
     ds_in = xr.open_dataset(fin, decode_cf=False)
@@ -259,6 +259,6 @@ if __name__ == '__main__':
                         required=True,
                         help='format of the output file\'s dimensions (choose from: checkpoint, diagnostic)')
     args = parser.parse_args()
-    regrid_file(args.filein, args.fileout, args.dim_format_in, args.dim_format_out, 
+    file_regrid(args.filein, args.fileout, args.dim_format_in, args.dim_format_out, 
                 args.cs_res_out, args.ll_res_out, args.sg_params_in, args.sg_params_out)
     

@@ -627,7 +627,7 @@ def compare_single_level(
                 msg = "Met mata ust be passed to convert units to ug/m3."
                 raise ValueError(msg)
             elif normalize_by_area:
-                msg = "Normalizing by area is now allowed if plotting ug/m3"
+                msg = "Normalizing by area is not allowed if plotting ug/m3"
                 raise ValueError(msg)
             elif ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
                 msg = "Units must be mol/mol if converting to ug/m3."
