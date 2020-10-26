@@ -1,6 +1,4 @@
 import argparse
-import os.path
-
 import numpy as np
 import xarray as xr
 try:
@@ -12,12 +10,48 @@ except ImportError as e:
     print('file_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
 import pandas as pd
 
-from gcpy.grid import make_grid_SG, get_input_res, get_vert_grid, get_grid_extents
-from gcpy.regrid import make_regridder_S2S, sg_hash, reformat_dims, make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
+from gcpy.grid import get_input_res, get_vert_grid, get_grid_extents
+from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
 from gcpy.util import reshape_MAPL_CS
 
 def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_out='0x0', sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]):
-    
+
+    """
+    Regrids an input file to a new horizontal grid specification and saves it
+    as a new file. 
+
+    Args:
+    -----
+        fin : str
+            The input filename
+        fout : str
+            The output filename (file will be overwritten if it already exists)
+        dim_format_in : str
+            Format of the input file's dimensions (choose from: classic, checkpoint, diagnostic),
+            where classic denotes lat/lon and checkpoint / diagnostic are cubed-sphere formats
+        dim_format_out : str
+            Format of the output file's dimensions (choose from: classic, checkpoint, diagnostic),
+            where classic denotes lat/lon and checkpoint / diagnostic are cubed-sphere formats
+
+    Keyword Args (optional):
+    ------------------------
+        cs_res_out : int
+            The cubed-sphere resolution of the output dataset. Not used if dim_format_out is classic
+            Default value: 0
+        ll_res_out : str 
+            The lat/lon resolution of the output dataset. Not used if dim_format_out is not classic
+            Default value: '0x0'
+        sg_params_in : list[float, float, float]
+            Input grid stretching parameters [stretch-factor, target longitude, target latitude].
+            Not used if dim_format_in is classic
+            Default value: [1.0, 170.0, -90.0] (No stretching)
+        sg_params_out : list[float, float, float]
+            Output grid stretching parameters [stretch-factor, target longitude, target latitude].
+            Not used if dim_format_out is classic
+            Default value: [1.0, 170.0, -90.0] (No stretching)
+
+    """
+
     # Load dataset
     ds_in = xr.open_dataset(fin, decode_cf=False)
     ds_in = ds_in.load()
@@ -182,6 +216,26 @@ def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_o
 
 
 def rename_restart_variables(ds, towards_gchp=True):
+    """
+    Renames restart variables according to GEOS-Chem Classic and GCHP conventions.
+
+    Args:
+    -----
+        ds : xarray.Dataset
+            The input dataset
+
+    Keyword Args (optional):
+    ------------------------
+        towards_gchp : bool
+            Whether renaming to (True) or from (False) GCHP format
+            Default value: True
+
+    Returns:
+    -------
+        xarray.Dataset
+            Input dataset with variables renamed
+    """
+
     if towards_gchp:
         old_str = 'SpeciesRst'
         new_str = 'SPC'
@@ -192,6 +246,27 @@ def rename_restart_variables(ds, towards_gchp=True):
 
 
 def drop_and_rename_classic_vars(ds, towards_gchp=True):
+    """
+    Renames and drops certain restart variables according to GEOS-Chem Classic 
+    and GCHP conventions.
+
+    Args:
+    -----
+        ds : xarray.Dataset
+            The input dataset
+
+    Keyword Args (optional):
+    ------------------------
+        towards_gchp : bool
+            Whether going to (True) or from (False) GCHP format
+            Default value: True
+
+    Returns:
+    -------
+        xarray.Dataset
+            Input dataset with variables renamed and dropped
+    """
+
     if towards_gchp:
         ds = ds.rename({name : name.replace('Met_', '', 1).replace('Chem_', '', 1) for name in list(ds.data_vars)
                         if name.startswith('Met_') or name.startswith('Chem_')})

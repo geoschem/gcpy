@@ -431,7 +431,7 @@ def print_metrics(common_vars, dst):
         # Write CH4 lifetime [years]
         # ==============================================================
         title = "CH4 lifetime w/r/t tropospheric OH [years]"
-        diff = common_vars["ch4_life_ref"] - common_vars["ch4_life_dev"]
+        absdiff = common_vars["ch4_life_ref"] - common_vars["ch4_life_dev"]
         pctdiff = (absdiff / common_vars["ch4_life_ref"]) * 100.0
         write_to_file(
             f,
@@ -481,7 +481,7 @@ def make_benchmark_oh_metrics(
             containing emissions totals will be written.
             Default value: ./benchmark
 
-        overwrite : boolean
+        overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value : False

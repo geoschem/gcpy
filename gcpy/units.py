@@ -14,14 +14,17 @@ def adjust_units(units):
     conversion routines below.
 
     Args:
+    -----
         units : str
             Input unit string.
 
     Returns:
+    --------
         adjusted_units: str
             Output unit string, adjusted to a consistent value.
 
     Remarks:
+    --------
         Unit list is incomplete -- currently is geared to units from
         common model diagnostics (e.g. kg/m2/s, kg, and variants).
     """
@@ -60,6 +63,7 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
     Converts a data array from kg to one of several types of target units.
 
     Args:
+    -----
         data_kg : numpy ndarray
             Input data array, in units of kg.
 
@@ -72,11 +76,13 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
             Conversion factor from kg to kg carbon.
 
      Returns:
+     --------
         data : numpy ndarray
             Ouptut data array, converted to the units specified
             by the 'target_units' argument.
 
      Remarks:
+     --------
         At present, only those unit conversions corresponding to the
         GEOS-Chem benchmarks have been implemented.
 
@@ -141,14 +147,11 @@ def convert_units(
     -----
         dr : xarray DataArray
             Data to be converted from native units to target units.
-
         species_name : str
             Name of the species corresponding to the data stored in "dr".
-
         species_properties : dict
             Dictionary containing species properties (e.g. molecular
             weights and other metadata) for the given species.
-
         target_units : str
             Units to which the data will be converted.
 
@@ -156,16 +159,17 @@ def convert_units(
     ------------------------
         interval : float
             The length of the averaging period in seconds.
-
+            Default value: [2678400.0]
         area_m2 : xarray DataArray
             Surface area in square meters
-
+            Default value: None
         delta_p : xarray DataArray
             Delta-pressure between top and bottom edges of grid box (dry air)
             in hPa
-
+            Default value: None
         box_height : xarray DataArray
             Grid box height in meters
+            Default value: None
 
     Returns:
     --------
@@ -267,7 +271,7 @@ def convert_units(
             # Need to right pad the interval array with new axes up to the
             # time dim of the dataset to enable broadcasting
             numnewdims = len(dr.dims) - (dr.dims.index('time') + 1)
-            for newdim in range(numnewdims):
+            for _ in range(numnewdims):
                 numsec = numsec[:, np.newaxis]
         else:
             # Raise an error if no time in dataset but interval has length > 1
@@ -342,9 +346,9 @@ def check_units(ref_da, dev_da, enforce_units=True):
 
     Keyword Args (optional):
     ------------------------
-        enforce_units : boolean
+        enforce_units : bool
             Whether to stop program if ref and dev units do not match
-
+            Default value: True
     Returns:
     --------
         units_match : bool

@@ -5,16 +5,18 @@ import scipy.sparse
 from itertools import product
 from .util import get_shape_of_data
 from .grid_stretching_transforms import scs_transform
-
+from .constants import R_EARTH_m
 
 def get_troposphere_mask(ds):
     """
     Returns a mask array for picking out the tropospheric grid boxes.
+
     Args:
     -----
         ds : xarray Dataset
             Dataset containing certain met field variables (i.e.
             Met_TropLev, Met_BXHEIGHT).
+
     Returns:
     --------
         tropmask : numpy ndarray
@@ -103,19 +105,15 @@ def get_input_res(data):
 
     Args:
     -----
-
         data : xarray Dataset
             Input GEOS-Chem dataset
-
         sg_params : list [stretch_factor, target_longitude, target_latitude]
             Stretched-grid parameters of the dataset (not currently gatherable from grid structure)
 
     Returns:
     -----
-
         res : str or int
             Lat/lon res of the form 'latresxlonres' or cubed-sphere resolution
-
         gridtype : str
             'll' for lat/lon or 'cs' for cubed-sphere
 
@@ -150,25 +148,27 @@ def call_make_grid(res, gridtype, in_extent=[-180,180,-90,90],
 
     Args:
     -----
-
         res : str or int
             Resolution of grid (format 'latxlon' or csres)
-
         gridtype : str
             'll' for lat/lon or 'cs' for cubed-sphere
 
-        zonal_mean : boolean
-            Set to True if the output grid is for a zonal mean plot
-
-        in_extent : list (minlon, maxlon, minlat, maxlat)
+    Keyword Args (optional):
+    ------------------------
+        in_extent : list[float, float, float, float]
             Describes minimum and maximum latitude and longitude of input data
-
-        out_extent : list (minlon, maxlon, minlat, maxlat)
+            in the format [minlon, maxlon, minlat, maxlat]
+            Default value: [-180, 180, -90, 90]
+        out_extent : list[float, float, float, float]
             Desired minimum and maximum latitude and longitude of output grid
-
-        sg_params : list (stretch_factor, target_longitude, target_latitude)
-            Desired stretched-grid parameters (will trigger stretched-grid creation if not empty)
-
+            in the format [minlon, maxlon, minlat, maxlat]
+            Default value: [-180, 180, -90, 90]
+        sg_params : list[float, float, float] (stretch_factor, target_longitude, target_latitude)
+            Desired stretched-grid parameters in the format
+            [stretch_factor, target_longitude, target_latitude]. 
+            Will trigger stretched-grid creation if not default values.
+            Default value: [1, 170, -90] (no stretching)
+            
     Returns:
     -----
         [grid, grid_list] : list(dict, list(dict))
@@ -192,17 +192,18 @@ def get_grid_extents(data, edges=True):
     -----
         data : xarray Dataset or dict
             A GEOS-Chem dataset or a grid dict
+        edges (optional) : bool
+            Whether grid extents should use cell edges instead of centers
+            Default value: True
+
     Returns:
     -----
         minlon : float
             Minimum longitude of data grid
-
         maxlon : float
             Maximum longitude of data grid
-
         minlat : float
             Minimum latitude of data grid
-
         maxlat : float
             Maximum latitude of data grid
     """
@@ -246,20 +247,21 @@ def get_vert_grid(dataset, AP=[[],[]], BP=[[],[]]):
         dataset : xarray Dataset
             A GEOS-Chem output dataset
 
+    Keyword Args (optional):
+    ------------------------
         AP : list-like type
             Hybrid grid parameter A in hPa
-
+            Default value: [[], []]
         BP : list-like type
             Hybrid grid parameter B (unitless)        
+            Default value: [[], []]
 
     Returns:
     -----
         p_edge : numpy array
             Edge pressure values for vertical grid
-
         p_mid  : numpy array
             Midpoint pressure values for vertical grid
-
         nlev : int
             Number of levels in vertical grid
     """
@@ -284,7 +286,6 @@ def get_pressure_indices(pedge, pres_range):
     -----
         pedge : numpy array
             A GEOS-Chem output dataset
-
         pres_range : list(float, float)
             Contains minimum and maximum pressure
 
@@ -304,10 +305,8 @@ def pad_pressure_edges(pedge_ind, max_ind, pmid_len):
     -----
         pedge_ind : list
             List of edge pressure indices
-
         max_ind : int
             Maximum index
-
         pmid_len : int
             Length of pmid which should not be exceeded by indices
             
@@ -334,7 +333,6 @@ def get_ind_of_pres(dataset, pres):
     -----
         dataset : xarray Dataset
             GEOS-Chem dataset
-
         pres : int or float
             Desired pressure value
 
@@ -344,7 +342,7 @@ def get_ind_of_pres(dataset, pres):
             Index of level in dataset that corresponds to requested pressure
 
     """
-    pedge, pmid, nlev = get_vert_grid(dataset)
+    pedge, pmid, _ = get_vert_grid(dataset)
     converted_dataset = convert_lev_to_pres(dataset, pmid, pedge)
     return np.argmin(np.abs(converted_dataset['lev']-pres).values)
 
@@ -356,15 +354,13 @@ def convert_lev_to_pres(dataset, pmid, pedge, lev_type='pmid'):
     -----
         dataset : xarray Dataset
             GEOS-Chem dataset
-
         pmid : np.array
             Midpoint pressure values
-
         pedge : np.array
-            Edge pressure values
-        
-        lev_type : str
+            Edge pressure values        
+        lev_type (optional): str
             Denote whether lev is 'pedge' or 'pmid' if grid is not 72/73 or 47/48 levels
+            Default value: 'pmid'
 
     Returns:
     -----
@@ -547,6 +543,35 @@ CAM_26L_grid = vert_grid(_CAM_26L_AP, _CAM_26L_BP)
 
 
 def make_grid_LL(llres, in_extent=[-180,180,-90,90], out_extent=[]):
+    """
+    Creates a lat/lon grid description.
+
+    Args:
+    -----
+        llres : str
+            lat/lon resolution in 'latxlon' format (e.g. '4x5')
+
+    Keyword Args (optional):
+    ------------------------
+        in_extent : list[float, float, float, float]
+            Describes minimum and maximum latitude and longitude of initial grid
+            in the format [minlon, maxlon, minlat, maxlat]
+            Default value: [-180, 180, -90, 90]
+        out_extent : list[float, float, float, float]
+            Describes minimum and maximum latitude and longitude of target grid
+            in the format [minlon, maxlon, minlat, maxlat]. Needed when intending
+            to use grid to trim extent of input data
+            Default value: [] (assumes value of in_extent)
+
+    Returns:
+    -----
+        llgrid : dict
+            dict grid description of format {'lat'   : lat midpoints,
+                                             'lon'   : lon midpoints,
+                                             'lat_b' : lat edges,
+                                             'lon_b' : lon edges}
+    """
+
     #get initial bounds of grid
     [minlon, maxlon, minlat, maxlat] = in_extent
     [dlat,dlon] = list(map(float, llres.split('x')))
@@ -589,7 +614,26 @@ def make_grid_LL(llres, in_extent=[-180,180,-90,90], out_extent=[]):
               'lon_b': lon_b}
     return llgrid
 
-def make_grid_CS(csres,out_extent=[0,360,-90,90]):
+def make_grid_CS(csres):
+    """
+    Creates a cubed-sphere grid description.
+
+    Args:
+    -----
+        csres : int
+            cubed-sphere resolution of target grid
+
+    Returns:
+    -----
+        [csgrid, csgrid_list] : list[dict, list[dict]]
+            csgrid is a dict of format {'lat'   : lat midpoints,
+                                        'lon'   : lon midpoints,
+                                        'lat_b' : lat edges,
+                                        'lon_b' : lon edges}
+            where each value has an extra face dimension of length 6.
+            csgrid_list is a list of dicts separated by face index
+    """
+
     csgrid = csgrid_GMAO(csres)
     csgrid_list = [None]*6
     for i in range(6):
@@ -601,6 +645,31 @@ def make_grid_CS(csres,out_extent=[0,360,-90,90]):
     return [csgrid, csgrid_list]
 
 def make_grid_SG(csres, stretch_factor, target_lon, target_lat):
+    """
+    Creates a stretched-grid grid description.
+
+    Args:
+    -----
+        csres : int
+            cubed-sphere resolution of target grid
+        stretch_factor : float
+            stretch factor of target grid
+        target_lon : float
+            target stretching longitude of target grid
+        target_lon : float
+            target stretching latitude of target grid
+
+    Returns:
+    -----
+        [csgrid, csgrid_list] : list[dict, list[dict]]
+            csgrid is a dict of format {'lat'   : lat midpoints,
+                                        'lon'   : lon midpoints,
+                                        'lat_b' : lat edges,
+                                        'lon_b' : lon edges}
+            where each value has an extra face dimension of length 6.
+            csgrid_list is a list of dicts separated by face index
+    """
+
     csgrid = csgrid_GMAO(csres, offset=0)
     csgrid_list = [None] * 6
     for i in range(6):
@@ -633,7 +702,7 @@ def calc_rectilinear_lon_edge(lon_stride, center_at_180):
     lon_stride : float
         Stride length in degrees. For example, for a standard GEOS-Chem Classic
         4x5 grid, lon_stride would be 5.
-    center_at_180: boolean
+    center_at_180: bool
         Whether or not the grid should have a cell center at 180 degrees (i.e.
         on the date line). If true, the first grid cell is centered on the date
         line; if false, the first grid edge is on the date line.
@@ -672,7 +741,7 @@ def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
     lat_stride : float
         Stride length in degrees. For example, for a standard GEOS-Chem Classic
         4x5 grid, lat_stride would be 4.
-    half_polar_grid: boolean
+    half_polar_grid: bool
         Whether or not the grid should be "half-polar" (i.e. bands at poles are
         half the size). In either case the grid will start and end at -/+ 90,
         but when half_polar_grid is True, the first and last bands will have a
@@ -727,10 +796,9 @@ def calc_rectilinear_grid_area(lon_edge,lat_edge):
     --------
     [NONE]
     """
-    from .. constants import R_EARTH
 
     # Convert from km to m
-    _radius_earth_m = R_EARTH * 1000.0
+    _radius_earth_m = R_EARTH_m
 
     lon_edge = asarray(lon_edge, dtype=float)
     lat_edge = asarray(lat_edge, dtype=float)
@@ -1030,7 +1098,7 @@ class CSGrid(object):
 
                         if ((c % 2) != 0) and (j == c//2 - 1):
                             print(i, j, face)
-                            new_xyz[0] = np.pi
+                            new_xyz = (np.pi, *new_xyz)
 
                     elif face == 4:
                         temp_xyz = rotate_sphere_3D(x, y, z, np.pi/2., 'z')
