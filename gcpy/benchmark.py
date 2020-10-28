@@ -353,7 +353,7 @@ def create_global_mass_table(
     """
     Creates a table of global masses for a list of species in contained in
     two data sets.  The data sets,  which typically represent output from two
-    differnet model versions, are usually contained in netCDF data files.
+    different model versions, are usually contained in netCDF data files.
 
     Args:
     -----
@@ -614,10 +614,17 @@ def make_benchmark_conc_plots(
         overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
-            Default value: False.
+            Default value: False
         verbose : bool
             Set this flag to True to print extra informational output.
-            Default value: False.
+            Default value: False
+		collection : str
+			Name of collection to use for plotting.
+			Default value: "SpeciesConc"
+		benchmark_type: str
+			A string denoting the type of benchmark output to plot,
+			either FullChemBenchmark or TransportTracersBenchmark. 
+			Default value: "FullChemBenchmark"
         plot_by_spc_cat: logical
             Set this flag to False to send plots to one file rather
             than separate file per category.
@@ -636,6 +643,7 @@ def make_benchmark_conc_plots(
         normalize_by_area: bool
             Set this flag to true to enable normalization of data
             by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
+			Default value: False
         cats_in_ugm3: list of str
             List of benchmark categories to to convert to ug/m3
             Default value: ["Aerosols", "Secondary_Organic_Aerosols"]
@@ -2378,13 +2386,13 @@ def make_benchmark_mass_tables(
 
     Args:
     -----
-        reflist : list of str
-            List of files (i.e. pathnames) that will constitute
+        reflist : str
+            Pathname that will constitute
             the "Ref" (aka "Reference") data set.
         refstr : str
             A string to describe ref (e.g. version number)
         dev : list of str
-            List of files (i.e. pathnames) that will constitute
+            Pathname that will constitute
             the "Dev" (aka "Development") data set.  The "Dev"
             data set will be compared against the "Ref" data set.
         devstr : str
@@ -2889,6 +2897,10 @@ def make_benchmark_wetdep_plots(
             plot pdf filename and as a destination folder subdirectory
             for writing plots
             Default value: None
+		benchmark_type: str
+			A string denoting the type of benchmark output to plot,
+			either FullChemBenchmark or TransportTracersBenchmark. 
+			Default value: "FullChemBenchmark"			
         overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
