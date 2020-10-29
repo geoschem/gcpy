@@ -93,7 +93,7 @@ setup(
     include_package_data=True,
     install_requires=["xesmf>=0.2.1", "scipy>=1.3.1", "Cartopy>=0.17.0", "pandas>=0.25.1",
                       "matplotlib>=3.1.1", "tabulate>=0.8.3", "joblib>=0.17.0", "xbpch>=0.3.5", 
-                      "numpy>=1.19.1", "PyPDF2>=1.26.0"],
+                      "numpy>=1.19.1", "PyPDF2>=1.26.0", "sphinx", "sphinx-rtd-theme", "sphinx-autoapi"],
     classifiers = CLASSIFIERS
 )
 
