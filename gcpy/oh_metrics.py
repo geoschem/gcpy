@@ -6,7 +6,7 @@ Requires Python3.
 
 Calling sequence:
 -----------------
-./ph_metrics.py
+./oh_metrics.py
 """
 # =====================================================================
 # %%% IMPORTS ETC. %%%
@@ -17,13 +17,6 @@ import numpy as np
 import xarray as xr
 import yaml
 import gcpy.constants as const
-
-# Tell matplotlib not to look for an X-window
-os.environ["QT_QPA_PLATFORM"] = "offscreen"
-
-# Suppress harmless run-time warnings (mostly about underflow in division)
-warnings.filterwarnings("ignore", category=RuntimeWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
 
 # =====================================================================
 # %%% METHODS %%%
@@ -490,6 +483,12 @@ def make_benchmark_oh_metrics(
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
     """
+    # Tell matplotlib not to look for an X-window
+    os.environ["QT_QPA_PLATFORM"] = "offscreen"
+    
+    # Suppress harmless run-time warnings (mostly about underflow in division)
+    warnings.filterwarnings("ignore", category=RuntimeWarning)
+    warnings.filterwarnings("ignore", category=UserWarning)
 
     # Make sure that the destination directory exists
     # (or create it if it does not)
