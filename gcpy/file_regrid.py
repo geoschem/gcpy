@@ -15,6 +15,7 @@ from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, m
 from gcpy.util import reshape_MAPL_CS
 
 def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_out='0x0', sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]):
+
     """
     Regrids an input file to a new horizontal grid specification and saves it
     as a new file. 
@@ -50,6 +51,7 @@ def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_o
             Default value: [1.0, 170.0, -90.0] (No stretching)
 
     """
+
     # Load dataset
     ds_in = xr.open_dataset(fin, decode_cf=False)
     ds_in = ds_in.load()

@@ -9,8 +9,6 @@ of GEOS-Chem, but can also be used to compare results from different points in o
 are stored in separate xarray datasets.
 The example data described here is in lat/lon format, but the same code works equally
 well for cubed-sphere (GCHP) data. 
-For full documentation on the plotting capabilities of GCPy (including full argument lists), 
-please see the GCPy Wiki at https://github.com/geoschem/gcpy/wiki
 """
 
 #xarray allows us to read in any NetCDF file, the format of most GEOS-Chem diagnostics,
