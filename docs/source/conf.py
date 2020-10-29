@@ -33,6 +33,11 @@ release = '1.0.0-alpha.0'
 extensions = [
 ]
 
+extensions.append('autoapi.extension')
+
+autoapi_type = 'python'
+autoapi_dirs = ['../../gcpy']
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
