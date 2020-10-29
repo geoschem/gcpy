@@ -14,7 +14,7 @@ Welcome to GCPy's documentation!
    Guide-to-Useful-Capabilities
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 4
    :caption: Detailed Functionality Documentation:
    
    Plotting

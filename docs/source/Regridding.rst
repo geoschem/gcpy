@@ -4,7 +4,7 @@ Regridding
 This page describes the regridding capabilities of GCPy. GCPy currently supports regridding of data from GEOS-Chem restarts and output NetCDF files.
 Regridding is supported across any horizontal resolution and any grid type available in GEOS-Chem, including lat/lon (global or non-global), global 
 standard cubed-sphere, and global stretched-grid. GCPy also supports arbitrary vertical regridding across different vertical resolutions.
-    
+   
 
 Regridding for Plotting in GCPy
 -------------------------------
@@ -60,45 +60,64 @@ or as a function (``gcpy.file_regrid.file_regrid()``) from a Python script or in
 
 .. code-block:: python
 
-    def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_out='0x0', 
-        sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]
-    ):
-        """
-        Regrids an input file to a new horizontal grid specification and saves it
-        as a new file.
+   def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_out='0x0', 
+   sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]
+   ):
+   """
+   Regrids an input file to a new horizontal grid specification and saves it
+   as a new file.
+   """
 
-        Args:
-        -----
-            fin : str
-                The input filename
-            fout : str
-                The output filename (file will be overwritten if it already exists)
-            dim_format_in : str
-                Format of the input file's dimensions (choose from: classic, checkpoint, diagnostic),
-                where classic denotes lat/lon and checkpoint / diagnostic are cubed-sphere formats
-            dim_format_out : str
-                Format of the output file's dimensions (choose from: classic, checkpoint, diagnostic),
-                where classic denotes lat/lon and checkpoint / diagnostic are cubed-sphere formats
 
-        Keyword Args (optional):
-        ------------------------
-            cs_res_out : int
-                The cubed-sphere resolution of the output dataset. Not used if dim_format_out is classic
-                Default value: 0
-            ll_res_out : str
-                The lat/lon resolution of the output dataset. Not used if dim_format_out is not classic
-                Default value: '0x0'
-            sg_params_in : list[float, float, float]
-                Input grid stretching parameters [stretch-factor, target longitude, target latitude].
-                Not used if dim_format_in is classic
-                Default value: [1.0, 170.0, -90.0] (No stretching)
-            sg_params_out : list[float, float, float]
-                Output grid stretching parameters [stretch-factor, target longitude, target latitude].
-                Not used if dim_format_out is classic
-                Default value: [1.0, 170.0, -90.0] (No stretching)
+Required Arguments:
+~~~~~~~~~~~~~~~~~~~
 
-        """
+.. option:: fin : str
 
+      The input filename
+
+.. option:: fout : str
+
+      The output filename (file will be overwritten if it already exists)
+
+.. option:: dim_format_in : str
+
+      Format of the input file's dimensions (choose from: classic, checkpoint, diagnostic),
+      where classic denotes lat/lon and checkpoint / diagnostic are cubed-sphere formats
+
+.. option:: dim_format_out : str
+
+      Format of the output file's dimensions (choose from: classic, checkpoint, diagnostic),
+      where classic denotes lat/lon and checkpoint / diagnostic are cubed-sphere formats
+
+Optional arguments:
+~~~~~~~~~~~~~~~~~~~
+
+.. option:: cs_res_out : int
+
+      The cubed-sphere resolution of the output dataset. Not used if dim_format_out is classic
+
+      Default value: 0
+
+.. option:: ll_res_out : str
+
+      The lat/lon resolution of the output dataset. Not used if dim_format_out is not classic
+
+      Default value: '0x0'
+
+.. option:: sg_params_in : list[float, float, float]
+
+      Input grid stretching parameters [stretch-factor, target longitude, target latitude].
+      Not used if dim_format_in is classic
+
+      Default value: [1.0, 170.0, -90.0] (No stretching)
+
+.. option:: sg_params_out : list[float, float, float]
+
+      Output grid stretching parameters [stretch-factor, target longitude, target latitude].
+      Not used if dim_format_out is classic
+
+      Default value: [1.0, 170.0, -90.0] (No stretching)
 
 There are three dimension formats available for regridding: `classic` (GEOS-Chem Classic lat/lon format), `checkpoint` (GCHP restart file format),
 and `diagnostic` (GCHP output file format). You can regrid between any of these formats using ``file_regrid``, as well as between different resolutions
@@ -111,10 +130,10 @@ with a stretch factor of 3, a target longitude of 260.0, and a target latitude o
 
 .. code-block
 
-    python -m gcpy.file_regrid                             \
-                   -i initial_GEOSChem_rst.c90_standard.nc   \
-                   --dim_format_in checkpoint                \
-                   -o sg_restart_c48_3_260_40.nc             \
-                   --cs_res_out 48                           \
-                   --sg_params_out 3.0 260.0 40.0            \
-                   --dim_format_out checkpoint
+   python -m gcpy.file_regrid             \
+         -i initial_GEOSChem_rst.c90_standard.nc   \
+         --dim_format_in checkpoint      \
+         -o sg_restart_c48_3_260_40.nc       \
+         --cs_res_out 48            \
+         --sg_params_out 3.0 260.0 40.0      \
+         --dim_format_out checkpoint
