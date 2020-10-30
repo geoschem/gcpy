@@ -89,7 +89,8 @@ class _GlobVars:
             )
             RstFinal = join(
                 self.devrstdir,
-                "gcchem_internal_checkpoint.restart.{}*.nc4".format(self.y1_str)
+                "gcchem_internal_checkpoint.restart.{}*.nc4".format(
+                    self.y1_str)
             )
         else:
             RstInit = join(

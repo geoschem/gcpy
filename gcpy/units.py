@@ -366,7 +366,8 @@ def check_units(ref_da, dev_da, enforce_units=True):
             # if enforcing units, stop the program if
             # units do not match
             assert units_ref == units_dev, \
-                "Units do not match: ref {} and dev {}!".format(units_ref, units_dev)
+                "Units do not match: ref {} and dev {}!".format(
+                    units_ref, units_dev)
     else:
         units_match = True
     return units_match

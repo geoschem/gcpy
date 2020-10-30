@@ -1303,10 +1303,16 @@ class CSGrid(object):
                     last_y = (j == (c - 1))
 
                     # Get the four corners
-                    lat_corner = [lat_edge[i, j, f], lat_edge[i + 1, j, f],
-                                  lat_edge[i + 1, j + 1, f], lat_edge[i, j + 1, f]]
-                    lon_corner = [lon_edge[i, j, f], lon_edge[i + 1, j, f],
-                                  lon_edge[i + 1, j + 1, f], lon_edge[i, j + 1, f]]
+                    lat_corner = [
+                        lat_edge[i, j, f],
+                        lat_edge[i + 1, j, f],
+                        lat_edge[i + 1, j + 1, f],
+                        lat_edge[i, j + 1, f]]
+                    lon_corner = [
+                        lon_edge[i, j, f],
+                        lon_edge[i + 1, j, f],
+                        lon_edge[i + 1, j + 1, f],
+                        lon_edge[i, j + 1, f]]
 
                     # Convert from lat-lon back to cartesian
                     xyz_corner = np.asarray(

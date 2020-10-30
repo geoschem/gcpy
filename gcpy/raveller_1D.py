@@ -109,14 +109,8 @@ if __name__ == '__main__':
                               required=True,
                               help='grid\'s cubed-sphere resolution')
     create_track.add_argument(
-        '--sg_params',
-        metavar='P',
-        type=float,
-        nargs=3,
-        default=[
-            1.0,
-            170.0,
-            -90.0],
+        '--sg_params', metavar='P', type=float, nargs=3,
+        default=[1.0, 170.0, -90.0],
         help='grid stretching parameters (stretch-factor, target longitude, target latitude)')
     create_track.add_argument('--overpass_time',
                               metavar='HH:MM',
