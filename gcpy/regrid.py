@@ -11,8 +11,10 @@ import scipy.sparse
 import warnings
 
 
-def make_regridder_L2L(llres_in, llres_out, weightsdir='.', reuse_weights=False,
-                       in_extent=[-180, 180, -90, 90], out_extent=[-180, 180, -90, 90]):
+def make_regridder_L2L(
+        llres_in, llres_out, weightsdir='.', reuse_weights=False,
+        in_extent=[-180, 180, -90, 90],
+        out_extent=[-180, 180, -90, 90]):
     """
     Create an xESMF regridder between two lat/lon grids
 
@@ -118,7 +120,9 @@ def make_regridder_C2L(csres_in, llres_out, weightsdir='.',
         _, csgrid_list = make_grid_CS(csres_in)
     else:
         _, csgrid_list = make_grid_SG(
-            csres_in, stretch_factor=sg_params[0], target_lon=sg_params[1], target_lat=sg_params[2])
+            csres_in, stretch_factor=sg_params[0],
+            target_lon=sg_params[1],
+            target_lat=sg_params[2])
     llgrid = make_grid_LL(llres_out)
     regridder_list = []
     for i in range(6):
@@ -207,7 +211,8 @@ def make_regridder_S2S(
     _, igrid_list = make_grid_SG(
         csres_in, stretch_factor=sf_in, target_lat=tlat_in, target_lon=tlon_in)
     _, ogrid_list = make_grid_SG(
-        csres_out, stretch_factor=sf_out, target_lat=tlat_out, target_lon=tlon_out)
+        csres_out, stretch_factor=sf_out, target_lat=tlat_out,
+        target_lon=tlon_out)
     regridder_list = []
     for o_face in range(6):
         regridder_list.append({})
@@ -266,7 +271,9 @@ def make_regridder_L2S(llres_in, csres_out, weightsdir='.',
         _, csgrid_list = make_grid_CS(csres_out)
     else:
         _, csgrid_list = make_grid_SG(
-            csres_out, stretch_factor=sg_params[0], target_lon=sg_params[1], target_lat=sg_params[2])
+            csres_out, stretch_factor=sg_params[0],
+            target_lon=sg_params[1],
+            target_lat=sg_params[2])
 
     regridder_list = []
     for i in range(6):
@@ -295,8 +302,10 @@ def make_regridder_L2S(llres_in, csres_out, weightsdir='.',
     return regridder_list
 
 
-def create_regridders(refds, devds, weightsdir='.', reuse_weights=True, cmpres=None,
-                      zm=False, sg_ref_params=[1, 170, -90], sg_dev_params=[1, 170, -90]):
+def create_regridders(
+        refds, devds, weightsdir='.', reuse_weights=True, cmpres=None,
+        zm=False, sg_ref_params=[1, 170, -90],
+        sg_dev_params=[1, 170, -90]):
     """
     Internal function used for creating regridders between two datasets.
     Follows decision logic needed for plotting functions.
@@ -850,7 +859,8 @@ def regrid_vertical(src_data_3D, xmat_regrid, target_levs=[]):
     # Transfer over old / create new coordinates for xarray DataArrays
     if isinstance(src_data_3D, xr.DataArray):
         new_coords = {
-            coord: src_data_3D.coords[coord].data for coord in src_data_3D.coords if coord != 'lev'}
+            coord: src_data_3D.coords[coord].data
+            for coord in src_data_3D.coords if coord != 'lev'}
         if target_levs == []:
             new_coords['lev'] = np.arange(
                 1, out_data.shape[0], out_data.shape[0])
@@ -948,4 +958,7 @@ def gen_xmat(p_edge_from, p_edge_to):
                 i_to += 1
 
     return scipy.sparse.coo_matrix(
-        (xmat_s[:i_weight], (xmat_i[:i_weight], xmat_j[:i_weight])), shape=(n_from, n_to))
+        (xmat_s[: i_weight],
+         (xmat_i[: i_weight],
+          xmat_j[: i_weight])),
+        shape=(n_from, n_to))

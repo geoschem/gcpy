@@ -16,8 +16,10 @@ from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, m
 from gcpy.util import reshape_MAPL_CS
 
 
-def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_out='0x0',
-                sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]):
+def file_regrid(
+        fin, fout, dim_format_in, dim_format_out, cs_res_out=0,
+        ll_res_out='0x0', sg_params_in=[1.0, 170.0, -90.0],
+        sg_params_out=[1.0, 170.0, -90.0]):
     """
     Regrids an input file to a new horizontal grid specification and saves it
     as a new file.
@@ -64,8 +66,10 @@ def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_o
         ds_in = reformat_dims(ds_in, format=dim_format_in, towards_common=True)
 
         # Drop variables that don't look like fields
-        non_fields = [v for v in ds_in.variables.keys() if len(
-            set(ds_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0 or len(ds_in[v].dims) == 0]
+        non_fields = [
+            v for v in ds_in.variables.keys()
+            if len(set(ds_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0 or
+            len(ds_in[v].dims) == 0]
         ds_in = ds_in.drop(non_fields)
 
         # Transpose to T, Z, F, Y, X
@@ -165,8 +169,11 @@ def file_regrid(fin, fout, dim_format_in, dim_format_out, cs_res_out=0, ll_res_o
         # SG/CS to LL
         regridders = make_regridder_C2L(
             cs_res_in, ll_res_out, sg_params=sg_params_in)
-        ds_out = xr.concat([regridders[face](ds_in.isel(F=face), keep_attrs=True)
-                            for face in range(6)], dim='F').sum('F', keep_attrs=True)
+        ds_out = xr.concat(
+            [regridders[face](ds_in.isel(F=face),
+                              keep_attrs=True) for face in range(6)],
+            dim='F').sum(
+            'F', keep_attrs=True)
         #ds_out = xr.sum([regridders[face](ds_in.isel(F=face), keep_attrs=True) for face in range(6)], dim='F', keep_attrs=True)
         ds_out = ds_out.rename({
             'T': 'time',
@@ -265,7 +272,8 @@ def rename_restart_variables(ds, towards_gchp=True):
         old_str = 'SPC'
         new_str = 'SpeciesRst'
     return ds.rename({name: name.replace(old_str, new_str, 1)
-                      for name in list(ds.data_vars) if name.startswith(old_str)})
+                      for name in list(ds.data_vars)
+                      if name.startswith(old_str)})
 
 
 def drop_and_rename_classic_vars(ds, towards_gchp=True):
@@ -291,8 +299,10 @@ def drop_and_rename_classic_vars(ds, towards_gchp=True):
     """
 
     if towards_gchp:
-        ds = ds.rename({name: name.replace('Met_', '', 1).replace('Chem_', '', 1) for name in list(
-            ds.data_vars) if name.startswith('Met_') or name.startswith('Chem_')})
+        ds = ds.rename(
+            {name: name.replace('Met_', '', 1).replace('Chem_', '', 1)
+             for name in list(ds.data_vars)
+             if name.startswith('Met_') or name.startswith('Chem_')})
         ds = ds.rename({'DELPDRY': 'DELP_DRY'})
         ds = ds.drop_vars(['P0',
                            'hyam',
@@ -334,24 +344,12 @@ if __name__ == '__main__':
                         required=True,
                         help='name of output file')
     parser.add_argument(
-        '--sg_params_in',
-        metavar='P',
-        type=float,
-        nargs=3,
-        default=[
-            1.0,
-            170.0,
-            -90.0],
+        '--sg_params_in', metavar='P', type=float, nargs=3,
+        default=[1.0, 170.0, -90.0],
         help='input grid stretching parameters (stretch-factor, target longitude, target latitude)')
     parser.add_argument(
-        '--sg_params_out',
-        metavar='P',
-        type=float,
-        nargs=3,
-        default=[
-            1.0,
-            170.0,
-            -90.0],
+        '--sg_params_out', metavar='P', type=float, nargs=3,
+        default=[1.0, 170.0, -90.0],
         help='output grid stretching parameters (stretch-factor, target longitude, target latitude)')
     parser.add_argument('--cs_res_out',
                         metavar='RES',
