@@ -22,6 +22,7 @@ import gcpy.constants as const
 # %%% METHODS %%%
 # =====================================================================
 
+
 def combine_dataset(file_list=None):
     """
     Wrapper for xarray.open_mfdataset, taking into account the
@@ -300,7 +301,7 @@ def compute_oh_metrics(common_vars):
         lifetimes_wrt_oh(
             common_vars["refdata"],
             airmass_m
-        )
+    )
 
     # ==================================================================
     # Dev dataset
@@ -323,7 +324,7 @@ def compute_oh_metrics(common_vars):
         lifetimes_wrt_oh(
             common_vars["devdata"],
             airmass_m
-        )
+    )
 
     return common_vars
 
@@ -344,9 +345,9 @@ def write_to_file(f, title, ref, dev, absdiff, pctdiff, is_mean_oh=False):
        is_mean_oh : bool
     """
     print(file=f)
-    print("-"*60, file=f)
+    print("-" * 60, file=f)
     print(title, file=f)
-    print("-"*60, file=f)
+    print("-" * 60, file=f)
 
     if is_mean_oh:
         print("Ref      : {:14.11f}".format(ref), file=f)
@@ -485,7 +486,7 @@ def make_benchmark_oh_metrics(
     """
     # Tell matplotlib not to look for an X-window
     os.environ["QT_QPA_PLATFORM"] = "offscreen"
-    
+
     # Suppress harmless run-time warnings (mostly about underflow in division)
     warnings.filterwarnings("ignore", category=RuntimeWarning)
     warnings.filterwarnings("ignore", category=UserWarning)

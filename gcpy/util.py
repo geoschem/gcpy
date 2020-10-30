@@ -10,8 +10,9 @@ import xarray as xr
 import gcpy.constants as gcon
 from PyPDF2 import PdfFileWriter, PdfFileReader
 
+
 def convert_lon(data, dim='lon', format='atlantic', neg_dateline=True):
-    """ 
+    """
     Convert longitudes from -180..180 to 0..360, or vice-versa.
 
     Args
@@ -59,7 +60,7 @@ def convert_lon(data, dim='lon', format='atlantic', neg_dateline=True):
         new_lon[mask] = -(360. - lon[mask])
         new_lon[~mask] = lon[~mask]
 
-        roll_len = len(data[dim])//2 - offset
+        roll_len = len(data[dim]) // 2 - offset
 
     elif format == 'pacific':
         mask = lon < 0.
@@ -67,13 +68,14 @@ def convert_lon(data, dim='lon', format='atlantic', neg_dateline=True):
         new_lon[mask] = lon[mask] + 360.
         new_lon[~mask] = lon[~mask]
 
-        roll_len = -len(data[dim])//2 - offset
+        roll_len = -len(data[dim]) // 2 - offset
 
     # Copy mutated longitude values into copied data container
     data_copy[dim].values = new_lon
     data_copy = data_copy.roll(**{dim: roll_len})
 
     return data_copy
+
 
 def get_emissions_varnames(commonvars, template=None):
     """
@@ -296,6 +298,7 @@ def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
             file=f,
         )
 
+
 def get_species_categories(benchmark_type="FullChemBenchmark"):
     """
     Returns the list of benchmark categories that each species
@@ -341,6 +344,7 @@ def archive_species_categories(dst):
     print("Archiving {} in {}".format(spc_categories, dst))
     shutil.copyfile(src, os.path.join(dst, spc_categories))
 
+
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
     """
     Adds bookmarks to an existing PDF file.
@@ -375,7 +379,9 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
     for i, varname in enumerate(varlist):
         bookmarkname = varname.replace(remove_prefix, "")
         if verbose:
-            print("Adding bookmark for {} with name {}".format(varname, bookmarkname))
+            print(
+                "Adding bookmark for {} with name {}".format(
+                    varname, bookmarkname))
         output_pdf.addPage(input_pdf.getPage(i))
         output_pdf.addBookmark(bookmarkname, i)
         output_pdf.setPageMode("/UseOutlines")
@@ -551,9 +557,9 @@ def add_missing_variables(refdata, devdata, verbose=False, **kwargs):
                 attrs=refdata[v].attrs,
                 **kwargs
             )
-            devlist.append(dr)           
+            devlist.append(dr)
         devdata = xr.merge(devlist)
-        
+
         # ==============================================================
         # For each variable that is in devdata but not in refdata,
         # add a new DataArray to refdata with the same sizes but
@@ -576,6 +582,7 @@ def add_missing_variables(refdata, devdata, verbose=False, **kwargs):
 
     return refdata, devdata
 
+
 def reshape_MAPL_CS(da):
     """
     Reshapes data if contains dimensions indicate MAPL v1.0.0+ output
@@ -583,7 +590,7 @@ def reshape_MAPL_CS(da):
     -----
         da : xarray DataArray
             Data array variable
-        
+
     Returns:
     --------
         data : xarray DataArray
@@ -594,7 +601,7 @@ def reshape_MAPL_CS(da):
         if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
             da = da.stack(lat=("nf", "Ydim"))
             da = da.rename({"Xdim": "lon"})
-        
+
         if "lev" in da.dims and "time" in da.dims:
             da = da.transpose("time", "lev", "lat", "lon")
         elif "lev" in da.dims:
@@ -604,6 +611,7 @@ def reshape_MAPL_CS(da):
         else:
             da = da.transpose("lat", "lon")
     return da
+
 
 def get_diff_of_diffs(ref, dev):
     """
@@ -615,7 +623,7 @@ def get_diff_of_diffs(ref, dev):
             The "Reference" (aka "Ref") dataset.
         dev : xarray Dataset
             The "Development" (aka "Dev") dataset
-        
+
     Returns:
     --------
          absdiffs: xarray Dataset
@@ -624,9 +632,9 @@ def get_diff_of_diffs(ref, dev):
             Dataset containing dev/ref values
     """
 
-    #get diff of diffs datasets for 2 datasets
-    #limit each pair to be the same type of output (GEOS-Chem Classic or GCHP)
-    #and same resolution / extent
+    # get diff of diffs datasets for 2 datasets
+    # limit each pair to be the same type of output (GEOS-Chem Classic or GCHP)
+    # and same resolution / extent
     vardict = compare_varnames(ref, dev, quiet=True)
     varlist = vardict["commonvars"]
     # Select only common fields between the Ref and Dev datasets
@@ -637,13 +645,13 @@ def get_diff_of_diffs(ref, dev):
             absdiffs = dev - ref
             fracdiffs = dev / ref
             for v in dev.data_vars.keys():
-            # Ensure the diffs Dataset includes attributes
+                # Ensure the diffs Dataset includes attributes
                 absdiffs[v].attrs = dev[v].attrs
                 fracdiffs[v].attrs = dev[v].attrs
     elif 'nf' in ref.dims and 'nf' in dev.dims:
-    
-    # Include special handling if cubed sphere grid dimension names are different 
-    # since they changed in MAPL v1.0.0.
+
+        # Include special handling if cubed sphere grid dimension names are different
+        # since they changed in MAPL v1.0.0.
         if "lat" in ref.dims and "Xdim" in dev.dims:
             ref_newdimnames = dev.copy()
             for v in dev.data_vars.keys():
@@ -652,8 +660,7 @@ def get_diff_of_diffs(ref, dev):
                         dev[v].values.shape)
                 # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose(
                 #                                                                      "time","lev","lat","Xdim").values
-    
-    
+
         with xr.set_options(keep_attrs=True):
             absdiffs = dev.copy()
             fracdiffs = dev.copy()
@@ -668,8 +675,9 @@ def get_diff_of_diffs(ref, dev):
     else:
         print('Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere) within each dataset pair')
         raise ValueError
-    
+
     return absdiffs, fracdiffs
+
 
 def slice_by_lev_and_time(ds, varname, itime, ilev, flip):
     """
@@ -686,15 +694,15 @@ def slice_by_lev_and_time(ds, varname, itime, ilev, flip):
         ilev : int
             Index of level by which to slice
         flip : bool
-            Whether to flip ilev to be indexed from ground or top of atmosphere 
-        
+            Whether to flip ilev to be indexed from ground or top of atmosphere
+
     Returns:
     --------
         ds[varname] : xarray DataArray
             DataArray of data variable sliced according to ilev and itime
     """
-    #used in compare_single_level and compare_zonal_mean to get dataset slices
-    #WBD change flip slice to use max level index rather than hardcoded 71
+    # used in compare_single_level and compare_zonal_mean to get dataset slices
+    # WBD change flip slice to use max level index rather than hardcoded 71
     vdims = ds[varname].dims
     if "time" in vdims and "lev" in vdims:
         if flip:
@@ -733,8 +741,8 @@ def rename_and_flip_gchp_rst_vars(ds):
     '''
     for v in ds.data_vars.keys():
         if v.startswith('SPC_'):
-            spc = v.replace('SPC_','')
-            ds = ds.rename({v: 'SpeciesRst_'+spc})
+            spc = v.replace('SPC_', '')
+            ds = ds.rename({v: 'SpeciesRst_' + spc})
         elif v == 'DELP_DRY':
             ds = ds.rename({"DELP_DRY": "Met_DELPDRY"})
         elif v == 'BXHEIGHT':
@@ -781,7 +789,7 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
             (This is often referred to as the "Development" Dataset.)
 
     Keyword Args (optional):
-    ------------------------         
+    ------------------------
         quiet : bool
             Set this flag to True if you wish to suppress printing
             informational output to stdout.
@@ -846,7 +854,7 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
 
     # Print information on common and mismatching variables,
     # as well as dimensions
-    if quiet == False:
+    if not quiet:
         print("\nComparing variable names in compare_varnames")
         print("{} common variables".format(len(commonvars)))
         if len(refonly) > 0:
@@ -1105,7 +1113,8 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
 
                 # Verbose output
                 if verbose:
-                    print("WARNING: Nothing defined for: {}".format(variable_name))
+                    print(
+                        "WARNING: Nothing defined for: {}".format(variable_name))
                 continue
 
             # Overwrite certain variable names
@@ -1246,14 +1255,14 @@ def add_lumped_species_to_dataset(
         for _, spc in enumerate(lspc_dict[lspc]):
             varname = prefix + spc
             if varname not in ds_new.data_vars:
-                print("Warning: {} needed for {} not in dataset.".\
+                print("Warning: {} needed for {} not in dataset.".
                       format(spc, lspc))
                 continue
             if verbose:
-                print(" -> adding {} with scale {}".\
+                print(" -> adding {} with scale {}".
                       format(spc, lspc_dict[lspc][spc]))
             darr.values = darr.values + \
-                          ds_new[varname].values * lspc_dict[lspc][spc]
+                ds_new[varname].values * lspc_dict[lspc][spc]
             num_spc = num_spc + 1
 
         # Replace values with NaN is no species found in dataset
@@ -1547,6 +1556,8 @@ def create_dataarray_of_nan(name, sizes, coords, attrs, vertical_dim="lev"):
     return xr.DataArray(
         nan_arr, name=name, dims=new_dims, coords=new_coords, attrs=attrs
     )
+
+
 def check_for_area(ds, gcc_area_name="AREA", gchp_area_name="Met_AREAM2"):
     """
     Makes sure that a dataset has a surface area variable contained
@@ -1591,6 +1602,7 @@ def check_for_area(ds, gcc_area_name="AREA", gchp_area_name="Met_AREAM2"):
         ds[gcc_area_name] = ds[gchp_area_name]
 
     return ds
+
 
 def get_filepath(datadir, col, date, is_gchp=False):
     """
@@ -1648,6 +1660,7 @@ def get_filepath(datadir, col, date, is_gchp=False):
     path = file_tmpl + date_str + extension
     return path
 
+
 def get_filepaths(datadir, collections, dates, is_gchp=False):
     """
     Routine to return filepaths for a given GEOS-Chem "Classic"
@@ -1687,7 +1700,7 @@ def get_filepaths(datadir, collections, dates, is_gchp=False):
 
     # Create the return variable
     rows, cols = (len(collections), len(dates))
-    paths = [['']*cols]*rows
+    paths = [[''] * cols] * rows
 
     # ==================================================================
     # Create the file list
@@ -1737,6 +1750,7 @@ def get_filepaths(datadir, collections, dates, is_gchp=False):
             paths[c][d] = file_tmpl + date_time + extension
 
     return paths
+
 
 def extract_pathnames_from_log(filename, prefix_filter=""):
     """
@@ -1792,10 +1806,11 @@ def extract_pathnames_from_log(filename, prefix_filter=""):
     data_list = sorted(list(data_list))
     return data_list
 
+
 def get_gcc_filepath(outputdir, collection, day, time):
     '''
     Routine for getting filepath of GEOS-Chem Classic output
-    
+
     Args:
     -----
         outputdir : str
@@ -1826,7 +1841,7 @@ def get_gcc_filepath(outputdir, collection, day, time):
 def get_gchp_filepath(outputdir, collection, day, time):
     '''
     Routine for getting filepath of GCHP output
-    
+
     Args:
     -----
         outputdir : str
@@ -1849,6 +1864,7 @@ def get_gchp_filepath(outputdir, collection, day, time):
     )
     return filepath
 
+
 def get_nan_mask(data):
     """
     Create a mask with NaN values removed from an input array
@@ -1864,11 +1880,12 @@ def get_nan_mask(data):
             Original array with NaN values removed
     """
 
-    #remove NaNs
-    fill = np.nanmax(data)+100000
+    # remove NaNs
+    fill = np.nanmax(data) + 100000
     new_data = np.where(np.isnan(data), fill, data)
     new_data = np.ma.masked_where(data == fill, data)
     return new_data
+
 
 def all_zero_or_nan(ds):
     """

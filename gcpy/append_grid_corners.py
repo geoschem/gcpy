@@ -3,14 +3,19 @@ import xarray as xr
 from .grid import make_grid_SG
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Append grid-box corners to file')
+    parser = argparse.ArgumentParser(
+        description='Append grid-box corners to file')
     parser.add_argument('filein')
-    parser.add_argument('--sg_params',
-                        metavar='P',
-                        type=float,
-                        nargs=3,
-                        default=[1.0, 170.0, -90.0],
-                        help='input grid stretching parameters (stretch-factor, target longitude, target latitude)')
+    parser.add_argument(
+        '--sg_params',
+        metavar='P',
+        type=float,
+        nargs=3,
+        default=[
+            1.0,
+            170.0,
+            -90.0],
+        help='input grid stretching parameters (stretch-factor, target longitude, target latitude)')
     args = parser.parse_args()
 
     ds = xr.open_dataset(args.filein)

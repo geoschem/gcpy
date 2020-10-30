@@ -24,11 +24,13 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # Define a class for passing global variables to the methods below
 # ======================================================================
 
+
 class _GlobVars:
     """
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
+
     def __init__(self, devstr, files, dst, year,
                  bmk_type, species, overwrite, month):
         """
@@ -268,7 +270,7 @@ def print_ste(globvars, df):
     with open(filename, "w+") as f:
 
         # Print header
-        print("%"*79, file=f)
+        print("%" * 79, file=f)
         if globvars.is_TransportTracers:
             print(" Table 4. Strat-trop exchange in {} for year {}".format(
                 globvars.devstr, globvars.y0_str), file=f)
@@ -283,7 +285,7 @@ def print_ste(globvars, df):
         if globvars.is_1yr:
             print(" Annual mean is weighted by the number of days per month",
                   file=f)
-        print("%"*79, file=f)
+        print("%" * 79, file=f)
         print(file=f)
 
         # Print the DataFrame

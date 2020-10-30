@@ -8,6 +8,7 @@ import numpy as np
 import xarray as xr
 import gcpy.constants as physconsts
 
+
 def adjust_units(units):
     """
     Creates a consistent unit string that will be used in the unit
@@ -236,9 +237,7 @@ def convert_units(
     if "g" in target_units and mw_g is None:
         raise ValueError(
             "Conversion from {} to {} for {} requires MW_g definition in species_database.yml".format(
-                units, target_units, species_name
-            )
-        )
+                units, target_units, species_name))
 
     # Conversion factor for kg species to kg C
     kg_to_kgC = (emitted_mw_g * moles_C_per_mole_species) / mw_g
@@ -265,7 +264,8 @@ def convert_units(
     # Number of seconds is passed via the interval argument
     numsec = interval
 
-    # Special handling is required if multiple times in interval (for broadcast)
+    # Special handling is required if multiple times in interval (for
+    # broadcast)
     if len(interval) > 1:
         if 'time' in dr.dims:
             # Need to right pad the interval array with new axes up to the
@@ -275,7 +275,8 @@ def convert_units(
                 numsec = numsec[:, np.newaxis]
         else:
             # Raise an error if no time in dataset but interval has length > 1
-            raise ValueError('Interval passed to convert_units has length greater than one but data array has no time dimension')
+            raise ValueError(
+                'Interval passed to convert_units has length greater than one but data array has no time dimension')
 
     # ==============================
     # Compute target units
@@ -316,8 +317,8 @@ def convert_units(
 
     else:
         raise ValueError(
-            "Units ({}) in variable {} are not supported".format(units, species_name)
-        )
+            "Units ({}) in variable {} are not supported".format(
+                units, species_name))
 
     # ==============================
     # Return result
@@ -333,6 +334,7 @@ def convert_units(
 
     # Return to calling routine
     return dr_new
+
 
 def check_units(ref_da, dev_da, enforce_units=True):
     """
@@ -368,6 +370,7 @@ def check_units(ref_da, dev_da, enforce_units=True):
     else:
         units_match = True
     return units_match
+
 
 def data_unit_is_mol_per_mol(da):
     """
