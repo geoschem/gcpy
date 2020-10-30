@@ -6,7 +6,8 @@ def rotate_vectors(x, y, z, k, theta):
     y = np.atleast_1d(y)
     z = np.atleast_1d(z)
     v = np.moveaxis(np.array([x, y, z]), 0, -1)  # shape: (..., 3)
-    v = v*np.cos(theta) + np.cross(k, v) * np.sin(theta) + k[np.newaxis, :] * np.dot(v, k)[:, np.newaxis] * (1-np.cos(theta))
+    v = v * np.cos(theta) + np.cross(k, v) * np.sin(theta) + \
+        k[np.newaxis, :] * np.dot(v, k)[:, np.newaxis] * (1 - np.cos(theta))
     return v[..., 0], v[..., 1], v[..., 2]
 
 
@@ -41,7 +42,7 @@ def scs_transform(x, y, s, tx, ty):
     ty = ty * np.pi / 180
     # Calculate rotation about x, and z axes
     x0 = np.pi
-    y0 = -np.pi/2
+    y0 = -np.pi / 2
     theta_x = ty - y0
     theta_z = tx - x0
     # Apply schmidt transform

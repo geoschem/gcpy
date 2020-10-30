@@ -22,11 +22,13 @@ import pandas as pd
 # Define a class for passing global variables to the methods below
 # ======================================================================
 
+
 class _GlobVars:
     """
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
+
     def __init__(self, reflogdir, refstr, devlogdir, devstr,
                  year, dst, overwrite):
         """
@@ -71,7 +73,7 @@ class _GlobVars:
         # Days per month in the benchmark year
         self.d_per_mon = np.zeros(self.N_MONTHS)
         for t in range(self.N_MONTHS):
-            self.d_per_mon[t] = monthrange(self.y0, t+1)[1] * 1.0
+            self.d_per_mon[t] = monthrange(self.y0, t + 1)[1] * 1.0
 
         # Days in the benchmark year
         self.d_per_yr = np.sum(self.d_per_mon)
@@ -94,11 +96,11 @@ def find_mean_oh(filename):
             GEOS-Chem "Classic" log file.
     """
     # Read through each log file from the bottom up
-    mean_oh= 0.0
+    mean_oh = 0.0
     with open(filename) as f:
         lines = f.readlines()
         for line in reversed(lines):
-            if "Mean OH ="  in line:
+            if "Mean OH =" in line:
                 line = line.replace("Mean OH =", "")
                 line = line.replace("[1e5 molec/cm3]", "")
                 line = line.strip()
@@ -152,7 +154,7 @@ def compute_mean_oh_from_logs(globvars):
         dev_log = join(globvars.devlogdir, log_name)
         mean_oh = find_mean_oh(dev_log)
         df.loc[mon_yr_str, dev] = mean_oh
-        df.loc[mean, dev] +=(mean_oh * globvars.d_per_mon[t])
+        df.loc[mean, dev] += (mean_oh * globvars.d_per_mon[t])
 
     # Annual mean is weighted by days per month
     df.loc[mean] /= globvars.d_per_yr
@@ -193,7 +195,7 @@ def print_mean_oh_from_logs(globvars, df):
     with open(filename, "w+") as f:
 
         # Print header
-        print("%"*79, file=f)
+        print("%" * 79, file=f)
         print(" Mean OH concentration table for year {}".format(
             globvars.year), file=f)
         print(" \n Units: 1e5 molec cm-3", file=f)
@@ -201,7 +203,7 @@ def print_mean_oh_from_logs(globvars, df):
             globvars.refstr, globvars.devstr), file=f)
         print("\n Annual mean OH is weighted by the number of days per month",
               file=f)
-        print("%"*79, file=f)
+        print("%" * 79, file=f)
         print(file=f)
 
         # Print the DataFrame
@@ -247,15 +249,15 @@ def make_benchmark_oh_from_logs(reflogdir, refstr, devlogdir, devstr,
 if __name__ == "__main__":
 
     # For debug testing
-    maindir   = "/path/to/benchmark/main/dir"
-    refstr    = "gcc_ref_version_str"
-    devstr    = "gcc_dev_version_str"
-    refdir    = join(maindir, refstr)
-    devdir    = join(maindir, devstr)
+    maindir = "/path/to/benchmark/main/dir"
+    refstr = "gcc_ref_version_str"
+    devstr = "gcc_dev_version_str"
+    refdir = join(maindir, refstr)
+    devdir = join(maindir, devstr)
     reflogdir = join(refdir, "logs")
     devlogdir = join(devdir, "logs")
-    year      = 2016
-    dst       = join(devdir, "Plots", "Tables")
+    year = 2016
+    dst = join(devdir, "Plots", "Tables")
 
     make_benchmark_oh_from_logs(reflogdir, refstr, devlogdir, devstr,
                                 year, dst=dst, overwrite=True)

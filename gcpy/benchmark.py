@@ -34,6 +34,7 @@ spc_categories = "benchmark_categories.yml"
 emission_spc = "emission_species.yml"
 emission_inv = "emission_inventories.yml"
 
+
 def create_total_emissions_table(
     refdata,
     refstr,
@@ -222,7 +223,8 @@ def create_total_emissions_table(
         # Title strings
         if "Inv" in template:
             print("Computing inventory totals for {}".format(species_name))
-            title1 = "### Emissions totals for inventory {}".format(species_name)
+            title1 = "### Emissions totals for inventory {}".format(
+                species_name)
         else:
             print("Computing emissions totals for {}".format(species_name))
             title1 = "### Emissions totals for species {}".format(species_name)
@@ -236,10 +238,11 @@ def create_total_emissions_table(
         print("#" * 79, file=f)
         print(
             "{}{}{}{}".format(
-                " ".ljust(22), "Ref".rjust(20), "Dev".rjust(20), "Dev - Ref".rjust(15)
-            ),
-            file=f
-        )
+                " ".ljust(22),
+                "Ref".rjust(20),
+                "Dev".rjust(20),
+                "Dev - Ref".rjust(15)),
+            file=f)
 
         # =============================================================
         # Loop over all emissions variables corresponding to this
@@ -551,6 +554,7 @@ def create_global_mass_table(
     # ==================================================================
     f.close()
 
+
 def make_benchmark_conc_plots(
     ref,
     refstr,
@@ -618,13 +622,13 @@ def make_benchmark_conc_plots(
         verbose : bool
             Set this flag to True to print extra informational output.
             Default value: False
-		collection : str
-			Name of collection to use for plotting.
-			Default value: "SpeciesConc"
-		benchmark_type: str
-			A string denoting the type of benchmark output to plot,
-			either FullChemBenchmark or TransportTracersBenchmark. 
-			Default value: "FullChemBenchmark"
+                collection : str
+                        Name of collection to use for plotting.
+                        Default value: "SpeciesConc"
+                benchmark_type: str
+                        A string denoting the type of benchmark output to plot,
+                        either FullChemBenchmark or TransportTracersBenchmark.
+                        Default value: "FullChemBenchmark"
         plot_by_spc_cat: logical
             Set this flag to False to send plots to one file rather
             than separate file per category.
@@ -643,7 +647,7 @@ def make_benchmark_conc_plots(
         normalize_by_area: bool
             Set this flag to true to enable normalization of data
             by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
-			Default value: False
+                        Default value: False
         cats_in_ugm3: list of str
             List of benchmark categories to to convert to ug/m3
             Default value: ["Aerosols", "Secondary_Organic_Aerosols"]
@@ -654,7 +658,7 @@ def make_benchmark_conc_plots(
             Path name for ref meteorology
             Default value: None
         devmet : str
-            Path name for dev meteorology  
+            Path name for dev meteorology
             Default value: None
         sigdiff_files : list of str
             Filenames that will contain the lists of species having
@@ -724,8 +728,8 @@ def make_benchmark_conc_plots(
         diff_of_diffs = True
     else:
         diff_of_diffs = False
-    
-    # Open second datasets if passed as arguments (used for diff of diffs)    
+
+    # Open second datasets if passed as arguments (used for diff of diffs)
     if diff_of_diffs:
         second_refds = xr.open_dataset(second_ref,
                                        drop_variables=gcon.skip_these_vars)
@@ -736,7 +740,7 @@ def make_benchmark_conc_plots(
         second_devds = None
 
     # Create regridding files if necessary while not in parallel loop
-    [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
+    [_ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
     # If we are normalizing by area, then merge the surface areas
     # on the Ref & Dev grids into the Ref & Dev datasets, but only
@@ -769,7 +773,7 @@ def make_benchmark_conc_plots(
         varlist.sort()
 
         # Surface
-        pdfname = os.path.join(dst,'SpeciesConc_Sfc.pdf')
+        pdfname = os.path.join(dst, 'SpeciesConc_Sfc.pdf')
         compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist,
                              pdfname=pdfname,
@@ -783,9 +787,9 @@ def make_benchmark_conc_plots(
                              spcdb_dir=spcdb_dir)
 
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
-                             verbose=verbose)
+                                  verbose=verbose)
         # 500 hPa
-        pdfname = os.path.join(dst,'SpeciesConc_500hPa.pdf')
+        pdfname = os.path.join(dst, 'SpeciesConc_500hPa.pdf')
         compare_single_level(refds, refstr, devds, devstr,
                              ilev=22,
                              varlist=varlist,
@@ -795,14 +799,14 @@ def make_benchmark_conc_plots(
                              normalize_by_area=normalize_by_area,
                              extra_title_txt=extra_title_txt,
                              weightsdir=weightsdir,
-                             second_ref=second_refds, 
+                             second_ref=second_refds,
                              second_dev=second_devds,
                              spcdb_dir=spcdb_dir)
 
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
-                             verbose=verbose)
+                                  verbose=verbose)
         # Zonal mean
-        pdfname = os.path.join(dst,'SpeciesConc_ZnlMn.pdf')
+        pdfname = os.path.join(dst, 'SpeciesConc_ZnlMn.pdf')
         compare_zonal_mean(refds, refstr, devds, devstr,
                            varlist=varlist,
                            pdfname=pdfname,
@@ -811,12 +815,12 @@ def make_benchmark_conc_plots(
                            normalize_by_area=normalize_by_area,
                            extra_title_txt=extra_title_txt,
                            weightsdir=weightsdir,
-                           second_ref=second_refds, 
+                           second_ref=second_refds,
                            second_dev=second_devds,
                            spcdb_dir=spcdb_dir)
 
         util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=var_prefix,
-                             verbose=verbose)
+                                  verbose=verbose)
         return
 
     # ==================================================================
@@ -859,8 +863,9 @@ def make_benchmark_conc_plots(
     dict_sfc = {}
     dict_500 = {}
     dict_zm = {}
+
     def createplots(filecat):
-        cat_diff_dict = {'sfc' : [], '500' : [], 'zm' : []}
+        cat_diff_dict = {'sfc': [], '500': [], 'zm': []}
 
         # Plots units ug/m3 for certain species categories
         convert_to_ugm3 = False
@@ -874,7 +879,7 @@ def make_benchmark_conc_plots(
         # If restrict_cats list is passed,
         # skip all categories except those in the list
         if restrict_cats and filecat not in restrict_cats:
-            return {filecat : cat_diff_dict}
+            return {filecat: cat_diff_dict}
 
         # Create a directory for each category.
         # If subdst is passed, then create a subdirectory in each
@@ -911,7 +916,8 @@ def make_benchmark_conc_plots(
                     catdir, "{}_Surface_{}.pdf".format(filecat, subdst)
                 )
             else:
-                pdfname = os.path.join(catdir, "{}_Surface.pdf".format(filecat))
+                pdfname = os.path.join(
+                    catdir, "{}_Surface.pdf".format(filecat))
 
             diff_sfc = []
             compare_single_level(
@@ -1067,22 +1073,25 @@ def make_benchmark_conc_plots(
                 pdfname, filecat, catdict,
                 warninglist, remove_prefix=coll_prefix
             )
-        return {filecat : cat_diff_dict}
+        return {filecat: cat_diff_dict}
 
     # Create the plots in parallel
     results = Parallel(n_jobs=n_job)(
         delayed(createplots)(filecat) for _, filecat in enumerate(catdict)
     )
 
-    dict_sfc = {list(result.keys())[0] : result[list(result.keys())[0]]['sfc'] for result in results}
-    dict_500 = {list(result.keys())[0] : result[list(result.keys())[0]]['500'] for result in results}
-    dict_zm  = {list(result.keys())[0] : result[list(result.keys())[0]]['zm']  for result in results}
+    dict_sfc = {list(result.keys())[0]: result[list(
+        result.keys())[0]]['sfc'] for result in results}
+    dict_500 = {list(result.keys())[0]: result[list(
+        result.keys())[0]]['500'] for result in results}
+    dict_zm = {list(result.keys())[0]: result[list(
+        result.keys())[0]]['zm'] for result in results}
 
     # ==============================================================
     # Write the list of species having significant differences,
     # which we need to fill out the benchmark approval forms.
     # ==============================================================
-    if sigdiff_files != None:
+    if sigdiff_files is not None:
         for filename in sigdiff_files:
             if "sfc" in plots:
                 if "sfc" in filename:
@@ -1123,6 +1132,7 @@ def make_benchmark_conc_plots(
     devmetds = xr.Dataset()
     second_ref = xr.Dataset()
     second_dev = xr.Dataset()
+
 
 def make_benchmark_emis_plots(
     ref,
@@ -1276,7 +1286,7 @@ def make_benchmark_emis_plots(
     [refds, devds] = util.add_missing_variables(refds, devds)
 
     # Create regridding files if necessary while not in parallel loop
-    [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
+    [_ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
     # Combine 2D and 3D variables into an overall list
     quiet = not verbose
@@ -1319,7 +1329,7 @@ def make_benchmark_emis_plots(
             spcdb_dir=spcdb_dir
         )
         util.add_bookmarks_to_pdf(pdfname, varlist,
-                             remove_prefix="Emis", verbose=verbose)
+                                  remove_prefix="Emis", verbose=verbose)
         return
 
     # Get emissions variables (non-inventory), categories, and species
@@ -1355,9 +1365,9 @@ def make_benchmark_emis_plots(
         def createfile_hco_cat(c):
             # Handle cases of bioburn and bioBurn (temporary until 12.3.1)
             if c == "Bioburn":
-                varnames = [k for k in emis_vars \
+                varnames = [k for k in emis_vars
                             if any(b in k for b in ["Bioburn", "BioBurn"])
-                ]
+                            ]
             else:
                 varnames = [k for k in emis_vars if c in k]
 
@@ -1368,7 +1378,8 @@ def make_benchmark_emis_plots(
                     emisspcdir, "{}_Emissions_{}.pdf".format(c, subdst)
                 )
             else:
-                pdfname = os.path.join(emisspcdir, "{}_Emissions.pdf".format(c))
+                pdfname = os.path.join(
+                    emisspcdir, "{}_Emissions.pdf".format(c))
             diff_dict = {}
             diff_emis = []
             compare_single_level(
@@ -1397,17 +1408,17 @@ def make_benchmark_emis_plots(
             diff_dict[c] = diff_emis
             return diff_dict
 
-        results = Parallel(n_jobs=n_job)(delayed(createfile_hco_cat)(c) \
+        results = Parallel(n_jobs=n_job)(delayed(createfile_hco_cat)(c)
                                          for c in emis_cats)
 
-        dict_emis = {list(result.keys())[0] : result[list(result.keys())[0]] \
+        dict_emis = {list(result.keys())[0]: result[list(result.keys())[0]]
                      for result in results}
 
         # =============================================================
         # Write the list of species having significant differences,
         # which we need to fill out the benchmark approval forms.
         # =============================================================
-        if sigdiff_files != None:
+        if sigdiff_files is not None:
             for filename in sigdiff_files:
                 if "emis" in filename:
                     with open(filename, "w+") as f:
@@ -1425,14 +1436,14 @@ def make_benchmark_emis_plots(
     if plot_by_spc_cat:
 
         catdict = util.get_species_categories()
-        warninglist = (
-            []
-        )  # in case any emissions are skipped (for use in nested pdf bookmarks)
-        allcatspc = (
-            []
-        )  # for checking if emissions species not defined in benchmark category file
+        # in case any emissions are skipped (for use in nested pdf bookmarks)
+        warninglist = ([])
+        # for checking if emissions species not defined in benchmark category
+        # file
+        allcatspc = ([])
         emisdict = {}  # used for nested pdf bookmarks
         # for i, filecat in enumerate(catdict):
+
         def createfile_bench_cat(filecat):
             # Get emissions for species in this benchmark category
             varlist = []
@@ -1443,10 +1454,11 @@ def make_benchmark_emis_plots(
                     catspc.append(spc)
                     if spc in emis_spc:
                         emisdict[filecat][spc] = []
-                        emisvars = [v for v in emis_vars \
+                        emisvars = [v for v in emis_vars
                                     if spc == v.split("_")[0][4:]]
                         for var in emisvars:
-                            emisdict[filecat][spc].append(var.replace("Emis", ""))
+                            emisdict[filecat][spc].append(
+                                var.replace("Emis", ""))
                             varlist.append(var)
             if not varlist:
                 print(
@@ -1492,15 +1504,17 @@ def make_benchmark_emis_plots(
                 n_job=n_job,
                 spcdb_dir=spcdb_dir
             )
-            util.add_nested_bookmarks_to_pdf(pdfname, filecat, emisdict, warninglist)
+            util.add_nested_bookmarks_to_pdf(
+                pdfname, filecat, emisdict, warninglist)
             return catspc
         results = Parallel(n_jobs=n_job)(
-            delayed(createfile_bench_cat)(filecat) \
+            delayed(createfile_bench_cat)(filecat)
             for i, filecat in enumerate(catdict)
         )
 
         allcatspc = [spc for result in results for spc in result]
-        # Give warning if emissions species is not assigned a benchmark category
+        # Give warning if emissions species is not assigned a benchmark
+        # category
         for spc in emis_spc:
             if spc not in allcatspc:
                 print(
@@ -1514,6 +1528,7 @@ def make_benchmark_emis_plots(
     # -------------------------------------------
     refds = xr.Dataset()
     devds = xr.Dataset()
+
 
 def make_benchmark_emis_tables(
     reflist,
@@ -1557,7 +1572,7 @@ def make_benchmark_emis_tables(
             Path name for ref meteorology
             Default value: None
         devmet : str
-            Path name for dev meteorology  
+            Path name for dev meteorology
             Default value: None
         overwrite : bool
             Set this flag to True to overwrite files in the
@@ -1616,18 +1631,25 @@ def make_benchmark_emis_tables(
         refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
         devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
         if refmet is not None:
-            refmetds = xr.open_mfdataset(refmet, drop_variables=gcon.skip_these_vars)
+            refmetds = xr.open_mfdataset(
+                refmet, drop_variables=gcon.skip_these_vars)
         if devmet is not None:
-            devmetds = xr.open_mfdataset(devmet, drop_variables=gcon.skip_these_vars)
-    else:    
+            devmetds = xr.open_mfdataset(
+                devmet, drop_variables=gcon.skip_these_vars)
+    else:
         print(reflist)
-        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
-        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+        # , combine="nested", concat_dim="time")
+        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
+        # , combine="nested", concat_dim="time")
+        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
         if refmet is not None:
-            refmetds = xr.open_mfdataset(refmet, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
+            # , combine="nested", concat_dim="time")
+            refmetds = xr.open_mfdataset(
+                refmet, drop_variables=gcon.skip_these_vars)
         if devmet is not None:
-            devmetds = xr.open_mfdataset(devmet, drop_variables=gcon.skip_these_vars)#, combine="nested", concat_dim="time")
-
+            # , combine="nested", concat_dim="time")
+            devmetds = xr.open_mfdataset(
+                devmet, drop_variables=gcon.skip_these_vars)
 
     # ==================================================================
     # Create table of emissions
@@ -1841,10 +1863,10 @@ def make_benchmark_jvalue_plots(
     [refds, devds] = util.add_missing_variables(refds, devds)
 
     # Create regridding files if necessary
-    [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
+    [_ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
     # Get a list of the 3D variables in both datasets
-    if varlist == None:
+    if varlist is None:
         quiet = not verbose
         vardict = util.compare_varnames(refds, devds, quiet=quiet)
         cmn = vardict["commonvars3D"]
@@ -1857,20 +1879,20 @@ def make_benchmark_jvalue_plots(
         # Get a list of local noon J-value variables
         # (or use the varlist passed via tha argument list)
         prefix = "JNoon_"
-        if varlist == None:
+        if varlist is None:
             varlist = [v for v in cmn if prefix in v]
 
         # Make sure JNoonFrac (fraction of times it was local noon
         # in each column) is present in both Ref and Dev datasets
-        if not "JNoonFrac" in cmn:
+        if "JNoonFrac" not in cmn:
             msg = "JNoonFrac is not common to Ref and Dev datasets!"
             raise ValueError(msg)
 
         # JNoon_* are cumulative sums of local noon J-values; we need
         # to divide these by JNoonFrac to get the average value
-        refds = util.divide_dataset_by_dataarray(refds, \
+        refds = util.divide_dataset_by_dataarray(refds,
                                                  refds["JNoonFrac"], varlist)
-        devds = util.divide_dataset_by_dataarray(devds, \
+        devds = util.divide_dataset_by_dataarray(devds,
                                                  devds["JNoonFrac"], varlist)
 
         # Subfolder of dst where PDF files will be printed
@@ -1881,7 +1903,7 @@ def make_benchmark_jvalue_plots(
         # Get a list of continuously averaged J-value variables
         # (or use the varlist passed via tha argument list)
         prefix = "Jval_"
-        if varlist == None:
+        if varlist is None:
             varlist = [v for v in cmn if prefix in v]
 
         # Subfolder of dst where PDF files will be printed
@@ -1932,7 +1954,11 @@ def make_benchmark_jvalue_plots(
             spcdb_dir=spcdb_dir
         )
         diff_sfc[:] = [v.replace(prefix, "") for v in diff_sfc]
-        util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
+        util.add_bookmarks_to_pdf(
+            pdfname,
+            varlist,
+            remove_prefix=prefix,
+            verbose=verbose)
 
     # 500hPa plots
     if "500hpa" in plots:
@@ -1962,7 +1988,7 @@ def make_benchmark_jvalue_plots(
         )
         diff_500[:] = [v.replace(prefix, "") for v in diff_500]
         util.add_bookmarks_to_pdf(pdfname, varlist,
-                             remove_prefix=prefix, verbose=verbose)
+                                  remove_prefix=prefix, verbose=verbose)
     # Full-column zonal mean plots
     if "zonalmean" in plots:
         if subdst is not None:
@@ -1991,7 +2017,11 @@ def make_benchmark_jvalue_plots(
             spcdb_dir=spcdb_dir
         )
         diff_zm[:] = [v.replace(prefix, "") for v in diff_zm]
-        util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=prefix, verbose=verbose)
+        util.add_bookmarks_to_pdf(
+            pdfname,
+            varlist,
+            remove_prefix=prefix,
+            verbose=verbose)
 
         # Strat_ZonalMean plots will use a log-pressure Y-axis, with
         # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
@@ -2000,7 +2030,8 @@ def make_benchmark_jvalue_plots(
                 jvdir, "{}Strat_ZonalMean_{}.pdf".format(prefix, subdst)
             )
         else:
-            pdfname = os.path.join(jvdir, "{}Strat_ZonalMean.pdf".format(prefix))
+            pdfname = os.path.join(
+                jvdir, "{}Strat_ZonalMean.pdf".format(prefix))
 
         compare_zonal_mean(
             refds,
@@ -2020,13 +2051,13 @@ def make_benchmark_jvalue_plots(
             spcdb_dir=spcdb_dir
         )
         util.add_bookmarks_to_pdf(pdfname, varlist,
-                             remove_prefix=prefix, verbose=verbose)
+                                  remove_prefix=prefix, verbose=verbose)
 
         # ==============================================================
         # Write the lists of J-values that have significant differences,
         # which we need to fill out the benchmark approval forms.
         # ==============================================================
-        if sigdiff_files != None:
+        if sigdiff_files is not None:
             for filename in sigdiff_files:
                 if "sfc" in plots:
                     if "sfc" in filename:
@@ -2184,7 +2215,7 @@ def make_benchmark_aod_plots(
         raise FileNotFoundError("Could not find Dev file: {}".format(dev))
 
     # Create regridding files if necessary
-    [ _ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
+    [_ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
     # NOTE: GCHP diagnostic variable exports are defined before the
     # input.geos file is read.  This means "WL1" will not have been
@@ -2216,7 +2247,7 @@ def make_benchmark_aod_plots(
 
     # Find common AOD variables in both datasets
     # (or use the varlist passed via keyword argument)
-    if varlist == None:
+    if varlist is None:
         quiet = not verbose
         vardict = util.compare_varnames(refds, devds, quiet)
         cmn3D = vardict["commonvars3D"]
@@ -2349,7 +2380,7 @@ def make_benchmark_aod_plots(
     # Write the list of AOD quantities having significant differences,
     # which we will need to fill out the benchmark forms.
     # ==================================================================
-    if sigdiff_files != None:
+    if sigdiff_files is not None:
         for filename in sigdiff_files:
             if "sfc" in filename:
                 with open(filename, "a+") as f:
@@ -2364,6 +2395,7 @@ def make_benchmark_aod_plots(
     # -------------------------------------------
     refds = xr.Dataset()
     devds = xr.Dataset()
+
 
 def make_benchmark_mass_tables(
     ref,
@@ -2435,7 +2467,7 @@ def make_benchmark_mass_tables(
         dev_met_extra : str
             Path to dev Met file containing area data for use with restart files
             which do not contain the Area variable.
-            Default value : ''            
+            Default value : ''
     """
 
     # ==================================================================
@@ -2486,7 +2518,8 @@ def make_benchmark_mass_tables(
             ref_met_extra = xr.open_dataset(ref_met_extra)
             ref_area = util.get_area_from_dataset(ref_met_extra)
         else:
-            raise ValueError('Must pass Met data if using a restart file without area')
+            raise ValueError(
+                'Must pass Met data if using a restart file without area')
     try:
         dev_area = util.get_area_from_dataset(devds)
     except ValueError:
@@ -2494,7 +2527,8 @@ def make_benchmark_mass_tables(
             dev_met_extra = xr.open_dataset(dev_met_extra)
             dev_area = util.get_area_from_dataset(dev_met_extra)
         else:
-            raise ValueError('Must pass Met data if using a restart file without area')
+            raise ValueError(
+                'Must pass Met data if using a restart file without area')
     # Find required meteorological variables in Ref
     # (or exit with an error if we can't find them)
     metvar_list = ["Met_DELPDRY", "Met_BXHEIGHT", "Met_TropLev"]
@@ -2539,7 +2573,8 @@ def make_benchmark_mass_tables(
         for v in varlist:
             if v not in commonspc:
                 msg = msg.format(dst)
-                raise ValueError('Variable {} in varlist passed to make_benchmark_mass_tables is not present in ref and dev datasets'.format(v))
+                raise ValueError(
+                    'Variable {} in varlist passed to make_benchmark_mass_tables is not present in ref and dev datasets'.format(v))
     else:
         varlist = commonspc
 
@@ -2616,6 +2651,7 @@ def make_benchmark_mass_tables(
     refds = xr.Dataset()
     devds = xr.Dataset()
 
+
 def make_benchmark_oh_metrics(
     ref,
     refmet,
@@ -2639,7 +2675,7 @@ def make_benchmark_oh_metrics(
         refstr : str
             A string to describe ref (e.g. version number)
         dev : str
-            Path name of "Dev" (aka "Development") data set file. 
+            Path name of "Dev" (aka "Development") data set file.
             The "Dev" data set will be compared against the "Ref" data set.
         devmet : list of str
             Path name of dev meteorology data set.
@@ -2772,13 +2808,13 @@ def make_benchmark_oh_metrics(
     dev_num = np.sum(dev_dens.values * dev_vol.values)
 
     # Denominator: Loss rate in troposphere
-    ref_mcf_denom = np.sum(ref_mcf_k * ref_oh_trop * \
+    ref_mcf_denom = np.sum(ref_mcf_k * ref_oh_trop *
                            ref_dens_trop * ref_vol_trop)
-    dev_mcf_denom = np.sum(dev_mcf_k * dev_oh_trop * \
+    dev_mcf_denom = np.sum(dev_mcf_k * dev_oh_trop *
                            dev_dens_trop * dev_vol_trop)
-    ref_ch4_denom = np.sum(ref_ch4_k * ref_oh_trop * \
+    ref_ch4_denom = np.sum(ref_ch4_k * ref_oh_trop *
                            ref_dens_trop * ref_vol_trop)
-    dev_ch4_denom = np.sum(dev_ch4_k * dev_oh_trop * \
+    dev_ch4_denom = np.sum(dev_ch4_k * dev_oh_trop *
                            dev_dens_trop * dev_vol_trop)
 
     # Compute lifetimes [years]
@@ -2792,9 +2828,9 @@ def make_benchmark_oh_metrics(
     mcf_diff = dev_mcf_lifetime - ref_mcf_lifetime
     ch4_diff = dev_ch4_lifetime - ref_ch4_lifetime
 
-    mcf_pctdiff = ((dev_mcf_lifetime - ref_mcf_lifetime) / \
+    mcf_pctdiff = ((dev_mcf_lifetime - ref_mcf_lifetime) /
                    ref_mcf_lifetime) * 100.0
-    ch4_pctdiff = ((dev_ch4_lifetime - ref_ch4_lifetime) / \
+    ch4_pctdiff = ((dev_ch4_lifetime - ref_ch4_lifetime) /
                    ref_ch4_lifetime) * 100.0
 
     # ==================================================================
@@ -2845,6 +2881,7 @@ def make_benchmark_oh_metrics(
     devds = xr.Dataset()
     refmetds = xr.Dataset()
     devmetds = xr.Dataset()
+
 
 def make_benchmark_wetdep_plots(
     ref,
@@ -2897,10 +2934,10 @@ def make_benchmark_wetdep_plots(
             plot pdf filename and as a destination folder subdirectory
             for writing plots
             Default value: None
-		benchmark_type: str
-			A string denoting the type of benchmark output to plot,
-			either FullChemBenchmark or TransportTracersBenchmark. 
-			Default value: "FullChemBenchmark"			
+                benchmark_type: str
+                        A string denoting the type of benchmark output to plot,
+                        either FullChemBenchmark or TransportTracersBenchmark.
+                        Default value: "FullChemBenchmark"
         overwrite : bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
@@ -2922,7 +2959,7 @@ def make_benchmark_wetdep_plots(
             Path name for ref meteorology
             Default value: None
         devmet : str
-            Path name for dev meteorology  
+            Path name for dev meteorology
             Default value: None
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
@@ -2943,7 +2980,7 @@ def make_benchmark_wetdep_plots(
         raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.mkdir(dst)
-        
+
     # Make a collection subdirectory
     targetdst = os.path.join(dst, collection)
     if not os.path.isdir(targetdst):
@@ -2976,7 +3013,7 @@ def make_benchmark_wetdep_plots(
 
     # Get list of variables in collection
     vardict = util.compare_varnames(refds, devds, quiet=True)
-    varlist = [v for v in vardict["commonvars3D"] if collection+"_" in v]
+    varlist = [v for v in vardict["commonvars3D"] if collection + "_" in v]
     varlist.sort()
 
     # Surface plots
@@ -3002,9 +3039,12 @@ def make_benchmark_wetdep_plots(
             n_job=n_job,
             spcdb_dir=spcdb_dir
         )
-        util.add_bookmarks_to_pdf(pdfname, varlist, remove_prefix=collection+'_',
-                             verbose=verbose)
-        
+        util.add_bookmarks_to_pdf(
+            pdfname,
+            varlist,
+            remove_prefix=collection + '_',
+            verbose=verbose)
+
     # 500 hPa plots
     if "500hpa" in plots:
         if datestr is not None:
@@ -3015,7 +3055,7 @@ def make_benchmark_wetdep_plots(
         compare_single_level(
             refds,
             refstr,
-            devds,                 
+            devds,
             devstr,
             varlist=varlist,
             ilev=22,
@@ -3031,13 +3071,13 @@ def make_benchmark_wetdep_plots(
         util.add_bookmarks_to_pdf(
             pdfname,
             varlist,
-            remove_prefix=collection+'_',
+            remove_prefix=collection + '_',
             verbose=verbose
         )
-                
+
     # Zonal mean plots
     if "zonalmean" in plots or "zm" in plots:
-            
+
         # Full column
         if datestr is not None:
             plotfilename = "{}_FullColumn_ZonalMean_{}.pdf".format(
@@ -3066,10 +3106,10 @@ def make_benchmark_wetdep_plots(
         util.add_bookmarks_to_pdf(
             pdfname,
             varlist,
-            remove_prefix=collection+'_',
+            remove_prefix=collection + '_',
             verbose=verbose
         )
-        
+
         # Stratosphere
         if datestr is not None:
             plotfilename = "{}_Strat_ZonalMean_{}.pdf".format(
@@ -3099,7 +3139,7 @@ def make_benchmark_wetdep_plots(
         util.add_bookmarks_to_pdf(
             pdfname,
             varlist,
-            remove_prefix=collection+'_',
+            remove_prefix=collection + '_',
             verbose=verbose
         )
 
@@ -3113,18 +3153,18 @@ def make_benchmark_wetdep_plots(
 
 
 def make_benchmark_aerosol_tables(
-        devdir,
-        devlist_aero,
-        devlist_spc,
-        devlist_met,
-        devstr,
-        year, 
-        days_per_mon,
-        dst='./benchmark',
-        overwrite=False,
-        is_gchp=False,
-        spcdb_dir=os.path.dirname(__file__)
-    ):
+    devdir,
+    devlist_aero,
+    devlist_spc,
+    devlist_met,
+    devstr,
+    year,
+    days_per_mon,
+    dst='./benchmark',
+    overwrite=False,
+    is_gchp=False,
+    spcdb_dir=os.path.dirname(__file__)
+):
     """
     Compute FullChemBenchmark aerosol budgets & burdens
 
@@ -3141,15 +3181,15 @@ def make_benchmark_aerosol_tables(
         devstr : str
             Descriptive string for datasets (e.g. version number)
         year : str
-            The year of the benchmark simulation (e.g. '2016'). 
+            The year of the benchmark simulation (e.g. '2016').
         days_per_month : list of int
             List of number of days per month for all months
 
     Keyword Args (optional):
     ------------------------
-        dst : str 
+        dst : str
             Directory where budget tables will be created.
-            Default value: './benchmark'            
+            Default value: './benchmark'
         overwrite : bool
             Overwrite burden & budget tables? (default=True)
             Default value: False
@@ -3171,7 +3211,7 @@ def make_benchmark_aerosol_tables(
         os.makedirs(dst)
 
     # List of species (and subsets for the trop & strat)
-    species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC" ]
+    species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC"]
 
     # Read the species database
     path = os.path.join(spcdb_dir, "species_database.yml")
@@ -3187,30 +3227,42 @@ def make_benchmark_aerosol_tables(
     path = os.path.join(os.path.dirname(__file__), "aod_species.yml")
     aod = yaml_load_file(open(path))
     aod_list = [v for v in aod.keys() if "Dust" in v or "Hyg" in v]
-    #different names for GCHP
+    # different names for GCHP
     if is_gchp:
         aod_list = [v.replace('550nm', 'WL1') for v in aod_list]
     # Descriptive names
     spc2name = {"BCPI": "Black Carbon",
                 "DST1": "Dust",
                 "OCPI": "Organic Carbon",
-                "SO4" : "Sulfate",
+                "SO4": "Sulfate",
                 "SALA": "Sea Salt (accum)",
                 "SALC": "Sea Salt (coarse)"
-    }
-    
+                }
+
     # Read data collections
     if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):
-        ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list, compat='override', coords='all')
-        ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)
-        ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)
+        ds_aer = xr.open_mfdataset(
+            devlist_aero,
+            data_vars=aod_list,
+            compat='override',
+            coords='all')
+        ds_spc = xr.open_mfdataset(
+            devlist_spc, drop_variables=gcon.skip_these_vars)
+        ds_met = xr.open_mfdataset(
+            devlist_met, drop_variables=gcon.skip_these_vars)
     else:
-        ds_aer = xr.open_mfdataset(devlist_aero, data_vars=aod_list, compat='override', coords='all')#,
-                                   #combine="nested", concat_dim="time")
-        ds_spc = xr.open_mfdataset(devlist_spc, drop_variables=gcon.skip_these_vars)#, 
-                                   #combine="nested", concat_dim="time")
-        ds_met = xr.open_mfdataset(devlist_met, drop_variables=gcon.skip_these_vars)#, 
-                                   #combine="nested", concat_dim="time")
+        ds_aer = xr.open_mfdataset(
+            devlist_aero,
+            data_vars=aod_list,
+            compat='override',
+            coords='all')  # ,
+        # combine="nested", concat_dim="time")
+        ds_spc = xr.open_mfdataset(devlist_spc,
+                                   drop_variables=gcon.skip_these_vars)  # ,
+        # combine="nested", concat_dim="time")
+        ds_met = xr.open_mfdataset(devlist_met,
+                                   drop_variables=gcon.skip_these_vars)  # ,
+        # combine="nested", concat_dim="time")
 
     # Get troposphere mask
     tropmask = get_troposphere_mask(ds_met)
@@ -3224,24 +3276,24 @@ def make_benchmark_aerosol_tables(
     # --------------------------------
 
     # Get number of vertical levels
-    N_LEVS  = ds_spc.dims["lev"]
+    N_LEVS = ds_spc.dims["lev"]
 
-    if is_gchp:   
+    if is_gchp:
         area = ds_met["Met_AREAM2"].values
         a = area.shape
         area_m2 = np.zeros([a[0], N_LEVS, a[1], a[2], a[3]])
         for t in range(n_mon):
             for k in range(N_LEVS):
-                area_m2[t,k,:,:,:] = area[t,:,:,:]
-        total_area_m2 = np.sum(area_m2[0,0,:,:,:])
+                area_m2[t, k, :, :, :] = area[t, :, :, :]
+        total_area_m2 = np.sum(area_m2[0, 0, :, :, :])
     else:
         area = ds_met["AREA"].values
         a = area.shape
         area_m2 = np.zeros([a[0], N_LEVS, a[1], a[2]])
         for t in range(n_mon):
             for k in range(N_LEVS):
-                area_m2[t,k,:,:] = area[t,:,:]
-        total_area_m2 = np.sum(area_m2[0,0,:,:])
+                area_m2[t, k, :, :] = area[t, :, :]
+        total_area_m2 = np.sum(area_m2[0, 0, :, :])
 
     # ------------------------------
     # Conversion factors and time increments
@@ -3258,18 +3310,18 @@ def make_benchmark_aerosol_tables(
     # Define function to print tables
     # ------------------------------
     def print_aerosol_metrics(data, species_list, filename, title, label):
-        
+
         with open(filename, "w+") as f:
-            
+
             # Print top header
-            print("%"*79, file=f)
-            print(" {} for {} in {}".format(title, year, devstr), file=f) 
+            print("%" * 79, file=f)
+            print(" {} for {} in {}".format(title, year, devstr), file=f)
             print(" (weighted by the number of days per month)", file=f)
-            print("%"*79, file=f)
-            line = "\n"+" "*40+"Strat         Trop         Strat+Trop\n"
-            line += " "*40+"-----------   ----------   ----------"
+            print("%" * 79, file=f)
+            line = "\n" + " " * 40 + "Strat         Trop         Strat+Trop\n"
+            line += " " * 40 + "-----------   ----------   ----------"
             print(line, file=f)
-            
+
             # Print data
             for spc in species_list:
                 line = "{} ({}) {} :  {:11.9f}   {:10.8f}   {:10.8f}\n".format(
@@ -3289,7 +3341,7 @@ def make_benchmark_aerosol_tables(
     filename = "{}/Aerosol_Burdens_{}.txt".format(dst, devstr)
     if n_mon == 12:
         title = "Annual average global aerosol burdens"
-    else: 
+    else:
         title = "Average global aerosol burdens across {} months".format(n_mon)
     label = "burden [Tg]"
 
@@ -3302,13 +3354,13 @@ def make_benchmark_aerosol_tables(
 
     # Define the axes we need to sum over to make monthly sums
     if is_gchp:
-        sum_axes = (1,2,3,4)
+        sum_axes = (1, 2, 3, 4)
     else:
-        sum_axes = (1,2,3)
+        sum_axes = (1, 2, 3)
 
     # Loop over species
     for spc in species_list:
-        
+
         # Whole-atmosphere and trop-only quantities [g]
         # NOTE: DryDep is by nature trop-only
         varname = "SpeciesConc_" + spc
@@ -3326,7 +3378,7 @@ def make_benchmark_aerosol_tables(
         burdens[spc + "_s"] = np.sum(q_sum_s) / days_per_yr
 
     print_aerosol_metrics(burdens, species_list, filename, title, label)
-    
+
     # -------------------------------------------
     # Compute average AOD's [Tg] and print
     # -------------------------------------------
@@ -3348,19 +3400,19 @@ def make_benchmark_aerosol_tables(
 
     # Define axes to sum over, and total surface area
     if is_gchp:
-        sum_axes = (1,2,3,4)
+        sum_axes = (1, 2, 3, 4)
     else:
-        sum_axes = (1,2,3)
+        sum_axes = (1, 2, 3)
 
     # Loop over AOD variables
     for varname in aod_list:
-        
-        # Get the corresponding species name 
+
+        # Get the corresponding species name
         if "Dust" in varname:
             spc = "DST1"
         else:
             spc = varname.split("_")[1]
-            
+
         # Whole-atmosphere AOD [1]
         q[spc + "_f"] = ds_aer[varname].values
 
@@ -3368,10 +3420,10 @@ def make_benchmark_aerosol_tables(
         q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
 
         # Create monthly sums, weighted by the number of days per month
-        q_sum_f = np.sum(q[spc + "_f"] * area_m2, axis=sum_axes)*days_per_mon
-        q_sum_t = np.sum(q[spc + "_t"] * area_m2, axis=sum_axes)*days_per_mon
+        q_sum_f = np.sum(q[spc + "_f"] * area_m2, axis=sum_axes) * days_per_mon
+        q_sum_t = np.sum(q[spc + "_t"] * area_m2, axis=sum_axes) * days_per_mon
         q_sum_s = q_sum_f - q_sum_t
-        
+
         # Take annual averages
         aods[spc + "_f"] = np.sum(q_sum_f) / total_area_m2 / days_per_yr
         aods[spc + "_t"] = np.sum(q_sum_t) / total_area_m2 / days_per_yr
@@ -3397,8 +3449,8 @@ def make_benchmark_operations_budget(
     benchmark_type=None,
     label=None,
     col_sections=["Full", "Trop", "PBL", "Strat"],
-    operations=["Chemistry","Convection","EmisDryDep","Mixing",\
-                "Transport","WetDep"],
+    operations=["Chemistry", "Convection", "EmisDryDep", "Mixing",
+                "Transport", "WetDep"],
     compute_accum=True,
     require_overlap=False,
     dst='.',
@@ -3443,7 +3495,7 @@ def make_benchmark_operations_budget(
             Default value: ["Chemistry","Convection","EmisDryDep",
                             "Mixing","Transport","WetDep"]
         compute_accum : bool
-            Optionally turn on/off accumulation calculation. If True, will 
+            Optionally turn on/off accumulation calculation. If True, will
             only compute accumulation if all six GEOS-Chem operations budgets
             are computed. Otherwise a message will be printed warning that
             accumulation will not be calculated.
@@ -3479,7 +3531,7 @@ def make_benchmark_operations_budget(
             msg = "Strat budget table requires Full and Trop column sections"
             raise ValueError(msg)
         else:
-            print("*** Will compute Strat budget as difference of Full"\
+            print("*** Will compute Strat budget as difference of Full"
                   " and Trop ***")
 
     # Make a subset of column sections not including Strat
@@ -3489,7 +3541,8 @@ def make_benchmark_operations_budget(
     # Operations
     # ------------------------------------------
 
-    # Rename the optional argument to be clear it is GEOS-Chem budget operations
+    # Rename the optional argument to be clear it is GEOS-Chem budget
+    # operations
     gc_operations = operations
 
     # Handle whether to compute accumulation.
@@ -3504,12 +3557,12 @@ def make_benchmark_operations_budget(
         print("  {}".format(all_operation))
     if compute_accum:
         if "ACCUMULATION" in all_operations:
-            print("*** Will compute ACCUMULATION operation as sum of all "\
+            print("*** Will compute ACCUMULATION operation as sum of all "
                   "GEOS-Chem operations ***")
         else:
-            print("***Will not compute ACCUMULATION since not all GEOS-Chem"\
+            print("***Will not compute ACCUMULATION since not all GEOS-Chem"
                   " operation budgets will be computed.")
-    
+
     # ------------------------------------------
     # Read data
     # ------------------------------------------
@@ -3521,12 +3574,14 @@ def make_benchmark_operations_budget(
     print('Opening ref and dev data')
     skip_vars = gcon.skip_these_vars
     if annual:
-        if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):        
+        if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):
             ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
             dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
         else:
-            ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)#, combine="nested", concat_dim="time")
-            dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)#, combine="nested", concat_dim="time")
+            # , combine="nested", concat_dim="time")
+            ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
+            # , combine="nested", concat_dim="time")
+            dev_ds = xr.open_mfdataset(devfiles, drop_variables=skip_vars)
     else:
         ref_ds = xr.open_dataset(reffiles, drop_variables=skip_vars)
         dev_ds = xr.open_dataset(devfiles, drop_variables=skip_vars)
@@ -3562,7 +3617,7 @@ def make_benchmark_operations_budget(
             if require_overlap:
                 section_spc = list(set(cmnspc))
             else:
-                section_spc =  list(set(refspc + devspc + cmnspc))
+                section_spc = list(set(refspc + devspc + cmnspc))
             section_spc.sort()
             spclists[gc_section] = section_spc
 
@@ -3631,82 +3686,82 @@ def make_benchmark_operations_budget(
     columns = ["Column_Section", "Species", "Operation", "Ref_raw", "Dev_raw",
                "Units_converted", "Ref", "Dev", "Diff", "Pct_diff"]
     n_rows = n_sections * n_spc * n_ops
-    
+
     # Make column data to initialize with
     col_section = list(itertools.chain.from_iterable(
         itertools.repeat(x, n_ops * n_spc) for x in col_sections))
     col_spc = list(itertools.chain.from_iterable(
         itertools.repeat(x, n_ops) for x in spclist)) * n_sections
     col_ops = all_operations * n_sections * n_spc
-    
+
     # Put the column data together into a dictionary
     data = {
-        'Species':col_spc,
-        'Operation':col_ops,
-        'Column_Section':col_section,
+        'Species': col_spc,
+        'Operation': col_ops,
+        'Column_Section': col_section,
     }
-    
+
     # Create the dataframe from the data dictionary and column names list
     df = pd.DataFrame(data, columns=columns)
-    
+
     # ------------------------------------------
     # Populate dataframe for GEOS-Chem operations and column sections
     # ------------------------------------------
     print('Calculating budgets for all data operations and column sections...')
-    
+
     # Loop over sections (only those with data in files)
     for gc_section in gc_sections:
-    
+
         # Loop over species in that section
         for i, spc in enumerate(spclist):
-            
+
             # Keep track of progress
-            if (i+1) % 50 == 0:
-                print('  {}: species {} of {}'.format(gc_section, i+1, \
+            if (i + 1) % 50 == 0:
+                print('  {}: species {} of {}'.format(gc_section, i + 1,
                                                       n_spc))
-    
+
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
-    
+
                 # Get the dataframe row to fill. Skip if not found.
                 dfrow = (df["Column_Section"] == gc_section) \
-                        & (df["Species"] == spc) \
-                        & (df["Operation"] == gc_operation)
+                    & (df["Species"] == spc) \
+                    & (df["Operation"] == gc_operation)
                 if not any(dfrow):
                     continue
-    
+
                 # Get the variable name in the datasets
-                varname= "Budget" + gc_operation + gc_section + "_" + spc
-                    
+                varname = "Budget" + gc_operation + gc_section + "_" + spc
+
                 # Calculate Ref and dev raw as global sum
-                if ( varname in ref_ds.data_vars.keys() ):
+                if (varname in ref_ds.data_vars.keys()):
                     refraw = ref_ds[varname].values.sum()
-                elif gc_operation == "WetDep" and is_wetdep[spc] == None:
+                elif gc_operation == "WetDep" and is_wetdep[spc] is None:
                     refraw = 0.0
                 else:
                     refraw = np.nan
-                if ( varname in dev_ds.data_vars.keys() ):
+                if (varname in dev_ds.data_vars.keys()):
                     devraw = dev_ds[varname].values.sum()
-                elif gc_operation == "WetDep" and is_wetdep[spc] == None:
+                elif gc_operation == "WetDep" and is_wetdep[spc] is None:
                     devraw = 0.0
                 else:
                     devraw = np.nan
-    
+
                 # Convert units
                 refconv = refraw * ref_conv_fac[spc]
                 devconv = devraw * dev_conv_fac[spc]
-                    
+
                 # Calculate diff and % diff from conc with converted units
                 if not np.isnan(refconv) and not np.isnan(devconv):
                     diff = devconv - refconv
                     try:
                         pctdiff = diff / refconv * 100
-                    except:
+                    except BaseException:
                         pctdiff = np.nan
                 else:
                     diff = np.nan
                     pctdiff = np.nan
-    
+
                 # Fill dataframe
                 df.loc[dfrow, "Ref_raw"] = refraw
                 df.loc[dfrow, "Dev_raw"] = devraw
@@ -3715,128 +3770,128 @@ def make_benchmark_operations_budget(
                 df.loc[dfrow, "Dev"] = devconv
                 df.loc[dfrow, "Diff"] = diff
                 df.loc[dfrow, "Pct_diff"] = pctdiff
-    
+
     # ------------------------------------------
     # Compute Strat for each data operation (if applicable)
     # ------------------------------------------
     if compute_strat:
         print('Computing Strat budgets from Trop and Full...')
-    
+
         # Loop over species
         for i, spc in enumerate(spclist):
-            
+
             # Keep track of progress
-            if (i+1) % 50 == 0:
-                print('  Strat: species {} of {}'.format(i+1, n_spc))
-    
+            if (i + 1) % 50 == 0:
+                print('  Strat: species {} of {}'.format(i + 1, n_spc))
+
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
-    
+
                 # Get the strat dataframe row to fill. Skip if not found.
                 dfrow = (df["Column_Section"] == "Strat") \
-                        & (df["Species"] == spc) \
-                        & (df["Operation"] == gc_operation)
+                    & (df["Species"] == spc) \
+                    & (df["Operation"] == gc_operation)
                 if not any(dfrow):
                     continue
-    
+
                 # Get the "Full" row to use in the calculation
                 dfrow_full = (df["Column_Section"] == "Full") \
-                             & (df["Species"] == spc) \
-                             & (df["Operation"] == gc_operation)
+                    & (df["Species"] == spc) \
+                    & (df["Operation"] == gc_operation)
                 if not any(dfrow_full):
                     continue
-    
+
                 # Get the "Trop" row to use in the calculation
                 dfrow_trop = (df["Column_Section"] == "Trop") \
-                             & (df["Species"] == spc) \
-                             & (df["Operation"] == gc_operation)
+                    & (df["Species"] == spc) \
+                    & (df["Operation"] == gc_operation)
                 if not any(dfrow_trop):
                     continue
-    
+
                 # Calculate strat concentrations as Full minus Trop. Do
                 # not bother with raw value computation.
                 refstrat = df.loc[dfrow_full, "Ref"].values[0] \
-                           - df.loc[dfrow_trop, "Ref"].values[0]
+                    - df.loc[dfrow_trop, "Ref"].values[0]
                 devstrat = df.loc[dfrow_full, "Dev"].values[0] \
-                           - df.loc[dfrow_trop, "Dev"].values[0]
-    
+                    - df.loc[dfrow_trop, "Dev"].values[0]
+
                 # Calculate diff and % diff
                 if not np.isnan(refstrat) and not np.isnan(devstrat):
                     diff = devstrat - refstrat
                     try:
                         pctdiff = diff / refstrat * 100
-                    except:
+                    except BaseException:
                         pctdiff = np.nan
                 else:
                     diff = np.nan
                     pctdiff = np.nan
-    
+
                 # Fill dataframe
                 df.loc[dfrow, "Units_converted"] = units[spc]
                 df.loc[dfrow, "Ref"] = refstrat
                 df.loc[dfrow, "Dev"] = devstrat
                 df.loc[dfrow, "Diff"] = diff
                 df.loc[dfrow, "Pct_diff"] = pctdiff
-    
+
     # ------------------------------------------
     # Compute Accumulation for each column section (if applicable)
     # ------------------------------------------
     if compute_accum:
         print('Computing ACCUMULATION operation budgets...')
-    
+
         # Loop over all column sections
         for col_section in col_sections:
-    
+
             # Loop over species
             for i, spc in enumerate(spclist):
-            
+
                 # Keep track of progress
-                if (i+1) % 50 == 0:
-                    print('  {}: species {} of {}'.\
-                          format(col_section, i+1, n_spc))
-    
+                if (i + 1) % 50 == 0:
+                    print('  {}: species {} of {}'.
+                          format(col_section, i + 1, n_spc))
+
                 # Get the accumulation dataframe row to fill.Skip if not found.
                 dfrow = (df["Column_Section"] == col_section) \
-                        & (df["Species"] == spc) \
-                        & (df["Operation"] == "ACCUMULATION")
+                    & (df["Species"] == spc) \
+                    & (df["Operation"] == "ACCUMULATION")
                 if not any(dfrow):
                     continue
-    
+
                 # Get the rows to sum
                 dfrows_to_sum = (df["Column_Section"] == col_section) \
-                                & (df["Species"] == spc) \
-                                & (df["Operation"].isin(gc_operations))
-    
+                    & (df["Species"] == spc) \
+                    & (df["Operation"].isin(gc_operations))
+
                 # Sum the concentrations. If there is one or more NaN values
                 # then set to NaN since not enough data for accumulation.
                 refsum = df.loc[dfrows_to_sum, "Ref"].sum()
                 devsum = df.loc[dfrows_to_sum, "Dev"].sum()
-                    
+
                 # Calculate diff and % diff
                 if not np.isnan(refsum) and not np.isnan(devsum):
                     diff = devsum - refsum
                     try:
                         pctdiff = diff / refsum * 100
-                    except:
+                    except BaseException:
                         pctdiff = np.nan
                 else:
                     diff = np.nan
                     pctdiff = np.nan
-    
+
                 # Fill dataframe
                 df.loc[dfrow, "Units_converted"] = units[spc]
                 df.loc[dfrow, "Ref"] = refsum
                 df.loc[dfrow, "Dev"] = devsum
                 df.loc[dfrow, "Diff"] = diff
                 df.loc[dfrow, "Pct_diff"] = pctdiff
-                
+
     #  Sanity check write to csv (for testing. Keep commented out otherwise)
     #df.to_csv('df.csv', na_rep='NA')
-    
+
     # ------------------------------------------
     # Make budget file
     # ------------------------------------------
-    
+
     # Create the target output directory hierarchy if it doesn't already exist
     if os.path.isdir(dst) and not overwrite:
         msg = "Directory {} exists. ".format(dst)
@@ -3844,19 +3899,19 @@ def make_benchmark_operations_budget(
         raise ValueError(msg)
     elif not os.path.isdir(dst):
         os.makedirs(dst)
-    
+
     # Print budgets to file
     if label is not None:
         filename = "{}/Budgets_After_Operations_{}.txt".format(dst, label)
     else:
         filename = "{}/Budgets_After_Operations.txt".format(dst)
     with open(filename, "w+") as f:
-        print("#"*78, file=f)
+        print("#" * 78, file=f)
         if label is not None and benchmark_type is not None:
             print("{} budgets for {}".format(benchmark_type, label),
                   file=f)
         else:
-            print("Budgets across {}/{} sec".format(ref_interval,dev_interval), file=f)
+            print("Budgets across {}/{} sec".format(ref_interval, dev_interval), file=f)
         print("\n", file=f)
         print("NOTES:", file=f)
         msg = " - When using the non-local mixing scheme (default), "\
@@ -3868,26 +3923,31 @@ def make_benchmark_operations_budget(
               "budget is calculated as Full minus Trop\n - ACCUMULATION "\
               "is calculated as sum of all other operations"
         print(msg, file=f)
-        print("#"*78, file=f)
+        print("#" * 78, file=f)
         print(file=f)
-    
+
         # Loop over species
         for i, spc in enumerate(spclist):
             print("{} budgets (Ref={}; Dev={})".format(
                 spc, refstr, devstr), file=f)
-    
+
             # Print a table for each column section
             for col_section in col_sections:
-    
+
                 # Get the dataframe rows. Skip if none found.
                 dfrows = (df["Column_Section"] == col_section) \
-                         & (df["Species"] == spc) \
-                         & (df["Operation"].isin(all_operations))
+                    & (df["Species"] == spc) \
+                    & (df["Operation"].isin(all_operations))
                 if not any(dfrows):
                     continue
-    
+
                 # Print dataframe subset to file
-                print("{} {} : {}".format(col_section, units[spc], spc), file=f)
+                print(
+                    "{} {} : {}".format(
+                        col_section,
+                        units[spc],
+                        spc),
+                    file=f)
                 print(tabulate(df.loc[dfrows, ["Operation",
                                                "Ref",
                                                "Dev",
@@ -3896,15 +3956,14 @@ def make_benchmark_operations_budget(
                                headers='keys',
                                tablefmt='psql',
                                showindex=False,
-                               floatfmt=(".5f",".5f",".5f",".5f",".5f"),
-                           ), file=f
-                  )
-            print("\n", file = f)
-    
+                               floatfmt=(".5f", ".5f", ".5f", ".5f", ".5f"),
+                               ), file=f
+                      )
+            print("\n", file=f)
+
     # ------------------------------------------
     # Clean up
     # ------------------------------------------
     df = pd.DataFrame()
     ref_ds = xr.Dataset()
     dev_ds = xr.Dataset()
-    
