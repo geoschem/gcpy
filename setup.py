@@ -26,6 +26,7 @@ CLASSIFIERS = [
     'Programming Language :: Python',
     'Programming Language :: Python :: 3.6',
     'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
     'Topic :: Scientific/Engineering',
 ]
 
@@ -33,7 +34,7 @@ MAJOR = 1
 MINOR = 0
 MICRO = 0
 #for test.pypi (cannot overwrite version files on pypi or test.pypi)
-NANO = '.5'
+NANO = '.10'
 VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, NANO)
 #VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
 '''
@@ -99,8 +100,14 @@ setup(
 
 
 '''
-Instructions for publishing new version to PyPi:
+Instructions for publishing new version to TestPyPi (mimics PyPi) and PyPi:
 
-Test installation in a virtual environment using pip install --extra-index-url https://test.pypi.org/simple/ geoschem-gcpy
+1. Update version numbers above
+2. Install twine if not available (pip install twine)
+3. run python setup.py sdist bdist_wheel
+4. run twine check dist/*
+5. run twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+6. Test installation in a virtual environment using pip install --extra-index-url https://test.pypi.org/simple/ geoschem-gcpy
+7. To publish to PyPi, run twine upload dist/*
 
 '''

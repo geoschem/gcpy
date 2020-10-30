@@ -2,8 +2,13 @@ recursive-include gcpy/ *
 recursive-exclude gcpy/__pycache__ *
 recursive-include benchmark/ *
 recursive-include examples/ *
-recursive-include docs/ *
+recursive-exclude examples/ *.bpch *.pdf
+include docs/environment.yml
+include docs/Makefile
+include docs/make.bat
+recursive-include docs/source *.rst *.png
 include *.in
 include *.md
 include *.txt
 include *.yml
+
