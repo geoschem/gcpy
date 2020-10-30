@@ -11,9 +11,12 @@ import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
 from PyPDF2 import PdfFileMerger
 from .grid import get_vert_grid, get_pressure_indices, \
-    pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, get_input_res
-from .regrid import regrid_comparison_data, create_regridders, gen_xmat, regrid_vertical
-from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, all_zero_or_nan, slice_by_lev_and_time, compare_varnames
+    pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, \
+    get_input_res
+from .regrid import regrid_comparison_data, create_regridders, gen_xmat, \
+    regrid_vertical
+from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, \
+    all_zero_or_nan, slice_by_lev_and_time, compare_varnames                                                                               
 from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
 from joblib import Parallel, delayed
@@ -74,7 +77,8 @@ def six_plot(
     Args:
     -----
         subplot : str
-            Type of plot to create (ref, dev, absolute difference or fractional difference)
+            Type of plot to create (ref, dev, absolute difference or 
+            fractional difference)
         all_zero : bool
             Set this flag to True if the data to be plotted consist only of zeros
         all_nan : bool
@@ -84,7 +88,8 @@ def six_plot(
         grid : dict
             Dictionary mapping plot_val to plottable coordinates
         ax : matplotlib axes
-            Axes object to plot information. Will create a new axes if none is passed.
+            Axes object to plot information. Will create a new axes 
+            if none is passed.
         rowcol : tuple
             Subplot position in overall Figure
         title : str
@@ -98,7 +103,8 @@ def six_plot(
         masked_data : numpy array
             Masked area for cubed-sphere plotting
         other_all_nan : bool
-            Set this flag to True if plotting ref/dev and the other of ref/dev is all nan
+            Set this flag to True if plotting ref/dev and the other of ref/dev 
+            is all nan
         gridtype : str
             "ll" for lat/lon or "cs" for cubed-sphere
         vmins: list of float
@@ -108,7 +114,8 @@ def six_plot(
         use_cmap_RdBu : bool
             Set this flag to True to use a blue-white-red colormap
         match_cbar : bool
-            Set this flag to True if you are plotting with the same colorbar for ref and dev
+            Set this flag to True if you are plotting with the same colorbar 
+            for ref and dev
         verbose : bool
             Set this flag to True to enable informative printout.
         log_color_scale : bool
@@ -123,7 +130,8 @@ def six_plot(
             Indices where edge pressure values are within a given pressure range
             Default value: np.full((1,1), -1)
         log_yaxis : bool
-            Set this flag to True to enable log scaling of pressure in zonal mean plots
+            Set this flag to True to enable log scaling of pressure in zonal 
+            mean plots
             Default value: False
         xtick_positions : list of float
             Locations of lat/lon or lon ticks on plot
@@ -142,12 +150,12 @@ def six_plot(
             Default value: ccrs.PlateCarree()
         ll_plot_func : str
             Function to use for lat/lon single level plotting with possible values
-            'imshow' and 'pcolormesh'. imshow is much faster but is slightly displaced
-            when plotting from dateline to dateline and/or pole to pole.
+            'imshow' and 'pcolormesh'. imshow is much faster but is slightly
+            displaced when plotting from dateline to dateline and/or pole to pole.
             Default value: 'imshow'
         extra_plot_args : various
-            Any extra keyword arguments are passed through the plotting functions to be used
-            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
+            Any extra keyword arguments are passed through the plotting functions to
+            be used in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     """
     # Set min and max of the data range
     if subplot in ("ref", "dev"):
