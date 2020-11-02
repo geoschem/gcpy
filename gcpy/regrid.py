@@ -2,7 +2,8 @@
 
 import os
 import xesmf as xe
-from .grid import make_grid_LL, make_grid_CS, make_grid_SG, get_input_res, call_make_grid, get_grid_extents
+from .grid import make_grid_LL, make_grid_CS, make_grid_SG, get_input_res, call_make_grid, \
+    get_grid_extents, get_vert_grid
 import hashlib
 import numpy as np
 import xarray as xr
@@ -801,6 +802,86 @@ def sg_hash(
             cs_res=cs_res).encode()).hexdigest()[
         :7]
 
+def regrid_vertical_datasets(ref, dev, target_grid_choice='ref', ref_vert_params=[[],[]],
+                             dev_vert_params=[[],[]], target_vert_params=[[],[]]):
+    """
+    Perform complete vertical regridding of GEOS-Chem datasets to 
+    the vertical grid of one of the datasets or an entirely different 
+    vertical grid.
+    
+    Args:
+        ref : xarray.Dataset
+            First dataset
+        dev : xarray.Dataset
+            Second dataset
+        target_grid_choice (optional) : str
+            Will regrid to the chosen dataset among the two datasets
+            unless target_vert_params is provided
+            Default value: 'ref'
+        ref_vert_params (optional) : list(list, list) of list-like types
+            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format. 
+            Needed if ref grid is not 47 or 72 levels
+            Default value: [[], []]
+        dev_vert_params (optional) : list(list, list) of list-like types
+            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format. 
+            Needed if dev grid is not 47 or 72 levels
+            Default value: [[], []]
+        target_vert_params (optional) : list(list, list) of list-like types
+            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format. 
+            Will override target_grid_choice as target grid
+            Default value: [[], []]
+    Returns:
+        new_ref : xarray.Dataset
+            First dataset, possibly regridded to a new vertical grid
+        new_dev : xarray.Dataset
+            Second dataset, possibly regridded to a new vertical grid
+    """
+
+    # Get mid-point pressure and edge pressures for this grid
+    ref_pedge, ref_pmid, _ = get_vert_grid(ref, *ref_vert_params)
+    dev_pedge, dev_pmid, _ = get_vert_grid(dev, *dev_vert_params)
+    
+    new_ref, new_dev = ref, dev
+    
+    if len(ref_pedge) != len(dev_pedge) or target_vert_params != [[],[]]:
+        if target_vert_params != [[],[]]:
+            #use a specific target grid for regridding if passed
+            target_grid = vert_grid(*target_vert_params)
+            target_pedge, target_pmid = target_grid.p_edge(), target_grid.p_mid()        
+        elif target_grid_choice == 'ref':
+            target_pedge, target_pmid = ref_pedge, ref_pmid
+        else:
+            target_pedge, target_pmid = dev_pedge, dev_pmid
+        
+        def regrid_one_vertical_dataset(ds, ds_pedge, target_pedge, target_pmid):
+            new_ds = ds
+            if len(ds_pedge) != len(target_pedge):
+                #regrid all 3D (plus possible time dimension) variables
+                xmat_ds = gen_xmat(ds_pedge, target_pedge)
+                regrid_variables = [v for v in ds.data_vars if (("lat" in ds[v].dims or "Xdim" in ds[v].dims)
+                                                                 and ("lon" in ds[v].dims or "Ydim" in ds[v].dims)
+                                                                 and ("lev" in ds[v].dims))]
+                new_ds = xr.Dataset()
+                #currently drop data vars that have lev but don't also have x and y coordinates
+                for v in (set(ds.data_vars)-set(regrid_variables)): 
+                    if 'lev' not in ds[v].dims:
+                        new_ds[v] = ds[v]
+                new_ds.attrs = ds.attrs
+                for v in regrid_variables:
+                    if "time" in ds[v].dims:
+                        new_ds_temp = []
+                        for time in range(len(ds[v].time)):
+                            new_ds_v = regrid_vertical(ds[v].isel(time=time), xmat_ds, target_pmid)
+                            new_ds_temp.append(new_ds_v.expand_dims("time"))
+                        new_ds[v] = xr.concat(new_ds_temp, "time")
+                    else:
+                        new_ds[v] = regrid_vertical(ds[v], xmat, target_pmid)
+            return new_ds
+        
+        new_ref = regrid_one_vertical_dataset(ref, ref_pedge, target_pedge, target_pmid)
+        new_dev = regrid_one_vertical_dataset(dev, dev_pedge, target_pedge, target_pmid)
+
+    return new_ref, new_dev
 
 def regrid_vertical(src_data_3D, xmat_regrid, target_levs=[]):
     """
@@ -844,6 +925,7 @@ def regrid_vertical(src_data_3D, xmat_regrid, target_levs=[]):
         # Matrix correctly dimensioned
         xmat_renorm = xmat_regrid.copy()
     else:
+        print(src_data_3D, xmat_regrid.shape)
         raise ValueError('Regridding matrix not correctly sized')
 
     nlev_out = xmat_renorm.shape[1]

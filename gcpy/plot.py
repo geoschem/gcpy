@@ -1934,9 +1934,9 @@ def compare_zonal_mean(
 
     # regrid vertically if necessary
     if len(ref_pedge) != len(pedge):
-        xmat = gen_xmat(ref_pedge, pedge)
+        xmat = gen_xmat(ref_pedge[ref_pedge_ind], pedge[pedge_ind])
     elif len(dev_pedge) != len(pedge):
-        xmat = gen_xmat(dev_pedge, pedge)
+        xmat = gen_xmat(dev_pedge[dev_pedge_ind], pedge[pedge_ind])
 
     for i in range(n_var):
 
@@ -2025,14 +2025,14 @@ def compare_zonal_mean(
 
         # Reduce variables to smaller vert grid if necessary for comparison
         if len(ref_pedge) != len(pedge):
-            ds_ref = regrid_vertical(ds_ref, xmat, dev_pmid)
+            ds_ref = regrid_vertical(ds_ref, xmat, dev_pmid[dev_pmid_ind])
             if diff_of_diffs:
-                frac_ds_ref = regrid_vertical(frac_ds_ref, xmat, dev_pmid)
+                frac_ds_ref = regrid_vertical(frac_ds_ref, xmat, dev_pmid[dev_pmid_ind])
 
         if len(dev_pedge) != len(pedge):
-            ds_dev = regrid_vertical(ds_dev, xmat, ref_pmid)
+            ds_dev = regrid_vertical(ds_dev, xmat, ref_pmid[ref_pmid_ind])
             if diff_of_diffs:
-                frac_ds_dev = regrid_vertical(frac_ds_dev, xmat, ref_pmid)
+                frac_ds_dev = regrid_vertical(frac_ds_dev, xmat, ref_pmid[ref_pmid_ind])
         ds_ref_cmps[i] = ds_ref
         ds_dev_cmps[i] = ds_dev
         if diff_of_diffs:
