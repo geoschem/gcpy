@@ -1366,7 +1366,10 @@ def compare_single_level(
             for folder in folders[:-1]:
                 full_path = os.path.join(full_path, folder)
                 if not os.path.isdir(full_path):
-                    os.mkdir(full_path)
+                    try:
+                        os.mkdir(full_path)
+                    except FileExistsError:
+                        pass
             pdf = PdfPages(os.path.join(full_path, pdfname_temp))
             pdf.savefig(figs)
             pdf.close()
@@ -2394,7 +2397,10 @@ def compare_zonal_mean(
             for folder in folders[:-1]:
                 full_path = os.path.join(full_path, folder)
                 if not os.path.isdir(full_path):
-                    os.mkdir(full_path)
+                    try:
+                        os.mkdir(full_path)
+                    except FileExistsError:
+                        pass
             pdf = PdfPages(os.path.join(full_path, pdfname_temp))
             pdf.savefig(figs)
             pdf.close()
