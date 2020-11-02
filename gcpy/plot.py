@@ -550,6 +550,9 @@ def compare_single_level(
          sg_dev_params=sg_dev_params
     )
 
+    #TODO: Implement vertical regridding. Current indexing system makes
+    #vertical regridding ambiguous for compare_single_level        
+
     # ==============================================================
     # Handle grid extents for lat-lon grids
     # ==============================================================
@@ -789,7 +792,7 @@ def compare_single_level(
 
     # ==================================================================
     # Create arrays for each variable in Ref and Dev datasets
-    # and do any necessary regridding. 'cmp' stands for comparison
+    # and do any necessary horizontal regridding. 'cmp' stands for comparison
     # and represents ref and dev data regridded as needed to a common
     # grid type and resolution for use in difference and ratio plots.
     # ==================================================================
