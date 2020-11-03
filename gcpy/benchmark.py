@@ -1637,7 +1637,6 @@ def make_benchmark_emis_tables(
             devmetds = xr.open_mfdataset(
                 devmet, drop_variables=gcon.skip_these_vars)
     else:
-        print(reflist)
         # , combine="nested", concat_dim="time")
         refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
         # , combine="nested", concat_dim="time")
