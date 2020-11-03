@@ -128,7 +128,7 @@ As stated previously, you can either call ``file_regrid.file_regrid()`` directly
 An example command line call (separated by line for readability) for regridding a C90 cubed-sphere restart file to a C48 stretched-grid 
 with a stretch factor of 3, a target longitude of 260.0, and a target latitude of 40.0 looks like:
 
-.. code-block
+.. code-block::
 
    python -m gcpy.file_regrid             \
          -i initial_GEOSChem_rst.c90_standard.nc   \
