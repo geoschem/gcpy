@@ -790,6 +790,23 @@ def compare_single_level(
         if "lev" in dev_area.dims:
             dev_area = dev_area.isel(lev=0)
 
+    # ==============================================================
+    # Reshape cubed sphere data if using MAPL v1.0.0+
+    # TODO: update function to expect data in this format
+    # ==============================================================
+
+    for i in range(n_var):
+        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
+        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
+        #ds_ref_cmps[i] = reshape_MAPL_CS(ds_ref_cmps[i])
+        #ds_dev_cmps[i] = reshape_MAPL_CS(ds_dev_cmps[i])
+        if diff_of_diffs:
+            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
+            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
+            #frac_ds_ref_cmps[i] = reshape_MAPL_CS(frac_ds_ref_cmps[i])
+            #frac_ds_dev_cmps[i] = reshape_MAPL_CS(frac_ds_dev_cmps[i])
+
+
     # ==================================================================
     # Create arrays for each variable in Ref and Dev datasets
     # and do any necessary horizontal regridding. 'cmp' stands for comparison
@@ -891,21 +908,6 @@ def compare_single_level(
                 cmpmaxlon_ind
             )
 
-    # ==============================================================
-    # Reshape cubed sphere data if using MAPL v1.0.0+
-    # TODO: update function to expect data in this format
-    # ==============================================================
-
-    for i in range(n_var):
-        ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
-        ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
-        ds_ref_cmps[i] = reshape_MAPL_CS(ds_ref_cmps[i])
-        ds_dev_cmps[i] = reshape_MAPL_CS(ds_dev_cmps[i])
-        if diff_of_diffs:
-            frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
-            frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
-            frac_ds_ref_cmps[i] = reshape_MAPL_CS(frac_ds_ref_cmps[i])
-            frac_ds_dev_cmps[i] = reshape_MAPL_CS(frac_ds_dev_cmps[i])
 
     # =================================================================
     # Define function to create a single page figure to be called
@@ -2895,6 +2897,31 @@ def single_panel(plot_vals,
                     drop=True).where(
                     plot_vals.lat < maxlat,
                     drop=True)
+            else:
+                # filter data by indices of grid
+                minlon_i = np.where(grid['lon_b']==closest_minlon)[0]
+                if len(minlon_i) == 0:
+                    minlon_i = 0
+                else:
+                    minlon_i = int(minlon_i)
+                maxlon_i = np.where(grid['lon_b']==closest_maxlon)[0]
+                if len(maxlon_i) == 0:
+                    maxlon_i = -1
+                else:
+                    maxlon_i = int(maxlon_i)                
+                minlat_i = np.where(grid['lat_b']==closest_minlat)[0]
+                if len(minlat_i) == 0:
+                    minlat_i = 0
+                else:
+                    minlat_i = int(minlat_i)
+                maxlat_i = np.where(grid['lat_b']==closest_maxlat)[0]
+                if len(maxlat_i) == 0:
+                    maxlat_i = -1
+                else:
+                    maxlat_i = int(maxlat_i)
+                    
+                plot_vals = plot_vals[minlat_i:maxlat_i+1,
+                                      minlon_i:maxlon_i+1]
             # Create a lon/lat plot
             plot = ax.imshow(
                 plot_vals,
