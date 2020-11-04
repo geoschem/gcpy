@@ -1004,21 +1004,6 @@ def compare_single_level(
         vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
 
-        if verbose:
-            print("vmin_ref: {}".format(vmin_ref))
-            print("vmax_ref: {}".format(vmax_ref))
-            print("vmin_dev: {}".format(vmin_dev))
-            print("vmax_dev: {}".format(vmax_dev))
-            if cmpgridtype == "cs":
-                print("vmin_ref_cmp: {}".format(vmin_ref_cmp))
-                print("vmax_ref_cmp: {}".format(vmax_ref_cmp))
-                print("vmin_dev_cmp: {}".format(vmin_dev_cmp))
-                print("vmax_dev_cmp: {}".format(vmax_dev_cmp))
-            print("vmin_cmp: {}".format(vmin_cmp))
-            print("vmax_cmp: {}".format(vmax_cmp))
-            print("vmin_abs: {}".format(vmin_abs))
-            print("vmax_abs: {}".format(vmax_abs))
-
         # ==============================================================
         # Test if Ref and/or Dev contain all zeroes or all NaNs.
         # This will have implications as to how we set min and max
@@ -2130,16 +2115,6 @@ def compare_zonal_mean(
         # Take min/max across all grids
         vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
         vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
-
-        if verbose:
-            print("vmin_ref: {}".format(vmin_ref))
-            print("vmin_dev: {}".format(vmin_dev))
-            print("vmin_cmp: {}".format(vmin_cmp))
-            print("vmin_abs: {}".format(vmin_abs))
-            print("vmax_ref: {}".format(vmax_ref))
-            print("vmax_dev: {}".format(vmax_dev))
-            print("vmax_cmp: {}".format(vmax_cmp))
-            print("vmax_abs: {}".format(vmax_abs))
 
         # ==============================================================
         # Test if Ref and/or Dev contain all zeroes or all NaNs.
