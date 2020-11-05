@@ -91,10 +91,14 @@ gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
 #dates of ref and dev runs
-ref_bmk_year     = '2019'
-ref_bmk_mon      = '7'
-dev_bmk_year     = '2019'
-dev_bmk_mon      = '7'
+gcc_ref_bmk_year  = '2016'
+gcc_ref_bmk_mon   = '7'
+gcc_dev_bmk_year  = '2019'
+gcc_dev_bmk_mon   = '7'
+gchp_ref_bmk_year = '2016'
+gchp_ref_bmk_mon  = '7'
+gchp_dev_bmk_year = '2019'
+gchp_dev_bmk_mon  = '7'
 
 # Name to be used for directory of output from this script
 results_dir = "BenchmarkResults"
@@ -220,44 +224,46 @@ diff_of_diffs_devstr = [gchp_ref_version, gchp_dev_version]
 # =====================================================================
 
 # Start and end months of the benchmark
-ref_b_start   = (int(ref_bmk_year), int(ref_bmk_mon))
-ref_b_stop    = (int(ref_bmk_year), int(ref_bmk_mon) + 1)
+gcc_ref_b_start  = (int(gcc_ref_bmk_year), int(gcc_ref_bmk_mon))
+gcc_ref_b_stop   = (int(gcc_ref_bmk_year), int(gcc_ref_bmk_mon) + 1)
+gcc_dev_b_start  = (int(gcc_dev_bmk_year), int(gcc_dev_bmk_mon))
+gcc_dev_b_stop   = (int(gcc_dev_bmk_year), int(gcc_dev_bmk_mon) + 1)
 
-dev_b_start   = (int(dev_bmk_year), int(dev_bmk_mon))
-dev_b_stop    = (int(dev_bmk_year), int(dev_bmk_mon) + 1)
+gchp_ref_b_start = (int(gchp_ref_bmk_year), int(gchp_ref_bmk_mon))
+gchp_ref_b_stop  = (int(gchp_ref_bmk_year), int(gchp_ref_bmk_mon) + 1)
+gchp_dev_b_start = (int(gchp_dev_bmk_year), int(gchp_dev_bmk_mon))
+gchp_dev_b_stop  = (int(gchp_dev_bmk_year), int(gchp_dev_bmk_mon) + 1)
 
 # Convert to strings
-ref_s_start   = (str(ref_b_start[0]), str(ref_b_start[1]).zfill(2))
-ref_s_stop    = (str(ref_b_stop[0]),  str(ref_b_stop[1]).zfill(2))
+gcc_ref_s_start  = (str(gcc_ref_b_start[0]), str(gcc_ref_b_start[1]).zfill(2))
+gcc_ref_s_stop   = (str(gcc_ref_b_stop[0]),  str(gcc_ref_b_stop[1]).zfill(2))
+gcc_dev_s_start  = (str(gcc_dev_b_start[0]), str(gcc_dev_b_start[1]).zfill(2))
+gcc_dev_s_stop   = (str(gcc_dev_b_stop[0]),  str(gcc_dev_b_stop[1]).zfill(2))
 
-dev_s_start   = (str(dev_b_start[0]), str(dev_b_start[1]).zfill(2))
-dev_s_stop    = (str(dev_b_stop[0]),  str(dev_b_stop[1]).zfill(2))
+gchp_ref_s_start = (str(gchp_ref_b_start[0]), str(gchp_ref_b_start[1]).zfill(2))
+gchp_ref_s_stop  = (str(gchp_ref_b_stop[0]),  str(gchp_ref_b_stop[1]).zfill(2))
+gchp_dev_s_start = (str(gchp_dev_b_start[0]), str(gchp_dev_b_start[1]).zfill(2))
+gchp_dev_s_stop  = (str(gchp_dev_b_stop[0]),  str(gchp_dev_b_stop[1]).zfill(2))
+
 
 # Timestamps for files
-gcc_ref_date  = np.datetime64( "{}-{}-01T00:00:00".format(ref_s_start[0], ref_s_start[1]))
-gchp_ref_date = np.datetime64("{}-{}-16T12:00:00".format(ref_s_start[0], ref_s_start[1]))
-end_ref_date  = np.datetime64("{}-{}-01T00:00:00".format(ref_s_stop[0], ref_s_stop[1]))
+gcc_ref_date  = np.datetime64( "{}-{}-01T00:00:00".format(gcc_ref_s_start[0], gcc_ref_s_start[1]))
+gchp_ref_date = np.datetime64("{}-{}-16T12:00:00".format(gchp_ref_s_start[0], gchp_ref_s_start[1]))
 
-gcc_dev_date  = np.datetime64( "{}-{}-01T00:00:00".format(dev_s_start[0], dev_s_start[1]))
-gchp_dev_date = np.datetime64("{}-{}-16T12:00:00".format(dev_s_start[0], dev_s_start[1]))
-end_dev_date  = np.datetime64("{}-{}-01T00:00:00".format(dev_s_stop[0], dev_s_stop[1]))
+gcc_end_ref_date  = np.datetime64("{}-{}-01T00:00:00".format(gcc_ref_s_stop[0], gcc_ref_s_stop[1]))
+gchp_end_ref_date  = np.datetime64("{}-{}-01T00:00:00".format(gchp_ref_s_stop[0], gchp_ref_s_stop[1]))
+
+gcc_dev_date  = np.datetime64( "{}-{}-01T00:00:00".format(gcc_dev_s_start[0], gcc_dev_s_start[1]))
+gchp_dev_date = np.datetime64("{}-{}-16T12:00:00".format(gchp_dev_s_start[0], gchp_dev_s_start[1]))
+
+gcc_end_dev_date  = np.datetime64("{}-{}-01T00:00:00".format(gcc_dev_s_stop[0], gcc_dev_s_stop[1]))
+gchp_end_dev_date  = np.datetime64("{}-{}-01T00:00:00".format(gchp_dev_s_stop[0], gchp_dev_s_stop[1]))
 
 # Seconds per month
-ref_sec_in_bmk_month = (end_ref_date - gcc_ref_date).astype("float64")
-dev_sec_in_bmk_month = (end_dev_date - gcc_dev_date).astype("float64")
-
-if not np.equal(ref_sec_in_bmk_month, dev_sec_in_bmk_month):
-    print('Skipping emissions tables and operations budget tables because months are' + \
-          'different lengths')
-    emis_table=False
-    ops_budget_table=False
-
-# String for month and year (e.g. "Jul2016")
-if np.equal(gcc_ref_date, gcc_dev_date):
-    mon_yr_str = calendar.month_abbr[ref_b_start[1]] + ref_s_start[0]
-else:
-    mon_yr_str = calendar.month_abbr[ref_b_start[1]] + ref_s_start[0] + 'Vs' + \
-                 calendar.month_abbr[dev_b_start[1]] + dev_s_start[0]
+gcc_ref_sec_in_bmk_month  = (gcc_end_ref_date  - gcc_ref_date).astype("float64")
+gchp_ref_sec_in_bmk_month = (gchp_end_ref_date - gchp_ref_date).astype("float64")
+gcc_dev_sec_in_bmk_month  = (gcc_end_dev_date  - gcc_dev_date).astype("float64")
+gchp_dev_sec_in_bmk_month = (gchp_end_dev_date - gchp_dev_date).astype("float64")
 
 # ======================================================================
 # Significant difference filenames
@@ -308,6 +314,17 @@ if gchp_vs_gcc_diff_of_diffs: print(" - GCHP vs GCC diff of diffs")
 # ======================================================================
 if gcc_vs_gcc:
 
+    if not np.equal(gcc_ref_sec_in_bmk_month, gcc_dev_sec_in_bmk_month):
+        print('Skipping emissions tables and operations budget tables because months are different lengths')
+        emis_table=False
+        ops_budget_table=False
+
+      # String for month and year (e.g. "Jul2016")
+    if np.equal(gcc_ref_date, gcc_dev_date):
+        mon_yr_str = calendar.month_abbr[gcc_ref_b_start[1]] + gcc_ref_s_start[0]
+    else:
+        mon_yr_str = calendar.month_abbr[gcc_ref_b_start[1]] + gcc_ref_s_start[0] + 'Vs' + calendar.month_abbr[gcc_dev_b_start[1]] + gcc_dev_s_start[0]
+    
     #---------------------------------------------------------------
     # GCC vs GCC Concentration plots
     #
@@ -559,6 +576,17 @@ if gcc_vs_gcc:
 # ======================================================================
 if gchp_vs_gcc:
 
+    if not np.equal(gcc_dev_sec_in_bmk_month, gchp_dev_sec_in_bmk_month):
+        print('Skipping emissions tables and operations budget tables because months are different lengths')
+        emis_table=False
+        ops_budget_table=False
+
+    # String for month and year (e.g. "Jul2016")
+    if np.equal(gcc_dev_date, gchp_dev_date):
+        mon_yr_str = calendar.month_abbr[gcc_dev_b_start[1]] + gcc_dev_s_start[0]
+    else:
+        mon_yr_str = calendar.month_abbr[gcc_dev_b_start[1]] + gcc_dev_s_start[0] + 'Vs' + calendar.month_abbr[gchp_dev_b_start[1]] + gchp_dev_s_start[0]
+        
     #---------------------------------------------------------------
     # GCHP vs GCC Concentration plots
     #---------------------------------------------------------------
@@ -793,6 +821,17 @@ if gchp_vs_gcc:
 # ======================================================================
 if gchp_vs_gchp:
 
+    if not np.equal(gchp_ref_sec_in_bmk_month, gcc_dev_sec_in_bmk_month):
+        print('Skipping emissions tables and operations budget tables because months are different lengths')
+        emis_table=False
+        ops_budget_table=False
+
+    # String for month and year (e.g. "Jul2016")
+    if np.equal(gchp_ref_date, gchp_dev_date):
+        mon_yr_str = calendar.month_abbr[gchp_ref_b_start[1]] + gchp_ref_s_start[0]
+    else:
+        mon_yr_str = calendar.month_abbr[gchp_ref_b_start[1]] + gchp_ref_s_start[0] + 'Vs' + calendar.month_abbr[gcc_dev_b_start[1]] + gcc_dev_s_start[0]
+        
     #---------------------------------------------------------------
     # GCHP vs GCHP Concentration plots
     #---------------------------------------------------------------
@@ -809,7 +848,7 @@ if gchp_vs_gchp:
         # Meteorology data needed for GCHP calculations
         col = "StateMet"
         #col = "StateMet_avg" # use this for benchmarks prior to 13.0
-        refmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_ref_date,
+        refmet = get_filepath(gchp_vs_gchp_refdir, col, gchp_ref_date,
                               is_gchp=True)
         devmet = get_filepath(gchp_vs_gchp_devdir, col, gchp_dev_date,
                               is_gchp=True)
