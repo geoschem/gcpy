@@ -702,19 +702,20 @@ def slice_by_lev_and_time(ds, varname, itime, ilev, flip):
             DataArray of data variable sliced according to ilev and itime
     """
     # used in compare_single_level and compare_zonal_mean to get dataset slices
-    # WBD change flip slice to use max level index rather than hardcoded 71
     vdims = ds[varname].dims
     if "time" in vdims and "lev" in vdims:
         if flip:
-            return ds[varname].isel(time=itime, lev=71 - ilev)
+            maxlev_i = len(ds['lev'])-1
+            return ds[varname].isel(time=itime, lev=maxlev_i - ilev)
         else:
             return ds[varname].isel(time=itime, lev=ilev)
-    elif "time" not in vdims and "lev" in vdims:
+    elif ("time" not in vdims or itime == -1) and "lev" in vdims:
         if flip:
-            return ds[varname].isel(lev=71 - ilev)
+            maxlev_i = len(ds['lev'])-1
+            return ds[varname].isel(lev=maxlev_i - ilev)
         else:
             return ds[varname].isel(lev=ilev)
-    elif "time" in vdims and "lev" not in vdims:
+    elif "time" in vdims and "lev" not in vdims and itime != -1:
         return ds[varname].isel(time=itime)
     else:
         return ds[varname]
