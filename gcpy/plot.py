@@ -493,18 +493,12 @@ def compare_single_level(
         devdata = devdata.assign_coords({'time' : [aligned_time]})
         second_ref = second_ref.assign_coords({'time' : [aligned_time]})
         second_dev = second_dev.assign_coords({'time' : [aligned_time]})
+
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
-        if type(refstr) is list:
-            frac_refstr = '{} / {}'.format(refstr[1], refstr[0])
-            refstr = '{} - {}'.format(refstr[1], refstr[0])
-        else:
-            frac_refstr = 'Ref2 / Ref1'
-        if type(devstr) is list:
-            frac_devstr = '{} / {}'.format(devstr[1], devstr[0])
-            devstr = '{} - {}'.format(devstr[1], devstr[0])
-        else:
-            frac_devstr = 'Dev2 / Dev1'
+
+        frac_refstr = 'GCC_dev / GCC_ref'
+        frac_devstr = 'GCHP_dev / GCHP_ref'
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist is None:
         quiet = not verbose
@@ -1613,16 +1607,9 @@ def compare_zonal_mean(
 
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
-        if type(refstr) is list:
-            frac_refstr = '{} / {}'.format(refstr[1], refstr[0])
-            refstr = '{} - {}'.format(refstr[1], refstr[0])
-        else:
-            frac_refstr = 'Ref2 / Ref1'
-        if type(devstr) is list:
-            frac_devstr = '{} / {}'.format(devstr[1], devstr[0])
-            devstr = '{} - {}'.format(devstr[1], devstr[0])
-        else:
-            frac_devstr = 'Dev2 / Dev1'
+
+        frac_refstr = 'GCC_dev / GCC_ref'
+        frac_devstr = 'GCHP_dev / GCHP_ref'
 
     # If no varlist is passed, plot all 3D variables in the dataset
     if varlist is None:
