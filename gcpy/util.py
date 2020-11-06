@@ -666,8 +666,8 @@ def get_diff_of_diffs(ref, dev):
             fracdiffs = dev.copy()
             for v in dev.data_vars.keys():
                 if "Xdim" in dev[v].dims or "lat" in dev[v].dims:
-                    absdiffs[v] = dev[v] - ref[v]
-                    fracdiffs[v] = dev[v] / ref[v]
+                    absdiffs[v].values = dev[v].values - ref[v].values
+                    fracdiffs[v].values = dev[v].values / ref[v].values
                     # NOTE: The diffs Datasets are created without variable
                     # attributes; we have to reattach them
                     absdiffs[v].attrs = dev[v].attrs

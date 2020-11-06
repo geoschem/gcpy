@@ -496,7 +496,6 @@ def compare_single_level(
 
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
-
         frac_refstr = 'GCC_dev / GCC_ref'
         frac_devstr = 'GCHP_dev / GCHP_ref'
     # If no varlist is passed, plot all (surface only for 3D)
@@ -517,7 +516,6 @@ def compare_single_level(
     #        os.remove(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
     #    except:
     #        continue
-
     # If converting to ug/m3, load the species database
     if convert_to_ugm3:
         properties_path = os.path.join(spcdb_dir, "species_database.yml")
@@ -576,6 +574,7 @@ def compare_single_level(
     # Get comparison date extents in same midpoint format as lat-lon grid.
     cmp_mid_minlon, cmp_mid_maxlon, cmp_mid_minlat, cmp_mid_maxlat = \
         get_grid_extents(cmpgrid, edges=False)
+
     if refgridtype == "ll" and ref_extent != cmp_extent and cmpgridtype == "ll":
         refdata = refdata.\
             where(refdata.lon >= cmp_mid_minlon, drop=True).\
@@ -848,7 +847,6 @@ def compare_single_level(
         if cmpgridtype == "cs":
             ref_cs_res = cmpres
             dev_cs_res = cmpres
-
         # Ref
         ds_ref_cmps[i] = regrid_comparison_data(
             ds_ref,
@@ -909,8 +907,6 @@ def compare_single_level(
                 cmpminlon_ind,
                 cmpmaxlon_ind
             )
-
-
     # =================================================================
     # Define function to create a single page figure to be called
     # in a parallel loop
