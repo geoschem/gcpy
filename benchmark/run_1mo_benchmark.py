@@ -404,8 +404,8 @@ if gcc_vs_gcc:
             dev,
             gcc_vs_gcc_devstr,
             dst=gcc_vs_gcc_resultsdir,
-            ref_interval=[ref_sec_in_bmk_month],
-            dev_interval=[dev_sec_in_bmk_month],
+            ref_interval=[gcc_ref_sec_in_bmk_month],
+            dev_interval=[gcc_dev_sec_in_bmk_month],
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
@@ -497,8 +497,8 @@ if gcc_vs_gcc:
             ref,
             gcc_dev_version,
             dev,
-            ref_sec_in_bmk_month,
-            dev_sec_in_bmk_month,
+            gcc_ref_sec_in_bmk_month,
+            gcc_dev_sec_in_bmk_month,
             benchmark_type=bmk_type,
             label=mon_yr_str,
             dst=gcc_vs_gcc_tablesdir
@@ -677,8 +677,8 @@ if gchp_vs_gcc:
             dev,
             gchp_vs_gcc_devstr,
             dst=gchp_vs_gcc_resultsdir,
-            ref_interval=[ref_sec_in_bmk_month],
-            dev_interval=[dev_sec_in_bmk_month],
+            ref_interval=[gcc_dev_sec_in_bmk_month],
+            dev_interval=[gchp_dev_sec_in_bmk_month],
             overwrite=True,
             devmet=devmet,
             spcdb_dir=spcdb_dir
@@ -776,8 +776,8 @@ if gchp_vs_gcc:
             ref,
             gchp_dev_version,
             dev,
-            ref_sec_in_bmk_month,
-            dev_sec_in_bmk_month,
+            gcc_dev_sec_in_bmk_month,
+            gchp_dev_sec_in_bmk_month,
             benchmark_type=bmk_type,
             label=mon_yr_str,
             operations=["Chemistry","Convection","EmisDryDep","Mixing",
@@ -821,7 +821,7 @@ if gchp_vs_gcc:
 # ======================================================================
 if gchp_vs_gchp:
 
-    if not np.equal(gchp_ref_sec_in_bmk_month, gcc_dev_sec_in_bmk_month):
+    if not np.equal(gchp_ref_sec_in_bmk_month, gchp_dev_sec_in_bmk_month):
         print('Skipping emissions tables and operations budget tables because months are different lengths')
         emis_table=False
         ops_budget_table=False
@@ -923,8 +923,8 @@ if gchp_vs_gchp:
             dev,
             gchp_vs_gchp_devstr,
             dst=gchp_vs_gchp_resultsdir,
-            ref_interval=[ref_sec_in_bmk_month],
-            dev_interval=[dev_sec_in_bmk_month],
+            ref_interval=[gchp_ref_sec_in_bmk_month],
+            dev_interval=[gchp_dev_sec_in_bmk_month],
             overwrite=True,
             refmet=refmet,
             devmet=devmet,
@@ -1025,8 +1025,8 @@ if gchp_vs_gchp:
             ref,
             gchp_dev_version,
             dev,
-            ref_sec_in_bmk_month,
-            dev_sec_in_bmk_month,
+            gchp_ref_sec_in_bmk_month,
+            gchp_dev_sec_in_bmk_month,
             benchmark_type=bmk_type,
             label=mon_yr_str,
             operations=["Chemistry","Convection","EmisDryDep","Mixing",
