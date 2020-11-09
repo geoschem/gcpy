@@ -673,7 +673,7 @@ def get_diff_of_diffs(ref, dev):
                     absdiffs[v].attrs = dev[v].attrs
                     fracdiffs[v].attrs = dev[v].attrs
     else:
-        print('Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere)' + \ 
+        print('Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere)' + \
               ' within each dataset pair')
         raise ValueError
 

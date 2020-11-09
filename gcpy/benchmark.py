@@ -1466,8 +1466,8 @@ def make_benchmark_emis_plots(
                             varlist.append(var)
             if not varlist:
                 print(
-                    "\nWarning: no emissions species in benchmark species" + \ "
-                    category {}".format(
+                    "\nWarning: no emissions species in benchmark species" + \
+                    "category {}".format(
                         filecat
                     )
                 )
