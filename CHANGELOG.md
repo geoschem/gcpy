@@ -4,6 +4,35 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.0] - 2020-11-10
+
+### Added
+- Added complete documentation to a new ReadTheDocs site
+- Added conda-forge installation support
+- Added file regridder for regridding NetCDF restart and output between GEOS-Chem's horizontal grid types
+- Plotting now supports automatic regridding between lat/lon, cubed-sphere, and stretched-grid formats
+- Added additional 1-year benchmark plotting capabilities for GCHP
+- Added oh_metrics.py, which generates output using the new Metrics collection in GEOS-Chem 13.0.0
+- Extra keyword arguments not defined in plotting functions are now passed to matplotlib.pyplot
+- Added a command line tool for appending grid-box corners to cubed-sphere datasets
+- Added support for arbitrary vertical grids in zonal mean plotting
+- Added regridding functions for arbitrary vertical grids
+
+### Changed
+- Some constants in constants.py have been tweaked to match GEOS-Chem definitions
+- docs/environment.yml, setup.py, and requirements.txt now reflect up-to-date GCPy library requirements
+- Most docstrings now use the same format
+- Various code formatting changes have been made to align with PEP8 guidelines
+
+### Deprecated
+- mean_oh_from_logs.py is replaced in functionality by oh_metrics.py for GEOS-Chem versions >=13.0.0
+
+### Fixed
+- Installation through pip (from the repositoryand conda now works correctly
+
+### Removed
+- Removed several functions and files that are no longer used, including budget_aer.py and create_budget_table()
+
 ## [0.3.1] - 2020-08-21
 
 ### Added
