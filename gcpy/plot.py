@@ -371,7 +371,8 @@ def compare_single_level(
             List of xarray dataset variable names to make plots for
             Default value: None (will compare all common variables)
         ilev : integer
-            Dataset level dimension index using 0-based system
+            Dataset level dimension index using 0-based system.
+            Indexing is ambiguous when plotting differing vertical grids
             Default value: 0
         itime : integer
             Dataset time dimension index using 0-based system
@@ -435,30 +436,36 @@ def compare_single_level(
             Default value: None
         extent : list
             Defines the extent of the region to be plotted in form
-            [minlon, maxlon, minlat, maxlat]. Default value plots extent of input grids.
+            [minlon, maxlon, minlat, maxlat]. 
+            Default value plots extent of input grids.
             Default value: [-1000, -1000, -1000, -1000]
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
-            Default value: 1
+            Set to 1 to disable parallel plotting. 
+            Value of -1 allows the application to decide.
+            Default value: -1
         sigdiff_list: list of str
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
         second_ref : xarray Dataset
-            A dataset of the same model type / grid as refdata, to be used in diff-of-diffs plotting.
+            A dataset of the same model type / grid as refdata, 
+            to be used in diff-of-diffs plotting.
             Default value: None
         second_dev : xarray Dataset
-            A dataset of the same model type / grid as devdata, to be used in diff-of-diffs plotting.
+            A dataset of the same model type / grid as devdata, 
+            to be used in diff-of-diffs plotting.
             Default value: None
         spcdb_dir  : str
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
         sg_ref_path : str
-            Path to NetCDF file containing stretched-grid info (in attributes) for the ref dataset
+            Path to NetCDF file containing stretched-grid info 
+            (in attributes) for the ref dataset
             Default value: '' (will not be read in)
         sg_dev_path : str
-            Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
+            Path to NetCDF file containing stretched-grid info 
+            (in attributes) for the dev dataset
             Default value: '' (will not be read in)
         ll_plot_func : str
             Function to use for lat/lon single level plotting with possible values
@@ -510,13 +517,6 @@ def compare_single_level(
     savepdf = True
     if pdfname == "":
         savepdf = False
-    # Cleanup previous temporary PDFs produced during parallelization
-    # for i in range(n_var):
-    #    try:
-    #        os.remove(os.path.join(temp_dir, pdfname + "BENCHMARKFIGCREATION.pdf" + str(i)))
-    #    except:
-    #        continue
-    # If converting to ug/m3, load the species database
     if convert_to_ugm3:
         properties_path = os.path.join(spcdb_dir, "species_database.yml")
         properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
@@ -550,9 +550,6 @@ def compare_single_level(
          sg_dev_params=sg_dev_params
     )
 
-    #TODO: Implement vertical regridding. Current indexing system makes
-    #vertical regridding ambiguous for compare_single_level        
-
     # ==============================================================
     # Handle grid extents for lat-lon grids
     # ==============================================================
@@ -560,13 +557,9 @@ def compare_single_level(
     # Get lat/lon extents, if applicable
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
-    # if cmpgridtype == "cs":
-    #    cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = get_grid_extents(cmpgrid)
-    # else:
     cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = [-180, 180, -90, 90]
 
     # Set plot bounds for non cubed-sphere regridding and plotting
-    # if cmpgridtype == "ll":
     ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
     dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
     cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
@@ -1546,32 +1539,39 @@ def compare_zonal_mean(
             Default value: None
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
-            Default value: 1
+            Set to 1 to disable parallel plotting. 
+            Value of -1 allows the application to decide.
+            Default value: -1
         sigdiff_list: list of str
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
         second_ref : xarray Dataset
-            A dataset of the same model type / grid as refdata, to be used in diff-of-diffs plotting.
+            A dataset of the same model type / grid as refdata, 
+            to be used in diff-of-diffs plotting.
             Default value: None
         second_dev : xarray Dataset
-            A dataset of the same model type / grid as devdata, to be used in diff-of-diffs plotting.
+            A dataset of the same model type / grid as devdata, 
+            to be used in diff-of-diffs plotting.
             Default value: None
         spcdb_dir  : str
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
         sg_ref_path : str
-            Path to NetCDF file containing stretched-grid info (in attributes) for the ref dataset
+            Path to NetCDF file containing stretched-grid info 
+            (in attributes) for the ref dataset
             Default value: '' (will not be read in)
         sg_dev_path : str
-            Path to NetCDF file containing stretched-grid info (in attributes) for the dev dataset
+            Path to NetCDF file containing stretched-grid info 
+            (in attributes) for the dev dataset
             Default value: '' (will not be read in)
         ref_vert_params : list(AP, BP) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless). Needed if ref grid is not 47 or 72 levels.
+            Hybrid grid parameter A in hPa and B (unitless). 
+            Needed if ref grid is not 47 or 72 levels.
             Default value: [[], []]
         dev_vert_params : list(AP, BP) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless). Needed if dev grid is not 47 or 72 levels.
+            Hybrid grid parameter A in hPa and B (unitless). 
+            Needed if dev grid is not 47 or 72 levels.
             Default value: [[], []]
         extra_plot_args : various
             Any extra keyword arguments are passed through the plotting functions to be used
@@ -2397,8 +2397,7 @@ def compare_zonal_mean(
     # ==================================================================
     # Call figure generation function in a parallel loop over variables
     # ==================================================================
-    # do not attempt nested thread parallelization due to issues with
-    # matplotlib
+    # do not attempt nested thread parallelization due to issues with matplotlib
     if current_process().name != "MainProcess":
         n_job = 1
 
@@ -2595,10 +2594,12 @@ def single_panel(plot_vals,
             Range from minimum to maximum pressure for zonal mean plotting
             Default value: [0, 2000] (will plot entire atmosphere)
         pedge : numpy array
-            Edge pressures of vertical grid cells in plot_vals for zonal mean plotting
+            Edge pressures of vertical grid cells in plot_vals 
+            for zonal mean plotting
             Default value: np.full((1, 1), -1) (will determine automatically)
         pedge_ind : numpy array
-            Index of edge pressure values within pressure range in plot_vals for zonal mean plotting
+            Index of edge pressure values within pressure range in plot_vals
+            for zonal mean plotting
             Default value: np.full((1, 1), -1) (will determine automatically)
         log_yaxis : bool
             Set this flag to True to enable log scaling of pressure in zonal mean plots

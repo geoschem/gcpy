@@ -646,9 +646,6 @@ def regrid_comparison_data(
                 data_format = 'checkpoint'
             new_data = reformat_dims(
                 data, format=data_format, towards_common=True)
-            # Drop variables that don't look like fields
-            #non_fields = [v for v in new_data.variables.keys() if len(set(new_data[v].dims) - {'T', 'Z', 'F', 'Y', 'X'})>0]
-            #new_data = new_data.drop(non_fields)
             # Transpose to T, Z, F, Y, X
             if len(new_data.dims) == 5:
                 new_data = new_data.transpose('T', 'Z', 'F', 'Y', 'X')

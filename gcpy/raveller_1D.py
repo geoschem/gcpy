@@ -38,7 +38,8 @@ def create_track_func(args):
 
     ds = xr.Dataset({'longitude': lon, 'latitude': lat})
 
-    #ds['time'] = (((ds['longitude'] / 15) + args.overpass_time) + (ds['latitude'] / 180) * args.vertical_scan_time) % 24
+    #ds['time'] = (((ds['longitude'] / 15) + args.overpass_time) + \
+    #(ds['latitude'] / 180) * args.vertical_scan_time) % 24
     # vary overpass time with latitude
     overpass_offset = ds['latitude'] / 90 * 24 / args.orbits_per_day / 4 * 60
     if args.direction == 'ascending':
