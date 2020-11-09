@@ -19,7 +19,7 @@ URL = "https://github.com/geoschem/gcpy"
 LICENSE = "MIT"
 
 CLASSIFIERS = [
-    'Development Status :: 4 - Beta',
+    'Development Status :: 5 - Production/Stable',
     'License :: OSI Approved :: MIT License',
     'Operating System :: OS Independent',
     'Intended Audience :: Science/Research',
@@ -30,13 +30,13 @@ CLASSIFIERS = [
     'Topic :: Scientific/Engineering',
 ]
 
-MAJOR = 1
-MINOR = 0
-MICRO = 0
+MAJOR = 0
+MINOR = 3
+MICRO = 1
 #for test.pypi (cannot overwrite version files on pypi or test.pypi)
-NANO = '.10'
-VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, NANO)
-#VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
+NANO = '.12'
+#VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, NANO)
+VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
 '''
 #DEV format (using git hash) is intriguing but incompatible with PEP 440
 #No hashes can be used in version field
