@@ -659,7 +659,7 @@ def get_diff_of_diffs(ref, dev):
                     ref_newdimnames[v].values = ref[v].values.reshape(
                         dev[v].values.shape)
                 # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose(
-                #                                                                      "time","lev","lat","Xdim").values
+                # "time","lev","lat","Xdim").values
 
         with xr.set_options(keep_attrs=True):
             absdiffs = dev.copy()
@@ -673,7 +673,8 @@ def get_diff_of_diffs(ref, dev):
                     absdiffs[v].attrs = dev[v].attrs
                     fracdiffs[v].attrs = dev[v].attrs
     else:
-        print('Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere) within each dataset pair')
+        print('Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere)' + \ 
+              ' within each dataset pair')
         raise ValueError
 
     return absdiffs, fracdiffs

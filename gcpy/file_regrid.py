@@ -8,11 +8,13 @@ try:
         raise ImportError(
             "file_regrid.py requires xESMF version 0.2.1 or higher.")
 except ImportError as e:
-    print('file_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
+    print('file_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation ' + \
+          'instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
 import pandas as pd
 
 from gcpy.grid import get_input_res, get_vert_grid, get_grid_extents
-from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
+from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, \
+    make_regridder_C2L, make_regridder_L2L
 from gcpy.util import reshape_MAPL_CS
 
 
@@ -31,26 +33,32 @@ def file_regrid(
         fout : str
             The output filename (file will be overwritten if it already exists)
         dim_format_in : str
-            Format of the input file's dimensions (choose from: classic, checkpoint, diagnostic),
-            where classic denotes lat/lon and checkpoint / diagnostic are cubed-sphere formats
+            Format of the input file's dimensions (choose from: classic, 
+            checkpoint, diagnostic), where classic denotes lat/lon and 
+            checkpoint / diagnostic are cubed-sphere formats
         dim_format_out : str
-            Format of the output file's dimensions (choose from: classic, checkpoint, diagnostic),
-            where classic denotes lat/lon and checkpoint / diagnostic are cubed-sphere formats
+            Format of the output file's dimensions (choose from: classic,
+            checkpoint, diagnostic), where classic denotes lat/lon
+            and checkpoint / diagnostic are cubed-sphere formats
 
     Keyword Args (optional):
     ------------------------
         cs_res_out : int
-            The cubed-sphere resolution of the output dataset. Not used if dim_format_out is classic
+            The cubed-sphere resolution of the output dataset. 
+            Not used if dim_format_out is classic
             Default value: 0
         ll_res_out : str
-            The lat/lon resolution of the output dataset. Not used if dim_format_out is not classic
+            The lat/lon resolution of the output dataset. 
+            Not used if dim_format_out is not classic
             Default value: '0x0'
         sg_params_in : list[float, float, float]
-            Input grid stretching parameters [stretch-factor, target longitude, target latitude].
+            Input grid stretching parameters 
+            [stretch-factor, target longitude, target latitude].
             Not used if dim_format_in is classic
             Default value: [1.0, 170.0, -90.0] (No stretching)
         sg_params_out : list[float, float, float]
-            Output grid stretching parameters [stretch-factor, target longitude, target latitude].
+            Output grid stretching parameters 
+            [stretch-factor, target longitude, target latitude].
             Not used if dim_format_out is classic
             Default value: [1.0, 170.0, -90.0] (No stretching)
 
@@ -174,7 +182,6 @@ def file_regrid(
                               keep_attrs=True) for face in range(6)],
             dim='F').sum(
             'F', keep_attrs=True)
-        #ds_out = xr.sum([regridders[face](ds_in.isel(F=face), keep_attrs=True) for face in range(6)], dim='F', keep_attrs=True)
         ds_out = ds_out.rename({
             'T': 'time',
             'Z': 'lev'})

@@ -110,7 +110,8 @@ def get_input_res(data):
         data : xarray Dataset
             Input GEOS-Chem dataset
         sg_params : list [stretch_factor, target_longitude, target_latitude]
-            Stretched-grid parameters of the dataset (not currently gatherable from grid structure)
+            Stretched-grid parameters of the dataset (not currently gatherable 
+            from grid structure)
 
     Returns:
     -----
@@ -175,7 +176,8 @@ def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
     Returns:
     -----
         [grid, grid_list] : list(dict, list(dict))
-            Returns the created grid. grid_list is a list of grids if gridtype is 'cs', else it is None
+            Returns the created grid. 
+            grid_list is a list of grids if gridtype is 'cs', else it is None
     """
 
     # call appropriate make_grid function and return new grid
@@ -1144,7 +1146,8 @@ class CSGrid(object):
             pp[:, i, j] = latlon_to_cartesian(
                 lambda_rad[i, j], theta_rad[i, j])
 
-        # Map the edges on the sphere back to the cube. Note that all intersections are at x = -rsq3
+        # Map the edges on the sphere back to the cube. 
+        #Note that all intersections are at x = -rsq3
         # print("EDGES")
         for ij in range(1, c + 1):
             # print(ij)

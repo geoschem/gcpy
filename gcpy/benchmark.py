@@ -140,7 +140,8 @@ def create_total_emissions_table(
     elif refmetdata is not None:
         refarea = refmetdata["Met_AREAM2"]
     else:
-        msg = "AREA variable is not in the ref Dataset and optional dataset containing Met_AREAM2 is not passed!"
+        msg = "AREA variable is not in the ref Dataset and " + \
+              "optional dataset containing Met_AREAM2 is not passed!"
         raise ValueError(msg)
 
     # Get dev area [m2]
@@ -149,7 +150,8 @@ def create_total_emissions_table(
     elif devmetdata is not None:
         devarea = devmetdata["Met_AREAM2"]
     else:
-        msg = "AREA variable is not in the dev Dataset and optional dataset containing Met_AREAM2 is not passed!"
+        msg = "AREA variable is not in the dev Dataset and optional " + \
+              "dataset containing Met_AREAM2 is not passed!"
         raise ValueError(msg)
 
     # Load a YAML file containing species properties (such as
@@ -1223,11 +1225,13 @@ def make_benchmark_emis_plots(
             fill out the benchmark approval forms.
             Default value: None
         weightsdir : str
-            Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
+            Directory in which to place (and possibly reuse) xESMF regridder 
+            netCDF files.
             Default value: '.'
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting. Value of -1 allows the application to decide.
+            Set to 1 to disable parallel plotting. 
+            Value of -1 allows the application to decide.
             Default value: -1
         spcdb_dir : str
             Directory of species_datbase.yml file
@@ -1462,7 +1466,8 @@ def make_benchmark_emis_plots(
                             varlist.append(var)
             if not varlist:
                 print(
-                    "\nWarning: no emissions species in benchmark species category {}".format(
+                    "\nWarning: no emissions species in benchmark species" + \ "
+                    category {}".format(
                         filecat
                     )
                 )
@@ -1518,7 +1523,8 @@ def make_benchmark_emis_plots(
         for spc in emis_spc:
             if spc not in allcatspc:
                 print(
-                    "Warning: species {} has emissions diagnostics but is not in benchmark_categories.yml".format(
+                    "Warning: species {} has emissions diagnostics but is not" + \
+                    " in benchmark_categories.yml".format(
                         spc
                     )
                 )
@@ -1803,7 +1809,8 @@ def make_benchmark_jvalue_plots(
             fill out the benchmark approval forms.
             Default value: None
         weightsdir : str
-            Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
+            Directory in which to place (and possibly reuse) xESMF regridder 
+            netCDF files.
             Default value: '.'
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
@@ -2162,7 +2169,8 @@ def make_benchmark_aod_plots(
             approval forms.
             Default value: None
         weightsdir : str
-            Directory in which to place (and possibly reuse) xESMF regridder netCDF files.
+            Directory in which to place (and possibly reuse) xESMF regridder 
+            netCDF files.
             Default value: '.'
         n_job : int
             Defines the number of simultaneous workers for parallel plotting.
@@ -2573,7 +2581,8 @@ def make_benchmark_mass_tables(
             if v not in commonspc:
                 msg = msg.format(dst)
                 raise ValueError(
-                    'Variable {} in varlist passed to make_benchmark_mass_tables is not present in ref and dev datasets'.format(v))
+                    'Variable {} in varlist passed to make_benchmark_mass_tables ' + \
+                    'is not present in ref and dev datasets'.format(v))
     else:
         varlist = commonspc
 
