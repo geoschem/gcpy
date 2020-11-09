@@ -466,8 +466,8 @@ if gcc_vs_gcc:
 
         # Diagnostic collection files to read
         col = "Restart"
-        ref = get_filepath(gcc_vs_gcc_refrst, col, end_ref_date)
-        dev = get_filepath(gcc_vs_gcc_devrst, col, end_dev_date)
+        ref = get_filepath(gcc_vs_gcc_refrst, col, gcc_end_ref_date)
+        dev = get_filepath(gcc_vs_gcc_devrst, col, gcc_end_dev_date)
 
         # Plot mass tables
         bmk.make_benchmark_mass_tables(
@@ -742,8 +742,8 @@ if gchp_vs_gcc:
 
         # Diagnostic collection files to read
         col = "Restart"
-        ref = get_filepath(gchp_vs_gcc_refrst, col, end_ref_date)
-        dev = get_filepath(gchp_vs_gcc_devrst, col, end_dev_date,
+        ref = get_filepath(gchp_vs_gcc_refrst, col, gcc_end_dev_date)
+        dev = get_filepath(gchp_vs_gcc_devrst, col, gchp_end_dev_date,
                            is_gchp=True)
 
         # Plot mass tables
@@ -991,9 +991,9 @@ if gchp_vs_gchp:
 
         # Diagnostic collection files to read
         col = "Restart"
-        ref = get_filepath(gchp_vs_gchp_refrst, col, end_ref_date,
+        ref = get_filepath(gchp_vs_gchp_refrst, col, gchp_end_ref_date,
                            is_gchp=True)
-        dev = get_filepath(gchp_vs_gchp_devrst, col, end_dev_date,
+        dev = get_filepath(gchp_vs_gchp_devrst, col, gchp_end_dev_date,
                            is_gchp=True)
 
         # Plot mass tables
