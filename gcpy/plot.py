@@ -23,6 +23,7 @@ from joblib import Parallel, delayed
 from multiprocessing import current_process
 from tempfile import TemporaryDirectory
 import warnings
+import copy
 
 # Save warnings format to undo overwriting built into PyPDF2
 _warning_format = warnings.showwarning
@@ -1248,7 +1249,7 @@ def compare_single_level(
                        plot_extent[:], plot_extent[:]]
 
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
-        grids = [refgrid, devgrid, cmpgrid, cmpgrid, cmpgrid, cmpgrid]
+        grids = [refgrid, devgrid, cmpgrid.copy(), cmpgrid.copy(), cmpgrid.copy(), cmpgrid.copy()]
         axs = [ax0, ax1, ax2, ax3, ax4, ax5]
         rowcols = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
         titles = [
@@ -2659,7 +2660,6 @@ def single_panel(plot_vals,
             title = plot_vals.name
         except BaseException:
             pass
-
     # Generate grid if not passed
     if grid == {}:
         res, gridtype = get_input_res(plot_vals)
@@ -2748,22 +2748,52 @@ def single_panel(plot_vals,
     # Account for cross-dateline extent
     if extent[0] > extent[1]:
         if gridtype == "ll":
+            # rearrange data with dateline in the middle instead of prime meridian
+            # change extent / grid to where dateline is 0, prime meridian is -180 / 180
+            # needed for numpy arrays if doing pcolormesh / imshow, and xarray DataArrays
+            # if using imshow
+            proj = ccrs.PlateCarree(central_longitude=180)
+            if ll_plot_func == "imshow" or type(plot_vals) is not xr.DataArray:
+                i = 0
+                while grid['lon_b'][i] < 0:
+                    i = i+1
+                plot_vals_holder = copy.deepcopy(plot_vals)
+                if type(plot_vals) is not xr.DataArray:
+                    plot_vals_holder[:,:-i] = plot_vals[:,i:]
+                    plot_vals_holder[:,-i:] = plot_vals[:,:i]
+                else:
+                    plot_vals_holder.values[:,:-i] = plot_vals.values[:,i:]
+                    plot_vals_holder.values[:,-i:] = plot_vals.values[:,:i]
+                plot_vals = plot_vals_holder
+            extent[0] = extent[0] % 360 - 180
+            extent[1] = extent[1] % 360 - 180
+            grid["lon_b"] = grid["lon_b"] % 360 - 180
+            grid["lon"] = grid["lon"] % 360 - 180
+            if type(plot_vals) is xr.DataArray:                
+                plot_vals['lon'] = plot_vals['lon'] % 360 - 180
+            # realign grid also if doing imshow or using numpy arrays
+            if ll_plot_func == "imshow" or type(plot_vals) is not xr.DataArray:
+                temp_grid = copy.deepcopy(grid)
+                temp_grid['lon_b'][:-i] = grid['lon_b'][i:]
+                temp_grid['lon_b'][-i:] = grid['lon_b'][:i]
+                temp_grid['lon'][:-i] = grid['lon'][i:]
+                temp_grid['lon'][-i:] = grid['lon'][:i]
+                grid = temp_grid
+                if type(plot_vals) is xr.DataArray:
+                    plot_vals = plot_vals.assign_coords({'lon' : grid['lon']})
+        if gridtype == "cs":
             proj = ccrs.PlateCarree(central_longitude=180)
             extent[0] = extent[0] % 360 - 180
             extent[1] = extent[1] % 360 - 180
             grid["lon_b"] = grid["lon_b"] % 360 - 180
             grid["lon"] = grid["lon"] % 360 - 180
-        else:
-            proj = ccrs.PlateCarree(central_longitude=180)
-            extent[0] = extent[0] % 360 - 180
-            extent[1] = extent[1] % 360 - 180
-            grid["lon_b"] = grid["lon_b"] % 360 - 180
-            grid["lon"] = grid["lon"] % 360 - 180
+
     if ax is None:
         if plot_type == "zonal_mean":
             ax = plt.axes()
         if plot_type == "single_level":
             ax = plt.axes(projection=proj)
+
     fig = plt.gcf()
     data_is_xr = type(plot_vals) is xr.DataArray
     # Normalize colors (put into range [0..1] for matplotlib methods)
@@ -2810,8 +2840,9 @@ def single_panel(plot_vals,
             #[dlat,dlon] = list(map(float, res.split('x')))
             dlon = grid['lon'][2] - grid['lon'][1]
             dlat = grid['lat'][2] - grid['lat'][1]
-
+            
             def get_nearest_extent(val, array, direction, spacing):
+                # choose nearest values in grid to desired extent to minimize distortion
                 grid_vals = np.asarray(array)
                 diff = grid_vals - val
                 if direction == 'greater':
@@ -2895,7 +2926,6 @@ def single_panel(plot_vals,
                     maxlat_i = -1
                 else:
                     maxlat_i = int(maxlat_i)
-                    
                 plot_vals = plot_vals[minlat_i:maxlat_i+1,
                                       minlon_i:maxlon_i+1]
             # Create a lon/lat plot
