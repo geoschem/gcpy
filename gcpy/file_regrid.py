@@ -89,6 +89,8 @@ def file_regrid(
     elif dim_format_in == 'classic' and dim_format_out != 'classic':
         ds_in = drop_and_rename_classic_vars(ds_in)
 
+    # save type of data for later restoration
+    original_dtype = np.dtype(ds_in[list(ds_in.data_vars)[0]])
     if cs_res_in == cs_res_out and all(
             [v1 == v2 for v1, v2 in zip(sg_params_in, sg_params_out)]):
         print('Skipping regridding since grid parameters are identical')
@@ -241,7 +243,8 @@ def file_regrid(
         ds_out.attrs['cs_res'] = cs_res_out
 
     ds_out = ds_out.assign_coords({'time': time})
-
+    # correct precision changes (accidental 32-bit to 64-bit)
+    ds_out = ds_out.astype(original_dtype)
     # Write dataset
     ds_out.to_netcdf(
         fout,
