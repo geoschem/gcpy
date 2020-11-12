@@ -310,7 +310,7 @@ def drop_and_rename_classic_vars(ds, towards_gchp=True):
             {name: name.replace('Met_', '', 1).replace('Chem_', '', 1)
              for name in list(ds.data_vars)
              if name.startswith('Met_') or name.startswith('Chem_')})
-        ds = ds.rename({'DELPDRY': 'DELP_DRY'})
+        if 'DELPDRY' in list(ds.data_vars): ds = ds.rename({'DELPDRY': 'DELP_DRY'})
         ds = ds.drop_vars(['P0',
                            'hyam',
                            'hybm',
@@ -325,14 +325,20 @@ def drop_and_rename_classic_vars(ds, towards_gchp=True):
                            'StatePSC'],
                           errors='ignore')
     else:
-        ds = ds.rename({'DELP_DRY': 'Met_DELPDRY',
-                        'BXHEIGHT': 'Met_BXHEIGHT',
-                        'TropLev': 'Met_TropLev',
-                        'DryDepNitrogen': 'Chem_DryDepNitrogen',
-                        'WetDepNitrogen': 'Chem_WetDepNitrogen',
-                        'H2O2AfterChem': 'Chem_H2O2AfterChem',
-                        'SO2AfterChem': 'Chem_SO2AfterChem',
-                        'KPPHvalue': 'Chem_KPPHvalue'})
+        renames = {'DELP_DRY': 'Met_DELPDRY',
+                   'BXHEIGHT': 'Met_BXHEIGHT',
+                   'TropLev': 'Met_TropLev',
+                   'DryDepNitrogen': 'Chem_DryDepNitrogen',
+                   'WetDepNitrogen': 'Chem_WetDepNitrogen',
+                   'H2O2AfterChem': 'Chem_H2O2AfterChem',
+                   'SO2AfterChem': 'Chem_SO2AfterChem',
+                   'KPPHvalue': 'Chem_KPPHvalue'}
+        data_vars = list(ds.data_vars)
+        new_renames = renames.copy()
+        for key in renames.keys():
+            if key not in data_vars:
+                del(new_renames[key])
+        ds = ds.rename(new_renames)
 
     return rename_restart_variables(ds, towards_gchp=towards_gchp)
 
