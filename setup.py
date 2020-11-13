@@ -30,13 +30,12 @@ CLASSIFIERS = [
     'Topic :: Scientific/Engineering',
 ]
 
-MAJOR = 0
-MINOR = 3
-MICRO = 1
-#for test.pypi (cannot overwrite version files on pypi or test.pypi)
-NANO = '.12'
-#VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, NANO)
-VERSION = "{}.{}.{}".format(MAJOR, MINOR, MICRO)
+MAJOR = 1
+MINOR = 0
+MICRO = 0
+EXTRA = 'b0' # for alpha (aN), beta (bN), rc (rcN) versions
+
+VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, EXTRA)
 '''
 #DEV format (using git hash) is intriguing but incompatible with PEP 440
 #No hashes can be used in version field
