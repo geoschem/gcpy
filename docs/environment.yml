@@ -1,4 +1,4 @@
-name: gcpy
+name: gcpy_test2
 channels:
     - defaults
     - conda-forge
