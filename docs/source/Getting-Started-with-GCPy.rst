@@ -50,7 +50,7 @@ described below:
 
    From within your Conda environment, you can follow the instructions
    on `Installing normally through Conda (if you don't plan on
-   developing GCPy) <#installing-gcpy-for-non-developers-using-conda>`__ or `Installing in development
+   modifying GCPy source code) <#installing-gcpy-for-non-developers-using-conda>`__ or `Installing in development
    mode through Conda-build (for developers) <#install_dev>`__.
 
 Python dependencies
@@ -81,18 +81,19 @@ Installing GCPy for non-developers using Conda
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 GCPy is available through the ``conda-forge`` channel under the name
-``geoschem-gcpy``. Installing GCPy in your Conda environment can be done
-with a single command:
+``geoschem-gcpy``. Installing GCPy in your Conda environment requires two commands:
 
 .. code:: bash
 
-    conda install geoschem-gcpy
+   conda config --add channels conda-forge
+   conda install geoschem-gcpy
+
 
 Conda will handle the installation of all dependencies and
 sub-dependencies for GCPy, which includes many Python packages and
-several non-Python packages.
+several non-Python libraries.
 
-Installing GCPy in development mode through Conda-build (for developers) (TODO: Test to ensure conda develop functions correctly, else will need to instruct developers to manually install non-Python dependencies through Conda and then follow instructions in `this comment <https://github.com/conda/conda-build/issues/1992#issuecomment-322588270>`__).
+Installing GCPy for developers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you wish to make changes to the GCPy source code with the goal of
@@ -103,12 +104,14 @@ clone of the GCPy Git repository:
 
     git clone https://github.com/geoschem/gcpy.git
     cd gcpy
+	conda config --add channels conda-forge
+    conda install geoschem-gcpy --only-deps
+	pip install -e .
+	
+	
+Conda will handle the installation of dependencies when you install
+from this clone, and pip will point all GCPy links to this directory.
 
-Conda/PyPi will handle the installation of dependencies when you install
-from this clone and will point all GCPy links to this directory.
-
-TODO: Figure out whether conda develop functions correctly and adjust
-instructions accordingly
 
 Manual install using source code (pre-1.0.0)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
