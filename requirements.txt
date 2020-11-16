@@ -11,6 +11,6 @@ PyPDF2>=1.26.0
 dask>=2.3.0
 xarray>=0.15.0
 netcdf4>=1.4.2
-sphinx-rtd-theme
+sphinx_rtd_theme
 sphinx
 sphinx-autoapi
