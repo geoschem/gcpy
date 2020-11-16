@@ -1,4 +1,4 @@
-name: gcpy_test2
+name: gcpy_full               # All requirements for GCPy, plus Jupyter, IPython, and other libraries for working with examples
 channels:
     - defaults
     - conda-forge
@@ -29,7 +29,7 @@ dependencies:
         - pycodestyle>=2.5.0  # tool to check style conventions (formerly pep8)
         - xesmf>=0.2.1        # Universal regridder
         - PyPDF2>==1.26.0     # PDF utilities, add bookmarks to PDFs etc.
-        - tabulate>=0.8.3     # Pretty-print tabular data in Python
         - sphinx              # Base Sphinx documentation library
         - sphinx-rtd-theme    # ReadTheDocs theme for documentation
-        - sphinx-autoapi      # Automatic API documentation generation
+        - sphinx-autoapi      # Automatic API documentation generation	
+        - tabulate>=0.8.3     # Pretty-print tabular data in Python
