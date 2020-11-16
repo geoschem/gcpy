@@ -41,11 +41,11 @@ described below:
        conda create -n gcpy_env
 
        # Activate (enter) your new Conda environment
-       $ source activate gcpy_env #Linux / MacOS
+       $ conda activate gcpy_env #Linux / MacOS
        > activate gcpy_env        #Windows
 
        # Deactivate (exit) your Conda environment
-       $ source deactivate #Linux / MacOS
+       $ conda deactivate #Linux / MacOS
        > deactivate        #Windows
 
    From within your Conda environment, you can follow the instructions
@@ -104,9 +104,9 @@ clone of the GCPy Git repository:
 
     git clone https://github.com/geoschem/gcpy.git
     cd gcpy
-	conda config --add channels conda-forge
+    conda config --add channels conda-forge
     conda install geoschem-gcpy --only-deps
-	pip install -e .
+    pip install -e .
 	
 	
 Conda will handle the installation of dependencies when you install
