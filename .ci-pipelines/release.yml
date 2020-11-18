@@ -39,6 +39,6 @@ steps:
       Dockerfile: .ci-pipelines/release.dockerfile
       repository: geoschem/gcpy                     # Docker Hub repository
       tags: |
-        $(VERSION_TAG)                              # Source code repo's tag
+        $(VERSION_TAG)
         latest
       containerRegistry: DockerHub
