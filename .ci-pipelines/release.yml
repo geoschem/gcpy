@@ -38,12 +38,12 @@ steps:
       command: build
       buildContext: $(Build.Repository.LocalPath)   # The path to the source code repo
       Dockerfile: .ci-pipelines/release.dockerfile
-      repository: geoschemdev/gcpy             # Docker Hub repository
+      repository: geoschem/gcpy                     # Docker Hub repository
       tags: $(VERSION_TAG)                          # Source code repo's tag
   - task: Docker@2
     displayName: Push image
     inputs:
       containerRegistry: DockerHub
-      repository: geoschemdev/gcpy             # Docker Hub repository
+      repository: geoschem/gcpy                     # Docker Hub repository
       command: push
       tags: $(VERSION_TAG)
