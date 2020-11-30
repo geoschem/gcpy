@@ -1908,7 +1908,7 @@ def make_benchmark_jvalue_plots(
 
         # Get a list of continuously averaged J-value variables
         # (or use the varlist passed via tha argument list)
-        prefix = "Jval_"
+        prefix = "Jval"
         if varlist is None:
             varlist = [v for v in cmn if prefix in v]
 
@@ -1936,10 +1936,10 @@ def make_benchmark_jvalue_plots(
     # Surface plots
     if "sfc" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}Surface_{}.pdf".format(
+            pdfname = os.path.join(jvdir, "{}_Surface_{}.pdf".format(
                 prefix, subdst))
         else:
-            pdfname = os.path.join(jvdir, "{}Surface.pdf".format(prefix))
+            pdfname = os.path.join(jvdir, "{}_Surface.pdf".format(prefix))
 
         diff_sfc = []
         compare_single_level(
@@ -1969,10 +1969,10 @@ def make_benchmark_jvalue_plots(
     # 500hPa plots
     if "500hpa" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}500hPa_{}.pdf".format(
+            pdfname = os.path.join(jvdir, "{}_500hPa_{}.pdf".format(
                 prefix, subdst))
         else:
-            pdfname = os.path.join(jvdir, "{}500hPa.pdf".format(prefix))
+            pdfname = os.path.join(jvdir, "{}_500hPa.pdf".format(prefix))
 
         diff_500 = []
         compare_single_level(
@@ -1999,10 +1999,10 @@ def make_benchmark_jvalue_plots(
     if "zonalmean" in plots:
         if subdst is not None:
             pdfname = os.path.join(
-                jvdir, "{}FullColumn_ZonalMean_{}.pdf".format(prefix, subdst)
+                jvdir, "{}_FullColumn_ZonalMean_{}.pdf".format(prefix, subdst)
             )
         else:
-            pdfname = os.path.join(jvdir, "{}FullColumn_ZonalMean.pdf".format(
+            pdfname = os.path.join(jvdir, "{}_FullColumn_ZonalMean.pdf".format(
                 prefix))
 
         diff_zm = []
@@ -2033,11 +2033,11 @@ def make_benchmark_jvalue_plots(
         # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
         if subdst is not None:
             pdfname = os.path.join(
-                jvdir, "{}Strat_ZonalMean_{}.pdf".format(prefix, subdst)
+                jvdir, "{}_Strat_ZonalMean_{}.pdf".format(prefix, subdst)
             )
         else:
             pdfname = os.path.join(
-                jvdir, "{}Strat_ZonalMean.pdf".format(prefix))
+                jvdir, "{}_Strat_ZonalMean.pdf".format(prefix))
 
         compare_zonal_mean(
             refds,
