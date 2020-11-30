@@ -3975,3 +3975,143 @@ def make_benchmark_operations_budget(
     df = pd.DataFrame()
     ref_ds = xr.Dataset()
     dev_ds = xr.Dataset()
+
+
+def make_benchmark_mass_conservation_table(
+    datafiles,
+    runstr,
+    dst="./benchmark",
+    overwrite=False,
+    spcdb_dir=os.path.dirname(__file__)
+):
+    """
+    Creates a text file containing global mass of the PassiveTracer
+    from Transport Tracer simulations across a series of restart files.
+
+    Args:
+    -----
+        datafiles : list of str
+            Path names of restart files.
+        runstr : str
+            Name to put in the filename and header of the output file
+        refstr : str
+            A string to describe ref (e.g. version number)
+        dev : str
+            Path name of "Dev" (aka "Development") data set file.
+            The "Dev" data set will be compared against the "Ref" data set.
+        devmet : list of str
+            Path name of dev meteorology data set.
+        devstr : str
+            A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str
+            A string denoting the destination folder where the file
+            containing emissions totals will be written.
+            Default value: "./benchmark"
+        overwrite : bool
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value : False
+    """
+
+    # ==================================================================
+    # Define destination directory
+    # ==================================================================
+    if os.path.isdir(dst) and not overwrite:
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any."
+        msg = msg.format(dst)
+        raise ValueError(msg)
+    elif not os.path.isdir(dst):
+        os.makedirs(dst)
+
+    # Load a YAML file containing species properties (such as
+    # molecular weights), which we will need for unit conversions.
+    properties_path = os.path.join(spcdb_dir, "species_database.yml")
+    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+
+    # Get the species name
+    spc_name = 'PassiveTracer'
+    
+    # Get a list of properties for the given species
+    species_properties = properties.get(spc_name)
+
+    # Specify target units
+    target_units = "Tg"
+
+    dates = []
+    masses = []
+
+    # ==================================================================
+    # Calculate global mass for the tracer at all restart dates
+    # ==================================================================
+    for f in datafiles:
+        
+        ds = xr.open_dataset(f, drop_variables=gcon.skip_these_vars)
+
+        # Save date in desired format
+        #datestr = str(pd.to_datetime(ds.time.values[0]))
+        #dates.append(datestr[:4] + '-' + datestr[5:7] + '-' + datestr[8:10])
+
+        # Assume typical restart file name format, but avoid using dates
+        # from within files which may be incorrect for the initial restart
+        datestr = f.split('/')[-1].split('.')[2][:9]
+        dates.append(datestr[:4] + '-' + datestr[4:6] + '-' + datestr[6:8])
+        
+        area = util.get_area_from_dataset(ds)
+        delta_p = ds['Met_DELPDRY']
+
+        # ==============================================================
+        # Convert units of Ref and save to a DataArray
+        # (or skip if Ref contains NaNs everywhere)
+        # ==============================================================        
+        da = ds['SpeciesRst_PassiveTracer'].astype(np.float64)
+        da = convert_units(
+                da,
+                spc_name,
+                species_properties,
+                target_units,
+                area_m2=area,
+                delta_p=delta_p
+        )
+        
+        # Save total global mass
+        masses.append(np.sum(da.values))
+        # Clean up
+        ds = xr.Dataset()
+        da = xr.DataArray()
+
+    # Calclate max and min mass, absolute diff, percent diff
+    max_mass = np.max(masses)
+    min_mass = np.min(masses)
+    # Convert absdiff to grams
+    absdiff = (max_mass-min_mass) * 10**12
+    pctdiff = max_mass/min_mass
+
+    # ==================================================================
+    # Print masses to file
+    # ==================================================================
+    # Create file
+    outfilename = os.path.join(dst, runstr + ".passive_mass.txt")
+
+    with open(outfilename, 'w') as f:
+        titlestr = '  Global Mass of Passive Tracer in ' + runstr + '  '        
+        #headers
+        print('%' * (len(titlestr)+4), file=f)
+        print(titlestr,                file=f)
+        print('%' * (len(titlestr)+4), file=f)
+        print('', file=f)
+        print(' Date' + ' ' * 8 + 'Mass [Tg]', file=f)
+        print(' ' + '-' * 10 + '  ' + '-' * 16, file=f)
+        #masses
+        for i in range(len(masses)):
+            print(' {}  {:11.13f}'.format(dates[i], masses[i]), file=f)
+        print(' ', file=f)
+        print(' Summary', file=f)
+        print(' ' + '-' * 30, file=f)
+        print(' Max mass =  {:2.13f} Tg'.format(max_mass), file=f)
+        print(' Min mass =  {:2.13f} Tg'.format(min_mass), file=f)
+        print(' Abs diff =  {:>16.3f} g'.format(absdiff), file=f)
+        print(' Pct diff =  {:>16.5f} %'.format(pctdiff), file=f)
