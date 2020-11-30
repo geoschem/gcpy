@@ -158,7 +158,7 @@ else:
                                     results_dir, "GCHP_version_comparison")
     gchp_vs_gcc_resultsdir   = join(maindir, gchp_dev_version,
                                     results_dir, "GCHP_GCC_comparison")
-    base_gchp_resultsdir     = join(maindir, gchp_dev_dir, results_dir)
+    base_gchp_resultsdir     = join(maindir, gchp_dev_version, results_dir)
     #make results directories that don't exist
     for resdir, plotting_type in zip([gcc_vs_gcc_resultsdir, base_gchp_resultsdir,
                                       gchp_vs_gchp_resultsdir, gchp_vs_gcc_resultsdir],
