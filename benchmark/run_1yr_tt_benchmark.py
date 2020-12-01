@@ -123,6 +123,7 @@ plot_wetdep       = True
 rnpbbe_budget     = True
 operations_budget = True
 ste_table         = True # GCC only
+cons_table        = True
 
 # =====================================================================
 # Data directories
@@ -225,6 +226,7 @@ if plot_wetdep:  print(" - Convective and large-scale wet deposition plots")
 if rnpbbe_budget: print(" - Radionuclides budget table")
 if operations_budget: print(" - Operations budget table")
 if ste_table:    print(" - Table of strat-trop exchange")
+if cons_table:   print(" - Table of mass conservation")
 print("Comparisons will be made for the following combinations:")
 if gcc_vs_gcc:   print(" - GCC vs GCC")
 if gchp_vs_gcc:  print(" - GCHP vs GCC")
@@ -643,3 +645,87 @@ if gchp_vs_gchp:
                         "WetDep"],
             compute_accum=False,
             dst=gchp_vs_gchp_tablesdir            )
+
+
+# ======================================================================
+# Create mass conservations tables for GCC and GCHP
+# ======================================================================
+
+if cons_table:
+
+    col = "Restart"
+
+    # Create mass conservation table for gcc_ref
+    if gcc_vs_gcc:        
+        print("\n%%% Creating GCC ref mass conservation table")
+        
+        # Get monthly restart files in the gcc refrst directory
+        datafiles = get_filepaths(gcc_vs_gcc_refrstdir, col, all_months,
+                                  is_gchp=False)
+        
+        # Make mass conservation table
+        bmk.make_benchmark_mass_conservation_table(
+            datafiles,
+            gcc_ref_version,
+            dst=gcc_vs_gcc_tablesdir
+            overwrite=True,
+            spcdb_dir=spcdb_dir
+        )
+
+    if gcc_vs_gcc or gchp_vs_gcc:        
+        print("\n%%% Creating GCC dev mass conservation table")
+        
+        # Get monthly restart files in the gcc devrst directory
+        datafiles = get_filepaths(gcc_vs_gcc_devrstdir, col, all_months,
+                                  is_gchp=False)
+        
+        if gchp_vs_gcc:
+            tablesdir=gchp_vs_gcc_tablesdir
+        else:
+            tablesdir=gcc_vs_gcc_tablesdir
+
+        # Make mass conservation table
+        bmk.make_benchmark_mass_conservation_table(
+            datafiles,
+            gcc_dev_version,
+            dst=tablesdir
+            overwrite=True,
+            spcdb_dir=spcdb_dir
+        )
+    
+    if gchp_vs_gcc or gchp_vs_gchp:
+        print("\n%%% Creating GCHP dev mass conservation table")
+        
+        # Get monthly restart files in the gcc devrst directory
+        datafiles = get_filepaths(gchp_vs_gcc_devrstdir, col, all_months,
+                                  is_gchp=True)
+        
+        if gchp_vs_gcc:
+            tablesdir=gchp_vs_gcc_tablesdir
+        else:
+            tablesdir=gchp_vs_gchp_tablesdir
+
+        # Make mass conservation table
+        bmk.make_benchmark_mass_conservation_table(
+            datafiles,
+            gchp_dev_version,
+            dst=tablesdir,
+            overwrite=True,
+            spcdb_dir=spcdb_dir
+        )
+
+    if gchp_vs_gchp:
+        print("\n%%% Creating GCHP ref mass conservation table")
+        
+        # Get monthly restart files in the gcc devrst directory
+        datafiles = get_filepaths(gchp_vs_gchp_refrstdir, col, all_months,
+                                  is_gchp=True)
+        
+        # Make mass conservation table
+        bmk.make_benchmark_mass_conservation_table(
+            datafiles,
+            gchp_ref_version,
+            dst=gchp_vs_gchp_tablesdir,
+            overwrite=True,
+            spcdb_dir=spcdb_dir
+        )
