@@ -225,25 +225,27 @@ def create_total_emissions_table(
         # Title strings
         if "Inv" in template:
             print("Computing inventory totals for {}".format(species_name))
-            title1 = "### Emissions totals for inventory {}".format(
+            title1 = "### Emissions totals for inventory {} [Tg]".format(
                 species_name)
         else:
             print("Computing emissions totals for {}".format(species_name))
-            title1 = "### Emissions totals for species {}".format(species_name)
+            title1 = "### Emissions totals for species {} [Tg]".format(species_name)
 
         title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
 
         # Print header to file
-        print("#" * 79, file=f)
-        print("{}{}".format(title1.ljust(76), "###"), file=f)
-        print("{}{}".format(title2.ljust(76), "###"), file=f)
-        print("#" * 79, file=f)
+        print("#" * 83, file=f)
+        print("{}{}".format(title1.ljust(80), "###"), file=f)
+        print("{}{}".format(title2.ljust(80), "###"), file=f)
+        print("#" * 83, file=f)
         print(
-            "{}{}{}{}".format(
-                " ".ljust(22),
+            "{}{}{}{}{}".format(
+                " ".ljust(19),
                 "Ref".rjust(20),
                 "Dev".rjust(20),
-                "Dev - Ref".rjust(15)),
+                "Dev - Ref".rjust(14),
+                "% diff".rjust(10),
+            ),
             file=f)
 
         # =============================================================
@@ -450,16 +452,16 @@ def create_global_mass_table(
     title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
 
     # Print header to file
-    print("#" * 79, file=f)
-    print("{}{}".format(title1.ljust(76), "###"), file=f)
-    print("{}{}".format(title2.ljust(76), "###"), file=f)
-    print("#" * 79, file=f)
+    print("#" * 83, file=f)
+    print("{}{}".format(title1.ljust(80), "###"), file=f)
+    print("{}{}".format(title2.ljust(80), "###"), file=f)
+    print("#" * 83, file=f)
     print(
         "{}{}{}{}{}".format(
-            " ".ljust(13),
+            " ".ljust(19),
             "Ref".rjust(20),
             "Dev".rjust(20),
-            "Dev - Ref".rjust(15),
+            "Dev - Ref".rjust(14),
             "% diff".rjust(10),
         ),
         file=f,
@@ -538,7 +540,6 @@ def create_global_mass_table(
                 devarray,
                 devstr,
                 f,
-                mass_tables=True,
                 masks=met_and_masks,
             )
         else:
@@ -548,7 +549,6 @@ def create_global_mass_table(
                 devarray,
                 devstr,
                 f,
-                mass_tables=True
             )
 
     # ==================================================================
