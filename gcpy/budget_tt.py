@@ -9,16 +9,17 @@ TransportTracersBenchmark simulations.
 # Imports etc.
 # ======================================================================
 
-from calendar import monthrange
-import numpy as np
 import os
 from os.path import join
-import gcpy.constants as constants
-from gcpy.grid import get_troposphere_mask
-from gcpy.util import rename_and_flip_gchp_rst_vars, dict_diff
+from glob import glob
 import warnings
+from calendar import monthrange
+import numpy as np
 import xarray as xr
 from yaml import load as yaml_load_file
+import gcpy.constants as constants
+from gcpy.grid import get_troposphere_mask
+from gcpy.util import rename_and_flip_gchp_rst_vars, dict_diff, reshape_MAPL_CS
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -27,7 +28,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # ======================================================================
 # Define a class for passing global variables to the methods below
 # ======================================================================
-
 
 class _GlobVars:
     """
@@ -111,8 +111,13 @@ class _GlobVars:
         if is_gchp:
             StateMetAvg = join(self.devdir,
                                "*.StateMet_avg.{}*.nc4".format(self.y0_str))
-            # StateMetInst = join(self.devdir,
-            #                    "*.StateMet_inst.{}*.nc4".format(self.y0_str))
+
+            StateMet = join(self.devdir,
+                            "*.StateMet.{}*.nc4".format(self.y0_str))
+
+            # Set a logical if we need to read StateMet_avg or StateMet
+            gchp_use_statemet_avg  = os.path.isfile(glob(StateMetAvg)[0])
+
         else:
             StateMet = join(self.devdir,
                             "*.StateMet.{}*.nc4".format(self.y0_str))
@@ -139,7 +144,8 @@ class _GlobVars:
             RstFinal, drop_variables=skip_vars, **extra_kwargs)
 
         # Change the restart datasets into format similar to GCC, and flip
-        # vertical axis
+        # vertical axis.  Also test if the restart files have the BXHEIGHT
+        # variable contained within them.
         if is_gchp:
             self.ds_ini = rename_and_flip_gchp_rst_vars(self.ds_ini)
             self.ds_end = rename_and_flip_gchp_rst_vars(self.ds_end)
@@ -157,16 +163,10 @@ class _GlobVars:
             WetLossLS, drop_variables=skip_vars, **extra_kwargs)
 
         # Met fields
-        if is_gchp:
+        # For GCHP: Read from StateMet_avg if present (otherwise StateMet)
+        if is_gchp and gchp_use_statemet_avg:
             self.ds_met = xr.open_mfdataset(
                 StateMetAvg, drop_variables=skip_vars, **extra_kwargs)
-            # For now, don't read restarts for GCHP (bmy, 3/16/20)
-            # ds_met_inst = xr.open_mfdataset(StateMetInst,
-            #                                drop_variables=skip_vars)
-            #
-            # Add the initial met fields to the restart file collections
-            #self.ds_ini = xr.merge([self.ds_ini, ds_met_inst.isel(time=0)])
-            #self.ds_end = xr.merge([self.ds_end, ds_met_inst.isel(time=11)])
         else:
             self.ds_met = xr.open_mfdataset(
                 StateMet, drop_variables=skip_vars, **extra_kwargs)
@@ -180,14 +180,16 @@ class _GlobVars:
                 HemcoDiag, drop_variables=skip_vars, **extra_kwargs)
 
         # Area and troposphere mask
-        # For gchp, get area in m2 from restart for use in calculating initial
-        # and final mass from restart. Get area in cm2 from diagnostic
-        # file for format compatibility with diagnostic output.
+        # The area in m2 is on the restart file grid
+        # The area in cm2 is on the History diagnostic grid
+        # Both grids are identical in GCClassic but differ in GCHP
         if self.is_gchp:
-            self.area_m2 = self.ds_ini["AREA"]
-            # using met files for all area because AREA is not always in restarts
-            # actually can't do this because of different dimensions
-            #self.area_m2 = self.ds_met["Met_AREAM2"]
+            if 'Met_AREAM2' not in self.ds_met.data_vars.keys():
+                msg = 'Could not find Met_AREAM2 in StateMet_avg collection!'
+                raise ValueError(msg)
+            area_m2 = self.ds_met["Met_AREAM2"].isel(time=0)
+            area_m2 = reshape_MAPL_CS(area_m2)
+            self.area_m2 = area_m2
             self.area_cm2 = self.ds_met["Met_AREAM2"] * 1.0e4
         else:
             self.area_m2 = self.ds_met["AREA"].isel(time=0)
@@ -256,10 +258,10 @@ class _GlobVars:
             self.mcm2s_to_g_d[spc] = self.area_cm2.values \
                 / self.kg_per_mol[spc] \
                 * self.kg_s_to_g_d[spc]
+
 # ======================================================================
 # Functions
 # ======================================================================
-
 
 def total(globvars, dict_list):
     """
@@ -318,26 +320,41 @@ def mass_from_rst(globvars, ds, tropmask):
     result = {}
 
     # Conversion factors based on restart-file met fields
+    # NOTE: Convert DataArray to numpy ndarray so that the
+    # broadcasting will be done properly!!!
     g100 = 100.0 / constants.G
     if 'time' in ds["Met_DELPDRY"].dims:
-        airmass = ds["Met_DELPDRY"].isel(time=0) * globvars.area_m2 * g100
+        deltap = ds["Met_DELPDRY"].isel(time=0).values
     else:
-        airmass = ds["Met_DELPDRY"] * globvars.area_m2 * g100
-    airmass = airmass.values
+        deltap = ds["Met_DELPDRY"].values
+    area = globvars.area_m2.values
+    airmass = deltap * area * g100
+
+    # GCClassic: Restart variables begin with SpeciesRst
+    prefix = "SpeciesRst_"
+
+    # Determine if restart file variables have a time dimension
+    # (if one does, they all do)
+    varname = prefix + globvars.species_list[0]
+    if 'time' in ds[varname].dims:
+        has_time_dim = True
+    else:
+        has_time_dim = False
 
     # Loop over species
-    has_time_dim = 'time' in ds["SpeciesRst_" + globvars.species_list[0]]
     for spc in globvars.species_list:
+
+        # Add the prefix to the species name
+        varname = prefix + spc
 
         # Conversion factor from mixing ratio to g, w/ met from rst file
         vv_to_g[spc] = airmass \
             * (globvars.mw[spc] / globvars.mw["Air"]) * 1000.0
 
         if has_time_dim:
-            rst_f[spc] = ds["SpeciesRst_" +
-                            spc].isel(time=0).values * vv_to_g[spc]
+            rst_f[spc] = ds[varname].isel(time=0).values * vv_to_g[spc]
         else:
-            rst_f[spc] = ds["SpeciesRst_" + spc].values * vv_to_g[spc]
+            rst_f[spc] = ds[varname].values * vv_to_g[spc]
 
         # Troposphere-only mass
         rst_t[spc] = np.ma.masked_array(rst_f[spc], tropmask)
