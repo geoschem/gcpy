@@ -225,25 +225,27 @@ def create_total_emissions_table(
         # Title strings
         if "Inv" in template:
             print("Computing inventory totals for {}".format(species_name))
-            title1 = "### Emissions totals for inventory {}".format(
+            title1 = "### Emissions totals for inventory {} [Tg]".format(
                 species_name)
         else:
             print("Computing emissions totals for {}".format(species_name))
-            title1 = "### Emissions totals for species {}".format(species_name)
+            title1 = "### Emissions totals for species {} [Tg]".format(species_name)
 
         title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
 
         # Print header to file
-        print("#" * 79, file=f)
-        print("{}{}".format(title1.ljust(76), "###"), file=f)
-        print("{}{}".format(title2.ljust(76), "###"), file=f)
-        print("#" * 79, file=f)
+        print("#" * 83, file=f)
+        print("{}{}".format(title1.ljust(80), "###"), file=f)
+        print("{}{}".format(title2.ljust(80), "###"), file=f)
+        print("#" * 83, file=f)
         print(
-            "{}{}{}{}".format(
-                " ".ljust(22),
+            "{}{}{}{}{}".format(
+                " ".ljust(19),
                 "Ref".rjust(20),
                 "Dev".rjust(20),
-                "Dev - Ref".rjust(15)),
+                "Dev - Ref".rjust(14),
+                "% diff".rjust(10),
+            ),
             file=f)
 
         # =============================================================
@@ -450,16 +452,16 @@ def create_global_mass_table(
     title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
 
     # Print header to file
-    print("#" * 79, file=f)
-    print("{}{}".format(title1.ljust(76), "###"), file=f)
-    print("{}{}".format(title2.ljust(76), "###"), file=f)
-    print("#" * 79, file=f)
+    print("#" * 83, file=f)
+    print("{}{}".format(title1.ljust(80), "###"), file=f)
+    print("{}{}".format(title2.ljust(80), "###"), file=f)
+    print("#" * 83, file=f)
     print(
         "{}{}{}{}{}".format(
-            " ".ljust(13),
+            " ".ljust(19),
             "Ref".rjust(20),
             "Dev".rjust(20),
-            "Dev - Ref".rjust(15),
+            "Dev - Ref".rjust(14),
             "% diff".rjust(10),
         ),
         file=f,
@@ -538,7 +540,6 @@ def create_global_mass_table(
                 devarray,
                 devstr,
                 f,
-                mass_tables=True,
                 masks=met_and_masks,
             )
         else:
@@ -548,7 +549,6 @@ def create_global_mass_table(
                 devarray,
                 devstr,
                 f,
-                mass_tables=True
             )
 
     # ==================================================================
@@ -1908,7 +1908,7 @@ def make_benchmark_jvalue_plots(
 
         # Get a list of continuously averaged J-value variables
         # (or use the varlist passed via tha argument list)
-        prefix = "Jval_"
+        prefix = "Jval"
         if varlist is None:
             varlist = [v for v in cmn if prefix in v]
 
@@ -1936,10 +1936,10 @@ def make_benchmark_jvalue_plots(
     # Surface plots
     if "sfc" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}Surface_{}.pdf".format(
+            pdfname = os.path.join(jvdir, "{}_Surface_{}.pdf".format(
                 prefix, subdst))
         else:
-            pdfname = os.path.join(jvdir, "{}Surface.pdf".format(prefix))
+            pdfname = os.path.join(jvdir, "{}_Surface.pdf".format(prefix))
 
         diff_sfc = []
         compare_single_level(
@@ -1969,10 +1969,10 @@ def make_benchmark_jvalue_plots(
     # 500hPa plots
     if "500hpa" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}500hPa_{}.pdf".format(
+            pdfname = os.path.join(jvdir, "{}_500hPa_{}.pdf".format(
                 prefix, subdst))
         else:
-            pdfname = os.path.join(jvdir, "{}500hPa.pdf".format(prefix))
+            pdfname = os.path.join(jvdir, "{}_500hPa.pdf".format(prefix))
 
         diff_500 = []
         compare_single_level(
@@ -1999,10 +1999,10 @@ def make_benchmark_jvalue_plots(
     if "zonalmean" in plots:
         if subdst is not None:
             pdfname = os.path.join(
-                jvdir, "{}FullColumn_ZonalMean_{}.pdf".format(prefix, subdst)
+                jvdir, "{}_FullColumn_ZonalMean_{}.pdf".format(prefix, subdst)
             )
         else:
-            pdfname = os.path.join(jvdir, "{}FullColumn_ZonalMean.pdf".format(
+            pdfname = os.path.join(jvdir, "{}_FullColumn_ZonalMean.pdf".format(
                 prefix))
 
         diff_zm = []
@@ -2033,11 +2033,11 @@ def make_benchmark_jvalue_plots(
         # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
         if subdst is not None:
             pdfname = os.path.join(
-                jvdir, "{}Strat_ZonalMean_{}.pdf".format(prefix, subdst)
+                jvdir, "{}_Strat_ZonalMean_{}.pdf".format(prefix, subdst)
             )
         else:
             pdfname = os.path.join(
-                jvdir, "{}Strat_ZonalMean.pdf".format(prefix))
+                jvdir, "{}_Strat_ZonalMean.pdf".format(prefix))
 
         compare_zonal_mean(
             refds,
@@ -3975,3 +3975,143 @@ def make_benchmark_operations_budget(
     df = pd.DataFrame()
     ref_ds = xr.Dataset()
     dev_ds = xr.Dataset()
+
+
+def make_benchmark_mass_conservation_table(
+    datafiles,
+    runstr,
+    dst="./benchmark",
+    overwrite=False,
+    spcdb_dir=os.path.dirname(__file__)
+):
+    """
+    Creates a text file containing global mass of the PassiveTracer
+    from Transport Tracer simulations across a series of restart files.
+
+    Args:
+    -----
+        datafiles : list of str
+            Path names of restart files.
+        runstr : str
+            Name to put in the filename and header of the output file
+        refstr : str
+            A string to describe ref (e.g. version number)
+        dev : str
+            Path name of "Dev" (aka "Development") data set file.
+            The "Dev" data set will be compared against the "Ref" data set.
+        devmet : list of str
+            Path name of dev meteorology data set.
+        devstr : str
+            A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+    ------------------------
+        dst : str
+            A string denoting the destination folder where the file
+            containing emissions totals will be written.
+            Default value: "./benchmark"
+        overwrite : bool
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value : False
+    """
+
+    # ==================================================================
+    # Define destination directory
+    # ==================================================================
+    if os.path.isdir(dst) and not overwrite:
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any."
+        msg = msg.format(dst)
+        raise ValueError(msg)
+    elif not os.path.isdir(dst):
+        os.makedirs(dst)
+
+    # Load a YAML file containing species properties (such as
+    # molecular weights), which we will need for unit conversions.
+    properties_path = os.path.join(spcdb_dir, "species_database.yml")
+    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+
+    # Get the species name
+    spc_name = 'PassiveTracer'
+    
+    # Get a list of properties for the given species
+    species_properties = properties.get(spc_name)
+
+    # Specify target units
+    target_units = "Tg"
+
+    dates = []
+    masses = []
+
+    # ==================================================================
+    # Calculate global mass for the tracer at all restart dates
+    # ==================================================================
+    for f in datafiles:
+        
+        ds = xr.open_dataset(f, drop_variables=gcon.skip_these_vars)
+
+        # Save date in desired format
+        #datestr = str(pd.to_datetime(ds.time.values[0]))
+        #dates.append(datestr[:4] + '-' + datestr[5:7] + '-' + datestr[8:10])
+
+        # Assume typical restart file name format, but avoid using dates
+        # from within files which may be incorrect for the initial restart
+        datestr = f.split('/')[-1].split('.')[2][:9]
+        dates.append(datestr[:4] + '-' + datestr[4:6] + '-' + datestr[6:8])
+        
+        area = util.get_area_from_dataset(ds)
+        delta_p = ds['Met_DELPDRY']
+
+        # ==============================================================
+        # Convert units of Ref and save to a DataArray
+        # (or skip if Ref contains NaNs everywhere)
+        # ==============================================================        
+        da = ds['SpeciesRst_PassiveTracer'].astype(np.float64)
+        da = convert_units(
+                da,
+                spc_name,
+                species_properties,
+                target_units,
+                area_m2=area,
+                delta_p=delta_p
+        )
+        
+        # Save total global mass
+        masses.append(np.sum(da.values))
+        # Clean up
+        ds = xr.Dataset()
+        da = xr.DataArray()
+
+    # Calclate max and min mass, absolute diff, percent diff
+    max_mass = np.max(masses)
+    min_mass = np.min(masses)
+    # Convert absdiff to grams
+    absdiff = (max_mass-min_mass) * 10**12
+    pctdiff = max_mass/min_mass
+
+    # ==================================================================
+    # Print masses to file
+    # ==================================================================
+    # Create file
+    outfilename = os.path.join(dst, runstr + ".passive_mass.txt")
+
+    with open(outfilename, 'w') as f:
+        titlestr = '  Global Mass of Passive Tracer in ' + runstr + '  '        
+        #headers
+        print('%' * (len(titlestr)+4), file=f)
+        print(titlestr,                file=f)
+        print('%' * (len(titlestr)+4), file=f)
+        print('', file=f)
+        print(' Date' + ' ' * 8 + 'Mass [Tg]', file=f)
+        print(' ' + '-' * 10 + '  ' + '-' * 16, file=f)
+        #masses
+        for i in range(len(masses)):
+            print(' {}  {:11.13f}'.format(dates[i], masses[i]), file=f)
+        print(' ', file=f)
+        print(' Summary', file=f)
+        print(' ' + '-' * 30, file=f)
+        print(' Max mass =  {:2.13f} Tg'.format(max_mass), file=f)
+        print(' Min mass =  {:2.13f} Tg'.format(min_mass), file=f)
+        print(' Abs diff =  {:>16.3f} g'.format(absdiff), file=f)
+        print(' Pct diff =  {:>16.5f} %'.format(pctdiff), file=f)
