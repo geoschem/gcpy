@@ -499,8 +499,8 @@ if gcc_vs_gcc:
             label ="at 01{}".format(datestr)
 
             # Read seasonal data
-            ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
-            dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
+            ref = get_filepath(gcc_vs_gcc_refrstdir, col, reftime)
+            dev = get_filepath(gcc_vs_gcc_devrstdir, col, devtime)
 
             # Create tables
             bmk.make_benchmark_mass_tables(
