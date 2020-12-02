@@ -581,8 +581,8 @@ if gcc_vs_gcc:
             dev_spc,
             dev_met,
             gcc_dev_version,
-            bmk_year,
-            days_per_month,
+            bmk_year_dev,
+            days_per_month_dev,
             dst=gcc_vs_gcc_tablesdir,
             overwrite=True,
             spcdb_dir=spcdb_dir
@@ -602,7 +602,7 @@ if gcc_vs_gcc:
         ste.make_benchmark_ste_table(
             gcc_dev_version,
             dev,
-            bmk_year,
+            bmk_year_dev,
             dst=gcc_vs_gcc_tablesdir,
             bmk_type=bmk_type,
             species=['O3'],
@@ -760,8 +760,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devstr,
             devmet=devmet,
             dst=gchp_vs_gcc_resultsdir,
-            ref_interval=sec_per_month,
-            dev_interval=sec_per_month,
+            ref_interval=sec_per_month_ref,
+            dev_interval=sec_per_month_dev,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
@@ -957,8 +957,8 @@ if gchp_vs_gcc:
             dev_spc,
             dev_met,
             gchp_dev_version,
-            bmk_year,
-            days_per_month,
+            bmk_year_dev,
+            days_per_month_dev,
             dst=gchp_vs_gcc_tablesdir,
             overwrite=True,
             spcdb_dir=spcdb_dir,
@@ -1098,8 +1098,8 @@ if gchp_vs_gchp:
             refmet=refmet,
             devmet=devmet,
             dst=gchp_vs_gchp_resultsdir,
-            ref_interval=sec_per_month,
-            dev_interval=sec_per_month,
+            ref_interval=sec_per_month_ref,
+            dev_interval=sec_per_month_dev,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
