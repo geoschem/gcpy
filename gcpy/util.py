@@ -3,13 +3,13 @@ objects used throughout GCPy """
 
 
 import os
+import warnings
 import yaml
 import shutil
 import numpy as np
 import xarray as xr
 import gcpy.constants as gcon
 from PyPDF2 import PdfFileWriter, PdfFileReader
-
 
 def convert_lon(data, dim='lon', format='atlantic', neg_dateline=True):
     """
@@ -559,6 +559,10 @@ def reshape_MAPL_CS(da):
         data : xarray DataArray
             Data with dimensions renamed and transposed to match old MAPL format
     """
+
+    # Suppress annoying future warnings for now
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    
     if type(da) != np.ndarray:
         vdims = da.dims
         if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
