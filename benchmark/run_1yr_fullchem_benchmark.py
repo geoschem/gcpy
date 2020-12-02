@@ -596,7 +596,7 @@ if gcc_vs_gcc:
 
         # Diagnostic collections to read (all 12 months)
         col = "AdvFluxVert"
-        dev = get_filepaths(gcc_vs_gcc_devdir, col, all_months_dev)
+        dev = get_filepaths(gcc_vs_gcc_devdir, col, all_months_dev)[0]
 
         # Compute monthly and annual average strat-trop exchange of O3
         ste.make_benchmark_ste_table(
@@ -1089,6 +1089,7 @@ if gchp_vs_gchp:
                                all_months_mid_ref, is_gchp=True)
         devmet = get_filepaths(gchp_vs_gchp_devdir, colmet,
                                all_months_mid_dev, is_gchp=True)
+
         # Create emissions table that spans entire year
         bmk.make_benchmark_emis_tables(
             ref,
