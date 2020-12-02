@@ -65,9 +65,10 @@ from joblib import Parallel, delayed, cpu_count, parallel_backend
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"]="offscreen"
 
-# Suppress harmless run-time warnings (mostly about underflow in division)
+# Suppress annoying warning messages
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
 
 # This script has a fixed benchmark type
 bmk_type     = "FullChemBenchmark"
@@ -237,12 +238,12 @@ all_months_ref = np.arange(bmk_start_ref,
 sec_per_month_ref = np.zeros(12)
 days_per_month_ref = np.zeros(12)
 all_months_mid_ref = np.zeros(12, dtype="datetime64[h]")
-for m in range(12):
-    days_per_month_ref[m] = monthrange(int(bmk_year_ref), m+1)[1]
-    sec_per_month_ref[m] = days_per_month_ref[m] * 86400.0
-    middle_hr = int(days_per_month_ref[m]*24/2)
+for t in range(12):
+    days_per_month_ref[t] = monthrange(int(bmk_year_ref), t + 1)[1]
+    sec_per_month_ref[t] = days_per_month_ref[t] * 86400.0
+    middle_hr = int(days_per_month_ref[t] * 24 / 2)
     delta = np.timedelta64(middle_hr, 'h')
-    all_months_mid_ref[m] = all_months_ref[m].astype("datetime64[h]") + delta
+    all_months_mid_ref[t] = all_months_ref[t].astype("datetime64[h]") + delta
 
 # Get subset of month datetimes for only benchmark months
 bmk_mons_ref = all_months_ref[bmk_mon_inds]
@@ -250,7 +251,7 @@ bmk_mons_mid_ref = all_months_mid_ref[bmk_mon_inds]
 bmk_sec_per_month_ref = sec_per_month_ref[bmk_mon_inds]
 
 # =====================================================================
-# Dates and times -- dev data
+# Dates and times -- Dev data
 # =====================================================================
 
 # Month/year strings for use in table subdirectories (e.g. Jan2016)
@@ -270,12 +271,12 @@ all_months_dev = np.arange(bmk_start_dev,
 sec_per_month_dev = np.zeros(12)
 days_per_month_dev = np.zeros(12)
 all_months_mid_dev = np.zeros(12, dtype="datetime64[h]")
-for m in range(12):
-    days_per_month_dev[m] = monthrange(int(bmk_year_dev), m+1)[1]
-    sec_per_month_dev[m] = days_per_month_dev[m] * 86400.0
-    middle_hr = int(days_per_month_dev[m]*24/2)
+for t in range(12):
+    days_per_month_dev[t] = monthrange(int(bmk_year_dev), t + 1)[1]
+    sec_per_month_dev[t] = days_per_month_dev[t] * 86400.0
+    middle_hr = int(days_per_month_dev[t] * 24 / 2)
     delta = np.timedelta64(middle_hr, 'h')
-    all_months_mid_dev[m] = all_months_dev[m].astype("datetime64[h]") + delta
+    all_months_mid_dev[t] = all_months_dev[t].astype("datetime64[h]") + delta
 
 # Get subset of month datetimes for only benchmark months
 bmk_mons_dev = all_months_dev[bmk_mon_inds]
@@ -322,10 +323,19 @@ if gcc_vs_gcc:
 
         # Create concentration plots for each benchmark month
         for t in range(bmk_n_months):
-            ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mons_ref[t])
-            dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mons_dev[t])
-            refmet = get_filepath(gcc_vs_gcc_refdir, colmet, bmk_mons_ref[t])
-            devmet = get_filepath(gcc_vs_gcc_devdir, colmet, bmk_mons_dev[t])
+
+            # Time & date quantities
+            reftime = bmk_mons_ref[t]
+            devtime = bmk_mons_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+
+            # Read seasonal data
+            ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
+            refmet = get_filepath(gcc_vs_gcc_refdir, colmet, reftime)
+            devmet = get_filepath(gcc_vs_gcc_devdir, colmet, devtime)
+
+            # Create plots
             bmk.make_benchmark_conc_plots(
                 ref,
                 gcc_vs_gcc_refstr,
@@ -334,7 +344,7 @@ if gcc_vs_gcc:
                 refmet=refmet,
                 devmet=devmet,
                 dst=gcc_vs_gcc_resultsdir,
-                subdst=bmk_mon_yr_strs_dev[t],
+                subdst=datestr,
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
                 plot_by_spc_cat=plot_by_spc_cat,
@@ -353,15 +363,24 @@ if gcc_vs_gcc:
 
         # Create concentration plots for each benchmark month
         for t in range(bmk_n_months):
-            ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mons_ref[t])
-            dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mons_dev[t])
+
+            # Time & date quantities
+            reftime = bmk_mons_ref[t]
+            devtime = bmk_mons_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+
+            # Read seasonal data
+            ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
+
+            # Create plots
             bmk.make_benchmark_emis_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
                 dst=gcc_vs_gcc_resultsdir,
-                subdst=bmk_mon_yr_strs_dev[t],
+                subdst=datestr,
                 weightsdir=weightsdir,
                 plot_by_spc_cat=plot_by_spc_cat,
                 plot_by_hco_cat=plot_by_hco_cat,
@@ -375,7 +394,7 @@ if gcc_vs_gcc:
     if emis_table:
         print("\n%%% Creating GCC vs. GCC emissions & inventory totals %%%")
 
-        # Diagnostic collections to read
+        # Read all months of data
         col = "Emissions"
         ref = get_filepaths(gcc_vs_gcc_refdir, col, all_months_ref)
         dev = get_filepaths(gcc_vs_gcc_devdir, col, all_months_dev)
@@ -404,15 +423,24 @@ if gcc_vs_gcc:
 
         # Create J-value plots for each benchmark month
         for t in range(bmk_n_months):
-            ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mons_ref[t])
-            dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mons_dev[t])
+
+            # Time & date quantities
+            reftime = bmk_mons_ref[t]
+            devtime = bmk_mons_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+
+            # Read seasonal data
+            ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
+
+            # Make plots
             bmk.make_benchmark_jvalue_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
                 dst=gcc_vs_gcc_resultsdir,
-                subdst=bmk_mon_yr_strs_dev[t],
+                subdst=datestr,
                 weightsdir=weightsdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir
@@ -429,15 +457,24 @@ if gcc_vs_gcc:
 
         # Create AOD plots for each benchmark month
         for t in range(bmk_n_months):
-            ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mons_ref[t])
-            dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mons_dev[t])
+
+            # Time & date quantities
+            reftime = bmk_mons_ref[t]
+            devtime = bmk_mons_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+
+            # Read seasonal data
+            ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
+
+            # Create plots
             bmk.make_benchmark_aod_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
                 dst=gcc_vs_gcc_resultsdir,
-                subdst=bmk_mon_yr_strs_dev[t],
+                subdst=datestr,
                 weightsdir=weightsdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir
@@ -453,23 +490,34 @@ if gcc_vs_gcc:
         col = "Restart"
 
         # Create mass table for each benchmark month
-        def parallel_mass_table(t, bmk_mon_ref, bmk_mon_dev):
-            ref = get_filepath(gcc_vs_gcc_refrstdir, col, bmk_mon_ref)
-            dev = get_filepath(gcc_vs_gcc_devrstdir, col, bmk_mon_dev)
+        def parallel_mass_table(t):
+
+            # Time & date quantities
+            reftime = bmk_mons_ref[t]
+            devtime = bmk_mons_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+            label ="at 01{}".format(datestr)
+
+            # Read seasonal data
+            ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
+
+            # Create tables
             bmk.make_benchmark_mass_tables(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
                 dst=gcc_vs_gcc_tablesdir,
-                subdst=bmk_mon_yr_strs_dev[t],
-                label="at 01{}".format(bmk_mon_yr_strs_dev[t]),
+                subdst=datestr,
+                label=label,
                 overwrite=True,
                 spcdb_dir=spcdb_dir
             )
-        results = Parallel(n_jobs=-1)(delayed(parallel_mass_table)\
-                                      (t, bmk_mons_ref[t], bmk_mons_dev[t]) \
-                                      for t in range(bmk_n_months))
+
+        # Run in parallel
+        results = Parallel(n_jobs=-1)\
+            (delayed(parallel_mass_table) (t) for t in range(bmk_n_months))
 
     # --------------------------------------------------------------
     # GCC vs GCC operations budgets tables
@@ -481,24 +529,36 @@ if gcc_vs_gcc:
         col = "Budget"
 
         # Create budget table for each benchmark month (ewl??)
-        def parallel_ops_budg(t, bmk_mon_ref, bmk_mon_dev):
-            ref = get_filepath(gcc_vs_gcc_refdir, col, bmk_mon_ref)
-            dev = get_filepath(gcc_vs_gcc_devdir, col, bmk_mon_dev)
-            plot_dir = join(gcc_vs_gcc_budgetdir, bmk_mon_yr_strs_dev[s])
+        def parallel_ops_budg(t):
+
+            # Time & date quantities
+            reftime = bmk_mons_ref[t]
+            devtime = bmk_mons_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+            label ="at 01{}".format(datestr)
+            sec_ref = sec_per_month_ref[t]
+            sec_dev = sec_per_month_dev[t]
+
+            # Read seasonal data
+            ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
+
+            # Create tables
             bmk.make_benchmark_operations_budget(
                 gcc_ref_version,
                 ref,
                 gcc_dev_version,
                 dev,
-                bmk_sec_per_month[t],
-                bmk_sec_per_month[t],
+                sec_ref,
+                sec_dev,
                 benchmark_type=bmk_type,
-                label=bmk_mon_yr_strs_dev[s],
+                label=label,
                 dst=gcc_vs_gcc_tablesdir
             )
-        results = Parallel(n_jobs=-1)(delayed(parallel_ops_budg)\
-                                      (t, bmk_mons_ref[t], bmk_mons_dev[t]) \
-                                      for t in range(bmk_n_months))
+
+        # Run in parallel
+        results = Parallel(n_jobs=-1)\
+            (delayed(parallel_ops_budg) (t) for t in range(bmk_n_months))
 
     # --------------------------------------------------------------
     # GCC vs GCC aerosols budgets/burdens tables
@@ -603,19 +663,23 @@ if gchp_vs_gcc:
         # Create concentration plots for each benchmark month
         for t in range(bmk_n_months):
 
+            # Time & date quantities
+            reftime = bmk_mons_dev[t]
+            devtime = bmk_mons_mid_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+
             # SpeciesConc
-            ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mons_dev[t])
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid_dev[t],
-                               is_gchp=True)
+            ref = get_filepath(gchp_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, devtime, is_gchp=True)
 
             # StateMet
-            refmet = get_filepath(gchp_vs_gcc_refdir, colmet, bmk_mons_dev[t])
-            devmet = get_filepath(gchp_vs_gcc_devdir,  colmet,
-                                  bmk_mons_mid_dev[t], is_gchp=True)
+            refmet = get_filepath(gchp_vs_gcc_refdir, colmet, reftime)
+            devmet = get_filepath(gchp_vs_gcc_devdir,  colmet, devtime,
+                                  is_gchp=True)
 
             # Use this for benchmark prior to 13.0
-            #devmet = get_filepath(gchp_vs_gcc_devdir, colmet_gchp,
-            #                      bmk_mons_mid_dev[t], is_gchp=True)
+            #devmet = get_filepath(gchp_vs_gcc_devdir, colmet_gchp, devtime,
+            #                      is_gchp=True)
 
             bmk.make_benchmark_conc_plots(
                 ref,
@@ -625,7 +689,7 @@ if gchp_vs_gcc:
                 refmet=refmet,
                 devmet=devmet,
                 dst=gchp_vs_gcc_resultsdir,
-                subdst=bmk_mon_yr_strs_dev[t],
+                subdst=datestr,
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
                 plot_by_spc_cat=plot_by_spc_cat,
@@ -644,16 +708,24 @@ if gchp_vs_gcc:
 
         # Create concentration plots for each benchmark month
         for t in range(bmk_n_months):
-            ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon_dev[t])
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid_dev[t],
-                               is_gchp=True)
+
+            # Time & date quantities
+            reftime = bmk_mons_dev[t]
+            devtime = bmk_mons_mid_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+
+            # Read data
+            ref = get_filepath(gchp_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, devtime, is_gchp=True)
+
+            # Create plots
             bmk.make_benchmark_emis_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
                 dst=gchp_vs_gcc_resultsdir,
-                subdst=bmk_mon_yr_strs_dev[t],
+                subdst=datestr,
                 weightsdir=weightsdir,
                 plot_by_spc_cat=plot_by_spc_cat,
                 plot_by_hco_cat=plot_by_hco_cat,
@@ -705,16 +777,24 @@ if gchp_vs_gcc:
 
         # Create J-value plots for each benchmark month
         for t in range(bmk_n_months):
-            ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon_dev[t])
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid_dev[t],
-                               is_gchp=True)
+
+            # Time & date quantities
+            reftime = bmk_mons_dev[t]
+            devtime = bmk_mons_mid_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+
+            # Read data
+            ref = get_filepath(gchp_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, devtime, is_gchp=True)
+
+            # Create plots
             bmk.make_benchmark_jvalue_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
                 dst=gchp_vs_gcc_resultsdir,
-                subdst=bmk_mon_yr_strs_dev[t],
+                subdst=datestr,
                 weightsdir=weightsdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir
@@ -731,16 +811,24 @@ if gchp_vs_gcc:
 
         # Create AOD plots for each benchmark month
         for t in range(bmk_n_months):
-            ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon_dev[t])
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mons_mid_dev[t],
-                               is_gchp=True)
+
+            # Time & date quantities
+            reftime = bmk_mons_dev[t]
+            devtime = bmk_mons_mid_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+
+            # Read data
+            ref = get_filepath(gchp_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, devtime, is_gchp=True)
+
+            # Create plots
             bmk.make_benchmark_aod_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
                 dst=gchp_vs_gcc_resultsdir,
-                subdst=bmk_mon_yr_strs_dev[t],
+                subdst=datestr,
                 weightsdir=weightsdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir
@@ -754,10 +842,20 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "Restart"
-        # Create mass table for each benchmark month
-        def parallel_mass_table(t, bmk_mon, bmk_mon_mid):
-            ref = get_filepath(gchp_vs_gcc_refrstdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devrstdir, col, bmk_mon_mid,
+
+        # Create mass table for each benchmark month in parallel
+        def parallel_mass_table(t):
+
+            # Time & date quantities
+            reftime = bmk_mons_ref[t]
+            devtime = bmk_mons_dev[t]
+            extratime = bmk_mons_dev[t+1]
+            datestr = bmk_mon_yr_strs_dev[t]
+            label = "at 01{}".format(datestr)
+
+            # Read data
+            ref = get_filepath(gchp_vs_gcc_refrstdir, col, reftime)
+            dev = get_filepath(gchp_vs_gcc_devrstdir, col, devtime,
                                is_gchp=True)
 
             # use initial restart if no checkpoint present (intended for
@@ -769,22 +867,24 @@ if gchp_vs_gcc:
                            'initial_GEOSChem_rst.' + gchp_dev_res +
                            '_benchmark.nc')
                 dev_extra = get_filepath(gchp_vs_gcc_devrstdir, col,
-                                      bmk_mons_dev[t+1], is_gchp=True)
+                                         extratime, is_gchp=True)
+
+            # Create tables
             bmk.make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
                 dst=gchp_vs_gcc_tablesdir,
-                subdst=bmk_mon_yr_strs[t],
-                label="at 01{}".format(bmk_mon_yr_strs_dev[t]),
+                subdst=datestr,
+                label=label,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
                 dev_met_extra=dev_extra
             )
-        results = Parallel(n_jobs=-1)(delayed(parallel_mass_table)\
-                                     (t, bmk_mons_dev[t], bmk_mons_mid_dev[t]) \
-                                     for t in range(bmk_months))
+
+        results = Parallel(n_jobs=-1)\
+            (delayed(parallel_mass_table) (t) for t in range(bmk_months))
 
     #---------------------------------------------------------------
     # GCHP vs GCC operations budgets tables
@@ -794,29 +894,40 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "Budget"
-        def parallel_ops_budg(t, bmk_mon, bmk_mon_mid):
-            # Create budget table for each benchmark month (ewl??)
-            ref = get_filepath(gchp_vs_gcc_refdir, col, bmk_mon)
-            dev = get_filepath(gchp_vs_gcc_devdir, col, bmk_mon_mid,
-                               is_gchp=True)
-            plot_dir = join(gchp_vs_gcc_budgetdir, bmk_mon_yr_strs_dev[t])
+
+        # Create operations table for each benchmark month in parallel
+        def parallel_ops_budg(t):
+
+            # Time & date quantities
+            reftime = bmk_mons_ref[t]
+            devtime = bmk_mons_mid_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+            label = "at 01{}".format(datestr)
+            sec_ref = bmk_sec_per_month_ref[t]
+            sec_dev = bmk_sec_per_month_dev[t]
+
+            # Read data
+            ref = get_filepath(gchp_vs_gcc_refdir, col, reftime)
+            dev = get_filepath(gchp_vs_gcc_devdir, col, devtime, is_gchp=True)
+
+            # Create tables
             bmk.make_benchmark_operations_budget(
                 gcc_dev_version,
                 ref,
                 gchp_dev_version,
                 dev,
-                bmk_sec_per_month[t],
-                bmk_sec_per_month[t],
+                sec_ref,
+                sec_dev,
                 benchmark_type=bmk_type,
-                label=bmk_mon_yr_strs[s],
+                label=datestr,
                 operations=["Chemistry", "Convection", "EmisDryDep",
                             "Mixing", "WetDep"],
                 compute_accum=False,
-                dst=gchp_vs_gcc_tablesdir            )
+                dst=gchp_vs_gcc_tablesdir
+            )
 
-        results = Parallel(n_jobs=-1)(delayed(parallel_ops_budg)\
-                                     (t, bmk_mons_dev[t], bmk_mons_mid_dev[t]) \
-                                     for t in range(bmk_n_months))
+        results = Parallel(n_jobs=-1)\
+            (delayed(parallel_ops_budg) (t) for t in range(bmk_n_months))
 
     #---------------------------------------------------------------
     # GCHP vs GCC aerosol budgets and burdens tables
@@ -830,6 +941,8 @@ if gchp_vs_gcc:
         col_spc = "SpeciesConc"
         col_met = "StateMet"
         #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
+
+        # Read data from all months
         dev_aero = get_filepaths(gchp_vs_gcc_devdir, col_aero,
                                  all_months_mid_dev, is_gchp=True)
         dev_spc = get_filepaths(gchp_vs_gcc_devdir, col_spc,
@@ -860,8 +973,9 @@ if gchp_vs_gcc:
 
         # Diagnostic collection files to read
         col = "Metrics"
-        ref = get_filepaths(gcc_vs_gcc_refdir, col, all_months_dev)[0]
-        dev = get_filepaths(gcc_vs_gcc_devdir, col, all_months_mid_dev)[0]
+        ref = get_filepaths(gchp_vs_gcc_refdir, col, all_months_dev)[0]
+        dev = get_filepaths(gchp_vs_gcc_devdir, col, all_months_mid_dev,
+                            is_gchp=True)[0]
 
         # Create the OH Metrics table
         oh.make_benchmark_oh_metrics(
@@ -1053,39 +1167,57 @@ if gchp_vs_gchp:
         # Diagnostic collections to read
         col = "Restart"
 
-        # Create mass table for each benchmark month
-        def parallel_mass_table(s, bmk_mon):
-            ref = get_filepath(gchp_vs_gchp_refrstdir, col, bmk_mon,
+        # Create mass table for each benchmark month in parallel
+        def parallel_mass_table(t):
+
+            # Time & date quantities
+            reftime = bmk_mons_ref[t]
+            devtime = bmk_mons_dev[t]
+            extraref = bmk_mons_ref[t+1]
+            extradev = bmk_mons_dev[t+1]
+            datestr = bmk_mon_yr_strs_dev[t]
+            label = "at 01{}".format(datestr)
+
+            # Read Ref data
+            ref = get_filepath(gchp_vs_gchp_refrstdir, col, refdate,
                                is_gchp=True)
             ref_extra=''
             if not os.path.isfile(ref):
-                ref = join(gchp_vs_gchp_refrstdir, 'initial_GEOSChem_rst.' + gchp_ref_res + '_benchmark.nc')
+                ref = join(gchp_vs_gchp_refrstdir,
+                           'initial_GEOSChem_rst.' + gchp_ref_res
+                           + '_benchmark.nc')
                 ref_extra = get_filepath(gchp_vs_gchp_refrstdir, col,
-                                      bmk_mons[s+1], is_gchp=True)
+                                         extraref, is_gchp=True)
 
-            dev = get_filepath(gchp_vs_gchp_devrstdir, col, bmk_mon,
+            # Read Dev data
+            dev = get_filepath(gchp_vs_gchp_devrstdir, col, bmk_mon_dev,
                                is_gchp=True)
             dev_extra=''
             if not os.path.isfile(dev):
-                dev = join(gchp_vs_gchp_devrstdir, 'initial_GEOSChem_rst.' + gchp_dev_res + '_benchmark.nc')
+                dev = join(gchp_vs_gchp_devrstdir,
+                           'initial_GEOSChem_rst.' + gchp_dev_res
+                           + '_benchmark.nc')
                 dev_extra = get_filepath(gchp_vs_gchp_devrstdir, col,
-                                      bmk_mons[s+1], is_gchp=True)
+                                         extradev, is_gchp=True)
 
+            # Create tables
             bmk.make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
                 dst=gchp_vs_gchp_tablesdir,
-                subdst=bmk_mon_yr_strs[s],
-                label="at 01{}".format(bmk_mon_yr_strs[s]),
+                subdst=datestr,
+                label=label,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
                 ref_met_extra=ref_extra,
                 dev_met_extra=dev_extra
             )
-        results = Parallel(n_jobs=-1)(delayed(parallel_mass_table)(s, bmk_mon) \
-                                      for s, bmk_mon in enumerate(bmk_mons))
+
+        # Run in parallel
+        results = Parallel(n_jobs=-1)\
+            (delayed(parallel_mass_table) (t) for t in range(bmk_n_months))
 
     #---------------------------------------------------------------
     # GCHP vs GCHP operations budgets tables
@@ -1095,7 +1227,16 @@ if gchp_vs_gchp:
 
         # Diagnostic collections to read
         col = "Budget"
-        def parallel_ops_budg(s, bmk_mon_mid):
+        def parallel_ops_budg(t):
+
+            # Time & date quantities
+            reftime = bmk_mons_mid_ref[t]
+            devtime = bmk_mons_mid_dev[t]
+            datestr = bmk_mon_yr_strs_dev[t]
+            label = "at 01{}".format(datestr)
+            sec_ref = bmk_sec_per_month_ref[t]
+            sec_dev = bmk_sec_per_month_dev[t]
+
             # Create budget table for each benchmark month (ewl??)
             ref = get_filepath(gchp_vs_gchp_refdir, col, bmk_mon_mid,
                                is_gchp=True)
@@ -1107,17 +1248,19 @@ if gchp_vs_gchp:
                 ref,
                 gchp_dev_version,
                 dev,
-                bmk_sec_per_month[s],
-                bmk_sec_per_month[s],
+                sec_ref,
+                sec_dev,
                 benchmark_type=bmk_type,
-                label=bmk_mon_yr_strs[s],
-                operations=["Chemistry", "Convection", "EmisDryDep", "Mixing", "WetDep"],
+                label=datestr,
+                operations=["Chemistry", "Convection", "EmisDryDep",
+                            "Mixing", "WetDep"],
                 compute_accum=False,
-                dst=gchp_vs_gchp_tablesdir            )
+                dst=gchp_vs_gchp_tablesdir
+            )
 
-        results = Parallel(n_jobs=-1)(delayed(parallel_ops_budg)\
-                                     (t,bmk_mon_mid_ref[t],bmk_mon_mid_dev[t]) \
-                                     for t in range(bmk_n_months))
+        # Run in parallel
+        results = Parallel(n_jobs=-1)\
+            (delayed(parallel_ops_budg) (t) for t in range(bmk_n_months))
 
     #---------------------------------------------------------------
     # GCHP vs GCHP aerosol budgets and burdens tables
