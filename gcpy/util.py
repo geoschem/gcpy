@@ -156,7 +156,7 @@ def create_display_name(diagnostic_name):
     return display_name
 
 
-def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
+def print_totals(ref, refstr, dev, devstr, f, masks=None):
     """
     Computes and prints Ref and Dev totals (as well as the difference
     Dev - Ref) for two xarray DataArray objects.
@@ -178,15 +178,10 @@ def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
 
     Keyword Args (optional):
     -----------------------------
-        mass_tables : bool
-            Set this switch to True if you would like to print out
-            totals of global mass.
-            Default value: False (i.e. print out emissions totals)
         masks : dict of xarray DataArray
             Dictionary containing the tropospheric mask arrays
             for Ref and Dev.  If this keyword argument is passed,
-            then print_totals will print tropospheric totals
-            NOTE: This option is only used if mass_tables=True.
+            then print_totals will print tropospheric totals.
             Default value: None (i.e. print whole-atmosphere totals)
 
     Remarks:
@@ -234,7 +229,7 @@ def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
 
     # Special handling for totals
     if "_TOTAL" in diagnostic_name.upper():
-        print("-" * 79, file=f)
+        print("-" * 83, file=f)
 
     # ==================================================================
     # Sum the Ref array (or set to NaN if missing)
@@ -272,31 +267,22 @@ def print_totals(ref, refstr, dev, devstr, f, mass_tables=False, masks=None):
     # Compute % differences (or set to NaN if missing)
     # If ref is very small, near zero, also set the % diff to NaN
     # ==================================================================
-    if mass_tables:
-        if np.isnan(total_ref) or np.isnan(total_dev):
+    if np.isnan(total_ref) or np.isnan(total_dev):
+        pctdiff = np.nan
+    else:
+        pctdiff = ((total_dev - total_ref) / total_ref) * 100.0
+        if total_ref < 1.0e-15:
             pctdiff = np.nan
-        else:
-            pctdiff = ((total_dev - total_ref) / total_ref) * 100.0
-            if total_ref < 1.0e-15:
-                pctdiff = np.nan
 
     # ==================================================================
     # Write output to file
     # ==================================================================
-    if mass_tables:
-        print(
-            "{} : {:18.6f}  {:18.6f}  {:13.6f}  {:8.3f}".format(
-                display_name.ljust(12), total_ref, total_dev, diff, pctdiff
-            ),
-            file=f,
-        )
-    else:
-        print(
-            "{} : {:18.6f}  {:18.6f}  {:13.6f} {}".format(
-                display_name.ljust(21), total_ref, total_dev, diff, units
-            ),
-            file=f,
-        )
+    print(
+        "{} : {:18.6f}  {:18.6f}  {:12.6f}  {:8.3f}".format(
+            display_name.ljust(18), total_ref, total_dev, diff, pctdiff
+        ),
+        file=f,
+    )
 
 
 def get_species_categories(benchmark_type="FullChemBenchmark"):
