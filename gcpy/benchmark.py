@@ -4033,7 +4033,7 @@ def make_benchmark_mass_conservation_table(
     properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # Get the species name
-    spc_name = 'PassiveTracer'
+    spc_name = 'PassiveTracer' 
     
     # Get a list of properties for the given species
     species_properties = properties.get(spc_name)
@@ -4061,13 +4061,18 @@ def make_benchmark_mass_conservation_table(
         dates.append(datestr[:4] + '-' + datestr[4:6] + '-' + datestr[6:8])
         
         area = util.get_area_from_dataset(ds)
-        delta_p = ds['Met_DELPDRY']
+        # Select for GCC or GCHP
+        delta_p = ds['Met_DELPDRY'] if 'Met_DELPDRY' in list(ds.data_vars) else ds['DELP_DRY']
 
         # ==============================================================
         # Convert units of Ref and save to a DataArray
         # (or skip if Ref contains NaNs everywhere)
-        # ==============================================================        
-        da = ds['SpeciesRst_PassiveTracer'].astype(np.float64)
+        # ==============================================================
+        # Select for GCC or GCHP
+        if 'SpeciesRst_PassiveTracer' in list(ds.data_vars):
+            da = ds['SpeciesRst_PassiveTracer'].astype(np.float64)
+        else:
+            da = ds['SPC_PassiveTracer'].astype(np.float64)
         da = convert_units(
                 da,
                 spc_name,
