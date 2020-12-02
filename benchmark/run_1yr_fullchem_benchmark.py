@@ -112,6 +112,11 @@ spcdb_dir   = join(maindir, gcc_dev_version)
 gchp_ref_res = 'c48'
 gchp_dev_res = 'c48'
 
+# Kludge: Set switches that will pick the proper StateMet collection
+# for GCHP.  Versions prior to 13.0.0 used StateMet_avg.
+gchp_ref_prior_to_13 = True
+gchp_dev_prior_to_13 = True
+
 # =====================================================================
 # Specify if this is a gcpy test validation run
 # =====================================================================
@@ -216,6 +221,18 @@ gchp_vs_gchp_devstr  = gchp_dev_version
 ########################################################################
 ###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
 ########################################################################
+
+def gchp_ref_metname():
+    if gchp_ref_prior_to_13:
+        return "StateMet_avg"
+    else:
+        return "StateMet"
+
+def gchp_dev_metname():
+    if gchp_dev_prior_to_13:
+        return "StateMet_avg"
+    else:
+        return "StateMet"
 
 # =====================================================================
 # Dates and times -- ref data
@@ -657,8 +674,8 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        colmet = "StateMet"
-        #colmet_gchp = "StateMet_avg" # Use this for benchmarks prior to 13.0
+        col_met_gcc = "StateMet"
+        col_met_gchp = gchp_dev_metname()
 
         # Create concentration plots for each benchmark month
         for t in range(bmk_n_months):
@@ -673,13 +690,9 @@ if gchp_vs_gcc:
             dev = get_filepath(gchp_vs_gcc_devdir, col, devtime, is_gchp=True)
 
             # StateMet
-            refmet = get_filepath(gchp_vs_gcc_refdir, colmet, reftime)
-            devmet = get_filepath(gchp_vs_gcc_devdir,  colmet, devtime,
+            refmet = get_filepath(gchp_vs_gcc_refdir, col_met_gcc, reftime)
+            devmet = get_filepath(gchp_vs_gcc_devdir, col_met_gchp, devtime,
                                   is_gchp=True)
-
-            # Use this for benchmark prior to 13.0
-            #devmet = get_filepath(gchp_vs_gcc_devdir, colmet_gchp, devtime,
-            #                      is_gchp=True)
 
             bmk.make_benchmark_conc_plots(
                 ref,
@@ -741,15 +754,13 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "Emissions"
+        col_met_gchp = gchp_dev_metname()
+
+        # Read data
         ref = get_filepaths(gchp_vs_gcc_refdir, col, all_months_dev)
         dev = get_filepaths(gchp_vs_gcc_devdir, col, all_months_mid_dev,
                             is_gchp=True)
-
-        # Pass StateMet collection as source of GCHP area. Since area is
-        # time-invariant, only need to pass for one month.
-        colmet = "StateMet"
-        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
-        devmet = get_filepaths(gchp_vs_gcc_devdir, colmet,
+        devmet = get_filepaths(gchp_vs_gcc_devdir, col_met_gchp,
                                all_months_mid_dev, is_gchp=True)
 
         # Create emissions table that spans entire year
@@ -939,8 +950,7 @@ if gchp_vs_gcc:
         # Diagnostic collections to read
         col_aero = "Aerosols"
         col_spc = "SpeciesConc"
-        col_met = "StateMet"
-        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
+        col_met = gchp_dev_metname()
 
         # Read data from all months
         dev_aero = get_filepaths(gchp_vs_gcc_devdir, col_aero,
@@ -1004,8 +1014,8 @@ if gchp_vs_gchp:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        colmet = "StateMet"
-        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
+        col_met_ref = gchp_ref_metname()
+        col_met_dev = gchp_dev_metname()
 
         # Create concentration plots for each benchmark month
         for t in range(bmk_n_months):
@@ -1017,9 +1027,9 @@ if gchp_vs_gchp:
                                is_gchp=True)
 
             # StateMet
-            refmet = get_filepath(gchp_vs_gchp_refdir, colmet,
+            refmet = get_filepath(gchp_vs_gchp_refdir, col_met_ref,
                                   bmk_mon_mid_ref[t], is_gchp=True)
-            devmet = get_filepath(gchp_vs_gchp_devdir, colmet,
+            devmet = get_filepath(gchp_vs_gchp_devdir, col_met_dev,
                                   bmk_mon_mid_dev[t], is_gchp=True)
 
             bmk.make_benchmark_conc_plots(
@@ -1054,6 +1064,8 @@ if gchp_vs_gchp:
                                bmk_mon_mid_ref[t],  is_gchp=True)
             dev = get_filepath(gchp_vs_gchp_devdir, col,
                                bmk_mon_mid_dev[t],  is_gchp=True)
+
+            # Create the plots
             bmk.make_benchmark_emis_plots(
                 ref,
                 gchp_vs_gchp_refstr,
@@ -1076,18 +1088,17 @@ if gchp_vs_gchp:
 
         # Diagnostic collections to read
         col = "Emissions"
+        col_met_ref = gchp_ref_metname()
+        col_met_dev = gchp_dev_metname()
+
+        # Read data
         ref = get_filepaths(gchp_vs_gchp_refdir, col,
                             all_months_mid_ref, is_gchp=True)
         dev = get_filepaths(gchp_vs_gchp_devdir, col,
                             all_months_mid_dev, is_gchp=True)
-
-        # Pass StateMet collection as source of GCHP area. Since area is
-        # time-invariant, only need to pass for one month.
-        colmet = "StateMet"
-        #colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
-        refmet = get_filepaths(gchp_vs_gchp_refdir, colmet,
+        refmet = get_filepaths(gchp_vs_gchp_refdir, col_met_ref,
                                all_months_mid_ref, is_gchp=True)
-        devmet = get_filepaths(gchp_vs_gchp_devdir, colmet,
+        devmet = get_filepaths(gchp_vs_gchp_devdir, col_met_dev,
                                all_months_mid_dev, is_gchp=True)
 
         # Create emissions table that spans entire year
