@@ -739,7 +739,7 @@ if cons_table:
         bmk.make_benchmark_mass_conservation_table(
             datafiles,
             gcc_ref_version,
-            dst=gcc_vs_gcc_tablesdir
+            dst=gcc_vs_gcc_tablesdir,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
@@ -760,7 +760,7 @@ if cons_table:
         bmk.make_benchmark_mass_conservation_table(
             datafiles,
             gcc_dev_version,
-            dst=tablesdir
+            dst=tablesdir,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
