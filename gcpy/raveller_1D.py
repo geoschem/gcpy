@@ -14,8 +14,7 @@ def create_track_func(args):
     #grid, _ = make_grid_SG(args.cs_res, *args.sg_params)
 
     lon = xr.DataArray(
-        grid['lon'] %
-        360,
+        grid['lon'] % 360,
         coords={
             'nf': nf,
             'Ydim': Ydim,
@@ -24,7 +23,6 @@ def create_track_func(args):
             'nf',
             'Ydim',
             'Xdim'])
-    lon.values[lon.values > 180] -= 360
     lat = xr.DataArray(
         grid['lat'],
         coords={
@@ -46,12 +44,14 @@ def create_track_func(args):
         # overpass delayed at high northern latitudes if ascending
         overpass_offset = -overpass_offset
 
-    overpass_time_timedelta_min = ds['longitude'] / \
-        360 * 24 * 60 + overpass_offset
+    longitude = ds.longitude.values
+    longitude[longitude > 180] -= 360
+    
+    # overpass time is early in the east and late in the west
+    overpass_time_timedelta_min = -longitude / 360 * 24 * 60 + overpass_offset
 
     overhead_time = pd.to_datetime(args.overpass_time, format='%H:%M').time()
-    ds['time'] = (overhead_time.hour + overhead_time.minute /
-                  60 + overpass_time_timedelta_min / 60) % 24
+    ds['time'] = (overhead_time.hour + overhead_time.minute / 60 + overpass_time_timedelta_min / 60) % 24
 
     ds = ds.stack(track=['nf', 'Ydim', 'Xdim'])
     ds = ds.sortby('time')
@@ -62,6 +62,7 @@ def create_track_func(args):
 
     ds['longitude'].attrs['long_name'] = 'longitude'
     ds['longitude'].attrs['units'] = 'degrees_east'
+    ds['longitude'].values = ds['longitude'].values % 360
 
     ds['latitude'].attrs['long_name'] = 'latitude'
     ds['latitude'].attrs['units'] = 'degrees_north'
