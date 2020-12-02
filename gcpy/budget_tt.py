@@ -41,7 +41,6 @@ class _GlobVars:
         Initializes the _GlobVars class.
 
         Args:
-        -----
             devstr : str
                 Label denoting the "Dev" version.
             devdir : str
@@ -267,14 +266,12 @@ def total(globvars, dict_list):
     Assumes that all objects have the same keys.
 
     Args:
-    -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
         dict_list : list of dict
             Dictionaries to be summed.
 
     Returns:
-    -------
         result : dict
             Key-by-key sum of all dicts in dict_list.
     """
@@ -298,7 +295,6 @@ def mass_from_rst(globvars, ds, tropmask):
     Computes global species mass from a restart file.
 
     Args:
-    -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
         ds : xarray Dataset
@@ -307,7 +303,6 @@ def mass_from_rst(globvars, ds, tropmask):
             Mask to denote tropospheric grid boxes.
 
     Returns:
-    --------
         result: dict
             Species mass in strat, trop, and strat+trop regimes.
     """
@@ -355,7 +350,6 @@ def annual_average(globvars, ds, collection, conv_factor):
     Computes the annual average of budgets or fluxes.
 
     Args:
-    -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
         ds : xarray Dataset
@@ -366,7 +360,6 @@ def annual_average(globvars, ds, collection, conv_factor):
             Conversion factor to be applied.
 
      Returns:
-     --------
         result: dict
             Annual-average budgets or fluxes in
             in strat, trop, and strat+trop regimes.
@@ -435,12 +428,10 @@ def annual_average_sources(globvars):
     Computes the annual average of radionuclide sources.
 
     Args:
-    -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
 
      Returns:
-     -------
         result : dict
             Source totals in strat, trop, and strat+trop regimes.
     """
@@ -522,12 +513,10 @@ def trop_residence_time(globvars):
     Computes the tropospheric residence time of radionuclides.
 
     Args:
-    -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
 
     Returns:
-    --------
         result : dict
             Tropopsheric residence time for all species.
     """
@@ -593,7 +582,6 @@ def print_budgets(globvars, data, key):
     Prints the trop+strat budget file.
 
     Args:
-    -----
         globvars: object of type _GlobVars
             Global variables needed for budget computations.
         data: dict
@@ -720,7 +708,6 @@ def transport_tracers_budgets(
     Main program to compute TransportTracersBenchmark budgets
 
     Args:
-    -----
         maindir : str
             Top-level benchmark folder
         devstr : str
@@ -729,7 +716,6 @@ def transport_tracers_budgets(
             The year of the benchmark simulation (e.g. 2016).
 
     Keyword Args (optional):
-    ------------------------
         dst : str
             Directory where budget tables will be created.
             Default value: './1yr_benchmark'

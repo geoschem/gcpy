@@ -15,17 +15,14 @@ def adjust_units(units):
     conversion routines below.
 
     Args:
-    -----
         units : str
             Input unit string.
 
-    Returns:
-    --------
+    Returns:    
         adjusted_units: str
             Output unit string, adjusted to a consistent value.
 
-    Remarks:
-    --------
+    Remarks:    
         Unit list is incomplete -- currently is geared to units from
         common model diagnostics (e.g. kg/m2/s, kg, and variants).
     """
@@ -63,8 +60,7 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
     """
     Converts a data array from kg to one of several types of target units.
 
-    Args:
-    -----
+    Args:    
         data_kg : numpy ndarray
             Input data array, in units of kg.
 
@@ -76,14 +72,12 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
         kg_to_kg_C : float
             Conversion factor from kg to kg carbon.
 
-     Returns:
-     --------
+    Returns:     
         data : numpy ndarray
             Ouptut data array, converted to the units specified
             by the 'target_units' argument.
 
-     Remarks:
-     --------
+    Remarks:     
         At present, only those unit conversions corresponding to the
         GEOS-Chem benchmarks have been implemented.
 
@@ -144,8 +138,7 @@ def convert_units(
     Converts data stored in an xarray DataArray object from its native
     units to a target unit.
 
-    Args:
-    -----
+    Args:    
         dr : xarray DataArray
             Data to be converted from native units to target units.
         species_name : str
@@ -156,8 +149,7 @@ def convert_units(
         target_units : str
             Units to which the data will be converted.
 
-    Keyword Args (optional):
-    ------------------------
+    Keyword Args (optional):    
         interval : float
             The length of the averaging period in seconds.
             Default value: [2678400.0]
@@ -172,13 +164,11 @@ def convert_units(
             Grid box height in meters
             Default value: None
 
-    Returns:
-    --------
+    Returns:    
         dr_new : xarray DataArray
             Data converted to target units.
 
-    Remarks:
-    --------
+    Remarks:    
         At present, only certain types of unit conversions have been
         implemented (corresponding to the most commonly used unit
         conversions for model benchmark output).
@@ -339,20 +329,18 @@ def convert_units(
 def check_units(ref_da, dev_da, enforce_units=True):
     """
     Ensures the units of two xarray DataArrays are the same.
-    Args:
-    -----
+
+    Args:    
         ref_da : xarray DataArray
             First data array containing a units attribute.
         dev_da : xarray DataArray
             Second data array containing a units attribute.
 
-    Keyword Args (optional):
-    ------------------------
+    Keyword Args (optional):    
         enforce_units : bool
             Whether to stop program if ref and dev units do not match
             Default value: True
-    Returns:
-    --------
+    Returns:    
         units_match : bool
     """
     units_ref = ref_da.units.strip()
@@ -377,13 +365,12 @@ def data_unit_is_mol_per_mol(da):
     """
     Check if the units of an xarray DataArray are mol/mol based on a set
     list of unit strings mol/mol may be.
-    Args:
-    -----
+
+    Args:    
         da : xarray DataArray
             Data array containing a units attribute
 
-    Returns:
-    --------
+    Returns:    
         is_molmol : bool
             Whether input units are mol/mol
     """
