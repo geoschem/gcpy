@@ -37,7 +37,6 @@ class _GlobVars:
         Initializes the _GlobVars class.
 
         Args:
-        -----
             devstr : str
                 Label denoting the "Dev" version.
             devdir : str
@@ -46,7 +45,6 @@ class _GlobVars:
                 Year of the benchmark simulation.
 
         Keyword Args (optional):
-        ------------------------
             dst : str
                 Directory where plots & tables will be created.
             bmk_type : str
@@ -192,12 +190,10 @@ def compute_ste(globvars):
     across the 100hPa pressure level.
 
     Args:
-    -----
         globvars : obj of type _GlobVars
             Global variables needed for budget computations.
 
     Returns:
-    --------
         result: Pandas DataFrame
             Strat-trop fluxes
     """
@@ -245,7 +241,6 @@ def print_ste(globvars, df):
     Prints the strat-trop exchange table.
 
     Args:
-    -----
         globvars : _GlobVars
             Global variables
         df : pandas DataFrame
@@ -303,7 +298,6 @@ def make_benchmark_ste_table(devstr, files, year,
     the selected species and benchmark year.
 
     Args:
-    -----
         devstr : str
             Label denoting the "Dev" version.
         files : str
@@ -312,7 +306,6 @@ def make_benchmark_ste_table(devstr, files, year,
             Year of the benchmark simulation.
 
     Keyword Args (optional):
-    -----------------------
         dst : str
             Directory where plots & tables will be created.
         bmk_type : str

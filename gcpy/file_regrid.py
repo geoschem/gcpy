@@ -27,7 +27,6 @@ def file_regrid(
     as a new file.
 
     Args:
-    -----
         fin : str
             The input filename
         fout : str
@@ -42,7 +41,6 @@ def file_regrid(
             and checkpoint / diagnostic are cubed-sphere formats
 
     Keyword Args (optional):
-    ------------------------
         cs_res_out : int
             The cubed-sphere resolution of the output dataset. 
             Not used if dim_format_out is classic
@@ -259,18 +257,15 @@ def rename_restart_variables(ds, towards_gchp=True):
     Renames restart variables according to GEOS-Chem Classic and GCHP conventions.
 
     Args:
-    -----
         ds : xarray.Dataset
             The input dataset
 
     Keyword Args (optional):
-    ------------------------
         towards_gchp : bool
             Whether renaming to (True) or from (False) GCHP format
             Default value: True
 
     Returns:
-    -------
         xarray.Dataset
             Input dataset with variables renamed
     """
@@ -292,18 +287,15 @@ def drop_and_rename_classic_vars(ds, towards_gchp=True):
     and GCHP conventions.
 
     Args:
-    -----
         ds : xarray.Dataset
             The input dataset
 
     Keyword Args (optional):
-    ------------------------
         towards_gchp : bool
             Whether going to (True) or from (False) GCHP format
             Default value: True
 
     Returns:
-    -------
         xarray.Dataset
             Input dataset with variables renamed and dropped
     """

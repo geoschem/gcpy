@@ -13,13 +13,11 @@ def get_troposphere_mask(ds):
     Returns a mask array for picking out the tropospheric grid boxes.
 
     Args:
-    -----
         ds : xarray Dataset
             Dataset containing certain met field variables (i.e.
             Met_TropLev, Met_BXHEIGHT).
 
     Returns:
-    --------
         tropmask : numpy ndarray
             Tropospheric mask.  False denotes grid boxes that are
             in the troposphere and True in the stratosphere
@@ -106,7 +104,6 @@ def get_input_res(data):
     Returns resolution of dataset passed to compare_single_level or compare_zonal_means
 
     Args:
-    -----
         data : xarray Dataset
             Input GEOS-Chem dataset
         sg_params : list [stretch_factor, target_longitude, target_latitude]
@@ -114,7 +111,6 @@ def get_input_res(data):
             from grid structure)
 
     Returns:
-    -----
         res : str or int
             Lat/lon res of the form 'latresxlonres' or cubed-sphere resolution
         gridtype : str
@@ -151,14 +147,12 @@ def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
     Create a mask with NaN values removed from an input array
 
     Args:
-    -----
         res : str or int
             Resolution of grid (format 'latxlon' or csres)
         gridtype : str
             'll' for lat/lon or 'cs' for cubed-sphere
 
     Keyword Args (optional):
-    ------------------------
         in_extent : list[float, float, float, float]
             Describes minimum and maximum latitude and longitude of input data
             in the format [minlon, maxlon, minlat, maxlat]
@@ -174,7 +168,6 @@ def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
             Default value: [1, 170, -90] (no stretching)
 
     Returns:
-    -----
         [grid, grid_list] : list(dict, list(dict))
             Returns the created grid. 
             grid_list is a list of grids if gridtype is 'cs', else it is None
@@ -195,7 +188,6 @@ def get_grid_extents(data, edges=True):
     Get min and max lat and lon from an input GEOS-Chem xarray dataset or grid dict
 
     Args:
-    -----
         data : xarray Dataset or dict
             A GEOS-Chem dataset or a grid dict
         edges (optional) : bool
@@ -203,7 +195,6 @@ def get_grid_extents(data, edges=True):
             Default value: True
 
     Returns:
-    -----
         minlon : float
             Minimum longitude of data grid
         maxlon : float
@@ -261,12 +252,10 @@ def get_vert_grid(dataset, AP=[[], []], BP=[[], []]):
     Determine vertical grid of input dataset
 
     Args:
-    -----
         dataset : xarray Dataset
             A GEOS-Chem output dataset
 
     Keyword Args (optional):
-    ------------------------
         AP : list-like type
             Hybrid grid parameter A in hPa
             Default value: [[], []]
@@ -275,7 +264,6 @@ def get_vert_grid(dataset, AP=[[], []], BP=[[], []]):
             Default value: [[], []]
 
     Returns:
-    -----
         p_edge : numpy array
             Edge pressure values for vertical grid
         p_mid  : numpy array
@@ -303,14 +291,12 @@ def get_pressure_indices(pedge, pres_range):
     Get indices where edge pressure values are within a given pressure range
 
     Args:
-    -----
         pedge : numpy array
             A GEOS-Chem output dataset
         pres_range : list(float, float)
             Contains minimum and maximum pressure
 
     Returns:
-    -----
         numpy array
             Indices where edge pressure values are within a given pressure range
     """
@@ -325,7 +311,6 @@ def pad_pressure_edges(pedge_ind, max_ind, pmid_len):
     Add outer indices to edge pressure index list
 
     Args:
-    -----
         pedge_ind : list
             List of edge pressure indices
         max_ind : int
@@ -334,7 +319,6 @@ def pad_pressure_edges(pedge_ind, max_ind, pmid_len):
             Length of pmid which should not be exceeded by indices
 
     Returns:
-    -----
         pedge_ind : list
             List of edge pressure indices, possibly with new minimum and maximum indices
     """
@@ -354,14 +338,12 @@ def get_ind_of_pres(dataset, pres):
     Get index of pressure level that contains the requested pressure value.
 
     Args:
-    -----
         dataset : xarray Dataset
             GEOS-Chem dataset
         pres : int or float
             Desired pressure value
 
     Returns:
-    -----
         index : int
             Index of level in dataset that corresponds to requested pressure
 
@@ -376,7 +358,6 @@ def convert_lev_to_pres(dataset, pmid, pedge, lev_type='pmid'):
     Convert lev dimension to pressure in a GEOS-Chem dataset
 
     Args:
-    -----
         dataset : xarray Dataset
             GEOS-Chem dataset
         pmid : np.array
@@ -388,7 +369,6 @@ def convert_lev_to_pres(dataset, pmid, pedge, lev_type='pmid'):
             Default value: 'pmid'
 
     Returns:
-    -----
         dataset : xarray Dataset
             Input dataset with "lev" dimension values replaced with pressure values
     """
@@ -687,12 +667,10 @@ def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
     Creates a lat/lon grid description.
 
     Args:
-    -----
         llres : str
             lat/lon resolution in 'latxlon' format (e.g. '4x5')
 
     Keyword Args (optional):
-    ------------------------
         in_extent : list[float, float, float, float]
             Describes minimum and maximum latitude and longitude of initial grid
             in the format [minlon, maxlon, minlat, maxlat]
@@ -704,7 +682,6 @@ def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
             Default value: [] (assumes value of in_extent)
 
     Returns:
-    -----
         llgrid : dict
             dict grid description of format {'lat'   : lat midpoints,
                                              'lon'   : lon midpoints,
@@ -760,12 +737,10 @@ def make_grid_CS(csres):
     Creates a cubed-sphere grid description.
 
     Args:
-    -----
         csres : int
             cubed-sphere resolution of target grid
 
     Returns:
-    -----
         [csgrid, csgrid_list] : list[dict, list[dict]]
             csgrid is a dict of format {'lat'   : lat midpoints,
                                         'lon'   : lon midpoints,
@@ -791,7 +766,6 @@ def make_grid_SG(csres, stretch_factor, target_lon, target_lat):
     Creates a stretched-grid grid description.
 
     Args:
-    -----
         csres : int
             cubed-sphere resolution of target grid
         stretch_factor : float
@@ -802,7 +776,6 @@ def make_grid_SG(csres, stretch_factor, target_lon, target_lat):
             target stretching latitude of target grid
 
     Returns:
-    -----
         [csgrid, csgrid_list] : list[dict, list[dict]]
             csgrid is a dict of format {'lat'   : lat midpoints,
                                         'lon'   : lon midpoints,

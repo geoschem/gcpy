@@ -56,7 +56,6 @@ def create_total_emissions_table(
     are usually contained in netCDF data files.
 
     Args:
-    -----
         refdata : xarray Dataset
             The first data set to be compared (aka "Reference" or "Ref").
         refstr : str
@@ -80,7 +79,6 @@ def create_total_emissions_table(
             emissions totals.
 
     Keyword Args (optional):
-    ------------------------
         ref_interval : float
             The length of the ref data interval in seconds. By default, interval
             is set to the number of seconds in a 31-day month (86400 * 31),
@@ -116,7 +114,6 @@ def create_total_emissions_table(
             Default value: Directory of GCPy code repository
 
     Remarks:
-    --------
         This method is mainly intended for model benchmarking purposes,
         rather than as a general-purpose tool.
 
@@ -363,7 +360,6 @@ def create_global_mass_table(
     different model versions, are usually contained in netCDF data files.
 
     Args:
-    -----
         refdata : xarray Dataset
             The first data set to be compared (aka "Reference").
         refstr : str
@@ -385,7 +381,6 @@ def create_global_mass_table(
             pass the month & year.
 
     Keyword Args (optional):
-    ------------------------
         trop_only : bool
             Set this switch to True if you wish to print totals
             only for the troposphere.
@@ -403,7 +398,6 @@ def create_global_mass_table(
             Default value: Directory of GCPy code repository
 
     Remarks:
-    --------
         This method is mainly intended for model benchmarking purposes,
         rather than as a general-purpose tool.
 
@@ -590,7 +584,6 @@ def make_benchmark_conc_plots(
     for model benchmarking purposes.
 
     Args:
-    -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
         refstr : str OR list of str
@@ -605,7 +598,6 @@ def make_benchmark_conc_plots(
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
-    ------------------------
         dst : str
             A string denoting the destination folder where a PDF
             file containing plots will be written.
@@ -1162,7 +1154,6 @@ def make_benchmark_emis_plots(
     emissions diagnostics.
 
     Args:
-    -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
         refstr : str
@@ -1175,7 +1166,6 @@ def make_benchmark_emis_plots(
             A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
-    ------------------------
         dst : str
             A string denoting the destination folder where
             PDF files containing plots will be written.
@@ -1238,7 +1228,6 @@ def make_benchmark_emis_plots(
             Default value: Directory of GCPy code repository
 
     Remarks:
-    --------
         (1) If both plot_by_spc_cat and plot_by_hco_cat are
             False, then all emission plots will be placed into the
             same PDF file.
@@ -1554,7 +1543,6 @@ def make_benchmark_emis_tables(
     category for benchmarking purposes.
 
     Args:
-    -----
         reflist: list of str
              List with the path names of the emissions file or files
              (multiple months) that will constitute the "Ref"
@@ -1569,7 +1557,6 @@ def make_benchmark_emis_tables(
             A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
-    ------------------------
         dst : str
             A string denoting the destination folder where the file
             containing emissions totals will be written.
@@ -1740,7 +1727,6 @@ def make_benchmark_jvalue_plots(
     benchmarking purposes.
 
     Args:
-    -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
         refstr : str
@@ -1753,7 +1739,6 @@ def make_benchmark_jvalue_plots(
             A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
-    ------------------------
         varlist : list of str
             List of J-value variables to plot.  If not passed,
             then all J-value variables common to both dev
@@ -1822,7 +1807,6 @@ def make_benchmark_jvalue_plots(
             Default value: Directory of GCPy code repository
 
     Remarks:
-    --------
          Will create 4 files containing J-value plots:
             (1 ) Surface values
             (2 ) 500 hPa values
@@ -2120,7 +2104,6 @@ def make_benchmark_aod_plots(
     depths (AODs) for model benchmarking purposes.
 
     Args:
-    -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
         refstr : str
@@ -2133,7 +2116,6 @@ def make_benchmark_aod_plots(
             A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
-    ------------------------
         varlist : list of str
             List of AOD variables to plot.  If not passed, then all
             AOD variables common to both Dev and Ref will be plotted.
@@ -2424,7 +2406,6 @@ def make_benchmark_mass_tables(
     category for benchmarking purposes.
 
     Args:
-    -----
         reflist : str
             Pathname that will constitute
             the "Ref" (aka "Reference") data set.
@@ -2438,7 +2419,6 @@ def make_benchmark_mass_tables(
             A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
-    ------------------------
         varlist : list of str
             List of variables to include in the list of totals.
             If omitted, then all variables that are found in either
@@ -2675,7 +2655,6 @@ def make_benchmark_oh_metrics(
     and CH4 lifetime for benchmarking purposes.
 
     Args:
-    -----
         ref : str
             Path name of "Ref" (aka "Reference") data set file.
         refmet : str
@@ -2691,7 +2670,6 @@ def make_benchmark_oh_metrics(
             A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
-    ------------------------
         dst : str
             A string denoting the destination folder where the file
             containing emissions totals will be written.
@@ -2917,7 +2895,6 @@ def make_benchmark_wetdep_plots(
     for model benchmarking purposes.
 
     Args:
-    -----
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
         refstr : str
@@ -2932,7 +2909,6 @@ def make_benchmark_wetdep_plots(
             String name of collection to plot comparisons for.
 
     Keyword Args (optional):
-    ------------------------
         dst : str
             A string denoting the destination folder where a PDF
             file containing plots will be written.
@@ -3177,7 +3153,6 @@ def make_benchmark_aerosol_tables(
     Compute FullChemBenchmark aerosol budgets & burdens
 
     Args:
-    -----
         devdir: str
             Path to development ("Dev") data directory
         devlist_aero : list of str
@@ -3194,7 +3169,6 @@ def make_benchmark_aerosol_tables(
             List of number of days per month for all months
 
     Keyword Args (optional):
-    ------------------------
         dst : str
             Directory where budget tables will be created.
             Default value: './benchmark'
@@ -3470,7 +3444,6 @@ def make_benchmark_operations_budget(
     each operation) from a GEOS-Chem benchmark simulation.
 
     Args:
-    -----
         refstr : str
             Labels denoting the "Ref" versions
         reffiles : list of str
@@ -3483,7 +3456,6 @@ def make_benchmark_operations_budget(
             Number of seconds in the diagnostic interval.
 
     Keyword Args (optional):
-    ------------------------
         benchmark_type : str
             "TransportTracersBenchmark" or "FullChemBenchmark".
             Default value: None
@@ -3989,7 +3961,6 @@ def make_benchmark_mass_conservation_table(
     from Transport Tracer simulations across a series of restart files.
 
     Args:
-    -----
         datafiles : list of str
             Path names of restart files.
         runstr : str
@@ -4005,7 +3976,6 @@ def make_benchmark_mass_conservation_table(
             A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
-    ------------------------
         dst : str
             A string denoting the destination folder where the file
             containing emissions totals will be written.

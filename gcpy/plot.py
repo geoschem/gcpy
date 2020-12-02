@@ -76,7 +76,6 @@ def six_plot(
     in the prior listed functions and has not been tested separately.
 
     Args:
-    -----
         subplot : str
             Type of plot to create (ref, dev, absolute difference or 
             fractional difference)
@@ -123,7 +122,6 @@ def six_plot(
             Set this flag to True to enable log-scale colormapping
 
     Keyword Args (optional):
-    ------------------------
         pedge : numpy array
             Edge pressures of grid cells in data to be plotted
             Default value: np.full((1,1), -1)
@@ -354,7 +352,6 @@ def compare_single_level(
     in two xarray Datasets. Optionally save to PDF.
 
     Args:
-    -----
         refdata : xarray dataset
             Dataset used as reference in comparison
         refstr  : str OR list of str
@@ -367,7 +364,6 @@ def compare_single_level(
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
-    ------------------------
         varlist : list of strings
             List of xarray dataset variable names to make plots for
             Default value: None (will compare all common variables)
@@ -1452,7 +1448,6 @@ def compare_zonal_mean(
     common in two xarray Daatasets. Optionally save to PDF.
 
     Args:
-    -----
         refdata : xarray dataset
             Dataset used as reference in comparison
         refstr  : str OR list of str
@@ -1465,7 +1460,6 @@ def compare_zonal_mean(
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
-    ------------------------
         varlist : list of strings
             List of xarray dataset variable names to make plots for
             Default value: None (will compare all common 3D variables)
@@ -2449,14 +2443,12 @@ def normalize_colors(vmin, vmax, is_difference=False,
     taking the log of data that is all zeroes.
 
     Args:
-    -----
         vmin : float
             Minimum value of the data range.
         vmax : float
             Maximum value of the data range.
 
     Keyword Args (optional):
-    ------------------------
         is_difference : bool
             Set this switch to denote that we are using a difference
             color scale (i.e. with zero in the middle of the range).
@@ -2467,13 +2459,11 @@ def normalize_colors(vmin, vmax, is_difference=False,
             Default value: False
 
     Returns:
-    --------
         norm : matplotlib Norm
             The normalized matplotlib color range, stored in
             a matplotlib Norm object.
 
     Remarks:
-    --------
          For log color scales, we will use a range of 3 orders of
          magnitude (i.e. from vmax/1e3 to vmax).
     """
@@ -2545,12 +2535,10 @@ def single_panel(plot_vals,
     Core plotting routine -- creates a single plot panel.
 
     Args:
-    -----
         plot_vals : xarray DataArray or numpy array
             Single data variable GEOS-Chem output to plot
 
     Keyword Args (Optional):
-    ------------------------
         ax : matplotlib axes
             Axes object to plot information
             Default value: None (Will create a new axes)
@@ -2632,9 +2620,8 @@ def single_panel(plot_vals,
             Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
 
     Returns:
-    -----
-    plot : matplotlib plot
-        Plot object created from input
+        plot : matplotlib plot
+            Plot object created from input
     """
 
     # Eliminate 1D level or time dimensions
