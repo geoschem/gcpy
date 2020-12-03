@@ -16,19 +16,19 @@ def convert_lon(data, dim='lon', format='atlantic', neg_dateline=True):
     Convert longitudes from -180..180 to 0..360, or vice-versa.
 
     Args:
-        data : DataArray or Dataset
+        data: DataArray or Dataset
              The container holding the data to be converted; the dimension indicated
              by 'dim' must be associated with this container
 
     Keyword Args (optional):
-        dim : str
+        dim: str
              Name of dimension holding the longitude coordinates
              Default value: 'lon'
-        format : str
+        format: str
              Control whether or not to shift from -180..180 to 0..360 ('pacific') or
              from 0..360 to -180..180 ('atlantic')
              Default value: 'atlantic'
-        neg_dateline : logical
+        neg_dateline: logical
              If True, then the international dateline is set to -180 instead of 180.
              Default value: True
 
@@ -80,15 +80,15 @@ def get_emissions_varnames(commonvars, template=None):
     contain a particular search string.
 
     Args:
-        commonvars : list of strs
+        commonvars: list of strs
             A list of commmon variable names from two data sets.
             (This can be obtained with method gcpy.util.compare_varnames)
-        template : str
+        template: str
             String template for matching variable names corresponding
             to emission diagnostics by sector
             Default Value: None
     Returns:
-        varnames : list of strs
+        varnames: list of strs
             A list of variable names corresponding to emission
             diagnostics for a given species and sector
     """
@@ -113,11 +113,11 @@ def create_display_name(diagnostic_name):
     that can be used as a plot title or in a table of totals.
 
     Args:
-        diagnostic_name : str
+        diagnostic_name: str
             Name of the diagnostic to be formatted
 
     Returns:
-        display_name : str
+        display_name: str
             Formatted name that can be used as plot titles or in tables
             of emissions totals.
 
@@ -154,21 +154,21 @@ def print_totals(ref, refstr, dev, devstr, f, masks=None):
     Dev - Ref) for two xarray DataArray objects.
 
     Args:
-        ref : xarray DataArray
+        ref: xarray DataArray
             The first DataArray to be compared (aka "Reference")
-        refstr : str
+        refstr: str
             A string that can be used to identify refdata.
             (e.g. a model version number or other identifier).
-        dev : xarray DataArray
+        dev: xarray DataArray
             The second DataArray to be compared (aka "Development")
-        devstr : str
+        devstr: str
             A string that can be used to identify devdata
             (e.g. a model version number or other identifier).
-        f : file
+        f: file
             File object denoting a text file where output will be directed.
 
     Keyword Args (optional):
-        masks : dict of xarray DataArray
+        masks: dict of xarray DataArray
             Dictionary containing the tropospheric mask arrays
             for Ref and Dev.  If this keyword argument is passed,
             then print_totals will print tropospheric totals.
@@ -281,12 +281,12 @@ def get_species_categories(benchmark_type="FullChemBenchmark"):
     plots for the various species.
 
     Args:
-        benchmark_type : str
+        benchmark_type: str
             Specifies the type of the benchmark (either
             FullChemBenchmark (default) or TransportTracersBenchmark).
 
     Returns:
-        spc_cat_dict : dict
+        spc_cat_dict: dict
             A nested dictionary of categories (and sub-categories)
             and the species belonging to each.
 
@@ -306,7 +306,7 @@ def archive_species_categories(dst):
     named "benchmark_species.yml".
 
     Args:
-        dst : str
+        dst: str
             Name of the folder where the YAML file containing
             benchmark categories ("benchmark_species.yml")
             will be written.
@@ -322,21 +322,21 @@ def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
     Adds bookmarks to an existing PDF file.
 
     Args:
-        pdfname : str
+        pdfname: str
             Name of an existing PDF file of species or emission plots
             to which bookmarks will be attached.
-        varlist : list
+        varlist: list
             List of variables, which will be used to create the
             PDF bookmark names.
 
     Keyword Args (optional):
-        remove_prefix : str
+        remove_prefix: str
             Specifies a prefix to remove from each entry in varlist
             when creating bookmarks.  For example, if varlist has
             a variable name "SpeciesConc_NO", and you specify
             remove_prefix="SpeciesConc_", then the bookmark for
             that variable will be just "NO", etc.
-         verbose : bool
+         verbose: bool
             Set this flag to True to print extra informational output.
             Default value: False
     """
@@ -374,22 +374,22 @@ def add_nested_bookmarks_to_pdf(
     Add nested bookmarks to PDF.
 
     Args:
-        pdfname : str
+        pdfname: str
             Path of PDF to add bookmarks to
-        category : str
+        category: str
             Top-level key name in catdict that maps to contents of PDF
-        catdict : dictionary
+        catdict: dictionary
             Dictionary containing key-value pairs where one top-level
             key matches category and has value fully describing pages
             in PDF. The value is a dictionary where keys are level 1
             bookmark names, and values are lists of level 2 bookmark
             names, with one level 2 name per PDF page.  Level 2 names
             must appear in catdict in the same order as in the PDF.
-        warninglist : list of strings
+        warninglist: list of strings
             Level 2 bookmark names to skip since not present in PDF.
 
     Keyword Args (optional):
-        remove_prefix : str
+        remove_prefix: str
             Prefix to be remove from warninglist names before comparing with
             level 2 bookmark names in catdict.
             Default value: empty string (warninglist names match names
@@ -473,18 +473,18 @@ def add_missing_variables(refdata, devdata, verbose=False, **kwargs):
     resolutions or types.
 
     Args:
-        refdata : xarray Dataset
+        refdata: xarray Dataset
             The "Reference" (aka "Ref") dataset
-        devdata : xarray Dataset
+        devdata: xarray Dataset
             The "Development" (aka "Dev") dataset
 
     Keyword Args (optional):
-        verbose : bool
+        verbose: bool
             Toggles extra debug print output
             Default value: False
 
     Returns:
-        refdata, devdata : xarray Datasets
+        refdata, devdata: xarray Datasets
             The returned "Ref" and "Dev" datasets, with
             placeholder missing value variables added
     """
@@ -552,11 +552,11 @@ def reshape_MAPL_CS(da):
     """
     Reshapes data if contains dimensions indicate MAPL v1.0.0+ output
     Args:
-        da : xarray DataArray
+        da: xarray DataArray
             Data array variable
 
     Returns:
-        data : xarray DataArray
+        data: xarray DataArray
             Data with dimensions renamed and transposed to match old MAPL format
     """
 
@@ -585,9 +585,9 @@ def get_diff_of_diffs(ref, dev):
     Generate datasets containing differences between two datasets
 
     Args:
-        ref : xarray Dataset
+        ref: xarray Dataset
             The "Reference" (aka "Ref") dataset.
-        dev : xarray Dataset
+        dev: xarray Dataset
             The "Development" (aka "Dev") dataset
 
     Returns:
@@ -650,19 +650,19 @@ def slice_by_lev_and_time(ds, varname, itime, ilev, flip):
     Slice a DataArray by desired time and level.
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
             Dataset containing GEOS-Chem data.
-        varname : str
+        varname: str
             Variable name for data variable to be sliced
-        itime : int
+        itime: int
             Index of time by which to slice
-        ilev : int
+        ilev: int
             Index of level by which to slice
-        flip : bool
+        flip: bool
             Whether to flip ilev to be indexed from ground or top of atmosphere
 
     Returns:
-        ds[varname] : xarray DataArray
+        ds[varname]: xarray DataArray
             DataArray of data variable sliced according to ilev and itime
     """
     # used in compare_single_level and compare_zonal_mean to get dataset slices
@@ -690,13 +690,13 @@ def rename_and_flip_gchp_rst_vars(ds):
     Transforms a GCHP restart dataset to match GCC names and level convention
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
             Dataset containing GCHP restart file data, such as variables
             SPC_{species}, BXHEIGHT, DELP_DRY, and TropLev, with level
             convention down (level 0 is top-of-atmosphere).
 
     Returns:
-        ds : xarray Dataset
+        ds: xarray Dataset
             Dataset containing GCHP restart file data with names and level
             convention matching GCC restart. Variables include
             SpeciesRst_{species}, Met_BXHEIGHT, Met_DELPDRY, and Met_TropLev,
@@ -722,11 +722,11 @@ def dict_diff(dict0, dict1):
     Assumes that both objects have the same keys.
 
     Args:
-        dict0, dict1 : dict
+        dict0, dict1: dict
             Dictionaries to be subtracted (dict1 - dict0)
 
     Returns:
-        result : dict
+        result: dict
             Key-by-key difference of dict1 - dict0
     """
     result = {}
@@ -741,21 +741,21 @@ def compare_varnames(refdata, devdata, refonly=[], devonly=[], quiet=False):
     Finds variables that are common to two xarray Dataset objects.
 
     Args:
-        refdata : xarray Dataset
+        refdata: xarray Dataset
             The first Dataset to be compared.
             (This is often referred to as the "Reference" Dataset.)
-        devdata : xarray Dataset
+        devdata: xarray Dataset
             The second Dataset to be compared.
             (This is often referred to as the "Development" Dataset.)
 
     Keyword Args (optional):
-        quiet : bool
+        quiet: bool
             Set this flag to True if you wish to suppress printing
             informational output to stdout.
             Default value: False
 
     Returns:
-        vardict : dict of lists of str
+        vardict: dict of lists of str
             Dictionary containing several lists of variable names:
             Key              Value
             -----            -----
@@ -857,17 +857,17 @@ def compare_stats(refdata, refstr, devdata, devstr, varname):
     from two xarray Dataset objects.
 
     Args:
-        refdata : xarray Dataset
+        refdata: xarray Dataset
             The first Dataset to be compared.
             (This is often referred to as the "Reference" Dataset.)
-        refstr : str
+        refstr: str
             Label for refdata to be used in the printout
-        devdata : xarray Dataset
+        devdata: xarray Dataset
             The second Dataset to be compared.
             (This is often referred to as the "Development" Dataset.)
-        devstr : str
+        devstr: str
             Label for devdata to be used in the printout
-        varname : str
+        varname: str
             Variable name for which global statistics will be printed out.
     """
 
@@ -901,16 +901,16 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
     to names used in the GEOS-Chem netCDF diagnostic outputs.
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
             The xarray Dataset object whose names are to be replaced.
 
     Keyword Args (optional):
-        verbose : bool
+        verbose: bool
             Set this flag to True to print informational output.
             Default value: False
 
     Returns:
-        ds_new : xarray Dataset
+        ds_new: xarray Dataset
             A new xarray Dataset object all of the bpch-style
             diagnostic names replaced by GEOS-Chem netCDF names.
 
@@ -1126,26 +1126,26 @@ def add_lumped_species_to_dataset(
     collection output.
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
             An xarray Dataset object prior to adding lumped species.
 
     Keyword Args (optional):
-        lspc_dict : dictionary
+        lspc_dict: dictionary
             Dictionary containing list of constituent species and their
             integer scale factors per lumped species.
             Default value: False
-        lspc_yaml : str
+        lspc_yaml: str
             Set this flag to True to print informational output.
             Default value: False
-        verbose : bool
+        verbose: bool
             Whether to print informational output.
             Default value: True
-        overwrite : bool
+        overwrite: bool
             Whether to overwrite an existing species dataarray in a dataset
             if it has the same name as a new lumped species. If False and
             overlapping names are found then the function will raise an error.
             Default value: False
-        prefix : str
+        prefix: str
             Prefix to prepend to new lumped species names. This argument is
             also used to extract an existing dataarray in the dataset with
             the correct size and dimensions to use during initialization of
@@ -1153,7 +1153,7 @@ def add_lumped_species_to_dataset(
             Default value: "SpeciesConc_"
 
     Returns:
-        ds_new : xarray Dataset
+        ds_new: xarray Dataset
             A new xarray Dataset object containing all of the original
             species plus new lumped species.
     """
@@ -1278,7 +1278,7 @@ def divide_dataset_by_dataarray(ds, dr, varlist=None):
             of ds will be divided by dr.
             Default value: None
     Returns:
-        ds_new : xarray Dataset
+        ds_new: xarray Dataset
             A new xarray Dataset object with its variables divided by dr.
     """
 
@@ -1318,24 +1318,24 @@ def get_shape_of_data(data, vertical_dim="lev", return_dims=False):
     'lev': 72, ...} from an xarray Dataset or xarray Datarray object.
 
     Args:
-        data : xarray Dataset, xarray DataArray, or dict
+        data: xarray Dataset, xarray DataArray, or dict
             The data for which the size is requested.
 
     Keyword Args (optional):
-        vertical_dim : str
+        vertical_dim: str
             Specify the vertical dimension that you wish to
             return: lev or ilev.
             Default value: 'lev'
-        return_dims : bool
+        return_dims: bool
             Set this switch to True if you also wish to return a list of
             dimensions in the same order as the tuple of dimension sizes.
             Default value: False
 
     Returns:
-        shape : tuple of int
+        shape: tuple of int
             Tuple containing the sizes of each dimension of dr in order:
             (time, lev|ilev, nf, lat|YDim, lon|XDim).
-        dims : list of str
+        dims: list of str
             If return_dims is True, then dims will contain a list of
             dimension names in the same order as shape
             (['time', 'lev', 'lat', 'lon'] for GEOS-Chem "Classic",
@@ -1379,10 +1379,10 @@ def get_area_from_dataset(ds):
     for GCHP) from an xarray Dataset object.
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
             The input dataset.
     Returns:
-        area_m2 : xarray DataArray
+        area_m2: xarray DataArray
             The surface area in m2, as found in ds.
     """
 
@@ -1405,13 +1405,13 @@ def get_variables_from_dataset(ds, varlist):
     found in the Dataset, or else an error will be raised.
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
             The input dataset.
-        varlist : list of str
+        varlist: list of str
             List of DataArray variables to extract from ds.
 
     Returns:
-        ds_subset : xarray Dataset
+        ds_subset: xarray Dataset
             A new data set containing only the variables
             that were requested.
 
@@ -1440,24 +1440,24 @@ def create_dataarray_of_nan(name, sizes, coords, attrs, vertical_dim="lev"):
     variables, and need to represent one as missing or undefined.
 
     Args:
-    name : str
+    name: str
         The name for the DataArray object that will contain NaNs.
-    sizes : dict of int
+    sizes: dict of int
         Dictionary of the dimension names and their sizes (e.g.
-        {'time' : 1 ', 'lev': 72, ...} that will be used to create
+        {'time': 1 ', 'lev': 72, ...} that will be used to create
         the DataArray of NaNs.  This can be obtained from an
         xarray Dataset as ds.sizes.
-    coords : dict of lists of float
+    coords: dict of lists of float
         Dictionary containing the coordinate variables that will
         be used to create the DataArray of NaNs.  This can be obtained
         from an xarray Dataset with ds.coords.
-    attrs : dict of str
+    attrs: dict of str
         Dictionary containing the DataArray variable attributes
         (such as "units", "long_name", etc.).  This can be obtained
         from an xarray Dataset with dr.attrs.
 
     Returns:
-    dr : xarray DataArray
+    dr: xarray DataArray
         The output DataArray object, which will contain NaN values
         everywhere.  This will denote missing data.
     """
@@ -1505,20 +1505,20 @@ def check_for_area(ds, gcc_area_name="AREA", gchp_area_name="Met_AREAM2"):
     GEOS-Chem "Classic" area name if it is present.
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
             The Dataset object that will be checked.
 
     Keyword Args (optional):
-        gcc_area_name : str
+        gcc_area_name: str
             Specifies the name of the GEOS-Chem "Classic" surface
             area varaible
             Default value: "AREA"
-        gchp_area_name : str
+        gchp_area_name: str
             Specifies the name of the GCHP surface area variable.
             Default value: "Met_AREAM2"
 
     Returns:
-        ds : xarray Dataset
+        ds: xarray Dataset
             The modified Dataset object
     """
 
@@ -1543,21 +1543,21 @@ def get_filepath(datadir, col, date, is_gchp=False):
     (aka "GCC") or GCHP diagnostic collection and date.
 
     Args:
-        datadir : str
+        datadir: str
             Path name of the directory containing GCC or GCHP data files.
-        col : str
+        col: str
             Name of collection (e.g. Emissions, SpeciesConc, etc.)
             for which file path will be returned.
-        date : numpy.datetime64
+        date: numpy.datetime64
             Date for which file paths are requested.
 
     Keyword Args (optional):
-        is_gchp : bool
+        is_gchp: bool
             Set this switch to True to obtain file pathnames to
             GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
 
     Returns:
-        path : str
+        path: str
             Pathname for the specified collection and date.
     """
 
@@ -1597,21 +1597,21 @@ def get_filepaths(datadir, collections, dates, is_gchp=False):
     (aka "GCC") or GCHP diagnostic collection.
 
     Args:
-        datadir : str
+        datadir: str
             Path name of the directory containing GCC or GCHP data files.
-        collections : list of str
+        collections: list of str
             Names of collections (e.g. Emissions, SpeciesConc, etc.)
             for which file paths will be returned.
-        dates : array of numpy.datetime64
+        dates: array of numpy.datetime64
             Array of dates for which file paths are requested.
 
     Keyword Args (optional):
-        is_gchp : bool
+        is_gchp: bool
             Set this switch to True to obtain file pathnames to
             GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
 
     Returns:
-        paths : 2D list of str
+        paths: 2D list of str
             A list of pathnames for each specified collection and date.
             First dimension is collection, and second is date.
     """
@@ -1686,14 +1686,14 @@ def extract_pathnames_from_log(filename, prefix_filter=""):
     downloaded from gcgrid or from Amazon S3.
 
     Args:
-        filename : str
+        filename: str
             GEOS-Chem standard log file
-        prefix_filter (optional) : str
+        prefix_filter (optional): str
             Restricts the output to file paths starting with
             this prefix (e.g. "/home/ubuntu/ExtData/HEMCO/")
             Default value: ''
     Returns:
-        data list : list of str
+        data list: list of str
             List of full pathnames of data files found in
             the log file.
     Author:
@@ -1736,17 +1736,17 @@ def get_gcc_filepath(outputdir, collection, day, time):
     Routine for getting filepath of GEOS-Chem Classic output
 
     Args:
-        outputdir : str
+        outputdir: str
              Path of the OutputDir directory
-        collection : str
+        collection: str
              Name of output collection, e.g. Emissions or SpeciesConc
-        day : str
+        day: str
              Number day of output, e.g. 31
-        time : str
+        time: str
              Z time of output, e.g. 1200z
 
     Returns:
-        filepath : str
+        filepath: str
              Path of requested file
     '''
     if collection == "Emissions":
@@ -1765,17 +1765,17 @@ def get_gchp_filepath(outputdir, collection, day, time):
     Routine for getting filepath of GCHP output
 
     Args:
-        outputdir : str
+        outputdir: str
              Path of the OutputDir directory
-        collection : str
+        collection: str
              Name of output collection, e.g. Emissions or SpeciesConc
-        day : str
+        day: str
              Number day of output, e.g. 31
-        time : str
+        time: str
              Z time of output, e.g. 1200z
 
     Returns:
-        filepath : str
+        filepath: str
              Path of requested file
     '''
 
@@ -1790,11 +1790,11 @@ def get_nan_mask(data):
     Create a mask with NaN values removed from an input array
 
     Args:
-        data : numpy array
+        data: numpy array
             Input array possibly containing NaNs
 
     Returns:
-        new_data : numpy array
+        new_data: numpy array
             Original array with NaN values removed
     """
 
@@ -1810,10 +1810,10 @@ def all_zero_or_nan(ds):
     Return whether ds is all zeros, or all nans
 
     Args:
-        ds : numpy array
+        ds: numpy array
             Input GEOS-Chem data
     Returns:
-        all_zero, all_nan : bool, bool
+        all_zero, all_nan: bool, bool
             All_zero is whether ds is all zeros, all_nan is whether ds is all NaNs
     """
 

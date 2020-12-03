@@ -37,21 +37,21 @@ class _GlobVars:
         Initializes the _GlobVars class.
 
         Args:
-            devstr : str
+            devstr: str
                 Label denoting the "Dev" version.
-            devdir : str
+            devdir: str
                 Directory where benchmark diagnostic files are found.
-            year : int
+            year: int
                 Year of the benchmark simulation.
 
         Keyword Args (optional):
-            dst : str
+            dst: str
                 Directory where plots & tables will be created.
-            bmk_type : str
+            bmk_type: str
                 FullChemBenchmark or TransportTracersBenchmark.
-            species : list of str
+            species: list of str
                 Species for which STE fluxes are desired.
-            overwrite : bool
+            overwrite: bool
                 Denotes whether to ovewrite existing budget tables.
         """
         # ------------------------------
@@ -190,7 +190,7 @@ def compute_ste(globvars):
     across the 100hPa pressure level.
 
     Args:
-        globvars : obj of type _GlobVars
+        globvars: obj of type _GlobVars
             Global variables needed for budget computations.
 
     Returns:
@@ -241,9 +241,9 @@ def print_ste(globvars, df):
     Prints the strat-trop exchange table.
 
     Args:
-        globvars : _GlobVars
+        globvars: _GlobVars
             Global variables
-        df : pandas DataFrame
+        df: pandas DataFrame
             Strat-trop exchange table
     """
     # Create plot directory hierarchy if necessary
@@ -298,23 +298,23 @@ def make_benchmark_ste_table(devstr, files, year,
     the selected species and benchmark year.
 
     Args:
-        devstr : str
+        devstr: str
             Label denoting the "Dev" version.
-        files : str
+        files: str
             List of files containing vertical fluxes.
-        year : str
+        year: str
             Year of the benchmark simulation.
 
     Keyword Args (optional):
-        dst : str
+        dst: str
             Directory where plots & tables will be created.
-        bmk_type : str
+        bmk_type: str
             FullChemBenchmark or TransportTracersBenchmark.
-        species : list of str
+        species: list of str
             Species for which STE fluxes are desired.
-        overwrite : bool
+        overwrite: bool
             Denotes whether to ovewrite existing budget tables.
-        month : float
+        month: float
             If passed, specifies the month of a 1-month benchmark.
             Default: None (denotes a 1-year benchmark)
     """
