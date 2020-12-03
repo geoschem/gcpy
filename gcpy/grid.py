@@ -106,9 +106,6 @@ def get_input_res(data):
     Args:
         data: xarray Dataset
             Input GEOS-Chem dataset
-        sg_params: list [stretch_factor, target_longitude, target_latitude]
-            Stretched-grid parameters of the dataset (not currently gatherable 
-            from grid structure)
 
     Returns:
         res: str or int
