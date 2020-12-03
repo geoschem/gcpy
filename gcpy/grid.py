@@ -266,7 +266,7 @@ def get_vert_grid(dataset, AP=[[], []], BP=[[], []]):
     Returns:
         p_edge: numpy array
             Edge pressure values for vertical grid
-        p_mid : numpy array
+        p_mid: numpy array
             Midpoint pressure values for vertical grid
         nlev: int
             Number of levels in vertical grid

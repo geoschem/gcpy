@@ -354,12 +354,12 @@ def compare_single_level(
     Args:
         refdata: xarray dataset
             Dataset used as reference in comparison
-        refstr : str OR list of str
+        refstr: str OR list of str
             String description for reference data to be used in plots
             OR list containing [ref1str, ref2str] for diff-of-diffs plots
         devdata: xarray dataset
             Dataset used as development in comparison
-        devstr : str OR list of str
+        devstr: str OR list of str
             String description for development data to be used in plots
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
@@ -453,7 +453,7 @@ def compare_single_level(
             A dataset of the same model type / grid as devdata, 
             to be used in diff-of-diffs plotting.
             Default value: None
-        spcdb_dir : str
+        spcdb_dir: str
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
         sg_ref_path: str
@@ -1450,12 +1450,12 @@ def compare_zonal_mean(
     Args:
         refdata: xarray dataset
             Dataset used as reference in comparison
-        refstr : str OR list of str
+        refstr: str OR list of str
             String description for reference data to be used in plots
             OR list containing [ref1str, ref2str] for diff-of-diffs plots
         devdata: xarray dataset
             Dataset used as development in comparison
-        devstr : str OR list of str
+        devstr: str OR list of str
             String description for development data to be used in plots
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
@@ -1549,7 +1549,7 @@ def compare_zonal_mean(
             A dataset of the same model type / grid as devdata, 
             to be used in diff-of-diffs plotting.
             Default value: None
-        spcdb_dir : str
+        spcdb_dir: str
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
         sg_ref_path: str
