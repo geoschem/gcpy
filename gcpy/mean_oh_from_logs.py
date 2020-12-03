@@ -35,15 +35,15 @@ class _GlobVars:
         Initializes the _GlobVars class.
 
         Args:
-            reflogdir, devlogdir : str
+            reflogdir, devlogdir: str
                 Directory containing log files from Ref and Dev.
-            refstr, devstr : str
+            refstr, devstr: str
                 String label for the Ref and Def simulations.
-            year : int
+            year: int
                 Year of the Ref and Dev benchmark simulations.
-            dst : str
+            dst: str
                 Folder in which the mean OH table will be printed.
-            overwrite : bool
+            overwrite: bool
                 If true, will overwrite the existing OH table in dst.
         """
         # ------------------------------
@@ -90,7 +90,7 @@ def find_mean_oh(filename):
     Searches a GEOS-Chem "Classic" log file for the Mean OH value.
 
     Args:
-        filename : str
+        filename: str
             GEOS-Chem "Classic" log file.
     """
     # Read through each log file from the bottom up
@@ -114,7 +114,7 @@ def compute_mean_oh_from_logs(globvars):
     Computes mean OH from GEOS-Chem FullChemBenchmark log files.
 
     Args:
-        globvars : _GlobVars
+        globvars: _GlobVars
             Global variables
     """
 
@@ -167,9 +167,9 @@ def print_mean_oh_from_logs(globvars, df):
     Prints the mean OH table from 1-year FullChemBenchmark log files.
 
     Args:
-        globvars : _GlobVars
+        globvars: _GlobVars
             Global variables
-        df : pandas DataFrame
+        df: pandas DataFrame
             Strat-trop exchange table
     """
     # Create plot directory hierarchy if necessary
@@ -212,17 +212,17 @@ def make_benchmark_oh_from_logs(reflogdir, refstr, devlogdir, devstr,
     Creates the table of mean OH concentrations, as obtained from log files.
 
     Args:
-        reflogdir, devlogdir : str
+        reflogdir, devlogdir: str
             Directory containing log files from  Ref and Dev simulations.
-        refstr, devstr : str
+        refstr, devstr: str
             String label for the Ref and Def simulations.
-        year : str
+        year: str
             Year of the Ref and Dev benchmark simulations.
 
     Keyword Args (optional):
-        dst : str
+        dst: str
             Folder in which the mean OH table will be printed.
-        overwrite : bool
+        overwrite: bool
             If true, will overwrite the existing OH table in dst.
     """
 

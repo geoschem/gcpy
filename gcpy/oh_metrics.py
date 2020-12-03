@@ -28,10 +28,10 @@ def combine_dataset(file_list=None):
     extra arguments needed in xarray 0.15 and later.
 
     Args:
-        file_list : list of str
+        file_list: list of str
 
     Returns:
-        ds : xarray Dataset
+        ds: xarray Dataset
     """
 
     # Return a single Dataset containing data from all MeanOH files.
@@ -68,10 +68,10 @@ def validate_metrics_collection(ds):
     metrics from a CH4 simulation or a fullchem simulation.
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
 
     Returns:
-        is_ch4_sim : bool
+        is_ch4_sim: bool
     """
 
     # CH4 and fullchem simulations have these variables
@@ -99,12 +99,12 @@ def read_metrics_collection(files):
     into a single xarray Dataset.
 
     Args:
-        data_dir : str
+        data_dir: str
             Directory containing data files.
             Default: "./OutputDir".
 
     Returns:
-        ds : xarray Dataset
+        ds: xarray Dataset
     """
 
     # If files a scalar, promote it to a list
@@ -128,7 +128,7 @@ def total_airmass(ds):
     Computes the total airmass (in both kg and molec).
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
 
     Returns:
         airmass_kg, airmass_m: numpy float64
@@ -146,11 +146,11 @@ def global_mean_oh(ds, airmass_kg, mw_oh_kg):
     Computes the global mean OH concentration (1e5 molec cm-3)
 
     Args:
-        sum_airmass_kg : numpy float64
-        ds : xarray Dataset
+        sum_airmass_kg: numpy float64
+        ds: xarray Dataset
 
     Returns:
-        sum_mean_oh : numpy float64
+        sum_mean_oh: numpy float64
     """
     # Divide out total airmass to get total mean OH concentration [kg m-3]
     # Then convert mean OH from [kg m-3] to [1e5 molec cm-3]
@@ -167,16 +167,16 @@ def lifetimes_wrt_oh(ds, airmass_m):
     against tropospheric OH.
 
     Args:
-        ds : xarray Dataset
+        ds: xarray Dataset
 
-        airmass_m : numpy float64
+        airmass_m: numpy float64
            Total airmass [molecules]
 
         s_per_yr: numpy float64
            Conversion factor: seconds to year.
 
     Returns:
-        ch4_life_wrt_oh, mcf_life_wrt_oh : numpy float64
+        ch4_life_wrt_oh, mcf_life_wrt_oh: numpy float64
     """
 
     # Seconds per year
@@ -199,25 +199,25 @@ def init_common_vars(ref, refstr, dev, devstr, spcdb_dir):
     need to be passed between methods.
 
     Args:
-        ref : str
+        ref: str
             Path name of "Ref" (aka "Reference") data set file.
 
-        refstr : str
+        refstr: str
             A string to describe ref (e.g. version number)
 
-        dev : str
+        dev: str
             Path name of "Dev" (aka "Development") data set file.
             The "Dev" data set will be compared against the "Ref" data set.
 
-        devstr : str
+        devstr: str
             A string to describe dev (e.g. version number)
 
-        spcdb_dir : str
+        spcdb_dir: str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
 
     Returns:
-        common_vars : dict
+        common_vars: dict
     """
 
     # Get species database
@@ -258,10 +258,10 @@ def compute_oh_metrics(common_vars):
     lifetime w/r/t OH, and CH4 lifetime w/r/t OH.
 
     Args:
-        common_vars : dict
+        common_vars: dict
 
     Returns:
-        common_vars : dict
+        common_vars: dict
     """
 
     # ==================================================================
@@ -319,13 +319,13 @@ def write_to_file(f, title, ref, dev, absdiff, pctdiff, is_mean_oh=False):
     quantity (mean OH, MCF lifetime, CH4 lifetime) to a file.
 
     Args:
-       f : file
+       f: file
 
-       title : str
+       title: str
 
-       ref, dev, absdiff, pctdiff : numpy float64
+       ref, dev, absdiff, pctdiff: numpy float64
 
-       is_mean_oh : bool
+       is_mean_oh: bool
     """
     print(file=f)
     print("-" * 60, file=f)
@@ -350,8 +350,8 @@ def print_metrics(common_vars, dst):
     from a GEOS-Chem simulation.
 
     Args:
-        ds : xarray Dataset
-        is_ch4_sim : bool
+        ds: xarray Dataset
+        is_ch4_sim: bool
     """
 
     # Create file
@@ -436,31 +436,31 @@ def make_benchmark_oh_metrics(
     and CH4 lifetime for benchmarking purposes.
 
     Args:
-        ref : str
+        ref: str
             Path name of "Ref" (aka "Reference") data set file.
 
-        refstr : str
+        refstr: str
             A string to describe ref (e.g. version number)
 
-        dev : str
+        dev: str
             Path name of "Dev" (aka "Development") data set file.
             The "Dev" data set will be compared against the "Ref" data set.
 
-        devstr : str
+        devstr: str
             A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
-        dst : str
+        dst: str
             A string denoting the destination folder where the file
             containing emissions totals will be written.
             Default value: ./benchmark
 
-        overwrite : bool
+        overwrite: bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
-            Default value : False
+            Default value: False
 
-        spcdb_dir : str
+        spcdb_dir: str
             Directory of species_datbase.yml file
             Default value: Directory of GCPy code repository
     """

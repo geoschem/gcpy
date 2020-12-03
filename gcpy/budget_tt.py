@@ -41,21 +41,21 @@ class _GlobVars:
         Initializes the _GlobVars class.
 
         Args:
-            devstr : str
+            devstr: str
                 Label denoting the "Dev" version.
-            devdir : str
+            devdir: str
                 Directory where diagnostic files are found.
-            devrstdir : str
+            devrstdir: str
                 Directory where restart files are found.
-            dst : str
+            dst: str
                 Directory where plots & tables will be created.
-            year : int
+            year: int
                 Year of the benchmark simulation.
-            is_gchp : bool
+            is_gchp: bool
                 Denotes if this is GCHP (True) or GCC (False) data.
-            overwrite : bool
+            overwrite: bool
                 Denotes whether to ovewrite existing budget tables.
-            spcdb_dir : str
+            spcdb_dir: str
                 Directory where species_database.yml is stored.
         """
         # ------------------------------
@@ -268,13 +268,13 @@ def total(globvars, dict_list):
     Assumes that all objects have the same keys.
 
     Args:
-        globvars : obj of type _GlobVars
+        globvars: obj of type _GlobVars
             Global variables needed for budget computations.
-        dict_list : list of dict
+        dict_list: list of dict
             Dictionaries to be summed.
 
     Returns:
-        result : dict
+        result: dict
             Key-by-key sum of all dicts in dict_list.
     """
     # Initialize
@@ -297,11 +297,11 @@ def mass_from_rst(globvars, ds, tropmask):
     Computes global species mass from a restart file.
 
     Args:
-        globvars : obj of type _GlobVars
+        globvars: obj of type _GlobVars
             Global variables needed for budget computations.
-        ds : xarray Dataset
+        ds: xarray Dataset
             Data containing species mass to be summed.
-        tropmask : numpy ndarray
+        tropmask: numpy ndarray
             Mask to denote tropospheric grid boxes.
 
     Returns:
@@ -367,13 +367,13 @@ def annual_average(globvars, ds, collection, conv_factor):
     Computes the annual average of budgets or fluxes.
 
     Args:
-        globvars : obj of type _GlobVars
+        globvars: obj of type _GlobVars
             Global variables needed for budget computations.
-        ds : xarray Dataset
+        ds: xarray Dataset
             Data to be averaged
-        collection : str
+        collection: str
             Name of the diagnostic collection.
-        conv_factor : str
+        conv_factor: str
             Conversion factor to be applied.
 
      Returns:
@@ -445,11 +445,11 @@ def annual_average_sources(globvars):
     Computes the annual average of radionuclide sources.
 
     Args:
-        globvars : obj of type _GlobVars
+        globvars: obj of type _GlobVars
             Global variables needed for budget computations.
 
      Returns:
-        result : dict
+        result: dict
             Source totals in strat, trop, and strat+trop regimes.
     """
 
@@ -530,11 +530,11 @@ def trop_residence_time(globvars):
     Computes the tropospheric residence time of radionuclides.
 
     Args:
-        globvars : obj of type _GlobVars
+        globvars: obj of type _GlobVars
             Global variables needed for budget computations.
 
     Returns:
-        result : dict
+        result: dict
             Tropopsheric residence time for all species.
     """
 
@@ -725,24 +725,24 @@ def transport_tracers_budgets(
     Main program to compute TransportTracersBenchmark budgets
 
     Args:
-        maindir : str
+        maindir: str
             Top-level benchmark folder
-        devstr : str
+        devstr: str
             Denotes the "Dev" benchmark version.
-        year : int
+        year: int
             The year of the benchmark simulation (e.g. 2016).
 
     Keyword Args (optional):
-        dst : str
+        dst: str
             Directory where budget tables will be created.
             Default value: './1yr_benchmark'
-        is_gchp : bool
+        is_gchp: bool
             Denotes if data is from GCHP (True) or GCC (false).
             Default value: False
-        overwrite : bool
+        overwrite: bool
             Denotes whether to ovewrite existing budget tables.
             Default value: True
-        spcdb_dir : str
+        spcdb_dir: str
             Directory where species_database.yml is stored.
             Default value: GCPy directory
     """

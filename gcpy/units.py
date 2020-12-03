@@ -15,7 +15,7 @@ def adjust_units(units):
     conversion routines below.
 
     Args:
-        units : str
+        units: str
             Input unit string.
 
     Returns:    
@@ -61,19 +61,19 @@ def convert_kg_to_target_units(data_kg, target_units, kg_to_kgC):
     Converts a data array from kg to one of several types of target units.
 
     Args:    
-        data_kg : numpy ndarray
+        data_kg: numpy ndarray
             Input data array, in units of kg.
 
-        target_units : str
+        target_units: str
             String containing the name of the units to which the "data_kg"
             argument will be converted.  Examples: 'Tg', 'Tg C', 'Mg',
             'Mg C', 'kg, 'kg C', etc.
 
-        kg_to_kg_C : float
+        kg_to_kg_C: float
             Conversion factor from kg to kg carbon.
 
     Returns:     
-        data : numpy ndarray
+        data: numpy ndarray
             Ouptut data array, converted to the units specified
             by the 'target_units' argument.
 
@@ -139,33 +139,33 @@ def convert_units(
     units to a target unit.
 
     Args:    
-        dr : xarray DataArray
+        dr: xarray DataArray
             Data to be converted from native units to target units.
-        species_name : str
+        species_name: str
             Name of the species corresponding to the data stored in "dr".
-        species_properties : dict
+        species_properties: dict
             Dictionary containing species properties (e.g. molecular
             weights and other metadata) for the given species.
-        target_units : str
+        target_units: str
             Units to which the data will be converted.
 
     Keyword Args (optional):    
-        interval : float
+        interval: float
             The length of the averaging period in seconds.
             Default value: [2678400.0]
-        area_m2 : xarray DataArray
+        area_m2: xarray DataArray
             Surface area in square meters
             Default value: None
-        delta_p : xarray DataArray
+        delta_p: xarray DataArray
             Delta-pressure between top and bottom edges of grid box (dry air)
             in hPa
             Default value: None
-        box_height : xarray DataArray
+        box_height: xarray DataArray
             Grid box height in meters
             Default value: None
 
     Returns:    
-        dr_new : xarray DataArray
+        dr_new: xarray DataArray
             Data converted to target units.
 
     Remarks:    
@@ -331,17 +331,17 @@ def check_units(ref_da, dev_da, enforce_units=True):
     Ensures the units of two xarray DataArrays are the same.
 
     Args:    
-        ref_da : xarray DataArray
+        ref_da: xarray DataArray
             First data array containing a units attribute.
-        dev_da : xarray DataArray
+        dev_da: xarray DataArray
             Second data array containing a units attribute.
 
     Keyword Args (optional):    
-        enforce_units : bool
+        enforce_units: bool
             Whether to stop program if ref and dev units do not match
             Default value: True
     Returns:    
-        units_match : bool
+        units_match: bool
     """
     units_ref = ref_da.units.strip()
     units_dev = dev_da.units.strip()
@@ -367,11 +367,11 @@ def data_unit_is_mol_per_mol(da):
     list of unit strings mol/mol may be.
 
     Args:    
-        da : xarray DataArray
+        da: xarray DataArray
             Data array containing a units attribute
 
     Returns:    
-        is_molmol : bool
+        is_molmol: bool
             Whether input units are mol/mol
     """
     conc_units = ["mol mol-1 dry", "mol/mol", "mol mol-1"]

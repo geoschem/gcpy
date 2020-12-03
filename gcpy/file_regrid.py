@@ -27,34 +27,34 @@ def file_regrid(
     as a new file.
 
     Args:
-        fin : str
+        fin: str
             The input filename
-        fout : str
+        fout: str
             The output filename (file will be overwritten if it already exists)
-        dim_format_in : str
+        dim_format_in: str
             Format of the input file's dimensions (choose from: classic, 
             checkpoint, diagnostic), where classic denotes lat/lon and 
             checkpoint / diagnostic are cubed-sphere formats
-        dim_format_out : str
+        dim_format_out: str
             Format of the output file's dimensions (choose from: classic,
             checkpoint, diagnostic), where classic denotes lat/lon
             and checkpoint / diagnostic are cubed-sphere formats
 
     Keyword Args (optional):
-        cs_res_out : int
+        cs_res_out: int
             The cubed-sphere resolution of the output dataset. 
             Not used if dim_format_out is classic
             Default value: 0
-        ll_res_out : str
+        ll_res_out: str
             The lat/lon resolution of the output dataset. 
             Not used if dim_format_out is not classic
             Default value: '0x0'
-        sg_params_in : list[float, float, float]
+        sg_params_in: list[float, float, float]
             Input grid stretching parameters 
             [stretch-factor, target longitude, target latitude].
             Not used if dim_format_in is classic
             Default value: [1.0, 170.0, -90.0] (No stretching)
-        sg_params_out : list[float, float, float]
+        sg_params_out: list[float, float, float]
             Output grid stretching parameters 
             [stretch-factor, target longitude, target latitude].
             Not used if dim_format_out is classic
@@ -257,11 +257,11 @@ def rename_restart_variables(ds, towards_gchp=True):
     Renames restart variables according to GEOS-Chem Classic and GCHP conventions.
 
     Args:
-        ds : xarray.Dataset
+        ds: xarray.Dataset
             The input dataset
 
     Keyword Args (optional):
-        towards_gchp : bool
+        towards_gchp: bool
             Whether renaming to (True) or from (False) GCHP format
             Default value: True
 
@@ -287,11 +287,11 @@ def drop_and_rename_classic_vars(ds, towards_gchp=True):
     and GCHP conventions.
 
     Args:
-        ds : xarray.Dataset
+        ds: xarray.Dataset
             The input dataset
 
     Keyword Args (optional):
-        towards_gchp : bool
+        towards_gchp: bool
             Whether going to (True) or from (False) GCHP format
             Default value: True
 

@@ -76,83 +76,83 @@ def six_plot(
     in the prior listed functions and has not been tested separately.
 
     Args:
-        subplot : str
+        subplot: str
             Type of plot to create (ref, dev, absolute difference or 
             fractional difference)
-        all_zero : bool
+        all_zero: bool
             Set this flag to True if the data to be plotted consist only of zeros
-        all_nan : bool
+        all_nan: bool
             Set this flag to True if the data to be plotted consist only of NaNs
-        plot_val : xarray DataArray
+        plot_val: xarray DataArray
             Single variable GEOS-Chem output values to plot
-        grid : dict
+        grid: dict
             Dictionary mapping plot_val to plottable coordinates
-        ax : matplotlib axes
+        ax: matplotlib axes
             Axes object to plot information. Will create a new axes 
             if none is passed.
-        rowcol : tuple
+        rowcol: tuple
             Subplot position in overall Figure
-        title : str
+        title: str
             Title to print on axes
-        comap : matplotlib Colormap
+        comap: matplotlib Colormap
             Colormap for plotting data values
-        unit : str
+        unit: str
             Units of plotted data
-        extent : tuple (minlon, maxlon, minlat, maxlat)
+        extent: tuple (minlon, maxlon, minlat, maxlat)
             Describes minimum and maximum latitude and longitude of input data
-        masked_data : numpy array
+        masked_data: numpy array
             Masked area for cubed-sphere plotting
-        other_all_nan : bool
+        other_all_nan: bool
             Set this flag to True if plotting ref/dev and the other of ref/dev 
             is all nan
-        gridtype : str
+        gridtype: str
             "ll" for lat/lon or "cs" for cubed-sphere
         vmins: list of float
             list of length 3 of minimum ref value, dev value, and absdiff value
         vmaxs: list of float
             list of length 3 of maximum ref value, dev value, and absdiff value
-        use_cmap_RdBu : bool
+        use_cmap_RdBu: bool
             Set this flag to True to use a blue-white-red colormap
-        match_cbar : bool
+        match_cbar: bool
             Set this flag to True if you are plotting with the same colorbar 
             for ref and dev
-        verbose : bool
+        verbose: bool
             Set this flag to True to enable informative printout.
-        log_color_scale : bool
+        log_color_scale: bool
             Set this flag to True to enable log-scale colormapping
 
     Keyword Args (optional):
-        pedge : numpy array
+        pedge: numpy array
             Edge pressures of grid cells in data to be plotted
             Default value: np.full((1,1), -1)
-        pedge_ind : numpy array
+        pedge_ind: numpy array
             Indices where edge pressure values are within a given pressure range
             Default value: np.full((1,1), -1)
-        log_yaxis : bool
+        log_yaxis: bool
             Set this flag to True to enable log scaling of pressure in zonal 
             mean plots
             Default value: False
-        xtick_positions : list of float
+        xtick_positions: list of float
             Locations of lat/lon or lon ticks on plot
             Default value: []
         xticklabels: list of str
             Labels for lat/lon ticks
             Default value: []
-        plot_type : str
+        plot_type: str
             Type of plot, either "single_level" or "zonal"mean"
             Default value: "single_level"
-        ratio_log : bool
+        ratio_log: bool
             Set this flag to True to enable log scaling for ratio plots
             Default value: False
-        proj : cartopy projection
+        proj: cartopy projection
             Projection for plotting data
             Default value: ccrs.PlateCarree()
-        ll_plot_func : str
+        ll_plot_func: str
             Function to use for lat/lon single level plotting with possible values
             'imshow' and 'pcolormesh'. imshow is much faster but is slightly
             displaced when plotting from dateline to dateline and/or pole to pole.
             Default value: 'imshow'
-        extra_plot_args : various
+        extra_plot_args: various
             Any extra keyword arguments are passed through the plotting functions to
             be used in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     """
@@ -352,91 +352,91 @@ def compare_single_level(
     in two xarray Datasets. Optionally save to PDF.
 
     Args:
-        refdata : xarray dataset
+        refdata: xarray dataset
             Dataset used as reference in comparison
-        refstr  : str OR list of str
+        refstr : str OR list of str
             String description for reference data to be used in plots
             OR list containing [ref1str, ref2str] for diff-of-diffs plots
-        devdata : xarray dataset
+        devdata: xarray dataset
             Dataset used as development in comparison
-        devstr  : str OR list of str
+        devstr : str OR list of str
             String description for development data to be used in plots
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
-        varlist : list of strings
+        varlist: list of strings
             List of xarray dataset variable names to make plots for
             Default value: None (will compare all common variables)
-        ilev : integer
+        ilev: integer
             Dataset level dimension index using 0-based system.
             Indexing is ambiguous when plotting differing vertical grids
             Default value: 0
-        itime : integer
+        itime: integer
             Dataset time dimension index using 0-based system
             Default value: 0
-        refmet : xarray dataset
+        refmet: xarray dataset
             Dataset containing ref meteorology
             Default value: None
-        devmet : xarray dataset
+        devmet: xarray dataset
             Dataset containing dev meteorology
             Default value: None
-        weightsdir : str
+        weightsdir: str
             Directory path for storing regridding weights
             Default value: None (will create/store weights in
             current directory)
-        pdfname : str
+        pdfname: str
             File path to save plots as PDF
             Default value: Empty string (will not create PDF)
-        cmpres : str
+        cmpres: str
             String description of grid resolution at which
             to compare datasets
             Default value: None (will compare at highest resolution
             of ref and dev)
-        match_cbar : bool
+        match_cbar: bool
             Set this flag to True if you wish to use the same colorbar
             bounds for the Ref and Dev plots.
             Default value: True
-        normalize_by_area : bool
+        normalize_by_area: bool
             Set this flag to True if you wish to normalize the Ref and Dev
             raw data by grid area. Input ref and dev datasets must include
             AREA variable in m2 if normalizing by area.
             Default value: False
-        enforce_units : bool
+        enforce_units: bool
             Set this flag to True to force an error if Ref and Dev
             variables have different units.
             Default value: True
-        convert_to_ugm3 : bool
+        convert_to_ugm3: bool
             Whether to convert data units to ug/m3 for plotting.
             Default value: False
-        flip_ref : bool
+        flip_ref: bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
             Default value: False
-        flip_dev : bool
+        flip_dev: bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Dev dataset.
             Default value: False
-        use_cmap_RdBu : bool
+        use_cmap_RdBu: bool
             Set this flag to True to use a blue-white-red colormap
             for plotting the raw data in both the Ref and Dev datasets.
             Default value: False
-        verbose : bool
+        verbose: bool
             Set this flag to True to enable informative printout.
             Default value: False
         log_color_scale: bool
             Set this flag to True to plot data (not diffs)
             on a log color scale.
             Default value: False
-        extra_title_txt : str
+        extra_title_txt: str
             Specifies extra text (e.g. a date string such as "Jan2016")
             for the top-of-plot title.
             Default value: None
-        extent : list
+        extent: list
             Defines the extent of the region to be plotted in form
             [minlon, maxlon, minlat, maxlat]. 
             Default value plots extent of input grids.
             Default value: [-1000, -1000, -1000, -1000]
-        n_job : int
+        n_job: int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. 
             Value of -1 allows the application to decide.
@@ -445,31 +445,31 @@ def compare_single_level(
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
-        second_ref : xarray Dataset
+        second_ref: xarray Dataset
             A dataset of the same model type / grid as refdata, 
             to be used in diff-of-diffs plotting.
             Default value: None
-        second_dev : xarray Dataset
+        second_dev: xarray Dataset
             A dataset of the same model type / grid as devdata, 
             to be used in diff-of-diffs plotting.
             Default value: None
-        spcdb_dir  : str
+        spcdb_dir : str
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
-        sg_ref_path : str
+        sg_ref_path: str
             Path to NetCDF file containing stretched-grid info 
             (in attributes) for the ref dataset
             Default value: '' (will not be read in)
-        sg_dev_path : str
+        sg_dev_path: str
             Path to NetCDF file containing stretched-grid info 
             (in attributes) for the dev dataset
             Default value: '' (will not be read in)
-        ll_plot_func : str
+        ll_plot_func: str
             Function to use for lat/lon single level plotting with possible values
             'imshow' and 'pcolormesh'. imshow is much faster but is slightly displaced
             when plotting from dateline to dateline and/or pole to pole.
             Default value: 'imshow'
-        extra_plot_args : various
+        extra_plot_args: various
             Any extra keyword arguments are passed through the plotting functions to be used
             in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     """
@@ -493,10 +493,10 @@ def compare_single_level(
         second_ref, second_dev = second_ref.load(), second_dev.load()
         #use fake time dim in case dates are different in datasets
         aligned_time = np.datetime64('2000-01-01')
-        refdata = refdata.assign_coords({'time' : [aligned_time]})
-        devdata = devdata.assign_coords({'time' : [aligned_time]})
-        second_ref = second_ref.assign_coords({'time' : [aligned_time]})
-        second_dev = second_dev.assign_coords({'time' : [aligned_time]})
+        refdata = refdata.assign_coords({'time': [aligned_time]})
+        devdata = devdata.assign_coords({'time': [aligned_time]})
+        second_ref = second_ref.assign_coords({'time': [aligned_time]})
+        second_dev = second_dev.assign_coords({'time': [aligned_time]})
 
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
@@ -1448,91 +1448,91 @@ def compare_zonal_mean(
     common in two xarray Daatasets. Optionally save to PDF.
 
     Args:
-        refdata : xarray dataset
+        refdata: xarray dataset
             Dataset used as reference in comparison
-        refstr  : str OR list of str
+        refstr : str OR list of str
             String description for reference data to be used in plots
             OR list containing [ref1str, ref2str] for diff-of-diffs plots
-        devdata : xarray dataset
+        devdata: xarray dataset
             Dataset used as development in comparison
-        devstr  : str OR list of str
+        devstr : str OR list of str
             String description for development data to be used in plots
             OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
-        varlist : list of strings
+        varlist: list of strings
             List of xarray dataset variable names to make plots for
             Default value: None (will compare all common 3D variables)
-        itime : integer
+        itime: integer
             Dataset time dimension index using 0-based system
             Default value: 0
-        refmet : xarray dataset
+        refmet: xarray dataset
             Dataset containing ref meteorology
             Default value: None
-        devmet : xarray dataset
+        devmet: xarray dataset
             Dataset containing dev meteorology
             Default value: None
-        weightsdir : str
+        weightsdir: str
             Directory path for storing regridding weights
             Default value: None (will create/store weights in
             current directory)
-        pdfname : str
+        pdfname: str
             File path to save plots as PDF
             Default value: Empty string (will not create PDF)
-        cmpres : str
+        cmpres: str
             String description of grid resolution at which
             to compare datasets
             Default value: None (will compare at highest resolution
             of Ref and Dev)
-        match_cbar : bool
+        match_cbar: bool
             Set this flag to True to use same the colorbar bounds
             for both Ref and Dev plots.
             Default value: True
-        pres_range : list of two integers
+        pres_range: list of two integers
             Pressure range of levels to plot [hPa]. The vertical axis will
             span the outer pressure edges of levels that contain pres_range
             endpoints.
             Default value: [0,2000]
-        normalize_by_area : bool
+        normalize_by_area: bool
             Set this flag to True to to normalize raw data in both
             Ref and Dev datasets by grid area. Input ref and dev datasets
             must include AREA variable in m2 if normalizing by area.
             Default value: False
-        enforce_units : bool
+        enforce_units: bool
             Set this flag to True force an error if the variables in
             the Ref and Dev datasets have different units.
             Default value: True
-        convert_to_ugm3 : str
+        convert_to_ugm3: str
             Whether to convert data units to ug/m3 for plotting.
             Default value: False
-        flip_ref : bool
+        flip_ref: bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
             Default value: False
-        flip_dev : bool
+        flip_dev: bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Dev dataset.
             Default value: False
-        use_cmap_RdBu : bool
+        use_cmap_RdBu: bool
             Set this flag to True to use a blue-white-red colormap for
             plotting raw reference and development datasets.
             Default value: False
-        verbose : logical
+        verbose: logical
             Set this flag to True to enable informative printout.
             Default value: False
         log_color_scale: bool
             Set this flag to True to enable plotting data (not diffs)
             on a log color scale.
             Default value: False
-        log_yaxis : bool
+        log_yaxis: bool
             Set this flag to True if you wish to create zonal mean
             plots with a log-pressure Y-axis.
             Default value: False
-        extra_title_txt : str
+        extra_title_txt: str
             Specifies extra text (e.g. a date string such as "Jan2016")
             for the top-of-plot title.
             Default value: None
-        n_job : int
+        n_job: int
             Defines the number of simultaneous workers for parallel plotting.
             Set to 1 to disable parallel plotting. 
             Value of -1 allows the application to decide.
@@ -1541,34 +1541,34 @@ def compare_zonal_mean(
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
-        second_ref : xarray Dataset
+        second_ref: xarray Dataset
             A dataset of the same model type / grid as refdata, 
             to be used in diff-of-diffs plotting.
             Default value: None
-        second_dev : xarray Dataset
+        second_dev: xarray Dataset
             A dataset of the same model type / grid as devdata, 
             to be used in diff-of-diffs plotting.
             Default value: None
-        spcdb_dir  : str
+        spcdb_dir : str
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
-        sg_ref_path : str
+        sg_ref_path: str
             Path to NetCDF file containing stretched-grid info 
             (in attributes) for the ref dataset
             Default value: '' (will not be read in)
-        sg_dev_path : str
+        sg_dev_path: str
             Path to NetCDF file containing stretched-grid info 
             (in attributes) for the dev dataset
             Default value: '' (will not be read in)
-        ref_vert_params : list(AP, BP) of list-like types
+        ref_vert_params: list(AP, BP) of list-like types
             Hybrid grid parameter A in hPa and B (unitless). 
             Needed if ref grid is not 47 or 72 levels.
             Default value: [[], []]
-        dev_vert_params : list(AP, BP) of list-like types
+        dev_vert_params: list(AP, BP) of list-like types
             Hybrid grid parameter A in hPa and B (unitless). 
             Needed if dev grid is not 47 or 72 levels.
             Default value: [[], []]
-        extra_plot_args : various
+        extra_plot_args: various
             Any extra keyword arguments are passed through the plotting functions to be used
             in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
     """
@@ -2443,23 +2443,23 @@ def normalize_colors(vmin, vmax, is_difference=False,
     taking the log of data that is all zeroes.
 
     Args:
-        vmin : float
+        vmin: float
             Minimum value of the data range.
-        vmax : float
+        vmax: float
             Maximum value of the data range.
 
     Keyword Args (optional):
-        is_difference : bool
+        is_difference: bool
             Set this switch to denote that we are using a difference
             color scale (i.e. with zero in the middle of the range).
             Default value: False
-        log_color_scale : bool
+        log_color_scale: bool
             Logical flag to denote that we are using a logarithmic
             color scale instead of a linear color scale.
             Default value: False
 
     Returns:
-        norm : matplotlib Norm
+        norm: matplotlib Norm
             The normalized matplotlib color range, stored in
             a matplotlib Norm object.
 
@@ -2535,92 +2535,92 @@ def single_panel(plot_vals,
     Core plotting routine -- creates a single plot panel.
 
     Args:
-        plot_vals : xarray DataArray or numpy array
+        plot_vals: xarray DataArray or numpy array
             Single data variable GEOS-Chem output to plot
 
     Keyword Args (Optional):
-        ax : matplotlib axes
+        ax: matplotlib axes
             Axes object to plot information
             Default value: None (Will create a new axes)
-        plot_type : str
+        plot_type: str
             Either "single_level" or "zonal_mean"
             Default value: "single_level"
-        grid : dict
+        grid: dict
             Dictionary mapping plot_vals to plottable coordinates
             Default value: {} (will attempt to read grid from plot_vals)
-        gridtype : str
+        gridtype: str
             "ll" for lat/lon or "cs" for cubed-sphere
             Default value: "" (will automatically determine from grid)
-        title : str
+        title: str
             Title to put at top of plot
             Default value: "fill" (will use name attribute of plot_vals if available)
-        comap : matplotlib Colormap
+        comap: matplotlib Colormap
             Colormap for plotting data values
             Default value: WhGrYlRd
-        norm : list
+        norm: list
             List with range [0..1] normalizing color range for matplotlib methods
             Default value: [] (will determine from plot_vals)
-        unit : str
+        unit: str
             Units of plotted data
             Default value: "" (will use units attribute of plot_vals if available)
-        extent : tuple (minlon, maxlon, minlat, maxlat)
+        extent: tuple (minlon, maxlon, minlat, maxlat)
             Describes minimum and maximum latitude and longitude of input data
             Default value: (None, None, None, None) (Will use full extent of plot_vals
             if plot is single level.
-        masked_data : numpy array
+        masked_data: numpy array
             Masked area for avoiding near-dateline cubed-sphere plotting issues
             Default value: None (will attempt to determine from plot_vals)
-        use_cmap_RdBu : bool
+        use_cmap_RdBu: bool
             Set this flag to True to use a blue-white-red colormap
             Default value: False
-        log_color_scale : bool
+        log_color_scale: bool
             Set this flag to True to use a log-scale colormap
             Default value: False
-        add_cb : bool
+        add_cb: bool
             Set this flag to True to add a colorbar to the plot
             Default value: True
-        pres_range : list(int)
+        pres_range: list(int)
             Range from minimum to maximum pressure for zonal mean plotting
             Default value: [0, 2000] (will plot entire atmosphere)
-        pedge : numpy array
+        pedge: numpy array
             Edge pressures of vertical grid cells in plot_vals 
             for zonal mean plotting
             Default value: np.full((1, 1), -1) (will determine automatically)
-        pedge_ind : numpy array
+        pedge_ind: numpy array
             Index of edge pressure values within pressure range in plot_vals
             for zonal mean plotting
             Default value: np.full((1, 1), -1) (will determine automatically)
-        log_yaxis : bool
+        log_yaxis: bool
             Set this flag to True to enable log scaling of pressure in zonal mean plots
             Default value: False
-        xtick_positions : list(float)
+        xtick_positions: list(float)
             Locations of lat/lon or lon ticks on plot
             Default value: [] (will place automatically for zonal mean plots)
-        xticklabels : list(str)
+        xticklabels: list(str)
             Labels for lat/lon ticks
             Default value: [] (will determine automatically from xtick_positions)
-        proj : cartopy projection
+        proj: cartopy projection
             Projection for plotting data
             Default value: ccrs.PlateCarree()
-        sg_path : str
+        sg_path: str
             Path to NetCDF file containing stretched-grid info (in attributes) for plot_vals
             Default value: '' (will not be read in)
-        ll_plot_func : str
+        ll_plot_func: str
             Function to use for lat/lon single level plotting with possible values
             'imshow' and 'pcolormesh'. imshow is much faster but is slightly displaced
             when plotting from dateline to dateline and/or pole to pole.
             Default value: 'imshow'
-        vert_params : list(AP, BP) of list-like types
+        vert_params: list(AP, BP) of list-like types
             Hybrid grid parameter A in hPa and B (unitless). Needed if grid is not 47 or 72 levels.
             Default value: [[], []]
-        pdfname : str
+        pdfname: str
             File path to save plots as PDF
             Default value: "" (will not create PDF)
-        extra_plot_args : various
+        extra_plot_args: various
             Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
 
     Returns:
-        plot : matplotlib plot
+        plot: matplotlib plot
             Plot object created from input
     """
 
