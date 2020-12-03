@@ -733,7 +733,7 @@ if cons_table:
         
         # Get monthly restart files in the gcc refrst directory
         datafiles = get_filepaths(gcc_vs_gcc_refrstdir, col, all_months,
-                                  is_gchp=False)
+                                  is_gchp=False)[0]
         
         # Make mass conservation table
         bmk.make_benchmark_mass_conservation_table(
@@ -749,7 +749,7 @@ if cons_table:
         
         # Get monthly restart files in the gcc devrst directory
         datafiles = get_filepaths(gcc_vs_gcc_devrstdir, col, all_months,
-                                  is_gchp=False)
+                                  is_gchp=False)[0]
         
         if gchp_vs_gcc:
             tablesdir=gchp_vs_gcc_tablesdir
@@ -770,7 +770,7 @@ if cons_table:
         
         # Get monthly restart files in the gcc devrst directory
         datafiles = get_filepaths(gchp_vs_gcc_devrstdir, col, all_months,
-                                  is_gchp=True)
+                                  is_gchp=True)[0]
         
         if gchp_vs_gcc:
             tablesdir=gchp_vs_gcc_tablesdir
@@ -791,7 +791,7 @@ if cons_table:
         
         # Get monthly restart files in the gcc devrst directory
         datafiles = get_filepaths(gchp_vs_gchp_refrstdir, col, all_months,
-                                  is_gchp=True)
+                                  is_gchp=True)[0]
         
         # Make mass conservation table
         bmk.make_benchmark_mass_conservation_table(

@@ -4018,9 +4018,8 @@ def make_benchmark_mass_conservation_table(
     # Calculate global mass for the tracer at all restart dates
     # ==================================================================
     for f in datafiles:
-        
         ds = xr.open_dataset(f, drop_variables=gcon.skip_these_vars)
-
+        
         # Save date in desired format
         #datestr = str(pd.to_datetime(ds.time.values[0]))
         #dates.append(datestr[:4] + '-' + datestr[5:7] + '-' + datestr[8:10])
