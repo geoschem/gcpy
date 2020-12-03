@@ -24,7 +24,7 @@ Wiki <http://wiki.seas.harvard.edu/geos-chem/index.php/Main_Page>`__.
 
 .. toctree::
    :maxdepth: 4
-   :caption: Detailed Functionality Documentation:
+   :caption: Usage Details:
    
    Plotting
    Tabling
