@@ -97,7 +97,7 @@ gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
 # Name to be used for directory of output from this script
-results_dir = "Results"
+results_dir = "BenchmarkResults"
 
 # Path to regridding weights
 weightsdir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights"
@@ -732,7 +732,7 @@ if cons_table:
         print("\n%%% Creating GCC ref mass conservation table")
         
         # Get monthly restart files in the gcc refrst directory
-        datafiles = get_filepaths(gcc_vs_gcc_refrstdir, col, all_months,
+        datafiles = get_filepaths(gcc_vs_gcc_refrstdir, col, all_months_ref,
                                   is_gchp=False)[0]
         
         # Make mass conservation table
@@ -748,7 +748,7 @@ if cons_table:
         print("\n%%% Creating GCC dev mass conservation table")
         
         # Get monthly restart files in the gcc devrst directory
-        datafiles = get_filepaths(gcc_vs_gcc_devrstdir, col, all_months,
+        datafiles = get_filepaths(gcc_vs_gcc_devrstdir, col, all_months_dev,
                                   is_gchp=False)[0]
         
         if gchp_vs_gcc:
@@ -769,7 +769,7 @@ if cons_table:
         print("\n%%% Creating GCHP dev mass conservation table")
         
         # Get monthly restart files in the gcc devrst directory
-        datafiles = get_filepaths(gchp_vs_gcc_devrstdir, col, all_months,
+        datafiles = get_filepaths(gchp_vs_gcc_devrstdir, col, all_months_dev,
                                   is_gchp=True)[0]
         
         if gchp_vs_gcc:
@@ -790,7 +790,7 @@ if cons_table:
         print("\n%%% Creating GCHP ref mass conservation table")
         
         # Get monthly restart files in the gcc devrst directory
-        datafiles = get_filepaths(gchp_vs_gchp_refrstdir, col, all_months,
+        datafiles = get_filepaths(gchp_vs_gchp_refrstdir, col, all_months_ref,
                                   is_gchp=True)[0]
         
         # Make mass conservation table
