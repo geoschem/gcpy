@@ -10,7 +10,7 @@ import xarray as xr
 import pandas as pd
 import scipy.sparse
 import warnings
-
+from distutils.version import LooseVersion
 
 def make_regridder_L2L(
         llres_in, llres_out, weightsdir='.', reuse_weights=False,
@@ -65,6 +65,12 @@ def make_regridder_L2L(
         weightsfile = os.path.join(
             weightsdir, 'conservative_{}_{}_{}_{}.nc'.format(
                 llres_in, llres_out, in_extent_str, out_extent_str))
+        
+    if not os.path.isfile(weightsfile) and reuse_weights and \
+       LooseVersion(xe.__version__) > LooseVersion("0.3.0"):
+        #catch error when working with more recent versions of xesmf
+        reuse_weights=False
+        
     try:
         regridder = xe.Regridder(
             llgrid_in,
@@ -128,6 +134,12 @@ def make_regridder_C2L(csres_in, llres_out, weightsdir='.',
         else:
             weights_fname = f'conservative_sg{sg_hash(csres_in, sf_in, tlat_in, tlon_in)}_ll{llres_out}_F{i}.nc'
             weightsfile = os.path.join(weightsdir, weights_fname)
+            
+        if not os.path.isfile(weightsfile) and reuse_weights and \
+           LooseVersion(xe.__version__) > LooseVersion("0.3.0"):
+            #catch error when working with more recent versions of xesmf
+            reuse_weights=False
+
         try:
             regridder = xe.Regridder(
                 csgrid_list[i],
@@ -210,13 +222,18 @@ def make_regridder_S2S(
         regridder_list.append({})
         for i_face in range(6):
             weights_fname = f'conservative_sg{sg_hash(csres_in, sf_in, tlat_in, tlon_in)}_F{i_face}_sg{sg_hash(csres_out, sf_out, tlat_out, tlon_out)}_F{o_face}.nc'
-            weights_file = os.path.join(weightsdir, weights_fname)
-            reuse_weights = os.path.exists(weights_file)
+            weightsfile = os.path.join(weightsdir, weights_fname)
+            reuse_weights = os.path.exists(weightsfile)
+            if not os.path.isfile(weightsfile) and reuse_weights and \
+               LooseVersion(xe.__version__) > LooseVersion("0.3.0"):
+                #catch error when working with more recent versions of xesmf
+                reuse_weights=False
+
             try:
                 regridder = xe.Regridder(igrid_list[i_face],
                                          ogrid_list[o_face],
                                          method='conservative',
-                                         filename=weights_file,
+                                         filename=weightsfile,
                                          reuse_weights=reuse_weights)
                 regridder_list[-1][i_face] = regridder
             except ValueError:
@@ -273,6 +290,11 @@ def make_regridder_L2S(llres_in, csres_out, weightsdir='.',
         else:
             weights_fname = f'conservative_ll{llres_in}_sg{sg_hash(csres_out, *sg_params)}_F{i}.nc'
             weightsfile = os.path.join(weightsdir, weights_fname)
+        if not os.path.isfile(weightsfile) and reuse_weights and \
+           LooseVersion(xe.__version__) > LooseVersion("0.3.0"):
+            #catch error when working with more recent versions of xesmf
+            reuse_weights=False
+
         try:
             regridder = xe.Regridder(
                 llgrid,
