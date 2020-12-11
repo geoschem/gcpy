@@ -115,7 +115,7 @@ class _GlobVars:
                             "*.StateMet.{}*.nc4".format(self.y0_str))
 
             # Set a logical if we need to read StateMet_avg or StateMet
-            gchp_use_statemet_avg  = os.path.isfile(glob(StateMetAvg)[0])
+            gchp_use_statemet_avg  = os.path.exists(StateMetAvg)
 
         else:
             StateMet = join(self.devdir,

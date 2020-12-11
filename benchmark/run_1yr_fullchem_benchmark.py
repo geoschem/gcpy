@@ -860,7 +860,6 @@ if gchp_vs_gcc:
             # Time & date quantities
             reftime = bmk_mons_ref[t]
             devtime = bmk_mons_dev[t]
-            extratime = bmk_mons_dev[t+1]
             datestr = bmk_mon_yr_strs_dev[t]
             label = "at 01{}".format(datestr)
 
@@ -877,6 +876,7 @@ if gchp_vs_gcc:
                 dev = join(gchp_vs_gcc_devrstdir,
                            'initial_GEOSChem_rst.' + gchp_dev_res +
                            '_benchmark.nc')
+                extratime = bmk_mons_dev[t+1]
                 dev_extra = get_filepath(gchp_vs_gcc_devrstdir, col,
                                          extratime, is_gchp=True)
 
@@ -895,7 +895,7 @@ if gchp_vs_gcc:
             )
 
         results = Parallel(n_jobs=-1)\
-            (delayed(parallel_mass_table) (t) for t in range(bmk_months))
+            (delayed(parallel_mass_table) (t) for t in range(bmk_n_months))
 
     #---------------------------------------------------------------
     # GCHP vs GCC operations budgets tables
