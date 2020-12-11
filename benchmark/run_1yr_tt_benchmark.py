@@ -286,6 +286,7 @@ if gcc_vs_gcc:
         # Diagnostic collections to read
         col = "SpeciesConc"
         colmet = "StateMet"
+        colmet_gchp="StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Create concentration plots for each benchmark month
         for t in range(bmk_n_months):
@@ -298,7 +299,7 @@ if gcc_vs_gcc:
             # Seasonal diagnostic collection files to read
             ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
             dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
-            refmet = get_filepath(gcc_vs_gcc_refdir, colmet, reftime)
+            refmet = get_filepath(gcc_vs_gcc_refdir, colmet_gchp, reftime)
             devmet = get_filepath(gcc_vs_gcc_devdir, colmet, devtime)
 
             bmk.make_benchmark_conc_plots(
@@ -326,6 +327,7 @@ if gcc_vs_gcc:
         # Diagnostic collection files to read
         cols = ["WetLossConv", "WetLossLS"]
         colmet = "StateMet"
+        colmet_gchp="StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Loop over wet deposition collections and benchmark months
         for col in cols:
@@ -339,7 +341,7 @@ if gcc_vs_gcc:
                  # Seasonal diagnostic collection files to read
                 ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
                 dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
-                refmet = get_filepath(gcc_vs_gcc_refdir, colmet, reftime)
+                refmet = get_filepath(gcc_vs_gcc_refdir, colmet_gchp, reftime)
                 devmet = get_filepath(gcc_vs_gcc_devdir, colmet, devtime)
 
                 # Make wet deposition plots
@@ -440,8 +442,8 @@ if gchp_vs_gcc:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        #colmet = "StateMet"
-        colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
+        colmet = "StateMet"
+        colmet_gchp = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Create concentration plots for each benchmark month
         for t in range(bmk_n_months):
@@ -482,8 +484,8 @@ if gchp_vs_gcc:
 
         # Create separate set of plots for each wetdep collection
         cols = ["WetLossConv", "WetLossLS"]
-        #colmet = "StateMet"
-        colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
+        colmet = "StateMet"
+        colmet_gchp = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Create plots for each collection and benchmark month
         for col in cols:
@@ -581,7 +583,7 @@ if gchp_vs_gchp:
 
         # Diagnostic collections to read
         col = "SpeciesConc"
-        #colmet = "StateMet"
+        colmet = "StateMet"
         colmet_gchp = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Create concentration plots for each benchmark month
@@ -597,12 +599,8 @@ if gchp_vs_gchp:
                                is_gchp=True)
             dev = get_filepath(gchp_vs_gchp_devdir, col, devtime,
                                is_gchp=True)
-            refmet = get_filepath(gchp_vs_gchp_refdir, colmet, devtime,
+            refmet = get_filepath(gchp_vs_gchp_refdir, colmet_gchp, devtime,
                                   is_gchp=True)
-
-            # Use this for benchmark prior to 13.0
-            #devmet = get_filepath(gchp_vs_gchp_devdir, colmet_gchp, devtime,
-            #                      is_gchp=True)
             devmet = get_filepath(gchp_vs_gchp_devdir, colmet, devtime,
                                   is_gchp=True)
 
@@ -632,8 +630,8 @@ if gchp_vs_gchp:
 
         # Create separate set of plots for each wetdep collection
         cols = ["WetLossConv", "WetLossLS"]
-        #colmet = "StateMet"
-        colmet = "StateMet_avg" # Use this for benchmarks prior to 13.0
+        colmet = "StateMet"
+        colmet_gchp = "StateMet_avg" # Use this for benchmarks prior to 13.0
 
         # Create plots for each collection and benchmark month
         for col in cols:
@@ -649,7 +647,7 @@ if gchp_vs_gchp:
                                    is_gchp=True)
                 dev = get_filepath(gchp_vs_gchp_devdir, col, devtime,
                                    is_gchp=True)
-                refmet = get_filepath(gchp_vs_gchp_refdir, colmet, reftime,
+                refmet = get_filepath(gchp_vs_gchp_refdir, colmet_gchp, reftime,
                                       is_gchp=True)
                 devmet = get_filepath(gchp_vs_gchp_devdir, colmet, devtime,
                                       is_gchp=True)
