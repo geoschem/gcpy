@@ -242,7 +242,13 @@ def file_regrid(
 
     ds_out = ds_out.assign_coords({'time': time})
     # correct precision changes (accidental 32-bit to 64-bit)
+    # save attributes (no longer needed in xarray >=0.16.1)
+    attrs = ds_out.attrs
+    data_attrs = {var : ds_out[str(var)].attrs for var in list(ds_out.variables)}
     ds_out = ds_out.astype(original_dtype)
+    for var in list(ds_out.variables):
+        ds_out[str(var)].attrs = data_attrs[var]
+    ds_out.attrs = attrs
     # Write dataset
     ds_out.to_netcdf(
         fout,

@@ -4039,9 +4039,13 @@ def make_benchmark_mass_conservation_table(
         # ==============================================================
         # Select for GCC or GCHP
         if 'SpeciesRst_PassiveTracer' in list(ds.data_vars):
+            attrs = ds['SpeciesRst_PassiveTracer'].attrs
             da = ds['SpeciesRst_PassiveTracer'].astype(np.float64)
+            da.attrs = attrs
         else:
+            attrs = ds['SPC_PassiveTracer'].attrs
             da = ds['SPC_PassiveTracer'].astype(np.float64)
+            da.attrs = attrs
         da = convert_units(
                 da,
                 spc_name,
