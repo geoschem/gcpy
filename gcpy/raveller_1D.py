@@ -83,20 +83,67 @@ def create_track_func(args):
 
 
 def unravel_func(args):
+    def time_to_time_of_day(ds, numpy_time_unit='ns'):
+        # Get mode date
+        (unique_dates, date_counts) = np.unique(ds.time.astype('datetime64[D]'), return_counts=True)
+        mode_date = unique_dates[np.argmax(date_counts)]
+        time_of_day = (ds.time - mode_date).astype(f'timedelta64[{numpy_time_unit}]')
+        return ds.assign_coords(time=time_of_day), mode_date
+
+    def find_shift(tracked_output, track_file):
+        output_time = tracked_output.time.values.astype(float) / 1e9 / 3600 % 24
+        track_time = track_file.time.values.astype(float) / 1e9 / 3600 % 24
+
+        def score(shift):
+            return np.sum(np.abs(np.concatenate([output_time[shift:], output_time[:shift]]) - track_time))
+
+        def has_converged(absdiff, curr_min, n=10):
+            return len(absdiff) > n and np.all(absdiff[-n:] - curr_min > 0)
+
+        absdiff = []
+        shift = 0
+        curr_min = score(shift)
+
+        for shift in range(len(track_time)):
+            absdiff.append(score(shift))
+            curr_min = min(curr_min, absdiff[-1])
+            if has_converged(absdiff, curr_min, n=20):
+                break
+
+        return np.argmin(absdiff)
+
+    # Load track file and 1D output
     track = xr.open_dataset(args.track)
-    track_mi = pd.MultiIndex.from_arrays([track.nf, track.Ydim, track.Xdim])
+    tracked_output = xr.open_dataset(args.i)
+
+    # Convert time coordinate to time of day
+    track, _ = time_to_time_of_day(track)
+    tracked_output, tracked_output_date = time_to_time_of_day(tracked_output)
+
+    # The 1D output is shifted---find how much we need to roll backwards
+    shift = find_shift(tracked_output, track)
+    tracked_output = tracked_output.roll(dict(time=-shift))
+
+    # Create a multiindex for nf,Ydim,Xdim
+    track_mi = pd.MultiIndex.from_arrays([track.nf.values, track.Ydim.values, track.Xdim.values], names=['nf', 'Ydim', 'Xdim'])
     track = track.drop(['nf', 'Ydim', 'Xdim', 'latitude', 'longitude'])
 
-    ds = xr.open_dataset(args.i)
+    # Merge datasets
+    tracked_output = tracked_output
+    tracked_output = tracked_output.assign_coords({'time': track.time})
+    tracked_output = xr.merge([tracked_output, track], compat='equals')
 
-    ds = ds.reindex({'time': track.time}, method='nearest')
-    ds = xr.merge([ds, track], compat='no_conflicts')
+    # Unstack time coordinate (1D index)
+    tracked_output = tracked_output.assign_coords({'time': track_mi})
+    tracked_output = tracked_output.unstack('time')
 
-    ds = ds.assign_coords({'time': track_mi})
-    ds = ds.unstack('time')
-    ds = ds.sortby(['nf', 'Ydim', 'Xdim'])
+    # Remake time coordinate
+    tracked_output = tracked_output.expand_dims(dim='time')
+    tracked_output.assign_coords({'time': [tracked_output_date]})
 
-    ds.to_netcdf(args.o)
+    tracked_output.to_netcdf(args.o)
+
+
 
 
 if __name__ == '__main__':
