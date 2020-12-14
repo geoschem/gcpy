@@ -91,11 +91,11 @@ gchp_ref_version = "GCHP_ref"
 gchp_dev_version = "GCHP_dev"
 
 #dates of ref and dev runs
-gcc_ref_bmk_year  = '2016'
+gcc_ref_bmk_year  = '2019'
 gcc_ref_bmk_mon   = '7'
 gcc_dev_bmk_year  = '2019'
 gcc_dev_bmk_mon   = '7'
-gchp_ref_bmk_year = '2016'
+gchp_ref_bmk_year = '2019'
 gchp_ref_bmk_mon  = '7'
 gchp_dev_bmk_year = '2019'
 gchp_dev_bmk_mon  = '7'
@@ -563,12 +563,12 @@ if gcc_vs_gcc:
         ste.make_benchmark_ste_table(
             gcc_dev_version,
             dev,
-            dev_b_start[0],
+            gcc_dev_b_start[0],
             bmk_type=bmk_type,
             dst=gcc_vs_gcc_tablesdir,
             species=['O3'],
             overwrite=True,
-            month=dev_b_start[1]
+            month=gcc_dev_b_start[1]
         )
 
 # ======================================================================

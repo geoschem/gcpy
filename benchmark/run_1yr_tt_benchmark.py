@@ -69,8 +69,8 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 # This script has a fixed benchmark type, year, and months
 bmk_type     = "TransportTracersBenchmark"
-bmk_year_ref = '2016'
-bmk_year_dev = '2016'
+bmk_year_ref = '2019'
+bmk_year_dev = '2019'
 bmk_mon_strs = ["Jan", "Apr", "Jul", "Oct"]
 bmk_mon_inds = [0, 3, 6, 9]
 bmk_n_months = len(bmk_mon_strs)
@@ -299,7 +299,7 @@ if gcc_vs_gcc:
             # Seasonal diagnostic collection files to read
             ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
             dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
-            refmet = get_filepath(gcc_vs_gcc_refdir, colmet_gchp, reftime)
+            refmet = get_filepath(gcc_vs_gcc_refdir, colmet, reftime)
             devmet = get_filepath(gcc_vs_gcc_devdir, colmet, devtime)
 
             bmk.make_benchmark_conc_plots(
@@ -341,7 +341,7 @@ if gcc_vs_gcc:
                  # Seasonal diagnostic collection files to read
                 ref = get_filepath(gcc_vs_gcc_refdir, col, reftime)
                 dev = get_filepath(gcc_vs_gcc_devdir, col, devtime)
-                refmet = get_filepath(gcc_vs_gcc_refdir, colmet_gchp, reftime)
+                refmet = get_filepath(gcc_vs_gcc_refdir, colmet, reftime)
                 devmet = get_filepath(gcc_vs_gcc_devdir, colmet, devtime)
 
                 # Make wet deposition plots
@@ -525,7 +525,6 @@ if gchp_vs_gcc:
     # --------------------------------------------------------------
     if rnpbbe_budget:
         print("\n%%% Creating GCHP vs. GCC radionuclides budget table %%%")
-
         # Make radionuclides budget table
         ttbdg.transport_tracers_budgets(
             gchp_dev_version,
@@ -599,7 +598,7 @@ if gchp_vs_gchp:
                                is_gchp=True)
             dev = get_filepath(gchp_vs_gchp_devdir, col, devtime,
                                is_gchp=True)
-            refmet = get_filepath(gchp_vs_gchp_refdir, colmet_gchp, devtime,
+            refmet = get_filepath(gchp_vs_gchp_refdir, colmet, devtime,
                                   is_gchp=True)
             devmet = get_filepath(gchp_vs_gchp_devdir, colmet, devtime,
                                   is_gchp=True)
@@ -647,7 +646,7 @@ if gchp_vs_gchp:
                                    is_gchp=True)
                 dev = get_filepath(gchp_vs_gchp_devdir, col, devtime,
                                    is_gchp=True)
-                refmet = get_filepath(gchp_vs_gchp_refdir, colmet_gchp, reftime,
+                refmet = get_filepath(gchp_vs_gchp_refdir, colmet, reftime,
                                       is_gchp=True)
                 devmet = get_filepath(gchp_vs_gchp_devdir, colmet, devtime,
                                       is_gchp=True)
