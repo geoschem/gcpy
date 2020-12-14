@@ -3,7 +3,7 @@ channels:
     - defaults
     - conda-forge
 dependencies:
-    - python>=3.6, <3.9       # Python version 3.6
+    - python>=3.6             # Python version 3.6
     - bottleneck              # C-optimized array functions for NumPy
     - cartopy>=0.17.0         # Geographic plotting toolkit
     - cython                  # Transpile Python->C

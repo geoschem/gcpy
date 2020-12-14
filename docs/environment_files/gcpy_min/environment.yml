@@ -3,7 +3,7 @@ channels:
     - defaults
     - conda-forge
 dependencies:
-    - python>=3.6, <3.9       # Python version 3.6
+    - python>=3.6             # Python version 3.6
     - cartopy>=0.17.0         # Geographic plotting toolkit
     - dask>=2.3.0             # Parallel processing library
     - esmpy>=7.1.0            # ESMF for python
