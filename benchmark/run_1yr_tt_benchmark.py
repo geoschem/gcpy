@@ -726,7 +726,7 @@ if cons_table:
 
     # Create mass conservation table for gcc_ref
     if gcc_vs_gcc:        
-        print("\n%%% Creating GCC ref mass conservation table")
+        print("\n%%% Creating GCC ref mass conservation table %%%")
         
         # Get monthly restart files in the gcc refrst directory
         datafiles = get_filepaths(gcc_vs_gcc_refrstdir, col, all_months_ref,
@@ -742,7 +742,7 @@ if cons_table:
         )
 
     if gcc_vs_gcc or gchp_vs_gcc:        
-        print("\n%%% Creating GCC dev mass conservation table")
+        print("\n%%% Creating GCC dev mass conservation table %%%")
         
         # Get monthly restart files in the gcc devrst directory
         datafiles = get_filepaths(gcc_vs_gcc_devrstdir, col, all_months_dev,
@@ -763,7 +763,7 @@ if cons_table:
         )
     
     if gchp_vs_gcc or gchp_vs_gchp:
-        print("\n%%% Creating GCHP dev mass conservation table")
+        print("\n%%% Creating GCHP dev mass conservation table %%%")
         
         # Get monthly restart files in the gcc devrst directory
         datafiles = get_filepaths(gchp_vs_gcc_devrstdir, col, all_months_dev,
@@ -784,7 +784,7 @@ if cons_table:
         )
 
     if gchp_vs_gchp:
-        print("\n%%% Creating GCHP ref mass conservation table")
+        print("\n%%% Creating GCHP ref mass conservation table %%%")
         
         # Get monthly restart files in the gcc devrst directory
         datafiles = get_filepaths(gchp_vs_gchp_refrstdir, col, all_months_ref,
