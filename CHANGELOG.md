@@ -4,6 +4,14 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.1] - 2021-01-05
+
+### Added
+- Added MSA to Sulfur benchmark category
+
+### Changed
+- Removed carbon-based units from benchmark emissions tables
+
 ## [1.0.0] - 2021-01-05
 
 ### Added
