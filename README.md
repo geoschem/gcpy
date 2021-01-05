@@ -29,7 +29,7 @@ GCPy aims to build on the well-established scientific Python technical stack, le
 
 ## Documentation:
 
-For more information on installing and using GCPy, visit the official documentation at [gcpy.readthedocs.io] (gcpy.readthedocs.io).
+For more information on installing and using GCPy, visit the official documentation at [gcpy.readthedocs.io](https://gcpy.readthedocs.io/).
 
 
 ## License
