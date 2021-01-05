@@ -1,4 +1,4 @@
-# GEOS-Chem Species Database (23 Jul 2020)
+# GEOS-Chem Species Database
 # Core species only (neglecting microphysics)
 # NOTE: Anchors must be defined before any variables that reference them
 A3O2:
@@ -9,7 +9,6 @@ A3O2:
 ACET:
   DD_F0: 1.0
   DD_Hstar: 1.0e+5
-  EmMW_g: 12.0
   Formula: CH3C(O)CH3
   FullName: Acetone
   Henry_CR: 5500.0
@@ -18,7 +17,6 @@ ACET:
   Is_DryDep: true
   Is_Gas: true
   Is_Photolysis: true
-  MolecRatio: 3.0
   MW_g: 58.09
 ACTA:
   DD_F0: 1.0
@@ -51,7 +49,6 @@ AERI:
 ALD2:
   DD_F0: 1.0
   DD_Hstar: 1.1e+1
-  EmMW_g: 12.0
   Formula: CH3CHO
   FullName: Acetaldehyde
   Henry_CR: 5900.0
@@ -62,15 +59,12 @@ ALD2:
   Is_Photolysis: true
   Is_WetDep: true
   MW_g: 44.06
-  MolecRatio: 2.0
   WD_RetFactor: 2.0e-2
 ALK4:
-  EmMW_g: 12.0
   FullName: Lumped >= C4 Alkanes
   Is_Advected: true
   Is_Gas: true
   MW_g: 58.12
-  MolecRatio: 4.3
 ASOA_PROP: &ASOAproperties
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
@@ -170,10 +164,11 @@ BCPO:
 Be_PROP: &Beproperties
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_HStar: 0.0
+  DD_Hstar: 0.0
   Is_Advected: true
-  Is_DryDep: true
   Is_Aerosol: true
+  Is_DryDep: true
+  Is_RadioNuclide: true
   Is_WetDep: true
   WD_AerScavEff: 1.0
   WD_KcScaleFac: [1.0, 0.5, 1.0]
@@ -199,13 +194,11 @@ Be7Strat:
   FullName: Beryllium-7 isotope in stratosphere
   MW_g: 7.0
 BENZ:
-  EmMW_g: 12.0
   Formula: C6H6
   FullName: Benzene
   Is_Advected: true
   Is_Gas: true
   MW_g: 78.12
-  MolecRatio: 6.0
 Br:
   Formula: Br
   FullName: Atomic bromine
@@ -318,7 +311,6 @@ C2H4:
   Is_Gas: true
   MW_g: 28.05
 C2H6:
-  EmMW_g: 12.0
   Formula: C2H6
   FullName: Ethane
   Henry_CR: 2400.0
@@ -326,9 +318,7 @@ C2H6:
   Is_Advected: true
   Is_Gas: true
   MW_g: 30.08
-  MolecRatio: 2.0
 C3H8:
-  EmMW_g: 12.0
   Formula: C3H8
   FullName: Propane
   Henry_CR: 2400.0
@@ -336,7 +326,6 @@ C3H8:
   Is_Advected: true
   Is_Gas: true
   MW_g: 44.11
-  MolecRatio: 3.0
 C4HVP1:
   Formula: C4H7O3
   FullName: C4 hydroxy-vinyl peroxy radicals from HPALDS
@@ -495,7 +484,7 @@ CH4_PROP: &CH4properties
   MW_g: 16.05
 CH4:
   << : *CH4properties
-  Background_VV: 1.7e-6
+  Background_VV: 1.8e-6
   FullName: Methane
 CH4_BBN:
   << : *CH4properties
@@ -639,6 +628,12 @@ ClOO:
   Henry_K0: 1.0
   Henry_CR: 3500.0
   MW_g: 67.45
+CLOCK:
+  Background_VV: 0.0
+  FullName: Clock tracer for diagnosing age of air
+  Is_Advected: true
+  Is_Gas: true
+  MW_g: 1.0
 CO2_PROP: &CO2properties
   Formula: CO2
   Is_Gas: true
@@ -870,7 +865,6 @@ DSTAL4:
 EOH:
   DD_F0: 0.0
   DD_Hstar: 1.9e+2
-  EmMW_g: 12.0
   Formula: C2H5OH
   FullName: Ethanol
   Henry_CR: 6400.0
@@ -880,7 +874,6 @@ EOH:
   Is_Gas: true
   Is_WetDep: true
   MW_g: 46.08
-  MolecRatio: 2.0
   WD_RetFactor: 2.0e-2
 ETHLN:
   DD_F0: 1.0
@@ -2113,7 +2106,6 @@ ISALC:
   MW_g: 126.90
   WD_CoarseAer: true
 ISOP:
-  EmMW_g: 12.0
   Formula: CH2=C(CH3)CH=CH2
   FullName: Isoprene
   Henry_CR: 4400.0
@@ -2121,7 +2113,6 @@ ISOP:
   Is_Advected: true
   Is_Gas: true
   MW_g: 68.13
-  MolecRatio: 5.0
 ISOPNOO1:
   Formula: C5H10NO7
   FullName: Peroxy radicals from IHN2
@@ -2168,15 +2159,19 @@ KO2:
 LBRO2H:
   FullName: Dummy species to track oxidation of BRO2 by HO2
   Is_Gas: true
+  MW_g: 159.13
 LBRO2N:
   FullName: Dummy species to track oxidation of BRO2 by NO
   Is_Gas: true
+  MW_g: 159.13
 LCH4:
   FullName: Dummy species to track loss rate of CH4
   Is_Gas: true
+  MW_g: 16.05
 LCO:
   FullName: Dummy species to track loss rate of CO
   Is_Gas: true
+  MW_g: 28.01
 LIMO:
   DD_F0: 0.0
   DD_Hstar: 7.0e-2
@@ -2198,24 +2193,31 @@ LIMO2:
 LISOPNO3:
   FullName: Dummy species to track oxidation of ISOP by NO3
   Is_Gas: true
+  MW_g: 68.13
 LISOPOH:
   FullName: Dummy species to track oxidation of ISOP by OH
   Is_Gas: true
+  MW_g: 68.13
 LNRO2H:
   FullName: Dummy species to track oxidation of NRO2 by HO2
   Is_Gas: true
+  MW_g: 159.17
 LNRO2N:
   FullName: Dummy species to track oxidation of NRO2 by NO
   Is_Gas: true
+  MW_g: 159.17
 LOx:
   FullName: Dummy species to track loss rate of Ox
   Is_Gas: true
+  MW_g: 48.00
 LTRO2H:
   FullName: Dummy species to track oxidation of TRO2 by HO2
   Is_Gas: true
+  MW_g: 173.16
 LTRO2N:
   FullName: Dummy species to track oxidation of TRO2 by NO
   Is_Gas: true
+  MW_g: 173.16
 LVOC:
   DD_F0: 1.0
   DD_Hstar: 1.0e+8
@@ -2232,7 +2234,7 @@ LVOC:
 LVOCOA:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_HStar: 0.0
+  DD_Hstar: 0.0
   Formula: C5H14O5
   FullName: Aer-phase low-volatility non-IEPOX product of RIP ox
   Is_Advected: true
@@ -2246,9 +2248,11 @@ LVOCOA:
 LXRO2H:
   FullName: Dummy species to track oxidation of XRO2 by HO2
   Is_Gas: true
+  MW_g: 187.19
 LXRO2N:
   FullName: Dummy species to track oxidation of XRO2 by NO
   Is_Gas: true
+  MW_g: 187.19
 MACR:
   DD_F0: 1.0
   DD_Hstar: 6.5
@@ -2379,7 +2383,6 @@ MCROHOO:
   Is_Gas: true
   MW_g: 119.11
 MEK:
-  EmMW_g: 12.0
   Formula: RC(O)R
   FullName: Methyl Ethyl Ketone
   Henry_CR: 5700.0
@@ -2389,7 +2392,6 @@ MEK:
   Is_Photolysis: true
   Is_WetDep: true
   MW_g: 72.11
-  MolecRatio: 4.0
   WD_RetFactor: 2.0e-2
 MENO3:
   DD_F0: 0.1
@@ -2743,7 +2745,7 @@ NH4:
   DD_DvzAerSnow: 0.03
   DD_DvzMinVal: [0.01, 0.01]
   DD_F0: 0.0
-  DD_Hstar_old : 0.0
+  DD_Hstar: 0.0
   Formula: NH4
   FullName: Ammonium
   Is_Advected: true
@@ -2868,39 +2870,39 @@ O3:
   Background_VV: 2.0e-8
   FullName: Ozone
   Is_DryAlt: true
-O3AFBL:
+O3afbl:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the African boundary layer
-O3ASBL:
+O3asbl:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the Asian boundary layer
-O3ATBL:
+O3atbl:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the Atlantic Ocean boundary layer
-O3EUBL:
+O3eubl:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the European boundary layer
-O3INIT:
+O3init:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone from the initial condition
-O3MT:
+O3mt:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the middle troposphere
-O3NABL:
+O3nabl:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the North America boundary layer
-O3PCBL:
+O3pcbl:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the Pacific Ocean boundary layer
-O3ROW:
+O3row:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the rest of the world
@@ -2908,11 +2910,11 @@ O3Strat:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the stratosphere
-O3USA:
+O3usa:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced over the United States in PBL
-O3UT:
+O3ut:
   << : *O3properties
   Background_VV: 1.0e-20
   FullName: Ozone produced in the upper troposphere
@@ -3019,7 +3021,7 @@ OPOG1:
   Is_DryDep: true
   Is_Gas: true
   Is_WetDep: true
-  MW:g: 12.01
+  MW_g: 12.01
   WD_RetFactor: 2.0e-2
 OPOG2:
   DD_F0: 0.0
@@ -3030,7 +3032,7 @@ OPOG2:
   Is_DryDep: true
   Is_Gas: true
   Is_WetDep: true
-  MW:g: 12.01
+  MW_g: 12.01
   WD_RetFactor: 2.0e-2
 OTHRO2:
   Formula: CH3CH2OO
@@ -3059,11 +3061,12 @@ PassiveTracer:
 Pb210_PROP: &Pbproperties
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_HStar: 0.0
+  DD_Hstar: 0.0
   Formula: Pb210
   Is_Advected: true
   Is_Aerosol: true
   Is_DryDep: true
+  Is_RadioNuclide: true
   Is_WetDep: true
   MW_g: 210.0
   WD_AerScavEff: 1.0
@@ -3078,6 +3081,7 @@ Pb210Strat:
 PCO:
   FullName: Dummy species to track production rate of CO
   Is_Gas: true
+  MW_g: 28.01
 pFe:
   DD_F0: 0.0
   DD_Hstar: 0.0
@@ -3094,6 +3098,7 @@ pFe:
 PH2O2:
   FullName: Dummy species to track production rate of H2O2
   Is_Gas: true
+  MW_g: 34.02
 PIO2:
   Formula: C10H17O3
   FullName: Peroxy radical from MTPA
@@ -3211,7 +3216,7 @@ POPG_PYR:
 POPPBCPI_BaP:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C20H12
   FullName: Benzo(a)pyrene particles on hydrophilic black carbon
   Is_Aerosol: true
@@ -3224,7 +3229,7 @@ POPPBCPI_BaP:
 POPPBCPI_PHE:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C14H10
   FullName: Phenanthrene particles on hydrophilic black carbon
   Is_Aerosol: true
@@ -3237,7 +3242,7 @@ POPPBCPI_PHE:
 POPPBCPI_PYR:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C16H10
   FullName: Pyrene particles on hydrophilic black carbon
   Is_Aerosol: true
@@ -3250,7 +3255,7 @@ POPPBCPI_PYR:
 POPPBCPO_BaP:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C20H12
   FullName: Benzo(a)pyrene particles on hydrophobic black carbon
   Is_Aerosol: true
@@ -3263,7 +3268,7 @@ POPPBCPO_BaP:
 POPPBCPO_PHE:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C14H10
   FullName: Phenanthrene particles on hydrophobic black carbon
   Is_Aerosol: true
@@ -3276,7 +3281,7 @@ POPPBCPO_PHE:
 POPPBCPO_PYR:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C16H10
   FullName: Pyrene particles on hydrophobic black carbon
   Is_Aerosol: true
@@ -3289,7 +3294,7 @@ POPPBCPO_PYR:
 POPPOCPI_BaP:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C20H12
   FullName: Benzo(a)pyrene particles on hydrophilic organic carbon
   Is_Aerosol: true
@@ -3302,7 +3307,7 @@ POPPOCPI_BaP:
 POPPOCPI_PHE:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C14H10
   FullName: Phenanthrene particles on hydrophilic organic carbon
   Is_Aerosol: true
@@ -3315,7 +3320,7 @@ POPPOCPI_PHE:
 POPPOCPI_PYR:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C16H10
   FullName: Pyrene particles on hydrophilic organic carbon
   Is_Aerosol: true
@@ -3328,7 +3333,7 @@ POPPOCPI_PYR:
 POPPOCPO_BaP:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C20H12
   FullName: Benzo(a)pyrene particles on hydrophobic organic carbon
   Is_Aerosol: true
@@ -3341,7 +3346,7 @@ POPPOCPO_BaP:
 POPPOCPO_PHE:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C14H10
   FullName: Phenanthrene particles on hydrophobic organic carbon
   Is_Aerosol: true
@@ -3354,7 +3359,7 @@ POPPOCPO_PHE:
 POPPOCPO_PYR:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_Hstar_old: 0.0
+  DD_Hstar: 0.0
   Formula: C16H10
   FullName: Pyrene particles on hydrophobic organic carbon
   Is_Aerosol: true
@@ -3367,6 +3372,7 @@ POPPOCPO_PYR:
 POx:
   FullName: Dummy species to track production rate of Ox
   Is_Gas: true
+  MW_g: 48.00
 PP:
   DD_F0: 1.0
   DD_Hstar: 2.94e+2
@@ -3414,7 +3420,6 @@ PROPNN:
   MW_g: 119.08
   WD_RetFactor: 2.0e-2
 PRPE:
-  EmMW_g: 12.0
   Formula: C3H6
   FullName: Lumped >= C3 alkenes
   Henry_CR: 3400.0
@@ -3423,7 +3428,6 @@ PRPE:
   Is_Gas: true
   Is_WetDep: true
   MW_g: 42.09
-  MolecRatio: 3.0
   WD_RetFactor: 2.0e-2
 PRPN:
   DD_F0: 1.0
@@ -3442,6 +3446,7 @@ PRPN:
 PSO4:
   FullName: Dummy species to track production of SO4
   Is_Gas: true
+  MW_g: 96.06
 PYAC:
   DD_F0: 1.0
   DD_Hstar: 3.14e+5
@@ -3603,6 +3608,7 @@ Rn222:
   FullName: Radon-222 isotope
   Is_Advected: true
   Is_Aerosol: true
+  Is_RadioNuclide: true
   MW_g: 222.0
 ROH:
   Formula: C3H7OH
@@ -3691,7 +3697,7 @@ SO4:
   DD_DvzAerSnow: 0.03
   DD_DvzMinVal: [0.01, 0.01]
   DD_F0: 0.0
-  DD_Hstar_Old: 0.0
+  DD_Hstar: 0.0
   Density: 1700.0
   Formula: SO4
   FullName: Sulfate
@@ -3744,7 +3750,7 @@ SO4s:
 SOAGX:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_HStar: 0.0
+  DD_Hstar: 0.0
   Formula: C2H2O2
   FullName: Aerosol-phase glyoxal
   Is_Advected: true
@@ -3758,7 +3764,7 @@ SOAGX:
 SOAIE:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_HStar: 0.0
+  DD_Hstar: 0.0
   Formula: C5H10O3
   FullName: Aerosol-phase IEPOX
   Is_Advected: true
@@ -3777,7 +3783,7 @@ SOAP:
 SOAS:
   DD_DvzAerSnow: 0.03
   DD_F0: 0.0
-  DD_HStar: 0.0
+  DD_Hstar: 0.0
   FullName: SOA Simple - simplified non-volatile SOA parameterization
   Is_Advected: true
   Is_Aerosol: true
@@ -3788,13 +3794,11 @@ SOAS:
   WD_KcScaleFac: [1.0, 0.5, 1.0]
   WD_RainoutEff: [0.8, 0.0, 0.8]
 TOLU:
-  EmMW_g: 12.0
   Formula: C7H8
   FullName: Toluene
   Is_Advected: true
   Is_Gas: true
   MW_g: 92.15
-  MolecRatio: 7.0
 TRO2:
   Formula: C7H9O5
   FullName: Peroxy radical from TOLU oxidation
@@ -3847,10 +3851,8 @@ XRO2:
   Is_Gas: true
   MW_g: 187.19
 XYLE:
-  EmMW_g: 12.0
   Formula: C8H10
   FullName: Xylene
   Is_Advected: true
   Is_Gas: true
   MW_g: 106.18
-  MolecRatio: 8.0
