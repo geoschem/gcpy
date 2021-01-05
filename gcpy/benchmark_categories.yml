@@ -196,6 +196,7 @@ FullChemBenchmark:
     Sulfur:
       - SOx
       - DMS
+      - MSA
       - OCS
       - SO2
       - SO4
