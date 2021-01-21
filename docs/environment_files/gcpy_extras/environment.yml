@@ -1,4 +1,4 @@
-name: gcpy_extras               # All requirements for GCPy, its examples, and extra libraries for scientific analysis
+name: esmf_gcpy_extras               # All requirements for GCPy, its examples, and extra libraries for scientific analysis
 channels:
     - defaults
     - conda-forge
@@ -25,6 +25,7 @@ dependencies:
     - statsmodels             # Regression/modeling toolkit
     - xarray>=0.15.0          # N-d labeled array library. Use older version for compatibility with xbpch
     - sphinx>=2.1.2
+    - xesmf>=0.2.1            # Universal regridder
     - pip:
         # These are additional libraries to search for on PyPI
         - xbpch>=0.3.5        # Interface for bpch output files
@@ -32,7 +33,6 @@ dependencies:
         - h5netcdf            # allow HDF5-backend for xarray
         - joblib>=0.17.0      # Parallel processing for Python
         - pycodestyle>=2.5.0  # tool to check style conventions (formerly pep8)
-        - xesmf>=0.2.1        # Universal regridder
         - PyPDF2>==1.26.0     # PDF utilities, add bookmarks to PDFs etc.
         - sphinx              # Base Sphinx documentation library
         - sphinx_rtd_theme    # ReadTheDocs theme for documentation
