@@ -2713,9 +2713,7 @@ def single_panel(plot_vals,
             if type(plot_vals) is xr.DataArray:
                 z_ind = plot_vals.dims.index('lon')
             # calculate zonal means
-            print(plot_vals)
             plot_vals = plot_vals.mean(axis=z_ind)
-            print(plot_vals)
     if gridtype == "":
         _, gridtype = get_input_res(plot_vals)
     if extent == (None, None, None, None) or extent is None:
