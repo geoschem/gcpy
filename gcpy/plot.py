@@ -2677,10 +2677,8 @@ def single_panel(plot_vals,
 
                 # pmid indexes do not include last pedge index
                 pmid_ind = pedge_ind[:-1]
-
                 # Convert levels to pressures in ref and dev data
                 plot_vals = convert_lev_to_pres(plot_vals, pmid, pedge)
-
                 # get proper levels
                 plot_vals = plot_vals.isel(lev=pmid_ind)
 
@@ -2710,12 +2708,14 @@ def single_panel(plot_vals,
                     new_gridtype,
                     nlev=nlev
                 )
-            # assume z dim is index 0 (no time dim) if a numpy array is passed
-            z_ind = 0
+            # assume z dim is index 2 (no time dim) if a numpy array is passed
+            z_ind = 2
             if type(plot_vals) is xr.DataArray:
-                z_ind = plot_vals.dims.index('lev')
+                z_ind = plot_vals.dims.index('lon')
             # calculate zonal means
+            print(plot_vals)
             plot_vals = plot_vals.mean(axis=z_ind)
+            print(plot_vals)
     if gridtype == "":
         _, gridtype = get_input_res(plot_vals)
     if extent == (None, None, None, None) or extent is None:
