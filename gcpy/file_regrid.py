@@ -17,7 +17,6 @@ from gcpy.grid import get_input_res, get_vert_grid, get_grid_extents
 from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, \
     make_regridder_C2L, make_regridder_L2L
 from gcpy.util import reshape_MAPL_CS
-from tempfile import TemporaryDirectory
 
 def file_regrid(
         fin, fout, dim_format_in, dim_format_out, cs_res_out=0,
