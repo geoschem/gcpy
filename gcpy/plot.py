@@ -2529,6 +2529,7 @@ def single_panel(plot_vals,
                  ll_plot_func="imshow",
                  vert_params=[[], []],
                  pdfname="",
+                 weightsdir='.',
                  **extra_plot_args
                  ):
     """
@@ -2616,6 +2617,9 @@ def single_panel(plot_vals,
         pdfname: str
             File path to save plots as PDF
             Default value: "" (will not create PDF)
+        weightsdir: str
+            Directory path for storing regridding weights
+            Default value: "." (will store regridding files in current directory)
         extra_plot_args: various
             Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
 
@@ -2687,7 +2691,7 @@ def single_panel(plot_vals,
              grid, regridder, _, regridder_list, _] = create_regridders(
                 plot_vals,
                 plot_vals,
-                weightsdir='.',
+                weightsdir=weightsdir,
                 cmpres=None,
                 zm=True,
                 sg_ref_params=sg_params
@@ -2695,7 +2699,6 @@ def single_panel(plot_vals,
             if gridtype == 'cs':
                 plot_vals = reshape_MAPL_CS(plot_vals)
                 nlev = len(plot_vals['lev'])
-
                 # Ref
                 plot_vals = regrid_comparison_data(
                     plot_vals,
