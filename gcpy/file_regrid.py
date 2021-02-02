@@ -1,4 +1,5 @@
 import argparse
+import os
 import numpy as np
 import xarray as xr
 try:
@@ -16,7 +17,7 @@ from gcpy.grid import get_input_res, get_vert_grid, get_grid_extents
 from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, \
     make_regridder_C2L, make_regridder_L2L
 from gcpy.util import reshape_MAPL_CS
-
+from tempfile import TemporaryDirectory
 
 def file_regrid(
         fin, fout, dim_format_in, dim_format_out, cs_res_out=0,
@@ -89,6 +90,8 @@ def file_regrid(
 
     # save type of data for later restoration
     original_dtype = np.dtype(ds_in[list(ds_in.data_vars)[0]])
+
+    oface_files=[]
     if cs_res_in == cs_res_out and all(
             [v1 == v2 for v1, v2 in zip(sg_params_in, sg_params_out)]):
         print('Skipping regridding since grid parameters are identical')
@@ -106,6 +109,8 @@ def file_regrid(
             sf_out=sg_params_out[0],
             tlon_out=sg_params_out[1],
             tlat_out=sg_params_out[2])
+        # Save temporary output face files to minimize RAM usage
+        oface_files = [os.path.join('.',fout+str(x)) for x in range(6)]
         # For each output face, sum regridded input faces
         oface_datasets = []
         for oface in range(6):
@@ -119,9 +124,12 @@ def file_regrid(
                 oface_regridded,
                 dim='intersecting_ifaces').sum(
                 'intersecting_ifaces',
-                keep_attrs=True)
-            oface_datasets.append(oface_regridded)
-        ds_out = xr.concat(oface_datasets, dim='F')
+                keep_attrs=True).expand_dims({'F':[oface]})
+            oface_regridded.to_netcdf(
+                oface_files[oface],
+                format='NETCDF4_CLASSIC'
+            )
+        ds_out=xr.open_mfdataset(oface_files, combine='by_coords', concat_dim='F')
         # Put regridded dataset back into a familiar format
         ds_out = ds_out.rename({
             'y': 'Y',
@@ -256,6 +264,8 @@ def file_regrid(
     )
     # Print the resulting dataset
     print(ds_out)
+    # Remove any temporary files
+    for f in oface_files: os.remove(f)
 
 
 def rename_restart_variables(ds, towards_gchp=True):
