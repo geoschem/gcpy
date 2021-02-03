@@ -244,7 +244,7 @@ def get_grid_extents(data, edges=True):
         return -180, 180, -90, 90
 
 
-def get_vert_grid(dataset, AP=[[], []], BP=[[], []]):
+def get_vert_grid(dataset, AP=[], BP=[]):
     """
     Determine vertical grid of input dataset
 
@@ -255,10 +255,10 @@ def get_vert_grid(dataset, AP=[[], []], BP=[[], []]):
     Keyword Args (optional):
         AP: list-like type
             Hybrid grid parameter A in hPa
-            Default value: [[], []]
+            Default value: []
         BP: list-like type
             Hybrid grid parameter B (unitless)
-            Default value: [[], []]
+            Default value: []
 
     Returns:
         p_edge: numpy array
@@ -273,11 +273,17 @@ def get_vert_grid(dataset, AP=[[], []], BP=[[], []]):
         return GEOS_72L_grid.p_edge(), GEOS_72L_grid.p_mid(), 72
     elif dataset.sizes["lev"] in (47, 48):
         return GEOS_47L_grid.p_edge(), GEOS_47L_grid.p_mid(), 47
-    elif AP is None or BP is None:
-        raise ValueError(
-            "Only 72/73 or 47/48 level vertical grids are automatically determined" +
-            "from input dataset by get_vert_grid(), please pass grid parameters AP and BP" +
-            "as keyword arguments")
+    elif AP == [] or BP == []:
+        if dataset.sizes["lev"] == 1:
+            AP = [1, 1]
+            BP = [1]
+            new_grid = vert_grid(AP, BP)
+            return new_grid.p_edge(), new_grid.p_mid(), np.size(AP)
+        else:
+            raise ValueError(
+                "Only 72/73 or 47/48 level vertical grids are automatically determined" +
+                "from input dataset by get_vert_grid(), please pass grid parameters AP and BP" +
+                "as keyword arguments")
     else:
         new_grid = vert_grid(AP, BP)
         return new_grid.p_edge(), new_grid.p_mid(), np.size(AP)
@@ -386,7 +392,7 @@ def convert_lev_to_pres(dataset, pmid, pedge, lev_type='pmid'):
 
 class vert_grid:
     def __init__(self, AP=None, BP=None, p_sfc=1013.25):
-        if (AP.size != BP.size) or (AP is None):
+        if (len(AP) != len(BP)) or (AP is None):
             # Throw error?
             print('Inconsistent vertical grid specification')
         self.AP = np.array(AP)
