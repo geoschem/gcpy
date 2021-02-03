@@ -2669,7 +2669,7 @@ def single_panel(plot_vals,
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
 
                 # Get mid-point pressure and edge pressures for this grid
-                pedge, pmid, _ = get_vert_grid(plot_vals, vert_params)
+                pedge, pmid, _ = get_vert_grid(plot_vals, *vert_params)
 
                 # Get indexes of pressure subrange (full range is default)
                 pedge_ind = get_pressure_indices(pedge, pres_range)

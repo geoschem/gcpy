@@ -21,7 +21,7 @@ from gcpy.util import reshape_MAPL_CS
 def file_regrid(
         fin, fout, dim_format_in, dim_format_out, cs_res_out=0,
         ll_res_out='0x0', sg_params_in=[1.0, 170.0, -90.0],
-        sg_params_out=[1.0, 170.0, -90.0]):
+        sg_params_out=[1.0, 170.0, -90.0], vert_params_out=[[], []]):
     """
     Regrids an input file to a new horizontal grid specification and saves it
     as a new file.
@@ -59,6 +59,10 @@ def file_regrid(
             [stretch-factor, target longitude, target latitude].
             Not used if dim_format_out is classic
             Default value: [1.0, 170.0, -90.0] (No stretching)
+        vert_params_out: list(list, list) of list-like types
+            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
+            Needed for lat/lon output if not using full 72-level or 47-level grid
+            Default value: [[], []]
 
     """
 
@@ -194,7 +198,7 @@ def file_regrid(
             'Z': 'lev'})
         ds_out = drop_and_rename_classic_vars(ds_out, towards_gchp=False)
         ds_out = ds_out.reindex(lev=ds_out.lev[::-1])
-        _, lev_coords, _ = get_vert_grid(ds_out)
+        _, lev_coords, _ = get_vert_grid(ds_out, *vert_params_out)
         ds_out = ds_out.assign_coords({'lev': lev_coords})
         ds_out['lat'].attrs = {'long_name': 'Latitude',
                                'units': 'degrees_north',
@@ -405,6 +409,13 @@ if __name__ == '__main__':
             'classic'],
         required=True,
         help='format of the output file\'s dimensions (choose from: checkpoint, diagnostic)')
+    parser.add_argument(
+        '--vert_params_out',
+        metavar='VERT',
+        type=list,
+        required=False,
+        help='Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format')
+
     args = parser.parse_args()
     file_regrid(
         args.filein,
@@ -414,4 +425,5 @@ if __name__ == '__main__':
         args.cs_res_out,
         args.ll_res_out,
         args.sg_params_in,
-        args.sg_params_out)
+        args.sg_params_out,
+        args.vert_params_out)
