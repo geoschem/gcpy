@@ -2711,12 +2711,13 @@ def single_panel(plot_vals,
                     new_gridtype,
                     nlev=nlev
                 )
-            # assume z dim is index 2 (no time dim) if a numpy array is passed
-            z_ind = 2
+            # average across longitude bands
+            # assume lon dim is index 2 (no time dim) if a numpy array is passed
+            lon_ind = 2
             if type(plot_vals) is xr.DataArray:
-                z_ind = plot_vals.dims.index('lon')
+                lon_ind = plot_vals.dims.index('lon')
             # calculate zonal means
-            plot_vals = plot_vals.mean(axis=z_ind)
+            plot_vals = plot_vals.mean(axis=lon_ind)
     if gridtype == "":
         _, gridtype = get_input_res(plot_vals)
     if extent == (None, None, None, None) or extent is None:
