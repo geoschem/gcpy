@@ -4,13 +4,20 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-## [1.0.1] - 2021-01-05
+## [1.0.1] - 2021-02-09
 
 ### Added
 - Added MSA to Sulfur benchmark category
+- Added weightsdir parameter to single_panel()
+- Added temporary file creation to file_regrid() to decrease memory consumption during cubed-sphere regridding
 
 ### Changed
 - Removed carbon-based units from benchmark emissions tables
+- Environment files now request xESMF through conda-forge rather than pip
+
+### Fixed
+- Fixed Cubed-Sphere to Lat/Lon regridding for 1-level files.
+- Fixed single panel zonal mean axis selection
 
 ## [1.0.0] - 2021-01-05
 
