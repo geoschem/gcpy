@@ -144,6 +144,48 @@ def unravel_func(args):
     tracked_output.to_netcdf(args.o)
 
 
+def create_site_track_func(args):
+
+    sites = pd.read_csv(args.csv, sep=args.separator, header=0)
+    lats = np.array(sites.iloc[:,0], dtype=float)
+    lons = np.array(sites.iloc[:,1], dtype=float) % 360
+    site_id = np.array(sites.iloc[:,2], dtype=str)
+
+    ds = xr.Dataset({'longitude': ('site_id', lons), 'latitude': ('site_id', lats)}, coords={'site_id': site_id})
+
+    ds['longitude'].attrs['long_name'] = 'longitude'
+    ds['longitude'].attrs['units'] = 'degrees_east'
+
+    ds['latitude'].attrs['long_name'] = 'latitude'
+    ds['latitude'].attrs['units'] = 'degrees_north'
+
+    ds.coords['site_id'] = site_id
+    ds.coords['sample_number'] = np.arange(args.samples_per_day)
+
+    time_separator=args.ts
+
+    ds['site_time_offset'] = xr.DataArray(np.arange(ds.dims['site_id'])*time_separator, dims='site_id')
+    ds['sample_time_offset'] = xr.DataArray(np.linspace(0, 24, args.samples_per_day+1)[:-1], dims='sample_number')
+
+    ds = ds.stack(track=['sample_number', 'site_id'])
+
+    ds['site'] = xr.DataArray(ds.site_id.values, dims='track')
+    ds['sample'] = xr.DataArray(ds.sample_number.values, dims='track')
+
+
+    ds['time'] = ds.site_time_offset+ds.sample_time_offset
+    ds['time'].attrs['long_name'] = 'time'
+    ds['time'].attrs['units'] = 'hours since 1900-01-01 00:00:00'
+
+    ds = ds.set_index({'track': 'time'}).rename({'track': 'time'}).drop(['site_time_offset', 'sample_time_offset'])
+
+    encoding = {
+        'longitude':    {'dtype': np.float32, 'complevel': 9, 'zlib': True},
+        'latitude':     {'dtype': np.float32, 'complevel': 9, 'zlib': True},
+        'time':         {'dtype': np.float32, 'complevel': 9, 'zlib': True},
+    }
+    ds.to_netcdf(args.o, encoding=encoding, format='NETCDF4_CLASSIC')
+
 
 
 if __name__ == '__main__':
@@ -181,6 +223,29 @@ if __name__ == '__main__':
                               required=True,
                               help='output filename')
 
+    create_site_track = subparsers.add_parser(
+            'create_site_track', help='Generate a track file for ground sites')
+    create_site_track.add_argument('--csv',
+                              type=str,
+                              required=True,
+                              help='path to csv with site data (columns: lat, lon, site ID)')
+    create_site_track.add_argument('--separator',
+                                   type=str,
+                                   default=",",
+                                   help='CSV separator')
+    create_site_track.add_argument('--ts',
+                                   type=float,
+                                   default=1/3600,
+                                   help='time separator between site samples (should be small number greater than 0)')
+    create_site_track.add_argument('--samples_per_day',
+                                   type=int,
+                                   required=True,
+                                   help='number of samples to take per day')
+    create_site_track.add_argument('-o',
+                              type=str,
+                              required=True,
+                              help='output filename')
+
     unravel = subparsers.add_parser(
         'unravel', help='Unravel 1D diagnostic file')
     unravel.add_argument('--track',
@@ -204,5 +269,7 @@ if __name__ == '__main__':
         parser.print_help()
     elif args.command == 'create_track':
         create_track_func(args)
+    elif args.command == 'create_site_track':
+        create_site_track_func(args)
     elif args.command == 'unravel':
         unravel_func(args)
