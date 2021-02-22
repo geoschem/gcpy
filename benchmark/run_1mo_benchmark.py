@@ -261,9 +261,9 @@ gchp_end_dev_date  = np.datetime64("{}-{}-01T00:00:00".format(gchp_dev_s_stop[0]
 
 # Seconds per month
 gcc_ref_sec_in_bmk_month  = (gcc_end_ref_date  - gcc_ref_date).astype("float64")
-gchp_ref_sec_in_bmk_month = (gchp_end_ref_date - gchp_ref_date).astype("float64")
+gchp_ref_sec_in_bmk_month = (gchp_end_ref_date - gchp_ref_date).astype("float64") * 2
 gcc_dev_sec_in_bmk_month  = (gcc_end_dev_date  - gcc_dev_date).astype("float64")
-gchp_dev_sec_in_bmk_month = (gchp_end_dev_date - gchp_dev_date).astype("float64")
+gchp_dev_sec_in_bmk_month = (gchp_end_dev_date - gchp_dev_date).astype("float64") * 2
 
 # ======================================================================
 # Significant difference filenames
