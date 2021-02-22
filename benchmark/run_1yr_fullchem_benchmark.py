@@ -733,9 +733,9 @@ if gchp_vs_gcc:
             # Create plots
             bmk.make_benchmark_emis_plots(
                 ref,
-                gcc_vs_gcc_refstr,
+                gchp_vs_gcc_refstr,
                 dev,
-                gcc_vs_gcc_devstr,
+                gchp_vs_gcc_devstr,
                 dst=gchp_vs_gcc_resultsdir,
                 subdst=datestr,
                 weightsdir=weightsdir,
