@@ -21,6 +21,10 @@ on your own.
 Software Prerequisites
 ~~~~~~~~~~~~~~~~~~~~~~
 
+GCPy is currently supported for Linux and MacOS operating systems. Due to a reliance on several packages without Windows support,
+**GCPy is not currently supported for Windows**. You will receive an error message if you attempt to install GCPy through Conda
+on Windows.
+
 The only essential software package you need before installing GCPy is a
 distribution of the Conda package manager, which is used to install GCPy
 and its dependencies. It is also highly recommended that you create an
