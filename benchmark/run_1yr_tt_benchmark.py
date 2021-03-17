@@ -40,6 +40,9 @@ Remarks:
         https://github.com/ipython/ipython/issues/10627
 
     This issue might be fixed in matplotlib 3.0.
+
+This script corresponds with GCPy 1.0.2. Edit this version ID if releasing
+a new version of GCPy.
 """
 
 # =====================================================================
@@ -48,6 +51,7 @@ Remarks:
 
 import os
 from os.path import join
+from shutil import copyfile
 import warnings
 
 from calendar import monthrange
@@ -156,6 +160,10 @@ if gcpy_test:
     gchp_vs_gcc_resultsdir   = join(mainresultsdir,'GCHP_GCC_comparison')
     gchp_vs_gchp_resultsdir  = join(mainresultsdir,'GCHP_version_comparison')
     if not os.path.exists(mainresultsdir): os.mkdir(mainresultsdir)
+    # Make copy of benchmark script in results directory
+    curfile = os.path.realpath(__file__)
+    copyfile(curfile, join(mainresultsdir,curfile.split('/')[-1]))
+
 else:
     gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_version, results_dir)
     gchp_vs_gchp_resultsdir  = join(maindir, gchp_dev_version,
@@ -169,6 +177,9 @@ else:
                                      [gcc_vs_gcc, gchp_vs_gcc or gchp_vs_gchp,
                                       gchp_vs_gchp, gchp_vs_gcc]):
         if plotting_type and not os.path.exists(resdir): os.mkdir(resdir)
+        # Make copy of benchmark script in results directory
+        curfile = os.path.realpath(__file__)
+        copyfile(curfile, join(resdir,curfile.split('/')[-1]))
 
 # Tables directories
 gcc_vs_gcc_tablesdir   = join(gcc_vs_gcc_resultsdir,"Tables")
