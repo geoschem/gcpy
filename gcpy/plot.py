@@ -2663,7 +2663,8 @@ def single_panel(plot_vals,
                 sg_attrs['target_latitude']]
 
         if plot_type == 'single_level':
-            [grid, _] = call_make_grid(res, gridtype, sg_params=sg_params)
+            grid_extent = get_grid_extents(plot_vals)
+            [grid, _] = call_make_grid(res, gridtype, in_extent=grid_extent, sg_params=sg_params)
 
         else:  # zonal mean
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
