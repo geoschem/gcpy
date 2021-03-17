@@ -204,9 +204,10 @@ else:
                                       gchp_vs_gcc or gchp_vs_gchp or gchp_vs_gcc_diff_of_diffs,
                                       gchp_vs_gchp, gchp_vs_gcc, gchp_vs_gcc_diff_of_diffs]):
         if plotting_type and not os.path.exists(resdir): os.mkdir(resdir)
-        # Make copy of benchmark script in results directory
-        curfile = os.path.realpath(__file__)
-        copyfile(curfile, join(resdir,curfile.split('/')[-1]))
+        if resdir == gcc_vs_gcc_resultsdir or resdir == base_gchp_resultsdir:
+            # Make copy of benchmark script in results directory
+            curfile = os.path.realpath(__file__)
+            copyfile(curfile, join(resdir,curfile.split('/')[-1]))
 
 gcc_vs_gcc_tablesdir    = join(gcc_vs_gcc_resultsdir, "Tables")
 gchp_vs_gchp_tablesdir  = join(gchp_vs_gchp_resultsdir, "Tables")
