@@ -4,6 +4,18 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.2] - 2021-03-18
+
+### Added
+- Added GCPy version number and automatic script copying to benchmark scripts
+- Added line clarifying lack of Windows support in ReadTheDocs
+
+### Fixed
+- Fixed benchmark month seconds calculation for GCHP in 1-month benchmark script
+- Fixed label typo in benchmark script GCHP vs. GCC emission plots
+- Fixed grid creation for non-global grids in plot.single_panel
+- Fixed issue in get_grid_extents when maxlon was in Western Hemisphere
+
 ## [1.0.1] - 2021-02-09
 
 ### Added
