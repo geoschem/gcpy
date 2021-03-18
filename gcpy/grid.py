@@ -237,7 +237,7 @@ def get_grid_extents(data, edges=True):
             # add longitude res to max longitude
             lon = np.sort(lon)
             minlon = np.min(lon)
-            maxlon = np.max(lon) + abs(abs(lon[-1] - abs(lon[-2])))
+            maxlon = np.max(lon) + abs(abs(lon[-1]) - abs(lon[-2]))
             return minlon, maxlon, minlat, maxlat
     else:
         # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
