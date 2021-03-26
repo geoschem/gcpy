@@ -554,42 +554,28 @@ def compare_single_level(
     # Get lat/lon extents, if applicable
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
-    cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = [-180, 180, -90, 90]
+    
+    if -1000 not in extent:
+        cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = extent
+    else:
+        # Account for 0-360 coordinate scale
+        uniform_refminlon, uniform_refmaxlon = refminlon, refmaxlon
+        uniform_devminlon, uniform_devmaxlon = devminlon, devmaxlon
+        if uniform_refmaxlon > 185:
+            uniform_refminlon, uniform_refmaxlon = -180, 180
+        if uniform_devmaxlon > 185:
+            uniform_devminlon, uniform_devmaxlon = -180, 180
 
+        cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = \
+            [np.max([(uniform_refminlon+180%360)-180, uniform_devminlon]),
+             np.min([uniform_refmaxlon, uniform_devmaxlon]),
+             np.max([refminlat, devminlat]),
+             np.min([refmaxlat, devmaxlat])]
+    
     # Set plot bounds for non cubed-sphere regridding and plotting
     ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
     dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
     cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
-    # Trim data to extent of comparison grid if using lat-lon grids.
-    # Get comparison date extents in same midpoint format as lat-lon grid.
-    cmp_mid_minlon, cmp_mid_maxlon, cmp_mid_minlat, cmp_mid_maxlat = \
-        get_grid_extents(cmpgrid, edges=False)
-
-    if refgridtype == "ll" and ref_extent != cmp_extent and cmpgridtype == "ll":
-        refdata = refdata.\
-            where(refdata.lon >= cmp_mid_minlon, drop=True).\
-            where(refdata.lon <= cmp_mid_maxlon, drop=True).\
-            where(refdata.lat >= cmp_mid_minlat, drop=True).\
-            where(refdata.lat <= cmp_mid_maxlat, drop=True)
-        if diff_of_diffs:
-            fracrefdata = fracrefdata.\
-                where(fracrefdata.lon >= cmp_mid_minlon, drop=True).\
-                where(fracrefdata.lon <= cmp_mid_maxlon, drop=True).\
-                where(fracrefdata.lat >= cmp_mid_minlat, drop=True).\
-                where(fracrefdata.lat <= cmp_mid_maxlat, drop=True)
-    if devgridtype == "ll" and dev_extent != cmp_extent and cmpgridtype == "ll":
-        devdata = devdata.\
-            where(devdata.lon >= cmp_mid_minlon, drop=True).\
-            where(devdata.lon <= cmp_mid_maxlon, drop=True).\
-            where(devdata.lat >= cmp_mid_minlat, drop=True).\
-            where(devdata.lat <= cmp_mid_maxlat, drop=True)
-        if diff_of_diffs:
-            fracdevdata = fracdevdata.\
-                where(fracdevdata.lon >= cmp_mid_minlon, drop=True).\
-                where(fracdevdata.lon <= cmp_mid_maxlon, drop=True).\
-                where(fracdevdata.lat >= cmp_mid_minlat, drop=True).\
-                where(fracdevdata.lat <= cmp_mid_maxlat, drop=True)
-
     # ==============================================================
     # Loop over all variables
     # ==============================================================
@@ -810,10 +796,25 @@ def compare_single_level(
     frac_ds_dev_cmps = [None] * n_var
 
     global_cmp_grid = call_make_grid(cmpres, cmpgridtype)[0]
-    cmpminlon_ind = np.where(global_cmp_grid["lon"] >= cmpminlon)[0][0]
-    cmpmaxlon_ind = np.where(global_cmp_grid["lon"] <= cmpmaxlon)[0][-1]
-    cmpminlat_ind = np.where(global_cmp_grid["lat"] >= cmpminlat)[0][0]
-    cmpmaxlat_ind = np.where(global_cmp_grid["lat"] <= cmpmaxlat)[0][-1]
+    # Get grid limited to cmp_extent for comparison datasets
+    # Do not do this for cross-dateline plotting
+    if cmp_extent[0] < cmp_extent[1]:
+        regional_cmp_extent = cmp_extent
+    else:
+        regional_cmp_extent = [-180, 180, -90, 90]
+
+    regional_cmp_grid = call_make_grid(cmpres, cmpgridtype, 
+                                       in_extent=[-180,180,-90,90], 
+                                       out_extent=regional_cmp_extent)[0]
+
+    # Get comparison data extents in same midpoint format as lat-lon grid.
+    cmp_mid_minlon, cmp_mid_maxlon, cmp_mid_minlat, cmp_mid_maxlat = \
+        get_grid_extents(regional_cmp_grid, edges=False)
+
+    cmpminlon_ind = np.where(global_cmp_grid["lon"] >= cmp_mid_minlon)[0][0]
+    cmpmaxlon_ind = np.where(global_cmp_grid["lon"] <= cmp_mid_maxlon)[0][-1]
+    cmpminlat_ind = np.where(global_cmp_grid["lat"] >= cmp_mid_minlat)[0][0]
+    cmpmaxlat_ind = np.where(global_cmp_grid["lat"] <= cmp_mid_maxlat)[0][-1]
 
     for i in range(n_var):
         ds_ref = ds_refs[i]
@@ -968,30 +969,63 @@ def compare_single_level(
         # Get min and max values for use in the colorbars
         # ==============================================================
 
+        # Choose from values within plot extent
+        if -1000 not in extent:
+            min_max_extent = extent
+        else:
+            min_max_extent = cmp_extent
+        # Find min and max lon
+        min_max_minlon = np.min([min_max_extent[0], min_max_extent[1]])
+        min_max_maxlon = np.max([min_max_extent[0], min_max_extent[1]])
+        min_max_minlat = min_max_extent[2]
+        min_max_maxlat = min_max_extent[3]
+
+        def get_extent_for_colors(ds, minlon, maxlon, minlat, maxlat):
+            ds_new = ds.copy()
+            lat_var='lat'
+            lon_var='lon'
+            # Account for cubed-sphere data
+            if 'lons' in ds_new.coords:
+                lat_var='lats'
+                lon_var='lons'
+            if ds_new['lon'].max() > 190:
+                minlon=minlon%360
+                maxlon=maxlon%360
+            # account for cross dateline
+            if minlon > maxlon:
+                temp = minlon
+                minlon = maxlon
+                maxlon = temp
+            return ds_new.where(ds_new[lon_var] >= minlon, drop=True).\
+                where(ds_new[lon_var] <= maxlon, drop=True).\
+                where(ds_new[lat_var] >= minlat, drop=True).\
+                where(ds_new[lat_var] <= maxlat, drop=True)
+        ds_ref_reg = get_extent_for_colors(ds_ref, min_max_minlon, min_max_maxlon, min_max_minlat, min_max_maxlat)
+        ds_dev_reg = get_extent_for_colors(ds_dev, min_max_minlon, min_max_maxlon, min_max_minlat, min_max_maxlat)
+
         # Ref
-        vmin_ref = float(ds_ref.data.min())
-        vmax_ref = float(ds_ref.data.max())
+        vmin_ref = float(np.nanmin(ds_ref_reg.data))
+        vmax_ref = float(np.nanmax(ds_ref_reg.data))
 
         # Dev
-        vmin_dev = float(ds_dev.data.min())
-        vmax_dev = float(ds_dev.data.max())
+        vmin_dev = float(np.nanmin(ds_dev_reg.data))
+        vmax_dev = float(np.nanmax(ds_dev_reg.data))
 
         # Comparison
         if cmpgridtype == "cs":
-            vmin_ref_cmp = float(ds_ref_cmp.min())
-            vmax_ref_cmp = float(ds_ref_cmp.max())
-            vmin_dev_cmp = float(ds_dev_cmp.min())
-            vmax_dev_cmp = float(ds_dev_cmp.max())
-            vmin_cmp = np.min([vmin_ref_cmp, vmin_dev_cmp])
-            vmax_cmp = np.max([vmax_ref_cmp, vmax_dev_cmp])
+            vmin_ref_cmp = float(np.nanmin(ds_ref_cmp))
+            vmax_ref_cmp = float(np.nanmax(ds_ref_cmp))
+            vmin_dev_cmp = float(np.nanmin(ds_dev_cmp))
+            vmax_dev_cmp = float(np.nanmax(ds_dev_cmp))
+            vmin_cmp = np.nanmin([vmin_ref_cmp, vmin_dev_cmp])
+            vmax_cmp = np.nanmax([vmax_ref_cmp, vmax_dev_cmp])
         else:
-            vmin_cmp = np.min([ds_ref_cmp.min(), ds_dev_cmp.min()])
-            vmax_cmp = np.max([ds_ref_cmp.max(), ds_dev_cmp.max()])
+            vmin_cmp = np.nanmin([np.nanmin(ds_ref_cmp), np.nanmin(ds_dev_cmp)])
+            vmax_cmp = np.nanmax([np.nanmax(ds_ref_cmp), np.nanmax(ds_dev_cmp)])
 
         # Get overall min & max
-        vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
-        vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
-
+        vmin_abs = np.nanmin([vmin_ref, vmin_dev])#, vmin_cmp])
+        vmax_abs = np.nanmax([vmax_ref, vmax_dev])#, vmax_cmp])
         # ==============================================================
         # Test if Ref and/or Dev contain all zeroes or all NaNs.
         # This will have implications as to how we set min and max
@@ -1008,10 +1042,8 @@ def compare_single_level(
             absdiff = np.array(ds_dev_cmp) - np.array(ds_ref_cmp)
         else:
             absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
-
         # Test if the abs. diff. is zero everywhere or NaN everywhere
         absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(absdiff)
-
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/
         # questions/46527456/preventing-spurious-horizontal-lines-for-
@@ -1243,9 +1275,9 @@ def compare_single_level(
             extents = [plot_extent[:], plot_extent[:],
                        plot_extent[:], plot_extent[:],
                        plot_extent[:], plot_extent[:]]
-
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
-        grids = [refgrid, devgrid, cmpgrid.copy(), cmpgrid.copy(), cmpgrid.copy(), cmpgrid.copy()]
+        grids = [refgrid, devgrid, regional_cmp_grid.copy(), regional_cmp_grid.copy(), 
+                 regional_cmp_grid.copy(), regional_cmp_grid.copy()]
         axs = [ax0, ax1, ax2, ax3, ax4, ax5]
         rowcols = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
         titles = [
