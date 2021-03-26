@@ -477,8 +477,7 @@ def create_regridders(
                     cmpres,
                     weightsdir=weightsdir,
                     reuse_weights=reuse_weights,
-                    in_extent=ref_extent,
-                    out_extent=cmp_extent)
+                    in_extent=ref_extent)
         else:
             if cmpgridtype == "cs":
                 refregridder_list = make_regridder_S2S(
@@ -510,8 +509,7 @@ def create_regridders(
                     cmpres,
                     weightsdir=weightsdir,
                     reuse_weights=reuse_weights,
-                    in_extent=dev_extent,
-                    out_extent=cmp_extent)
+                    in_extent=dev_extent)
         else:
             if cmpgridtype == "cs":
                 devregridder_list = make_regridder_S2S(
@@ -609,13 +607,17 @@ def regrid_comparison_data(
         if gridtype == "ll":
             if cmpgridtype == "ll":
                 # regrid ll to ll
-                return regridder(data)
+                new_data = regridder(data)
             elif cmpgridtype == "cs":
                 # ll to CS
                 new_data = np.zeros([nlev, 6, res, res]).squeeze()
                 for j in range(6):
                     new_data[j, ...] = regridder_list[j](data)
-                return new_data
+            if nlev == 1:
+                # limit to extent of cmpgrid
+                new_data=new_data[cmpminlat_ind:cmpmaxlat_ind +
+                                  1, cmpminlon_ind:cmpmaxlon_ind + 1].squeeze()
+            return new_data
         elif cmpgridtype == "ll":
             # CS to ll
             if nlev == 1:
@@ -632,10 +634,9 @@ def regrid_comparison_data(
                 new_data += regridder(data_reshaped[j])
             if nlev == 1:
                 # limit to extent of cmpgrid
-                return new_data[cmpminlat_ind:cmpmaxlat_ind +
-                                1, cmpminlon_ind:cmpmaxlon_ind + 1].squeeze()
-            else:
-                return new_data
+                new_data=new_data[cmpminlat_ind:cmpmaxlat_ind +
+                                  1, cmpminlon_ind:cmpmaxlon_ind + 1].squeeze()
+            return new_data
         elif cmpgridtype == "cs":
             # CS to CS
             # Reformat dimensions to T, Z, F, Y, X
