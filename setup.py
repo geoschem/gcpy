@@ -101,7 +101,7 @@ setup(
 '''
 Instructions for publishing new version to TestPyPi (mimics PyPi) and PyPi:
 
-1. Update version numbers above
+1. Update version numbers above and in _version.py and commit before releasing
 2. Install twine if not available (pip install twine)
 3. run python setup.py sdist bdist_wheel
 4. run twine check dist/*
