@@ -51,7 +51,7 @@ a new version of GCPy.
 # =====================================================================
 
 import os
-from os.path import join
+from os.path import join, exists
 from shutil import copyfile
 import warnings
 
@@ -186,10 +186,12 @@ if gcpy_test:
     gcc_vs_gcc_resultsdir    = join(mainresultsdir,'GCC_version_comparison')
     gchp_vs_gchp_resultsdir  = join(mainresultsdir,'GCHP_version_comparison')
     gchp_vs_gcc_resultsdir   = join(mainresultsdir,'GCHP_GCC_comparison')
-    if not os.path.exists(mainresultsdir): os.mkdir(mainresultsdir)
+    if not exists(mainresultsdir): os.mkdir(mainresultsdir)
     # Make copy of benchmark script in results directory
     curfile = os.path.realpath(__file__)
-    copyfile(curfile, join(mainresultsdir,curfile.split('/')[-1]))
+    dest = join(mainresultsdir,curfile.split('/')[-1])
+    if not exists(dest):
+        copyfile(curfile, dest)
 
 else:
     gcc_vs_gcc_resultsdir    = join(maindir, gcc_dev_version, results_dir)
@@ -203,11 +205,13 @@ else:
                                       gchp_vs_gchp_resultsdir, gchp_vs_gcc_resultsdir],
                                      [gcc_vs_gcc, gchp_vs_gcc or gchp_vs_gchp,
                                       gchp_vs_gchp, gchp_vs_gcc]):
-        if plotting_type and not os.path.exists(resdir): os.mkdir(resdir)
+        if plotting_type and not exists(resdir): os.mkdir(resdir)
         if resdir == gcc_vs_gcc_resultsdir or resdir == base_gchp_resultsdir:
             # Make copy of benchmark script in results directory
             curfile = os.path.realpath(__file__)
-            copyfile(curfile, join(resdir,curfile.split('/')[-1]))
+            dest = join(resdir,curfile.split('/')[-1])
+            if not exists(dest):
+                copyfile(curfile, dest)
 
 # Tables directories
 gcc_vs_gcc_tablesdir   = join(gcc_vs_gcc_resultsdir,"Tables")
