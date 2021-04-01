@@ -4,6 +4,14 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## Unreleased
+
+### Added
+- Added gcpy/budget_ox.py to compute Ox budgets from 1-yr benchmarks
+
+### Changed
+- Updated benchmark/run_1yr_fullchem_benchmark.py to call the budget_ox.py for GCC vs GCC benchmark generation.  (NOTE: we are waiting to make sure that the GCHP benchmarks output wetdep fields before activating this feature for GCHP.)
+
 ## [1.0.3] - 2021-03-26
 
 ### Fixed
