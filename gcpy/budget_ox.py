@@ -32,7 +32,6 @@ class _GlobVars:
     Private class _GlobVars contains global data that needs to be
     shared among the methods in this module.
     """
-
     def __init__(
             self,
             devstr,
@@ -47,7 +46,7 @@ class _GlobVars:
         """
         Initializes the _GlobVars class.
 
-        Args:
+        Arguments:
             devstr: str
                 Label denoting the "Dev" version.
             devdir: str
@@ -84,75 +83,12 @@ class _GlobVars:
         self.y1_str = "{}".format(self.y1)
 
         # --------------------------------------------------------------
-        # Collection file lists
+        # Read data into datasets
         # --------------------------------------------------------------
 
-        # Restarts
-        if self.is_gchp:
-            RstInit = os.path.join(
-                self.devrstdir,
-                "gcchem_internal_checkpoint.restart.{}{}".format(
-                    self.y0_str,
-                    "0101_000000.nc4"
-                )
-            )
-            RstFinal = os.path.join(
-                self.devrstdir,
-                "gcchem_internal_checkpoint.restart.{}{}".format(
-                    self.y1_str,
-                    "0101_000000.nc4"
-                )
-            )
-        else:
-            RstInit = os.path.join(
-                self.devrstdir,
-                "GEOSChem.Restart.{}0101_0000z.nc4".format(self.y0_str)
-            )
-            RstFinal = os.path.join(
-                self.devrstdir,
-                "GEOSChem.Restart.{}0101_0000z.nc4".format(self.y1_str)
-            )
-        # Diagnostics
-        DryDep = os.path.join(
-            self.devdir,
-            "*.DryDep.{}*.nc4".format(self.y0_str)
-        )
-        ProdLoss = os.path.join(
-            self.devdir,
-            "*.ProdLoss.{}*.nc4".format(self.y0_str)
-        )
-        StateMet = os.path.join(
-            self.devdir,
-            "*.StateMet.{}*.nc4".format(self.y0_str)
-        )
-        WetLossConv = os.path.join(
-            self.devdir,
-            "*.WetLossConv.{}*.nc4".format(self.y0_str)
-        )
-        WetLossLS = os.path.join(
-            self.devdir,
-            "*.WetLossLS.{}*.nc4".format(self.y0_str)
-        )
-
-        # --------------------------------------------------------------
-        # Read data collections
-        # --------------------------------------------------------------
-
-        # Restarts
-        skip_vars = constants.skip_these_vars
-        extra_kwargs = {}
-
-        # Restart files at start & end of benchmark
-        self.ds_ini = xr.open_dataset(
-            RstInit,
-            drop_variables=skip_vars,
-            **extra_kwargs
-        )
-        self.ds_end = xr.open_dataset(
-            RstFinal,
-            drop_variables=skip_vars,
-            **extra_kwargs
-        )
+        # Read initial and final restart files
+        self.ds_ini = self.read_rst(self.y0_str)
+        self.ds_end = self.read_rst(self.y1_str)
 
         # Change the restart datasets into format similar to GCC, and flip
         # vertical axis.  Also test if the restart files have the BXHEIGHT
@@ -161,46 +97,120 @@ class _GlobVars:
             self.ds_ini = rename_and_flip_gchp_rst_vars(self.ds_ini)
             self.ds_end = rename_and_flip_gchp_rst_vars(self.ds_end)
 
-        # Diagnostics
-        self.ds_pl = xr.open_mfdataset(
-            ProdLoss,
-            drop_variables=skip_vars,
-            combine="nested",
-            concat_dim="time",
-            **extra_kwargs
-        )
-        self.ds_dry = xr.open_mfdataset(
-            DryDep,
-            drop_variables=skip_vars,
-            combine="nested",
-            concat_dim="time",
-            **extra_kwargs
-        )
-        self.ds_wcv = xr.open_mfdataset(
-            WetLossConv,
-            drop_variables=skip_vars,
-            combine="nested",
-            concat_dim="time",
-            **extra_kwargs
-        )
-        self.ds_wls = xr.open_mfdataset(
-            WetLossLS,
-            drop_variables=skip_vars,
-            combine="nested",
-            concat_dim="time",
-            **extra_kwargs
+        # Read diagnostics
+        self.get_diag_paths()
+        self.ds_dry = self.read_diag("DryDep")
+        self.ds_pl = self.read_diag("ProdLoss")
+        self.ds_met = self.read_diag("StateMet")
+        self.ds_wcv = self.read_diag("WetLossConv")
+        self.ds_wls = self.read_diag("WetLossLS")
+
+        # --------------------------------------------------------------
+        # Get other quantities for the budget computations
+        # --------------------------------------------------------------
+        self.get_area_and_volume()
+        self.tropmask = get_troposphere_mask(self.ds_met)
+        self.get_time_info()
+        self.get_conv_factors(spcdb_dir)
+
+
+    # ==================================================================
+    # Instance methods
+    # ==================================================================
+    def rst_file_path(self, ystr):
+        """
+        Returns the restart file path
+
+        Arguments:
+            ystr : Year string (YYYY format
+        """
+        # Restarts
+        if self.is_gchp:
+            RstPath = os.path.join(
+                self.devrstdir,
+                "gcchem_internal_checkpoint.restart.{}{}".format(
+                    ystr,
+                    "0101_000000.nc4"
+                )
+            )
+        else:
+            RstPath = os.path.join(
+                self.devrstdir,
+                "GEOSChem.Restart.{}0101_0000z.nc4".format(
+                    ystr
+                )
+            )
+
+        return RstPath
+
+
+    def get_diag_paths(self):
+        """
+        Generates data paths for diagnostic collection files.
+        """
+
+        # List of diagnostic collections
+        collections = [
+            'DryDep',
+            'ProdLoss',
+            'StateMet',
+            'WetLossConv',
+            'WetLossLS'
+        ]
+
+        # Path where files in each collection are found
+        self.pathlist = {}
+        for c in collections:
+            self.pathlist[c] = os.path.join(
+                self.devdir,
+                "*.{}.{}*.nc4".format(c, self.y0_str)
+            )
+
+
+    def read_rst(self, ystr):
+        """
+        Reads a restart file into an xarray Dataset
+
+        Arguments:
+           ystr: String containing the year (YYYY format)
+
+        Returns:
+           ds : xarray Dataset
+        """
+        path = self.rst_file_path(ystr)
+        ds = xr.open_dataset(
+            path,
+            drop_variables=constants.skip_these_vars
         )
 
-        # Met fields
-        self.ds_met = xr.open_mfdataset(
-            StateMet,
-            drop_variables=skip_vars,
+        return ds
+
+
+    def read_diag(self, collection):
+        """
+        Reads a restart file into an xarray Dataset.
+
+        Arguments:
+           collection : str
+               Name of the collection to read
+
+        Returns:
+           ds : xarray Dataset
+        """
+        ds = xr.open_mfdataset(
+            self.pathlist[collection],
+            drop_variables=constants.skip_these_vars,
             combine="nested",
-            concat_dim="time",
-            **extra_kwargs
+            concat_dim="time"
         )
 
-        # Area and troposphere mask
+        return ds
+
+
+    def get_area_and_volume(self):
+        """
+        Returns area and volume quantities for the budget computations.
+        """
         # The area in m2 is on the restart file grid
         # The area in cm2 is on the History diagnostic grid
         # Both grids are identical in GCClassic but differ in GCHP
@@ -215,13 +225,16 @@ class _GlobVars:
         else:
             self.area_m2 = self.ds_met["AREA"].isel(time=0)
             self.area_cm2 = self.area_m2 * 1.0e4
-        self.tropmask = get_troposphere_mask(
-            self.ds_met,
-        )
 
-        # --------------------------------------------------------------
-        # Months and days
-        # --------------------------------------------------------------
+        # Box volume [cm3]
+        self.vol_cm3 = self.ds_met["Met_AIRVOL"].values * 1.0e6
+
+
+    def get_time_info(self):
+        """
+        Returns time information for the budget computations.
+        """
+        # Months
         self.N_MONTHS = 12
         self.N_MONTHS_FLOAT = self.N_MONTHS * 1.0
 
@@ -241,9 +254,15 @@ class _GlobVars:
         for t in range(self.N_MONTHS):
             self.frac_of_a[t] = self.d_per_m[t] / self.d_per_a
 
-        # --------------------------------------------------------------
-        # Species info
-        # --------------------------------------------------------------
+
+    def get_conv_factors(self, spcdb_dir):
+        """
+        Gets conversion factors used in budget computations
+
+        Arguments:
+           spcdb_dir : str
+               Path to the species_database.yml file
+        """
 
         # List of species (and subsets for the trop & strat)
         self.species_list = ["HNO3", "O3", "NO2", "NO3", "PAN", "PPN"]
@@ -261,12 +280,9 @@ class _GlobVars:
         # kg/s --> Tg/d
         self.kg_s_to_tg_a_value = 86400.0 * self.d_per_a * 1e-9
 
-        # Box volume [cm3]
-        self.vol_cm3 = self.ds_met["Met_AIRVOL"].values * 1.0e6
-
 
 # ======================================================================
-# Functions
+# Methods
 # ======================================================================
 
 
@@ -276,7 +292,7 @@ def init_and_final_mass(
     """
     Computes global species mass from the initial & final restart files.
 
-    Args:
+    Arguments:
         globvars: obj of type _GlobVars
             Global variables needed for budget computations.
 
@@ -339,7 +355,7 @@ def annual_average_prodloss(
         globvars
 ):
     """
-    Args:
+    Arguments:
         globvars: obj of type _GlobVars
             Global variables needed for budget computations.
 
@@ -385,7 +401,7 @@ def annual_average_drydep(
         globvars
 ):
     """
-    Args:
+    Arguments:
         globvars: obj of type _GlobVars
             Global variables needed for budget computations.
 
@@ -417,7 +433,7 @@ def annual_average_drydep(
 
 def annual_average_wetdep(globvars):
     """
-    Args:
+    Arguments:
         globvars: obj of type _GlobVars
             Global variables needed for budget computations.
 
@@ -473,8 +489,8 @@ def print_budget(
     """
     Prints the trop+strat budget file.
 
-    Args:
-        globvars: object of type _GlobVars
+    Arguments:
+        globvars: _GlobVars
             Global variables needed for budget computations.
         data: dict
             Nested dictionary containing budget info.
@@ -560,7 +576,7 @@ def global_ox_budget(
     """
     Main program to compute TransportTracersBenchmark budgets
 
-    Args:
+    Arguments:
         maindir: str
             Top-level benchmark folder
         devstr: str
@@ -633,12 +649,3 @@ def global_ox_budget(
         dyn,
         net
     )
-
-# For testing
-if "__main__" in __name__:
-    devstr = "12.9.0"
-    devdir = "/n/holyscratch01/jacob_lab/ryantosca/B1yr/12.9.0/OutputDir"
-    devrstdir = devdir
-    year = 2016
-    dst = "/n/holyscratch01/jacob_lab/ryantosca/B1yr/Benchmark_Results"
-    ox_budget(devstr, devdir, devrstdir, year, dst)
