@@ -218,7 +218,7 @@ def print_totals(ref, refstr, dev, devstr, f, masks=None):
 
     # Special handling for totals
     if "_TOTAL" in diagnostic_name.upper():
-        print("-" * 83, file=f)
+        print("-"*83, file=f)
 
     # ==================================================================
     # Sum the Ref array (or set to NaN if missing)
