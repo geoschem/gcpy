@@ -295,7 +295,8 @@ def compare_data(config, data):
     # ==================================================================
     # Print totals for each quantity
     # ==================================================================
-    if config["options"]["totals_and_diffs"]["create_table"]:
+    if config["options"]["totals_and_diffs"]["create_table"] or \
+       config["options"]["totals_and_diffs"]["print_to_screen"]:
         print('... Printing totals and differences')
         print_totals_and_diffs(
             config,
