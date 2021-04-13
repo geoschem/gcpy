@@ -171,6 +171,15 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
         )
         f = open(pathname, 'w')
 
+    # If we are printing only variables with zero diffs,
+    # then alert the user (print to screen & file)
+    if config["options"]["totals_and_diffs"]["skip_zero_diffs"]:
+        line = "... Only showing variables with nonzero differences"
+        if do_file:
+            print(line, file=f)
+        else:
+            print(line)
+
     # Print top header
     line = "{} Ref={} Dev={} {}".format(
         "Variable".ljust(22),
