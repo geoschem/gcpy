@@ -1834,7 +1834,39 @@ def all_zero_or_nan(ds):
             Input GEOS-Chem data
     Returns:
         all_zero, all_nan: bool, bool
-            All_zero is whether ds is all zeros, all_nan is whether ds is all NaNs
+            All_zero is whether ds is all zeros, all_nan is whether ds i s all NaNs
     """
 
     return not np.any(ds), np.isnan(ds).all()
+
+
+def dataset_mean(ds, dim="time", skipna=True):
+    """
+    Convenience wrapper for taking the mean of an xarray Dataset.
+
+    Args:
+       ds : xarray Dataset
+           Input data
+
+    Keyword Args:
+       dim : str
+           Dimension over which the mean will be taken.
+           Default: "time"
+       skipna : bool
+           Flag to omit missing values from the mean.
+           Default: True
+
+    Returns:
+       ds_mean : xarray Dataset or None
+           Dataset containing mean values
+           Will return None if ds is not defined
+    """
+    if ds is None:
+        return ds
+
+    if not isinstance(ds, xr.Dataset):
+        raise ValueError("Argument ds must be None or xarray.Dataset!")
+
+    with xr.set_options(keep_attrs=True):
+        return ds.mean(dim=dim, skipna=skipna)
+    
