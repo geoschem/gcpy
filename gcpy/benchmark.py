@@ -700,22 +700,31 @@ def make_benchmark_conc_plots(
 
     # Define extra title text (usually a date string)
     # for the top-title of the plot
+    annual_mean = False
     if subdst is not None:
         extra_title_txt = subdst
+        if "AnnualMean".lower() in subdst.lower():
+            annual_mean = True
     else:
         extra_title_txt = None
 
+    # Pick the proper function to read the data
+    if annual_mean:
+        reader = xr.open_mfdataset
+    else:
+        reader = xr.open_dataset
+
     # Open datasets
-    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
-    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
+    refds = reader(ref, drop_variables=gcon.skip_these_vars)
+    devds = reader(dev, drop_variables=gcon.skip_these_vars)
 
     # Open met datasets if passed as arguments
     refmetds = None
     devmetds = None
     if refmet:
-        refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
+        refmetds = reader(refmet, drop_variables=gcon.skip_these_vars)
     if devmet:
-        devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
+        devmetds = reader(devmet, drop_variables=gcon.skip_these_vars)
 
     # Determine if doing diff-of-diffs
     if second_ref is not None and second_dev is not None:
@@ -725,13 +734,20 @@ def make_benchmark_conc_plots(
 
     # Open second datasets if passed as arguments (used for diff of diffs)
     if diff_of_diffs:
-        second_refds = xr.open_dataset(second_ref,
-                                       drop_variables=gcon.skip_these_vars)
-        second_devds = xr.open_dataset(second_dev,
-                                       drop_variables=gcon.skip_these_vars)
+        second_refds = reader(second_ref, drop_variables=gcon.skip_these_vars)
+        second_devds = reader(second_dev, drop_variables=gcon.skip_these_vars)
     else:
         second_refds = None
         second_devds = None
+
+    # Compute the annual mean of datasets (if necessary)
+    if annual_mean:
+        refds = util.dataset_mean(refds)
+        devds = util.dataset_mean(devds)
+        refmetds = util.dataset_mean(refmetds)
+        devmetds = util.dataset_mean(devmetds)
+        second_ref = util.dataset_mean(second_refds)
+        second_dev = util.dataset_mean(second_devds)
 
     # Create regridding files if necessary while not in parallel loop
     [_ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
@@ -1215,12 +1231,12 @@ def make_benchmark_emis_plots(
             fill out the benchmark approval forms.
             Default value: None
         weightsdir: str
-            Directory in which to place (and possibly reuse) xESMF regridder 
+            Directory in which to place (and possibly reuse) xESMF regridder
             netCDF files.
             Default value: '.'
         n_job: int
             Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting. 
+            Set to 1 to disable parallel plotting.
             Value of -1 allows the application to decide.
             Default value: -1
         spcdb_dir: str
@@ -1794,7 +1810,7 @@ def make_benchmark_jvalue_plots(
             fill out the benchmark approval forms.
             Default value: None
         weightsdir: str
-            Directory in which to place (and possibly reuse) xESMF regridder 
+            Directory in which to place (and possibly reuse) xESMF regridder
             netCDF files.
             Default value: '.'
         n_job: int
@@ -2151,7 +2167,7 @@ def make_benchmark_aod_plots(
             approval forms.
             Default value: None
         weightsdir: str
-            Directory in which to place (and possibly reuse) xESMF regridder 
+            Directory in which to place (and possibly reuse) xESMF regridder
             netCDF files.
             Default value: '.'
         n_job: int
@@ -4003,8 +4019,8 @@ def make_benchmark_mass_conservation_table(
     properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
 
     # Get the species name
-    spc_name = 'PassiveTracer' 
-    
+    spc_name = 'PassiveTracer'
+
     # Get a list of properties for the given species
     species_properties = properties.get(spc_name)
 
@@ -4019,7 +4035,7 @@ def make_benchmark_mass_conservation_table(
     # ==================================================================
     for f in datafiles:
         ds = xr.open_dataset(f, drop_variables=gcon.skip_these_vars)
-        
+
         # Save date in desired format
         #datestr = str(pd.to_datetime(ds.time.values[0]))
         #dates.append(datestr[:4] + '-' + datestr[5:7] + '-' + datestr[8:10])
@@ -4028,7 +4044,7 @@ def make_benchmark_mass_conservation_table(
         # from within files which may be incorrect for the initial restart
         datestr = f.split('/')[-1].split('.')[2][:9]
         dates.append(datestr[:4] + '-' + datestr[4:6] + '-' + datestr[6:8])
-        
+
         area = util.get_area_from_dataset(ds)
         # Select for GCC or GCHP
         delta_p = ds['Met_DELPDRY'] if 'Met_DELPDRY' in list(ds.data_vars) else ds['DELP_DRY']
@@ -4054,7 +4070,7 @@ def make_benchmark_mass_conservation_table(
                 area_m2=area,
                 delta_p=delta_p
         )
-        
+
         # Save total global mass
         masses.append(np.sum(da.values))
         # Clean up
@@ -4075,7 +4091,7 @@ def make_benchmark_mass_conservation_table(
     outfilename = os.path.join(dst, runstr + ".passive_mass.txt")
 
     with open(outfilename, 'w') as f:
-        titlestr = '  Global Mass of Passive Tracer in ' + runstr + '  '        
+        titlestr = '  Global Mass of Passive Tracer in ' + runstr + '  '
         #headers
         print('%' * (len(titlestr)+4), file=f)
         print(titlestr,                file=f)
