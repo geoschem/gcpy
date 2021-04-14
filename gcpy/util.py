@@ -313,8 +313,10 @@ def archive_species_categories(dst):
     """
     spc_categories = "benchmark_categories.yml"
     src = os.path.join(os.path.dirname(__file__), spc_categories)
-    print("Archiving {} in {}".format(spc_categories, dst))
-    shutil.copyfile(src, os.path.join(dst, spc_categories))
+    copy = os.path.join(dst, spc_categories)
+    if not os.path.exists(copy):
+        print("Archiving {} in {}".format(spc_categories, dst))
+        shutil.copyfile(src, copy)
 
 
 def add_bookmarks_to_pdf(pdfname, varlist, remove_prefix="", verbose=False):
@@ -562,7 +564,7 @@ def reshape_MAPL_CS(da):
 
     # Suppress annoying future warnings for now
     warnings.filterwarnings("ignore", category=FutureWarning)
-    
+
     if type(da) != np.ndarray:
         vdims = da.dims
         if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
@@ -1095,6 +1097,13 @@ def convert_bpch_names_to_netcdf_names(ds, verbose=False):
 
 
 def get_lumped_species_definitions():
+    """
+    Returns lumped species definitions from a YAML file.
+
+    Returns:
+        lumped_spc_dict : dict of str
+            Dictionary of lumped species
+    """
     lumped_spc = "lumped_species.yml"
     yamlfile = os.path.join(os.path.dirname(__file__), lumped_spc)
     with open(yamlfile, "r") as f:
@@ -1103,10 +1112,21 @@ def get_lumped_species_definitions():
 
 
 def archive_lumped_species_definitions(dst):
+    """
+    Archives lumped species definitions to a YAML file.
+
+    Args:
+        dst : str
+            Name of the folder where the YAML file containing
+            benchmark categories ("benchmark_species.yml")
+            will be written.
+    """
     lumped_spc = "lumped_species.yml"
     src = os.path.join(os.path.dirname(__file__), lumped_spc)
-    print("Archiving {} in {}".format(lumped_spc, dst))
-    shutil.copyfile(src, os.path.join(dst, lumped_spc))
+    copy = os.path.join(dst, lumped_spc)
+    if not os.path.exists(copy):
+        print("Archiving {} in {}".format(lumped_spc, dst))
+        shutil.copyfile(src, copy)
 
 
 def add_lumped_species_to_dataset(
