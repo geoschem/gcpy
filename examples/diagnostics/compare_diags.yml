@@ -1,0 +1,35 @@
+---
+paths:
+  main_dir: /path/to/your/data   # Add the path to your output here
+  plots_dir: ./Results
+  weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+  test_data_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon/
+
+data:
+  ref:
+    label: "GCC_ref"  
+    dir: GCC_ref
+    subdir: OutputDir
+    file: GEOSChem.SpeciesConc.20190701_0000z.nc4
+  dev:
+    label: "GCC_dev"
+    dir: GCC_dev
+    subdir: OutputDir
+    file: GEOSChem.SpeciesConc.20190701_0000z.nc4
+
+options:
+  gcpy_test: True
+  verbose: False
+  restrict_vars: []
+  level_plot:
+    create_plot: True
+    pdfname: single_level_comparison.pdf
+    level_to_plot: 0
+  zonal_mean:
+    create_plot: True
+    pdfname: zonal_mean_comparison.pdf
+  totals_and_diffs:
+    print_to_screen: True
+    create_table: True
+    skip_zero_diffs: False
+    filename: ''
