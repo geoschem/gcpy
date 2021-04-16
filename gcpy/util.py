@@ -315,7 +315,7 @@ def archive_species_categories(dst):
     src = os.path.join(os.path.dirname(__file__), spc_categories)
     copy = os.path.join(dst, spc_categories)
     if not os.path.exists(copy):
-        print("Archiving {} in {}".format(spc_categories, dst))
+        print("\nArchiving {} in {}".format(spc_categories, dst))
         shutil.copyfile(src, copy)
 
 
@@ -1125,7 +1125,7 @@ def archive_lumped_species_definitions(dst):
     src = os.path.join(os.path.dirname(__file__), lumped_spc)
     copy = os.path.join(dst, lumped_spc)
     if not os.path.exists(copy):
-        print("Archiving {} in {}".format(lumped_spc, dst))
+        print("\nArchiving {} in {}".format(lumped_spc, dst))
         shutil.copyfile(src, copy)
 
 
@@ -1133,7 +1133,7 @@ def add_lumped_species_to_dataset(
     ds,
     lspc_dict={},
     lspc_yaml="",
-    verbose=True,
+    verbose=False,
     overwrite=False,
     prefix="SpeciesConc_",
 ):
@@ -1159,7 +1159,7 @@ def add_lumped_species_to_dataset(
             Default value: False
         verbose: bool
             Whether to print informational output.
-            Default value: True
+            Default value: False
         overwrite: bool
             Whether to overwrite an existing species dataarray in a dataset
             if it has the same name as a new lumped species. If False and
