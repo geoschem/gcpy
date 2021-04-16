@@ -63,6 +63,7 @@ from gcpy import benchmark as bmk
 from gcpy.util import get_filepath, get_filepaths, get_area_from_dataset
 import gcpy.ste_flux as ste
 import gcpy.oh_metrics as oh
+import gcpy.budget_ox as ox
 import gcpy.mean_oh_from_logs as moh  # NOTE: to be removed after 13.0.0
 from joblib import Parallel, delayed, cpu_count, parallel_backend
 
@@ -145,6 +146,7 @@ plot_aod         = True
 mass_table       = True
 ops_budget_table = True
 aer_budget_table = True
+Ox_budget_table  = True
 ste_table        = True # GCC only
 OH_metrics       = True
 
@@ -622,6 +624,23 @@ if gcc_vs_gcc:
         )
 
     # --------------------------------------------------------------
+    # GCC vs GCC Ox budget table
+    # --------------------------------------------------------------
+    if Ox_budget_table:
+        print("\n%%% Creating GCC vs. GCC Ox budget table %%%")
+
+        # Compute Ox budget table
+        ox.global_ox_budget(
+            gcc_dev_version,
+            gcc_vs_gcc_devdir,
+            gcc_vs_gcc_devrstdir,
+            bmk_year_dev,
+            dst=gcc_vs_gcc_tablesdir,
+            overwrite=True,
+            spcdb_dir=spcdb_dir
+        )
+
+    # --------------------------------------------------------------
     # GCC Strat-Trop Exchange
     # --------------------------------------------------------------
     if ste_table:
@@ -990,6 +1009,37 @@ if gchp_vs_gcc:
             is_gchp=True
         )
 
+    # Comment out the budget tables until we are sure that GCHP
+    # benchmarks archive wetdep fields for HNO3 (bmy, 4/1/21)
+    ## --------------------------------------------------------------
+    ## GCHP vs GCC Ox budget tables
+    ## --------------------------------------------------------------
+    #if Ox_budget_table:
+    #    print("\n%%% Creating GCHP vs. GCC Ox budget tables %%%")
+    #
+    #    # Compute Ox budget table for GCC
+    #    ox.global_ox_budget(
+    #        gcc_dev_version,
+    #        gcc_vs_gcc_devdir,
+    #        gcc_vs_gcc_devrstdir,
+    #        bmk_year_dev,
+    #        dst=gcc_vs_gcc_tablesdir,
+    #        overwrite=True,
+    #        spcdb_dir=spcdb_dir
+    #    )
+    #
+    #    # Compute Ox budget table for GCHP
+    #    ox.global_ox_budget(
+    #        gchp_dev_version,
+    #        gchp_vs_gcc_devdir,
+    #        gchp_vs_gcc_devrstdir,
+    #        bmk_year_dev,
+    #        dst=gchp_vs_gcc_tablesdir,
+    #        overwrite=True,
+    #        is_gchp=True,
+    #        spcdb_dir=spcdb_dir
+    #    )
+
     #---------------------------------------------------------------
     # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
     #---------------------------------------------------------------
@@ -1303,6 +1353,27 @@ if gchp_vs_gchp:
             spcdb_dir=spcdb_dir
         )
         '''
+
+    # Comment out the budget tables until we are sure that GCHP
+    # benchmarks archive wetdep fields for HNO3 (bmy, 4/1/21)
+    ## --------------------------------------------------------------
+    ## GCHP vs GCHP Ox budget tables
+    ## --------------------------------------------------------------
+    #if Ox_budget_table:
+    #    print("\n%%% Creating GCHP Ox budget table %%%")
+    #
+    #    # Compute Ox budget table for GCHP
+    #    ox.global_ox_budget(
+    #        gchp_dev_version,
+    #        gchp_vs_gchp_devdir,
+    #        gchp_vs_gchp_devrstdir,
+    #        bmk_year_dev,
+    #        dst=gchp_vs_gchp_tablesdir,
+    #        overwrite=True,
+    #        is_gchp=True,
+    #        spcdb_dir=spcdb_dir
+    #    )
+
     #---------------------------------------------------------------
     # GCHP vs. GCHP global mean OH, MCF Lifetime, CH4 Lifetime
     #---------------------------------------------------------------

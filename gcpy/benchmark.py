@@ -824,9 +824,9 @@ def make_benchmark_conc_plots(
 
     # FullChemBenchmark has lumped species (TransportTracers does not)
     if "FullChem" in benchmark_type:
-        print("\nAdding lumped species to ref dataset:")
+        print("\nAdding lumped species to ref dataset")
         refds = util.add_lumped_species_to_dataset(refds)
-        print("\nAdding lumped species to dev dataset:")
+        print("\nAdding lumped species to dev dataset")
         devds = util.add_lumped_species_to_dataset(devds)
         if diff_of_diffs:
             second_refds = util.add_lumped_species_to_dataset(second_refds)
