@@ -39,9 +39,7 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-    This issue might be fixed in matplotlib 3.0.
-
-This script corresponds with GCPy 1.0.2. Edit this version ID if releasing
+This script corresponds with GCPy 1.0.4. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -176,10 +174,20 @@ else:
                                     results_dir, "GCHP_GCC_comparison")
     base_gchp_resultsdir     = join(maindir, gchp_dev_version, results_dir)
     #make results directories that don't exist
-    for resdir, plotting_type in zip([gcc_vs_gcc_resultsdir, base_gchp_resultsdir,
-                                      gchp_vs_gchp_resultsdir, gchp_vs_gcc_resultsdir],
-                                     [gcc_vs_gcc, gchp_vs_gcc or gchp_vs_gchp,
-                                      gchp_vs_gchp, gchp_vs_gcc]):
+    for resdir, plotting_type in zip(
+            [
+                gcc_vs_gcc_resultsdir,
+                base_gchp_resultsdir,
+                gchp_vs_gchp_resultsdir,
+                gchp_vs_gcc_resultsdir
+            ],
+            [
+                gcc_vs_gcc,
+                gchp_vs_gcc or gchp_vs_gchp,
+                gchp_vs_gchp,
+                gchp_vs_gcc
+            ]
+    ):
         if plotting_type and not exists(resdir): os.mkdir(resdir)
         if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
             # Make copy of benchmark script in results directory
@@ -539,14 +547,17 @@ if gchp_vs_gcc:
 
     # ==================================================================
     # GCHP vs GCC filepaths for StateMet collection data
+    #
+    # (1) GCHP (Dev) and GCC (Ref) use the same benchmark year.
+    # (2) The GCC version in "GCHP vs GCC" is the Dev of "GCC vs GCC".
     # ==================================================================
     refmet = get_filepaths(
-        gcc_vs_gcc_devdir,
+        gchp_vs_gcc_refdir,
         "StateMet",
-        all_months_ref
+        all_months_dev
     )[0]
     devmet = get_filepaths(
-        gcc_vs_gcc_devdir,
+        gchp_vs_gcc_devdir,
         gchp_metname(gchp_dev_prior_to_13),
         all_months_mid_dev,
         is_gchp=True
@@ -569,7 +580,7 @@ if gchp_vs_gcc:
         ref = get_filepaths(
             gchp_vs_gcc_refdir,
             "SpeciesConc",
-            all_months_ref
+            all_months_dev
         )[0]
         dev = get_filepaths(
             gchp_vs_gcc_devdir,
@@ -637,7 +648,7 @@ if gchp_vs_gcc:
             ref = get_filepaths(
                 gchp_vs_gcc_refdir,
                 col,
-                all_months_ref
+                all_months_dev
             )[0]
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
@@ -850,7 +861,8 @@ if gchp_vs_gchp:
             ref = get_filepaths(
                 gchp_vs_gchp_refdir,
                 col,
-                all_months_ref
+                all_months_mid_ref,
+                is_gchp=True
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
