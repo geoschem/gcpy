@@ -85,7 +85,7 @@ bmk_n_months = len(bmk_mon_strs)
 # ======================================================================
 
 # High-level directory containing subdirectories with data
-maindir  = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1yr_transporttracer"
+maindir = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1yr_transporttracer"
 
 # Version strings
 # NOTE: these will be used in some filenames and so should not have spaces
@@ -188,7 +188,8 @@ else:
                 gchp_vs_gcc
             ]
     ):
-        if plotting_type and not exists(resdir): os.mkdir(resdir)
+        if plotting_type and not exists(resdir):
+            os.mkdir(resdir)
         if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
             # Make copy of benchmark script in results directory
             curfile = os.path.realpath(__file__)
@@ -288,8 +289,8 @@ bmk_mons_mid_dev = all_months_mid_dev[bmk_mon_inds]
 # Print the list of plots & tables to the screen
 # =======================================================================
 print("The following plots and tables will be created for {}:".format(
-    bmk_type)
-)
+    bmk_type
+))
 if plot_conc:
     print(" - Concentration plots")
 if plot_wetdep:
@@ -529,14 +530,13 @@ if gcc_vs_gcc:
         )[0]
 
         # Make stat-trop exchange table for subset of species
-        species = ["Pb210","Be7","Be10"]
         ste.make_benchmark_ste_table(
             gcc_dev_version,
             devs,
             int(bmk_year_dev),
             dst=gcc_vs_gcc_tablesdir,
             bmk_type=bmk_type,
-            species=species,
+            species=["Pb210", "Be7", "Be10"],
             overwrite=True
         )
 
@@ -1013,9 +1013,9 @@ if cons_table:
 
         # Pick output folder
         if gchp_vs_gcc:
-            tablesdir=gchp_vs_gcc_tablesdir
+            tablesdir = gchp_vs_gcc_tablesdir
         else:
-            tablesdir=gcc_vs_gcc_tablesdir
+            tablesdir = gcc_vs_gcc_tablesdir
 
         # Create table
         bmk.make_benchmark_mass_conservation_table(
@@ -1042,9 +1042,9 @@ if cons_table:
 
         # Pick output folder
         if gchp_vs_gcc:
-            tablesdir=gchp_vs_gcc_tablesdir
+            tablesdir = gchp_vs_gcc_tablesdir
         else:
-            tablesdir=gchp_vs_gchp_tablesdir
+            tablesdir = gchp_vs_gchp_tablesdir
 
         # Create table
         bmk.make_benchmark_mass_conservation_table(
