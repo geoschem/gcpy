@@ -105,6 +105,10 @@ gchp_dev_bmk_mon  = '7'
 gchp_ref_prior_to_13 = False
 gchp_dev_prior_to_13 = False
 
+# Whether GCHP files are legacy (pre-13.1) format
+gchp_ref_is_legacy=True
+gchp_dev_is_legacy=True
+
 # Name to be used for directory of output from this script
 results_dir = "BenchmarkResults"
 
@@ -327,20 +331,40 @@ gchp_dev_s_start = (str(gchp_dev_b_start[0]), str(gchp_dev_b_start[1]).zfill(2))
 gchp_dev_s_stop = (str(gchp_dev_b_stop[0]), str(gchp_dev_b_stop[1]).zfill(2))
 
 # Timestamps for files
+
+# Ref start used in diagnostic filename
 gcc_ref_date = np.datetime64("{}-{}-01T00:00:00".format(*gcc_ref_s_start))
-gchp_ref_date = np.datetime64("{}-{}-16T12:00:00".format(*gchp_ref_s_start))
+if not gchp_ref_is_legacy:
+    gchp_ref_date = np.datetime64("{}-{}-01T00:00:00".format(gchp_ref_s_start[0], gchp_ref_s_start[1]))
+else:
+    gchp_ref_date = np.datetime64("{}-{}-16T12:00:00".format(gchp_ref_s_start[0], gchp_ref_s_start[1]))
+
+# Ref end used in restart filename)
 gcc_end_ref_date = np.datetime64("{}-{}-01T00:00:00".format(*gcc_ref_s_stop))
 gchp_end_ref_date = np.datetime64("{}-{}-01T00:00:00".format(*gchp_ref_s_stop))
+
+# Dev start used in diagnostic filename
 gcc_dev_date = np.datetime64("{}-{}-01T00:00:00".format(*gcc_dev_s_start))
-gchp_dev_date = np.datetime64("{}-{}-16T12:00:00".format(*gchp_dev_s_start))
+if not gchp_dev_is_legacy:
+    gchp_dev_date = np.datetime64("{}-{}-01T00:00:00".format(gchp_dev_s_start[0], gchp_dev_s_start[1]))
+else:
+    gchp_dev_date = np.datetime64("{}-{}-16T12:00:00".format(gchp_dev_s_start[0], gchp_dev_s_start[1]))
+
+# Dev end used in restart filename
 gcc_end_dev_date = np.datetime64("{}-{}-01T00:00:00".format(*gcc_dev_s_stop))
 gchp_end_dev_date = np.datetime64("{}-{}-01T00:00:00".format(*gchp_dev_s_stop))
 
 # Seconds per month
 gcc_ref_sec_in_bmk_month = (gcc_end_ref_date  - gcc_ref_date).astype("float64")
-gchp_ref_sec_in_bmk_month = (gchp_end_ref_date - gchp_ref_date).astype("float64") * 2
+gchp_ref_sec_in_bmk_month = (gchp_end_ref_date - gchp_ref_date).astype("float64")
 gcc_dev_sec_in_bmk_month = (gcc_end_dev_date  - gcc_dev_date).astype("float64")
-gchp_dev_sec_in_bmk_month = (gchp_end_dev_date - gchp_dev_date).astype("float64") * 2
+gchp_dev_sec_in_bmk_month = (gchp_end_dev_date - gchp_dev_date).astype("float64")
+
+# Double gchp sec/month if mid-point timestamp in filename (legacy format)
+if gchp_ref_is_legacy:
+    gchp_ref_sec_in_bmk_month = gchp_ref_sec_in_bmk_month * 2
+if gchp_dev_is_legacy:
+    gchp_dev_sec_in_bmk_month = gchp_dev_sec_in_bmk_month * 2
 
 # ======================================================================
 # Significant difference filenames
@@ -767,7 +791,7 @@ if gchp_vs_gcc:
             calendar.month_abbr[gchp_dev_b_start[1]] + gchp_dev_s_start[0]
 
     # ==================================================================
-    # GCC vs GCC filepaths for StateMet collection data
+    # GCHP vs GCC filepaths for StateMet collection data
     # ==================================================================
     refmet = get_filepath(
         gchp_vs_gcc_refdir,
@@ -778,7 +802,8 @@ if gchp_vs_gcc:
         gchp_vs_gcc_devdir,
         gchp_metname(gchp_dev_prior_to_13),
         gchp_dev_date,
-        is_gchp=True
+        is_gchp=True,
+        gchp_format_is_legacy=gchp_dev_is_legacy
     )
 
     # ==================================================================
@@ -797,7 +822,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devdir,
             "SpeciesConc",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -832,7 +858,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devdir,
             "Emissions",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create emissions plots
@@ -866,7 +893,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devdir,
             "Emissions",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -899,7 +927,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devdir,
             "JValues",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -931,7 +960,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devdir,
             "Aerosols",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -963,7 +993,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devrst,
             "Restart",
             gchp_end_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create tables
@@ -993,7 +1024,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devdir,
             "Budget",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1032,7 +1064,8 @@ if gchp_vs_gcc:
             gchp_vs_gcc_devdir,
             "Metrics",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create table
@@ -1086,13 +1119,15 @@ if gchp_vs_gchp:
         gchp_vs_gchp_refdir,
         gchp_metname(gchp_ref_prior_to_13),
         gchp_ref_date,
-        is_gchp=True
+        is_gchp=True,
+        gchp_format_is_legacy=gchp_ref_is_legacy
     )
     devmet = get_filepath(
         gchp_vs_gchp_devdir,
         gchp_metname(gchp_dev_prior_to_13),
         gchp_dev_date,
-        is_gchp=True
+        is_gchp=True,
+        gchp_format_is_legacy=gchp_dev_is_legacy
     )
 
     # ==================================================================
@@ -1106,13 +1141,15 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refdir,
             "SpeciesConc",
             gchp_ref_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepath(
             gchp_vs_gchp_devdir,
             "SpeciesConc",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1142,13 +1179,15 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refdir,
             "Emissions",
             gchp_ref_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepath(
             gchp_vs_gchp_devdir,
             "Emissions",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1177,13 +1216,15 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refdir,
             "Emissions",
             gchp_ref_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepath(
             gchp_vs_gchp_devdir,
             "Emissions",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create tables
@@ -1212,13 +1253,15 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refdir,
             "JValues",
             gchp_ref_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepath(
             gchp_vs_gchp_devdir,
             "JValues",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1245,13 +1288,15 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refdir,
             "Aerosols",
             gchp_ref_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepath(
             gchp_vs_gchp_devdir,
             "Aerosols",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1278,13 +1323,15 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refrst,
             "Restart",
             gchp_end_ref_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepath(
             gchp_vs_gchp_devrst,
             "Restart",
             gchp_end_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create tables
@@ -1309,13 +1356,15 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refdir,
             "Budget",
             gchp_ref_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepath(
             gchp_vs_gchp_devdir,
             "Budget",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create tables
@@ -1351,13 +1400,15 @@ if gchp_vs_gchp:
             gchp_vs_gchp_refdir,
             "Metrics",
             gchp_ref_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepath(
             gchp_vs_gchp_devdir,
             "Metrics",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create table
@@ -1400,13 +1451,15 @@ if gchp_vs_gcc_diff_of_diffs:
             gchp_vs_gchp_refdir,
             "SpeciesConc",
             gchp_ref_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         gchp_dev = get_filepath(
             gchp_vs_gchp_devdir,
             "SpeciesConc",
             gchp_dev_date,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create diff-of-diff plots for species concentrations

@@ -1633,7 +1633,8 @@ def get_filepath(
         datadir,
         col,
         date,
-        is_gchp=False
+        is_gchp=False,
+        gchp_format_is_legacy=False
 ):
     """
     Routine to return file path for a given GEOS-Chem "Classic"
@@ -1653,6 +1654,11 @@ def get_filepath(
             Set this switch to True to obtain file pathnames to
             GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
 
+        gchp_format_is_legacy: bool
+            Set this switch to True to obtain GCHP file pathnames of
+            the legacy format for diagnostics, which do not match GC-Classic
+            filenames. Set to False to use same format as GC-Classic.
+
     Returns:
         path: str
             Pathname for the specified collection and date.
@@ -1661,6 +1667,7 @@ def get_filepath(
     # Set filename template, extension, separator, and date string from
     # the collection, date, and data directory arguments
     separator = "_"
+    extension = "z.nc4"
     date_str = np.datetime_as_string(date, unit="m")
     if is_gchp:
         if "Restart" in col:
@@ -1669,8 +1676,10 @@ def get_filepath(
             extension = ".nc4"
             date_str = np.datetime_as_string(date, unit="s")
         else:
-            file_tmpl = os.path.join(datadir, "GCHP.{}.".format(col))
-            extension = "z.nc4"
+            if gchp_format_is_legacy:
+                file_tmpl = os.path.join(datadir, "GCHP.{}.".format(col))
+            else:
+                file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(col))
     else:
         if "Emissions" in col:
             file_tmpl = os.path.join(datadir, "HEMCO_diagnostics.")
@@ -1678,7 +1687,6 @@ def get_filepath(
             separator = ""
         else:
             file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(col))
-            extension = "z.nc4"
     if isinstance(date_str, np.str_):
         date_str = str(date_str)
     date_str = date_str.replace("T", separator)
@@ -1694,7 +1702,8 @@ def get_filepaths(
         datadir,
         collections,
         dates,
-        is_gchp=False
+        is_gchp=False,
+        gchp_format_is_legacy=False
 ):
     """
     Routine to return filepaths for a given GEOS-Chem "Classic"
@@ -1713,6 +1722,11 @@ def get_filepaths(
         is_gchp: bool
             Set this switch to True to obtain file pathnames to
             GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
+
+        gchp_format_is_legacy: bool
+            Set this switch to True to obtain GCHP file pathnames of
+            the legacy format for diagnostics, which do not match GC-Classic
+            filenames. Set to False to use same format as GC-Classic.
 
     Returns:
         paths: 2D list of str
@@ -1738,6 +1752,8 @@ def get_filepaths(
     # ==================================================================
     for c, collection in enumerate(collections):
 
+        separator = "_"
+        extension = "z.nc4"
         if is_gchp:
             # ---------------------------------------
             # Get the file path template for GCHP
@@ -1745,13 +1761,13 @@ def get_filepaths(
             if "Restart" in collection:
                 file_tmpl = os.path.join(datadir,
                                          "gcchem_internal_checkpoint.restart.")
-                separator = "_"
                 extension = ".nc4"
             else:
-                file_tmpl = os.path.join(datadir,
-                                         "GCHP.{}.".format(collection))
-                separator = "_"
-                extension = "z.nc4"
+                if gchp_format_is_legacy:
+                    file_tmpl = os.path.join(datadir,
+                                             "GCHP.{}.".format(collection))
+                else:
+                    file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(collection))
         else:
             # ---------------------------------------
             # Get the file path template for GCC
@@ -1764,8 +1780,6 @@ def get_filepaths(
             else:
                 file_tmpl = os.path.join(datadir,
                                          "GEOSChem.{}.".format(collection))
-                separator = "_"
-                extension = "z.nc4"
 
         # --------------------------------------------
         # Create a list of files for each date/time
