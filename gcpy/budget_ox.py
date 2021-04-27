@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Computes the budget of Ox from 1-year GEOS-Chem Classic
 or GCHP benchmark simulations.
@@ -11,13 +9,14 @@ or GCHP benchmark simulations.
 
 import os
 import warnings
+import yaml
 from calendar import monthrange
 import numpy as np
 import xarray as xr
 from yaml import load as yaml_load_file
 import gcpy.constants as constants
 from gcpy.grid import get_troposphere_mask
-from gcpy.util import rename_and_flip_gchp_rst_vars, reshape_MAPL_CS
+import gcpy.util as util
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -73,6 +72,9 @@ class _GlobVars:
         self.dst = dst
         self.is_gchp = is_gchp
         self.overwrite = overwrite
+        if spcdb_dir is None:
+            spcdb_dir = os.path.dirname(__file__)
+        self.spcdb_dir = spcdb_dir
 
         # ---------------------------------------------------------------
         # Benchmark year
@@ -86,6 +88,9 @@ class _GlobVars:
         # Read data into datasets
         # --------------------------------------------------------------
 
+        # Lumped species definition for Ox (looks in rundir first)
+        self.lspc_dict = self.get_lumped_species_dict()
+
         # Read initial and final restart files
         self.ds_ini = self.read_rst(self.y0_str)
         self.ds_end = self.read_rst(self.y1_str)
@@ -94,16 +99,16 @@ class _GlobVars:
         # vertical axis.  Also test if the restart files have the BXHEIGHT
         # variable contained within them.
         if is_gchp:
-            self.ds_ini = rename_and_flip_gchp_rst_vars(self.ds_ini)
-            self.ds_end = rename_and_flip_gchp_rst_vars(self.ds_end)
+            self.ds_ini = util.rename_and_flip_gchp_rst_vars(self.ds_ini)
+            self.ds_end = util.rename_and_flip_gchp_rst_vars(self.ds_end)
 
         # Read diagnostics
         self.get_diag_paths()
-        self.ds_dry = self.read_diag("DryDep")
+        self.ds_dry = self.read_diag("DryDep", prefix="DryDep_")
         self.ds_pl = self.read_diag("ProdLoss")
-        self.ds_met = self.read_diag("StateMet")
-        self.ds_wcv = self.read_diag("WetLossConv")
-        self.ds_wls = self.read_diag("WetLossLS")
+        self.ds_met = self.read_diag("StateMet", prefix="Met_")
+        self.ds_wcv = self.read_diag("WetLossConv", prefix="WetLossConv_")
+        self.ds_wls = self.read_diag("WetLossLS", prefix="WetLossLS_" )
 
         # --------------------------------------------------------------
         # Get other quantities for the budget computations
@@ -117,6 +122,30 @@ class _GlobVars:
     # ==================================================================
     # Instance methods
     # ==================================================================
+    def get_lumped_species_dict(self):
+        """
+        Returns a dictionary of lumped species definitions.
+
+        Returns
+           lspc_dict : dict
+        """
+        # First look in the current folder
+        lspc_path = "lumped_species.yml"
+        if os.path.exists(lspc_path):
+            lspc_dict = yaml.load(open(lspc_path), Loader=yaml.FullLoader)
+            return lspc_dict
+
+        # Then look in the same folder where the species database is
+        lspc_path = os.path.join(self.spcdb_dir, "lumped_species.yml")
+        if os.path.exists(lspc_path):
+            lspc_dict = yaml.load(open(lspc_path), Loader=yaml.FullLoader)
+            return lspc_dict
+
+        # Then look in the GCPy source code folder
+        lspc_dict = util.get_lumped_species_definitions()
+        return lspc_dict
+
+
     def rst_file_path(self, ystr):
         """
         Returns the restart file path
@@ -183,10 +212,17 @@ class _GlobVars:
             drop_variables=constants.skip_these_vars
         )
 
+        ds = util.add_lumped_species_to_dataset(
+            ds,
+            lspc_dict=self.lspc_dict,
+            verbose=False,
+            prefix="SpeciesRst_"
+        )
+
         return ds
 
 
-    def read_diag(self, collection):
+    def read_diag(self, collection, prefix=None):
         """
         Reads a restart file into an xarray Dataset.
 
@@ -204,6 +240,14 @@ class _GlobVars:
             concat_dim="time"
         )
 
+        if prefix is not None:
+            ds = util.add_lumped_species_to_dataset(
+                ds,
+                lspc_dict=self.lspc_dict,
+                verbose=False,
+                prefix=prefix
+            )
+
         return ds
 
 
@@ -219,7 +263,7 @@ class _GlobVars:
                 msg = 'Could not find Met_AREAM2 in StateMet_avg collection!'
                 raise ValueError(msg)
             area_m2 = self.ds_met["Met_AREAM2"].isel(time=0)
-            area_m2 = reshape_MAPL_CS(area_m2)
+            area_m2 = util.reshape_MAPL_CS(area_m2)
             self.area_m2 = area_m2
             self.area_cm2 = self.ds_met["Met_AREAM2"] * 1.0e4
         else:
@@ -263,18 +307,14 @@ class _GlobVars:
            spcdb_dir : str
                Path to the species_database.yml file
         """
-
-        # List of species (and subsets for the trop & strat)
-        self.species_list = ["HNO3", "O3", "NO2", "NO3", "PAN", "PPN"]
-
         # Read the species database
         path = os.path.join(spcdb_dir, "species_database.yml")
         spcdb = yaml_load_file(open(path))
 
         # Molecular weights [kg mol-1], as taken from the species database
         self.mw = {}
-        for v in self.species_list:
-            self.mw[v] = spcdb[v]["MW_g"] * 1.0e-3
+        self.mw["O3"] = spcdb["O3"]["MW_g"] * 1.0e-3
+        self.mw["Ox"] = self.mw["O3"]
         self.mw["Air"] = constants.MW_AIR_g * 1.0e-3
 
         # kg/s --> Tg/d
@@ -287,7 +327,8 @@ class _GlobVars:
 
 
 def init_and_final_mass(
-        globvars
+        globvars,
+        species
 ):
     """
     Computes global species mass from the initial & final restart files.
@@ -300,6 +341,9 @@ def init_and_final_mass(
         result: dict
             Contains initial & final tropospheric mass of O3.
     """
+    # Error checks
+    if species is None:
+        raise ValueError("Argument species is undefined!")
 
     # Meterological quantities (from restart file met)
     if 'time' in globvars.ds_ini["Met_DELPDRY"].dims:
@@ -320,33 +364,36 @@ def init_and_final_mass(
     vv_to_tg_ini = airmass_ini * (mw_ratio * kg_to_tg)
     vv_to_tg_end = airmass_end * (mw_ratio * kg_to_tg)
 
-    # Determine if restart file variables have a time dimension
-    # (if one does, they all do)
-    v = "SpeciesRst_O3"
-    if 'time' in globvars.ds_ini[v].dims:
-        mass_ini = globvars.ds_ini[v].isel(time=0).values * vv_to_tg_ini
-    else:
-        mass_ini = globvars.ds_ini[v].values * vv_to_tg_ini
-    if 'time' in globvars.ds_end[v].dims:
-        mass_end = globvars.ds_end[v].isel(time=0).values * vv_to_tg_end
-    else:
-        mass_end = globvars.ds_end[v].values * vv_to_tg_end
-
-    # Compute tropospheric masses [Tg Ox]
-    tropmass_ini = np.ma.masked_array(
-        mass_ini,
-        globvars.tropmask[0, :, :, :]
-    )
-    tropmass_end = np.ma.masked_array(
-        mass_end,
-        globvars.tropmask[globvars.N_MONTHS-1, :, :, :]
-    )
-
-    # Create a dict to return values
+    # Loop over the species list
     result = {}
-    result["Ini"] = np.sum(tropmass_ini)
-    result["End"] = np.sum(tropmass_end)
-    result["Acc"] = result["End"] - result["Ini"]
+    for s in species:
+        v = "SpeciesRst_" + s
+
+        # Determine if restart file variables have a time dimension
+        # (if one does, they all do)
+        if 'time' in globvars.ds_ini[v].dims:
+            mass_ini = globvars.ds_ini[v].isel(time=0).values * vv_to_tg_ini
+        else:
+            mass_ini = globvars.ds_ini[v].values * vv_to_tg_ini
+        if 'time' in globvars.ds_end[v].dims:
+            mass_end = globvars.ds_end[v].isel(time=0).values * vv_to_tg_end
+        else:
+            mass_end = globvars.ds_end[v].values * vv_to_tg_end
+
+        # Compute tropospheric masses [Tg Ox]
+        tropmass_ini = np.ma.masked_array(
+            mass_ini,
+            globvars.tropmask[0, :, :, :]
+        )
+        tropmass_end = np.ma.masked_array(
+            mass_end,
+            globvars.tropmask[globvars.N_MONTHS-1, :, :, :]
+        )
+
+        # Create a dict to return values
+        result[s + "_ini"] = np.sum(tropmass_ini)
+        result[s + "_end"] = np.sum(tropmass_end)
+        result[s + "_acc"] = result[s + "_end"] - result[s + "_ini"]
 
     return result
 
@@ -366,7 +413,7 @@ def annual_average_prodloss(
     """
 
     # Conversion factors
-    mw_avo = globvars.mw["O3"] / constants.AVOGADRO
+    mw_avo = globvars.mw["Ox"] / constants.AVOGADRO
     kg_to_tg = 1.0e-9
 
     # Tropospheric P(Ox) and L(Ox) [molec/s]
@@ -411,21 +458,17 @@ def annual_average_drydep(
     """
 
     # Conversion factors and area
-    mw_avo = (globvars.mw["O3"] / constants.AVOGADRO)
+    mw_avo = (globvars.mw["Ox"] / constants.AVOGADRO)
     kg_to_tg = 1.0e-9
     area_cm2 = globvars.area_cm2.values
 
     # Get P(Ox) AND L(Ox) [kg/s]
-    dry = globvars.ds_dry["DryDep_HNO3"].values \
-        + globvars.ds_dry["DryDep_NO2"].values  \
-        + globvars.ds_dry["DryDep_O3"].values   \
-        + globvars.ds_dry["DryDep_PAN"].values  \
-        + globvars.ds_dry["DryDep_PPN"].values
+    dry = globvars.ds_dry["DryDep_Ox"].values
 
     # Monthly-weighted conv & LS wet losses [kg HNO3/s]
     dry_tot = 0.0
     for t in range(globvars.N_MONTHS):
-        dry_tot += np.sum(dry[t, :, :] * area_cm2) * globvars.frac_of_a[t]
+        dry_tot += np.nansum(dry[t, :, :] * area_cm2) * globvars.frac_of_a[t]
     result = dry_tot * globvars.s_per_a * kg_to_tg * mw_avo
 
     return result
@@ -443,17 +486,16 @@ def annual_average_wetdep(globvars):
     """
 
     # Conversion factors
-    hno3_to_ox = globvars.mw["O3"] / globvars.mw["HNO3"]
     kg_to_tg = 1.0e-9
 
     # Tropospheric wet loss (convective & large scale)
     # Take only tropospheric values
     wetcv_trop = np.ma.masked_array(
-        globvars.ds_wcv["WetLossConv_HNO3"].values,
+        globvars.ds_wcv["WetLossConv_Ox"].values,
         globvars.tropmask
     )
     wetls_trop = np.ma.masked_array(
-        globvars.ds_wls["WetLossLS_HNO3"].values,
+        globvars.ds_wls["WetLossLS_Ox"].values,
         globvars.tropmask
     )
 
@@ -461,12 +503,12 @@ def annual_average_wetdep(globvars):
     wetcv_tot = 0.0
     wetls_tot = 0.0
     for t in range(globvars.N_MONTHS):
-        wetcv_tot += np.sum(wetcv_trop[t, :, :, :]) * globvars.frac_of_a[t]
-        wetls_tot += np.sum(wetls_trop[t, :, :, :]) * globvars.frac_of_a[t]
+        wetcv_tot += np.nansum(wetcv_trop[t, :, :, :]) * globvars.frac_of_a[t]
+        wetls_tot += np.nansum(wetls_trop[t, :, :, :]) * globvars.frac_of_a[t]
 
     # Convert [kg HNO3/s] to [Tg Ox/a]
-    wetcv_tot *= globvars.s_per_a * kg_to_tg  * hno3_to_ox
-    wetls_tot *= globvars.s_per_a * kg_to_tg  * hno3_to_ox
+    wetcv_tot *= globvars.s_per_a * kg_to_tg  #* hno3_to_ox
+    wetls_tot *= globvars.s_per_a * kg_to_tg  #* hno3_to_ox
 
     # Create a dict to return the results
     result = {}
@@ -477,14 +519,53 @@ def annual_average_wetdep(globvars):
     return result
 
 
+def dyn_net_lifetime(
+        globvars,
+        mass,
+        prodloss,
+        wetdep,
+        drydep
+):
+    """
+    Computes the following terms:
+
+    1. "dyn": Ox subsiding from the stratosphere
+
+    2  "net": Net Ox = Chem + Dyn - Drydep - Wetdep
+
+    3. "life": Ox lifetime in days = Ox burden / (Chem + Drydep + Wetdep)
+
+    Args:
+        globvars: _GlobVars
+            Global variables needed for budget computations.
+        mass : dict
+        prodloss : dict
+        wetdep : dict
+        drydep : numpy float64
+            Mass, prod/loss, and deposition terms
+    Returns:
+        result : dict
+            Contains dyn, net, and life terms.
+    """
+    result = {}
+    acc = mass["Ox_acc"]
+    burden = mass["Ox_end"]
+    chem = prodloss["POx-LOx"]
+    wetd = wetdep["Total"]
+    result["dyn"] = acc - (chem - wetd - drydep)
+    result["net"] = (chem + result["dyn"]) - (wetd + drydep)
+    result["life"] = (burden / (chem + wetd + drydep)) * globvars.d_per_a
+
+    return result
+
+
 def print_budget(
         globvars,
         mass,
         prodloss,
         wetdep,
         drydep,
-        dyn,
-        net
+        metrics
 ):
     """
     Prints the trop+strat budget file.
@@ -492,11 +573,12 @@ def print_budget(
     Arguments:
         globvars: _GlobVars
             Global variables needed for budget computations.
-        data: dict
-            Nested dictionary containing budget info.
-        key: list of str
-            One of "_f", (full-atmosphere) "_t" (trop-only),
-            or "_s" (strat-only).
+        mass : dict
+        prodloss : dict
+        wetdep : dict
+        drydep : numpy float64
+        metrics : dict
+            Mass, prod/loss and deposition terms.
     """
     # Create the plot directory hierarchy if it doesn't already exist
     if os.path.isdir(globvars.dst) and not globvars.overwrite:
@@ -523,19 +605,18 @@ def print_budget(
         print("End:   {}-01-01 00:00 UTC".format(globvars.y1_str), file=f)
         print("="*50, file=f)
         print("\n", file=f)
-        print("  MASS ACCUMULATION       Tg Ox a-1", file=f)
-        print("  -----------------      ----------\n", file=f)
-        v = mass["Ini"]
-        print("    Initial mass        {:11.4f}".format(v), file=f)
-        v = mass["End"]
-        print("    Final mass          {:11.4f}".format(v), file=f)
-        print("                         ----------", file=f)
-        v = mass["Acc"]
-        print("    Difference          {:11.7f}".format(v), file=f)
+        print("  MASS ACCUMULATION       Tg Ox a-1    Tg O3 a-1", file=f)
+        print("  -----------------      ----------   ----------\n", file=f)
+        v = [mass["Ox_ini"], mass["O3_ini"]]
+        print("    Initial mass        {:11.4f}  {:11.4f}".format(*v), file=f)
+        v = [mass["Ox_end"], mass["O3_end"]]
+        print("    Final mass          {:11.4f}  {:11.4f}".format(*v), file=f)
+        print("                         ----------   ----------", file=f)
+        v = [mass["Ox_acc"], mass["O3_acc"]]
+        print("    Difference          {:11.7f}  {:11.7f}".format(*v), file=f)
         print("\n", file=f)
-        print("  SOURCES AND SINKS       Tg Ox a-1", file=f)
+        print("  Ox SOURCES              Tg Ox a-1", file=f)
         print("  -----------------      ----------\n", file=f)
-
         print("  * Chemistry", file=f)
         v = prodloss["POx"]
         print("      Total POx         {:11.4f}".format(v), file=f)
@@ -544,6 +625,11 @@ def print_budget(
         print("                         ----------", file=f)
         v = prodloss["POx-LOx"]
         print("      Net POx - LOx     {:11.6f}\n".format(v), file=f)
+        v = metrics["dyn"]
+        print("  * Dynamics", file=f)
+        print("      Strat Flux(Ox)    {:11.4f}\n".format(v), file=f)
+        print("\n  Ox SINKS                Tg Ox a-1", file=f)
+        print("  -----------------      ----------\n", file=f)
         v = drydep
         print("  * Dry deposition      {:11.4f}\n".format(v), file=f)
         print("  * Wet deposition", file=f)
@@ -554,13 +640,16 @@ def print_budget(
         print("                         ----------", file=f)
         v = wetdep["Total"]
         print("      Total Wetdep      {:11.6f}\n".format(v), file=f)
-        v = dyn
-        print("  * Dynamics", file=f)
-        print("      Strat Flux(Ox)    {:11.4f}\n".format(v), file=f)
-        v = net
-        print("  * DELTA Ox", file=f)
-        print("      Chem+Dyn-Dry-Wet  {:11.6f}".format(v), file=f)
+        print("\n  Ox METRICS", file=f)
+        print("  -----------------      ----------\n", file=f)
+        print("  * Delta Ox", file=f)
+        v = metrics["net"]
+        print("      Chem+Dyn-Dry-Wet  {:11.6f}  Tg Ox a-1".format(v), file=f)
+        print("\n  * Ox Lifetime", file=f)
+        v = metrics["life"]
+        print("    Mass/(Chem+Dyn+Wet) {:11.6f}  days".format(v), file=f)
         print(file=f)
+
         f.close()
 
 
@@ -572,7 +661,8 @@ def global_ox_budget(
         dst='./1yr_benchmark',
         is_gchp=False,
         overwrite=True,
-        spcdb_dir=os.path.dirname(__file__)):
+        spcdb_dir=None
+):
     """
     Main program to compute TransportTracersBenchmark budgets
 
@@ -617,7 +707,8 @@ def global_ox_budget(
 
     # Mass from initial & final restart file
     mass = init_and_final_mass(
-        globvars
+        globvars,
+        ["O3", "Ox"]
     )
 
     # Sources and sinks
@@ -631,11 +722,14 @@ def global_ox_budget(
         globvars
     )
 
-    # Stratospheric Ox is residual source
-    dyn = mass["Acc"] - (prodloss["POx-LOx"] - wetdep["Total"] - drydep)
-
-    # Net Ox: (Chem + Dyn) - (Wet + Dry)
-    net = (prodloss["POx-LOx"] + dyn) - (wetdep["Total"] + drydep)
+    # Dynamics, net Ox, lifetime in days
+    metrics = dyn_net_lifetime(
+        globvars,
+        mass,
+        prodloss,
+        wetdep,
+        drydep
+    )
 
     # ==================================================================
     # Print budgets to file
@@ -646,6 +740,5 @@ def global_ox_budget(
         prodloss,
         wetdep,
         drydep,
-        dyn,
-        net
+        metrics
     )
