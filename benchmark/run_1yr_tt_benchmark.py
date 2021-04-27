@@ -99,6 +99,10 @@ gchp_dev_version = "GCHP_dev"
 gchp_ref_prior_to_13 = False
 gchp_dev_prior_to_13 = False
 
+# Whether GCHP files are legacy (pre-13.1) format
+gchp_ref_is_legacy=True
+gchp_dev_is_legacy=True
+
 # Name to be used for directory of output from this script
 results_dir = "BenchmarkResults"
 
@@ -266,22 +270,19 @@ bmk_end_ref = np.datetime64("{}-01-01".format(int(bmk_year_ref)+1))
 all_months_ref = np.arange(bmk_start_ref, bmk_end_ref,
                            step=np.timedelta64(1, "M"),
                            dtype="datetime64[M]")
+all_months_gchp_ref = all_months_ref
 
-# Get all months array of mid-point datetime per month for benchmark year
-# and # sec in year
-# NOTE: GCHP time-averaged files have time in the middle of the month
-sec_per_yr_ref = 0
-all_months_mid_ref = np.zeros(12, dtype="datetime64[h]")
-for t in range(12):
-    days_in_mon = monthrange(int(bmk_year_ref), t + 1)[1]
-    sec_per_yr_ref += days_in_mon * 86400.0
-    middle_hr = int(days_in_mon * 24 / 2)
-    delta = np.timedelta64(middle_hr, 'h')
-    all_months_mid_ref[t] = all_months_ref[t].astype("datetime64[h]") + delta
-
-# Get subset of month datetimes for only benchmark months
-bmk_mons_ref = all_months_ref[bmk_mon_inds]
-bmk_mons_mid_ref = all_months_mid_ref[bmk_mon_inds]
+# Overwrite all_months_gchp_ref if GCHP ref is legacy filename format.
+# Legacy format uses time-averaging period mid-point not start.
+if gchp_ref_is_legacy:
+    sec_per_yr_ref = 0
+    all_months_gchp_ref = np.zeros(12, dtype="datetime64[h]")
+    for t in range(12):
+        days_in_mon = monthrange(int(bmk_year_ref), t + 1)[1]
+        sec_per_yr_ref += days_in_mon * 86400.0
+        middle_hr = int(days_in_mon * 24 / 2)
+        delta = np.timedelta64(middle_hr, 'h')
+        all_months_gchp_ref[t] = all_months_ref[t].astype("datetime64[h]") + delta
 
 # ======================================================================
 # Dates and times -- Dev data
@@ -296,22 +297,19 @@ bmk_end_dev = np.datetime64("{}-01-01".format(int(bmk_year_dev)+1))
 all_months_dev = np.arange(bmk_start_dev, bmk_end_dev,
                            step=np.timedelta64(1, "M"),
                            dtype="datetime64[M]")
+all_months_gchp_dev = all_months_dev
 
-# Get all months array of mid-point datetime per month for benchmark year
-# and # sec in year
-# NOTE: GCHP time-averaged files have time in the middle of the month
-sec_per_yr_dev = 0
-all_months_mid_dev = np.zeros(12, dtype="datetime64[h]")
-for t in range(12):
-    days_in_mon = monthrange(int(bmk_year_dev), t + 1)[1]
-    sec_per_yr_dev += days_in_mon * 86400.0
-    middle_hr = int(days_in_mon* 24 / 2)
-    delta = np.timedelta64(middle_hr, 'h')
-    all_months_mid_dev[t] = all_months_dev[t].astype("datetime64[h]") + delta
-
-# Get subset of month datetimes for only benchmark months
-bmk_mons_dev = all_months_dev[bmk_mon_inds]
-bmk_mons_mid_dev = all_months_mid_dev[bmk_mon_inds]
+# Overwrite all_months_gchp_ref if GCHP ref is legacy filename format.
+# Legacy format uses time-averaging period mid-point not start.
+if gchp_dev_is_legacy:
+    sec_per_yr_dev = 0
+    all_months_gchp_dev = np.zeros(12, dtype="datetime64[h]")
+    for t in range(12):
+        days_in_mon = monthrange(int(bmk_year_dev), t + 1)[1]
+        sec_per_yr_dev += days_in_mon * 86400.0
+        middle_hr = int(days_in_mon* 24 / 2)
+        delta = np.timedelta64(middle_hr, 'h')
+        all_months_gchp_dev[t] = all_months_dev[t].astype("datetime64[h]") + delta
 
 # =======================================================================
 # Print the list of plots & tables to the screen
@@ -587,8 +585,9 @@ if gchp_vs_gcc:
     devmet = get_filepaths(
         gchp_vs_gcc_devdir,
         gchp_metname(gchp_dev_prior_to_13),
-        all_months_mid_dev,
-        is_gchp=True
+        all_months_gchp_dev,
+        is_gchp=True,
+        gchp_format_is_legacy=gchp_dev_is_legacy
     )[0]
 
     # ==================================================================
@@ -613,8 +612,9 @@ if gchp_vs_gcc:
         dev = get_filepaths(
             gchp_vs_gcc_devdir,
             "SpeciesConc",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Create plots
@@ -681,8 +681,9 @@ if gchp_vs_gcc:
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
                 col,
-                all_months_mid_dev,
-                is_gchp=True
+                all_months_gchp_dev,
+                is_gchp=True,
+                gchp_format_is_legacy=gchp_dev_is_legacy
             )[0]
 
             # Create plots
@@ -757,8 +758,9 @@ if gchp_vs_gcc:
         devs = get_filepaths(
             gchp_vs_gcc_devdir,
             col,
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Make operations budget table
@@ -788,19 +790,21 @@ if gchp_vs_gcc:
 if gchp_vs_gchp:
 
     # ==================================================================
-    # GCHP vs GCC filepaths for StateMet collection data
+    # GCHP vs GCHP filepaths for StateMet collection data
     # ==================================================================
     refmet = get_filepaths(
         gchp_vs_gchp_refdir,
         gchp_metname(gchp_ref_prior_to_13),
-        all_months_mid_ref,
-        is_gchp=True
+        all_months_gchp_ref,
+        is_gchp=True,
+        gchp_format_is_legacy=gchp_ref_is_legacy
     )[0]
     devmet = get_filepaths(
         gchp_vs_gchp_devdir,
         gchp_metname(gchp_dev_prior_to_13),
-        all_months_mid_dev,
-        is_gchp=True
+        all_months_gchp_dev,
+        is_gchp=True,
+        gchp_format_is_legacy=gchp_dev_is_legacy
     )[0]
 
     # ==================================================================
@@ -820,14 +824,16 @@ if gchp_vs_gchp:
         ref = get_filepaths(
             gchp_vs_gchp_refdir,
             "SpeciesConc",
-            all_months_mid_ref,
-            is_gchp=True
+            all_months_gchp_ref,
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "SpeciesConc",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Make concentration plots
@@ -889,14 +895,16 @@ if gchp_vs_gchp:
             ref = get_filepaths(
                 gchp_vs_gchp_refdir,
                 col,
-                all_months_mid_ref,
-                is_gchp=True
+                all_months_gchp_ref,
+                is_gchp=True,
+                gchp_format_is_legacy=gchp_ref_is_legacy
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 col,
-                all_months_mid_dev,
-                is_gchp=True
+                all_months_gchp_dev,
+                is_gchp=True,
+                gchp_format_is_legacy=gchp_dev_is_legacy
             )[0]
 
             # Create plots
@@ -966,14 +974,16 @@ if gchp_vs_gchp:
         refs = get_filepaths(
             gchp_vs_gchp_refdir,
             "Budget",
-            all_months_mid_ref,
-            is_gchp=True
+            all_months_gchp_ref,
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         devs = get_filepaths(
             gchp_vs_gchp_devdir,
             "Budget",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create table
@@ -1012,8 +1022,7 @@ if cons_table:
         datafiles = get_filepaths(
             gcc_vs_gcc_refrstdir,
             "Restart",
-            all_months_ref,
-            is_gchp=False
+            all_months_ref
         )[0]
 
         # Create table
@@ -1035,8 +1044,7 @@ if cons_table:
         datafiles = get_filepaths(
             gcc_vs_gcc_devrstdir,
             "Restart",
-            all_months_dev,
-            is_gchp=False
+            all_months_dev
         )[0]
 
         # Pick output folder
@@ -1065,7 +1073,8 @@ if cons_table:
             gchp_vs_gcc_devrstdir,
             "Restart",
             all_months_dev,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Pick output folder
@@ -1094,7 +1103,8 @@ if cons_table:
             gchp_vs_gchp_refrstdir,
             "Restart",
             all_months_ref,
-            is_gchp=True
+            is_gchp=True,
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )[0]
 
         # Create table

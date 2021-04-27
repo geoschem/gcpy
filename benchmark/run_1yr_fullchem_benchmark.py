@@ -117,6 +117,10 @@ gchp_dev_res = 'c48'
 gchp_ref_prior_to_13 = False
 gchp_dev_prior_to_13 = False
 
+# Whether GCHP files are legacy (pre-13.1) format
+gchp_ref_is_legacy=True
+gchp_dev_is_legacy=True
+
 # ======================================================================
 # Specify if this is a gcpy test validation run
 # ======================================================================
@@ -291,6 +295,13 @@ def gchp_metname(prior_to_13):
 # Month/year strings for use in table subdirectories (e.g. Jan2016)
 bmk_mon_yr_strs_ref = [v + bmk_year_ref for v in bmk_mon_strs]
 
+# Get days per month and seconds per month for ref
+sec_per_month_ref = np.zeros(12)
+days_per_month_ref = np.zeros(12)
+for t in range(12):
+    days_per_month_ref[t] = monthrange(int(bmk_year_ref), t + 1)[1]
+    sec_per_month_ref[t] = days_per_month_ref[t] * 86400.0
+
 # Get all months array of start datetimes for benchmark year
 bmk_start_ref = np.datetime64(bmk_year_ref + "-01-01")
 bmk_end_ref = np.datetime64("{}-01-01".format(int(bmk_year_ref)+1))
@@ -298,23 +309,20 @@ all_months_ref = np.arange(bmk_start_ref,
                            bmk_end_ref,
                            step=np.timedelta64(1, "M"),
                            dtype="datetime64[M]")
+all_months_gchp_ref = all_months_ref
 
-# Get all months array of mid-point datetime per month for benchmark year,
-# and # sec and # days per month
-# NOTE: GCHP time-averaged files have time in the middle of the month
-sec_per_month_ref = np.zeros(12)
-days_per_month_ref = np.zeros(12)
-all_months_mid_ref = np.zeros(12, dtype="datetime64[h]")
-for t in range(12):
-    days_per_month_ref[t] = monthrange(int(bmk_year_ref), t + 1)[1]
-    sec_per_month_ref[t] = days_per_month_ref[t] * 86400.0
-    middle_hr = int(days_per_month_ref[t] * 24 / 2)
-    delta = np.timedelta64(middle_hr, 'h')
-    all_months_mid_ref[t] = all_months_ref[t].astype("datetime64[h]") + delta
+# Reset all months datetime array if GCHP ref is legacy filename format.
+# Legacy format uses time-averaging period mid-point not start.
+if gchp_ref_is_legacy:
+    all_months_gchp_ref = np.zeros(12, dtype="datetime64[h]")
+    for t in range(12):
+        middle_hr = int(days_per_month_ref[t] * 24 / 2)
+        delta = np.timedelta64(middle_hr, 'h')
+        all_months_gchp_ref[t] = all_months_ref[t].astype("datetime64[h]") + delta
 
-# Get subset of month datetimes for only benchmark months
+# Get subset of month datetimes and seconds per month for only benchmark months
 bmk_mons_ref = all_months_ref[bmk_mon_inds]
-bmk_mons_mid_ref = all_months_mid_ref[bmk_mon_inds]
+bmk_mons_gchp_ref = all_months_gchp_ref[bmk_mon_inds]
 bmk_sec_per_month_ref = sec_per_month_ref[bmk_mon_inds]
 
 # =====================================================================
@@ -324,6 +332,13 @@ bmk_sec_per_month_ref = sec_per_month_ref[bmk_mon_inds]
 # Month/year strings for use in table subdirectories (e.g. Jan2016)
 bmk_mon_yr_strs_dev = [v + bmk_year_dev for v in bmk_mon_strs]
 
+# Get days per month and seconds per month for dev
+sec_per_month_dev = np.zeros(12)
+days_per_month_dev = np.zeros(12)
+for t in range(12):
+    days_per_month_dev[t] = monthrange(int(bmk_year_dev), t + 1)[1]
+    sec_per_month_dev[t] = days_per_month_dev[t] * 86400.0
+
 # Get all months array of start datetimes for benchmark year
 bmk_start_dev = np.datetime64(bmk_year_dev + "-01-01")
 bmk_end_dev = np.datetime64("{}-01-01".format(int(bmk_year_dev)+1))
@@ -331,23 +346,20 @@ all_months_dev = np.arange(bmk_start_dev,
                            bmk_end_dev,
                            step=np.timedelta64(1, "M"),
                            dtype="datetime64[M]")
+all_months_gchp_dev = all_months_dev
 
-# Get all months array of mid-point datetime per month for benchmark year,
-# and # sec and # days per month
-# NOTE: GCHP time-averaged files have time in the middle of the month
-sec_per_month_dev = np.zeros(12)
-days_per_month_dev = np.zeros(12)
-all_months_mid_dev = np.zeros(12, dtype="datetime64[h]")
-for t in range(12):
-    days_per_month_dev[t] = monthrange(int(bmk_year_dev), t + 1)[1]
-    sec_per_month_dev[t] = days_per_month_dev[t] * 86400.0
-    middle_hr = int(days_per_month_dev[t] * 24 / 2)
-    delta = np.timedelta64(middle_hr, 'h')
-    all_months_mid_dev[t] = all_months_dev[t].astype("datetime64[h]") + delta
+# Reset all months datetime array if GCHP dev is legacy filename format.
+# Legacy format uses time-averaging period mid-point not start.
+if gchp_dev_is_legacy:
+    all_months_gchp_dev = np.zeros(12, dtype="datetime64[h]")
+    for t in range(12):
+        middle_hr = int(days_per_month_dev[t] * 24 / 2)
+        delta = np.timedelta64(middle_hr, 'h')
+        all_months_gchp_dev[t] = all_months_dev[t].astype("datetime64[h]") + delta
 
-# Get subset of month datetimes for only benchmark months
+# Get subset of month datetimes and seconds per month for only benchmark months
 bmk_mons_dev = all_months_dev[bmk_mon_inds]
-bmk_mons_mid_dev = all_months_mid_dev[bmk_mon_inds]
+bmk_mons_gchp_dev = all_months_gchp_dev[bmk_mon_inds]
 bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
 
 # ======================================================================
@@ -873,8 +885,9 @@ if gchp_vs_gcc:
     devmet = get_filepaths(
         gchp_vs_gcc_devdir,
         gchp_metname(gchp_dev_prior_to_13),
-        all_months_mid_dev,
-        is_gchp=True
+        all_months_gchp_dev,
+        is_gchp=True,
+        is_legacy_gchp_format=gchp_dev_is_legacy
     )[0]
 
     # ==================================================================
@@ -896,8 +909,9 @@ if gchp_vs_gcc:
         dev = get_filepaths(
             gchp_vs_gcc_devdir,
             "SpeciesConc",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )[0]
 
         # Create plots
@@ -960,8 +974,9 @@ if gchp_vs_gcc:
         dev = get_filepaths(
             gchp_vs_gcc_devdir,
             "Emissions",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )[0]
 
         # Create plots
@@ -1014,8 +1029,9 @@ if gchp_vs_gcc:
         dev = get_filepaths(
             gchp_vs_gcc_devdir,
             "Emissions",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )[0]
 
         # Create emissions table that spans entire year
@@ -1051,8 +1067,9 @@ if gchp_vs_gcc:
         dev = get_filepaths(
             gchp_vs_gcc_devdir,
             "JValues",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )[0]
 
         # Create plots
@@ -1105,8 +1122,10 @@ if gchp_vs_gcc:
         dev = get_filepaths(
             gchp_vs_gcc_devdir,
             "Aerosols",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
+
         )[0]
 
         # Create plots
@@ -1161,7 +1180,8 @@ if gchp_vs_gcc:
                 gchp_vs_gcc_devrstdir,
                 "Restart",
                 bmk_mons_dev[m],
-                is_gchp=True
+                is_gchp=True,
+                is_legacy_gchp_format=gchp_dev_is_legacy
             )
 
             # use initial restart if no checkpoint present (intended for
@@ -1177,7 +1197,8 @@ if gchp_vs_gcc:
                     gchp_vs_gcc_devrstdir,
                     "Restart",
                     bmk_mons_dev[m+1],
-                    is_gchp=True
+                    is_gchp=True,
+                    is_legacy_gchp_format=gchp_dev_is_legacy
                 )
 
             # Create tables
@@ -1217,8 +1238,9 @@ if gchp_vs_gcc:
             devpath = get_filepath(
                 gchp_vs_gcc_devdir,
                 "Budget",
-                bmk_mons_mid_dev[m],
-                is_gchp=True
+                bmk_mons_gchp_dev[m],
+                is_gchp=True,
+                is_legacy_gchp_format=gchp_dev_is_legacy
             )
 
             # Create tables
@@ -1255,14 +1277,16 @@ if gchp_vs_gcc:
         devaero = get_filepaths(
             gchp_vs_gcc_devdir,
             "Aerosols",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )[0]
         devspc = get_filepaths(
             gchp_vs_gcc_devdir,
             "SpeciesConc",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )[0]
 
         # Create tables
@@ -1277,7 +1301,7 @@ if gchp_vs_gcc:
             dst=gchp_vs_gcc_tablesdir,
             overwrite=True,
             spcdb_dir=spcdb_dir,
-            is_gchp=True
+            is_gchp=True,
         )
 
     # Comment out the budget tables until we are sure that GCHP
@@ -1326,8 +1350,9 @@ if gchp_vs_gcc:
         dev = get_filepaths(
             gchp_vs_gcc_devdir,
             "Metrics",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )[0]
 
         # Create table
@@ -1358,14 +1383,16 @@ if gchp_vs_gchp:
     refmet = get_filepaths(
         gchp_vs_gchp_refdir,
         gchp_metname(gchp_ref_prior_to_13),
-        all_months_mid_ref,
-        is_gchp=True
+        all_months_gchp_ref,
+        is_gchp=True,
+        is_legacy_gchp_format=gchp_ref_is_legacy
     )[0]
     devmet = get_filepaths(
         gchp_vs_gcc_devdir,
         gchp_metname(gchp_dev_prior_to_13),
-        all_months_mid_dev,
-        is_gchp=True
+        all_months_gchp_dev,
+        is_gchp=True,
+        is_legacy_gchp_format=gchp_dev_is_legacy
     )[0]
 
     # ==================================================================
@@ -1382,14 +1409,16 @@ if gchp_vs_gchp:
         ref = get_filepaths(
             gchp_vs_gchp_refdir,
             "SpeciesConc",
-            all_months_mid_ref,
-            is_gchp=True
+            all_months_gchp_ref,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_ref_is_legacy
         )
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             col,
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1445,14 +1474,16 @@ if gchp_vs_gchp:
         ref = get_filepaths(
             gchp_vs_gchp_refdir,
             "Emissions",
-            all_months_mid_ref,
-            is_gchp=True
+            all_months_gchp_ref,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_ref_is_legacy
         )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Emissions",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )[0]
 
         # Create plots
@@ -1500,14 +1531,16 @@ if gchp_vs_gchp:
         ref = get_filepaths(
             gchp_vs_gchp_refdir,
             "Emissions",
-            all_months_mid_ref,
-            is_gchp=True
+            all_months_gchp_ref,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_ref_is_legacy
         )
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Emissions",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )
 
         # Create table
@@ -1539,14 +1572,16 @@ if gchp_vs_gchp:
         ref = get_filepaths(
             gchp_vs_gchp_refdir,
             "JValues",
-            all_months_mid_ref,
-            is_gchp=True
+            all_months_gchp_ref,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_ref_is_legacy
         )
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "JValues",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1593,14 +1628,16 @@ if gchp_vs_gchp:
         ref = get_filepaths(
             gchp_vs_gchp_refdir,
             "Aerosols",
-            all_months_mid_ref,
-            is_gchp=True
+            all_months_gchp_ref,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_ref_is_legacy
         )
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Aerosols",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1651,7 +1688,8 @@ if gchp_vs_gchp:
                 gchp_vs_gchp_refrstdir,
                 "Restart",
                 bmk_mons_ref[m],
-                is_gchp=True
+                is_gchp=True,
+                is_legacy_gchp_format=gchp_ref_is_legacy
             )
 
             # Use initial checkpoint if Ref restart is not present
@@ -1665,7 +1703,8 @@ if gchp_vs_gchp:
                     gchp_vs_gchp_refrstdir,
                     "Restart",
                     bmk_mons_ref[m+1],
-                    is_gchp=True
+                    is_gchp=True,
+                    is_legacy_gchp_format=gchp_ref_is_legacy
                 )
 
             # Dev filepaths
@@ -1673,7 +1712,8 @@ if gchp_vs_gchp:
                 gchp_vs_gchp_devrstdir,
                 "Restart",
                 bmk_mons_dev[m],
-                is_gchp=True
+                is_gchp=True,
+                is_legacy_gchp_format=gchp_dev_is_legacy
             )
 
             # Use initial checkpoint if Dev restart is not present
@@ -1687,7 +1727,8 @@ if gchp_vs_gchp:
                     gchp_vs_gchp_devrstdir,
                     "Restart",
                     bmk_mons_dev[m+1],
-                    is_gchp=True
+                    is_gchp=True,
+                    is_legacy_gchp_format=gchp_dev_is_legacy
                 )
 
             # Create tables
@@ -1725,14 +1766,16 @@ if gchp_vs_gchp:
             refpath = get_filepath(
                 gchp_vs_gchp_refdir,
                 "Budget",
-                bmk_mons_mid_ref[m],
-                is_gchp=True
+                bmk_mons_gchp_ref[m],
+                is_gchp=True,
+                is_legacy_gchp_format=gchp_ref_is_legacy
             )
             devpath = get_filepath(
                 gchp_vs_gchp_devdir,
                 "Budget",
-                bmk_mons_mid_dev[m],
-                is_gchp=True
+                bmk_mons_gchp_dev[m],
+                is_gchp=True,
+                is_legacy_gchp_format=gchp_dev_is_legacy
             )
 
             # Compute tables
@@ -1796,14 +1839,16 @@ if gchp_vs_gchp:
         ref = get_filepaths(
             gchp_vs_gchp_refdir,
             "Metrics",
-            all_months_mid_ref,
-            is_gchp=True
+            all_months_gchp_ref,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_ref_is_legacy
         )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Metrics",
-            all_months_mid_dev,
-            is_gchp=True
+            all_months_gchp_dev,
+            is_gchp=True,
+            is_legacy_gchp_format=gchp_dev_is_legacy
         )[0]
 
         # Create the OH Metrics table
