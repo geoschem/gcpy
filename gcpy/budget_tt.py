@@ -127,7 +127,7 @@ class _GlobVars:
         WetLossLS = join(self.devdir,
                          "*.WetLossLS.{}*.nc4".format(self.y0_str))
         GCHPEmiss = join(self.devdir,
-                         "GCHP.Emissions.{}*.nc4".format(self.y0_str))
+                         "*.Emissions.{}*.nc4".format(self.y0_str))
 
         # ------------------------------
         # Read data collections
