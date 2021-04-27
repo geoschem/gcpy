@@ -1656,7 +1656,7 @@ if gchp_vs_gchp:
 
             # Use initial checkpoint if Ref restart is not present
             ref_extra = ''
-            if not os.path.isfile(ref):
+            if not os.path.isfile(refpath):
                 refpath = join(
                     gchp_vs_gchp_refrstdir,
                     'initial_GEOSChem_rst.' + gchp_ref_res + '_benchmark.nc'
@@ -1678,7 +1678,7 @@ if gchp_vs_gchp:
 
             # Use initial checkpoint if Dev restart is not present
             dev_extra = ''
-            if not os.path.isfile(dev):
+            if not os.path.isfile(devpath):
                 devpath = join(
                     gchp_vs_gchp_devrstdir,
                     'initial_GEOSChem_rst.' + gchp_dev_res + '_benchmark.nc'
