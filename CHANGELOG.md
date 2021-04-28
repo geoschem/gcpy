@@ -8,9 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 - Added gcpy/budget_ox.py to compute Ox budgets from 1-yr benchmarks
+- Added capability to use GCHP 13.1.0+ or legacy file names in benchmark scripts
+- Added new methods dataset_reader and get_dataset_mean to util.py
 
 ### Changed
-- Updated benchmark/run_1yr_fullchem_benchmark.py to call the budget_ox.py for GCC vs GCC benchmark generation.  (NOTE: we are waiting to make sure that the GCHP benchmarks output wetdep fields before activating this feature for GCHP.)
+- Updated benchmark/run_1yr_fullchem_benchmark.py to call the budget_ox.py for GCC vs GCC benchmark generation.
+  - NOTE: we are waiting to make sure that the GCHP benchmarks output wetdep fields before activating this feature for GCHP.
+- Modified plotting methods in benchmark.py to compute the mean of datasets over the time dimension, if the "time_mean" keyword is passed.
+  - This feature is used to generate annual mean plots from 1-yr benchmark output.
+- Modified run_1yr_tt_benchmark.py and run_1yr_fullchem_benchmark.py to generate both annual mean and seasonal plots
+- Fixed formatting and import order issues in benchmark.py, util.py, budget_ox.py, and the run_*benchmark.py scripts as identified by pylint.
+- Modified budget_ox.py to use Ox instead of O3 for computing budget terms
 
 ## [1.0.3] - 2021-03-26
 

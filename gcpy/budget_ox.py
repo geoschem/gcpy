@@ -9,8 +9,8 @@ or GCHP benchmark simulations.
 
 import os
 import warnings
-import yaml
 from calendar import monthrange
+import yaml
 import numpy as np
 import xarray as xr
 from yaml import load as yaml_load_file
@@ -108,7 +108,7 @@ class _GlobVars:
         self.ds_pl = self.read_diag("ProdLoss")
         self.ds_met = self.read_diag("StateMet", prefix="Met_")
         self.ds_wcv = self.read_diag("WetLossConv", prefix="WetLossConv_")
-        self.ds_wls = self.read_diag("WetLossLS", prefix="WetLossLS_" )
+        self.ds_wls = self.read_diag("WetLossLS", prefix="WetLossLS_")
 
         # --------------------------------------------------------------
         # Get other quantities for the budget computations
