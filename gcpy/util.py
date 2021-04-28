@@ -1239,59 +1239,71 @@ def add_lumped_species_to_dataset(
         with open(lspc_yaml, "r") as f:
             lspc_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
 
-    # Get a dummy array to use for initialization
-    for var in ds.data_vars:
-        if prefix in var:
-            dummy_darr = ds[var]
-            break
+    # Make sure attributes are transferred when copying dataset / dataarrays
+    with xr.set_options(keep_attrs=True):
 
-    # Create a new dataset equivalent to the old
-    ds_new = ds
+        # Get a dummy array to use for initialization
+        dummy_darr = None
+        for var in ds.data_vars:
+            if prefix in var:
+                dummy_darr = ds[var]
+                break
+        if dummy_darr is None:
+            msg = "Invalid prefix: " + prefix
+            raise ValueError(msg)
 
-    for lspc in lspc_dict:
+        # Create a new dataset equivalent to the old
+        ds_new = ds.copy(deep=True)
 
-        # Assemble lumped species variable name
-        varname_new = prefix + lspc
+        # Free memory of original dataset
+        ds = xr.Dataset()
 
-        # Check if overlap with existing species
-        if varname_new in ds_new.data_vars and overwrite:
-            ds_new.drop(varname_new)
-        else:
-            assert(varname_new not in ds_new.data_vars), \
-                "{} already in dataset. To overwrite pass overwrite=True.".\
-                format(varname_new)
+        # Loop over lumped species
+        for lspc in lspc_dict:
 
-        # Verbose prints
-        if verbose:
-            print("Creating {}".format(varname_new))
+            # Assemble lumped species variable name
+            varname_new = prefix + lspc
 
-        # Initialize new dataarray
-        darr = dummy_darr
-        darr.name = varname_new
-        darr.values = np.full(darr.shape, 0.0)
+            # Check if overlap with existing species
+            if varname_new in ds_new.data_vars and overwrite:
+                ds_new.drop(varname_new)
+            else:
+                assert(varname_new not in ds_new.data_vars), \
+                    "{} already in dataset. To overwrite pass overwrite=True.".\
+                    format(varname_new)
 
-        # Loop over and sum constituent species values
-        num_spc = 0
-        for _, spc in enumerate(lspc_dict[lspc]):
-            varname = prefix + spc
-            if varname not in ds_new.data_vars:
-                print("Warning: {} needed for {} not in dataset.".
-                      format(spc, lspc))
-                continue
+            # Verbose prints
             if verbose:
-                print(" -> adding {} with scale {}".
-                      format(spc, lspc_dict[lspc][spc]))
-            darr.values = darr.values + \
-                ds_new[varname].values * lspc_dict[lspc][spc]
-            num_spc = num_spc + 1
+                print("Creating {}".format(varname_new))
 
-        # Replace values with NaN is no species found in dataset
-        if num_spc == 0:
-            print('No constituent species found in file. Setting to NaN.')
-            darr.values = np.full(darr.shape, np.nan)
+            # Initialize new dataarray for the lumped species
+            darr = dummy_darr
+            darr.name = varname_new
+            darr.values = np.full(darr.shape, 0.0)
 
-        # Merge new variable into dataset
-        ds_new = xr.merge([ds_new, darr])
+            # Loop over and sum constituent species values
+            num_spc = 0
+            for _, spc in enumerate(lspc_dict[lspc]):
+                varname = prefix + spc
+                if varname not in ds_new.data_vars:
+                    if verbose:
+                        print("Warning: {} needed for {} not in dataset.".
+                              format(spc, lspc))
+                    continue
+                if verbose:
+                    print(" -> adding {} with scale {}".
+                          format(spc, lspc_dict[lspc][spc]))
+                darr.values += ds_new[varname].values * lspc_dict[lspc][spc]
+                num_spc += 1
+
+            # Replace values with NaN is no species found in dataset
+            if num_spc == 0:
+                if verbose:
+                    print("No constituent species found! Setting to NaN.")
+                darr.values = np.full(darr.shape, np.nan)
+
+            # Merge new variable into dataset
+            ds_new = xr.merge([ds_new, darr])
 
     return ds_new
 
