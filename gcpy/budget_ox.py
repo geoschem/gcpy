@@ -519,7 +519,7 @@ def annual_average_wetdep(globvars):
     return result
 
 
-def dyn_net_lifetime(
+def annual_metrics(
         globvars,
         mass,
         prodloss,
@@ -531,9 +531,9 @@ def dyn_net_lifetime(
 
     1. "dyn": Ox subsiding from the stratosphere
 
-    2  "net": Net Ox = Chem + Dyn - Drydep - Wetdep
+    2  "net": Net Ox = (POx-LOx) + Dyn - Drydep - Wetdep
 
-    3. "life": Ox lifetime in days = Ox burden / (Chem + Drydep + Wetdep)
+    3. "life": Ox lifetime (d) = Ox burden / (LOx + Drydep + Wetdep)
 
     Args:
         globvars: _GlobVars
@@ -551,10 +551,11 @@ def dyn_net_lifetime(
     acc = mass["Ox_acc"]
     burden = mass["Ox_end"]
     chem = prodloss["POx-LOx"]
+    lox = prodloss["LOx"]
     wetd = wetdep["Total"]
     result["dyn"] = acc - (chem - wetd - drydep)
     result["net"] = (chem + result["dyn"]) - (wetd + drydep)
-    result["life"] = (burden / (chem + wetd + drydep)) * globvars.d_per_a
+    result["life"] = (burden / (lox + wetd + drydep)) * globvars.d_per_a
 
     return result
 
@@ -647,7 +648,7 @@ def print_budget(
         print("      Chem+Dyn-Dry-Wet  {:11.6f}  Tg Ox a-1".format(v), file=f)
         print("\n  * Ox Lifetime", file=f)
         v = metrics["life"]
-        print("    Mass/(Chem+Dyn+Wet) {:11.6f}  days".format(v), file=f)
+        print("     Mass/(LOx+Dyn+Wet) {:11.6f}  days".format(v), file=f)
         print(file=f)
 
         f.close()
@@ -723,7 +724,7 @@ def global_ox_budget(
     )
 
     # Dynamics, net Ox, lifetime in days
-    metrics = dyn_net_lifetime(
+    metrics = annual_metrics(
         globvars,
         mass,
         prodloss,
