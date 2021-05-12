@@ -241,7 +241,7 @@ else:
     )
 
     #make results directories that don't exist
-    for resdir, plotting in zip(
+    for resdir, plotting_type in zip(
             [
                 gcc_vs_gcc_resultsdir,
                 base_gchp_resultsdir,
