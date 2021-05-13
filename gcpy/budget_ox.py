@@ -212,11 +212,16 @@ class _GlobVars:
             drop_variables=constants.skip_these_vars
         )
 
+        if self.is_gchp:
+            RstPrefix="SPC_"
+        else:
+            RstPrefix="SpeciesRst_"
+
         ds = util.add_lumped_species_to_dataset(
             ds,
             lspc_dict=self.lspc_dict,
             verbose=False,
-            prefix="SpeciesRst_"
+            prefix=RstPrefix
         )
 
         return ds
