@@ -132,7 +132,7 @@ def file_regrid(
                 oface_files[oface],
                 format='NETCDF4_CLASSIC'
             )
-        ds_out=xr.open_mfdataset(oface_files, combine='by_coords', concat_dim='F')
+        ds_out=xr.open_mfdataset(oface_files, combine='by_coords', concat_dim='F',engine='netcdf4')
         # Put regridded dataset back into a familiar format
         ds_out = ds_out.rename({
             'y': 'Y',
