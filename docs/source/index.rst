@@ -47,3 +47,4 @@ Wiki <http://wiki.seas.harvard.edu/geos-chem/index.php/Main_Page>`__.
    Report_Request
    Contributing
    editing_these_docs
+   Release_guide
