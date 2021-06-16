@@ -308,6 +308,7 @@ def six_plot(
         # not all automatically chosen colorbar formatters properly handle the
         # above method
         pass
+
     cb.minorticks_off()
     cb.update_ticks()
     cb.set_label(unit)
@@ -991,6 +992,10 @@ def compare_single_level(
             if ds_new['lon'].max() > 190:
                 minlon=minlon%360
                 maxlon=maxlon%360
+                # account for global plot
+                if minlon == maxlon and maxlon == 180:
+                    minlon = 0
+                    maxlon = 360
             # account for cross dateline
             if minlon > maxlon:
                 temp = minlon
@@ -1000,6 +1005,7 @@ def compare_single_level(
                 where(ds_new[lon_var] <= maxlon, drop=True).\
                 where(ds_new[lat_var] >= minlat, drop=True).\
                 where(ds_new[lat_var] <= maxlat, drop=True)
+
         ds_ref_reg = get_extent_for_colors(ds_ref, min_max_minlon, min_max_maxlon, min_max_minlat, min_max_maxlat)
         ds_dev_reg = get_extent_for_colors(ds_dev, min_max_minlon, min_max_maxlon, min_max_minlat, min_max_maxlat)
 
