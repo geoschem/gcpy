@@ -1,0 +1,27 @@
+{
+    "access_right": "open",
+    "creators": [
+	{
+	    "name": "The International GEOS-Chem User Community"
+	}
+    ],
+    "description": "GCPy: The GEOS-Chem Python Toolkit",
+    "keywords": [
+	"atmospheric-chemistry",
+	"atmospheric-modelling",
+	"benchmarking",
+	"cloud-computing",
+	"cartopy",
+	"geos-chem",
+	"numpy",
+	"plots",
+	"plotting-in-python",
+	"python",
+	"python-toolkit",
+	"scientific-computing",
+	"visualization-tools",
+	"xarray"
+    ],
+    "license": "mit-license",
+    "upload_type": "software"
+}
