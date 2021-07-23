@@ -376,7 +376,7 @@ def print_metrics(common_vars, dst):
         # Mean OH concentration [1e5 molec/cm3]
         # ==============================================================
         title = "Global mass-weighted OH concentration [10^5 molec cm^-3]"
-        absdiff = common_vars["mean_oh_ref"] - common_vars["mean_oh_dev"]
+        absdiff = common_vars["mean_oh_dev"] - common_vars["mean_oh_ref"]
         pctdiff = (absdiff / common_vars["mean_oh_ref"]) * 100.0
         write_to_file(
             f,
@@ -392,7 +392,7 @@ def print_metrics(common_vars, dst):
         # Write MCF lifetime [years]
         # ==============================================================
         title = "CH3CCl3 (aka MCF) lifetime w/r/t tropospheric OH [years]"
-        absdiff = common_vars["mcf_life_ref"] - common_vars["mcf_life_dev"]
+        absdiff = common_vars["mcf_life_dev"] - common_vars["mcf_life_ref"]
         pctdiff = (absdiff / common_vars["mcf_life_ref"]) * 100.0
         write_to_file(
             f,
@@ -407,7 +407,7 @@ def print_metrics(common_vars, dst):
         # Write CH4 lifetime [years]
         # ==============================================================
         title = "CH4 lifetime w/r/t tropospheric OH [years]"
-        absdiff = common_vars["ch4_life_ref"] - common_vars["ch4_life_dev"]
+        absdiff = common_vars["ch4_life_dev"] - common_vars["ch4_life_ref"]
         pctdiff = (absdiff / common_vars["ch4_life_ref"]) * 100.0
         write_to_file(
             f,
