@@ -263,7 +263,7 @@ else:
             # Make copy of benchmark script in results directory
             curfile = os.path.realpath(__file__)
             dest = join(resdir, curfile.split('/')[-1])
-            if not exists(dest):
+            if exists(dest):
                 copyfile(curfile, dest)
 
 gcc_vs_gcc_tablesdir = join(
