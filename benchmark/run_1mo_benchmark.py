@@ -137,7 +137,7 @@ emis_table       = True
 plot_jvalues     = True
 plot_aod         = True
 mass_table       = True
-ops_budget_table = True
+ops_budget_table = False
 OH_metrics       = True # GCC only
 ste_table        = True # GCC only
 
