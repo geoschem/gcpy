@@ -119,7 +119,7 @@ gchp_dev_prior_to_13 = False
 
 # Whether GCHP files are legacy (pre-13.1) format
 gchp_ref_is_legacy=True
-gchp_dev_is_legacy=True
+gchp_dev_is_legacy=False
 
 # ======================================================================
 # Specify if this is a gcpy test validation run
@@ -887,7 +887,7 @@ if gchp_vs_gcc:
         gchp_metname(gchp_dev_prior_to_13),
         all_months_gchp_dev,
         is_gchp=True,
-        is_legacy_gchp_format=gchp_dev_is_legacy
+        gchp_format_is_legacy=gchp_dev_is_legacy
     )[0]
 
     # ==================================================================
@@ -911,7 +911,7 @@ if gchp_vs_gcc:
             "SpeciesConc",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Create plots
@@ -976,7 +976,7 @@ if gchp_vs_gcc:
             "Emissions",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Create plots
@@ -1031,7 +1031,7 @@ if gchp_vs_gcc:
             "Emissions",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Create emissions table that spans entire year
@@ -1069,7 +1069,7 @@ if gchp_vs_gcc:
             "JValues",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Create plots
@@ -1124,7 +1124,7 @@ if gchp_vs_gcc:
             "Aerosols",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
 
         )[0]
 
@@ -1181,7 +1181,7 @@ if gchp_vs_gcc:
                 "Restart",
                 bmk_mons_dev[m],
                 is_gchp=True,
-                is_legacy_gchp_format=gchp_dev_is_legacy
+                gchp_format_is_legacy=gchp_dev_is_legacy
             )
 
             # use initial restart if no checkpoint present (intended for
@@ -1198,7 +1198,7 @@ if gchp_vs_gcc:
                     "Restart",
                     bmk_mons_dev[m+1],
                     is_gchp=True,
-                    is_legacy_gchp_format=gchp_dev_is_legacy
+                    gchp_format_is_legacy=gchp_dev_is_legacy
                 )
 
             # Create tables
@@ -1240,7 +1240,7 @@ if gchp_vs_gcc:
                 "Budget",
                 bmk_mons_gchp_dev[m],
                 is_gchp=True,
-                is_legacy_gchp_format=gchp_dev_is_legacy
+                gchp_format_is_legacy=gchp_dev_is_legacy
             )
 
             # Create tables
@@ -1279,14 +1279,14 @@ if gchp_vs_gcc:
             "Aerosols",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
         devspc = get_filepaths(
             gchp_vs_gcc_devdir,
             "SpeciesConc",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Create tables
@@ -1352,7 +1352,7 @@ if gchp_vs_gcc:
             "Metrics",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Create table
@@ -1385,14 +1385,14 @@ if gchp_vs_gchp:
         gchp_metname(gchp_ref_prior_to_13),
         all_months_gchp_ref,
         is_gchp=True,
-        is_legacy_gchp_format=gchp_ref_is_legacy
+        gchp_format_is_legacy=gchp_ref_is_legacy
     )[0]
     devmet = get_filepaths(
         gchp_vs_gcc_devdir,
         gchp_metname(gchp_dev_prior_to_13),
         all_months_gchp_dev,
         is_gchp=True,
-        is_legacy_gchp_format=gchp_dev_is_legacy
+        gchp_format_is_legacy=gchp_dev_is_legacy
     )[0]
 
     # ==================================================================
@@ -1411,14 +1411,14 @@ if gchp_vs_gchp:
             "SpeciesConc",
             all_months_gchp_ref,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_ref_is_legacy
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             col,
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1476,14 +1476,14 @@ if gchp_vs_gchp:
             "Emissions",
             all_months_gchp_ref,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_ref_is_legacy
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Emissions",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Create plots
@@ -1533,14 +1533,14 @@ if gchp_vs_gchp:
             "Emissions",
             all_months_gchp_ref,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_ref_is_legacy
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Emissions",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create table
@@ -1574,14 +1574,14 @@ if gchp_vs_gchp:
             "JValues",
             all_months_gchp_ref,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_ref_is_legacy
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "JValues",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1630,14 +1630,14 @@ if gchp_vs_gchp:
             "Aerosols",
             all_months_gchp_ref,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_ref_is_legacy
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Aerosols",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )
 
         # Create plots
@@ -1689,7 +1689,7 @@ if gchp_vs_gchp:
                 "Restart",
                 bmk_mons_ref[m],
                 is_gchp=True,
-                is_legacy_gchp_format=gchp_ref_is_legacy
+                gchp_format_is_legacy=gchp_ref_is_legacy
             )
 
             # Use initial checkpoint if Ref restart is not present
@@ -1704,7 +1704,7 @@ if gchp_vs_gchp:
                     "Restart",
                     bmk_mons_ref[m+1],
                     is_gchp=True,
-                    is_legacy_gchp_format=gchp_ref_is_legacy
+                    gchp_format_is_legacy=gchp_ref_is_legacy
                 )
 
             # Dev filepaths
@@ -1713,7 +1713,7 @@ if gchp_vs_gchp:
                 "Restart",
                 bmk_mons_dev[m],
                 is_gchp=True,
-                is_legacy_gchp_format=gchp_dev_is_legacy
+                gchp_format_is_legacy=gchp_dev_is_legacy
             )
 
             # Use initial checkpoint if Dev restart is not present
@@ -1728,7 +1728,7 @@ if gchp_vs_gchp:
                     "Restart",
                     bmk_mons_dev[m+1],
                     is_gchp=True,
-                    is_legacy_gchp_format=gchp_dev_is_legacy
+                    gchp_format_is_legacy=gchp_dev_is_legacy
                 )
 
             # Create tables
@@ -1768,14 +1768,14 @@ if gchp_vs_gchp:
                 "Budget",
                 bmk_mons_gchp_ref[m],
                 is_gchp=True,
-                is_legacy_gchp_format=gchp_ref_is_legacy
+                gchp_format_is_legacy=gchp_ref_is_legacy
             )
             devpath = get_filepath(
                 gchp_vs_gchp_devdir,
                 "Budget",
                 bmk_mons_gchp_dev[m],
                 is_gchp=True,
-                is_legacy_gchp_format=gchp_dev_is_legacy
+                gchp_format_is_legacy=gchp_dev_is_legacy
             )
 
             # Compute tables
@@ -1841,14 +1841,14 @@ if gchp_vs_gchp:
             "Metrics",
             all_months_gchp_ref,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_ref_is_legacy
+            gchp_format_is_legacy=gchp_ref_is_legacy
         )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Metrics",
             all_months_gchp_dev,
             is_gchp=True,
-            is_legacy_gchp_format=gchp_dev_is_legacy
+            gchp_format_is_legacy=gchp_dev_is_legacy
         )[0]
 
         # Create the OH Metrics table
