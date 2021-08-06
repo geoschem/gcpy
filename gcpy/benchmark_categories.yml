@@ -31,6 +31,8 @@ FullChemBenchmark:
       - SALCAL
       - SALCCL
       - SO4s
+    Metals:
+      - pFe
   Bromine:
     Bromine:
       - Bry
@@ -181,11 +183,13 @@ FullChemBenchmark:
       - IEPOX
     Ketones:
       - ACET
+      - HAC
       - MEK
       - MVK
     Nitrates:
       - ISOPN
     Other:
+      - GLYC
       - GLYX
       - HCOOH
       - MAP

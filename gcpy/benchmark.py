@@ -1530,12 +1530,8 @@ def make_benchmark_emis_plots(
         # category
         for spc in emis_spc:
             if spc not in allcatspc:
-                print(
-                    "Warning: species {} has emissions diagnostics but is not" + \
-                    " in benchmark_categories.yml".format(
-                        spc
-                    )
-                )
+                print("Warning: species {} has emissions diagnostics but is not"
+                      " in benchmark_categories.yml".format(spc))
 
     # -------------------------------------------
     # Clean up
