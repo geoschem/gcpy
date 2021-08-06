@@ -442,6 +442,7 @@ if gcc_vs_gcc:
         )[0]
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_conc_plots(
             ref,
             gcc_vs_gcc_refstr,
@@ -462,6 +463,9 @@ if gcc_vs_gcc:
         # GCC vs GCC species concentration plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_conc_plots(
                 ref[mon_ind],
@@ -502,6 +506,7 @@ if gcc_vs_gcc:
         )[0]
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_emis_plots(
             ref,
             gcc_vs_gcc_refstr,
@@ -521,6 +526,9 @@ if gcc_vs_gcc:
         # GCC vs GCC emissions plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_emis_plots(
                 ref[mon_ind],
@@ -590,6 +598,7 @@ if gcc_vs_gcc:
         )[0]
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_jvalue_plots(
             ref,
             gcc_vs_gcc_refstr,
@@ -607,6 +616,9 @@ if gcc_vs_gcc:
         # GCC vs GCC J-value plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_jvalue_plots(
                 ref[mon_ind],
@@ -643,6 +655,7 @@ if gcc_vs_gcc:
         )[0]
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_aod_plots(
             ref,
             gcc_vs_gcc_refstr,
@@ -660,6 +673,9 @@ if gcc_vs_gcc:
         # GCC vs GCC column AOD plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_aod_plots(
                 ref[mon_ind],
@@ -830,19 +846,6 @@ if gcc_vs_gcc:
     if OH_metrics:
         print("\n%%% Creating GCC vs. GCC OH metrics %%%")
 
-# NOTE: Use this if the benchmark is prior to 13.0.0!
-#        # Compute mean OH from the log files
-#        # NOTE: Only works for GEOS-Chem "Classic" benchmarks!
-#        moh.make_benchmark_oh_from_logs(
-#            gcc_vs_gcc_reflogdir,
-#            gcc_vs_gcc_refstr,
-#           gcc_vs_gcc_devlogdir,
-#            gcc_vs_gcc_devstr,
-#            bmk_year_ref,
-#            dst=gcc_vs_gcc_tablesdir,
-#            overwrite=True
-#        )
-
         # Filepaths
         ref = get_filepaths(
             gcc_vs_gcc_refdir,
@@ -915,6 +918,7 @@ if gchp_vs_gcc:
         )[0]
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_conc_plots(
             ref,
             gchp_vs_gcc_refstr,
@@ -935,6 +939,9 @@ if gchp_vs_gcc:
         # GCHP vs GCC species concentration plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_conc_plots(
                 ref[mon_ind],
@@ -980,6 +987,7 @@ if gchp_vs_gcc:
         )[0]
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_emis_plots(
             ref,
             gchp_vs_gcc_refstr,
@@ -999,6 +1007,9 @@ if gchp_vs_gcc:
         # GCHP vs GCC emissions plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_emis_plots(
                 ref[mon_ind],
@@ -1073,6 +1084,7 @@ if gchp_vs_gcc:
         )[0]
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_jvalue_plots(
             ref,
             gchp_vs_gcc_refstr,
@@ -1090,6 +1102,9 @@ if gchp_vs_gcc:
         # GCHP vs GCC J-values plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_jvalue_plots(
                 ref[mon_ind],
@@ -1129,6 +1144,7 @@ if gchp_vs_gcc:
         )[0]
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_aod_plots(
             ref,
             gchp_vs_gcc_refstr,
@@ -1143,9 +1159,12 @@ if gchp_vs_gcc:
         )
 
         # --------------------------------------------------------------
-        # GCHP vs GCC column AOD plots: Selected Months
+        # GCHP vs GCC column AOD plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_aod_plots(
                 ref[mon_ind],
@@ -1422,6 +1441,7 @@ if gchp_vs_gchp:
         )
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_conc_plots(
             ref,
             gchp_vs_gchp_refstr,
@@ -1443,6 +1463,9 @@ if gchp_vs_gchp:
         # GCHP vs GCHP species concentration plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_conc_plots(
                 ref[mon_ind],
@@ -1487,6 +1510,7 @@ if gchp_vs_gchp:
         )[0]
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_emis_plots(
             ref,
             gchp_vs_gchp_refstr,
@@ -1503,9 +1527,12 @@ if gchp_vs_gchp:
         )
 
         # --------------------------------------------------------------
-        # GCHP vs GCHP species concentration plots: Selected months
+        # GCHP vs GCHP species concentration plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_emis_plots(
                 ref[mon_ind],
@@ -1585,6 +1612,7 @@ if gchp_vs_gchp:
         )
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_jvalue_plots(
             ref,
             gchp_vs_gchp_refstr,
@@ -1598,9 +1626,12 @@ if gchp_vs_gchp:
         )
 
         # --------------------------------------------------------------
-        # GCHP vs GCHP J-values plots: Selected Months
+        # GCHP vs GCHP J-values plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_jvalue_plots(
                 ref[mon_ind],
@@ -1641,6 +1672,7 @@ if gchp_vs_gchp:
         )
 
         # Create plots
+        print("\nCreating plots for annual mean")
         bmk.make_benchmark_aod_plots(
             ref,
             gchp_vs_gchp_refstr,
@@ -1658,6 +1690,9 @@ if gchp_vs_gchp:
         # GCHP vs GCHP column AOD plots: Seasonal
         # --------------------------------------------------------------
         for t in range(bmk_n_months):
+            print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+            # Create plots
             mon_ind = bmk_mon_inds[t]
             bmk.make_benchmark_aod_plots(
                 ref[mon_ind],
