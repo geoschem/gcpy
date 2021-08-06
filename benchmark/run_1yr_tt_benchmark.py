@@ -1013,28 +1013,6 @@ if gchp_vs_gchp:
 if cons_table:
 
     # ======================================================================
-    # Create mass conservation table for GCC_ref
-    # ======================================================================
-    if gcc_vs_gcc:
-        print("\n%%% Creating GCC ref mass conservation table %%%")
-
-        # Filepaths
-        datafiles = get_filepaths(
-            gcc_vs_gcc_refrstdir,
-            "Restart",
-            all_months_ref
-        )[0]
-
-        # Create table
-        bmk.make_benchmark_mass_conservation_table(
-            datafiles,
-            gcc_ref_version,
-            dst=gcc_vs_gcc_tablesdir,
-            overwrite=True,
-            spcdb_dir=spcdb_dir
-        )
-
-    # ======================================================================
     # Create mass conservation table for GCC_dev
     # ======================================================================
     if gcc_vs_gcc or gchp_vs_gcc:
@@ -1088,30 +1066,6 @@ if cons_table:
             datafiles,
             gchp_dev_version,
             dst=tablesdir,
-            overwrite=True,
-            spcdb_dir=spcdb_dir
-        )
-
-    # ======================================================================
-    # Create mass conservation table for GCHP_ref
-    # ======================================================================
-    if gchp_vs_gchp:
-        print("\n%%% Creating GCHP ref mass conservation table %%%")
-
-        # Filepaths
-        datafiles = get_filepaths(
-            gchp_vs_gchp_refrstdir,
-            "Restart",
-            all_months_ref,
-            is_gchp=True,
-            gchp_format_is_legacy=gchp_ref_is_legacy
-        )[0]
-
-        # Create table
-        bmk.make_benchmark_mass_conservation_table(
-            datafiles,
-            gchp_ref_version,
-            dst=gchp_vs_gchp_tablesdir,
             overwrite=True,
             spcdb_dir=spcdb_dir
         )
