@@ -370,26 +370,23 @@ if gchp_dev_is_legacy:
 # Significant difference filenames
 # ======================================================================
 
-vstr = "{}_vs_{}".format(gcc_ref_version, gcc_dev_version)
 gcc_vs_gcc_sigdiff = [
-    join(gcc_vs_gcc_resultsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
-    join(gcc_vs_gcc_resultsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
-    join(gcc_vs_gcc_resultsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
-    join(gcc_vs_gcc_resultsdir, "{}_sig_diffs_emissions.txt".format(vstr))
+    join(gcc_vs_gcc_resultsdir, "SigDiffs_sfc.txt"),
+    join(gcc_vs_gcc_resultsdir, "SigDiffs_500hpa.txt"),
+    join(gcc_vs_gcc_resultsdir, "SigDiffs_zonalmean.txt"),
+    join(gcc_vs_gcc_resultsdir, "SigDiffs_emissions.txt")
 ]
-vstr = "{}_vs_{}".format(gcc_dev_version, gchp_dev_version)
 gchp_vs_gcc_sigdiff = [
-    join(gchp_vs_gcc_resultsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
-    join(gchp_vs_gcc_resultsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
-    join(gchp_vs_gcc_resultsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
-    join(gchp_vs_gcc_resultsdir, "{}_sig_diffs_emissions.txt".format(vstr))
+    join(gchp_vs_gcc_resultsdir, "SigDiffs_sfc.txt"),
+    join(gchp_vs_gcc_resultsdir, "SigDiffs_500hpa.txt"),
+    join(gchp_vs_gcc_resultsdir, "SigDiffs_zonalmean.txt"),
+    join(gchp_vs_gcc_resultsdir, "SigDiffs_emissions.txt")
 ]
-vstr = "{}_vs_{}".format(gchp_ref_version, gchp_dev_version)
 gchp_vs_gchp_sigdiff = [
-    join(gchp_vs_gchp_resultsdir, "{}_sig_diffs_sfc.txt".format(vstr)),
-    join(gchp_vs_gchp_resultsdir, "{}_sig_diffs_500hpa.txt".format(vstr)),
-    join(gchp_vs_gchp_resultsdir, "{}_sig_diffs_zonalmean.txt".format(vstr)),
-    join(gchp_vs_gchp_resultsdir, "{}_sig_diffs_emissions.txt").format(vstr)
+    join(gchp_vs_gchp_resultsdir, "SigDiffs_sfc.txt"),
+    join(gchp_vs_gchp_resultsdir, "SigDiffs_500hpa.txt"),
+    join(gchp_vs_gchp_resultsdir, "SigDiffs_zonalmean.txt"),
+    join(gchp_vs_gchp_resultsdir, "SigDiffs_emissions.txt")
 ]
 
 # ======================================================================

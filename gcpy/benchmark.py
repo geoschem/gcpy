@@ -3373,7 +3373,7 @@ def make_benchmark_aerosol_tables(
     # --------------------------------------
 
     # Table info
-    filename = "{}/Aerosol_Burdens_{}.txt".format(dst, devstr)
+    filename = "{}/Aerosol_Burdens.txt".format(dst)
     if n_mon == 12:
         title = "Annual average global aerosol burdens"
     else:
@@ -3419,7 +3419,7 @@ def make_benchmark_aerosol_tables(
     # -------------------------------------------
 
     # Table info
-    filename = "{}/Global_Mean_AOD_{}.txt".format(dst, devstr)
+    filename = "{}/Global_Mean_AOD.txt".format(dst)
     if n_mon == 12:
         title = "Annual average global AODs"
     else:
@@ -4123,7 +4123,7 @@ def make_benchmark_mass_conservation_table(
     # Print masses to file
     # ==================================================================
     # Create file
-    outfilename = os.path.join(dst, runstr + ".passive_mass.txt")
+    outfilename = os.path.join(dst, "Passive_mass.txt")
 
     with open(outfilename, 'w') as f:
         titlestr = '  Global Mass of Passive Tracer in ' + runstr + '  '
