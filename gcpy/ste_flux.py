@@ -255,8 +255,7 @@ def print_ste(globvars, df):
         os.makedirs(globvars.dst)
 
     # Save the file in the Tables folder of dst
-    filename = "{}/{}.strat_trop_exchange_{}.txt".format(
-        globvars.dst, globvars.devstr, globvars.y0_str)
+    filename = "{}/Strat_trop_exchange.txt".format(globvars.dst)
 
     # Set numeric format to be 11 chars wide with 4 decimals
     pd.options.display.float_format = '{:11.4f}'.format

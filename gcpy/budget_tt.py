@@ -617,15 +617,11 @@ def print_budgets(globvars, data, key):
 
     # Filename to print
     if "_f" in key:
-        filename = "{}/{}.Pb-Be_budget_trop_strat_{}.txt".format(
-            globvars.dst, globvars.devstr, globvars.y0_str)
+        filename = "{}/Pb-Be_budget_trop_strat.txt".format(globvars.dst)
     elif "_t" in key:
-        filename = "{}/{}.Pb-Be_budget_troposphere_{}.txt".format(
-            globvars.dst, globvars.devstr, globvars.y0_str)
+        filename = "{}/Pb-Be_budget_troposphere.txt".format(globvars.dst)
     elif "_s" in key:
-        filename = \
-            "{}/{}.Pb-Be_budget_stratosphere_{}.txt".format(
-                globvars.dst, globvars.devstr, globvars.y0_str)
+        filename = "{}/Pb-Be_budget_stratosphere.txt".format(globvars.dst)
 
     # Common title string
     title = "Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n        "
@@ -634,14 +630,14 @@ def print_budgets(globvars, data, key):
     with open(filename, "w+") as f:
         if "_f" in key:
             print(
-                "Table 1. {} in the Troposphere + Stratosphere for {}\n".format(
-                    title, globvars.y0_str), file=f)
+                "Table 1. {} in the Troposphere + Stratosphere in {} for year {}\n".format(
+                    title, globvars.devstr, globvars.y0_str), file=f)
         elif "_t" in key:
-            print("Table 2. {} in the Troposphere for {}\n".format(
-                title, globvars.y0_str), file=f)
+            print("Table 2. {} in the Troposphere in {} for year {}\n".format(
+                title, globvars.devstr, globvars.y0_str), file=f)
         elif "_s" in key:
-            print("Table 3. {} in the Stratosphere for {}\n".format(
-                title, globvars.y0_str), file=f)
+            print("Table 3. {} in the Stratosphere in {} for year {}\n".format(
+                title, globvars.devstr, globvars.y0_str), file=f)
         print(
             "                                210Pb          7Be         10Be",
             file=f)
