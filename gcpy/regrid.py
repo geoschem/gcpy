@@ -631,7 +631,7 @@ def regrid_comparison_data(
                     nlev, 6, res, res).swapaxes(0, 1)
             for j in range(6):
                 regridder = regridder_list[j]
-                new_data += regridder(data_reshaped[j])
+                new_data = new_data + regridder(data_reshaped[j])
             if nlev == 1:
                 # limit to extent of cmpgrid
                 new_data=new_data[cmpminlat_ind:cmpmaxlat_ind +
