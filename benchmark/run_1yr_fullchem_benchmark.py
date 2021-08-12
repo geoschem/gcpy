@@ -1207,7 +1207,7 @@ if gchp_vs_gcc:
             # first month).  need to pass path of meteorology file with
             # area variable in this scenario
             dev_extra = ''
-            if not os.path.isfile(dev):
+            if not os.path.isfile(devpath):
                 devpath = join(
                     gchp_vs_gcc_devrstdir,
                     'initial_GEOSChem_rst.' + gchp_dev_res + '_benchmark.nc'
