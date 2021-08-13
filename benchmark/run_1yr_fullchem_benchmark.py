@@ -780,12 +780,12 @@ if gcc_vs_gcc:
             gcc_vs_gcc_devdir,
             "Aerosols",
             all_months_dev
-        )
+        )[0]
         devspc = get_filepaths(
             gcc_vs_gcc_devdir,
             "SpeciesConc",
             all_months_dev
-        )
+        )[0]
 
         # Compute tables
         bmk.make_benchmark_aerosol_tables(
@@ -1140,7 +1140,6 @@ if gchp_vs_gcc:
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=gchp_dev_is_legacy
-
         )[0]
 
         # Create plots
@@ -1431,14 +1430,14 @@ if gchp_vs_gchp:
             all_months_gchp_ref,
             is_gchp=True,
             gchp_format_is_legacy=gchp_ref_is_legacy
-        )
+        )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             col,
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=gchp_dev_is_legacy
-        )
+        )[0]
 
         # Create plots
         print("\nCreating plots for annual mean")
@@ -1561,14 +1560,14 @@ if gchp_vs_gchp:
             all_months_gchp_ref,
             is_gchp=True,
             gchp_format_is_legacy=gchp_ref_is_legacy
-        )
+        )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Emissions",
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=gchp_dev_is_legacy
-        )
+        )[0]
 
         # Create table
         bmk.make_benchmark_emis_tables(
@@ -1602,14 +1601,14 @@ if gchp_vs_gchp:
             all_months_gchp_ref,
             is_gchp=True,
             gchp_format_is_legacy=gchp_ref_is_legacy
-        )
+        )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "JValues",
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=gchp_dev_is_legacy
-        )
+        )[0]
 
         # Create plots
         print("\nCreating plots for annual mean")
@@ -1662,14 +1661,14 @@ if gchp_vs_gchp:
             all_months_gchp_ref,
             is_gchp=True,
             gchp_format_is_legacy=gchp_ref_is_legacy
-        )
+        )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
             "Aerosols",
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=gchp_dev_is_legacy
-        )
+        )[0]
 
         # Create plots
         print("\nCreating plots for annual mean")

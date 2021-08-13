@@ -514,12 +514,12 @@ if gcc_vs_gcc:
             gcc_vs_gcc_refdir,
             "Budget",
             all_months_ref
-        )
+        )[0]
         devs = get_filepaths(
             gcc_vs_gcc_devdir,
             "Budget",
             all_months_dev
-        )
+        )[0]
 
         # Create table
         bmk.make_benchmark_operations_budget(
@@ -977,14 +977,14 @@ if gchp_vs_gchp:
             all_months_gchp_ref,
             is_gchp=True,
             gchp_format_is_legacy=gchp_ref_is_legacy
-        )
+        )[0]
         devs = get_filepaths(
             gchp_vs_gchp_devdir,
             "Budget",
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=gchp_dev_is_legacy
-        )
+        )[0]
 
         # Create table
         bmk.make_benchmark_operations_budget(
