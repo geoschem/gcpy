@@ -951,7 +951,7 @@ if gchp_vs_gcc:
                 refmet=refmet[mon_ind],
                 devmet=devmet[mon_ind],
                 dst=gchp_vs_gcc_resultsdir,
-                subdst=datestr,
+                subdst=bmk_mon_yr_strs_dev[t],
                 weightsdir=weightsdir,
                 benchmark_type=bmk_type,
                 plot_by_spc_cat=plot_by_spc_cat,
