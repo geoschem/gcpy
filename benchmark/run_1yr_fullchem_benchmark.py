@@ -965,9 +965,6 @@ if gchp_vs_gcc:
     if plot_emis:
         print("\n%%% Creating GCHP vs. GCC emissions plots %%%")
 
-        # Diagnostic collections to read
-        col = "Emissions"
-
         # --------------------------------------------------------------
         # GCHP vs GCC emissions plots: Annual Mean
         # --------------------------------------------------------------
@@ -1433,7 +1430,7 @@ if gchp_vs_gchp:
         )[0]
         dev = get_filepaths(
             gchp_vs_gchp_devdir,
-            col,
+            "SpeciesConc",
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=gchp_dev_is_legacy
