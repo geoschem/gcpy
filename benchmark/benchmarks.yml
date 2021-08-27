@@ -1,21 +1,25 @@
 ---
+# =====================================================================
+# Benchmark configuration file (**EDIT AS NEEDED**)
+# Note: When doing GCHP vs GCC comparisions gchp_dev will be compared
+# to gcc_dev (not gcc_ref!). This ensures consistency in version names
+# when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
+# =====================================================================
 1mo_benchmark:
   paths:
-    # Add the path to your output here
+    # High-level directory containing subdirectories with data
     main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon
-    # plots_dir: ./Results
-    results_dir: BenchmarkResults
+    results_dir: BenchmarkResults # Name to be used for directory of output from this script
+    # Path to regridding weights
     weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
-    # test_data_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon/
-
   data:
     # contains configurations for ref and dev runs (version, dates, prior to v13.0.0)
     ref:
       gcc:
-        version: GCC_ref
-        dir: GCC_ref
+        version: GCC_ref # NOTE: these will be used in some filenames and so should not have spaces
+        dir: GCC_ref # Directory name
         subdir: OutputDir
-        bmk_mon: 7 
+        bmk_mon: 7 #dates of runs
         bmk_year: 2019
       gchp:
         version: GCHP_ref
@@ -23,8 +27,8 @@
         subdir: OutputDir
         bmk_mon: 7
         bmk_year: 2019
-        prior_to_13: False
-        is_legacy: True
+        prior_to_13: False # Are GCHP ref and/or dev versions prior to 13.0.0?
+        is_legacy: True # Whether GCHP files are legacy (pre-13.1) format
     dev:
       gcc:
         version: GCC_dev 
@@ -42,15 +46,15 @@
         is_legacy: True
 
   options:
-    gcpy_test: True
-    comparisons: #comparisons to run
+    gcpy_test: True # Specify if this is a gcpy test validation run
+    comparisons:
       gcc_vs_gcc: 
-        run: True
+        run: True # True to run this comparison
         dir: GCC_version_comparison
         tables_subdir: Tables
       gchp_vs_gcc: 
         run: True
-        dir: GCHP_version_comparison
+        dir: GCHP_version_comparison 
         tables_subdir: Tables
       gchp_vs_gchp: 
         run: True
@@ -59,7 +63,8 @@
       gchp_vs_gcc_diff_of_diffs: 
         run: True
         dir: GCHP_GCC_diff_of_diffs
-    outputs: # tables and plots to generate
+
+    outputs: # Output to generate (plots/tables will be created in this order):
       plot_conc: True
       plot_emis: True
       emis_table: True

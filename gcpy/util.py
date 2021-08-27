@@ -2023,3 +2023,18 @@ def dataset_reader(
         reader = xr.open_dataset
 
     return reader
+
+def read_config_file(config_file):
+    """
+    Reads configuration information from a YAML file.
+    """
+    # Read the configuration file in YAML format
+    try:
+        print(f"Using configuration file {config_file}")
+        config = yaml.safe_load(open(config_file))
+    except Exception as err:
+        msg = f"Error reading configuration in {config_file}: {err}"
+        raise Exception(msg)
+
+    return config
+
