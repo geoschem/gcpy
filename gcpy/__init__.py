@@ -13,6 +13,7 @@ except ImportError:
                       '\nElse, please reinstall using your package manager.')
 
 from .util import *
+from .date_time import *
 from .units import *
 from .ste_flux import *
 from .regrid import *
