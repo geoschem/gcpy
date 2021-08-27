@@ -28,7 +28,7 @@
         bmk_mon: 7
         bmk_year: 2019
         prior_to_13: False # Are GCHP ref and/or dev versions prior to 13.0.0?
-        is_legacy: True # Whether GCHP files are legacy (pre-13.1) format
+        is_legacy: False # Whether GCHP files are legacy (pre-13.1) format
     dev:
       gcc:
         version: GCC_dev 
@@ -43,7 +43,7 @@
         bmk_mon: 7
         bmk_year: 2019
         prior_to_13: False
-        is_legacy: True
+        is_legacy: False
 
   options:
     gcpy_test: True # Specify if this is a gcpy test validation run
