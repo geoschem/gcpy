@@ -1615,7 +1615,8 @@ if gchp_vs_gchp:
             dev,
             gchp_vs_gchp_devstr,
             dst=gchp_vs_gchp_resultsdir,
-            subdst=bmk_mon_yr_strs_dev[t],
+            subdst='AnnualMean',
+            time_mean=True,
             weightsdir=weightsdir,
             overwrite=True,
             spcdb_dir=spcdb_dir
