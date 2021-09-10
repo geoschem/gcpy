@@ -63,6 +63,13 @@ import gcpy.budget_ox as ox
 from gcpy import benchmark as bmk
 
 
+# Tell matplotlib not to look for an X-window
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+# Suppress annoying warning messages
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+
 def run_benchmark(config):
     """
     Runs 1 year benchmark with the given configuration settings.
@@ -71,13 +78,6 @@ def run_benchmark(config):
         config : dict
             Contains configuration for 1yr benchmark from yaml file.
     """
-    # Tell matplotlib not to look for an X-window
-    os.environ["QT_QPA_PLATFORM"] = "offscreen"
-
-    # Suppress annoying warning messages
-    warnings.filterwarnings("ignore", category=RuntimeWarning)
-    warnings.filterwarnings("ignore", category=UserWarning)
-    warnings.filterwarnings("ignore", category=FutureWarning)
 
     # This script has a fixed benchmark type
     bmk_type = "FullChemBenchmark"

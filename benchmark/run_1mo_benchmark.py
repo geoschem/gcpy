@@ -60,6 +60,13 @@ import gcpy.ste_flux as ste
 import gcpy.oh_metrics as oh
 import gcpy.benchmark as bmk
 
+# Tell matplotlib not to look for an X-window
+os.environ["QT_QPA_PLATFORM"] = "offscreen"
+
+# Suppress harmless run-time warnings (mostly about underflow in division)
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
+
 # def create_directory_paths(config):
 def gchp_metname(prior_to_13):
     """
@@ -71,14 +78,13 @@ def gchp_metname(prior_to_13):
 
 
 def run_benchmark(config):
+    """
+    Runs 1 mon benchmark with the given configuration settings.
 
-    # Tell matplotlib not to look for an X-window
-    os.environ["QT_QPA_PLATFORM"] = "offscreen"
-
-    # Suppress harmless run-time warnings (mostly about underflow in division)
-    warnings.filterwarnings("ignore", category=RuntimeWarning)
-    warnings.filterwarnings("ignore", category=UserWarning)
-
+    Args:
+        config : dict
+            Contains configuration for 1mon benchmark from yaml file.
+    """
     # This script has a fixed benchmark type
     bmk_type = "FullChemBenchmark"
 
