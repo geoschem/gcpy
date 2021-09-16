@@ -1027,7 +1027,6 @@ def main():
     """
     config_filename = sys.argv[1] if len(sys.argv) == 2 else "benchmarks.yml"
     config = read_config_file(config_filename)["1yr_tt_benchmark"]
-    print(config)
     run_benchmark(config)
 
 
