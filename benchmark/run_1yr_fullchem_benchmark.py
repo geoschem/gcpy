@@ -173,7 +173,7 @@ def run_benchmark(config):
             mainresultsdir, config["options"]["comparisons"]["gchp_vs_gchp"]["dir"]
         )
         gchp_vs_gcc_resultsdir = join(
-            mainresultsdir, config["options"]["comparisons"]["gchp_vs_gcc"]["dir"]
+            mainresultsdir, "GCHP_GCC_comparison"
         )
         if not exists(mainresultsdir):
             os.mkdir(mainresultsdir)
@@ -1849,7 +1849,6 @@ def main():
     """
     config_filename = sys.argv[1] if len(sys.argv) == 2 else "benchmarks.yml"
     config = read_config_file(config_filename)["1yr_fullchem_benchmark"]
-    print(config)
     run_benchmark(config)
 
 
