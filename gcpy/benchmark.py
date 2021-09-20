@@ -2597,10 +2597,9 @@ def make_benchmark_mass_tables(
     if varlist:
         for v in varlist:
             if v not in commonspc:
-                msg = msg.format(dst)
                 raise ValueError(
-                    'Variable {} in varlist passed to make_benchmark_mass_tables ' + \
-                    'is not present in ref and dev datasets'.format(v))
+                    '{} folder error: Variable {} in varlist passed to make_benchmark_mass_tables ' + \
+                    'is not present in ref and dev datasets'.format(dst, v))
     else:
         varlist = commonspc
 
