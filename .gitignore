@@ -160,3 +160,6 @@ ENV/
 
 # GEOS-Chem benchmark product
 *.pdf
+
+# VSCode settings file
+.vscode/settings.json
