@@ -10,21 +10,17 @@ Run this script to generate benchmark comparisons between:
     (2) GCHP vs GCC
     (3) GCHP vs GCHP
 
-You can customize this by editing the following settings in the
-"Configurables" section below:
-
-    (1) Edit the path variables so that they point to folders w/ model data
-    (2) Edit the version strings for each benchmark simulation
-    (3) Edit the switches that turn on/off creating of plots and tables
-    (4) If necessary, edit labels for the dev and ref versions
+You can customize this by editing the settings in the corresponding yaml 
+config file (eg. 1yr_fullchem_benchmark.yml).
 
 Calling sequence:
 
-    ./run_1yr_fullchem_benchmark.py
+    ./run_1yr_fullchem_benchmark.py <path-to-configuration-file>
 
-To test gcpy, copy this script anywhere you want to run the test and
-set gcpy_test to True in the config file. Benchmark artifacts will
-be created locally in new folder called Plots.
+To test gcpy, copy this script and the corresponding yaml config file 
+anywhere you want to run the test. Set gcpy_test to True at the top 
+of the script. Benchmark artifacts will be created locally in new folder 
+called Plots.
 
 Remarks:
 
@@ -1848,8 +1844,8 @@ def main():
     Args:
         accepts one optional argument pointing to the configuration file. Defaults to benchmarks.yml
     """
-    config_filename = sys.argv[1] if len(sys.argv) == 2 else "benchmarks.yml"
-    config = read_config_file(config_filename)["1yr_fullchem_benchmark"]
+    config_filename = sys.argv[1] if len(sys.argv) == 2 else "1yr_fullchem_benchmark.yml"
+    config = read_config_file(config_filename)
     run_benchmark(config)
 
 
