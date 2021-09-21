@@ -1,0 +1,75 @@
+---
+# =====================================================================
+# Benchmark configuration file (**EDIT AS NEEDED**)
+# customize in the following manner:
+# (1) Edit the path variables so that they point to folders w/ model data
+# (2) Edit the version strings for each benchmark simulation
+# (3) Edit the switches that turn on/off creating of plots and tables
+# (4) If necessary, edit labels for the dev and ref versions
+# Note: When doing GCHP vs GCC comparisions gchp_dev will be compared
+# to gcc_dev (not gcc_ref!). This ensures consistency in version names
+# when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
+# =====================================================================
+# configuration for 1 year fullchem benchmark
+paths:
+  main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1yr_fullchem
+  results_dir: BenchmarkResults
+  weights_dir: /n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+data:
+  ref:
+    gcc:
+      version: GCC_ref
+      dir: GCC_ref
+      subdir: OutputDir
+    gchp:
+      version: GCHP_ref
+      dir: GCHP_ref
+      subdir: OutputDir
+      prior_to_13: False
+      is_legacy: True
+      resolution: c48 # GCHP initial restart resolution (for mass tables)
+  dev:
+    gcc:
+      version: GCC_dev 
+      dir: GCC_dev
+      subdir: OutputDir
+    gchp:
+      version: GCHP_dev
+      dir: GCHP_dev
+      subdir: OutputDir
+      prior_to_13: False
+      is_legacy: False
+      resolution: c48
+
+options:
+  gcpy_test: True # Specify if this is a gcpy test validation run
+  comparisons:
+    gcc_vs_gcc: 
+      run: True # True to run this comparison
+      dir: GCC_version_comparison
+      tables_subdir: Tables
+    gchp_vs_gcc: 
+      run: True
+      dir: GCHP_GCC_comparison 
+      tables_subdir: Tables
+    gchp_vs_gchp: 
+      run: True
+      dir: GCHP_version_comparison
+      tables_subdir: Tables
+    # GCHP vs GCC diff of diffs not included in 1-yr full chemistry benchmark
+
+  outputs: # Output to generate (plots/tables will be created in this order):
+    plot_conc: True
+    plot_emis: True
+    emis_table: True
+    plot_jvalues: True
+    plot_aod: True
+    mass_table: True
+    ops_budget_table: False
+    aer_budget_table: True
+    Ox_budget_table: True
+    ste_table: True # GCC only
+    OH_metrics: True # GCC only
+    plot_options:
+      by_spc_cat: True
+      by_hco_cat: True

@@ -1,0 +1,84 @@
+---
+# =====================================================================
+# Benchmark configuration file (**EDIT AS NEEDED**)
+# customize in the following manner:
+# (1) Edit the path variables so that they point to folders w/ model data
+# (2) Edit the version strings for each benchmark simulation
+# (3) Edit the switches that turn on/off creating of plots and tables
+# (4) If necessary, edit labels for the dev and ref versions
+# Note: When doing GCHP vs GCC comparisions gchp_dev will be compared
+# to gcc_dev (not gcc_ref!). This ensures consistency in version names
+# when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
+# =====================================================================
+# configuration for 1 month benchmark
+paths:
+  # High-level directory containing subdirectories with data
+  main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon
+  results_dir: BenchmarkResults # Name to be used for directory of output from this script
+  # Path to regridding weights
+  weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+data:
+  # contains configurations for ref and dev runs (version, dates, prior to v13.0.0)
+  ref:
+    gcc:
+      version: GCC_ref # NOTE: these will be used in some filenames and so should not have spaces
+      dir: GCC_ref # Directory name
+      subdir: OutputDir
+      bmk_mon: 7 #dates of runs
+      bmk_year: 2019
+    gchp:
+      version: GCHP_ref
+      dir: GCHP_ref
+      subdir: OutputDir
+      bmk_mon: 7
+      bmk_year: 2019
+      prior_to_13: False # Are GCHP ref and/or dev versions prior to 13.0.0?
+      is_legacy: False # Whether GCHP files are legacy (pre-13.1) format
+  dev:
+    gcc:
+      version: GCC_dev 
+      dir: GCC_dev
+      subdir: OutputDir
+      bmk_mon: 7
+      bmk_year: 2019
+    gchp:
+      version: GCHP_dev
+      dir: GCHP_dev
+      subdir: OutputDir
+      bmk_mon: 7
+      bmk_year: 2019
+      prior_to_13: False
+      is_legacy: False
+
+options:
+  gcpy_test: True # Specify if this is a gcpy test validation run
+  comparisons:
+    gcc_vs_gcc: 
+      run: True # True to run this comparison
+      dir: GCC_version_comparison
+      tables_subdir: Tables
+    gchp_vs_gcc: 
+      run: True
+      dir: GCHP_GCC_comparison 
+      tables_subdir: Tables
+    gchp_vs_gchp: 
+      run: True
+      dir: GCHP_version_comparison
+      tables_subdir: Tables
+    gchp_vs_gcc_diff_of_diffs: 
+      run: True
+      dir: GCHP_GCC_diff_of_diffs
+
+  outputs: # Output to generate (plots/tables will be created in this order):
+    plot_conc: True
+    plot_emis: True
+    emis_table: True
+    plot_jvalues: True
+    plot_aod: True
+    mass_table: True
+    ops_budget_table: False
+    OH_metrics: True # GCC only
+    ste_table: True # GCC only
+    plot_options: # Plot concentrations and emissions by category?
+      by_spc_cat: True
+      by_hco_cat: True
