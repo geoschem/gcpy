@@ -31,8 +31,8 @@ CLASSIFIERS = [
 ]
 
 MAJOR = 1
-MINOR = 0
-MICRO = 3
+MINOR = 1
+MICRO = 0
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
 VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, EXTRA)

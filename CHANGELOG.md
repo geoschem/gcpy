@@ -5,13 +5,20 @@ All notable changes to GCPy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
-
 ### Added
+### Changed
+## [1.1.0] - 2021-09-22
+### Added
+
+- Added date_time.py module to help manage datetime utility functions
+- Added GLYC, HAC, and pFe to benchmark categories
 - Added gcpy/budget_ox.py to compute Ox budgets from 1-yr benchmarks
 - Added capability to use GCHP 13.1.0+ or legacy file names in benchmark scripts
 - Added new methods dataset_reader and get_dataset_mean to util.py
 
 ### Changed
+- Modified benchmarking scripts to use yaml config files.
+- Modified dry-run scripts to use yaml config files.
 - Updated benchmark/run_1yr_fullchem_benchmark.py to call the budget_ox.py for GCC vs GCC benchmark generation.
   - NOTE: we are waiting to make sure that the GCHP benchmarks output wetdep fields before activating this feature for GCHP.
 - Modified plotting methods in benchmark.py to compute the mean of datasets over the time dimension, if the "time_mean" keyword is passed.
