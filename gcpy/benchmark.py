@@ -4116,7 +4116,7 @@ def make_benchmark_mass_conservation_table(
     min_mass = np.min(masses)
     # Convert absdiff to grams
     absdiff = (max_mass-min_mass) * 10**12
-    pctdiff = max_mass/min_mass
+    pctdiff = (max_mass-min_mass)/min_mass * 100
 
     # ==================================================================
     # Print masses to file
@@ -4142,4 +4142,4 @@ def make_benchmark_mass_conservation_table(
         print(' Max mass =  {:2.13f} Tg'.format(max_mass), file=f)
         print(' Min mass =  {:2.13f} Tg'.format(min_mass), file=f)
         print(' Abs diff =  {:>16.3f} g'.format(absdiff), file=f)
-        print(' Pct diff =  {:>16.5f} %'.format(pctdiff), file=f)
+        print(' Pct diff =  {:>16.10f} %'.format(pctdiff), file=f)
