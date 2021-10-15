@@ -9,6 +9,7 @@ FullChemBenchmark:
       - NH4
       - NIT
       - SO4
+      - HMS
     OC_BC:
       - BCPI
       - BCPO
@@ -112,6 +113,10 @@ FullChemBenchmark:
       - ETNO3
       - IPRNO3
       - NPRNO3
+      - AONITA
+      - ETHN
+      - BZPAN
+      - NPHEN
   Oxidants:
     Oxidants:
       - O3
@@ -131,6 +136,8 @@ FullChemBenchmark:
       - ALK4
       - BENZ
       - CH4
+      - C2H2
+      - C2H4
       - C2H6
       - C3H8
       - PRPE
@@ -176,6 +183,7 @@ FullChemBenchmark:
       - ACTA
     Aldehydes:
       - ALD2
+      - BALD
       - CH2O
       - HPALDs
       - MACR
@@ -193,13 +201,16 @@ FullChemBenchmark:
       - GLYX
       - HCOOH
       - MAP
+      - PHEN
       - RCHO
     Peroxides:
+      - ETHP
       - MP
   Sulfur:
     Sulfur:
       - SOx
       - DMS
+      - HMS
       - MSA
       - OCS
       - SO2
