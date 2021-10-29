@@ -214,11 +214,11 @@ def run_benchmark(config):
         ):
             if plotting_type and not exists(resdir):
                 os.mkdir(resdir)
-            if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
-                # Make copy of benchmark script in results directory
-                curfile = os.path.realpath(__file__)
-                dest = join(resdir, curfile.split("/")[-1])
-                if exists(dest):
+                if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
+                    # Make copy of benchmark script in results directory
+                    curfile = os.path.realpath(__file__)
+                    dest = join(resdir, curfile.split("/")[-1])
+                    if exists(dest):
                     copyfile(curfile, dest)
 
     gcc_vs_gcc_tablesdir = join(gcc_vs_gcc_resultsdir, "Tables")
