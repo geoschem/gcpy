@@ -7,7 +7,7 @@ paths:
 
 data:
   ref:
-    label: "GCC_ref"  
+    label: "GCC_ref"
     dir: GCC_ref
     subdir: OutputDir
     file: GEOSChem.SpeciesConc.20190701_0000z.nc4
@@ -29,7 +29,9 @@ options:
     create_plot: True
     pdfname: zonal_mean_comparison.pdf
   totals_and_diffs:
-    print_to_screen: True
     create_table: True
-    skip_zero_diffs: False
+    diff_type: absdiff             # Values: percent, pctdiff, %, abs, absdiff
+    print_to_screen: True
     filename: ''
+    skip_small_diffs: True
+    small_diff_threshold: 0.0000
