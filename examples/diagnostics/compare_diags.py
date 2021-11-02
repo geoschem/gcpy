@@ -27,6 +27,29 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # Methods
 # ======================================================================
 
+def read_config_file():
+    """
+    Reads configuration information from a YAML file.
+    """
+
+    # Take the config file as the 2nd argument (or use a default)
+    # NOTE: sys.argv[0] is always the program name!
+    if len(sys.argv) == 2:
+        config_file = sys.argv[1]
+    else:
+        config_file = "compare_diags.yml"
+
+    # Read the configuration file in YAML format
+    try:
+        print("compare.diags.py: Using configuration file " + config_file)
+        config = yaml_load_file(open(config_file))
+    except Exception:
+        msg = "compare_diags.py: Error reading configuration file: " + \
+            config_file
+        raise Exception(msg)
+
+    return config
+
 
 def create_dirs(config):
     """
@@ -134,6 +157,13 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
     filename = config["options"]["totals_and_diffs"]["filename"]
     do_screen = config["options"]["totals_and_diffs"]["print_to_screen"]
 
+    # Determine if we will print percent or absolute differences
+    do_percent_diff = False
+    if "percent" in config["options"]["totals_and_diffs"]["diff_type"] or \
+       "pctdiff" in config["options"]["totals_and_diffs"]["diff_type"] or \
+       "%" in config["options"]["totals_and_diffs"]["diff_type"]:
+        do_percent_diff = True
+
     # Determine if we will print to a file
     do_file = len(filename) > 0
     if not do_file and not do_screen:
@@ -148,21 +178,31 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
         )
         f = open(pathname, 'w')
 
-    # If we are printing only variables with zero diffs,
+
+    # Percent threshold for reporting differences
+    threshold = config["options"]["totals_and_diffs"]["small_diff_threshold"]
+
+    # If we are skipping variables with small differences,
     # then alert the user (print to screen & file)
-    if config["options"]["totals_and_diffs"]["skip_zero_diffs"]:
-        line = "... Only showing variables with nonzero differences"
+    if config["options"]["totals_and_diffs"]["skip_small_diffs"]:
+        diff_label = " |absolute difference|  > " + str(threshold)
+        if do_percent_diff:
+            diff_label = "|percent difference| > " + str(threshold) + " %"
+        line = "... Only showing variables with " + diff_label
         if do_file:
             print(line, file=f)
         else:
             print(line)
 
     # Print top header
+    diff_label = "Dev - Ref"
+    if do_percent_diff:
+        diff_label = "(Dev-Ref)/Ref % diff"
     line = "{} Ref={} Dev={} {}".format(
         "Variable".ljust(22),
         config["data"]["ref"]["label"].ljust(20),
         config["data"]["dev"]["label"].ljust(20),
-        "Dev-Ref"
+        diff_label
     )
     if do_file:
         print(line, file=f)
@@ -172,29 +212,40 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
     # Always print nonzero differences, but only print zero differences
     # if the configuration option "skip_zero_diffs" is False.
     for v in varlist:
+
+        # Absolute difference
         refsum = np.sum(refdata[v].values)
         devsum = np.sum(devdata[v].values)
-        diff = devsum - refsum
 
-        if np.abs(diff) > 0.0:
-            line = "{} : {} | {} | {} ".format(
-                v.ljust(20),
-                str(refsum).ljust(22),
-                str(devsum).ljust(22),
-                diff
-            )
+        # Absolute difference
+        absdiff = np.sum(devdata[v].values - refdata[v].values)
+
+        # Compute percent difference if needed
+        # otherwise we'll use the absolute difference for plotting
+        diff = absdiff
+        if do_percent_diff:
+            diff = 0.0
+            if np.abs(refsum) > 0.0:
+                diff = (absdiff / refsum) * 100.0
+
+        # Line to be printed
+        line = "{} : {} | {} | {} ".format(
+            v.ljust(20),
+            str(refsum).ljust(22),
+            str(devsum).ljust(22),
+            diff
+        )
+
+        # Skip small values
+        if np.abs(diff) > threshold:
             if do_file:
                 print(line, file=f)
             if do_screen:
                 print(line)
+
+        # Or don't skip any values
         else:
-            if not config["options"]["totals_and_diffs"]["skip_zero_diffs"]:
-                line = "{} : {} | {} | {} ".format(
-                    v.ljust(20),
-                    str(refsum).ljust(22),
-                    str(devsum).ljust(22),
-                    diff
-                )
+            if not config["options"]["totals_and_diffs"]["skip_small_diffs"]:
                 if do_file:
                     print(line, file=f)
                 if do_screen:
@@ -296,13 +347,9 @@ def main():
     """
     Main program, reads data and calls compare_data to make plots.
     """
-    
-    # Take the config file as the 2nd argument (or use a default)
-    # NOTE: sys.argv[0] is always the program name!
-    config_filename = sys.argv[1] if len(sys.argv) == 2 else "compare_diags.yml"
 
     # Get paths and options from the configuration file
-    config = util.read_config_file(config_filename)
+    config = read_config_file()
 
     # Create dirs for plots & weights (if necessary)
     create_dirs(config)
