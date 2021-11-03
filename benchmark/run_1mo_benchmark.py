@@ -219,7 +219,7 @@ def run_benchmark(config):
                     curfile = os.path.realpath(__file__)
                     dest = join(resdir, curfile.split("/")[-1])
                     if exists(dest):
-                    copyfile(curfile, dest)
+                        copyfile(curfile, dest)
 
     gcc_vs_gcc_tablesdir = join(gcc_vs_gcc_resultsdir, "Tables")
     gchp_vs_gchp_tablesdir = join(gchp_vs_gchp_resultsdir, "Tables")
