@@ -27,30 +27,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # Methods
 # ======================================================================
 
-def read_config_file():
-    """
-    Reads configuration information from a YAML file.
-    """
-
-    # Take the config file as the 2nd argument (or use a default)
-    # NOTE: sys.argv[0] is always the program name!
-    if len(sys.argv) == 2:
-        config_file = sys.argv[1]
-    else:
-        config_file = "compare_diags.yml"
-
-    # Read the configuration file in YAML format
-    try:
-        print("compare.diags.py: Using configuration file " + config_file)
-        config = yaml_load_file(open(config_file))
-    except Exception:
-        msg = "compare_diags.py: Error reading configuration file: " + \
-            config_file
-        raise Exception(msg)
-
-    return config
-
-
 def create_dirs(config):
     """
     Create directories for plots and weights if they do not exist.
@@ -159,11 +135,10 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
 
     # Determine if we will print percent or absolute differences
     do_percent_diff = False
-    if "percent" in config["options"]["totals_and_diffs"]["diff_type"] or \
-       "pctdiff" in config["options"]["totals_and_diffs"]["diff_type"] or \
-       "%" in config["options"]["totals_and_diffs"]["diff_type"]:
+    if any(x in config["options"]["totals_and_diffs"]["diff_type"] \
+           for x in ["percent", "pctdiff", "%"]):
         do_percent_diff = True
-
+        
     # Determine if we will print to a file
     do_file = len(filename) > 0
     if not do_file and not do_screen:
@@ -185,10 +160,11 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
     # If we are skipping variables with small differences,
     # then alert the user (print to screen & file)
     if config["options"]["totals_and_diffs"]["skip_small_diffs"]:
-        diff_label = " |absolute difference|  > " + str(threshold)
+        diff_label = f"|absolute difference| > {threshold}"
+        #diff_label = " |absolute difference|  > " + str(threshold)
         if do_percent_diff:
-            diff_label = "|percent difference| > " + str(threshold) + " %"
-        line = "... Only showing variables with " + diff_label
+            diff_label = f"|percent difference| > {threshold} %"
+        line = f"... Only showing variables with {diff_label}"
         if do_file:
             print(line, file=f)
         else:
@@ -348,8 +324,15 @@ def main():
     Main program, reads data and calls compare_data to make plots.
     """
 
+    # Take the config file as the 2nd argument (or use a default)
+    # NOTE: sys.argv[0] is always the program name!
+    if len(sys.argv) == 2:
+        config_file = sys.argv[1]
+    else:
+        config_file = "compare_diags.yml"
+
     # Get paths and options from the configuration file
-    config = read_config_file()
+    config = util.read_config_file(config_file)
 
     # Create dirs for plots & weights (if necessary)
     create_dirs(config)
@@ -360,3 +343,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    
