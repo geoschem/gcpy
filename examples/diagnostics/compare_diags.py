@@ -161,7 +161,6 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
     # then alert the user (print to screen & file)
     if config["options"]["totals_and_diffs"]["skip_small_diffs"]:
         diff_label = f"|absolute difference| > {threshold}"
-        #diff_label = " |absolute difference|  > " + str(threshold)
         if do_percent_diff:
             diff_label = f"|percent difference| > {threshold} %"
         line = f"... Only showing variables with {diff_label}"
