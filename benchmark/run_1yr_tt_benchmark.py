@@ -9,16 +9,16 @@ Run this script to generate benchmark comparisons between:
     (2) GCHP vs GCC (not yet tested)
     (3) GCHP vs GCHP (not yet tested)
 
-You can customize this by editing the settings in the corresponding yaml 
+You can customize this by editing the settings in the corresponding yaml
 config file (eg. 1yr_tt_benchmark.yml).
 
 Calling sequence:
 
     ./run_1yr_tt_benchmark.py <path-to-configuration-file>
 
-To test gcpy, copy this script and the corresponding yaml config file 
-anywhere you want to run the test. Set gcpy_test to True at the top 
-of the script. Benchmark artifacts will be created locally in new folder 
+To test gcpy, copy this script and the corresponding yaml config file
+anywhere you want to run the test. Set gcpy_test to True at the top
+of the script. Benchmark artifacts will be created locally in new folder
 called Plots.
 
 Remarks:
@@ -105,53 +105,53 @@ def run_benchmark(config):
     # Diagnostic file directory paths
     gcc_vs_gcc_refdir = join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["version"],
+        config["data"]["ref"]["gcc"]["dir"],
         config["data"]["ref"]["gcc"]["subdir"],
     )
     gcc_vs_gcc_devdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["version"],
+        config["data"]["dev"]["gcc"]["dir"],
         config["data"]["dev"]["gcc"]["subdir"],
     )
     gchp_vs_gcc_refdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["version"],
+        config["data"]["dev"]["gcc"]["dir"],
         config["data"]["dev"]["gcc"]["subdir"],
     )
     gchp_vs_gcc_devdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["version"],
+        config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["subdir"],
     )
     gchp_vs_gchp_refdir = join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["version"],
+        config["data"]["ref"]["gchp"]["dir"],
         config["data"]["ref"]["gchp"]["subdir"],
     )
     gchp_vs_gchp_devdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["version"],
+        config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["subdir"],
     )
 
     # Restart file directory paths
     gcc_vs_gcc_refrstdir = join(
-        config["paths"]["main_dir"], config["data"]["ref"]["gcc"]["version"], "restarts"
+        config["paths"]["main_dir"], config["data"]["ref"]["gcc"]["dir"], "restarts"
     )
     gcc_vs_gcc_devrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["version"], "restarts"
+        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"], "restarts"
     )
     gchp_vs_gcc_refrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["version"], "restarts"
+        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"], "restarts"
     )
     gchp_vs_gcc_devrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["version"]
+        config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["dir"]
     )
     gchp_vs_gchp_refrstdir = join(
-        config["paths"]["main_dir"], config["data"]["ref"]["gchp"]["version"]
+        config["paths"]["main_dir"], config["data"]["ref"]["gchp"]["dir"]
     )
     gchp_vs_gchp_devrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["version"]
+        config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["dir"]
     )
 
     # Plots directories
@@ -177,24 +177,24 @@ def run_benchmark(config):
     else:
         gcc_vs_gcc_resultsdir = join(
             config["paths"]["main_dir"],
-            config["data"]["dev"]["gcc"]["version"],
+            config["data"]["dev"]["gcc"]["dir"],
             config["paths"]["results_dir"],
         )
         gchp_vs_gchp_resultsdir = join(
             config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["version"],
+            config["data"]["dev"]["gchp"]["dir"],
             config["paths"]["results_dir"],
             config["options"]["comparisons"]["gcc_vs_gcc"]["dir"],
         )
         gchp_vs_gcc_resultsdir = join(
             config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["version"],
+            config["data"]["dev"]["gchp"]["dir"],
             config["paths"]["results_dir"],
             config["options"]["comparisons"]["gchp_vs_gcc"]["dir"],
         )
         base_gchp_resultsdir = join(
             config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["version"],
+            config["data"]["dev"]["gchp"]["dir"],
             config["paths"]["results_dir"],
         )
         # make results directories that don't exist
