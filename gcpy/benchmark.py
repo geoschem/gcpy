@@ -709,6 +709,14 @@ def make_benchmark_conc_plots(
     refds = reader(ref, drop_variables=gcon.skip_these_vars)
     devds = reader(dev, drop_variables=gcon.skip_these_vars)
 
+    # -----------------------------------------------------------------
+    # Kludge, rename wrong variable name
+    if "SpeciesConc_PFE" in refds.data_vars.keys():
+        refds = refds.rename({"SpeciesConc_PFE": "SpeciesConc_pFe"})
+    if "SpeciesConc_PFE" in devds.data_vars.keys():
+        devds = devds.rename({"SpeciesConc_PFE": "SpeciesConc_pFe"})
+    # -----------------------------------------------------------------
+        
     # Open met datasets if passed as arguments
     refmetds = None
     devmetds = None
