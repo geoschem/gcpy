@@ -94,7 +94,7 @@ def run_benchmark(config):
 
     # Path to species_databse.yml
     spcdb_dir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["version"]
+        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"]
     )
 
     # ======================================================================
@@ -266,14 +266,18 @@ def run_benchmark(config):
     )
     all_months_gchp_ref = all_months_ref
 
+    # Compute seconds in the Ref year
+    sec_per_yr_ref = 0
+    for t in range(12):
+        days_in_mon = monthrange(int(bmk_year_ref), t + 1)[1]
+        sec_per_yr_ref += days_in_mon * 86400.0
+
     # Overwrite all_months_gchp_ref if GCHP ref is legacy filename format.
     # Legacy format uses time-averaging period mid-point not start.
     if config["data"]["ref"]["gchp"]["is_legacy"]:
-        sec_per_yr_ref = 0
         all_months_gchp_ref = np.zeros(12, dtype="datetime64[h]")
         for t in range(12):
             days_in_mon = monthrange(int(bmk_year_ref), t + 1)[1]
-            sec_per_yr_ref += days_in_mon * 86400.0
             middle_hr = int(days_in_mon * 24 / 2)
             delta = np.timedelta64(middle_hr, "h")
             all_months_gchp_ref[t] = all_months_ref[t].astype("datetime64[h]") + delta
@@ -293,6 +297,12 @@ def run_benchmark(config):
     )
     all_months_gchp_dev = all_months_dev
 
+    # Compute seconds in the Dev year
+    sec_per_yr_dev = 0
+    for t in range(12):
+        days_in_mon = monthrange(int(bmk_year_dev), t + 1)[1]
+        sec_per_yr_dev += days_in_mon * 86400.0
+
     # Overwrite all_months_gchp_ref if GCHP ref is legacy filename format.
     # Legacy format uses time-averaging period mid-point not start.
     if config["data"]["dev"]["gchp"]["is_legacy"]:
@@ -300,7 +310,6 @@ def run_benchmark(config):
         all_months_gchp_dev = np.zeros(12, dtype="datetime64[h]")
         for t in range(12):
             days_in_mon = monthrange(int(bmk_year_dev), t + 1)[1]
-            sec_per_yr_dev += days_in_mon * 86400.0
             middle_hr = int(days_in_mon * 24 / 2)
             delta = np.timedelta64(middle_hr, "h")
             all_months_gchp_dev[t] = all_months_dev[t].astype("datetime64[h]") + delta
@@ -461,7 +470,7 @@ def run_benchmark(config):
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCC vs. GCC radionuclides budget table %%%")
             ttbdg.transport_tracers_budgets(
-                config["data"]["dev"]["gcc"]["version"],
+                config["data"]["dev"]["gcc"]["dir"],
                 gcc_vs_gcc_devdir,
                 gcc_vs_gcc_devrstdir,
                 int(bmk_year_dev),
@@ -482,9 +491,9 @@ def run_benchmark(config):
 
             # Create table
             bmk.make_benchmark_operations_budget(
-                config["data"]["ref"]["gcc"]["version"],
+                config["data"]["ref"]["gcc"]["dir"],
                 refs,
-                config["data"]["dev"]["gcc"]["version"],
+                config["data"]["dev"]["gcc"]["dir"],
                 devs,
                 sec_per_yr_ref,
                 sec_per_yr_dev,
@@ -512,7 +521,7 @@ def run_benchmark(config):
 
             # Make stat-trop exchange table for subset of species
             ste.make_benchmark_ste_table(
-                config["data"]["dev"]["gcc"]["version"],
+                config["data"]["dev"]["gcc"]["dir"],
                 devs,
                 int(bmk_year_dev),
                 dst=gcc_vs_gcc_tablesdir,
@@ -675,7 +684,7 @@ def run_benchmark(config):
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCHP vs. GCC radionuclides budget table %%%")
             ttbdg.transport_tracers_budgets(
-                config["data"]["dev"]["gchp"]["version"],
+                config["data"]["dev"]["gchp"]["dir"],
                 gchp_vs_gcc_devdir,
                 gchp_vs_gcc_devrstdir,
                 int(bmk_year_dev),
@@ -704,9 +713,9 @@ def run_benchmark(config):
 
             # Make operations budget table
             bmk.make_benchmark_operations_budget(
-                config["data"]["dev"]["gcc"]["version"],
+                config["data"]["dev"]["gcc"]["dir"],
                 refs,
-                config["data"]["dev"]["gchp"]["version"],
+                config["data"]["dev"]["gchp"]["dir"],
                 devs,
                 sec_per_yr_ref,
                 sec_per_yr_dev,
@@ -893,7 +902,7 @@ def run_benchmark(config):
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCHP vs. GCHP radionuclides budget table %%%")
             ttbdg.transport_tracers_budgets(
-                config["data"]["dev"]["gchp"]["version"],
+                config["data"]["dev"]["gchp"]["dir"],
                 gchp_vs_gchp_devdir,
                 gchp_vs_gchp_devrstdir,
                 int(bmk_year_dev),
@@ -927,9 +936,9 @@ def run_benchmark(config):
 
             # Create table
             bmk.make_benchmark_operations_budget(
-                config["data"]["dev"]["gchp"]["version"],
+                config["data"]["dev"]["gchp"]["dir"],
                 refs,
-                config["data"]["dev"]["gchp"]["version"],
+                config["data"]["dev"]["gchp"]["dir"],
                 devs,
                 sec_per_yr_ref,
                 sec_per_yr_dev,
@@ -974,7 +983,7 @@ def run_benchmark(config):
             # Create table
             bmk.make_benchmark_mass_conservation_table(
                 datafiles,
-                config["data"]["dev"]["gcc"]["version"],
+                config["data"]["dev"]["gcc"]["dir"],
                 dst=tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
@@ -1007,7 +1016,7 @@ def run_benchmark(config):
             # Create table
             bmk.make_benchmark_mass_conservation_table(
                 datafiles,
-                config["data"]["dev"]["gchp"]["version"],
+                config["data"]["dev"]["gchp"]["dir"],
                 dst=tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
