@@ -1211,34 +1211,34 @@ def run_benchmark(config):
                 is_gchp=True,
             )
 
-    # ==================================================================
-    # GCHP vs GCC Ox budget tables
-    # ==================================================================
-    if config["options"]["outputs"]["Ox_budget_table"]:
-        print("\n%%% Creating GCHP vs. GCC Ox budget tables %%%")
+        # ==================================================================
+        # GCHP vs GCC Ox budget tables
+        # ==================================================================
+        if config["options"]["outputs"]["Ox_budget_table"]:
+            print("\n%%% Creating GCHP vs. GCC Ox budget tables %%%")
 
-        # Compute Ox budget table for GCC
-        ox.global_ox_budget(
-            config["data"]["dev"]["gcc"]["version"],
-            gcc_vs_gcc_devdir,
-            gcc_vs_gcc_devrstdir,
-            bmk_year_dev,
-            dst=gcc_vs_gcc_tablesdir,
-            overwrite=True,
-            spcdb_dir=spcdb_dir
-        )
+            # Compute Ox budget table for GCC
+            ox.global_ox_budget(
+                config["data"]["dev"]["gcc"]["version"],
+                gcc_vs_gcc_devdir,
+                gcc_vs_gcc_devrstdir,
+                bmk_year_dev,
+                dst=gcc_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir
+            )
 
-        # Compute Ox budget table for GCHP
-        ox.global_ox_budget(
-            config["data"]["dev"]["gchp"]["version"],
-            gchp_vs_gcc_devdir,
-            gchp_vs_gcc_devrstdir,
-            bmk_year_dev,
-            dst=gchp_vs_gcc_tablesdir,
-            overwrite=True,
-            is_gchp=True,
-            spcdb_dir=spcdb_dir
-        )
+            # Compute Ox budget table for GCHP
+            ox.global_ox_budget(
+                config["data"]["dev"]["gchp"]["version"],
+                gchp_vs_gcc_devdir,
+                gchp_vs_gcc_devrstdir,
+                bmk_year_dev,
+                dst=gchp_vs_gcc_tablesdir,
+                overwrite=True,
+                is_gchp=True,
+                spcdb_dir=spcdb_dir
+            )
 
         # ==================================================================
         # GCHP vs. GCC global mean OH, MCF Lifetime, CH4 Lifetime
@@ -1269,7 +1269,7 @@ def run_benchmark(config):
 
         # ==================================================================
         # GCHP Strat-Trop Exchange
-        # -=================================================================
+        # ==================================================================
         if config["options"]["outputs"]["ste_table"]:
             print("\n%%% Skipping GCHP vs. GCC Strat-Trop Exchange table %%%")
 
