@@ -49,13 +49,13 @@ import sys
 from os.path import join, exists
 from shutil import copyfile
 import warnings
-import calendar
+from datetime import datetime
 import numpy as np
 from gcpy.util import get_filepath, read_config_file
 import gcpy.ste_flux as ste
 import gcpy.oh_metrics as oh
 import gcpy.benchmark as bmk
-from gcpy.date_time import get_timestamp_string
+from gcpy.date_time import add_months
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -84,9 +84,6 @@ def run_benchmark(config):
     """
     # This script has a fixed benchmark type
     bmk_type = "FullChemBenchmark"
-
-    # seconds in 1 month
-    MONTH_SECONDS = np.datetime64("2019-03-01T00:00:00") - np.datetime64("2019-02-01T00:00:00")
 
     # =====================================================================
     # Data directories
@@ -264,8 +261,9 @@ def run_benchmark(config):
         gchp_ref_date = np.datetime64(config["data"]["ref"]["gcc"]["bmk_start"])
     else:
         # TODO how to update this with flexible start/ end date?
-        gchp_ref_date = np.datetime(config["data"]["ref"]["gchp"]["bmk_start"][0:8] 
-            + "16T12:00:00")
+        gchp_ref_date = np.datetime(
+            config["data"]["ref"]["gchp"]["bmk_start"][0:8] + "16T12:00:00"
+        )
         # gchp_ref_date = np.datetime64(
         #     "{}-{}-16T12:00:00".format(gchp_ref_s_start[0], gchp_ref_s_start[1])
         # )
@@ -280,8 +278,9 @@ def run_benchmark(config):
         gchp_dev_date = np.datetime64(config["data"]["dev"]["gchp"]["bmk_start"])
     else:
         # TODO how to update this with flexible start/ end date?
-        gchp_dev_date = np.datetime(config["data"]["dev"]["gchp"]["bmk_start"][0:8] 
-            + "16T12:00:00")
+        gchp_dev_date = np.datetime(
+            config["data"]["dev"]["gchp"]["bmk_start"][0:8] + "16T12:00:00"
+        )
         # gchp_dev_date = np.datetime64(
         #     "{}-{}-16T12:00:00".format(gchp_dev_s_start[0], gchp_dev_s_start[1])
         # )
@@ -374,14 +373,20 @@ def run_benchmark(config):
         # ==================================================================
         # GCC vs GCC string for month and year (e.g. "Jul2016")
         # ==================================================================
-        if np.equal(gcc_ref_date, gcc_dev_date) and np.equal(gcc_end_ref_date, gcc_end_dev_date):
-            comparison_str = f"{config['data']['dev']['gcc']['bmk_start']} " 
-            + f"- {config['data']['dev']['gcc']['bmk_end']}"
+        if np.equal(gcc_ref_date, gcc_dev_date) and np.equal(
+            gcc_end_ref_date, gcc_end_dev_date
+        ):
+            comparison_str = (
+                f"{config['data']['dev']['gcc']['bmk_start']} "
+                + f"- {config['data']['dev']['gcc']['bmk_end']}"
+            )
         else:
-            comparison_str = f"{config['data']['dev']['gcc']['bmk_start']} " 
-            + f"- {config['data']['dev']['gcc']['bmk_end']}" 
-            + f" Vs {config['data']['ref']['gcc']['bmk_start']} " 
-            + f"- {config['data']['ref']['gcc']['bmk_end']}"
+            comparison_str = (
+                f"{config['data']['dev']['gcc']['bmk_start']} "
+                + f"- {config['data']['dev']['gcc']['bmk_end']}"
+                + f" Vs {config['data']['ref']['gcc']['bmk_start']} "
+                + f"- {config['data']['ref']['gcc']['bmk_end']}"
+            )
 
         # ==================================================================
         # GCC vs GCC filepaths for StateMet collection data
@@ -617,16 +622,27 @@ def run_benchmark(config):
 
             # Compute monthly and annual average strat-trop exchange of O3
             # TODO fix this to only run on months/years
-            ste.make_benchmark_ste_table(
-                config["data"]["dev"]["gcc"]["version"],
-                dev,
-                gcc_dev_b_start[0],
-                bmk_type=bmk_type,
-                dst=gcc_vs_gcc_tablesdir,
-                species=["O3"],
-                overwrite=True,
-                month=gcc_dev_b_start[1],
-            )
+            if add_months(gcc_dev_date, 1) == gcc_end_dev_date:
+                ste.make_benchmark_ste_table(
+                    config["data"]["dev"]["gcc"]["version"],
+                    dev,
+                    gcc_dev_date.astype(datetime).year,
+                    bmk_type=bmk_type,
+                    dst=gcc_vs_gcc_tablesdir,
+                    species=["O3"],
+                    overwrite=True,
+                    month=gcc_dev_date.astype(datetime).month,
+                )
+            elif add_months(gcc_dev_date, 12) == gcc_end_dev_date:
+                ste.make_benchmark_ste_table(
+                    config["data"]["dev"]["gcc"]["version"],
+                    dev,
+                    gcc_dev_date.astype(datetime).year,
+                    bmk_type=bmk_type,
+                    dst=gcc_vs_gcc_tablesdir,
+                    species=["O3"],
+                    overwrite=True,
+                )
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC benchmark plots and tables
@@ -647,14 +663,20 @@ def run_benchmark(config):
         # ==================================================================
         # GCHP vs GCC string for month and year (e.g. "Jul2016")
         # ==================================================================
-        if np.equal(gcc_dev_date, gchp_dev_date) and np.equal(gcc_end_dev_date, gchp_end_dev_date):
-            comparison_str = f"{config['data']['dev']['gcc']['bmk_start']} " 
-            + f"- {config['data']['dev']['gcc']['bmk_end']}"
+        if np.equal(gcc_dev_date, gchp_dev_date) and np.equal(
+            gcc_end_dev_date, gchp_end_dev_date
+        ):
+            comparison_str = (
+                f"{config['data']['dev']['gcc']['bmk_start']} "
+                + f"- {config['data']['dev']['gcc']['bmk_end']}"
+            )
         else:
-            comparison_str = f"{config['data']['dev']['gcc']['bmk_start']} " 
-            + f"- {config['data']['dev']['gcc']['bmk_end']}" 
-            + f" Vs {config['data']['dev']['gchp']['bmk_start']} " 
-            + f"- {config['data']['dev']['gchp']['bmk_end']}"
+            comparison_str = (
+                f"{config['data']['dev']['gcc']['bmk_start']} "
+                + f"- {config['data']['dev']['gcc']['bmk_end']}"
+                + f" Vs {config['data']['dev']['gchp']['bmk_start']} "
+                + f"- {config['data']['dev']['gchp']['bmk_end']}"
+            )
 
         # ==================================================================
         # GCHP vs GCC filepaths for StateMet collection data
@@ -940,14 +962,20 @@ def run_benchmark(config):
         # ==================================================================
         # GCHP vs GCHP string for month and year (e.g. "Jul2016")
         # ==================================================================
-        if np.equal(gchp_ref_date, gchp_dev_date) and np.equal(gchp_end_ref_date, gchp_end_dev_date):
-            comparison_str = f"{config['data']['dev']['gchp']['bmk_start']} " 
-            + f"- {config['data']['dev']['gchp']['bmk_end']}"
+        if np.equal(gchp_ref_date, gchp_dev_date) and np.equal(
+            gchp_end_ref_date, gchp_end_dev_date
+        ):
+            comparison_str = (
+                f"{config['data']['dev']['gchp']['bmk_start']} "
+                + f"- {config['data']['dev']['gchp']['bmk_end']}"
+            )
         else:
-            comparison_str = f"{config['data']['ref']['gchp']['bmk_start']} " 
-            + f"- {config['data']['ref']['gchp']['bmk_end']}" 
-            + f" Vs {config['data']['dev']['gchp']['bmk_start']} " 
-            + f"- {config['data']['dev']['gchp']['bmk_end']}"
+            comparison_str = (
+                f"{config['data']['ref']['gchp']['bmk_start']} "
+                + f"- {config['data']['ref']['gchp']['bmk_end']}"
+                + f" Vs {config['data']['dev']['gchp']['bmk_start']} "
+                + f"- {config['data']['dev']['gchp']['bmk_end']}"
+            )
 
         # ==================================================================
         # GCHP vs GCHP filepaths for StateMet collection data
