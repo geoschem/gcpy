@@ -2,6 +2,8 @@
 Internal utilities for managing datetime objects and strings
 """
 from datetime import datetime
+from dateutil.relativedelta import relativedelta
+import numpy as np
 
 
 def get_timestamp_string(
@@ -32,3 +34,19 @@ def get_timestamp_string(
     date_str = str(datetime(*date_array)).replace(' ', 'T') + 'Z'
     
     return date_str
+
+def add_months(start_date, n_months):
+    """
+    Adds a specified number of months to a numpy datetime64 object
+
+    Args:
+        start_date: numpy.datetime64
+            numpy datetime64 object
+        n_months: integer
+            number of months to add to given date
+    Returns:
+        new_date: numpy.datetime64
+            numpy datetime64 object with exactly n_months added to the date
+    """
+    new_date = start_date.astype(datetime) + relativedelta(months=n_months)
+    return np.datetime64(new_date)
