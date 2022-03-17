@@ -25,7 +25,6 @@ data:
       version: GCHP_ref
       dir: GCHP_ref
       subdir: OutputDir
-      prior_to_13: False
       is_legacy: True
   dev:
     gcc:
@@ -36,10 +35,10 @@ data:
       version: GCHP_dev
       dir: GCHP_dev
       subdir: OutputDir
-      prior_to_13: False
       is_legacy: False
 
 options:
+  bmk_type: TransportTracersBenchmark
   gcpy_test: True
   comparisons:
     gcc_vs_gcc: 

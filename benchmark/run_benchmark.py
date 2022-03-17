@@ -55,7 +55,9 @@ from gcpy.util import get_filepath, read_config_file
 import gcpy.ste_flux as ste
 import gcpy.oh_metrics as oh
 import gcpy.benchmark as bmk
-from gcpy.date_time import add_months
+from gcpy.date_time import add_months, is_full_year
+from modules.run_1yr_fullchem_benchmark import run_benchmark as run_1yr_benchmark
+from modules.run_1yr_tt_benchmark import run_benchmark as run_1yr_tt_benchmark
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -64,17 +66,36 @@ os.environ["QT_QPA_PLATFORM"] = "offscreen"
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# def create_directory_paths(config):
-def gchp_metname(prior_to_13):
-    """
-    Deterimines the correct collection name for GCHP StateMet data.
-    """
-    if prior_to_13:
-        return "StateMet_avg"
-    return "StateMet"
+
+def choose_benchmark_type(config):
+    if not (
+        config["options"]["bmk_type"] == "FullChemBenchmark"
+        or config["options"]["bmk_type"] == "TransportTracersBenchmark"
+    ):
+        print(
+            f"Error: invalid benchmark type {config['options']['bmk_type']}. "
+            + "Please enter FullChemBenchmark or TransportTracersBenchmark."
+        )
+        sys.exit()
+
+    start = np.datetime64(config["data"]["ref"]["gcc"]["bmk_start"])
+    end = np.datetime64(config["data"]["ref"]["gcc"]["bmk_end"])
+    # determine benchmark type and run relevant script
+    if is_full_year(start, end):
+        if config["options"]["bmk_type"] == "FullChemBenchmark":
+            run_1yr_benchmark(
+                config, str(start.astype(datetime).year), str(end.astype(datetime).year)
+            )
+        else:
+            run_1yr_tt_benchmark(
+                config, str(start.astype(datetime).year), str(end.astype(datetime).year)
+            )
+        sys.exit()
+    else:
+        run_benchmark_default(config)
 
 
-def run_benchmark(config):
+def run_benchmark_default(config):
     """
     Runs 1 mon benchmark with the given configuration settings.
 
@@ -82,8 +103,7 @@ def run_benchmark(config):
         config : dict
             Contains configuration for 1mon benchmark from yaml file.
     """
-    # This script has a fixed benchmark type
-    bmk_type = "FullChemBenchmark"
+    gchp_metname = "StateMet"
 
     # =====================================================================
     # Data directories
@@ -152,8 +172,12 @@ def run_benchmark(config):
     # Results directories
     if config["options"]["gcpy_test"]:
         mainresultsdir = join(".", config["paths"]["results_dir"])
-        gcc_vs_gcc_resultsdir = join(mainresultsdir, "GCC_version_comparison")
-        gchp_vs_gchp_resultsdir = join(mainresultsdir, "GCHP_version_comparison")
+        gcc_vs_gcc_resultsdir = join(
+            mainresultsdir, config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
+        )
+        gchp_vs_gchp_resultsdir = join(
+            mainresultsdir, config["options"]["comparisons"]["gchp_vs_gchp"]["dir"]
+        )
         gchp_vs_gcc_resultsdir = join(mainresultsdir, "GCHP_GCC_comparison")
         diff_of_diffs_resultsdir = join(mainresultsdir, "GCHP_GCC_diff_of_diffs")
         if not exists(mainresultsdir):
@@ -174,13 +198,13 @@ def run_benchmark(config):
             config["paths"]["main_dir"],
             config["data"]["dev"]["gchp"]["dir"],
             config["paths"]["results_dir"],
-            "GCHP_version_comparison",
+            config["options"]["comparisons"]["gchp_vs_gchp"]["dir"],
         )
         gchp_vs_gcc_resultsdir = join(
             config["paths"]["main_dir"],
             config["data"]["dev"]["gchp"]["dir"],
             config["paths"]["results_dir"],
-            "GCHP_GCC_comparison",
+            config["options"]["comparisons"]["gchp_vs_gcc"]["dir"],
         )
         diff_of_diffs_resultsdir = join(
             config["paths"]["main_dir"],
@@ -222,9 +246,18 @@ def run_benchmark(config):
                     if exists(dest):
                         copyfile(curfile, dest)
 
-    gcc_vs_gcc_tablesdir = join(gcc_vs_gcc_resultsdir, "Tables")
-    gchp_vs_gchp_tablesdir = join(gchp_vs_gchp_resultsdir, "Tables")
-    gchp_vs_gcc_tablesdir = join(gchp_vs_gcc_resultsdir, "Tables")
+    gcc_vs_gcc_tablesdir = join(
+        gcc_vs_gcc_resultsdir,
+        config["options"]["comparisons"]["gcc_vs_gcc"]["tables_subdir"],
+    )
+    gchp_vs_gchp_tablesdir = join(
+        gchp_vs_gchp_resultsdir,
+        config["options"]["comparisons"]["gchp_vs_gchp"]["tables_subdir"],
+    )
+    gchp_vs_gcc_tablesdir = join(
+        gchp_vs_gcc_resultsdir,
+        config["options"]["comparisons"]["gchp_vs_gcc"]["tables_subdir"],
+    )
 
     # =====================================================================
     # Plot title strings
@@ -256,38 +289,39 @@ def run_benchmark(config):
     # =====================================================================
 
     # Ref start used in diagnostic filename
+    gchp_ref_date = np.datetime64(config["data"]["ref"]["gcc"]["bmk_start"])
     gcc_ref_date = np.datetime64(config["data"]["ref"]["gcc"]["bmk_start"])
-    if not config["data"]["ref"]["gchp"]["is_legacy"]:
-        gchp_ref_date = np.datetime64(config["data"]["ref"]["gcc"]["bmk_start"])
-    else:
-        # TODO how to update this with flexible start/ end date?
-        gchp_ref_date = np.datetime(
-            config["data"]["ref"]["gchp"]["bmk_start"][0:8] + "16T12:00:00"
-        )
-        # gchp_ref_date = np.datetime64(
-        #     "{}-{}-16T12:00:00".format(gchp_ref_s_start[0], gchp_ref_s_start[1])
-        # )
-
     # Ref end used in restart filename)
     gcc_end_ref_date = np.datetime64(config["data"]["ref"]["gcc"]["bmk_end"])
     gchp_end_ref_date = np.datetime64(config["data"]["ref"]["gchp"]["bmk_end"])
 
+    # TODO: remove is_legacy option with 14.0 release
+    if config["data"]["ref"]["gchp"]["is_legacy"]:
+        if add_months(gchp_ref_date, 1) == gchp_end_ref_date:
+            gchp_ref_date = np.datetime(
+                config["data"]["ref"]["gchp"]["bmk_start"][0:8] + "16T12:00:00"
+            )
+        else:
+            print("Error: `is_legacy: True` option only supported for exactly 1 month and 1 year benchmarks")
+            sys.exit()
+    
     # Dev start used in diagnostic filename
     gcc_dev_date = np.datetime64(config["data"]["dev"]["gcc"]["bmk_start"])
-    if not config["data"]["dev"]["gchp"]["is_legacy"]:
-        gchp_dev_date = np.datetime64(config["data"]["dev"]["gchp"]["bmk_start"])
-    else:
-        # TODO how to update this with flexible start/ end date?
-        gchp_dev_date = np.datetime(
-            config["data"]["dev"]["gchp"]["bmk_start"][0:8] + "16T12:00:00"
-        )
-        # gchp_dev_date = np.datetime64(
-        #     "{}-{}-16T12:00:00".format(gchp_dev_s_start[0], gchp_dev_s_start[1])
-        # )
-
+    gchp_dev_date = np.datetime64(config["data"]["dev"]["gchp"]["bmk_start"])
     # Dev end used in restart filename
     gcc_end_dev_date = np.datetime64(config["data"]["dev"]["gcc"]["bmk_end"])
     gchp_end_dev_date = np.datetime64(config["data"]["dev"]["gchp"]["bmk_end"])
+
+    # TODO: remove is_legacy option with 14.0 release
+    if config["data"]["dev"]["gchp"]["is_legacy"]:
+        if add_months(gchp_dev_date, 1) == gchp_end_dev_date:
+            gchp_dev_date = np.datetime(
+                config["data"]["dev"]["gchp"]["bmk_start"][0:8] + "16T12:00:00"
+            )
+        else:
+            print("Error: `is_legacy: True` option only supported for exactly 1 month and 1 year benchmarks")
+            sys.exit()
+
 
     # Seconds per month
     gcc_ref_sec_diff = (gcc_end_ref_date - gcc_ref_date).astype("float64")
@@ -327,7 +361,11 @@ def run_benchmark(config):
     # ======================================================================
     # Print the list of plots & tables to the screen
     # ======================================================================
-    print("The following plots and tables will be created for {}:".format(bmk_type))
+    print(
+        "The following plots and tables will be created for {}:".format(
+            config["options"]["bmk_type"]
+        )
+    )
     if config["options"]["outputs"]["plot_conc"]:
         print(" - Concentration plots")
     if config["options"]["outputs"]["plot_emis"]:
@@ -562,7 +600,7 @@ def run_benchmark(config):
                 dev,
                 gcc_ref_sec_diff,
                 gcc_dev_sec_diff,
-                benchmark_type=bmk_type,
+                benchmark_type=config["options"]["bmk_type"],
                 label=comparison_str,
                 dst=gcc_vs_gcc_tablesdir,
             )
@@ -621,27 +659,17 @@ def run_benchmark(config):
             dev = get_filepath(gcc_vs_gcc_devdir, "AdvFluxVert", gcc_dev_date)
 
             # Compute monthly and annual average strat-trop exchange of O3
-            # TODO fix this to only run on months/years
+            # only run if comparison is exactly 1 month
             if add_months(gcc_dev_date, 1) == gcc_end_dev_date:
                 ste.make_benchmark_ste_table(
                     config["data"]["dev"]["gcc"]["version"],
                     dev,
                     gcc_dev_date.astype(datetime).year,
-                    bmk_type=bmk_type,
+                    bmk_type=config["options"]["bmk_type"],
                     dst=gcc_vs_gcc_tablesdir,
                     species=["O3"],
                     overwrite=True,
                     month=gcc_dev_date.astype(datetime).month,
-                )
-            elif add_months(gcc_dev_date, 12) == gcc_end_dev_date:
-                ste.make_benchmark_ste_table(
-                    config["data"]["dev"]["gcc"]["version"],
-                    dev,
-                    gcc_dev_date.astype(datetime).year,
-                    bmk_type=bmk_type,
-                    dst=gcc_vs_gcc_tablesdir,
-                    species=["O3"],
-                    overwrite=True,
                 )
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -684,7 +712,7 @@ def run_benchmark(config):
         refmet = get_filepath(gchp_vs_gcc_refdir, "StateMet", gcc_dev_date)
         devmet = get_filepath(
             gchp_vs_gcc_devdir,
-            gchp_metname(config["data"]["dev"]["gchp"]["prior_to_13"]),
+            gchp_metname,
             gchp_dev_date,
             is_gchp=True,
             gchp_format_is_legacy=config["data"]["dev"]["gchp"]["is_legacy"],
@@ -898,7 +926,7 @@ def run_benchmark(config):
                 dev,
                 gcc_dev_sec_diff,
                 gchp_dev_sec_diff,
-                benchmark_type=bmk_type,
+                benchmark_type=config["options"]["bmk_type"],
                 label=comparison_str,
                 operations=[
                     "Chemistry",
@@ -982,14 +1010,14 @@ def run_benchmark(config):
         # ==================================================================
         refmet = get_filepath(
             gchp_vs_gchp_refdir,
-            gchp_metname(config["data"]["ref"]["gchp"]["prior_to_13"]),
+            gchp_metname,
             gchp_ref_date,
             is_gchp=True,
             gchp_format_is_legacy=config["data"]["ref"]["gchp"]["is_legacy"],
         )
         devmet = get_filepath(
             gchp_vs_gchp_devdir,
-            gchp_metname(config["data"]["dev"]["gchp"]["prior_to_13"]),
+            gchp_metname,
             gchp_dev_date,
             is_gchp=True,
             gchp_format_is_legacy=config["data"]["dev"]["gchp"]["is_legacy"],
@@ -1246,7 +1274,7 @@ def run_benchmark(config):
                 dev,
                 gchp_ref_sec_diff,
                 gchp_dev_sec_diff,
-                benchmark_type=bmk_type,
+                benchmark_type=config["options"]["bmk_type"],
                 label=comparison_str,
                 operations=[
                     "Chemistry",
@@ -1345,7 +1373,7 @@ def run_benchmark(config):
 def main():
     config_filename = sys.argv[1] if len(sys.argv) == 2 else "1mo_benchmark.yml"
     config = read_config_file(config_filename)
-    run_benchmark(config)
+    choose_benchmark_type(config)
 
 
 if __name__ == "__main__":

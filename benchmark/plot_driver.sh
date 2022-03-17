@@ -22,13 +22,13 @@
 conda activate gcpy
 
 # Uncomment this line to make 1-month benchmark plots & tables
-./run_1mo_benchmark.py > plots_1mo.log
+./run_benchmark.py 1mo_benchmark.yml > plots_1mo.log
 
 # Uncomment this line to make 1-year benchmark plots & tables
-#./run_1yr_fullchem_benchmark.py > plots_1yr_fullchem.log
+# ./run_benchmark.py 1yr_fullchem_benchmark.yml > plots_1yr_fullchem.log
 
 # Uncomment this line to make 1-year TransportTracers plots & tables
-#./run_1yr_tt_benchmark.py > plots_1yr_tt.log
+# ./run_benchmark.py 1yr_tt_benchmark.yml > plots_1yr_tt.log
 
 # Turn off python environment
 conda deactivate
