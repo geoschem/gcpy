@@ -6,9 +6,7 @@ from dateutil.relativedelta import relativedelta
 import numpy as np
 
 
-def get_timestamp_string(
-        date_array
-):
+def get_timestamp_string(date_array):
     """
     Convenience function returning the datetime timestamp based on the given input
 
@@ -31,22 +29,39 @@ def get_timestamp_string(
     date_array[1] = date_array[1] or 1
     date_array[2] = date_array[2] or 1
 
-    date_str = str(datetime(*date_array)).replace(' ', 'T') + 'Z'
-    
+    date_str = str(datetime(*date_array)).replace(" ", "T") + "Z"
+
     return date_str
+
 
 def add_months(start_date, n_months):
     """
-    Adds a specified number of months to a numpy datetime64 object
 
     Args:
         start_date: numpy.datetime64
             numpy datetime64 object
         n_months: integer
-            number of months to add to given date
     Returns:
         new_date: numpy.datetime64
             numpy datetime64 object with exactly n_months added to the date
     """
     new_date = start_date.astype(datetime) + relativedelta(months=n_months)
     return np.datetime64(new_date)
+
+
+def is_full_year(start_date, end_date):
+    """
+    Verifies if two dates are a full year starting Jan 1.
+
+    Args:
+        start_date: numpy.datetime64
+            numpy datetime64 object
+        end_date: numpy.datetime64
+            numpy datetime64 object
+    Returns: boolean
+    """
+    return (
+        add_months(start_date, 12) == end_date
+        and start_date.astype(datetime).month == 1
+        and start_date.astype(datetime).day == 1
+    )
