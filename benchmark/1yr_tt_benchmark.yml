@@ -16,25 +16,34 @@ paths:
   results_dir: BenchmarkResults
   weights_dir: /n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
 data:
+  # timestamp format YYYY-MM-DDThh:mm:ss
   ref:
     gcc:
       version: GCC_ref
       dir: GCC_ref
       subdir: OutputDir
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
     gchp:
       version: GCHP_ref
       dir: GCHP_ref
       subdir: OutputDir
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
       is_legacy: True
   dev:
     gcc:
       version: GCC_dev 
       dir: GCC_dev
       subdir: OutputDir
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
       subdir: OutputDir
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
       is_legacy: False
 
 options:

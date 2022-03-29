@@ -64,7 +64,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
-def run_benchmark(config, bmk_year_ref="2019", bmk_year_dev="2019"):
+def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # This script has a fixed benchmark type, year, and months
     bmk_type = config["options"]["bmk_type"]
     bmk_mon_strs = ["Jan", "Apr", "Jul", "Oct"]
@@ -1011,19 +1011,4 @@ def run_benchmark(config, bmk_year_ref="2019", bmk_year_dev="2019"):
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
-
-
-def main():
-    """
-    Driver for extracting config information and running 1yr tt benchmark
-
-    Args:
-        accepts one optional argument pointing to the configuration file. Defaults to benchmarks.yml
-    """
-    config_filename = sys.argv[1] if len(sys.argv) == 2 else "1yr_tt_benchmark.yml"
-    config = read_config_file(config_filename)
-    run_benchmark(config)
-
-
-if __name__ == "__main__":
-    main()
+            

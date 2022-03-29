@@ -415,7 +415,8 @@ def run_benchmark_default(config):
             config["options"]["outputs"]["ops_budget_table"] = False
 
         # ==================================================================
-        # GCC vs GCC string for month and year (e.g. "Jul2016")
+        # GCC vs GCC string for month and year 
+        # (e.g. "2019-07-01T00:00:00 - 2019-08-01T00:00:00")
         # ==================================================================
         if np.equal(gcc_ref_date, gcc_dev_date) and np.equal(
             gcc_end_ref_date, gcc_end_dev_date
@@ -695,7 +696,8 @@ def run_benchmark_default(config):
             config["options"]["outputs"]["ops_budget_table"] = False
 
         # ==================================================================
-        # GCHP vs GCC string for month and year (e.g. "Jul2016")
+        # GCHP vs GCC string for month and year 
+        # (e.g.  "2019-07-01T00:00:00 - 2019-08-01T00:00:00")
         # ==================================================================
         if np.equal(gcc_dev_date, gchp_dev_date) and np.equal(
             gcc_end_dev_date, gchp_end_dev_date
@@ -994,7 +996,8 @@ def run_benchmark_default(config):
             config["options"]["outputs"]["ops_budget_table"] = False
 
         # ==================================================================
-        # GCHP vs GCHP string for month and year (e.g. "Jul2016")
+        # GCHP vs GCHP string for month and year 
+        # (e.g.  "2019-07-01T00:00:00 - 2019-08-01T00:00:00")
         # ==================================================================
         if np.equal(gchp_ref_date, gchp_dev_date) and np.equal(
             gchp_end_ref_date, gchp_end_dev_date

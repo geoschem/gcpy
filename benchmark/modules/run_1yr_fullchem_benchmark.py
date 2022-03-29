@@ -66,7 +66,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-def run_benchmark(config, bmk_year_ref="2019", bmk_year_dev="2019"):
+def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     """
     Runs 1 year benchmark with the given configuration settings.
 
@@ -1823,19 +1823,3 @@ def run_benchmark(config, bmk_year_ref="2019", bmk_year_dev="2019"):
         # ==================================================================
         if config["options"]["outputs"]["ste_table"]:
             print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
-
-
-def main():
-    """
-    Driver for extracting config information and running 1yr benchmark
-
-    Args:
-        accepts one optional argument pointing to the configuration file. Defaults to benchmarks.yml
-    """
-    config_filename = sys.argv[1] if len(sys.argv) == 2 else "1yr_fullchem_benchmark.yml"
-    config = read_config_file(config_filename)
-    run_benchmark(config)
-
-
-if __name__ == "__main__":
-    main()
