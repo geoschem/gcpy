@@ -66,7 +66,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-def run_benchmark(config):
+def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     """
     Runs 1 year benchmark with the given configuration settings.
 
@@ -76,12 +76,11 @@ def run_benchmark(config):
     """
 
     # This script has a fixed benchmark type
-    bmk_type = "FullChemBenchmark"
-    bmk_year_ref = "2019"
-    bmk_year_dev = "2019"
+    bmk_type = config["options"]["bmk_type"]
     bmk_mon_strs = ["Jan", "Apr", "Jul", "Oct"]
     bmk_mon_inds = [0, 3, 6, 9]
     bmk_n_months = len(bmk_mon_strs)
+    gchp_metname = "StateMet"
 
     ########################################################################
     ###           CONFIGURABLE SETTINGS: ***EDIT AS NEEDED ***           ###
@@ -262,20 +261,9 @@ def run_benchmark(config):
     ###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
     ########################################################################
 
-    def gchp_metname(prior_to_13):
-        """
-        Returns the proper name for the GCHP StateMet collection.
-        """
-        if prior_to_13:
-            return "StateMet_avg"
-        return "StateMet"
-
     # =====================================================================
     # Dates and times -- ref data
     # =====================================================================
-
-    # Month/year strings for use in table subdirectories (e.g. Jan2016)
-    bmk_mon_yr_strs_ref = [v + bmk_year_ref for v in bmk_mon_strs]
 
     # Get days per month and seconds per month for ref
     sec_per_month_ref = np.zeros(12)
@@ -789,7 +777,7 @@ def run_benchmark(config):
         refmet = get_filepaths(gchp_vs_gcc_refdir, "StateMet", all_months_dev)[0]
         devmet = get_filepaths(
             gchp_vs_gcc_devdir,
-            gchp_metname(config["data"]["dev"]["gchp"]["prior_to_13"]),
+            gchp_metname,
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=config["data"]["dev"]["gchp"]["is_legacy"],
@@ -1283,14 +1271,14 @@ def run_benchmark(config):
         # ==================================================================
         refmet = get_filepaths(
             gchp_vs_gchp_refdir,
-            gchp_metname(config["data"]["ref"]["gchp"]["prior_to_13"]),
+            gchp_metname,
             all_months_gchp_ref,
             is_gchp=True,
             gchp_format_is_legacy=config["data"]["ref"]["gchp"]["is_legacy"],
         )[0]
         devmet = get_filepaths(
             gchp_vs_gcc_devdir,
-            gchp_metname(config["data"]["dev"]["gchp"]["prior_to_13"]),
+            gchp_metname,
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=config["data"]["dev"]["gchp"]["is_legacy"],
@@ -1835,19 +1823,3 @@ def run_benchmark(config):
         # ==================================================================
         if config["options"]["outputs"]["ste_table"]:
             print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
-
-
-def main():
-    """
-    Driver for extracting config information and running 1yr benchmark
-
-    Args:
-        accepts one optional argument pointing to the configuration file. Defaults to benchmarks.yml
-    """
-    config_filename = sys.argv[1] if len(sys.argv) == 2 else "1yr_fullchem_benchmark.yml"
-    config = read_config_file(config_filename)
-    run_benchmark(config)
-
-
-if __name__ == "__main__":
-    main()

@@ -64,23 +64,13 @@ warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 
-def gchp_metname(prior_to_13):
-    """
-    Deterimines the correct collection name for GCHP StateMet data.
-    """
-    if prior_to_13:
-        return "StateMet_avg"
-    return "StateMet"
-
-
-def run_benchmark(config):
+def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # This script has a fixed benchmark type, year, and months
-    bmk_type = "TransportTracersBenchmark"
-    bmk_year_ref = "2019"
-    bmk_year_dev = "2019"
+    bmk_type = config["options"]["bmk_type"]
     bmk_mon_strs = ["Jan", "Apr", "Jul", "Oct"]
     bmk_mon_inds = [0, 3, 6, 9]
     bmk_n_months = len(bmk_mon_strs)
+    gchp_metname = "StateMet"
 
     ########################################################################
     ###           CONFIGURABLE SETTINGS: ***EDIT AS NEEDED***            ###
@@ -544,7 +534,7 @@ def run_benchmark(config):
         refmet = get_filepaths(gchp_vs_gcc_refdir, "StateMet", all_months_dev)[0]
         devmet = get_filepaths(
             gchp_vs_gcc_devdir,
-            gchp_metname(config["data"]["dev"]["gchp"]["prior_to_13"]),
+            gchp_metname,
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=config["data"]["dev"]["gchp"]["is_legacy"],
@@ -742,14 +732,14 @@ def run_benchmark(config):
         # ==================================================================
         refmet = get_filepaths(
             gchp_vs_gchp_refdir,
-            gchp_metname(config["data"]["ref"]["gchp"]["prior_to_13"]),
+            gchp_metname,
             all_months_gchp_ref,
             is_gchp=True,
             gchp_format_is_legacy=config["data"]["ref"]["gchp"]["is_legacy"],
         )[0]
         devmet = get_filepaths(
             gchp_vs_gchp_devdir,
-            gchp_metname(config["data"]["dev"]["gchp"]["prior_to_13"]),
+            gchp_metname,
             all_months_gchp_dev,
             is_gchp=True,
             gchp_format_is_legacy=config["data"]["dev"]["gchp"]["is_legacy"],
@@ -1021,19 +1011,4 @@ def run_benchmark(config):
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
-
-
-def main():
-    """
-    Driver for extracting config information and running 1yr tt benchmark
-
-    Args:
-        accepts one optional argument pointing to the configuration file. Defaults to benchmarks.yml
-    """
-    config_filename = sys.argv[1] if len(sys.argv) == 2 else "1yr_tt_benchmark.yml"
-    config = read_config_file(config_filename)
-    run_benchmark(config)
-
-
-if __name__ == "__main__":
-    main()
+            
