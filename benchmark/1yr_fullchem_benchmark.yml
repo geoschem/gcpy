@@ -16,16 +16,20 @@ paths:
   results_dir: BenchmarkResults
   weights_dir: /n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
 data:
+  # timestamp format YYYY-MM-DDThh:mm:ss
   ref:
     gcc:
       version: GCC_ref
       dir: GCC_ref
       subdir: OutputDir
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
     gchp:
       version: GCHP_ref
       dir: GCHP_ref
       subdir: OutputDir
-      prior_to_13: False
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
       is_legacy: True
       resolution: c48 # GCHP initial restart resolution (for mass tables)
   dev:
@@ -33,15 +37,19 @@ data:
       version: GCC_dev 
       dir: GCC_dev
       subdir: OutputDir
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
       subdir: OutputDir
-      prior_to_13: False
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
       is_legacy: False
       resolution: c48
 
 options:
+  bmk_type: FullChemBenchmark
   gcpy_test: True # Specify if this is a gcpy test validation run
   comparisons:
     gcc_vs_gcc: 
