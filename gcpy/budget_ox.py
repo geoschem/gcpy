@@ -595,9 +595,8 @@ def print_budget(
         os.makedirs(globvars.dst)
 
     # Filename
-    filename = "{}/{}.O3_budget_troposphere_{}.txt".format(
+    filename = "{}/Ox_budget_troposphere_{}.txt".format(
         globvars.dst,
-        globvars.devstr,
         globvars.y0_str
     )
 
