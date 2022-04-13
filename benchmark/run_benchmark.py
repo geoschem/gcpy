@@ -170,7 +170,10 @@ def run_benchmark_default(config):
     # =====================================================================
     # Path to species_database.yml
     # =====================================================================
-    spcdb_dir = join(config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"])
+    if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
+        spcdb_dir = join(config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["dir"])
+    else:
+        spcdb_dir = join(config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"])
 
     # =====================================================================
     # Benchmark output directories
