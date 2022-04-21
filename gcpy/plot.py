@@ -2568,6 +2568,8 @@ def single_panel(plot_vals,
                  vert_params=[[], []],
                  pdfname="",
                  weightsdir='.',
+                 vmin=None,
+                 vmax=None,
                  **extra_plot_args
                  ):
     """
@@ -2658,6 +2660,13 @@ def single_panel(plot_vals,
         weightsdir: str
             Directory path for storing regridding weights
             Default value: "." (will store regridding files in current directory)
+            Default value: "" (will not create PDF)
+        vmin: float
+            minimum for colorbars
+            Default value: None (will use plot value minimum)
+        vmax: float
+            maximum for colorbars
+            Default value: None (will use plot value maximum)
         extra_plot_args: various
             Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
 
@@ -2827,11 +2836,11 @@ def single_panel(plot_vals,
     # Normalize colors (put into range [0..1] for matplotlib methods)
     if norm == []:
         if data_is_xr:
-            vmin = plot_vals.data.min()
-            vmax = plot_vals.data.max()
+            vmin = plot_vals.data.min() if vmin == None else vmin
+            vmax = plot_vals.data.max() if vmax == None else vmax
         elif type(plot_vals) is np.ndarray:
-            vmin = np.min(plot_vals)
-            vmax = np.max(plot_vals)
+            vmin = np.min(plot_vals) if vmin == None else vmin
+            vmax = np.max(plot_vals) if vmax == None else vmax
         norm = normalize_colors(
             vmin,
             vmax,
