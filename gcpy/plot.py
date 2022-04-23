@@ -2836,11 +2836,11 @@ def single_panel(plot_vals,
     # Normalize colors (put into range [0..1] for matplotlib methods)
     if norm == []:
         if data_is_xr:
-            vmin = plot_vals.data.min() if vmin == None else vmin
-            vmax = plot_vals.data.max() if vmax == None else vmax
+            vmin = plot_vals.data.min() if vmin is None else vmin
+            vmax = plot_vals.data.max() if vmax is None else vmax
         elif type(plot_vals) is np.ndarray:
-            vmin = np.min(plot_vals) if vmin == None else vmin
-            vmax = np.max(plot_vals) if vmax == None else vmax
+            vmin = np.min(plot_vals) if vmin is None else vmin
+            vmax = np.max(plot_vals) if vmax is None else vmax
         norm = normalize_colors(
             vmin,
             vmax,
@@ -3011,6 +3011,8 @@ def single_panel(plot_vals,
         # hemisphere
         if np.max(grid["lon_b"] > 180):
             grid["lon_b"] = (((grid["lon_b"] + 180) % 360) - 180)
+
+        plots = []
         for j in range(6):
             plot = ax.pcolormesh(
                 grid["lon_b"][j, :, :],
@@ -3021,6 +3023,7 @@ def single_panel(plot_vals,
                 norm=norm,
                 **extra_plot_args
             )
+            plots.append(plot)
         ax.set_extent(extent, crs=proj)
         ax.coastlines()
         ax.set_xticks(xtick_positions)
@@ -3063,4 +3066,6 @@ def single_panel(plot_vals,
         pdf.savefig(fig)
         pdf.close()
 
-    return plot
+    # cubedsphere grids have six plots associated with them, 
+    # so in that case we return a list of the 6 plots
+    return plots if 'plots' in locals() else plot
