@@ -375,7 +375,7 @@ Single_panel
        pedge_ind=np.full((1,1), -1), log_yaxis=False,
        xtick_positions=[], xticklabels=[], proj=ccrs.PlateCarree(),
        sg_path='', ll_plot_func="imshow", vert_params=[[],[]],
-       pdfname="", **extra_plot_args
+       pdfname="", return_list_of_plots=False **extra_plot_args
        ):
 
 
