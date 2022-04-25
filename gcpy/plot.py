@@ -3074,6 +3074,6 @@ def single_panel(plot_vals,
     # in some cases users may wish to get a list of all associated plots
     # eg. cubedsphere grids have six plots associated with them 
     if return_list_of_plots:
-        return [plot] if len(plots) == 0 else plots
+        return plots if 'plots' in locals() else [plot]
     else: 
         return plot
