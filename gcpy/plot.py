@@ -2570,6 +2570,7 @@ def single_panel(plot_vals,
                  weightsdir='.',
                  vmin=None,
                  vmax=None,
+                 return_list_of_plots=False,
                  **extra_plot_args
                  ):
     """
@@ -2667,6 +2668,10 @@ def single_panel(plot_vals,
         vmax: float
             maximum for colorbars
             Default value: None (will use plot value maximum)
+        return_list_of_plots: bool
+            Return plots as a list. This is helpful if you are using a cubedsphere grid
+            and would like access to all 6 plots
+            Default value: False
         extra_plot_args: various
             Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
 
@@ -3066,6 +3071,9 @@ def single_panel(plot_vals,
         pdf.savefig(fig)
         pdf.close()
 
-    # cubedsphere grids have six plots associated with them, 
-    # so in that case we return a list of the 6 plots
-    return plots if 'plots' in locals() else plot
+    # in some cases users may wish to get a list of all associated plots
+    # eg. cubedsphere grids have six plots associated with them 
+    if return_list_of_plots:
+        return [plot] if len(plots) == 0 else plots
+    else: 
+        return plot
