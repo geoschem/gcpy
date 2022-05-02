@@ -7,8 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## Unreleased
 ### Added
 ### Changed
-## [1.1.0] - 2021-09-22
+## [1.2.0] - 2021-09-22
 ### Added
+- Added Parameter for single_panel to support return of all 6 cubedsphere plots
+- Added flexible time period for benchmark plotting scripts
+### Changed
+- Modified single_panel to vmin/vmax parameters with newer versions of matplotlib (>3.5.0)
+- Modified run_benchmark script to select correct species database depending on benchmark type
+- Modified filename for Ox budget
+- Modified readthedocs build to use mamba instead of conda to fix build failures
+- Modified benchmark plotting scripts to use a single run_benchmark.py script
+- Modified benchmark categories and species database yaml files
+- Fixed bug in mass conservation table percent difference
+
+## [1.1.0] - 2021-09-22
 
 - Added date_time.py module to help manage datetime utility functions
 - Added GLYC, HAC, and pFe to benchmark categories
