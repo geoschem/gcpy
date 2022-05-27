@@ -30,7 +30,8 @@ data:
       subdir: OutputDir
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
-      is_legacy: True
+      is_pre_13.1: False
+      is_pre_14.0: True
   dev:
     gcc:
       version: GCC_dev 
@@ -44,7 +45,8 @@ data:
       subdir: OutputDir
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
-      is_legacy: False
+      is_pre_13.1: False
+      is_pre_14.0: False
 
 options:
   bmk_type: TransportTracersBenchmark

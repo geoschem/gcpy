@@ -1646,7 +1646,9 @@ def get_filepath(
         col,
         date,
         is_gchp=False,
-        gchp_format_is_legacy=False
+        gchp_res="00",
+        gchp_is_pre_13.1=False,
+        gchp_is_pre_14.0=False
 ):
     """
     Routine to return file path for a given GEOS-Chem "Classic"
@@ -1666,10 +1668,16 @@ def get_filepath(
             Set this switch to True to obtain file pathnames to
             GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
 
-        gchp_format_is_legacy: bool
-            Set this switch to True to obtain GCHP file pathnames of
-            the legacy format for diagnostics, which do not match GC-Classic
-            filenames. Set to False to use same format as GC-Classic.
+        gchp_res: int
+            Cubed-sphere resolution of GCHP data grid. Only needed for restart files.
+
+        gchp_is_pre_13.1: bool
+            Set this switch to True to obtain GCHP file pathnames used in
+            versions before 13.1. Only needed for diagnostic files.
+
+        gchp_is_pre_14.0: bool
+            Set this switch to True to obtain GCHP file pathnames used in
+            versions before 14.0. Only needed for restart files.
 
     Returns:
         path: str
@@ -1683,12 +1691,16 @@ def get_filepath(
     date_str = np.datetime_as_string(date, unit="m")
     if is_gchp:
         if "Restart" in col:
-            file_tmpl = os.path.join(datadir,
-                                     "gcchem_internal_checkpoint.restart.")
             extension = ".nc4"
             date_str = np.datetime_as_string(date, unit="s")
+            if gchp_is_pre_14.0:
+                file_tmpl = os.path.join(datadir,
+                                         "gcchem_internal_checkpoint.restart.")
+            else:
+                file_tmpl = os.path.join(datadir,
+                                         "Restarts/GEOSChem.Restart.")
         else:
-            if gchp_format_is_legacy:
+            if gchp_is_pre_13.1:
                 file_tmpl = os.path.join(datadir, "GCHP.{}.".format(col))
             else:
                 file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(col))
@@ -1705,8 +1717,12 @@ def get_filepath(
     date_str = date_str.replace("-", "")
     date_str = date_str.replace(":", "")
 
-    # Set file path to return
+    # Set file path. Include grid resolution if GCHP restart file.
     path = file_tmpl + date_str + extension
+    if is_gchp and "Restart" in collection and not gchp_is_pre_14.0:
+        date_str = date_time.replace("z", "")
+        path = file_tmpl + date_str + "00z.c" + gchp_res + extension
+
     return path
 
 
@@ -1715,7 +1731,9 @@ def get_filepaths(
         collections,
         dates,
         is_gchp=False,
-        gchp_format_is_legacy=False
+        gchp_res="00",
+        gchp_is_pre_13.1=False,
+        gchp_is_pre_14.0=False
 ):
     """
     Routine to return filepaths for a given GEOS-Chem "Classic"
@@ -1735,10 +1753,16 @@ def get_filepaths(
             Set this switch to True to obtain file pathnames to
             GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
 
-        gchp_format_is_legacy: bool
-            Set this switch to True to obtain GCHP file pathnames of
-            the legacy format for diagnostics, which do not match GC-Classic
-            filenames. Set to False to use same format as GC-Classic.
+        gchp_res: int
+            Cubed-sphere resolution of GCHP data files. Only needed for restart files.
+
+        gchp_is_pre_13.1: bool
+            Set this switch to True to obtain GCHP file pathnames used in
+            versions before 13.1. Only needed for diagnostic files.
+
+        gchp_is_pre_14.0: bool
+            Set this switch to True to obtain GCHP file pathnames used in
+            versions before 14.0. Only needed for diagnostic files.
 
     Returns:
         paths: 2D list of str
@@ -1771,11 +1795,15 @@ def get_filepaths(
             # Get the file path template for GCHP
             # ---------------------------------------
             if "Restart" in collection:
-                file_tmpl = os.path.join(datadir,
-                                         "gcchem_internal_checkpoint.restart.")
                 extension = ".nc4"
+                if gchp_is_pre_14.0:
+                    file_tmpl = os.path.join(datadir,
+                                         "gcchem_internal_checkpoint.restart.")
+                else:
+                    file_tmpl = os.path.join(datadir,
+                                         "Restarts/GEOSChem.Restart.")
             else:
-                if gchp_format_is_legacy:
+                if gchp_is_pre_13.1:
                     file_tmpl = os.path.join(datadir,
                                              "GCHP.{}.".format(collection))
                 else:
@@ -1804,7 +1832,12 @@ def get_filepaths(
             date_time = date_time.replace("T", separator)
             date_time = date_time.replace("-", "")
             date_time = date_time.replace(":", "")
+
+           # Set file path. Include grid resolution if GCHP restart file.
             paths[c][d] = file_tmpl + date_time + extension
+            if is_gchp and "Restart" in collection and not gchp_is_pre_14.0:
+                date_time = date_time.replace("z", "")
+                path[c][d] = file_tmpl + date_time + "00z.c" + gchp_res + extension
 
     return paths
 

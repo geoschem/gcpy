@@ -45,7 +45,8 @@ data:
       subdir: OutputDir
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
-      is_legacy: False # Whether GCHP files are legacy (pre-13.1) format
+      is_pre_13.1: False # Whether GCHP files are format before version 13.1
+      is_pre_14.0: True # Whether GCHP files are format before version 14.0
   dev:
     gcc:
       version: GCC_dev 
@@ -60,7 +61,8 @@ data:
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
       is_legacy: False
-
+      is_pre_13.1: False # Whether GCHP files are format before version 13.1
+      is_pre_14.0: True # Whether GCHP files are format before version 14.0
 options:
   bmk_type: FullChemBenchmark
   gcpy_test: True # Specify if this is a gcpy test validation run
