@@ -1647,8 +1647,8 @@ def get_filepath(
         date,
         is_gchp=False,
         gchp_res="00",
-        gchp_is_pre_13.1=False,
-        gchp_is_pre_14.0=False
+        gchp_is_pre_13_1=False,
+        gchp_is_pre_14_0=False
 ):
     """
     Routine to return file path for a given GEOS-Chem "Classic"
@@ -1671,11 +1671,11 @@ def get_filepath(
         gchp_res: int
             Cubed-sphere resolution of GCHP data grid. Only needed for restart files.
 
-        gchp_is_pre_13.1: bool
+        gchp_is_pre_13_1: bool
             Set this switch to True to obtain GCHP file pathnames used in
             versions before 13.1. Only needed for diagnostic files.
 
-        gchp_is_pre_14.0: bool
+        gchp_is_pre_14_0: bool
             Set this switch to True to obtain GCHP file pathnames used in
             versions before 14.0. Only needed for restart files.
 
@@ -1693,14 +1693,14 @@ def get_filepath(
         if "Restart" in col:
             extension = ".nc4"
             date_str = np.datetime_as_string(date, unit="s")
-            if gchp_is_pre_14.0:
+            if gchp_is_pre_14_0:
                 file_tmpl = os.path.join(datadir,
                                          "gcchem_internal_checkpoint.restart.")
             else:
                 file_tmpl = os.path.join(datadir,
                                          "Restarts/GEOSChem.Restart.")
         else:
-            if gchp_is_pre_13.1:
+            if gchp_is_pre_13_1:
                 file_tmpl = os.path.join(datadir, "GCHP.{}.".format(col))
             else:
                 file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(col))
@@ -1719,7 +1719,7 @@ def get_filepath(
 
     # Set file path. Include grid resolution if GCHP restart file.
     path = file_tmpl + date_str + extension
-    if is_gchp and "Restart" in collection and not gchp_is_pre_14.0:
+    if is_gchp and "Restart" in col and not gchp_is_pre_14_0:
         date_str = date_time.replace("z", "")
         path = file_tmpl + date_str + "00z.c" + gchp_res + extension
 
@@ -1732,8 +1732,8 @@ def get_filepaths(
         dates,
         is_gchp=False,
         gchp_res="00",
-        gchp_is_pre_13.1=False,
-        gchp_is_pre_14.0=False
+        gchp_is_pre_13_1=False,
+        gchp_is_pre_14_0=False
 ):
     """
     Routine to return filepaths for a given GEOS-Chem "Classic"
@@ -1756,11 +1756,11 @@ def get_filepaths(
         gchp_res: int
             Cubed-sphere resolution of GCHP data files. Only needed for restart files.
 
-        gchp_is_pre_13.1: bool
+        gchp_is_pre_13_1: bool
             Set this switch to True to obtain GCHP file pathnames used in
             versions before 13.1. Only needed for diagnostic files.
 
-        gchp_is_pre_14.0: bool
+        gchp_is_pre_14_0: bool
             Set this switch to True to obtain GCHP file pathnames used in
             versions before 14.0. Only needed for diagnostic files.
 
@@ -1796,14 +1796,14 @@ def get_filepaths(
             # ---------------------------------------
             if "Restart" in collection:
                 extension = ".nc4"
-                if gchp_is_pre_14.0:
+                if gchp_is_pre_14_0:
                     file_tmpl = os.path.join(datadir,
                                          "gcchem_internal_checkpoint.restart.")
                 else:
                     file_tmpl = os.path.join(datadir,
                                          "Restarts/GEOSChem.Restart.")
             else:
-                if gchp_is_pre_13.1:
+                if gchp_is_pre_13_1:
                     file_tmpl = os.path.join(datadir,
                                              "GCHP.{}.".format(collection))
                 else:
@@ -1835,7 +1835,7 @@ def get_filepaths(
 
            # Set file path. Include grid resolution if GCHP restart file.
             paths[c][d] = file_tmpl + date_time + extension
-            if is_gchp and "Restart" in collection and not gchp_is_pre_14.0:
+            if is_gchp and "Restart" in collection and not gchp_is_pre_14_0:
                 date_time = date_time.replace("z", "")
                 path[c][d] = file_tmpl + date_time + "00z.c" + gchp_res + extension
 
