@@ -1720,7 +1720,9 @@ def get_filepath(
     # Set file path. Include grid resolution if GCHP restart file.
     path = file_tmpl + date_str + extension
     if is_gchp and "Restart" in col and not gchp_is_pre_14_0:
-        path = file_tmpl + date_str + "z.c" + gchp_res + extension
+        path = file_tmpl + date_str[:len(date_str)-2] + "z.c" + gchp_res + extension
+        if not os.path.exists(path): # keep seconds if the restart does not exist
+            path = file_tmpl + date_str + "z.c" + gchp_res + extension
 
     return path
 
