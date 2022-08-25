@@ -93,11 +93,11 @@ def choose_benchmark_type(config):
     if is_full_year(start, end):
         if config["options"]["bmk_type"] == "FullChemBenchmark":
             run_1yr_benchmark(
-                config, str(start.astype(datetime).year), str(end.astype(datetime).year)
+                config, str(start.astype(datetime).year), str(start.astype(datetime).year)
             )
         else:
             run_1yr_tt_benchmark(
-                config, str(start.astype(datetime).year), str(end.astype(datetime).year)
+                config, str(start.astype(datetime).year), str(start.astype(datetime).year)
             )
     else:
         run_benchmark_default(config)
