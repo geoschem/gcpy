@@ -51,6 +51,7 @@ import warnings
 from shutil import copyfile
 from calendar import monthrange
 import numpy as np
+import xarray as xr
 from joblib import Parallel, delayed
 from gcpy.util import get_filepath, get_filepaths, read_config_file
 import gcpy.ste_flux as ste
@@ -130,30 +131,43 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
     # Restart file directory paths
     gcc_vs_gcc_refrstdir = join(
-        config["paths"]["main_dir"], config["data"]["ref"]["gcc"]["version"], "restarts"
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gcc"]["version"],
+        "restarts"
     )
     gcc_vs_gcc_devrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["version"], "restarts"
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gcc"]["version"],
+        "restarts"
     )
     gchp_vs_gcc_refrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["version"], "restarts"
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gcc"]["version"],
+        "restarts"
     )
     gchp_vs_gcc_devrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["version"]
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["version"]
     )
     gchp_vs_gchp_refrstdir = join(
-        config["paths"]["main_dir"], config["data"]["ref"]["gchp"]["version"]
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gchp"]["version"]
     )
     gchp_vs_gchp_devrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["version"]
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["version"]
     )
 
     # Log file directories -- GEOS-Chem "Classic" only
     gcc_vs_gcc_reflogdir = join(
-        config["paths"]["main_dir"], config["data"]["ref"]["gcc"]["version"], "logs"
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gcc"]["version"],
+        "logs"
     )
     gcc_vs_gcc_devlogdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["version"], "logs"
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gcc"]["version"],
+        "logs"
     )
 
     # ======================================================================
@@ -630,8 +644,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 """
 
                 # Filepaths
-                refpath = get_filepath(gcc_vs_gcc_refrstdir, "Restart", bmk_mons_ref[m])
-                devpath = get_filepath(gcc_vs_gcc_devrstdir, "Restart", bmk_mons_dev[m])
+                refpath = get_filepath(
+                    gcc_vs_gcc_refrstdir,
+                    "Restart",
+                    bmk_mons_ref[m]
+                )
+                devpath = get_filepath(
+                    gcc_vs_gcc_devrstdir,
+                    "Restart",
+                    bmk_mons_dev[m]
+                )
 
                 # Create tables
                 bmk.make_benchmark_mass_tables(
@@ -775,13 +797,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         # GCHP vs GCC filepaths for StateMet collection data
         # ==================================================================
-        refmet = get_filepaths(gchp_vs_gcc_refdir, "StateMet", all_months_dev)[0]
+        refmet = get_filepaths(gchp_vs_gcc_refdir,
+                               "StateMet",
+                               all_months_dev
+        )[0]
         devmet = get_filepaths(
             gchp_vs_gcc_devdir,
             gchp_metname,
             all_months_gchp_dev,
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+            gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
         )[0]
 
         # Get GCHP grid resolution from met collection file
@@ -805,7 +831,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "SpeciesConc",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
 
             # Create plots
@@ -869,7 +898,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Emissions",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
 
             # Create plots
@@ -909,12 +941,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dst=gchp_vs_gcc_resultsdir,
                     subdst=bmk_mon_yr_strs_dev[t],
                     weightsdir=config["paths"]["weights_dir"],
-                    plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                        "by_spc_cat"
-                    ],
-                    plot_by_hco_cat=config["options"]["outputs"]["plot_options"][
-                        "by_hco_cat"
-                    ],
+                    plot_by_spc_cat=config["options"]["outputs"][
+                        "plot_options"]["by_spc_cat"],
+                    plot_by_hco_cat=config["options"]["outputs"][
+                        "plot_options"]["by_hco_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -932,7 +962,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Emissions",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
 
             # Create emissions table that spans entire year
@@ -966,7 +999,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "JValues",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
 
             # Create plots
@@ -1021,7 +1057,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Aerosols",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
 
             # Create plots
@@ -1072,7 +1111,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Filepaths
                 refpath = get_filepath(
-                    gchp_vs_gcc_refrstdir, "Restart", bmk_mons_dev[m]
+                    gchp_vs_gcc_refrstdir,
+                    "Restart",
+                    bmk_mons_dev[m]
                 )
                 devpath = get_filepath(
                     gchp_vs_gcc_devrstdir,
@@ -1080,9 +1121,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     bmk_mons_dev[m],
                     is_gchp=True,
                     gchp_res=gchp_dev_res,
-                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                        "is_pre_13.1"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
                 )
-
+                
                 # use initial restart if no checkpoint present (intended for
                 # first month).  need to pass path of meteorology file with
                 # area variable in this scenario
@@ -1100,9 +1144,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         bmk_mons_dev[m + 1],
                         is_gchp=True,
                         gchp_res=gchp_dev_res,
-                        gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+                        gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                            "is_pre_13.1"],
+                        gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                            "is_pre_14.0"]
                     )
-
+                    
                 # Create tables
                 bmk.make_benchmark_mass_tables(
                     refpath,
@@ -1139,7 +1186,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "Budget",
                     bmk_mons_gchp_dev[m],
                     is_gchp=True,
-                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                        "is_pre_13.1"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
                 )
 
                 # Create tables
@@ -1179,14 +1229,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Aerosols",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
             devspc = get_filepaths(
                 gchp_vs_gcc_devdir,
                 "SpeciesConc",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"],
             )[0]
 
             # Create tables
@@ -1229,8 +1285,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 bmk_year_dev,
                 dst=gchp_vs_gcc_tablesdir,
                 overwrite=True,
+                spcdb_dir=spcdb_dir,
                 is_gchp=True,
-                spcdb_dir=spcdb_dir
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )
 
         # ==================================================================
@@ -1246,7 +1305,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Metrics",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
 
             # Create table
@@ -1280,6 +1342,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             all_months_gchp_ref,
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+            gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
         )[0]
         devmet = get_filepaths(
             gchp_vs_gcc_devdir,
@@ -1287,6 +1350,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             all_months_gchp_dev,
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+            gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
         )[0]
 
         # Get GCHP grid resolutions from met collection file
@@ -1311,14 +1375,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "SpeciesConc",
                 all_months_gchp_ref,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                    "is_pre_14.0"],
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 "SpeciesConc",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"],
             )[0]
 
             # Create plots
@@ -1335,9 +1405,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
                 benchmark_type=bmk_type,
-                plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                    "by_spc_cat"
-                ],
+                plot_by_spc_cat=config["options"]["outputs"][
+                    "plot_options"]["by_spc_cat"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
@@ -1361,9 +1430,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     subdst=bmk_mon_yr_strs_dev[t],
                     weightsdir=config["paths"]["weights_dir"],
                     benchmark_type=bmk_type,
-                    plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                        "by_spc_cat"
-                    ],
+                    plot_by_spc_cat=config["options"]["outputs"][
+                        "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -1384,14 +1452,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Emissions",
                 all_months_gchp_ref,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 "Emissions",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]                
             )[0]
 
             # Create plots
@@ -1405,12 +1479,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 subdst="AnnualMean",
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
-                plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                    "by_spc_cat"
-                ],
-                plot_by_hco_cat=config["options"]["outputs"]["plot_options"][
-                    "by_hco_cat"
-                ],
+                plot_by_spc_cat=config["options"]["outputs"][
+                    "plot_options"]["by_spc_cat"],
+                plot_by_hco_cat=config["options"]["outputs"][
+                    "plot_options"]["by_hco_cat"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
@@ -1431,12 +1503,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dst=gchp_vs_gchp_resultsdir,
                     subdst=bmk_mon_yr_strs_dev[t],
                     weightsdir=config["paths"]["weights_dir"],
-                    plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                        "by_spc_cat"
-                    ],
-                    plot_by_hco_cat=config["options"]["outputs"]["plot_options"][
-                        "by_hco_cat"
-                    ],
+                    plot_by_spc_cat=config["options"]["outputs"][
+                        "plot_options"]["by_spc_cat"],
+                    plot_by_hco_cat=config["options"]["outputs"][
+                        "plot_options"]["by_hco_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -1453,14 +1523,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Emissions",
                 all_months_gchp_ref,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 "Emissions",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
 
             # Create table
@@ -1494,14 +1570,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "JValues",
                 all_months_gchp_ref,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 "JValues",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
 
             # Create plots
@@ -1555,14 +1637,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Aerosols",
                 all_months_gchp_ref,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 "Aerosols",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"],
             )[0]
 
             # Create plots
@@ -1618,7 +1706,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     bmk_mons_ref[m],
                     is_gchp=True,
                     gchp_res=gchp_ref_res,
-                    gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
+                    gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                        "is_pre_13.1"],
+                    gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                        "is_pre_14.0"]
                 )
 
                 # Use initial checkpoint if Ref restart is not present
@@ -1636,7 +1727,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         bmk_mons_ref[m + 1],
                         is_gchp=True,
                         gchp_res=gchp_ref_res,
-                        gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
+                        gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                            "is_pre_13.1"],
+                        gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                            "is_pre_14.0"],
                     )
 
                 # Dev filepaths
@@ -1646,7 +1740,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     bmk_mons_dev[m],
                     is_gchp=True,
                     gchp_res=gchp_dev_res,
-                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                        "is_pre_13_1"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
                 )
 
                 # Use initial checkpoint if Dev restart is not present
@@ -1664,7 +1761,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         bmk_mons_dev[m + 1],
                         is_gchp=True,
                         gchp_res=gchp_dev_res,
-                        gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+                        gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                            "is_pre_13.1"],
+                        gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                            "is_pre_14.0"]
                     )
 
                 # Create tables
@@ -1705,14 +1805,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "Budget",
                     bmk_mons_gchp_ref[m],
                     is_gchp=True,
-                    gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                    gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                        "is_pre_13.1"],
+                    gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                        "is_pre_14.0"]
                 )
                 devpath = get_filepath(
                     gchp_vs_gchp_devdir,
                     "Budget",
                     bmk_mons_gchp_dev[m],
                     is_gchp=True,
-                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                        "is_pre_13.1"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
                 )
 
                 # Compute tables
@@ -1753,14 +1859,22 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Aerosols",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
             devspc = get_filepaths(
                 gchp_vs_gchp_devdir,
                 "SpeciesConc",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"
+                ],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"
+                ],
             )[0]
 
             # Create tables
@@ -1792,8 +1906,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 bmk_year_dev,
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
+                spcdb_dir=spcdb_dir,
                 is_gchp=True,
-                spcdb_dir=spcdb_dir
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )
 
         # ==================================================================
@@ -1808,14 +1925,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Metrics",
                 all_months_gchp_ref,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 "Metrics",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    "is_pre_14.0"]
             )[0]
 
             # Create the OH Metrics table
