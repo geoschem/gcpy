@@ -38,9 +38,11 @@ class _GlobVars:
             devrstdir,
             year,
             dst,
-            is_gchp,
             overwrite,
-            spcdb_dir
+            spcdb_dir,
+            is_gchp,
+            gchp_res,
+            gchp_is_pre_14_0
     ):
         """
         Initializes the _GlobVars class.
@@ -56,12 +58,17 @@ class _GlobVars:
                 Directory where plots & tables will be created.
             year: int
                 Year of the benchmark simulation.
-            is_gchp: bool
-                Denotes if this is GCHP (True) or GCC (False) data.
             overwrite: bool
                 Denotes whether to ovewrite existing budget tables.
             spcdb_dir: str
                 Directory where species_database.yml is stored.
+            is_gchp: bool
+                Denotes if this is GCHP (True) or GCC (False) data.
+            gchp_res: str
+                GCHP resolution string (e.g. "c24", "c48", etc.)
+            gchp_is_pre_14_0: bool
+                Denotes if the GCHP version is prior to 14.0.0 (True)
+                or not (False).
         """
         # --------------------------------------------------------------
         # Arguments from outside
@@ -70,11 +77,13 @@ class _GlobVars:
         self.devdir = devdir
         self.devrstdir = devrstdir
         self.dst = dst
-        self.is_gchp = is_gchp
         self.overwrite = overwrite
         if spcdb_dir is None:
             spcdb_dir = os.path.dirname(__file__)
         self.spcdb_dir = spcdb_dir
+        self.is_gchp = is_gchp
+        self.gchp_res = gchp_res
+        self.gchp_is_pre_14_0 = gchp_is_pre_14_0
 
         # ---------------------------------------------------------------
         # Benchmark year
@@ -155,19 +164,34 @@ class _GlobVars:
         """
         # Restarts
         if self.is_gchp:
-            RstPath = os.path.join(
-                self.devrstdir,
-                "gcchem_internal_checkpoint.restart.{}{}".format(
-                    ystr,
-                    "0101_000000.nc4"
+
+            # NOTE: Currently the behavior is to hardwire the restart
+            # file folder to be devrestdir/REstarts.  This mimics the
+            # behavior of get_filepath in util.py.  We should one day
+            # fix this so that we do not have to hardwire the Restarts/
+            # but instead assume that devrstdir is the true path to the
+            # restart file.
+            # See https://github.com/geoschem/gcpy/issues/158
+            if self.gchp_is_pre_14_0:
+                RstPath = os.path.join(
+                    self.devrstdir,
+                    "Restarts/gcchem_internal_checkpoint.restart.{}{}".format(
+                        ystr,
+                        "0101_000000.nc4"
+                    )
                 )
-            )
+            else:
+                RstPath = os.path.join(
+                    self.devrstdir,
+                    "Restarts/GEOSChem.Restart.{}0101_0000z.{}.nc4".format(
+                        ystr,
+                        self.gchp_res
+                    )
+                )
         else:
             RstPath = os.path.join(
                 self.devrstdir,
-                "GEOSChem.Restart.{}0101_0000z.nc4".format(
-                    ystr
-                )
+                "GEOSChem.Restart.{}0101_0000z.nc4".format(ystr)
             )
 
         return RstPath
@@ -664,12 +688,14 @@ def global_ox_budget(
         devrstdir,
         year,
         dst='./1yr_benchmark',
-        is_gchp=False,
         overwrite=True,
-        spcdb_dir=None
+        spcdb_dir=None,
+        is_gchp=False,
+        gchp_res="c24",
+        gchp_is_pre_14_0=False
 ):
     """
-    Main program to compute TransportTracersBenchmark budgets
+    Main program to compute Ox budgets
 
     Arguments:
         maindir: str
@@ -683,15 +709,22 @@ def global_ox_budget(
         dst: str
             Directory where budget tables will be created.
             Default value: './1yr_benchmark'
-        is_gchp: bool
-            Denotes if data is from GCHP (True) or GCC (false).
-            Default value: False
         overwrite: bool
             Denotes whether to ovewrite existing budget tables.
             Default value: True
         spcdb_dir: str
             Directory where species_database.yml is stored.
             Default value: GCPy directory
+        is_gchp: bool
+            Denotes if data is from GCHP (True) or GCC (false).
+            Default value: False
+        gchp_res: str
+            GCHP resolution string (e.g. "c24", "c48", etc.)
+            Default value: None
+        gchp_is_pre_14_0: bool
+            Denotes if the version is prior to GCHP 14.0.0 (True)
+            or not (False).
+            Default value: False
     """
 
     # Store global variables in a private class
@@ -701,9 +734,11 @@ def global_ox_budget(
         devrstdir,
         year,
         dst,
-        is_gchp,
         overwrite,
-        spcdb_dir
+        spcdb_dir,
+        is_gchp,
+        gchp_res,
+        gchp_is_pre_14_0,
     )
 
     # ==================================================================
