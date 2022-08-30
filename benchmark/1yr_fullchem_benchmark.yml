@@ -14,7 +14,7 @@
 paths:
   main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1yr_fullchem
   results_dir: BenchmarkResults
-  weights_dir: /n/holylfs/EXTERNAL_REPOS/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+  weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
 data:
   # timestamp format YYYY-MM-DDThh:mm:ss
   ref:
