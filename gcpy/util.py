@@ -1709,6 +1709,8 @@ def get_filepath(
             file_tmpl = os.path.join(datadir, "HEMCO_diagnostics.")
             extension = ".nc"
             separator = ""
+        elif "Restart" in col:
+            file_tmpl = os.path.join(datadir, "Restarts/GEOSChem.Restart.")
         else:
             file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(col))
     if isinstance(date_str, np.str_):
@@ -1818,6 +1820,10 @@ def get_filepaths(
                                          "HEMCO_diagnostics.")
                 separator = ""
                 extension = ".nc"
+            elif "Restart" in collection:
+                file_tmpl = os.path.join(datadir,
+                                         "Restarts/GEOSChem.Restart.")
+
             else:
                 file_tmpl = os.path.join(datadir,
                                          "GEOSChem.{}.".format(collection))
