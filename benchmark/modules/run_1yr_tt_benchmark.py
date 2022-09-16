@@ -128,13 +128,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
     # Restart file directory paths
     gcc_vs_gcc_refrstdir = join(
-        config["paths"]["main_dir"], config["data"]["ref"]["gcc"]["dir"], "restarts"
+        config["paths"]["main_dir"], config["data"]["ref"]["gcc"]["dir"], "Restarts"
     )
     gcc_vs_gcc_devrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"], "restarts"
+        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"], "Restarts"
     )
     gchp_vs_gcc_refrstdir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"], "restarts"
+        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"], "Restarts"
     )
     gchp_vs_gcc_devrstdir = join(
         config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["dir"]
