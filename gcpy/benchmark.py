@@ -581,16 +581,14 @@ def make_benchmark_conc_plots(
     Args:
         ref: str
             Path name for the "Ref" (aka "Reference") data set.
-        refstr: str OR list of str
+        refstr: str
             A string to describe ref (e.g. version number)
-            OR list containing [ref1str, ref2str] for diff-of-diffs plots
         dev: str
             Path name for the "Dev" (aka "Development") data set.
             This data set will be compared against the "Reference"
             data set.
-        devstr: str OR list of str
+        devstr: str
             A string to describe dev (e.g. version number)
-            OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
         dst: str
@@ -709,8 +707,8 @@ def make_benchmark_conc_plots(
     reader = util.dataset_reader(time_mean)
 
     # Open datasets
-    refds = reader(ref, drop_variables=gcon.skip_these_vars)
-    devds = reader(dev, drop_variables=gcon.skip_these_vars)
+    refds = reader(ref, drop_variables=gcon.skip_these_vars).load()
+    devds = reader(dev, drop_variables=gcon.skip_these_vars).load()
 
     print('\nPrinting refds (comparison ref)\n')
     print(refds)
@@ -729,9 +727,9 @@ def make_benchmark_conc_plots(
     refmetds = None
     devmetds = None
     if refmet:
-        refmetds = reader(refmet, drop_variables=gcon.skip_these_vars)
+        refmetds = reader(refmet, drop_variables=gcon.skip_these_vars).load()
     if devmet:
-        devmetds = reader(devmet, drop_variables=gcon.skip_these_vars)
+        devmetds = reader(devmet, drop_variables=gcon.skip_these_vars).load()
 
     # Determine if doing diff-of-diffs
     if second_ref is not None and second_dev is not None:
@@ -741,8 +739,8 @@ def make_benchmark_conc_plots(
 
     # Open second datasets if passed as arguments (used for diff of diffs)
     if diff_of_diffs:
-        second_refds = reader(second_ref, drop_variables=gcon.skip_these_vars)
-        second_devds = reader(second_dev, drop_variables=gcon.skip_these_vars)
+        second_refds = reader(second_ref, drop_variables=gcon.skip_these_vars).load()
+        second_devds = reader(second_dev, drop_variables=gcon.skip_these_vars).load()
 
         print('\nPrinting second_refds (dev of ref for diff-of-diffs)\n')
         print(second_refds)
@@ -943,6 +941,7 @@ def make_benchmark_conc_plots(
                 pdfname = os.path.join(
                     catdir, "{}_Surface_{}.pdf".format(filecat, subdst)
                 )
+                print('creating {}'.format(pdfname))
             else:
                 pdfname = os.path.join(
                     catdir, "{}_Surface.pdf".format(filecat))
@@ -1109,6 +1108,9 @@ def make_benchmark_conc_plots(
     results = Parallel(n_jobs=n_job)(
         delayed(createplots)(filecat) for _, filecat in enumerate(catdict)
     )
+#     # Do not create plots in parallel
+#    for _, filecat in enumerate(catdict):
+#        createplots(filecat)
 
     dict_sfc = {list(result.keys())[0]: result[list(
         result.keys())[0]]['sfc'] for result in results}
