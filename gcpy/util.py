@@ -2052,8 +2052,10 @@ def dataset_reader(
     """
     if multi_files:
         reader = xr.open_mfdataset
+        print('\nReading data via xarray open_mfdataset\n')
     else:
         reader = xr.open_dataset
+        print('\nReading data via xarray open_dataset\n')
 
     return reader
 
