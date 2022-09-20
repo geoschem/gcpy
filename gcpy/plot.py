@@ -490,12 +490,14 @@ def compare_single_level(
     if diff_of_diffs:
         refdata, devdata = refdata.load(), devdata.load()
         second_ref, second_dev = second_ref.load(), second_dev.load()
-        #use fake time dim in case dates are different in datasets
-        aligned_time = np.datetime64('2000-01-01')
-        refdata = refdata.assign_coords({'time': [aligned_time]})
-        devdata = devdata.assign_coords({'time': [aligned_time]})
-        second_ref = second_ref.assign_coords({'time': [aligned_time]})
-        second_dev = second_dev.assign_coords({'time': [aligned_time]})
+
+#        # If needed, use fake time dim in case dates are different in datasets.
+#        # This needs more work for case of single versus multiple times.
+#        aligned_time = [np.datetime64('2000-01-01')] * refdata.dims['time']
+#        refdata = refdata.assign_coords({'time': aligned_time})
+#        devdata = devdata.assign_coords({'time': aligned_time})
+#        second_ref = second_ref.assign_coords({'time': aligned_time})
+#        second_dev = second_dev.assign_coords({'time': aligned_time})
 
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
@@ -1623,12 +1625,14 @@ def compare_zonal_mean(
     if diff_of_diffs:
         refdata, devdata = refdata.load(), devdata.load()
         second_ref, second_dev = second_ref.load(), second_dev.load()
-        #use fake time dim in case dates are different in datasets
-        aligned_time = np.datetime64('2000-01-01')
-        refdata = refdata.assign_coords({'time' : [aligned_time]})
-        devdata = devdata.assign_coords({'time' : [aligned_time]})
-        second_ref = second_ref.assign_coords({'time' : [aligned_time]})
-        second_dev = second_dev.assign_coords({'time' : [aligned_time]})
+
+#        # If needed, use fake time dim in case dates are different in datasets.
+#        # This needs more work for case of single versus multiple times.
+#        aligned_time = np.datetime64('2000-01-01')
+#        refdata = refdata.assign_coords({'time' : [aligned_time]})
+#        devdata = devdata.assign_coords({'time' : [aligned_time]})
+#        second_ref = second_ref.assign_coords({'time' : [aligned_time]})
+#        second_dev = second_dev.assign_coords({'time' : [aligned_time]})
 
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
