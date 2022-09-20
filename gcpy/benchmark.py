@@ -709,6 +709,11 @@ def make_benchmark_conc_plots(
     refds = reader(ref, drop_variables=gcon.skip_these_vars)
     devds = reader(dev, drop_variables=gcon.skip_these_vars)
 
+    print('\nPrinting refds (comparison ref)\n')
+    print(refds)
+    print('\nPrinting devds (comparison dev)\n')
+    print(devds)
+
     # -----------------------------------------------------------------
     # Kludge, rename wrong variable name
     if "SpeciesConc_PFE" in refds.data_vars.keys():
@@ -735,6 +740,12 @@ def make_benchmark_conc_plots(
     if diff_of_diffs:
         second_refds = reader(second_ref, drop_variables=gcon.skip_these_vars)
         second_devds = reader(second_dev, drop_variables=gcon.skip_these_vars)
+
+        print('\nPrinting second_refds (dev of ref for diff-of-diffs)\n')
+        print(second_refds)
+        print('\nPrinting second_devds (dev of dev for diff-of-diffs)\n')
+        print(second_devds)
+
     else:
         second_refds = None
         second_devds = None
@@ -839,14 +850,17 @@ def make_benchmark_conc_plots(
 
     # FullChemBenchmark has lumped species (TransportTracers does not)
     if "FullChem" in benchmark_type:
-        print("\nAdding lumped species to ref dataset")
+        print("\nComputing lumped species for full chemistry benchmark")
+        print("-->Adding lumped species to ref dataset")
         refds = util.add_lumped_species_to_dataset(refds)
-        print("\nAdding lumped species to dev dataset")
+        print("-->Adding lumped species to dev dataset")
         devds = util.add_lumped_species_to_dataset(devds)
         if diff_of_diffs:
+            print("-->Adding lumped species to dev datasets")
             second_refds = util.add_lumped_species_to_dataset(second_refds)
             second_devds = util.add_lumped_species_to_dataset(second_devds)
         util.archive_lumped_species_definitions(dst)
+        print("Lumped species computation complete.\n")
 
     # Get the list of species categories
     catdict = util.get_species_categories(benchmark_type)
