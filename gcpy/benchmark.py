@@ -555,6 +555,7 @@ def make_benchmark_conc_plots(
         verbose=False,
         collection="SpeciesConc",
         benchmark_type="FullChemBenchmark",
+        cmpres=None,
         plot_by_spc_cat=True,
         restrict_cats=[],
         plots=["sfc", "500hpa", "zonalmean"],
@@ -617,6 +618,8 @@ def make_benchmark_conc_plots(
                         A string denoting the type of benchmark output to plot,
                         either FullChemBenchmark or TransportTracersBenchmark.
                         Default value: "FullChemBenchmark"
+        cmpres: string
+            Grid resolution at which to compare ref and dev data, e.g. '1x1.25'
         plot_by_spc_cat: logical
             Set this flag to False to send plots to one file rather
             than separate file per category.
@@ -796,6 +799,7 @@ def make_benchmark_conc_plots(
         pdfname = os.path.join(dst, 'SpeciesConc_Sfc.pdf')
         compare_single_level(refds, refstr, devds, devstr,
                              varlist=varlist,
+                             cmpres=cmpres,
                              pdfname=pdfname,
                              use_cmap_RdBu=use_cmap_RdBu,
                              log_color_scale=log_color_scale,
@@ -813,6 +817,7 @@ def make_benchmark_conc_plots(
         compare_single_level(refds, refstr, devds, devstr,
                              ilev=22,
                              varlist=varlist,
+                             cmpres=cmpres,
                              pdfname=pdfname,
                              use_cmap_RdBu=use_cmap_RdBu,
                              log_color_scale=log_color_scale,
@@ -950,6 +955,7 @@ def make_benchmark_conc_plots(
                 devstr,
                 varlist=varlist,
                 ilev=0,
+                cmpres=cmpres,
                 refmet=refmetds,
                 devmet=devmetds,
                 pdfname=pdfname,
@@ -992,6 +998,7 @@ def make_benchmark_conc_plots(
                 devstr,
                 varlist=varlist,
                 ilev=22,
+                cmpres=cmpres,
                 refmet=refmetds,
                 devmet=devmetds,
                 pdfname=pdfname,
