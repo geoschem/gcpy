@@ -1365,6 +1365,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         if config["options"]["outputs"]["plot_conc"]:
             print("\n%%% Creating GCHP vs. GCHP concentration plots %%%")
 
+            ! Option to specify grid resolution of comparison plots
+            cmpres="1x1.25"
+
             # --------------------------------------------------------------
             # GCHP vs GCHP species concentration plots: Annual Mean
             # --------------------------------------------------------------
@@ -1400,6 +1403,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_devstr,
                 refmet=refmet,
                 devmet=devmet,
+                cmpres=cmpres,
                 dst=gchp_vs_gchp_resultsdir,
                 subdst="AnnualMean",
                 time_mean=True,
@@ -1424,6 +1428,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
                     gchp_vs_gchp_devstr,
+                    cmpres=cmpres,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
                     dst=gchp_vs_gchp_resultsdir,
