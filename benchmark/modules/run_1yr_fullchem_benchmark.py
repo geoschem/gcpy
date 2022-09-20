@@ -1736,12 +1736,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # Dev filepaths
                 devpath = get_filepath(
                     gchp_vs_gchp_devrstdir,
-                    "Restart",
+                    "Restarts",
                     bmk_mons_dev[m],
                     is_gchp=True,
                     gchp_res=gchp_dev_res,
                     gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                        "is_pre_13_1"],
+                        "is_pre_13.1"],
                     gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
                         "is_pre_14.0"]
                 )
