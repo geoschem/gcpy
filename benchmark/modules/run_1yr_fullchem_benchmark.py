@@ -185,6 +185,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         gchp_vs_gcc_resultsdir = join(
             mainresultsdir, "GCHP_GCC_comparison"
         )
+        diff_of_diffs_resultsdir = join(
+            mainresultsdir, "GCHP_GCC_diff_of_diffs"
+        )
         if not exists(mainresultsdir):
             os.mkdir(mainresultsdir)
         # Make copy of benchmark script in results directory
@@ -286,6 +289,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     gchp_vs_gcc_devstr = config["data"]["dev"]["gchp"]["version"]
     gchp_vs_gchp_refstr = config["data"]["ref"]["gchp"]["version"]
     gchp_vs_gchp_devstr = config["data"]["dev"]["gchp"]["version"]
+    diff_of_diffs_refstr = (
+        config["data"]["dev"]["gcc"]["version"]
+        + " - "
+        + config["data"]["ref"]["gcc"]["version"]
+    )
+    diff_of_diffs_devstr = (
+        config["data"]["dev"]["gchp"]["version"]
+        + " - "
+        + config["data"]["ref"]["gchp"]["version"]
+    )
 
     ########################################################################
     ###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
@@ -392,6 +405,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         print(" - GCHP vs GCC")
     if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
         print(" - GCHP vs GCHP")
+    if config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"]:
+        print(" - GCHP vs GCC diff of diffs")
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCC vs GCC benchmark plots and tables
@@ -1977,3 +1992,85 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["ste_table"]:
             print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
+
+    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    # Create GCHP vs GCC difference of differences benchmark plots
+    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    if config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"]:
+
+        if config["options"]["outputs"]["plot_conc"]:
+            print("\n%%% Creating GCHP vs. GCC diff-of-diffs conc plots %%%")
+
+
+            # --------------------------------------------------------------
+            # GCHP vs GCC diff-of-diff species concentration plots: Annual Mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            gcc_ref = get_filepaths(gcc_vs_gcc_refdir, "SpeciesConc", all_months_ref)[0]
+            gcc_dev = get_filepaths(gcc_vs_gcc_devdir, "SpeciesConc", all_months_dev)[0]
+            gchp_ref = get_filepaths(
+                gchp_vs_gchp_refdir,
+                "SpeciesConc",
+                all_months_gchp_ref,
+                is_gchp=True,
+                gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
+                    "is_pre_13.1"],
+            )[0]
+            gchp_dev = get_filepaths(
+                gchp_vs_gchp_devdir,
+                "SpeciesConc",
+                all_months_gchp_dev,
+                is_gchp=True,
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                    "is_pre_13.1"],
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            bmk.make_benchmark_conc_plots(
+                gcc_ref,
+                diff_of_diffs_refstr,
+                gchp_ref,
+                diff_of_diffs_devstr,
+                dst=diff_of_diffs_resultsdir,
+                subdst="AnnualMean",
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                benchmark_type=bmk_type,
+                plot_by_spc_cat=config["options"]["outputs"][
+                    "plot_options"]["by_spc_cat"],
+                overwrite=True,
+                use_cmap_RdBu=True,
+                second_ref=gcc_dev,
+                second_dev=gchp_dev,
+                cats_in_ugm3=None,
+                spcdb_dir=spcdb_dir,
+            )
+
+            # --------------------------------------------------------------
+            # GCHP vs GCC diff-of-diff species concentration plots: Seasonal
+            # --------------------------------------------------------------
+            for t in range(bmk_n_months):
+                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+
+                # Create plots
+                mon_ind = bmk_mon_inds[t]
+                bmk.make_benchmark_conc_plots(
+                    gcc_ref[mon_ind],
+                    diff_of_diffs_refstr,
+                    gchp_ref[mon_ind],
+                    diff_of_diffs_devstr,
+                    dst=diff_of_diffs_resultsdir,
+                    subdst=bmk_mon_yr_strs_dev[t],
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=bmk_type,
+                    plot_by_spc_cat=config["options"]["outputs"][
+                        "plot_options"]["by_spc_cat"],
+                    overwrite=True,
+                    use_cmap_RdBu=True,
+                    second_ref=gcc_dev[mon_ind],
+                    second_dev=gchp_dev[mon_ind],
+                    cats_in_ugm3=None,
+                    spcdb_dir=spcdb_dir,
+                )
