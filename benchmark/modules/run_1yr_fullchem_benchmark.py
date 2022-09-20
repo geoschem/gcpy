@@ -89,84 +89,83 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     ########################################################################
     # Path to species_databse.yml
     spcdb_dir = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["version"]
+        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"]
     )
 
     # ======================================================================
     # Data directories
-    # For gchp_vs_gcc_refdir use config["data"]["dev"]["gcc"]["version"], not ref (mps, 6/27/19)
     # ======================================================================
 
     # Diagnostics file directory paths
     gcc_vs_gcc_refdir = join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["version"],
+        config["data"]["ref"]["gcc"]["dir"],
         config["data"]["ref"]["gcc"]["subdir"],
     )
     gcc_vs_gcc_devdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["version"],
+        config["data"]["dev"]["gcc"]["dir"],
         config["data"]["dev"]["gcc"]["subdir"],
     )
     gchp_vs_gcc_refdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["version"],
+        config["data"]["dev"]["gcc"]["dir"],
         config["data"]["dev"]["gcc"]["subdir"],
     )
     gchp_vs_gcc_devdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["version"],
+        config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["subdir"],
     )
     gchp_vs_gchp_refdir = join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["version"],
+        config["data"]["ref"]["gchp"]["dir"],
         config["data"]["ref"]["gchp"]["subdir"],
     )
     gchp_vs_gchp_devdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["version"],
+        config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["subdir"],
     )
 
     # Restart file directory paths
     gcc_vs_gcc_refrstdir = join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["version"],
+        config["data"]["ref"]["gcc"]["dir"],
         "restarts"
     )
     gcc_vs_gcc_devrstdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["version"],
+        config["data"]["dev"]["gcc"]["dir"],
         "restarts"
     )
     gchp_vs_gcc_refrstdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["version"],
+        config["data"]["dev"]["gcc"]["dir"],
         "restarts"
     )
     gchp_vs_gcc_devrstdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["version"]
+        config["data"]["dev"]["gchp"]["dir"]
     )
     gchp_vs_gchp_refrstdir = join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["version"]
+        config["data"]["ref"]["gchp"]["dir"]
     )
     gchp_vs_gchp_devrstdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["version"]
+        config["data"]["dev"]["gchp"]["dir"]
     )
 
     # Log file directories -- GEOS-Chem "Classic" only
     gcc_vs_gcc_reflogdir = join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["version"],
+        config["data"]["ref"]["gcc"]["dir"],
         "logs"
     )
     gcc_vs_gcc_devlogdir = join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["version"],
+        config["data"]["dev"]["gcc"]["dir"],
         "logs"
     )
 
@@ -281,7 +280,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
     # ======================================================================
     # Plot title strings
-    # For gchp_vs_gcc_refstr use config["data"]["dev"]["gcc"]["version"], not ref (mps, 6/27/19)
     # ======================================================================
     gcc_vs_gcc_refstr = config["data"]["ref"]["gcc"]["version"]
     gcc_vs_gcc_devstr = config["data"]["dev"]["gcc"]["version"]
@@ -1395,7 +1393,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         if config["options"]["outputs"]["plot_conc"]:
             print("\n%%% Creating GCHP vs. GCHP concentration plots %%%")
 
-            ! Option to specify grid resolution of comparison plots
+            # Option to specify grid resolution of comparison plots
             cmpres="1x1.25"
 
             # --------------------------------------------------------------
