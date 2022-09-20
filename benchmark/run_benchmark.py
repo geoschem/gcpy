@@ -906,7 +906,8 @@ def run_benchmark_default(config):
                 gchp_end_dev_date,
                 is_gchp=True,
                 gchp_res=gchp_dev_res,
-                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+                gcc_is_pre_14_0=config["data"]["dev"]["gcc"]["is_pre_14.0"]
             )
 
             # Create tables
