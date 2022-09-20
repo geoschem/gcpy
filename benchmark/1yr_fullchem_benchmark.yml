@@ -66,7 +66,9 @@ options:
       run: True
       dir: GCHP_version_comparison
       tables_subdir: Tables
-    # GCHP vs GCC diff of diffs not included in 1-yr full chemistry benchmark
+    gchp_vs_gcc_diff_of_diffs:
+      run: True
+      dir: GCHP_GCC_diff_of_diffs
 
   outputs: # Output to generate (plots/tables will be created in this order):
     plot_conc: True
