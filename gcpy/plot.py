@@ -355,14 +355,12 @@ def compare_single_level(
     Args:
         refdata: xarray dataset
             Dataset used as reference in comparison
-        refstr: str OR list of str
+        refstr: str
             String description for reference data to be used in plots
-            OR list containing [ref1str, ref2str] for diff-of-diffs plots
         devdata: xarray dataset
             Dataset used as development in comparison
-        devstr: str OR list of str
+        devstr: str
             String description for development data to be used in plots
-            OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
         varlist: list of strings
@@ -1488,14 +1486,12 @@ def compare_zonal_mean(
     Args:
         refdata: xarray dataset
             Dataset used as reference in comparison
-        refstr: str OR list of str
+        refstr: str
             String description for reference data to be used in plots
-            OR list containing [ref1str, ref2str] for diff-of-diffs plots
         devdata: xarray dataset
             Dataset used as development in comparison
-        devstr: str OR list of str
+        devstr: str
             String description for development data to be used in plots
-            OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
     Keyword Args (optional):
         varlist: list of strings
