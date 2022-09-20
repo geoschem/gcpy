@@ -10,6 +10,8 @@ import yaml
 import numpy as np
 import pandas as pd
 import xarray as xr
+import sparselt.esmf
+import sparselt.xr
 from joblib import Parallel, delayed
 from tabulate import tabulate
 import gcpy.util as util
@@ -738,6 +740,7 @@ def make_benchmark_conc_plots(
         diff_of_diffs = False
 
     # Open second datasets if passed as arguments (used for diff of diffs)
+    # Regrid to same horz grid resolution if two refs or two devs do not match.
     if diff_of_diffs:
         second_refds = reader(second_ref, drop_variables=gcon.skip_these_vars).load()
         second_devds = reader(second_dev, drop_variables=gcon.skip_these_vars).load()
@@ -746,6 +749,47 @@ def make_benchmark_conc_plots(
         print(second_refds)
         print('\nPrinting second_devds (dev of dev for diff-of-diffs)\n')
         print(second_devds)
+
+        # Only regrid if ref grid resolutions differ.
+        # Assume only may differ if both cubed-sphere.
+        # If different, assume the two resolutions are C24 and C48,
+        # and do the comparison at C48.
+        regrid_ref = False
+        if "Xdim" in refds.dims and "Xdim" in second_refds.dims:
+            if refds['Xdim'].size != second_refds['Xdim'].size:
+                regrid_ref = True
+        regrid_dev = False
+        if "Xdim" in devds.dims and "Xdim" in second_devds.dims:
+            if devds['Xdim'].size != second_devds['Xdim'].size:
+                regrid_dev = True
+        if regrid_ref or regrid_dev:
+            # Assume regridding C24 to C48 to compute the difference at C48
+            regridfile=os.join(weightsdir,'esmf_regrid_weights_c24_to_c48.nc')
+            transform = sparselt.esmf.load_weights(
+                regridfile,
+                input_dims=[('nf', 'Ydim', 'Xdim'), (6, 24, 24)],
+                output_dims=[('nf', 'Ydim', 'Xdim'), (6, 48, 48)],
+            )
+            if regrid_ref and refds['Xdim'].size == 24:
+                print('\nRegridding ref dataset 1 from C24 to C48\n')
+                refds = sparselt.xr.apply(transform, refds)
+                print(refds)
+                print('\nRegrid complete\n')
+            if regrid_ref and second_refds['Xdim'].size == 24:
+                print('\nRegridding ref dataset 2 from C24 to C48\n')
+                second_refds = sparselt.xr.apply(transform, second_refds)
+                print(second_refds)
+                print('\nRegrid complete\n')
+            if regrid_dev and devds['Xdim'].size == 24:
+                print('\nRegridding dev dataset 1 from C24 to C48\n')
+                devds = sparselt.xr.apply(transform, devds)
+                print(devds)
+                print('\nRegrid complete\n')
+            if regrid_dev and second_devds['Xdim'].size == 24:
+                print('\nRegridding dev dataset 2 from C24 to C48\n')
+                second_devds = sparselt.xr.apply(transform, second_devds)
+                print(second_devds)
+                print('\nRegrid complete\n')
 
     else:
         second_refds = None
