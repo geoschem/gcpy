@@ -1834,10 +1834,10 @@ def get_filepaths(
             date_time = date_time.replace("-", "")
             date_time = date_time.replace(":", "")
 
-           # Set file path. Include grid resolution if GCHP restart file.
+            # Set file path. Include grid resolution if GCHP restart file.
             paths[c][d] = file_tmpl + date_time + extension
             if is_gchp and "Restart" in collection and not gchp_is_pre_14_0:
-                path[c][d] = file_tmpl + date_time + "z.c" + gchp_res + extension
+                paths[c][d] = file_tmpl + date_time[:len(date_time)-2] + "z.c" + gchp_res + extension
 
     return paths
 
