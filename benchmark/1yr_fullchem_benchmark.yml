@@ -13,7 +13,7 @@
 # configuration for 1 year fullchem benchmark
 paths:
   main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1yr_fullchem
-  results_dir: BenchmarkResults
+  results_dir: /path/to/BenchmarkResults
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
 data:
   # timestamp format YYYY-MM-DDThh:mm:ss

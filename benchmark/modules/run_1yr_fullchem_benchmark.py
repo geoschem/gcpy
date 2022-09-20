@@ -198,23 +198,15 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     else:
 
         # Directory for GCC vs GCC is in GCC dev directory
-        base_gcc_resultsdir = join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gcc"]["version"],
-            config["paths"]["results_dir"],
-        )
+        base_gcc_resultsdir = config["paths"]["results_dir"]
         if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
             if not exists(base_gcc_resultsdir):
                 os.mkdir(base_gcc_resultsdir)
 
         # Directory for all GCHP comparisons is in GCHP dev directory
-        base_gchp_resultsdir = join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["version"],
-            config["paths"]["results_dir"],
-        )
-        if config["options"]["comparisons"]["gchp_vs_gchp"]["run"] \\
-           or config["options"]["comparisons"]["gchp_vs_gcc"]["run"] \\
+        base_gchp_resultsdir = config["paths"]["results_dir"]
+        if config["options"]["comparisons"]["gchp_vs_gchp"]["run"] \
+           or config["options"]["comparisons"]["gchp_vs_gcc"]["run"] \
            or config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"]:
             if not exists(base_gchp_resultsdir):
                 os.mkdir(base_gchp_resultsdir)
