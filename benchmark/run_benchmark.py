@@ -902,7 +902,7 @@ def run_benchmark_default(config):
             ref = get_filepath(
                 gchp_vs_gcc_refrst, 
                 "Restart", gcc_end_dev_date, 
-                gcc_is_pre_14_0=config["data"]["dev"]["gcc"]["is_pre_14.0"]
+                gcc_is_pre_14_0=config["data"]["ref"]["gcc"]["is_pre_14.0"]
             )
             dev = get_filepath(
                 gchp_vs_gcc_devrst,
