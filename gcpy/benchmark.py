@@ -764,7 +764,7 @@ def make_benchmark_conc_plots(
                 regrid_dev = True
         if regrid_ref or regrid_dev:
             # Assume regridding C24 to C48 to compute the difference at C48
-            regridfile=os.join(weightsdir,'esmf_regrid_weights_c24_to_c48.nc')
+            regridfile=os.path.join(weightsdir,'regrid_weights_c24_to_c48.nc')
             transform = sparselt.esmf.load_weights(
                 regridfile,
                 input_dims=[('nf', 'Ydim', 'Xdim'), (6, 24, 24)],
