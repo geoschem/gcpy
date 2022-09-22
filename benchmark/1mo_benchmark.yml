@@ -27,6 +27,7 @@ data:
       subdir: OutputDir
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
+      is_pre_14.0: False
     gchp:
       version: GCHP_ref
       dir: GCHP_ref
@@ -42,6 +43,7 @@ data:
       subdir: OutputDir
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
+      is_pre_14.0: False
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
@@ -49,7 +51,7 @@ data:
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
       is_pre_13.1: False
-      is_pre_14.0: True
+      is_pre_14.0: False
 
 options:
   bmk_type: FullChemBenchmark

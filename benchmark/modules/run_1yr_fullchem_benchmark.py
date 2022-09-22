@@ -132,17 +132,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     gcc_vs_gcc_refrstdir = join(
         config["paths"]["main_dir"],
         config["data"]["ref"]["gcc"]["dir"],
-        "restarts"
+        "Restarts"
     )
     gcc_vs_gcc_devrstdir = join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
-        "restarts"
+        "Restarts"
     )
     gchp_vs_gcc_refrstdir = join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
-        "restarts"
+        "Restarts"
     )
     gchp_vs_gcc_devrstdir = join(
         config["paths"]["main_dir"],
