@@ -1149,6 +1149,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # area variable in this scenario
                 dev_extra = ""
                 if not os.path.isfile(devpath):
+                    print("WARNING: dev restart not found: {}".format(devpath))
                     devpath = join(
                         gchp_vs_gcc_devrstdir,
                         "initial_GEOSChem_rst."
@@ -1737,6 +1738,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # Use initial checkpoint if Ref restart is not present
                 ref_extra = ""
                 if not os.path.isfile(refpath):
+                    print("WARNING: ref restart not found: {}".format(devpath))
                     refpath = join(
                         gchp_vs_gchp_refrstdir,
                         "initial_GEOSChem_rst."
@@ -1771,6 +1773,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # Use initial checkpoint if Dev restart is not present
                 dev_extra = ""
                 if not os.path.isfile(devpath):
+                    print("WARNING: dev restart not found: {}".format(devpath))
                     devpath = join(
                         gchp_vs_gchp_devrstdir,
                         "initial_GEOSChem_rst."
