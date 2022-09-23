@@ -1377,14 +1377,15 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         gchp_ref_res = str(get_input_res(ds_refmet)[0])
         gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
+        # Option to specify grid resolution of comparison plots
+        # This is a tempoary hack until cs->cs regridding in GCPy is fixed
+        cmpres="1x1.25"
+
         # ==================================================================
         # GCHP vs GCHP species concentration plots
         # ==================================================================
         if config["options"]["outputs"]["plot_conc"]:
             print("\n%%% Creating GCHP vs. GCHP concentration plots %%%")
-
-            # Option to specify grid resolution of comparison plots
-            cmpres="1x1.25"
 
             # --------------------------------------------------------------
             # GCHP vs GCHP species concentration plots: Annual Mean
@@ -1500,6 +1501,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_devstr,
                 dst=gchp_vs_gchp_resultsdir,
                 subdst="AnnualMean",
+                cmpres=cmpres,
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
                 plot_by_spc_cat=config["options"]["outputs"][
@@ -1524,6 +1526,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dev[mon_ind],
                     gchp_vs_gchp_devstr,
                     dst=gchp_vs_gchp_resultsdir,
+                    cmpres=cmpres,
                     subdst=bmk_mon_yr_strs_dev[t],
                     weightsdir=config["paths"]["weights_dir"],
                     plot_by_spc_cat=config["options"]["outputs"][
@@ -1618,6 +1621,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_devstr,
                 dst=gchp_vs_gchp_resultsdir,
                 subdst='AnnualMean',
+                cmpres=cmpres,
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
@@ -1639,6 +1643,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_devstr,
                     dst=gchp_vs_gchp_resultsdir,
                     subdst=bmk_mon_yr_strs_dev[t],
+                    cmpres=cmpres,
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
@@ -1685,6 +1690,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_devstr,
                 dst=gchp_vs_gchp_resultsdir,
                 subdst="AnnualMean",
+                cmpres=cmpres,
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
@@ -1706,6 +1712,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_devstr,
                     dst=gchp_vs_gchp_resultsdir,
                     subdst=bmk_mon_yr_strs_dev[t],
+                    cmpres=cmpres,
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
