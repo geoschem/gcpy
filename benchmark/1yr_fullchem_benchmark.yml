@@ -81,7 +81,7 @@ options:
     aer_budget_table: True
     Ox_budget_table: True
     ste_table: True # GCC only
-    OH_metrics: True # GCC only
+    OH_metrics: True
     plot_options:
       by_spc_cat: True
       by_hco_cat: True

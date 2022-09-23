@@ -81,7 +81,7 @@ options:
     plot_aod: True
     mass_table: True
     ops_budget_table: False
-    OH_metrics: True # GCC only
+    OH_metrics: True
     ste_table: True # GCC only
     plot_options: # Plot concentrations and emissions by category?
       by_spc_cat: True
