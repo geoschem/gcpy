@@ -1219,6 +1219,7 @@ def make_benchmark_emis_plots(
         subdst=None,
         plot_by_spc_cat=False,
         plot_by_hco_cat=False,
+        cmpres=None,
         overwrite=False,
         verbose=False,
         flip_ref=False,
@@ -1270,6 +1271,8 @@ def make_benchmark_emis_plots(
             according to HEMCO emissions categories (e.g. Anthro,
             Aircraft, Bioburn, etc.)
             Default value: False
+        cmpres: string
+            Grid resolution at which to compare ref and dev data, e.g. '1x1.25'
         overwrite: bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
@@ -1408,6 +1411,7 @@ def make_benchmark_emis_plots(
             devds,
             devstr,
             varlist=varlist,
+            cmpres=cmpres,
             pdfname=pdfname,
             log_color_scale=log_color_scale,
             extra_title_txt=extra_title_txt,
@@ -1475,6 +1479,7 @@ def make_benchmark_emis_plots(
                 devds,
                 devstr,
                 varlist=varnames,
+                cmpres=cmpres,
                 ilev=0,
                 pdfname=pdfname,
                 log_color_scale=log_color_scale,
@@ -1582,6 +1587,7 @@ def make_benchmark_emis_plots(
                 devds,
                 devstr,
                 varlist=varlist,
+                cmpres=cmpres,
                 ilev=0,
                 pdfname=pdfname,
                 flip_ref=flip_ref,
@@ -1801,6 +1807,7 @@ def make_benchmark_jvalue_plots(
         dst="./benchmark",
         subdst=None,
         local_noon_jvalues=False,
+        cmpres=None,
         plots=["sfc", "500hpa", "zonalmean"],
         overwrite=False,
         verbose=False,
@@ -1854,6 +1861,8 @@ def make_benchmark_jvalue_plots(
             which is the fraction of the time that it was local noon
             at each location.
             Default value: False
+        cmpres: string
+            Grid resolution at which to compare ref and dev data, e.g. '1x1.25'
         plots: list of strings
             List of plot types to create.
             Default value: ['sfc', '500hpa', 'zonalmean']
@@ -2067,6 +2076,7 @@ def make_benchmark_jvalue_plots(
             devds,
             devstr,
             varlist=varlist,
+            cmpres=cmpres,
             ilev=22,
             pdfname=pdfname,
             flip_ref=flip_ref,
@@ -2193,6 +2203,7 @@ def make_benchmark_aod_plots(
         varlist=None,
         dst="./benchmark",
         subdst=None,
+        cmpres=None,
         overwrite=False,
         verbose=False,
         log_color_scale=False,
@@ -2236,6 +2247,8 @@ def make_benchmark_aod_plots(
             and denotes a date string (such as "Jan2016") that
             corresponds to the month that is being plotted.
             Default value: None
+        cmpres: string
+            Grid resolution at which to compare ref and dev data, e.g. '1x1.25'
         overwrite: bool
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
@@ -2464,6 +2477,7 @@ def make_benchmark_aod_plots(
         devds,
         devstr,
         varlist=newvarlist,
+        cmpres=cmpres,
         ilev=0,
         pdfname=pdfname,
         log_color_scale=log_color_scale,
@@ -3140,6 +3154,7 @@ def make_benchmark_wetdep_plots(
             devds,
             devstr,
             varlist=varlist,
+            cmpres=cmpres,
             ilev=0,
             refmet=refmetds,
             devmet=devmetds,
@@ -3169,6 +3184,7 @@ def make_benchmark_wetdep_plots(
             devds,
             devstr,
             varlist=varlist,
+            cmpres=cmpres,
             ilev=22,
             refmet=refmetds,
             devmet=devmetds,
