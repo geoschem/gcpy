@@ -2211,6 +2211,7 @@ def make_benchmark_aod_plots(
         weightsdir='.',
         n_job=-1,
         time_mean=False,
+        verbose=False,
         spcdb_dir=os.path.dirname(__file__)
 ):
     """
