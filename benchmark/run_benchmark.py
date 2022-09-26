@@ -185,9 +185,15 @@ def run_benchmark_default(config):
     # Path to species_database.yml
     # =====================================================================
     if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
-        spcdb_dir = join(config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["dir"])
+        spcdb_dir = join(
+            config["paths"]["main_dir"],
+            config["data"]["dev"]["gchp"]["dir"]
+        )
     else:
-        spcdb_dir = join(config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"])
+        spcdb_dir = join(
+            config["paths"]["main_dir"],
+            config["data"]["dev"]["gcc"]["dir"]
+        )
 
     # =====================================================================
     # Benchmark output directories
@@ -918,8 +924,7 @@ def run_benchmark_default(config):
                 gchp_end_dev_date,
                 is_gchp=True,
                 gchp_res=gchp_dev_res,
-                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
-                gcc_is_pre_14_0=config["data"]["dev"]["gcc"]["is_pre_14.0"]
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
 
             # Create tables
@@ -1262,7 +1267,7 @@ def run_benchmark_default(config):
                 gchp_end_ref_date,
                 is_gchp=True,
                 gchp_res=gchp_ref_res,
-                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
             )
             dev = get_filepath(
                 gchp_vs_gchp_devrst,
@@ -1270,7 +1275,7 @@ def run_benchmark_default(config):
                 gchp_end_dev_date,
                 is_gchp=True,
                 gchp_res=gchp_dev_res,
-                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
 
             # Create tables
