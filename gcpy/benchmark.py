@@ -611,13 +611,13 @@ def make_benchmark_conc_plots(
         verbose: bool
             Set this flag to True to print extra informational output.
             Default value: False
-                collection: str
-                        Name of collection to use for plotting.
-                        Default value: "SpeciesConc"
-                benchmark_type: str
-                        A string denoting the type of benchmark output to plot,
-                        either FullChemBenchmark or TransportTracersBenchmark.
-                        Default value: "FullChemBenchmark"
+        collection: str
+            Name of collection to use for plotting.
+            Default value: "SpeciesConc"
+        benchmark_type: str
+            A string denoting the type of benchmark output to plot,
+            either FullChemBenchmark or TransportTracersBenchmark.
+            Default value: "FullChemBenchmark"
         cmpres: string
             Grid resolution at which to compare ref and dev data, e.g. '1x1.25'
         plot_by_spc_cat: logical
@@ -638,7 +638,7 @@ def make_benchmark_conc_plots(
         normalize_by_area: bool
             Set this flag to true to enable normalization of data
             by surfacea area (i.e. kg s-1 --> kg s-1 m-2).
-                        Default value: False
+            Default value: False
         cats_in_ugm3: list of str
             List of benchmark categories to to convert to ug/m3
             Default value: ["Aerosols", "Secondary_Organic_Aerosols"]
@@ -1379,8 +1379,7 @@ def make_benchmark_emis_plots(
     [_ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
     # Combine 2D and 3D variables into an overall list
-    quiet = not verbose
-    vardict = util.compare_varnames(refds, devds, quiet=quiet)
+    vardict = util.compare_varnames(refds, devds, quiet=(not verbose))
     vars2D = vardict["commonvars2D"]
     vars3D = vardict["commonvars3D"]
     varlist = vars2D + vars3D
@@ -1968,8 +1967,7 @@ def make_benchmark_jvalue_plots(
 
     # Get a list of the 3D variables in both datasets
     if varlist is None:
-        quiet = not verbose
-        vardict = util.compare_varnames(refds, devds, quiet=quiet)
+        vardict = util.compare_varnames(refds, devds, quiet=(not verbose))
         cmn = vardict["commonvars3D"]
 
     # ==================================================================
@@ -2211,7 +2209,6 @@ def make_benchmark_aod_plots(
         weightsdir='.',
         n_job=-1,
         time_mean=False,
-        verbose=False,
         spcdb_dir=os.path.dirname(__file__)
 ):
     """
@@ -2364,8 +2361,7 @@ def make_benchmark_aod_plots(
     # Find common AOD variables in both datasets
     # (or use the varlist passed via keyword argument)
     if varlist is None:
-        quiet = not verbose
-        vardict = util.compare_varnames(refds, devds, quiet)
+        vardict = util.compare_varnames(refds, devds, quiet=(not verbose))
         cmn3D = vardict["commonvars3D"]
         varlist = [v for v in cmn3D if "AOD" in v and "_bin" not in v]
 
@@ -3138,7 +3134,7 @@ def make_benchmark_wetdep_plots(
     #[refds, devds] = add_missing_variables(refds, devds)
 
     # Get list of variables in collection
-    vardict = util.compare_varnames(refds, devds, quiet=True)
+    vardict = util.compare_varnames(refds, devds, quiet=(not verbose))
     varlist = [v for v in vardict["commonvars3D"] if collection + "_" in v]
     varlist.sort()
 
@@ -3581,7 +3577,8 @@ def make_benchmark_operations_budget(
         require_overlap=False,
         dst='.',
         species=None,
-        overwrite=True
+        overwrite=True,
+        verbose=False
 ):
     """
     Prints the "operations budget" (i.e. change in mass after
@@ -3637,6 +3634,10 @@ def make_benchmark_operations_budget(
         overwrite: bool
             Denotes whether to overwrite existing budget file.
             Default value: True
+        verbose: bool
+            Set this switch to True if you wish to print out extra
+            informational messages.
+            Default value: False
     """
 
     # ------------------------------------------
