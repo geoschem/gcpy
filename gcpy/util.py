@@ -1648,8 +1648,7 @@ def get_filepath(
         is_gchp=False,
         gchp_res="00",
         gchp_is_pre_13_1=False,
-        gchp_is_pre_14_0=False,
-        gcc_is_pre_14_0=False
+        gchp_is_pre_14_0=False
 ):
     """
     Routine to return file path for a given GEOS-Chem "Classic"
@@ -1678,10 +1677,6 @@ def get_filepath(
 
         gchp_is_pre_14_0: bool
             Set this switch to True to obtain GCHP file pathnames used in
-            versions before 14.0. Only needed for restart files.
-
-        gcc_is_pre_14_0: bool
-            Set this switch to True to obtain GCClassic file pathnames used in
             versions before 14.0. Only needed for restart files.
 
     Returns:
@@ -1749,8 +1744,7 @@ def get_filepaths(
         is_gchp=False,
         gchp_res="00",
         gchp_is_pre_13_1=False,
-        gchp_is_pre_14_0=False,
-        gcc_is_pre_14_0=False
+        gchp_is_pre_14_0=False
 ):
     """
     Routine to return filepaths for a given GEOS-Chem "Classic"
@@ -1779,10 +1773,6 @@ def get_filepaths(
 
         gchp_is_pre_14_0: bool
             Set this switch to True to obtain GCHP file pathnames used in
-            versions before 14.0. Only needed for diagnostic files.
-
-        gcc_is_pre_14_0: bool
-            Set this switch to True to obtain GCClassic file pathnames used in
             versions before 14.0. Only needed for diagnostic files.
 
     Returns:
