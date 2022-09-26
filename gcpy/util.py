@@ -1699,26 +1699,33 @@ def get_filepath(
             extension = ".nc4"
             date_str = np.datetime_as_string(date, unit="s")
             if gchp_is_pre_14_0:
-                file_tmpl = os.path.join(datadir,
-                                         "gcchem_internal_checkpoint.restart.")
+                file_tmpl = os.path.join(
+                    datadir,
+                    "gcchem_internal_checkpoint.restart."
+                )
             else:
-                file_tmpl = os.path.join(datadir,
-                                         "Restarts/GEOSChem.Restart.")
+                file_tmpl = os.path.join(
+                    datadir,
+                    "GEOSChem.Restart."
+                )
         else:
             if gchp_is_pre_13_1:
-                file_tmpl = os.path.join(datadir, "GCHP.{}.".format(col))
+                file_tmpl = os.path.join(
+                    datadir,
+                    "GCHP.{}.".format(col)
+                )
             else:
-                file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(col))
+                file_tmpl = os.path.join(
+                    datadir,
+                    "GEOSChem.{}.".format(col)
+                )
     else:
         if "Emissions" in col:
             file_tmpl = os.path.join(datadir, "HEMCO_diagnostics.")
             extension = ".nc"
             separator = ""
         elif "Restart" in col:
-            if gcc_is_pre_14_0:
-                file_tmpl = os.path.join(datadir, "restarts/GEOSChem.Restart.")
-            else:
-                file_tmpl = os.path.join(datadir, "Restarts/GEOSChem.Restart.")
+            file_tmpl = os.path.join(datadir, "GEOSChem.Restart.")
         else:
             file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(col))
     if isinstance(date_str, np.str_):
@@ -1811,37 +1818,48 @@ def get_filepaths(
             if "Restart" in collection:
                 extension = ".nc4"
                 if gchp_is_pre_14_0:
-                    file_tmpl = os.path.join(datadir,
-                                         "gcchem_internal_checkpoint.restart.")
+                    file_tmpl = os.path.join(
+                        datadir,
+                        "gcchem_internal_checkpoint.restart."
+                    )
                 else:
-                    file_tmpl = os.path.join(datadir,
-                                         "Restarts/GEOSChem.Restart.")
+                    file_tmpl = os.path.join(
+                        datadir,
+                        "GEOSChem.Restart."
+                    )
             else:
                 if gchp_is_pre_13_1:
-                    file_tmpl = os.path.join(datadir,
-                                             "GCHP.{}.".format(collection))
+                    file_tmpl = os.path.join(
+                        datadir,
+                        "GCHP.{}.".format(collection)
+                    )
                 else:
-                    file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(collection))
+                    file_tmpl = os.path.join(
+                        datadir,
+                        "GEOSChem.{}.".format(collection)
+                    )
         else:
             # ---------------------------------------
             # Get the file path template for GCC
             # ---------------------------------------
             if "Emissions" in collection:
-                file_tmpl = os.path.join(datadir,
-                                         "HEMCO_diagnostics.")
+                file_tmpl = os.path.join(
+                    datadir,
+                    "HEMCO_diagnostics."
+                )
                 separator = ""
                 extension = ".nc"
             elif "Restart" in collection:
-                if gcc_is_pre_14_0:
-                    file_tmpl = os.path.join(datadir,
-                                             "restarts/GEOSChem.Restart.")
-                else:
-                    file_tmpl = os.path.join(datadir,
-                                             "Restarts/GEOSChem.Restart.")
+                file_tmpl = os.path.join(
+                    datadir,
+                    "GEOSChem.Restart."
+                )
 
             else:
-                file_tmpl = os.path.join(datadir,
-                                         "GEOSChem.{}.".format(collection))
+                file_tmpl = os.path.join(
+                    datadir,
+                    "GEOSChem.{}.".format(collection)
+                )
 
         # --------------------------------------------
         # Create a list of files for each date/time

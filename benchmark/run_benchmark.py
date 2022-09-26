@@ -121,52 +121,64 @@ def run_benchmark_default(config):
     gcc_vs_gcc_refdir = join(
         config["paths"]["main_dir"],
         config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["subdir"],
+        config["data"]["ref"]["gcc"]["outputs_subdir"],
     )
     gcc_vs_gcc_devdir = join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["subdir"],
+        config["data"]["dev"]["gcc"]["outputs_subdir"],
     )
     gchp_vs_gcc_refdir = join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["subdir"],
+        config["data"]["dev"]["gcc"]["outputs_subdir"],
     )
     gchp_vs_gcc_devdir = join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["subdir"],
+        config["data"]["dev"]["gchp"]["outputs_subdir"],
     )
     gchp_vs_gchp_refdir = join(
         config["paths"]["main_dir"],
         config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["subdir"],
+        config["data"]["ref"]["gchp"]["outputs_subdir"],
     )
     gchp_vs_gchp_devdir = join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["subdir"],
+        config["data"]["dev"]["gchp"]["outputs_subdir"],
     )
 
     # Restart file directory paths
     gcc_vs_gcc_refrst = join(
-        config["paths"]["main_dir"], config["data"]["ref"]["gcc"]["dir"]
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gcc"]["dir"],
+        config["data"]["ref"]["gcc"]["restarts_subdir"]
     )
     gcc_vs_gcc_devrst = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"]
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gcc"]["dir"],
+        config["data"]["dev"]["gcc"]["restarts_subdir"]
     )
     gchp_vs_gcc_refrst = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gcc"]["dir"]
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gcc"]["dir"],
+        config["data"]["dev"]["gcc"]["restarts_subdir"]
     )
     gchp_vs_gcc_devrst = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["dir"]
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["dir"],
+        config["data"]["dev"]["gchp"]["restarts_subdir"]
     )
     gchp_vs_gchp_refrst = join(
-        config["paths"]["main_dir"], config["data"]["ref"]["gchp"]["dir"]
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gchp"]["dir"],
+        config["data"]["ref"]["gchp"]["restarts_subdir"]
     )
     gchp_vs_gchp_devrst = join(
-        config["paths"]["main_dir"], config["data"]["dev"]["gchp"]["dir"]
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["dir"],
+        config["data"]["dev"]["gchp"]["restarts_subdir"]
     )
 
     # =====================================================================

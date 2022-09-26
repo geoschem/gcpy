@@ -24,14 +24,16 @@ data:
     gcc:
       version: GCC_ref # NOTE: these will be used in some filenames and so should not have spaces
       dir: GCC_ref # Directory name
-      subdir: OutputDir
+      outputs_subdir: OutputDir
+      restarts_subdir: restarts
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
       is_pre_14.0: False
     gchp:
       version: GCHP_ref
       dir: GCHP_ref
-      subdir: OutputDir
+      outputs_subdir: OutputDir
+      restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
       is_pre_13.1: False # Whether GCHP files are legacy (pre-13.1) format
@@ -40,14 +42,16 @@ data:
     gcc:
       version: GCC_dev 
       dir: GCC_dev
-      subdir: OutputDir
+      outputs_subdir: OutputDir
+      restarts_subdir: restarts
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
       is_pre_14.0: False
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
-      subdir: OutputDir
+      outputs_subdir: OutputDir
+      restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
       is_pre_13.1: False
