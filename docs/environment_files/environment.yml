@@ -1,0 +1,39 @@
+name: gcpy
+channels:
+    - defaults
+    - conda-forge
+dependencies:
+    - cartopy>=0.19.0     # Geographic plotting toolkit
+    - dask>=2.3.0         # Parallel processing library
+    - esmpy>=7.1.0        # ESMF for python
+    - h5py>=2.9.0         # Wrapper for HDF5
+    - ipython>=7.8.0      # IPython interpreter and tools
+    - jupyter>=1.0.0      # Jupyter federation architecture
+    - matplotlib>=3.1.1   # 2D plotting library
+    - netcdf4>=1.4.2      # Wrapper for netcdf4
+    - notebook>=6.0.0     # Notebook interface
+    - numpy>=1.19.1       # N-d array and numerics
+    - pandas>=0.25.1      # Labeled array library
+    - pip>=19.2.2         # Package installer for Python
+    - pytest>=5.0.1       # Unit/mock testing tools
+    - python>=3.9         # Python version 3.9
+    - scipy>=1.3.1        # Common math/stats/science functions
+    - sparselt>=0.1.3     # Regridding w/ vectorized sparse linear transforms
+    - xarray>=0.15.0      # N-d labeled array library
+    - xesmf>=0.2.1        # Universal regridder    
+    - pip:
+        # These are additional libraries to search for on PyPI
+        - docutils==0.16               # Dependency of Sphinx
+        - h5pyd>=0.3.3                 # HDF5 for Amazon S3
+        - h5netcdf                     # allow HDF5-backend for xarray
+        - jinja2==3.0.3                # Dependency of sphinx
+        - joblib>=0.17.0               # Parallel processing for Python
+        - pycodestyle>=2.5.0           # Python linter (formerly PEP8)
+        - PyPDF2>==1.26.0              # PDF utilities (e.g. bookmarks)
+        - recommonmark                 # Dependency of sphinx
+        - sphinx==3.5.4                # Base Sphinx documentation library
+        - sphinx_rtd_theme==0.5.2      # ReadTheDocs theme for documentation
+        - sphinxcontrib-bibtex==2.2.0  # Use LaTeX style biblio styles
+        - sphinx-autoapi               # Automatic API documentation generation	
+        - sphinx-autobuild             # Interactive build & display website
+        - tabulate>=0.8.3              # Pretty-print tabular data in Python
