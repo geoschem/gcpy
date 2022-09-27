@@ -10,10 +10,8 @@ or GCHP benchmark simulations.
 import os
 import warnings
 from calendar import monthrange
-import yaml
 import numpy as np
 import xarray as xr
-from yaml import load as yaml_load_file
 import gcpy.constants as constants
 from gcpy.grid import get_troposphere_mask
 import gcpy.util as util
@@ -141,13 +139,13 @@ class _GlobVars:
         # First look in the current folder
         lspc_path = "lumped_species.yml"
         if os.path.exists(lspc_path):
-            lspc_dict = yaml.load(open(lspc_path), Loader=yaml.FullLoader)
+            lspc_dict = util.read_config_file(lspc_path, quiet=True)
             return lspc_dict
 
         # Then look in the same folder where the species database is
         lspc_path = os.path.join(self.spcdb_dir, "lumped_species.yml")
         if os.path.exists(lspc_path):
-            lspc_dict = yaml.load(open(lspc_path), Loader=yaml.FullLoader)
+            lspc_dict = util.read_config_file(lspc_path, quiet=True)
             return lspc_dict
 
         # Then look in the GCPy source code folder
@@ -160,41 +158,16 @@ class _GlobVars:
         Returns the restart file path
 
         Arguments:
-            ystr : Year string (YYYY format
+            ystr : Year string (YYYY) format
         """
-        # Restarts
-        if self.is_gchp:
-
-            # NOTE: Currently the behavior is to hardwire the restart
-            # file folder to be devrestdir/REstarts.  This mimics the
-            # behavior of get_filepath in util.py.  We should one day
-            # fix this so that we do not have to hardwire the Restarts/
-            # but instead assume that devrstdir is the true path to the
-            # restart file.
-            # See https://github.com/geoschem/gcpy/issues/158
-            if self.gchp_is_pre_14_0:
-                RstPath = os.path.join(
-                    self.devrstdir,
-                    "Restarts/gcchem_internal_checkpoint.restart.{}{}".format(
-                        ystr,
-                        "0101_000000.nc4"
-                    )
-                )
-            else:
-                RstPath = os.path.join(
-                    self.devrstdir,
-                    "Restarts/GEOSChem.Restart.{}0101_0000z.{}.nc4".format(
-                        ystr,
-                        self.gchp_res
-                    )
-                )
-        else:
-            RstPath = os.path.join(
-                self.devrstdir,
-                "GEOSChem.Restart.{}0101_0000z.nc4".format(ystr)
-            )
-
-        return RstPath
+        return util.get_filepath(
+            self.devrstdir,
+            "Restart",
+            np.datetime64(f"{ystr}-01-01T00:00:00"),
+            is_gchp=self.is_gchp,
+            gchp_res=self.gchp_res,
+            gchp_is_pre_14_0=self.gchp_is_pre_14_0
+        )
 
 
     def get_diag_paths(self):
@@ -216,7 +189,7 @@ class _GlobVars:
         for c in collections:
             self.pathlist[c] = os.path.join(
                 self.devdir,
-                "*.{}.{}*.nc4".format(c, self.y0_str)
+                f"*.{c}.{self.y0_str}*.nc4"
             )
 
 
@@ -230,9 +203,8 @@ class _GlobVars:
         Returns:
            ds : xarray Dataset
         """
-        path = self.rst_file_path(ystr)
         ds = xr.open_dataset(
-            path,
+            self.rst_file_path(ystr),
             drop_variables=constants.skip_these_vars
         )
 
@@ -338,7 +310,7 @@ class _GlobVars:
         """
         # Read the species database
         path = os.path.join(spcdb_dir, "species_database.yml")
-        spcdb = yaml_load_file(open(path))
+        spcdb = util.read_config_file(path, quiet=True)
 
         # Molecular weights [kg mol-1], as taken from the species database
         self.mw = {}
@@ -628,10 +600,9 @@ def print_budget(
     with open(filename, "w+") as f:
         print("="*50, file=f)
         print("Annual Average Global Ox Budget", file=f)
-        print("for GEOS-Chem {} 1-year benchmark\n".format(
-            globvars.devstr), file=f)
-        print("Start: {}-01-01 00:00 UTC".format(globvars.y0_str), file=f)
-        print("End:   {}-01-01 00:00 UTC".format(globvars.y1_str), file=f)
+        print(f"for GEOS-Chem {globvars.devstr} 1-year benchmark\n", file=f)
+        print(f"Start: {globvars.y0_str}-01-01 00:00 UTC", file=f)
+        print(f"End:   {globvars.y1_str}-01-01 00:00 UTC", file=f)
         print("="*50, file=f)
         print("\n", file=f)
         print("  MASS ACCUMULATION       Tg Ox a-1    Tg O3 a-1", file=f)

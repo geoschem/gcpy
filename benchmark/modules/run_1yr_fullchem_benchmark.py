@@ -10,16 +10,16 @@ Run this script to generate benchmark comparisons between:
     (2) GCHP vs GCC
     (3) GCHP vs GCHP
 
-You can customize this by editing the settings in the corresponding yaml 
+You can customize this by editing the settings in the corresponding yaml
 config file (eg. 1yr_fullchem_benchmark.yml).
 
 Calling sequence:
 
     ./run_1yr_fullchem_benchmark.py <path-to-configuration-file>
 
-To test gcpy, copy this script and the corresponding yaml config file 
-anywhere you want to run the test. Set gcpy_test to True at the top 
-of the script. Benchmark artifacts will be created locally in new folder 
+To test gcpy, copy this script and the corresponding yaml config file
+anywhere you want to run the test. Set gcpy_test to True at the top
+of the script. Benchmark artifacts will be created locally in new folder
 called Plots.
 
 Remarks:
@@ -210,7 +210,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         base_gchp_resultsdir = config["paths"]["results_dir"]
         if config["options"]["comparisons"]["gchp_vs_gchp"]["run"] \
            or config["options"]["comparisons"]["gchp_vs_gcc"]["run"] \
-           or config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"]:
+           or config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"][
+               "run"]:
             if not exists(base_gchp_resultsdir):
                 os.mkdir(base_gchp_resultsdir)
 
@@ -229,7 +230,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         )
         diff_of_diffs_resultsdir = join(
             base_gchp_resultsdir,
-            config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["dir"],
+            config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"][
+                "dir"],
         )
         for resdir, plotting_type in zip(
             [
@@ -370,7 +372,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Print the list of plots & tables to the screen
     # ======================================================================
 
-    print("The following plots and tables will be created for {}:".format(bmk_type))
+    print(f"The following plots and tables will be created for {bmk_type}:")
     if config["options"]["outputs"]["plot_conc"]:
         print(" - Concentration plots")
     if config["options"]["outputs"]["plot_emis"]:
@@ -451,7 +453,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCC vs GCC species concentration plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -466,9 +468,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     subdst=bmk_mon_yr_strs_dev[t],
                     weightsdir=config["paths"]["weights_dir"],
                     benchmark_type=bmk_type,
-                    plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                        "by_spc_cat"
-                    ],
+                    plot_by_spc_cat=config["options"]["outputs"][
+                        "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -484,8 +485,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            ref = get_filepaths(gcc_vs_gcc_refdir, "Emissions", all_months_ref)[0]
-            dev = get_filepaths(gcc_vs_gcc_devdir, "Emissions", all_months_dev)[0]
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "Emissions",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "Emissions",
+                all_months_dev
+            )[0]
 
             # Create plots
             print("\nCreating plots for annual mean")
@@ -498,12 +507,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 subdst="AnnualMean",
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
-                plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                    "by_spc_cat"
-                ],
-                plot_by_hco_cat=config["options"]["outputs"]["plot_options"][
-                    "by_hco_cat"
-                ],
+                plot_by_spc_cat=config["options"]["outputs"][
+                    "plot_options"]["by_spc_cat"],
+                plot_by_hco_cat=config["options"]["outputs"][
+                    "plot_options"]["by_hco_cat"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
@@ -512,7 +519,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCC vs GCC emissions plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -524,12 +531,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dst=gcc_vs_gcc_resultsdir,
                     subdst=bmk_mon_yr_strs_dev[t],
                     weightsdir=config["paths"]["weights_dir"],
-                    plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                        "by_spc_cat"
-                    ],
-                    plot_by_hco_cat=config["options"]["outputs"]["plot_options"][
-                        "by_hco_cat"
-                    ],
+                    plot_by_spc_cat=config["options"]["outputs"][
+                        "plot_options"]["by_spc_cat"],
+                    plot_by_hco_cat=config["options"]["outputs"][
+                        "plot_options"]["by_hco_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -541,8 +546,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCC vs. GCC emissions & inventory totals %%%")
 
             # Filepaths
-            ref = get_filepaths(gcc_vs_gcc_refdir, "Emissions", all_months_ref)[0]
-            dev = get_filepaths(gcc_vs_gcc_devdir, "Emissions", all_months_dev)[0]
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "Emissions",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "Emissions",
+                all_months_dev
+            )[0]
 
             # Create table
             bmk.make_benchmark_emis_tables(
@@ -568,8 +581,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            ref = get_filepaths(gcc_vs_gcc_refdir, "JValues", all_months_ref)[0]
-            dev = get_filepaths(gcc_vs_gcc_devdir, "JValues", all_months_dev)[0]
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "JValues",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "JValues",
+                all_months_dev
+            )[0]
 
             # Create plots
             print("\nCreating plots for annual mean")
@@ -590,7 +611,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCC vs GCC J-value plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -617,8 +638,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            ref = get_filepaths(gcc_vs_gcc_refdir, "Aerosols", all_months_ref)[0]
-            dev = get_filepaths(gcc_vs_gcc_devdir, "Aerosols", all_months_dev)[0]
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "Aerosols",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "Aerosols",
+                all_months_dev
+            )[0]
 
             # Create plots
             print("\nCreating plots for annual mean")
@@ -639,7 +668,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCC vs GCC column AOD plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -686,7 +715,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gcc_vs_gcc_devstr,
                     dst=gcc_vs_gcc_tablesdir,
                     subdst=bmk_mon_yr_strs_dev[m],
-                    label="at 01{}".format(bmk_mon_yr_strs_dev[m]),
+                    label=f"at 01{bmk_mon_yr_strs_dev[m]}",
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -708,8 +737,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 """
 
                 # Filepaths
-                refpath = get_filepath(gcc_vs_gcc_refdir, "Budget", bmk_mons_ref[m])
-                devpath = get_filepath(gcc_vs_gcc_devdir, "Budget", bmk_mons_dev[m])
+                refpath = get_filepath(
+                    gcc_vs_gcc_refdir,
+                    "Budget",
+                    bmk_mons_ref[m]
+                )
+                devpath = get_filepath(
+                    gcc_vs_gcc_devdir,
+                    "Budget",
+                    bmk_mons_dev[m]
+                )
 
                 # Create tables
                 bmk.make_benchmark_operations_budget(
@@ -720,7 +757,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     sec_per_month_ref[m],
                     sec_per_month_dev[m],
                     benchmark_type=bmk_type,
-                    label="at 01{}".format(bmk_mon_yr_strs_dev[m]),
+                    label=f"at 01{bmk_mon_yr_strs_dev[m]}",
                     dst=gcc_vs_gcc_tablesdir,
                 )
 
@@ -736,8 +773,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCC vs. GCC aerosols budget tables %%%")
 
             # Filepaths
-            devaero = get_filepaths(gcc_vs_gcc_devdir, "Aerosols", all_months_dev)[0]
-            devspc = get_filepaths(gcc_vs_gcc_devdir, "SpeciesConc", all_months_dev)[0]
+            devaero = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "Aerosols",
+                all_months_dev
+            )[0]
+            devspc = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "SpeciesConc",
+                all_months_dev
+            )[0]
 
             # Compute tables
             bmk.make_benchmark_aerosol_tables(
@@ -775,7 +820,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCC vs. GCC Strat-Trop Exchange table %%%")
 
             # Filepaths
-            dev = get_filepaths(gcc_vs_gcc_devdir, "AdvFluxVert", all_months_dev)[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "AdvFluxVert",
+                all_months_dev
+            )[0]
 
             # Compute table
             ste.make_benchmark_ste_table(
@@ -795,8 +844,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCC vs. GCC OH metrics %%%")
 
             # Filepaths
-            ref = get_filepaths(gcc_vs_gcc_refdir, "Metrics", all_months_ref)[0]
-            dev = get_filepaths(gcc_vs_gcc_devdir, "Metrics", all_months_dev)[0]
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "Metrics",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "Metrics",
+                all_months_dev
+            )[0]
 
             # Create the OH Metrics table
             oh.make_benchmark_oh_metrics(
@@ -820,9 +877,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         # GCHP vs GCC filepaths for StateMet collection data
         # ==================================================================
-        refmet = get_filepaths(gchp_vs_gcc_refdir,
-                               "StateMet",
-                               all_months_dev
+        refmet = get_filepaths(
+            gchp_vs_gcc_refdir,
+            "StateMet",
+            all_months_dev
         )[0]
         devmet = get_filepaths(
             gchp_vs_gcc_devdir,
@@ -835,7 +893,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
         # Get GCHP grid resolution from met collection file
         ds_devmet = xr.open_dataset(devmet[0])
-        gchp_dev_res = str(get_input_res(ds_devmet)[0])
+        #gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
         # ==================================================================
         # GCHP vs GCC Concentration plots
@@ -848,7 +906,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            ref = get_filepaths(gchp_vs_gcc_refdir, "SpeciesConc", all_months_dev)[0]
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "SpeciesConc",
+                all_months_dev
+            )[0]
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
                 "SpeciesConc",
@@ -882,7 +944,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCHP vs GCC species concentration plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -897,9 +959,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     subdst=bmk_mon_yr_strs_dev[t],
                     weightsdir=config["paths"]["weights_dir"],
                     benchmark_type=bmk_type,
-                    plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                        "by_spc_cat"
-                    ],
+                    plot_by_spc_cat=config["options"]["outputs"][
+                        "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -915,16 +976,18 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            ref = get_filepaths(gchp_vs_gcc_refdir, "Emissions", all_months_dev)[0]
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "Emissions",
+                all_months_dev
+            )[0]
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
                 "Emissions",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                    "is_pre_13.1"],
-                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
-                    "is_pre_14.0"]
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )[0]
 
             # Create plots
@@ -938,12 +1001,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 subdst="AnnualMean",
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
-                plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                    "by_spc_cat"
-                ],
-                plot_by_hco_cat=config["options"]["outputs"]["plot_options"][
-                    "by_hco_cat"
-                ],
+                plot_by_spc_cat=config["options"]["outputs"][
+                    "plot_options"]["by_spc_cat"],
+                plot_by_hco_cat=config["options"]["outputs"][
+                    "plot_options"]["by_hco_cat"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
@@ -952,7 +1013,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCHP vs GCC emissions plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -979,16 +1040,18 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCC emissions tables %%%")
 
             # Filepaths
-            ref = get_filepaths(gchp_vs_gcc_refdir, "Emissions", all_months_dev)[0]
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "Emissions",
+                all_months_dev
+            )[0]
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
                 "Emissions",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                    "is_pre_13.1"],
-                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
-                    "is_pre_14.0"]
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )[0]
 
             # Create emissions table that spans entire year
@@ -1016,16 +1079,18 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            ref = get_filepaths(gchp_vs_gcc_refdir, "JValues", all_months_dev)[0]
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "JValues",
+                all_months_dev
+            )[0]
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
                 "JValues",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                    "is_pre_13.1"],
-                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
-                    "is_pre_14.0"]
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )[0]
 
             # Create plots
@@ -1047,7 +1112,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCHP vs GCC J-values plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -1074,7 +1139,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            ref = get_filepaths(gchp_vs_gcc_refdir, "Aerosols", all_months_dev)[0]
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "Aerosols",
+                all_months_dev
+            )[0]
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
                 "Aerosols",
@@ -1105,7 +1174,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCHP vs GCC column AOD plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -1143,19 +1212,19 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "Restart",
                     bmk_mons_dev[m],
                     is_gchp=True,
-                    gchp_res=gchp_dev_res,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                     gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
                         "is_pre_13.1"],
                     gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
                         "is_pre_14.0"]
                 )
-                
+
                 # use initial restart if no checkpoint present (intended for
                 # first month).  need to pass path of meteorology file with
                 # area variable in this scenario
                 dev_extra = ""
                 if not os.path.isfile(devpath):
-                    print("WARNING: dev restart not found: {}".format(devpath))
+                    print(f"WARNING: dev restart not found: {devpath}")
                     devpath = join(
                         gchp_vs_gcc_devrstdir,
                         "initial_GEOSChem_rst."
@@ -1167,13 +1236,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "Restart",
                         bmk_mons_dev[m + 1],
                         is_gchp=True,
-                        gchp_res=gchp_dev_res,
+                        gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                         gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
                             "is_pre_13.1"],
                         gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
                             "is_pre_14.0"]
                     )
-                    
+
                 # Create tables
                 bmk.make_benchmark_mass_tables(
                     refpath,
@@ -1182,7 +1251,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_devstr,
                     dst=gchp_vs_gcc_tablesdir,
                     subdst=bmk_mon_yr_strs_dev[m],
-                    label="at 01{}".format(bmk_mon_yr_strs_dev[m]),
+                    label=f"at 01{bmk_mon_yr_strs_dev[m]}",
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                     dev_met_extra=dev_extra,
@@ -1204,7 +1273,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 """
 
                 # Filepaths
-                refpath = get_filepath(gchp_vs_gcc_refdir, "Budget", bmk_mons_dev[m])
+                refpath = get_filepath(
+                    gchp_vs_gcc_refdir,
+                    "Budget",
+                    bmk_mons_dev[m]
+                )
                 devpath = get_filepath(
                     gchp_vs_gcc_devdir,
                     "Budget",
@@ -1225,7 +1298,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     bmk_sec_per_month_dev[m],
                     bmk_sec_per_month_dev[m],
                     benchmark_type=bmk_type,
-                    label="at 01{}".format(bmk_mon_yr_strs_dev[m]),
+                    label=f"at 01{bmk_mon_yr_strs_dev[m]}",
                     operations=[
                         "Chemistry",
                         "Convection",
@@ -1323,7 +1396,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCC OH metrics table %%%")
 
             # Filepaths
-            ref = get_filepaths(gchp_vs_gcc_refdir, "Metrics", all_months_dev)[0]
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "Metrics",
+                all_months_dev
+            )[0]
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
                 "Metrics",
@@ -1380,8 +1457,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # Get GCHP grid resolutions from met collection file
         ds_refmet = xr.open_dataset(refmet[0])
         ds_devmet = xr.open_dataset(devmet[0])
-        gchp_ref_res = str(get_input_res(ds_refmet)[0])
-        gchp_dev_res = str(get_input_res(ds_devmet)[0])
+        #gchp_ref_res = str(get_input_res(ds_refmet)[0])
+        #gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
         # Option to specify grid resolution of comparison plots
         # This is a tempoary hack until cs->cs regridding in GCPy is fixed
@@ -1495,7 +1572,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
                     "is_pre_13.1"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
-                    "is_pre_14.0"]                
+                    "is_pre_14.0"]
             )[0]
 
             # Create plots
@@ -1522,7 +1599,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCHP vs GCHP species concentration plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -1638,7 +1715,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCHP vs GCHP J-values plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -1707,7 +1784,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCHP vs GCHP column AOD plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
@@ -1741,7 +1818,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "Restart",
                     bmk_mons_ref[m],
                     is_gchp=True,
-                    gchp_res=gchp_ref_res,
+                    gchp_res=config["data"]["ref"]["gchp"]["resolution"],
                     gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
                         "is_pre_13.1"],
                     gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
@@ -1751,7 +1828,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # Use initial checkpoint if Ref restart is not present
                 ref_extra = ""
                 if not os.path.isfile(refpath):
-                    print("WARNING: ref restart not found: {}".format(devpath))
+                    print(f"WARNING: ref restart not found: {refpath}")
                     refpath = join(
                         gchp_vs_gchp_refrstdir,
                         "initial_GEOSChem_rst."
@@ -1763,7 +1840,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "Restart",
                         bmk_mons_ref[m + 1],
                         is_gchp=True,
-                        gchp_res=gchp_ref_res,
+                        gchp_res=config["data"]["ref"]["gchp"]["resolution"],
                         gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
                             "is_pre_13.1"],
                         gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
@@ -1776,7 +1853,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "Restarts",
                     bmk_mons_dev[m],
                     is_gchp=True,
-                    gchp_res=gchp_dev_res,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                     gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
                         "is_pre_13.1"],
                     gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
@@ -1786,7 +1863,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # Use initial checkpoint if Dev restart is not present
                 dev_extra = ""
                 if not os.path.isfile(devpath):
-                    print("WARNING: dev restart not found: {}".format(devpath))
+                    print(f"WARNING: dev restart not found: {devpath}")
                     devpath = join(
                         gchp_vs_gchp_devrstdir,
                         "initial_GEOSChem_rst."
@@ -1798,7 +1875,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "Restart",
                         bmk_mons_dev[m + 1],
                         is_gchp=True,
-                        gchp_res=gchp_dev_res,
+                        gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                         gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
                             "is_pre_13.1"],
                         gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
@@ -1813,7 +1890,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_devstr,
                     dst=gchp_vs_gchp_tablesdir,
                     subdst=bmk_mon_yr_strs_dev[m],
-                    label="at 01{}".format(bmk_mon_yr_strs_dev[m]),
+                    label=f"at 01{bmk_mon_yr_strs_dev[m]}",
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                     ref_met_extra=ref_extra,
@@ -1868,7 +1945,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     bmk_sec_per_month_ref[m],
                     bmk_sec_per_month_dev[m],
                     benchmark_type=bmk_type,
-                    label="at 01{}".format(bmk_mon_yr_strs_dev[m]),
+                    label=f"at 01{bmk_mon_yr_strs_dev[m]}",
                     operations=[
                         "Chemistry",
                         "Convection",
@@ -1907,12 +1984,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "SpeciesConc",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                    "is_pre_13.1"
-                ],
-                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
-                    "is_pre_14.0"
-                ],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )[0]
 
             # Create tables
@@ -1963,20 +2036,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 "Metrics",
                 all_months_gchp_ref,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
-                    "is_pre_13.1"],
-                gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
-                    "is_pre_14.0"]
+                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 "Metrics",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                    "is_pre_13.1"],
-                gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
-                    "is_pre_14.0"]
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )[0]
 
             # Create the OH Metrics table
@@ -2010,23 +2079,31 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            gcc_ref = get_filepaths(gcc_vs_gcc_refdir, "SpeciesConc", all_months_ref)[0]
-            gcc_dev = get_filepaths(gcc_vs_gcc_devdir, "SpeciesConc", all_months_dev)[0]
+            gcc_ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "SpeciesConc",
+                all_months_ref
+            )[0]
+            gcc_dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "SpeciesConc",
+                all_months_dev
+            )[0]
             gchp_ref = get_filepaths(
                 gchp_vs_gchp_refdir,
                 "SpeciesConc",
                 all_months_gchp_ref,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
-                    "is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
             )[0]
             gchp_dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 "SpeciesConc",
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                    "is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )[0]
 
             # Create plots
@@ -2055,7 +2132,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCHP vs GCC diff-of-diff species concentration plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
