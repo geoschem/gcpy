@@ -1646,7 +1646,7 @@ def get_filepath(
         col,
         date,
         is_gchp=False,
-        gchp_res="00",
+        gchp_res="c00",
         gchp_is_pre_13_1=False,
         gchp_is_pre_14_0=False
 ):
@@ -1668,8 +1668,10 @@ def get_filepath(
             Set this switch to True to obtain file pathnames to
             GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
 
-        gchp_res: int
-            Cubed-sphere resolution of GCHP data grid. Only needed for restart files.
+        gchp_res: str
+            Cubed-sphere resolution of GCHP data grid.
+            Only needed for restart files.
+            Default value: "c00".
 
         gchp_is_pre_13_1: bool
             Set this switch to True to obtain GCHP file pathnames used in
@@ -1705,15 +1707,9 @@ def get_filepath(
                 )
         else:
             if gchp_is_pre_13_1:
-                file_tmpl = os.path.join(
-                    datadir,
-                    "GCHP.{}.".format(col)
-                )
+                file_tmpl = os.path.join(datadir, f"GCHP.{col}.")
             else:
-                file_tmpl = os.path.join(
-                    datadir,
-                    "GEOSChem.{}.".format(col)
-                )
+                file_tmpl = os.path.join(datadir, f"GEOSChem.{col}.")
     else:
         if "Emissions" in col:
             file_tmpl = os.path.join(datadir, "HEMCO_diagnostics.")
@@ -1722,7 +1718,7 @@ def get_filepath(
         elif "Restart" in col:
             file_tmpl = os.path.join(datadir, "GEOSChem.Restart.")
         else:
-            file_tmpl = os.path.join(datadir, "GEOSChem.{}.".format(col))
+            file_tmpl = os.path.join(datadir, f"GEOSChem.{col}.")
     if isinstance(date_str, np.str_):
         date_str = str(date_str)
     date_str = date_str.replace("T", separator)
@@ -1732,7 +1728,7 @@ def get_filepath(
     # Set file path. Include grid resolution if GCHP restart file.
     path = file_tmpl + date_str + extension
     if is_gchp and "Restart" in col and not gchp_is_pre_14_0:
-        path = file_tmpl + date_str[:len(date_str)-2] + "z.c" + gchp_res + extension
+        path = file_tmpl + date_str[:len(date_str)-2] + "z." + gchp_res + extension
 
     return path
 
@@ -1742,7 +1738,7 @@ def get_filepaths(
         collections,
         dates,
         is_gchp=False,
-        gchp_res="00",
+        gchp_res="c00",
         gchp_is_pre_13_1=False,
         gchp_is_pre_14_0=False
 ):
@@ -1764,8 +1760,10 @@ def get_filepaths(
             Set this switch to True to obtain file pathnames to
             GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
 
-        gchp_res: int
-            Cubed-sphere resolution of GCHP data files. Only needed for restart files.
+        gchp_res: str
+            Cubed-sphere resolution of GCHP data grid.
+            Only needed for restart files.
+            Default value: "c00".
 
         gchp_is_pre_13_1: bool
             Set this switch to True to obtain GCHP file pathnames used in
@@ -1821,12 +1819,12 @@ def get_filepaths(
                 if gchp_is_pre_13_1:
                     file_tmpl = os.path.join(
                         datadir,
-                        "GCHP.{}.".format(collection)
+                        f"GCHP.{collection}."
                     )
                 else:
                     file_tmpl = os.path.join(
                         datadir,
-                        "GEOSChem.{}.".format(collection)
+                        f"GEOSChem.{collection}."
                     )
         else:
             # ---------------------------------------
@@ -1848,7 +1846,7 @@ def get_filepaths(
             else:
                 file_tmpl = os.path.join(
                     datadir,
-                    "GEOSChem.{}.".format(collection)
+                    f"GEOSChem.{collection}."
                 )
 
         # --------------------------------------------
@@ -1866,7 +1864,7 @@ def get_filepaths(
             # Set file path. Include grid resolution if GCHP restart file.
             paths[c][d] = file_tmpl + date_time + extension
             if is_gchp and "Restart" in collection and not gchp_is_pre_14_0:
-                paths[c][d] = file_tmpl + date_time[:len(date_time)-2] + "z.c" + gchp_res + extension
+                paths[c][d] = file_tmpl + date_time[:len(date_time)-2] + "z." + gchp_res + extension                
 
     return paths
 
@@ -2023,7 +2021,8 @@ def all_zero_or_nan(
             Input GEOS-Chem data
     Returns:
         all_zero, all_nan: bool, bool
-            All_zero is whether ds is all zeros, all_nan is whether ds i s all NaNs
+            all_zero is whether ds is all zeros, 
+            all_nan  is whether ds is all NaNs
     """
 
     return not np.any(ds), np.isnan(ds).all()
@@ -2088,13 +2087,14 @@ def dataset_reader(
 
     return reader
 
-def read_config_file(config_file):
+def read_config_file(config_file, quiet=False):
     """
     Reads configuration information from a YAML file.
     """
     # Read the configuration file in YAML format
     try:
-        print(f"Using configuration file {config_file}")
+        if not quiet:
+            print(f"Using configuration file {config_file}")
         config = yaml.safe_load(open(config_file))
     except Exception as err:
         msg = f"Error reading configuration in {config_file}: {err}"
