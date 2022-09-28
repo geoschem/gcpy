@@ -17,7 +17,7 @@
 
 # Make sure to set multiple threads; Joblib will use multiple
 # cores to parallelize certain plotting operations.
-export OMP_NUM_THREADS=SLURM_CPUS_PER_TASK
+export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export OMP_STACKSIZE=500m
 
 # Turn on Python environment (edit for your setup)
