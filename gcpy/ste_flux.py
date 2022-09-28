@@ -70,8 +70,8 @@ class _GlobVars:
         # ------------------------------
         self.y0 = year
         self.y1 = self.y0 + 1
-        self.y0_str = "{}".format(self.y0)
-        self.y1_str = "{}".format(self.y1)
+        self.y0_str = f"{self.y0}"
+        self.y1_str = f"{self.y1}"
 
         # ------------------------------
         # Read data collections
@@ -96,7 +96,7 @@ class _GlobVars:
                     concat_dim="time"
                 )
             except FileNotFoundError:
-                msg = "Could not find one or more files in {}".format(files)
+                msg = f"Could not find one or more files in {files}"
                 raise FileNotFoundError(msg)
         else:
             try:
@@ -105,7 +105,7 @@ class _GlobVars:
                     drop_variables=physconsts.skip_these_vars,
                 )
             except FileNotFoundError:
-                msg = "Could not find one or more files in {}".format(files)
+                msg = f"Could not find one or more files in {files}"
                 raise FileNotFoundError(msg)
 
         # Set a flag to denote if this data is from GCHP
@@ -249,13 +249,13 @@ def print_ste(globvars, df):
     # Create plot directory hierarchy if necessary
     if os.path.isdir(globvars.dst) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(globvars.dst, err_str))
+        print(f"Directory {globvars.dst} exists. {err_str}")
         return
     elif not os.path.isdir(globvars.dst):
         os.makedirs(globvars.dst)
 
     # Save the file in the Tables folder of dst
-    filename = "{}/Strat_trop_exchange.txt".format(globvars.dst)
+    filename = f"{globvars.dst}/Strat_trop_exchange.txt"
 
     # Set numeric format to be 11 chars wide with 4 decimals
     pd.options.display.float_format = '{:11.4f}'.format
@@ -266,13 +266,11 @@ def print_ste(globvars, df):
         # Print header
         print("%" * 79, file=f)
         if globvars.is_TransportTracers:
-            print(" Table 4. Strat-trop exchange in {} for year {}".format(
-                globvars.devstr, globvars.y0_str), file=f)
+            print(f" Table 4. Strat-trop exchange in {globvars.devstr} for year {globvars.y0_str}". file=f)
             print("          (i.e. species flux across 100 hPa)", file=f)
             print("\n Units: g/yr", file=f)
         else:
-            print(" Strat-trop exchange in {} for year {}".format(
-                globvars.devstr, globvars.y0_str), file=f)
+            print(f" Strat-trop exchange in {globvars.devstr} for year {globvars.y0_str}". file=f)
             print(" (i.e. species flux across 100 hPa)", file=f)
             print("\n Units: Tg/yr", file=f)
         print(file=f)
