@@ -1,22 +1,24 @@
 #!/bin/bash
 
-#SBATCH -c 1
+#SBATCH -c 12
 #SBATCH -N 1
-#SBATCH -t 0-6:00
+#SBATCH -t 0-3:00
 #SBATCH -p huce_intel
 #SBATCH --mem=12000
 #SBATCH --mail-type=END
 
-#============================================================
+#============================================================================
 # This us a sample SLURM script that you can use to submit
 # the run_1mo_benchmark.py or the run_1yr_benchmark.py
 # script to a computational queue.
 #
 # You can modify the SLURM parameters above for your setup.
-#============================================================
+#============================================================================
 
-# Load environment file
-. ~/.bashrc
+# Make sure to set multiple threads; Joblib will use multiple
+# cores to parallelize certain plotting operations.
+export OMP_NUM_THREADS=SLURM_CPUS_PER_TASK
+export OMP_STACKSIZE=500m
 
 # Turn on Python environment (edit for your setup)
 conda activate gcpy
