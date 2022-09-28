@@ -266,11 +266,11 @@ def print_ste(globvars, df):
         # Print header
         print("%" * 79, file=f)
         if globvars.is_TransportTracers:
-            print(f" Table 4. Strat-trop exchange in {globvars.devstr} for year {globvars.y0_str}". file=f)
+            print(f" Table 4. Strat-trop exchange in {globvars.devstr} for year {globvars.y0_str}", file=f)
             print("          (i.e. species flux across 100 hPa)", file=f)
             print("\n Units: g/yr", file=f)
         else:
-            print(f" Strat-trop exchange in {globvars.devstr} for year {globvars.y0_str}". file=f)
+            print(f" Strat-trop exchange in {globvars.devstr} for year {globvars.y0_str}", file=f)
             print(" (i.e. species flux across 100 hPa)", file=f)
             print("\n Units: Tg/yr", file=f)
         print(file=f)
