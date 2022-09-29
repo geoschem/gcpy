@@ -706,16 +706,17 @@ def make_benchmark_conc_plots(
         extra_title_txt = None
 
     # Pick the proper function to read the data
-    reader = util.dataset_reader(time_mean)
+    reader = util.dataset_reader(time_mean, verbose=verbose)
 
     # Open datasets
     refds = reader(ref, drop_variables=gcon.skip_these_vars).load()
     devds = reader(dev, drop_variables=gcon.skip_these_vars).load()
 
-    print('\nPrinting refds (comparison ref)\n')
-    print(refds)
-    print('\nPrinting devds (comparison dev)\n')
-    print(devds)
+    if verbose:
+        print('\nPrinting refds (comparison ref)\n')
+        print(refds)
+        print('\nPrinting devds (comparison dev)\n')
+        print(devds)
 
     # -----------------------------------------------------------------
     # Kludge, rename wrong variable name
@@ -1351,7 +1352,7 @@ def make_benchmark_emis_plots(
         extra_title_txt = None
 
     # Get the function that will read the dataset
-    reader = util.dataset_reader(time_mean)
+    reader = util.dataset_reader(time_mean, verbose=verbose)
 
     # Ref dataset
     try:
@@ -1938,7 +1939,7 @@ def make_benchmark_jvalue_plots(
         os.mkdir(dst)
 
     # Get the function that will read file(s) into a Dataset
-    reader = util.dataset_reader(time_mean)
+    reader = util.dataset_reader(time_mean, verbose=verbose)
 
     # Ref dataset
     try:
@@ -2308,7 +2309,7 @@ def make_benchmark_aod_plots(
         extra_title_txt = None
 
     # Get the function that will read file(s) into a dataset
-    reader = util.dataset_reader(time_mean)
+    reader = util.dataset_reader(time_mean, verbose=verbose)
 
     # Read the Ref dataset
     try:
@@ -2999,6 +3000,7 @@ def make_benchmark_wetdep_plots(
         devstr,
         collection,
         dst="./benchmark",
+        cmpres=None,
         datestr=None,
         overwrite=False,
         verbose=False,
@@ -3103,7 +3105,7 @@ def make_benchmark_wetdep_plots(
             os.mkdir(targetdst)
 
     # Get the function that will read file(s) into a dataset
-    reader = util.dataset_reader(time_mean)
+    reader = util.dataset_reader(time_mean, verbose=verbose)
 
     # Open datasets
     refds = reader(ref, drop_variables=gcon.skip_these_vars)

@@ -1204,8 +1204,9 @@ def add_lumped_species_to_dataset(
             integer scale factors per lumped species.
             Default value: False
         lspc_yaml: str
-            Set this flag to True to print informational output.
-            Default value: False
+            Name of the YAML file with cotituent species and integer
+          lumped species TAML file to read
+            Default value: ""
         verbose: bool
             Whether to print informational output.
             Default value: False
@@ -1236,8 +1237,7 @@ def add_lumped_species_to_dataset(
     if lspc_dict == {} and lspc_yaml == "":
         lspc_dict = get_lumped_species_definitions()
     elif lspc_dict == {} and lspc_yaml != "":
-        with open(lspc_yaml, "r") as f:
-            lspc_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
+        lspc_dict = read_config_file(lspc_yaml)
 
     # Make sure attributes are transferred when copying dataset / dataarrays
     with xr.set_options(keep_attrs=True):
@@ -2064,7 +2064,8 @@ def dataset_mean(
 
 
 def dataset_reader(
-        multi_files
+        multi_files,
+        verbose=False
 ):
     """
     Returns a function to read an xarray Dataset.
@@ -2080,12 +2081,15 @@ def dataset_reader(
     """
     if multi_files:
         reader = xr.open_mfdataset
-        print('\nReading data via xarray open_mfdataset\n')
+        if verbose:
+            print('Reading data via xarray open_mfdataset\n')
     else:
         reader = xr.open_dataset
-        print('\nReading data via xarray open_dataset\n')
+        if verbose:
+            print('Reading data via xarray open_dataset\n')
 
     return reader
+
 
 def read_config_file(config_file, quiet=False):
     """
