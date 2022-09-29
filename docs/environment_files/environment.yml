@@ -23,7 +23,8 @@ dependencies:
         - joblib==1.0.1               # Parallelize python code
         - numpy==1.21.1               # Optimized mathematical functions
         - pandas==1.3.1               # Tables/timeseries manipulation
-        - pycodestyle>=2.9.1          # Python linter (formerly PEP8)
+        - pycodestyle==2.9.1          # Python style checker (formerly PEP8)
+        - pylint==2.15.3              # Python linter
         - pypdf2==1.26.0              # PDF utilities (bookmarks, etc.)
         - recommonmark==0.7.1         # Dependency for Sphinx   
         - requests==2.26.0            # HTTP library
