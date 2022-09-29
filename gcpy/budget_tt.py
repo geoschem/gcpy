@@ -549,10 +549,14 @@ def annual_average_sources(globvars):
     q["Be7_f"] = np.zeros(q_shape)
     q["Be10_f"] = np.zeros(q_shape)
 
-    #%%% NOTE: This results in an IndexError, which may be due to
-    #%%% this behavior not being accepted in dask==2021.7.1.
-    #%%% See https://github.com/geoschem/gcpy/issues/168
-    #%%%
+    # Error traps
+    if q_shape[0] != globvars.N_MONTHS:
+        msg = f"Expected {globvars.N_MONTHS} but only found {q_shape[0]}"
+        raise ValueException(msg)
+    if q_shape[1] != n_levs:
+        msg = f"Expected {n_levs} but only found {q_shape[1]}!"
+        raise ValueException(msg)
+
     # Convert Be7 and Be10 sources from kg/m2/s to g/day
     # NOTE: This is a kludgey way to do it but it works and
     # preserves the shape of the data as (time,lev,lat,lon).
