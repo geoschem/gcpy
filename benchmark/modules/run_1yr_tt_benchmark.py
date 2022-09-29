@@ -601,10 +601,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
         )[0]
 
-        # Get GCHP grid resolution from met collection file
-        ds_devmet = xr.open_dataset(devmet[0])
-        gchp_dev_res = str(get_input_res(ds_devmet)[0])
-
         # ==================================================================
         # GCHP vs GCC species concentration plots
         # ==================================================================
@@ -831,12 +827,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
         )[0]
-
-        # Get GCHP grid resolutions from met collection file
-        ds_refmet = xr.open_dataset(refmet[0])
-        ds_devmet = xr.open_dataset(devmet[0])
-        #gchp_ref_res = str(get_input_res(ds_refmet)[0])
-        #gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
         # ==================================================================
         # GCHP vs GCHP species concentration plots
