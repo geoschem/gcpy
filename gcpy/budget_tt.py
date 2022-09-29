@@ -170,7 +170,7 @@ class _GlobVars:
 
         self.ds_ini = xr.open_dataset(
             RstInit,
-            drop_variabless=constants.skip_these_vars,
+            drop_variables=constants.skip_these_vars,
             **extra_kwargs
         )
 
@@ -549,6 +549,10 @@ def annual_average_sources(globvars):
     q["Be7_f"] = np.zeros(q_shape)
     q["Be10_f"] = np.zeros(q_shape)
 
+    #%%% NOTE: This results in an IndexError, which may be due to
+    #%%% this behavior not being accepted in dask==2021.7.1.
+    #%%% See https://github.com/geoschem/gcpy/issues/168
+    #%%%
     # Convert Be7 and Be10 sources from kg/m2/s to g/day
     # NOTE: This is a kludgey way to do it but it works and
     # preserves the shape of the data as (time,lev,lat,lon).
