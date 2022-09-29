@@ -209,12 +209,12 @@ def run_benchmark_default(config):
         )
         gchp_vs_gcc_resultsdir = join(mainresultsdir, "GCHP_GCC_comparison")
         diff_of_diffs_resultsdir = join(mainresultsdir, "GCHP_GCC_diff_of_diffs")
-        if not exists(mainresultsdir):
+        if not os.path.exists(mainresultsdir):
             os.mkdir(mainresultsdir)
         # Make copy of benchmark script in results directory
         curfile = os.path.realpath(__file__)
         dest = join(mainresultsdir, curfile.split("/")[-1])
-        if not exists(dest):
+        if not os.path.exists(dest):
             copyfile(curfile, dest)
 
     else:
