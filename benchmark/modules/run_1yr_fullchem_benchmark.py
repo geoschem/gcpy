@@ -1454,7 +1454,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         #gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
         # Option to specify grid resolution of comparison plots
-        # This is a tempoary hack until cs->cs regridding in GCPy is fixed
+        # This is a temporary hack until cs->cs regridding in GCPy is fixed
         cmpres="1x1.25"
 
         # ==================================================================

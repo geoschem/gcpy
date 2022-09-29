@@ -97,32 +97,32 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     gcc_vs_gcc_refdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["output_subdir"],
+        config["data"]["ref"]["gcc"]["outputs_subdir"]
     )
     gcc_vs_gcc_devdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["output_subdir"],
+        config["data"]["dev"]["gcc"]["outputs_subdir"]
     )
     gchp_vs_gcc_refdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["output_subdir"],
+        config["data"]["dev"]["gcc"]["outputs_subdir"]
     )
     gchp_vs_gcc_devdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["output_subdir"],
+        config["data"]["dev"]["gchp"]["outputs_subdir"]
     )
     gchp_vs_gchp_refdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["output_subdir"],
+        config["data"]["ref"]["gchp"]["outputs_subdir"]
     )
     gchp_vs_gchp_devdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["output_subdir"],
+        config["data"]["dev"]["gchp"]["outputs_subdir"]
     )
 
     # Restart file directory paths
@@ -352,8 +352,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         # GCC vs GCC filepaths for StateMet collection data
         # ==================================================================
-        refmet = get_filepaths(gcc_vs_gcc_refdir, "StateMet", all_months_ref)[0]
-        devmet = get_filepaths(gcc_vs_gcc_devdir, "StateMet", all_months_dev)[0]
+        refmet = get_filepaths(
+            gcc_vs_gcc_refdir,
+            "StateMet",
+            all_months_ref
+        )[0]
+        devmet = get_filepaths(
+            gcc_vs_gcc_devdir,
+            "StateMet",
+            all_months_dev
+        )[0]
 
         # ==================================================================
         # GCC vs GCC species concentration plots
@@ -369,15 +377,15 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            col = "SpeciesConc"
+            collection = "SpeciesConc"
             ref = get_filepaths(
                 gcc_vs_gcc_refdir,
-                col,
+                collection,
                 all_months_ref
             )[0]
             dev = get_filepaths(
                 gcc_vs_gcc_devdir,
-                col,
+                collection,
                 all_months_dev
             )[0]
 
@@ -386,6 +394,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
+                collection,
                 gcc_vs_gcc_devstr,
                 refmet=refmet,
                 devmet=devmet,
@@ -409,6 +418,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gcc_vs_gcc_refstr,
                     dev[mon_ind],
                     gcc_vs_gcc_devstr,
+                    collection,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
                     dst=gcc_vs_gcc_resultsdir,
@@ -427,10 +437,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCC vs. GCC wet deposition plots %%%")
 
             # Diagnostic collection files to read
-            cols = ["WetLossConv", "WetLossLS"]
+            wetdep_collections = ["WetLossConv", "WetLossLS"]
 
             # Loop over collections
-            for col in cols:
+            for collection in wetdep_collections:
 
                 # ----------------------------------------------------------
                 # GCC vs. GCC wet deposition plots: Annual mean
@@ -439,12 +449,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # Filepaths
                 ref = get_filepaths(
                     gcc_vs_gcc_refdir,
-                    col,
+                    collection,
                     all_months_ref
                 )[0]
                 dev = get_filepaths(
                     gcc_vs_gcc_devdir,
-                    col,
+                    collection,
                     all_months_dev
                 )[0]
 
@@ -454,6 +464,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gcc_vs_gcc_refstr,
                     dev,
                     gcc_vs_gcc_devstr,
+                    collection,
                     refmet=refmet,
                     devmet=devmet,
                     dst=gcc_vs_gcc_resultsdir,
@@ -461,7 +472,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     time_mean=True,
                     weightsdir=config["paths"]["weights_dir"],
                     benchmark_type=bmk_type,
-                    collection=col,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -476,13 +486,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         gcc_vs_gcc_refstr,
                         dev[mon_ind],
                         gcc_vs_gcc_devstr,
+                        collection,
                         refmet=refmet[mon_ind],
                         devmet=devmet[mon_ind],
                         dst=gcc_vs_gcc_resultsdir,
                         datestr=bmk_mon_yr_strs_dev[t],
                         weightsdir=config["paths"]["weights_dir"],
                         benchmark_type=bmk_type,
-                        collection=col,
                         overwrite=True,
                         spcdb_dir=spcdb_dir,
                     )
@@ -550,7 +560,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Diagnostic collection files to read (all 12 months)
             col = "AdvFluxVert"
-            devs = get_filepaths(gcc_vs_gcc_devdir, col, all_months_dev)[0]
+            devs = get_filepaths(
+                gcc_vs_gcc_devdir,
+                col,
+                all_months_dev
+            )[0]
 
             # Make stat-trop exchange table for subset of species
             ste.make_benchmark_ste_table(
@@ -605,18 +619,18 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            col = "SpeciesConc"
+            collection = "SpeciesConc"
             ref = get_filepaths(
                 gchp_vs_gcc_refdir,
-                col,
+                collection,
                 all_months_dev
             )[0]
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
-                col
+                collection,
                 all_months_gchp_dev,
                 is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
             )[0]
 
             # Create plots
@@ -625,6 +639,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                collection,
                 refmet=refmet,
                 devmet=devmet,
                 dst=gchp_vs_gcc_resultsdir,
@@ -647,6 +662,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_refstr,
                     dev[mon_ind],
                     gchp_vs_gcc_devstr,
+                    collection,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
                     dst=gchp_vs_gcc_resultsdir,
@@ -665,10 +681,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCC wet deposition plots %%%")
 
             # Create separate set of plots for each wetdep collection
-            cols = ["WetLossConv", "WetLossLS"]
+            wetdep_collections = ["WetLossConv", "WetLossLS"]
 
             # Create plots for each collection and benchmark month
-            for col in cols:
+            for collection in wetdep_collections:
 
                 # ----------------------------------------------------------
                 # GCHP vs GCC wet deposition plots: Annual mean
@@ -677,12 +693,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # Filepaths
                 ref = get_filepaths(
                     gchp_vs_gcc_refdir,
-                    col,
+                    collection,
                     all_months_dev
                 )[0]
                 dev = get_filepaths(
                     gchp_vs_gcc_devdir,
-                    col,
+                    collection,
                     all_months_gchp_dev,
                     is_gchp=True,
                     gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
@@ -695,8 +711,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_refstr,
                     dev,
                     gchp_vs_gcc_devstr,
+                    collection,
                     devmet=devmet,
-                    collection=col,
                     dst=gchp_vs_gcc_resultsdir,
                     datestr="AnnualMean",
                     time_mean=True,
@@ -717,9 +733,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         gchp_vs_gcc_refstr,
                         dev[mon_ind],
                         gchp_vs_gcc_devstr,
+                        collection,
                         refmet=refmet[mon_ind],
                         devmet=devmet[mon_ind],
-                        collection=col,
                         dst=gchp_vs_gcc_resultsdir,
                         datestr=bmk_mon_yr_strs_dev[t],
                         weightsdir=config["paths"]["weights_dir"],
@@ -754,15 +770,15 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCC operations budget tables %%%")
 
             # Filepaths
-            col = "Budget"
+            collection = "Budget"
             refs = get_filepaths(
                 gchp_vs_gcc_refdir,
-                col,
+                collection,
                 all_months_dev
             )[0]
             devs = get_filepaths(
                 gchp_vs_gcc_devdir,
-                col,
+                collection,
                 all_months_gchp_dev,
                 is_gchp=True,
                 gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
@@ -794,6 +810,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
 
+        # Option to specify grid resolution of comparison plots
+        # This is a temporary hack until cs->cs regridding in GCPy is fixed
+        cmpres="1x1.25"
+
         # ==================================================================
         # GCHP vs GCHP filepaths for StateMet collection data
         # ==================================================================
@@ -815,8 +835,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # Get GCHP grid resolutions from met collection file
         ds_refmet = xr.open_dataset(refmet[0])
         ds_devmet = xr.open_dataset(devmet[0])
-        gchp_ref_res = str(get_input_res(ds_refmet)[0])
-        gchp_dev_res = str(get_input_res(ds_devmet)[0])
+        #gchp_ref_res = str(get_input_res(ds_refmet)[0])
+        #gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
         # ==================================================================
         # GCHP vs GCHP species concentration plots
@@ -832,17 +852,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
 
             # Filepaths
-            col = "SpeciesConc"
+            collection = "SpeciesConc"
             ref = get_filepaths(
                 gchp_vs_gchp_refdir,
-                col,
+                collection,
                 all_months_gchp_ref,
                 is_gchp=True,
                 gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"]
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
-                col,
+                collection,
                 all_months_gchp_dev,
                 is_gchp=True,
                 gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
@@ -854,6 +874,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                collection,
                 refmet=refmet,
                 devmet=devmet,
                 dst=gchp_vs_gchp_resultsdir,
@@ -864,6 +885,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 restrict_cats=restrict_cats,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                cmpres=cmpres
             )
 
             # --------------------------------------------------------------
@@ -876,6 +898,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
                     gchp_vs_gchp_devstr,
+                    collection,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
                     dst=gchp_vs_gchp_resultsdir,
@@ -885,6 +908,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     restrict_cats=restrict_cats,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    cmpres=cmpres
                 )
 
         # ==================================================================
@@ -894,10 +918,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCHP wet deposition plots %%%")
 
             # Create separate set of plots for each wetdep collection
-            cols = ["WetLossConv", "WetLossLS"]
+            wetdep_collections = ["WetLossConv", "WetLossLS"]
 
             # Create plots for each collection and benchmark month
-            for col in cols:
+            for collection in wetdep_collections:
 
                 # ----------------------------------------------------------
                 # GCHP vs GCHP wet deposition plots: Annual Mean
@@ -906,7 +930,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # Filepaths
                 ref = get_filepaths(
                     gchp_vs_gchp_refdir,
-                    col,
+                    collection,
                     all_months_gchp_ref,
                     is_gchp=True,
                     gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
@@ -914,7 +938,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )[0]
                 dev = get_filepaths(
                     gchp_vs_gchp_devdir,
-                    col,
+                    collection,
                     all_months_gchp_dev,
                     is_gchp=True,
                     gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
@@ -927,9 +951,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_refstr,
                     dev,
                     gchp_vs_gchp_devstr,
+                    collection,
                     refmet=refmet,
                     devmet=devmet,
-                    collection=col,
                     dst=gchp_vs_gchp_resultsdir,
                     datestr="AnnualMean",
                     time_mean=True,
@@ -938,6 +962,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     normalize_by_area=True,
                     spcdb_dir=spcdb_dir,
+                    cmpres=cmpres
                 )
 
                 # ----------------------------------------------------------
@@ -950,9 +975,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         gchp_vs_gchp_refstr,
                         dev[mon_ind],
                         gchp_vs_gchp_devstr,
+                        collection,
                         refmet=refmet[mon_ind],
                         devmet=devmet[mon_ind],
-                        collection=col,
                         dst=gchp_vs_gchp_resultsdir,
                         datestr=bmk_mon_yr_strs_dev[t],
                         weightsdir=config["paths"]["weights_dir"],
@@ -960,6 +985,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         benchmark_type=bmk_type,
                         normalize_by_area=True,
                         spcdb_dir=spcdb_dir,
+                        cmpres=cmpres
                     )
 
         # ==================================================================
@@ -1024,14 +1050,14 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gchp_vs_gchp_tablesdir,
             )
 
-    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%#
+    # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create mass conservations tables for GCC and GCHP
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if config["options"]["outputs"]["cons_table"]:
 
-        # ======================================================================
+        # ===================================================================
         # Create mass conservation table for GCC_dev
-        # ======================================================================
+        # ===================================================================
         if (
             config["options"]["comparisons"]["gcc_vs_gcc"]["run"]
             or config["options"]["comparisons"]["gchp_vs_gcc"]["run"]
