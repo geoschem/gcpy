@@ -1,12 +1,13 @@
-List of GCPy developers (30 Oct 2020)
+List of GCPy developers (29 Sep 2022)
 ===============================================================================
 
+Liam Bindle
+Will Downs
 Sebastian Eastham
+Lucas Estrada
 Haipeng Lin
 Lizzie Lundgren
 Daniel Rothenberg
 Melissa Sulprizio
 Bob Yantosca
 Jiawei Zhuang
-Will Downs
-Liam Bindle
