@@ -44,16 +44,15 @@ a new version of GCPy.
 # ======================================================================
 
 import os
-import sys
 import warnings
 from shutil import copyfile
 from calendar import monthrange
 import numpy as np
-from gcpy.util import get_filepaths, read_config_file
+from gcpy.util import get_filepaths
 from gcpy import benchmark as bmk
 import gcpy.budget_tt as ttbdg
 import gcpy.ste_flux as ste
-from gcpy.grid import get_input_res
+#from gcpy.grid import get_input_res
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -125,18 +124,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         config["data"]["dev"]["gchp"]["outputs_subdir"]
     )
 
-    # Restart file directory paths
-    gcc_vs_gcc_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["restarts_subdir"]
-    )
+    # Diagnostic file directory paths
     gcc_vs_gcc_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["restarts_subdir"]
-    )
-    gchp_vs_gcc_refrstdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
         config["data"]["dev"]["gcc"]["restarts_subdir"]
@@ -145,11 +134,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["restarts_subdir"]
-    )
-    gchp_vs_gchp_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["restarts_subdir"]
     )
     gchp_vs_gchp_devrstdir = os.path.join(
         config["paths"]["main_dir"],
@@ -261,14 +245,14 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Dates and times -- Ref data
     # ======================================================================
 
-    # Month/year strings for use in tabl4e subdirectories (e.g. Jan2016)
-    bmk_mon_yr_strs_ref = [v + bmk_year_ref for v in bmk_mon_strs]
-
     # Get all months array of start datetimes for benchmark year
     bmk_start_ref = np.datetime64(bmk_year_ref + "-01-01")
-    bmk_end_ref = np.datetime64("{}-01-01".format(int(bmk_year_ref) + 1))
+    bmk_end_ref = np.datetime64(f"{int(bmk_year_ref) + 1}-01-01")
     all_months_ref = np.arange(
-        bmk_start_ref, bmk_end_ref, step=np.timedelta64(1, "M"), dtype="datetime64[M]"
+        bmk_start_ref,
+        bmk_end_ref,
+        step=np.timedelta64(1, "M"),
+        dtype="datetime64[M]"
     )
     all_months_gchp_ref = all_months_ref
 
@@ -297,9 +281,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
     # Get all months array of start datetimes for benchmark year
     bmk_start_dev = np.datetime64(bmk_year_dev + "-01-01")
-    bmk_end_dev = np.datetime64("{}-01-01".format(int(bmk_year_dev) + 1))
+    bmk_end_dev = np.datetime64(f"{int(bmk_year_dev) + 1}-01-01")
     all_months_dev = np.arange(
-        bmk_start_dev, bmk_end_dev, step=np.timedelta64(1, "M"), dtype="datetime64[M]"
+        bmk_start_dev,
+        bmk_end_dev,
+        step=np.timedelta64(1, "M"),
+        dtype="datetime64[M]"
     )
     all_months_gchp_dev = all_months_dev
 
@@ -394,8 +381,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
-                collection,
                 gcc_vs_gcc_devstr,
+                collection=collection,
                 refmet=refmet,
                 devmet=devmet,
                 dst=gcc_vs_gcc_resultsdir,
@@ -418,7 +405,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gcc_vs_gcc_refstr,
                     dev[mon_ind],
                     gcc_vs_gcc_devstr,
-                    collection,
+                    collection=collection,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
                     dst=gcc_vs_gcc_resultsdir,
@@ -464,7 +451,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gcc_vs_gcc_refstr,
                     dev,
                     gcc_vs_gcc_devstr,
-                    collection,
+                    collection=collection,
                     refmet=refmet,
                     devmet=devmet,
                     dst=gcc_vs_gcc_resultsdir,
@@ -486,7 +473,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         gcc_vs_gcc_refstr,
                         dev[mon_ind],
                         gcc_vs_gcc_devstr,
-                        collection,
+                        collection=collection,
                         refmet=refmet[mon_ind],
                         devmet=devmet[mon_ind],
                         dst=gcc_vs_gcc_resultsdir,
@@ -635,7 +622,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
-                collection,
+                collection=collection,
                 refmet=refmet,
                 devmet=devmet,
                 dst=gchp_vs_gcc_resultsdir,
@@ -658,7 +645,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_refstr,
                     dev[mon_ind],
                     gchp_vs_gcc_devstr,
-                    collection,
+                    collection=collection,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
                     dst=gchp_vs_gcc_resultsdir,
@@ -707,7 +694,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_refstr,
                     dev,
                     gchp_vs_gcc_devstr,
-                    collection,
+                    collection=collection,
                     devmet=devmet,
                     dst=gchp_vs_gcc_resultsdir,
                     datestr="AnnualMean",
@@ -729,7 +716,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         gchp_vs_gcc_refstr,
                         dev[mon_ind],
                         gchp_vs_gcc_devstr,
-                        collection,
+                        collection=collection,
                         refmet=refmet[mon_ind],
                         devmet=devmet[mon_ind],
                         dst=gchp_vs_gcc_resultsdir,
@@ -864,7 +851,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
-                collection,
+                collection=collection,
                 refmet=refmet,
                 devmet=devmet,
                 dst=gchp_vs_gchp_resultsdir,
@@ -888,7 +875,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
                     gchp_vs_gchp_devstr,
-                    collection,
+                    collection=collection,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
                     dst=gchp_vs_gchp_resultsdir,
@@ -941,7 +928,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_refstr,
                     dev,
                     gchp_vs_gchp_devstr,
-                    collection,
+                    collection=collection,
                     refmet=refmet,
                     devmet=devmet,
                     dst=gchp_vs_gchp_resultsdir,
@@ -965,7 +952,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         gchp_vs_gchp_refstr,
                         dev[mon_ind],
                         gchp_vs_gchp_devstr,
-                        collection,
+                        collection=collection,
                         refmet=refmet[mon_ind],
                         devmet=devmet[mon_ind],
                         dst=gchp_vs_gchp_resultsdir,
@@ -1076,9 +1063,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 spcdb_dir=spcdb_dir,
             )
 
-        # ======================================================================
+        # =====================================================================
         # Create mass conservation table for GCHP_dev
-        # ======================================================================
+        # =====================================================================
         if (
             config["options"]["comparisons"]["gchp_vs_gcc"]["run"]
             or config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
