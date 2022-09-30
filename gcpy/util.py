@@ -51,9 +51,8 @@ def convert_lon(
     offset = 0 if neg_dateline else 1
 
     if format not in ['atlantic', 'pacific']:
-        raise ValueError("Cannot convert longitudes for format '{}'; "
-                         "please choose one of 'atlantic' or 'pacific'"
-                         .format(format))
+        msg = f"Cannot convert longitudes for format '{format}'; please choose one of 'atlantic' or 'pacific'"
+        raise ValueError(msg)
 
     # Create a mask to decide how to mutate the longitude values
     if format == 'atlantic':
@@ -207,9 +206,7 @@ def print_totals(
     # that Ref and Dev have the same units before proceeding.
     if (not ref_is_all_nan) and (not dev_is_all_nan):
         if ref.units != dev.units:
-            msg = 'Ref has units "{}", but Dev array has units "{}"'.format(
-                ref.units, dev.units
-            )
+            msg = f"Ref has units {ref.units}, but Dev has units {dev.units}!"
             raise ValueError(msg)
 
     # ==================================================================
@@ -217,10 +214,8 @@ def print_totals(
     # ==================================================================
     if dev_is_all_nan:
         diagnostic_name = ref.name
-        units = ref.units
     else:
         diagnostic_name = dev.name
-        units = dev.units
 
     # Create the display name by editing the diagnostic name
     display_name = create_display_name(diagnostic_name)
@@ -276,10 +271,7 @@ def print_totals(
     # Write output to file
     # ==================================================================
     print(
-        "{} : {:18.6f}  {:18.6f}  {:12.6f}  {:8.3f}".format(
-            display_name.ljust(18), total_ref, total_dev, diff, pctdiff
-        ),
-        file=f,
+        f"{display_name.ljust(18)} : {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}", file=f
     )
 
 
@@ -306,8 +298,7 @@ def get_species_categories(
     """
     spc_categories = "benchmark_categories.yml"
     yamlfile = os.path.join(os.path.dirname(__file__), spc_categories)
-    with open(yamlfile, "r") as f:
-        spc_cat_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
+    spc_cat_dict = read_config_file(yamlfile)
     return spc_cat_dict[benchmark_type]
 
 
@@ -328,7 +319,7 @@ def archive_species_categories(
     src = os.path.join(os.path.dirname(__file__), spc_categories)
     copy = os.path.join(dst, spc_categories)
     if not os.path.exists(copy):
-        print("\nArchiving {} in {}".format(spc_categories, dst))
+        print(f"\nArchiving {spc_categories} in {dst}")
         shutil.copyfile(src, copy)
 
 
@@ -369,9 +360,7 @@ def add_bookmarks_to_pdf(
     for i, varname in enumerate(varlist):
         bookmarkname = varname.replace(remove_prefix, "")
         if verbose:
-            print(
-                "Adding bookmark for {} with name {}".format(
-                    varname, bookmarkname))
+            print(f"Adding bookmark for {varname} with name {bookmarkname}")
         output_pdf.addPage(input_pdf.getPage(i))
         output_pdf.addBookmark(bookmarkname, i)
         output_pdf.setPageMode("/UseOutlines")
@@ -457,7 +446,7 @@ def add_nested_bookmarks_to_pdf(
         # Loop over variables in this subcategory; make children bookmarks
         for varname in catdict[category][subcat]:
             if varname in warninglist:
-                print("Warning: skipping {}".format(varname))
+                print(f"Warning: skipping {varname}")
                 continue
             if first:
                 output_pdf.addBookmark(varname, i, parent)
@@ -542,7 +531,7 @@ def add_missing_variables(
         devlist = [devdata]
         for v in refonly:
             if verbose:
-                print("Creating array of NaN in devdata for: {}".format(v))
+                print(f"Creating array of NaN in devdata for: {v}")
             dr = create_dataarray_of_nan(
                 name=refdata[v].name,
                 sizes=devdata.sizes,
@@ -562,7 +551,7 @@ def add_missing_variables(
         reflist = [refdata]
         for v in devonly:
             if verbose:
-                print("Creating array of NaN in refdata for: {}".format(v))
+                print(f"Creating array of NaN in refdata for: {v}")
             dr = create_dataarray_of_nan(
                 name=devdata[v].name,
                 sizes=refdata.sizes,
@@ -593,7 +582,8 @@ def reshape_MAPL_CS(
     # Suppress annoying future warnings for now
     warnings.filterwarnings("ignore", category=FutureWarning)
 
-    if type(da) != np.ndarray:
+    #if type(da) != np.ndarray:
+    if not isinstance(da, np.ndarray):
         vdims = da.dims
         if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
             da = da.stack(lat=("nf", "Ydim"))
@@ -860,24 +850,20 @@ def compare_varnames(
     # as well as dimensions
     if not quiet:
         print("\nComparing variable names in compare_varnames")
-        print("{} common variables".format(len(commonvars)))
+        print(f"{len(commonvars)} common variables")
         if len(refonly) > 0:
-            print("{} variables in ref only (skip)".format(len(refonly)))
-            print("   Variable names: {}".format(refonly))
+            print(f"{len(refonly)} variables in ref only (skip)")
+            print(f"   Variable names: {refonly}")
         else:
             print("0 variables in ref only")
             if len(devonly) > 0:
-                print("{} variables in dev only (skip)".format(len(devonly)))
-                print("   Variable names: {}".format(devonly))
+                print(f"len({devonly} variables in dev only (skip)")
+                print(f"   Variable names: {devonly}")
             else:
                 print("0 variables in dev only")
                 if len(dimmismatch) > 0:
-                    print(
-                        "{} common variables have different dimensions".format(
-                            len(dimmismatch)
-                        )
-                    )
-                    print("   Variable names: {}".format(dimmismatch))
+                    print(f"{dimmismatch} common variables have different dimensions")
+                    print(f"   Variable names: {dimmismatch}")
                 else:
                     print("All variables have same dimensions in ref and dev")
 
@@ -921,24 +907,24 @@ def compare_stats(refdata, refstr, devdata, devstr, varname):
     devvar = devdata[varname]
     units = refdata[varname].units
     print("Data units:")
-    print("    {}:  {}".format(refstr, units))
-    print("    {}:  {}".format(devstr, units))
+    print(f"    {refstr}:  {units}")
+    print(f"    {devstr}:  {units}")
     print("Array sizes:")
-    print("    {}:  {}".format(refstr, refvar.shape))
-    print("    {}:  {}".format(devstr, devvar.shape))
+    print(f"    {refstr}:  {refvar.shape}")
+    print(f"    {devstr}:  {devvar.shape}")
     print("Global stats:")
     print("  Mean:")
-    print("    {}:  {}".format(refstr, np.round(refvar.values.mean(), 20)))
-    print("    {}:  {}".format(devstr, np.round(devvar.values.mean(), 20)))
+    print(f"    {refstr}:  {np.round(refvar.values.mean(), 20)}")
+    print(f"    {devstr}:  {np.round(devvar.values.mean(), 20)}")
     print("  Min:")
-    print("    {}:  {}".format(refstr, np.round(refvar.values.min(), 20)))
-    print("    {}:  {}".format(devstr, np.round(devvar.values.min(), 20)))
+    print(f"    {refstr}:  {np.round(refvar.values.min(), 20)}")
+    print(f"    {devstr}:  {np.round(devvar.values.min(), 20)}")
     print("  Max:")
-    print("    {}:  {}".format(refstr, np.round(refvar.values.max(), 20)))
-    print("    {}:  {}".format(devstr, np.round(devvar.values.max(), 20)))
+    print(f"    {refstr}:  {np.round(refvar.values.max(), 20)}")
+    print(f"    {devstr}:  {np.round(devvar.values.max(), 20)}")
     print("  Sum:")
-    print("    {}:  {}".format(refstr, np.round(refvar.values.sum(), 20)))
-    print("    {}:  {}".format(devstr, np.round(devvar.values.sum(), 20)))
+    print(f"    {refstr}:  {np.round(refvar.values.sum(), 20)}")
+    print(f"    {devstr}:  {np.round(devvar.values.sum(), 20)}")
 
 
 def convert_bpch_names_to_netcdf_names(
@@ -1034,7 +1020,7 @@ def convert_bpch_names_to_netcdf_names(
                 if names[key][1] == "skip":
                     # Verbose output
                     if verbose:
-                        print("WARNING: skipping {}".format(key))
+                        print(f"WARNING: skipping {key}")
                 else:
                     oldid = key
                     newid = names[key][0]
@@ -1082,7 +1068,7 @@ def convert_bpch_names_to_netcdf_names(
 
                     # Verbose output
                     if verbose:
-                        print("Skipping: {}".format(oldid))
+                        print(f"Skipping: {oldid}")
                 else:
                     newvar = newid + "_" + varstr
 
@@ -1115,9 +1101,7 @@ def convert_bpch_names_to_netcdf_names(
 
                 # Verbose output
                 if verbose:
-                    print(
-                        "WARNING: Nothing defined for: {}".format(
-                            variable_name))
+                    print(f"WARNING: Nothing defined for: {variable_name}")
                 continue
 
             # Overwrite certain variable names
@@ -1180,7 +1164,7 @@ def archive_lumped_species_definitions(
 
 def add_lumped_species_to_dataset(
         ds,
-        lspc_dict={},
+        lspc_dict=None,
         lspc_yaml="",
         verbose=False,
         overwrite=False,
@@ -1204,8 +1188,8 @@ def add_lumped_species_to_dataset(
             integer scale factors per lumped species.
             Default value: False
         lspc_yaml: str
-            Name of the YAML file with cotituent species and integer
-          lumped species TAML file to read
+            Name of the YAML file containing the list of constituent s
+            species and their integer scale factors per lumped species.
             Default value: ""
         verbose: bool
             Whether to print informational output.
@@ -1223,7 +1207,7 @@ def add_lumped_species_to_dataset(
             Default value: "SpeciesConc_"
 
     Returns:
-        ds_new: xarray Dataset
+        ds: xarray Dataset
             A new xarray Dataset object containing all of the original
             species plus new lumped species.
     """
@@ -1232,80 +1216,79 @@ def add_lumped_species_to_dataset(
     # Can overwrite by passing a dictionary
     # or a yaml file path containing one
     assert not (
-        lspc_dict != {} and lspc_yaml != ""
+        lspc_dict is not None and lspc_yaml != ""
     ), "Cannot pass both lspc_dict and lspc_yaml. Choose one only."
-    if lspc_dict == {} and lspc_yaml == "":
+    if lspc_dict is None and lspc_yaml == "":
         lspc_dict = get_lumped_species_definitions()
-    elif lspc_dict == {} and lspc_yaml != "":
+    elif lspc_dict is None and lspc_yaml != "":
         lspc_dict = read_config_file(lspc_yaml)
 
     # Make sure attributes are transferred when copying dataset / dataarrays
     with xr.set_options(keep_attrs=True):
 
-        # Get a dummy array to use for initialization
+        # Get a dummy DataArray to use for initialization
         dummy_darr = None
         for var in ds.data_vars:
             if prefix in var:
                 dummy_darr = ds[var]
+                dummy_type = print(dummy_darr.dtype)
+                dummy_shape = dummy_darr.shape
                 break
         if dummy_darr is None:
             msg = "Invalid prefix: " + prefix
             raise ValueError(msg)
 
-        # Create a new dataset equivalent to the old
-        ds_new = ds.copy(deep=True)
+        # Create a list with a copy of the dummy DataArray object
+        n_lumped_spc = len(lspc_dict)
+        lumped_spc = [None] * n_lumped_spc
+        for v, spcname in enumerate(lspc_dict):
+            lumped_spc[v] = dummy_darr.copy(deep=False)
+            lumped_spc[v].name = prefix + spcname
+            lumped_spc[v].values = np.full(dummy_shape, 0.0, dtype=dummy_type)
 
-        # Free memory of original dataset
-        ds = xr.Dataset()
+        # Loop over lumped species list
+        for v, lspc in enumerate(lumped_spc):
 
-        # Loop over lumped species
-        for lspc in lspc_dict:
-
-            # Assemble lumped species variable name
-            varname_new = prefix + lspc
+            # Search key for lspc_dict is lspc.name minus the prefix
+            c = lspc.name.find("_")
+            key = lspc.name[c+1:]
 
             # Check if overlap with existing species
-            if varname_new in ds_new.data_vars and overwrite:
-                ds_new.drop(varname_new)
+            if lspc.name in ds.data_vars and overwrite:
+                ds.drop(lspc.name)
             else:
-                assert(varname_new not in ds_new.data_vars), \
-                    "{} already in dataset. To overwrite pass overwrite=True.".\
-                    format(varname_new)
+                assert(lspc.name not in ds.data_vars), \
+                    f"{lspc.name} already in dataset. To overwrite pass overwrite=True."
 
             # Verbose prints
             if verbose:
-                print("Creating {}".format(varname_new))
-
-            # Initialize new dataarray for the lumped species
-            darr = dummy_darr
-            darr.name = varname_new
-            darr.values = np.full(darr.shape, 0.0)
+                print(f"Creating {lspc.name}")
 
             # Loop over and sum constituent species values
             num_spc = 0
-            for _, spc in enumerate(lspc_dict[lspc]):
-                varname = prefix + spc
-                if varname not in ds_new.data_vars:
+            for _, spcname in enumerate(lspc_dict[key]):
+                varname = prefix + spcname
+                if varname not in ds.data_vars:
                     if verbose:
-                        print("Warning: {} needed for {} not in dataset.".
-                              format(spc, lspc))
+                        print(f"Warning: {varname} needed for {lspc_dict[key][spcname]} not in dataset")
                     continue
                 if verbose:
-                    print(" -> adding {} with scale {}".
-                          format(spc, lspc_dict[lspc][spc]))
-                darr.values += ds_new[varname].values * lspc_dict[lspc][spc]
+                    print(f" -> adding {varname} with scale {lspc_dict[key][spcname]}")
+                lspc.values += ds[varname].values * lspc_dict[key][spcname]
                 num_spc += 1
 
-            # Replace values with NaN is no species found in dataset
+            # Replace values with NaN if no species found in dataset
             if num_spc == 0:
                 if verbose:
                     print("No constituent species found! Setting to NaN.")
-                darr.values = np.full(darr.shape, np.nan)
+                lspc.values = np.full(lspc.shape, np.nan)
 
-            # Merge new variable into dataset
-            ds_new = xr.merge([ds_new, darr])
+        # Insert the DataSet into the list of DataArrays
+        # so that we can only do the merge operation once
+        lumped_spc.insert(0, ds)
+        ds = xr.merge(lumped_spc)
 
-    return ds_new
+    return ds
 
 
 def filter_names(
@@ -1519,7 +1502,7 @@ def get_variables_from_dataset(
         if v in ds.data_vars.keys():
             ds_subset = xr.merge([ds_subset, ds[v]])
         else:
-            msg = "{} was not found in this dataset!".format(v)
+            msg = f"{v} was not found in this dataset!"
             raise ValueError(msg)
 
     return ds_subset
@@ -1630,9 +1613,7 @@ def check_for_area(
     found_gchp = gchp_area_name in ds.data_vars.keys()
 
     if (not found_gcc) and (not found_gchp):
-        msg = "Could not find {} or {} in the dataset!".format(
-            gcc_area_name, gchp_area_name
-        )
+        msg = f"Could not find {gcc_area_name} or {gchp_area_name} in the dataset!"
         raise ValueError(msg)
 
     if found_gchp:
@@ -1864,7 +1845,7 @@ def get_filepaths(
             # Set file path. Include grid resolution if GCHP restart file.
             paths[c][d] = file_tmpl + date_time + extension
             if is_gchp and "Restart" in collection and not gchp_is_pre_14_0:
-                paths[c][d] = file_tmpl + date_time[:len(date_time)-2] + "z." + gchp_res + extension                
+                paths[c][d] = file_tmpl + date_time[:len(date_time)-2] + "z." + gchp_res + extension
 
     return paths
 
@@ -1897,29 +1878,27 @@ def extract_pathnames_from_log(
     prefix_len = len(prefix_filter)
     data_list = set()  # only keep unique files
 
-    # Open file (or die with error)
-    try:
-        f = open(filename, "r")
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not find file {}".format(filename))
+    # Open file
+    with open(filename, "r") as f:
 
-    # Read data from the file line by line.
-    # Add file paths to the data_list set.
-    line = f.readline()
-    while line:
-        upcaseline = line.upper()
-        if (": OPENING" in upcaseline) or (": READING" in upcaseline):
-            data_path = line.split()[-1]
-            # remove common prefix
-            if data_path.startswith(prefix_filter):
-                trimmed_path = data_path[prefix_len:]
-                data_list.add(trimmed_path)
-
-        # Read next line
+        # Read data from the file line by line.
+        # Add file paths to the data_list set.
         line = f.readline()
+        while line:
+            upcaseline = line.upper()
+            if (": OPENING" in upcaseline) or (": READING" in upcaseline):
+                data_path = line.split()[-1]
+                # remove common prefix
+                if data_path.startswith(prefix_filter):
+                    trimmed_path = data_path[prefix_len:]
+                    data_list.add(trimmed_path)
 
-    # Close file and return
-    f.close()
+            # Read next line
+            line = f.readline()
+
+        # Close file and return
+        f.close()
+
     data_list = sorted(list(data_list))
     return data_list
 
@@ -1949,11 +1928,13 @@ def get_gcc_filepath(
     '''
     if collection == "Emissions":
         filepath = os.path.join(
-            outputdir, "HEMCO_diagnostics.{}{}.nc".format(day, time)
+            outputdir,
+            f"HEMCO_diagnostics.{day}{time}.nc"
         )
     else:
         filepath = os.path.join(
-            outputdir, "GEOSChem.{}.{}_{}z.nc4".format(collection, day, time)
+            outputdir,
+            f"GEOSChem.{collection}.{day}_{time}z.nc4"
         )
     return filepath
 
@@ -1983,7 +1964,8 @@ def get_gchp_filepath(
     '''
 
     filepath = os.path.join(
-        outputdir, "GCHP.{}.{}_{}z.nc4".format(collection, day, time)
+        outputdir,
+        f"GCHP.{collection}.{day}_{time}z.nc4"
     )
     return filepath
 
@@ -2021,7 +2003,7 @@ def all_zero_or_nan(
             Input GEOS-Chem data
     Returns:
         all_zero, all_nan: bool, bool
-            all_zero is whether ds is all zeros, 
+            all_zero is whether ds is all zeros,
             all_nan  is whether ds is all NaNs
     """
 
@@ -2102,7 +2084,6 @@ def read_config_file(config_file, quiet=False):
         config = yaml.safe_load(open(config_file))
     except Exception as err:
         msg = f"Error reading configuration in {config_file}: {err}"
-        raise Exception(msg)
+        raise Exception(msg) from err
 
     return config
-
