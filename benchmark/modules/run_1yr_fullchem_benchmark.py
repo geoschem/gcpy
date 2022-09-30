@@ -45,19 +45,18 @@ a new version of GCPy.
 # =====================================================================
 
 import os
-import sys
 import warnings
 from shutil import copyfile
 from calendar import monthrange
 import numpy as np
-import xarray as xr
+#import xarray as xr
 from joblib import Parallel, delayed
-from gcpy.util import get_filepath, get_filepaths, read_config_file
+from gcpy.util import get_filepath, get_filepaths
 import gcpy.ste_flux as ste
 import gcpy.oh_metrics as oh
 import gcpy.budget_ox as ox
 from gcpy import benchmark as bmk
-from gcpy.grid import get_input_res
+#from gcpy.grid import get_input_res
 
 
 # Tell matplotlib not to look for an X-window
@@ -157,18 +156,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["restarts_subdir"]
-    )
-
-    # Log file directories -- GEOS-Chem "Classic" only
-    gcc_vs_gcc_reflogdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        "logs"
-    )
-    gcc_vs_gcc_devlogdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        "logs"
     )
 
     # ======================================================================
@@ -277,10 +264,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         config["options"]["comparisons"]["gchp_vs_gchp"]["tables_subdir"],
     )
 
-    # Budget directories
-    gcc_vs_gcc_budgetdir = os.path.join(gcc_vs_gcc_resultsdir, "Budget")
-    gchp_vs_gcc_budgetdir = os.path.join(gchp_vs_gcc_resultsdir, "Budget")
-    gchp_vs_gchp_budgetdir = os.path.join(gchp_vs_gchp_resultsdir, "Budget")
+    ## Budget directories
+    #gcc_vs_gcc_budgetdir = os.path.join(gcc_vs_gcc_resultsdir, "Budget")
+    #gchp_vs_gcc_budgetdir = os.path.join(gchp_vs_gcc_resultsdir, "Budget")
+    #gchp_vs_gchp_budgetdir = os.path.join(gchp_vs_gchp_resultsdir, "Budget")
 
     # ======================================================================
     # Plot title strings
@@ -438,8 +425,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             ref = get_filepaths(
                 gcc_vs_gcc_refdir,
                 "SpeciesConc",
-                all_months_ref)
-            [0]
+                all_months_ref
+            )[0]
             dev = get_filepaths(
                 gcc_vs_gcc_devdir,
                 "SpeciesConc",
@@ -906,7 +893,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         )[0]
 
         # Get GCHP grid resolution from met collection file
-        ds_devmet = xr.open_dataset(devmet[0])
+        #ds_devmet = xr.open_dataset(devmet[0])
         #gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
         # ==================================================================
@@ -1448,8 +1435,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         )[0]
 
         # Get GCHP grid resolutions from met collection file
-        ds_refmet = xr.open_dataset(refmet[0])
-        ds_devmet = xr.open_dataset(devmet[0])
+        #ds_refmet = xr.open_dataset(refmet[0])
+        #ds_devmet = xr.open_dataset(devmet[0])
         #gchp_ref_res = str(get_input_res(ds_refmet)[0])
         #gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
@@ -1508,7 +1495,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # GCHP vs GCHP species concentration plots: Seasonal
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
-                print("\nCreating plots for {}".format(bmk_mon_strs[t]))
+                print(f"\nCreating plots for {bmk_mon_strs[t]}")
 
                 # Create plots
                 mon_ind = bmk_mon_inds[t]
