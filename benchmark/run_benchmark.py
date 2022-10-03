@@ -392,10 +392,9 @@ def run_benchmark_default(config):
     # ======================================================================
     # Print the list of plots & tables to the screen
     # ======================================================================
+    tmpstr = config["options"]["bmk_type"]
     print(
-        f"The following plots and tables will be created for {}:".format(
-            config["options"]["bmk_type"]
-        )
+        f"The following plots and tables will be created for {tmpstr}"
     )
     if config["options"]["outputs"]["plot_conc"]:
         print(" - Concentration plots")
