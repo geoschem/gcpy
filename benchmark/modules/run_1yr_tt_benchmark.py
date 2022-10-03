@@ -75,17 +75,29 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     ###           CONFIGURABLE SETTINGS: ***EDIT AS NEEDED***            ###
     ########################################################################
 
-    # ======================================================================
-    # Benchmark information
-    # Note: When doing GCHP vs GCC comparisions gchp_dev will be compared
-    # to gcc_dev (not gcc_ref!).
-    # ======================================================================
-
-    # Path to species_databse.yml
-    spcdb_dir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"]
+    # =====================================================================
+    # Path to species_database.yml
+    # =====================================================================
+    if spcdb_dir is None:  
+        if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
+            spcdb_dir = os.path.join(
+                config["paths"]["main_dir"],
+                config["data"]["dev"]["gchp"]["dir"]
+            )
+        else:
+            spcdb_dir = os.path.join(
+                config["paths"]["main_dir"],
+                config["data"]["dev"]["gcc"]["dir"]
+            )
+    spcdb_path = os.path.join(
+        spcdb_dir,
+        "species_database.yml"
     )
+    if os.path.exists(os.path.join(spcdb_path)):
+        msg = f"Using {spcdb_dir}/species_database.yml!"
+    else
+        msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
+        raise FileNotFoundError(msg)
 
     # ======================================================================
     # Data directories

@@ -10,13 +10,32 @@
 # to gcc_dev (not gcc_ref!). This ensures consistency in version names
 # when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
 # =====================================================================
-# configuration for 1 year transport tracer benchmark
+#
+# Configuration for 1 year TransportTracersBenchmark
+#
+# paths:
+#   main_dir:  High-level directory containing subdirectories with dat
+#   results_dir: Directory where plots/tables will be created
+#   weights_dir: Path to regridding weights
+#   spcdb_dir: Path to species_database.yml.  If equal to None, will
+#              look for species_database.yml in a default location.
+#
 paths:
   main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1yr_transporttracer
   results_dir: /path/to/BenchmarkResults
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
+  spcdb_dir: None
+#
+# data : Contains configurations for ref and dev runs
+#   version: version string (avoid spaces; this is used in filenames)
+#   dir: path to run directory
+#   outputs_subdir: subdirectory w/ GEOS-Chem diagnostic files
+#   restarts_subdir: subdirectory w/ GEOS-Chem restarts
+#   bmk_start: Simulation start date (YYYY-MM-DDThh:mm:ss)
+#   bmk_end: Simulation end date (YYYY-MM-DDThh:mm:ss)
+#   resolution: GCHP resolution string
+#
 data:
-  # timestamp format YYYY-MM-DDThh:mm:ss
   ref:
     gcc:
       version: GCC_ref
@@ -53,13 +72,15 @@ data:
       is_pre_13.1: False
       is_pre_14.0: False
       resolution: c48
-
+#
+# options: Specify the types of comparisons to perform
+# 
 options:
   bmk_type: TransportTracersBenchmark
   gcpy_test: True
   comparisons:
     gcc_vs_gcc:
-      run: True
+      run: False
       dir: GCC_version_comparison
       tables_subdir: Tables
     gchp_vs_gcc:
@@ -71,8 +92,10 @@ options:
       dir: GCHP_version_comparison
       tables_subdir: Tables
     # GCHP vs GCC diff of diffs not included in 1-yr tt benchmark
-
-  outputs: # Output to generate (plots/tables will be created in this order):
+#
+# outputs: Types of output to generate (plots/tables)
+# 
+  outputs:
     plot_conc: True
     plot_wetdep: True
     rnpbbe_budget: True

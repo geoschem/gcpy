@@ -10,24 +10,41 @@
 # to gcc_dev (not gcc_ref!). This ensures consistency in version names
 # when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
 # =====================================================================
-# configuration for 1 month benchmark
+#
+# Configuration for 1 month FullChemBenchmark
+#
+# paths:
+#   main_dir:  High-level directory containing subdirectories with dat
+#   results_dir: Directory where plots/tables will be created
+#   weights_dir: Path to regridding weights
+#   spcdb_dir: Path to species_database.yml.  If equal to None, will
+#              look for species_database.yml in a default location.
+#
 paths:
-  # High-level directory containing subdirectories with data
   main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon
-  results_dir: BenchmarkResults # Name to be used for directory of output from this script
-  # Path to regridding weights
+  results_dir: /n/holyscratch01/jacob_lab/ryantosca/bmk/BenchmarkResults_1mo 
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+  spcdb_dir: None
+#
+# data : Contains configurations for ref and dev runs
+#   version: version string (avoid spaces; this is used in filenames)
+#   dir: path to run directory
+#   outputs_subdir: subdirectory w/ GEOS-Chem diagnostic files
+#   restarts_subdir: subdirectory w/ GEOS-Chem restarts
+#   bmk_start: Simulation start date (YYYY-MM-DDThh:mm:ss)
+#   bmk_end: Simulation end date (YYYY-MM-DDThh:mm:ss)
+#   resolution: GCHP resolution string
+#
 data:
-  # contains configurations for ref and dev runs (version, dates, prior to v13.0.0)
-  # timestamp format YYYY-MM-DDThh:mm:ss
   ref:
     gcc:
-      version: GCC_ref # NOTE: these will be used in some filenames and so should not have spaces
-      dir: GCC_ref # Directory name
+      version: GCC_ref
+      dir: GCC_ref
       outputs_subdir: OutputDir
       restarts_subdir: restarts
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
+      is_pre_14.0: False
     gchp:
       version: GCHP_ref
       dir: GCHP_ref
@@ -36,7 +53,8 @@ data:
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
       is_pre_13.1: False # Whether GCHP files are legacy (pre-13.1) format
-      is_pre_14.0: True # Whether GCHP files are legacy (pre-14.0) format
+      is_pre_14.0: True # Whether GCHP files are legacy (pre-14.0) # format
+      resolution: c48
   dev:
     gcc:
       version: GCC_dev 
@@ -45,6 +63,7 @@ data:
       restarts_subdir: restarts
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
+      is_pre_14.0: False
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
@@ -54,13 +73,16 @@ data:
       bmk_end: "2019-08-01T00:00:00"
       is_pre_13.1: False
       is_pre_14.0: False
-
+      resolution: c24
+#
+# options: Specify the types of comparisons to perform
+#   
 options:
   bmk_type: FullChemBenchmark
   gcpy_test: True # Specify if this is a gcpy test validation run
   comparisons:
     gcc_vs_gcc: 
-      run: True # True to run this comparison
+      run: False # True to run this comparison
       dir: GCC_version_comparison
       tables_subdir: Tables
     gchp_vs_gcc: 
@@ -74,8 +96,10 @@ options:
     gchp_vs_gcc_diff_of_diffs: 
       run: True
       dir: GCHP_GCC_diff_of_diffs
-
-  outputs: # Output to generate (plots/tables will be created in this order):
+#
+# outputs: Types of output to generate (plots/tables)
+# 
+  outputs:
     plot_conc: True
     plot_emis: True
     emis_table: True
