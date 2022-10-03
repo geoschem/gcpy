@@ -1231,7 +1231,7 @@ def add_lumped_species_to_dataset(
         for var in ds.data_vars:
             if prefix in var:
                 dummy_darr = ds[var]
-                dummy_type = print(dummy_darr.dtype)
+                dummy_type = dummy_darr.dtype
                 dummy_shape = dummy_darr.shape
                 break
         if dummy_darr is None:
