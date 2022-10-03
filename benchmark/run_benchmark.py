@@ -36,7 +36,7 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.2.0. Edit this version ID if releasing
+This script corresponds with GCPy 1.3.0. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -46,7 +46,6 @@ a new version of GCPy.
 
 import os
 import sys
-from os.path import join, exists
 from shutil import copyfile
 import warnings
 from datetime import datetime
@@ -117,67 +116,69 @@ def run_benchmark_default(config):
 
     # =====================================================================
     # Data directories
-    # For gchp_vs_gcc_refdir use config["data"]["dev"]["gcc"]["version"], not ref (mps, 6/27/19)
+    # For gchp_vs_gcc_refdir use config["data"]["dev"]["gcc"]["version"],
+    # not ref (mps, 6/27/19)
     # =====================================================================
+
     # Diagnostic file directory paths
-    gcc_vs_gcc_refdir = join(
+    gcc_vs_gcc_refdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["ref"]["gcc"]["dir"],
         config["data"]["ref"]["gcc"]["outputs_subdir"],
     )
-    gcc_vs_gcc_devdir = join(
+    gcc_vs_gcc_devdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
         config["data"]["dev"]["gcc"]["outputs_subdir"],
     )
-    gchp_vs_gcc_refdir = join(
+    gchp_vs_gcc_refdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
         config["data"]["dev"]["gcc"]["outputs_subdir"],
     )
-    gchp_vs_gcc_devdir = join(
+    gchp_vs_gcc_devdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["outputs_subdir"],
     )
-    gchp_vs_gchp_refdir = join(
+    gchp_vs_gchp_refdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["ref"]["gchp"]["dir"],
         config["data"]["ref"]["gchp"]["outputs_subdir"],
     )
-    gchp_vs_gchp_devdir = join(
+    gchp_vs_gchp_devdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["outputs_subdir"],
     )
 
     # Restart file directory paths
-    gcc_vs_gcc_refrst = join(
+    gcc_vs_gcc_refrst = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["ref"]["gcc"]["dir"],
         config["data"]["ref"]["gcc"]["restarts_subdir"]
     )
-    gcc_vs_gcc_devrst = join(
+    gcc_vs_gcc_devrst = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
         config["data"]["dev"]["gcc"]["restarts_subdir"]
     )
-    gchp_vs_gcc_refrst = join(
+    gchp_vs_gcc_refrst = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
         config["data"]["dev"]["gcc"]["restarts_subdir"]
     )
-    gchp_vs_gcc_devrst = join(
+    gchp_vs_gcc_devrst = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["restarts_subdir"]
     )
-    gchp_vs_gchp_refrst = join(
+    gchp_vs_gchp_refrst = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["ref"]["gchp"]["dir"],
         config["data"]["ref"]["gchp"]["restarts_subdir"]
     )
-    gchp_vs_gchp_devrst = join(
+    gchp_vs_gchp_devrst = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["restarts_subdir"]
@@ -186,64 +187,81 @@ def run_benchmark_default(config):
     # =====================================================================
     # Path to species_database.yml
     # =====================================================================
-    if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
-        spcdb_dir = join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["dir"]
-        )
-    else:
-        spcdb_dir = join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gcc"]["dir"]
-        )
-
+    if spcdb_dir is None:  
+        if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
+            spcdb_dir = os.path.join(
+                config["paths"]["main_dir"],
+                config["data"]["dev"]["gchp"]["dir"]
+            )
+        else:
+            spcdb_dir = os.path.join(
+                config["paths"]["main_dir"],
+                config["data"]["dev"]["gcc"]["dir"]
+            )
+    spcdb_path = os.path.join(
+        spcdb_dir,
+        "species_database.yml"
+    )
+    if os.path.exists(os.path.join(spcdb_path)):
+        msg = f"Using {spcdb_dir}/species_database.yml!"
+    else
+        msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
+        raise FileNotFoundError(msg)
+                          
     # =====================================================================
     # Benchmark output directories
     # =====================================================================
     # Results directories
     if config["options"]["gcpy_test"]:
-        mainresultsdir = join(".", config["paths"]["results_dir"])
-        gcc_vs_gcc_resultsdir = join(
-            mainresultsdir, config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
+        mainresultsdir = os.path.join(".", config["paths"]["results_dir"])
+        gcc_vs_gcc_resultsdir = os.path.join(
+            mainresultsdir,
+            config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
         )
-        gchp_vs_gchp_resultsdir = join(
-            mainresultsdir, config["options"]["comparisons"]["gchp_vs_gchp"]["dir"]
+        gchp_vs_gchp_resultsdir = os.path.join(
+            mainresultsdir,
+            config["options"]["comparisons"]["gchp_vs_gchp"]["dir"]
         )
-        gchp_vs_gcc_resultsdir = join(mainresultsdir, "GCHP_GCC_comparison")
-        diff_of_diffs_resultsdir = join(mainresultsdir, "GCHP_GCC_diff_of_diffs")
+        gchp_vs_gcc_resultsdir = os.path.join(
+            mainresultsdir,
+            "GCHP_GCC_comparison")
+        diff_of_diffs_resultsdir = os.path.join(
+            mainresultsdir,
+            "GCHP_GCC_diff_of_diffs"
+        )
         if not os.path.exists(mainresultsdir):
             os.mkdir(mainresultsdir)
         # Make copy of benchmark script in results directory
         curfile = os.path.realpath(__file__)
-        dest = join(mainresultsdir, curfile.split("/")[-1])
+        dest = os.path.join(mainresultsdir, curfile.split("/")[-1])
         if not os.path.exists(dest):
             copyfile(curfile, dest)
 
     else:
-        gcc_vs_gcc_resultsdir = join(
+        gcc_vs_gcc_resultsdir = os.path.join(
             config["paths"]["main_dir"],
             config["data"]["dev"]["gcc"]["dir"],
             config["paths"]["results_dir"],
         )
-        gchp_vs_gchp_resultsdir = join(
+        gchp_vs_gchp_resultsdir = os.path.join(
             config["paths"]["main_dir"],
             config["data"]["dev"]["gchp"]["dir"],
             config["paths"]["results_dir"],
             config["options"]["comparisons"]["gchp_vs_gchp"]["dir"],
         )
-        gchp_vs_gcc_resultsdir = join(
+        gchp_vs_gcc_resultsdir = os.path.join(
             config["paths"]["main_dir"],
             config["data"]["dev"]["gchp"]["dir"],
             config["paths"]["results_dir"],
             config["options"]["comparisons"]["gchp_vs_gcc"]["dir"],
         )
-        diff_of_diffs_resultsdir = join(
+        diff_of_diffs_resultsdir = os.path.join(
             config["paths"]["main_dir"],
             config["data"]["dev"]["gchp"]["dir"],
             config["paths"]["results_dir"],
             "GCHP_GCC_diff_of_diffs",
         )
-        base_gchp_resultsdir = join(
+        base_gchp_resultsdir = os.path.join(
             config["paths"]["main_dir"],
             config["data"]["dev"]["gchp"]["dir"],
             config["paths"]["results_dir"],
@@ -273,19 +291,19 @@ def run_benchmark_default(config):
                 if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
                     # Make copy of benchmark script in results directory
                     curfile = os.path.realpath(__file__)
-                    dest = join(resdir, curfile.split("/")[-1])
+                    dest = os.path.join(resdir, curfile.split("/")[-1])
                     if exists(dest):
                         copyfile(curfile, dest)
 
-    gcc_vs_gcc_tablesdir = join(
+    gcc_vs_gcc_tablesdir = os.path.join(
         gcc_vs_gcc_resultsdir,
         config["options"]["comparisons"]["gcc_vs_gcc"]["tables_subdir"],
     )
-    gchp_vs_gchp_tablesdir = join(
+    gchp_vs_gchp_tablesdir = os.path.join(
         gchp_vs_gchp_resultsdir,
         config["options"]["comparisons"]["gchp_vs_gchp"]["tables_subdir"],
     )
-    gchp_vs_gcc_tablesdir = join(
+    gchp_vs_gcc_tablesdir = os.path.join(
         gchp_vs_gcc_resultsdir,
         config["options"]["comparisons"]["gchp_vs_gcc"]["tables_subdir"],
     )
@@ -371,22 +389,22 @@ def run_benchmark_default(config):
     # ======================================================================
 
     gcc_vs_gcc_sigdiff = [
-        join(gcc_vs_gcc_resultsdir, "SigDiffs_sfc.txt"),
-        join(gcc_vs_gcc_resultsdir, "SigDiffs_500hpa.txt"),
-        join(gcc_vs_gcc_resultsdir, "SigDiffs_zonalmean.txt"),
-        join(gcc_vs_gcc_resultsdir, "SigDiffs_emissions.txt"),
+        os.path.join(gcc_vs_gcc_resultsdir, "SigDiffs_sfc.txt"),
+        os.path.join(gcc_vs_gcc_resultsdir, "SigDiffs_500hpa.txt"),
+        os.path.join(gcc_vs_gcc_resultsdir, "SigDiffs_zonalmean.txt"),
+        os.path.join(gcc_vs_gcc_resultsdir, "SigDiffs_emissions.txt"),
     ]
     gchp_vs_gcc_sigdiff = [
-        join(gchp_vs_gcc_resultsdir, "SigDiffs_sfc.txt"),
-        join(gchp_vs_gcc_resultsdir, "SigDiffs_500hpa.txt"),
-        join(gchp_vs_gcc_resultsdir, "SigDiffs_zonalmean.txt"),
-        join(gchp_vs_gcc_resultsdir, "SigDiffs_emissions.txt"),
+        os.path.join(gchp_vs_gcc_resultsdir, "SigDiffs_sfc.txt"),
+        os.path.join(gchp_vs_gcc_resultsdir, "SigDiffs_500hpa.txt"),
+        os.path.join(gchp_vs_gcc_resultsdir, "SigDiffs_zonalmean.txt"),
+        os.path.join(gchp_vs_gcc_resultsdir, "SigDiffs_emissions.txt"),
     ]
     gchp_vs_gchp_sigdiff = [
-        join(gchp_vs_gchp_resultsdir, "SigDiffs_sfc.txt"),
-        join(gchp_vs_gchp_resultsdir, "SigDiffs_500hpa.txt"),
-        join(gchp_vs_gchp_resultsdir, "SigDiffs_zonalmean.txt"),
-        join(gchp_vs_gchp_resultsdir, "SigDiffs_emissions.txt"),
+        os.path.join(gchp_vs_gchp_resultsdir, "SigDiffs_sfc.txt"),
+        os.path.join(gchp_vs_gchp_resultsdir, "SigDiffs_500hpa.txt"),
+        os.path.join(gchp_vs_gchp_resultsdir, "SigDiffs_zonalmean.txt"),
+        os.path.join(gchp_vs_gchp_resultsdir, "SigDiffs_emissions.txt"),
     ]
 
     # ======================================================================
