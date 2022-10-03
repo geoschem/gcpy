@@ -187,7 +187,7 @@ def run_benchmark_default(config):
     # =====================================================================
     # Path to species_database.yml
     # =====================================================================
-    if spcdb_dir is None:  
+    if spcdb_dir is None:
         if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
             spcdb_dir = os.path.join(
                 config["paths"]["main_dir"],
@@ -207,7 +207,7 @@ def run_benchmark_default(config):
     else
         msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
         raise FileNotFoundError(msg)
-                          
+
     # =====================================================================
     # Benchmark output directories
     # =====================================================================
