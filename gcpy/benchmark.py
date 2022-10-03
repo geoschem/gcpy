@@ -4276,7 +4276,8 @@ def get_species_database_dir(config):
         "species_database.yml"
     )
     if os.path.exists(os.path.join(spcdb_path)):
-        msg = f"Using {spcdb_dir}/species_database.yml!"
+        msg = f"Using species dataabase {spcdb_dir}/species_database.yml!"
+        print(msg)
         return spcdb_dir
     else:
         msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
