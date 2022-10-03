@@ -85,7 +85,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # =====================================================================
     # Path to species_database.yml
     # =====================================================================
-    if spcdb_dir is None:  
+    if spcdb_dir is None:
         if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
             spcdb_dir = os.path.join(
                 config["paths"]["main_dir"],

@@ -74,7 +74,7 @@ data:
       resolution: c48
 #
 # options: Specify the types of comparisons to perform
-# 
+#
 options:
   bmk_type: TransportTracersBenchmark
   gcpy_test: True
@@ -94,7 +94,7 @@ options:
     # GCHP vs GCC diff of diffs not included in 1-yr tt benchmark
 #
 # outputs: Types of output to generate (plots/tables)
-# 
+#
   outputs:
     plot_conc: True
     plot_wetdep: True
