@@ -22,7 +22,7 @@
 #
 paths:
   main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon
-  results_dir: /n/holyscratch01/jacob_lab/ryantosca/bmk/BenchmarkResults_1mo 
+  results_dir: /path/to/BenchmarkResults
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
   spcdb_dir: None
 #
