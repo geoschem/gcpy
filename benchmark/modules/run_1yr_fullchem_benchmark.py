@@ -102,7 +102,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     )
     if os.path.exists(os.path.join(spcdb_path)):
         msg = f"Using {spcdb_dir}/species_database.yml!"
-    else
+    else:
         msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
         raise FileNotFoundError(msg)
 
