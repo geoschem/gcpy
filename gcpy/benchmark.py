@@ -725,7 +725,7 @@ def make_benchmark_conc_plots(
     if "SpeciesConc_PFE" in devds.data_vars.keys():
         devds = devds.rename({"SpeciesConc_PFE": "SpeciesConc_pFe"})
     # -----------------------------------------------------------------
-        
+
     # Open met datasets if passed as arguments
     refmetds = None
     devmetds = None
@@ -4238,3 +4238,46 @@ def make_benchmark_mass_conservation_table(
         print(' Min mass =  {:2.13f} Tg'.format(min_mass), file=f)
         print(' Abs diff =  {:>16.3f} g'.format(absdiff), file=f)
         print(' Pct diff =  {:>16.10f} %'.format(pctdiff), file=f)
+
+
+def get_species_database_dir(config):
+    """
+    Returns the directory in which the species_database.yml file is
+    located.  If "paths:spcdb_dir" (as specified in the benchmark YAML
+    configuration file) is None, then it will look for species_database.yml
+    in a default location (i.e. in one of the Dev folders).
+
+    Args:
+    -----
+    config: dict
+        Dictionary containing configuration information as read in
+        from a benchmark configuration YAML file.
+
+    Returns:
+    --------
+    spcdb_dir: str
+        Path to the directory in which the species_database.yml file
+        is located.
+    """
+    spcdb_dir = config["paths"]["spcdb_dir"]
+    if "DEFAULT" in spcdb_dir.upper():
+        if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
+            spcdb_dir = os.path.join(
+                config["paths"]["main_dir"],
+                config["data"]["dev"]["gchp"]["dir"]
+            )
+        else:
+            spcdb_dir = os.path.join(
+                config["paths"]["main_dir"],
+                config["data"]["dev"]["gcc"]["dir"]
+            )
+    spcdb_path = os.path.join(
+        spcdb_dir,
+        "species_database.yml"
+    )
+    if os.path.exists(os.path.join(spcdb_path)):
+        msg = f"Using {spcdb_dir}/species_database.yml!"
+        return spcdb_dir
+    else:
+        msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
+        raise FileNotFoundError(msg)
