@@ -112,7 +112,8 @@ def run_benchmark_default(config):
         config : dict
             Contains configuration for 1mon benchmark from yaml file.
     """
-    gchp_metname = "StateMet"
+    # Folder in which the species_database.yml file is found
+    spcdb_dir = bmk.get_species_database_dir(config)
 
     # =====================================================================
     # Data directories
@@ -183,30 +184,6 @@ def run_benchmark_default(config):
         config["data"]["dev"]["gchp"]["dir"],
         config["data"]["dev"]["gchp"]["restarts_subdir"]
     )
-
-    # =====================================================================
-    # Path to species_database.yml
-    # =====================================================================
-    if spcdb_dir is None:
-        if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
-            spcdb_dir = os.path.join(
-                config["paths"]["main_dir"],
-                config["data"]["dev"]["gchp"]["dir"]
-            )
-        else:
-            spcdb_dir = os.path.join(
-                config["paths"]["main_dir"],
-                config["data"]["dev"]["gcc"]["dir"]
-            )
-    spcdb_path = os.path.join(
-        spcdb_dir,
-        "species_database.yml"
-    )
-    if os.path.exists(os.path.join(spcdb_path)):
-        msg = f"Using {spcdb_dir}/species_database.yml!"
-    else:
-        msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
-        raise FileNotFoundError(msg)
 
     # =====================================================================
     # Benchmark output directories
@@ -762,7 +739,7 @@ def run_benchmark_default(config):
         refmet = get_filepath(gchp_vs_gcc_refdir, "StateMet", gcc_dev_date)
         devmet = get_filepath(
             gchp_vs_gcc_devdir,
-            gchp_metname,
+            "StateMet",
             gchp_dev_date,
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
@@ -1070,14 +1047,14 @@ def run_benchmark_default(config):
         # ==================================================================
         refmet = get_filepath(
             gchp_vs_gchp_refdir,
-            gchp_metname,
+            "StateMet",
             gchp_ref_date,
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
         )
         devmet = get_filepath(
             gchp_vs_gchp_devdir,
-            gchp_metname,
+            "StateMet",
             gchp_dev_date,
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],

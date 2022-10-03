@@ -68,35 +68,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     bmk_mon_strs = ["Jan", "Apr", "Jul", "Oct"]
     bmk_mon_inds = [0, 3, 6, 9]
     bmk_n_months = len(bmk_mon_strs)
-    gchp_metname = "StateMet"
-
-    ########################################################################
-    ###           CONFIGURABLE SETTINGS: ***EDIT AS NEEDED***            ###
-    ########################################################################
 
     # =====================================================================
     # Path to species_database.yml
     # =====================================================================
-    if spcdb_dir is None:  
-        if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
-            spcdb_dir = os.path.join(
-                config["paths"]["main_dir"],
-                config["data"]["dev"]["gchp"]["dir"]
-            )
-        else:
-            spcdb_dir = os.path.join(
-                config["paths"]["main_dir"],
-                config["data"]["dev"]["gcc"]["dir"]
-            )
-    spcdb_path = os.path.join(
-        spcdb_dir,
-        "species_database.yml"
-    )
-    if os.path.exists(os.path.join(spcdb_path)):
-        msg = f"Using {spcdb_dir}/species_database.yml!"
-    else:
-        msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
-        raise FileNotFoundError(msg)
+    spcdb_dir = bmk.get_species_database_dir(config)
 
     # ======================================================================
     # Data directories
@@ -593,7 +569,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         )[0]
         devmet = get_filepaths(
             gchp_vs_gcc_devdir,
-            gchp_metname,
+            "StateMet",
             all_months_gchp_dev,
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
@@ -813,14 +789,14 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         refmet = get_filepaths(
             gchp_vs_gchp_refdir,
-            gchp_metname,
+            "StateMet",
             all_months_gchp_ref,
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"]
         )[0]
         devmet = get_filepaths(
             gchp_vs_gchp_devdir,
-            gchp_metname,
+            "StateMet",
             all_months_gchp_dev,
             is_gchp=True,
             gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
