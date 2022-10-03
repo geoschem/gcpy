@@ -1097,3 +1097,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
+
+    # ==================================================================
+    # Print a message indicating that the benchmarks finished
+    # ==================================================================
+    print("\n %%%% All requested benchmark plots/tables created! %%%%")

@@ -1420,6 +1420,12 @@ def run_benchmark_default(config):
             )
 
 
+    # ==================================================================
+    # Print a message indicating that the benchmarks finished
+    # ==================================================================
+    print("\n %%%% All requested benchmark plots/tables created! %%%%")
+
+
 def main():
     """
     Driver program. Determines which benchmark script script to call
