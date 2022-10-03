@@ -4,7 +4,7 @@
 #SBATCH -N 1
 #SBATCH -t 0-3:00
 #SBATCH -p huce_intel
-#SBATCH --mem=12000
+#SBATCH --mem=50000
 #SBATCH --mail-type=END
 
 #============================================================================
@@ -14,6 +14,9 @@
 #
 # You can modify the SLURM parameters above for your setup.
 #============================================================================
+
+# Apply all bash initialization settings
+. ~/.bashrc
 
 # Make sure to set multiple threads; Joblib will use multiple
 # cores to parallelize certain plotting operations.
