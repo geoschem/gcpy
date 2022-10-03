@@ -81,7 +81,7 @@ options:
   gcpy_test: True
   comparisons:
     gcc_vs_gcc:
-      run: False
+      run: True
       dir: GCC_version_comparison
       tables_subdir: Tables
     gchp_vs_gcc:
