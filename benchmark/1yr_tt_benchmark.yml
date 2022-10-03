@@ -1,4 +1,4 @@
----
+&---
 # =====================================================================
 # Benchmark configuration file (**EDIT AS NEEDED**)
 # customize in the following manner:
@@ -24,7 +24,7 @@ paths:
   main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1yr_transporttracer
   results_dir: /path/to/BenchmarkResults
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
-  spcdb_dir: None
+  spcdb_dir: default
 #
 # data : Contains configurations for ref and dev runs
 #   version: version string (avoid spaces; this is used in filenames)
