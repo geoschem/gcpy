@@ -82,7 +82,7 @@ options:
   gcpy_test: True # Specify if this is a gcpy test validation run
   comparisons:
     gcc_vs_gcc: 
-      run: False # True to run this comparison
+      run: True # True to run this comparison
       dir: GCC_version_comparison
       tables_subdir: Tables
     gchp_vs_gcc: 
