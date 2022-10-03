@@ -11,14 +11,15 @@
 # when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
 # =====================================================================
 #
-# Configuration for 1yr fullchem benchmark
+# Configuration for 1yr FullChemBenchmark
 #
 # paths:
-#   main_dir:  High-level directory containing subdirectories with dat
+#   main_dir:    High-level directory containing ref & dev rundirs
 #   results_dir: Directory where plots/tables will be created
 #   weights_dir: Path to regridding weights
-#   spcdb_dir: Path to species_database.yml.  If equal to None, will
-#              look for species_database.yml in a default location.
+#   spcdb_dir:   Folder in which the species_database.yml file is
+#                located.  If set to "default", then will look for
+#                species_database.yml in one of the Dev rundirs.
 #
 paths:
   main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1yr_fullchem
@@ -26,14 +27,14 @@ paths:
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
   spcdb_dir: default
 #
-# data : Contains configurations for ref and dev runs
-#   version: version string (avoid spaces; this is used in filenames)
-#   dir: path to run directory
-#   outputs_subdir: subdirectory w/ GEOS-Chem diagnostic files
-#   restarts_subdir: subdirectory w/ GEOS-Chem restarts
-#   bmk_start: Simulation start date (YYYY-MM-DDThh:mm:ss)
-#   bmk_end: Simulation end date (YYYY-MM-DDThh:mm:ss)
-#   resolution: GCHP resolution string
+# data: Contains configurations for ref and dev runs
+#   version:         Version string (must not contain spaces)
+#   dir:             Path to run directory
+#   outputs_subdir:  Subdirectory w/ GEOS-Chem diagnostic files
+#   restarts_subdir: Subdirectory w/ GEOS-Chem restarts
+#   bmk_start:       Simulation start date (YYYY-MM-DDThh:mm:ss)
+#   bmk_end:         Simulation end date (YYYY-MM-DDThh:mm:ss)
+#   resolution:      GCHP resolution string
 #
 data:
   ref:
