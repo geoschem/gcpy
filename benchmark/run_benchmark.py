@@ -10,16 +10,16 @@ Run this script to generate benchmark comparisons between:
     (3) GCHP vs GCHP
     (4) GCHP vs GCC diff-of-diffs
 
-You can customize this by editing the settings in the corresponding yaml 
+You can customize this by editing the settings in the corresponding yaml
 config file (eg. 1mo_benchmark.yml).
 
 Calling sequence:
 
     ./run_1mo_benchmark.py <path-to-configuration-file>
 
-To test gcpy, copy this script and the corresponding yaml config file 
-anywhere you want to run the test. Set gcpy_test to True at the top 
-of the script. Benchmark artifacts will be created locally in new folder 
+To test gcpy, copy this script and the corresponding yaml config file
+anywhere you want to run the test. Set gcpy_test to True at the top
+of the script. Benchmark artifacts will be created locally in new folder
 called Plots.
 
 Remarks:
@@ -51,7 +51,6 @@ from shutil import copyfile
 import warnings
 from datetime import datetime
 import numpy as np
-import xarray as xr
 from gcpy.util import get_filepath, read_config_file
 import gcpy.ste_flux as ste
 import gcpy.oh_metrics as oh
@@ -59,7 +58,6 @@ import gcpy.benchmark as bmk
 from gcpy.date_time import add_months, is_full_year
 from modules.run_1yr_fullchem_benchmark import run_benchmark as run_1yr_benchmark
 from modules.run_1yr_tt_benchmark import run_benchmark as run_1yr_tt_benchmark
-from gcpy.grid import get_input_res
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -93,11 +91,15 @@ def choose_benchmark_type(config):
     if is_full_year(start, end):
         if config["options"]["bmk_type"] == "FullChemBenchmark":
             run_1yr_benchmark(
-                config, str(start.astype(datetime).year), str(start.astype(datetime).year)
+                config,
+                str(start.astype(datetime).year),
+                str(start.astype(datetime).year)
             )
         else:
             run_1yr_tt_benchmark(
-                config, str(start.astype(datetime).year), str(start.astype(datetime).year)
+                config,
+                str(start.astype(datetime).year),
+                str(start.astype(datetime).year)
             )
     else:
         run_benchmark_default(config)
@@ -333,7 +335,7 @@ def run_benchmark_default(config):
         else:
             print("Error: `is_pre_13.1: True` option only supported for exactly 1 month and 1 year benchmarks")
             sys.exit()
-    
+
     # Dev start used in diagnostic filename
     gcc_dev_date = np.datetime64(config["data"]["dev"]["gcc"]["bmk_start"])
     gchp_dev_date = np.datetime64(config["data"]["dev"]["gchp"]["bmk_start"])
@@ -391,7 +393,7 @@ def run_benchmark_default(config):
     # Print the list of plots & tables to the screen
     # ======================================================================
     print(
-        "The following plots and tables will be created for {}:".format(
+        f"The following plots and tables will be created for {}:".format(
             config["options"]["bmk_type"]
         )
     )
@@ -438,7 +440,7 @@ def run_benchmark_default(config):
             config["options"]["outputs"]["ops_budget_table"] = False
 
         # ==================================================================
-        # GCC vs GCC string for month and year 
+        # GCC vs GCC string for month and year
         # (e.g. "2019-07-01T00:00:00 - 2019-08-01T00:00:00")
         # ==================================================================
         if np.equal(gcc_ref_date, gcc_dev_date) and np.equal(
@@ -719,7 +721,7 @@ def run_benchmark_default(config):
             config["options"]["outputs"]["ops_budget_table"] = False
 
         # ==================================================================
-        # GCHP vs GCC string for month and year 
+        # GCHP vs GCC string for month and year
         # (e.g.  "2019-07-01T00:00:00 - 2019-08-01T00:00:00")
         # ==================================================================
         if np.equal(gcc_dev_date, gchp_dev_date) and np.equal(
@@ -750,8 +752,8 @@ def run_benchmark_default(config):
         )
 
         # Get GCHP grid resolution from met collection file
-        ds_devmet = xr.open_dataset(devmet)
-        gchp_dev_res = str(get_input_res(ds_devmet)[0])
+        #ds_devmet = xr.open_dataset(devmet)
+        #gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
         # ==================================================================
         # GCHP vs GCC species concentration plots
@@ -917,13 +919,17 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCHP vs. GCC global mass tables %%%")
 
             # Filepaths
-            ref = get_filepath(gchp_vs_gcc_refrst, "Restart", gcc_end_dev_date)
+            ref = get_filepath(
+                gchp_vs_gcc_refrst,
+                "Restart",
+                gcc_end_dev_date
+            )
             dev = get_filepath(
                 gchp_vs_gcc_devrst,
                 "Restart",
                 gchp_end_dev_date,
                 is_gchp=True,
-                gchp_res=gchp_dev_res,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
 
@@ -1024,7 +1030,7 @@ def run_benchmark_default(config):
             config["options"]["outputs"]["ops_budget_table"] = False
 
         # ==================================================================
-        # GCHP vs GCHP string for month and year 
+        # GCHP vs GCHP string for month and year
         # (e.g.  "2019-07-01T00:00:00 - 2019-08-01T00:00:00")
         # ==================================================================
         if np.equal(gchp_ref_date, gchp_dev_date) and np.equal(
@@ -1061,10 +1067,10 @@ def run_benchmark_default(config):
         )
 
         # Get GCHP grid resolutions from met collection file
-        ds_refmet = xr.open_dataset(refmet)
-        ds_devmet = xr.open_dataset(devmet)
-        gchp_ref_res = str(get_input_res(ds_refmet)[0])
-        gchp_dev_res = str(get_input_res(ds_devmet)[0])
+        #ds_refmet = xr.open_dataset(refmet)
+        #ds_devmet = xr.open_dataset(devmet)
+        #gchp_ref_res = str(get_input_res(ds_refmet)[0])
+        #gchp_dev_res = str(get_input_res(ds_devmet)[0])
 
         # ==================================================================
         # GCHP vs GCHP species concentration plots
@@ -1266,7 +1272,7 @@ def run_benchmark_default(config):
                 "Restart",
                 gchp_end_ref_date,
                 is_gchp=True,
-                gchp_res=gchp_ref_res,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
             )
             dev = get_filepath(
@@ -1274,7 +1280,7 @@ def run_benchmark_default(config):
                 "Restart",
                 gchp_end_dev_date,
                 is_gchp=True,
-                gchp_res=gchp_dev_res,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
 
@@ -1416,6 +1422,10 @@ def run_benchmark_default(config):
 
 
 def main():
+    """
+    Driver program. Determines which benchmark script script to call
+    for 1-hour, 1-day, 1-month, or 1-year benchmarks.
+    """
     config_filename = sys.argv[1] if len(sys.argv) == 2 else "1mo_benchmark.yml"
     config = read_config_file(config_filename)
     choose_benchmark_type(config)
