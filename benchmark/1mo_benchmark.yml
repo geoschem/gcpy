@@ -42,7 +42,7 @@ data:
       version: GCC_ref
       dir: GCC_ref
       outputs_subdir: OutputDir
-      restarts_subdir: restarts
+      restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
       is_pre_14.0: False
@@ -53,15 +53,15 @@ data:
       restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
-      is_pre_13.1: False # Whether GCHP files are legacy (pre-13.1) format
-      is_pre_14.0: True # Whether GCHP files are legacy (pre-14.0) # format
-      resolution: c48
+      is_pre_13.1: False
+      is_pre_14.0: False
+      resolution: c24
   dev:
     gcc:
       version: GCC_dev 
       dir: GCC_dev
       outputs_subdir: OutputDir
-      restarts_subdir: restarts
+      restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
       is_pre_14.0: False

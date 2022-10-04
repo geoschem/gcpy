@@ -45,6 +45,7 @@ data:
       restarts_subdir: restarts
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
+      is_pre_14.0: True               # for gcpy_test_data, edit if needed
     gchp:
       version: GCHP_ref
       dir: GCHP_ref
@@ -52,9 +53,9 @@ data:
       restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
-      is_pre_13.1: False
-      is_pre_14.0: True
-      resolution: c48
+      is_pre_13.1: True               # for gcpy_test_data, edit if needed
+      is_pre_14.0: True               # for gcpy_test_data, edit if needed
+      resolution: c48                 # for gcpy_test_data, edit if needed
   dev:
     gcc:
       version: GCC_dev
@@ -63,6 +64,7 @@ data:
       restarts_subdir: restarts
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
+      is_pre_14.0: True               # for gcpy_test_data, edit if needed
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
@@ -70,9 +72,9 @@ data:
       restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
-      is_pre_13.1: False
-      is_pre_14.0: False
-      resolution: c48
+      is_pre_13.1: True               # for gcpy_test_data, edit if needed
+      is_pre_14.0: True               # for gcpy_test_data, edit if needed
+      resolution: c48                 # for gcpy_test_data, edit if needed
 #
 # options: Specify the types of comparisons to perform
 #
