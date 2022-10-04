@@ -14,12 +14,13 @@ import sparselt.esmf
 import sparselt.xr
 from joblib import Parallel, delayed
 from tabulate import tabulate
-import gcpy.util as util
+from gcpy import util
 from gcpy.plot import compare_single_level, compare_zonal_mean
 from gcpy.regrid import create_regridders
 from gcpy.grid import get_troposphere_mask
 from gcpy.units import convert_units
 import gcpy.constants as gcon
+import gc
 
 # Save warnings format to undo overwriting built into PyPDF2
 warning_format = warnings.showwarning
@@ -1203,13 +1204,20 @@ def make_benchmark_conc_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    refds = xr.Dataset()
-    devds = xr.Dataset()
-    refmetds = xr.Dataset()
-    devmetds = xr.Dataset()
-    second_ref = xr.Dataset()
-    second_dev = xr.Dataset()
-
+    #refds = xr.Dataset()
+    #devds = xr.Dataset()
+    #refmetds = xr.Dataset()
+    #devmetds = xr.Dataset()
+    #second_ref = xr.Dataset()
+    #second_dev = xr.Dataset()
+    del refds
+    del devds
+    del refmetds
+    del devmetds
+    del second_ref
+    del second_dev
+    gc.collect()
+    
 
 def make_benchmark_emis_plots(
         ref,
@@ -1617,8 +1625,11 @@ def make_benchmark_emis_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    refds = xr.Dataset()
-    devds = xr.Dataset()
+    #refds = xr.Dataset()
+    #devds = xr.Dataset()
+    del refds
+    del devds
+    gc.collect()
 
 
 def make_benchmark_emis_tables(
@@ -1792,11 +1803,16 @@ def make_benchmark_emis_tables(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    refds = xr.Dataset()
-    devds = xr.Dataset()
-    refmetds = xr.Dataset()
-    devmetds = xr.Dataset()
-
+    #refds = xr.Dataset()
+    #devds = xr.Dataset()
+    #refmetds = xr.Dataset()
+    #devmetds = xr.Dataset()
+    del refds
+    del devds
+    del refmetds
+    del devmetds
+    gc.collect()
+    
 
 def make_benchmark_jvalue_plots(
         ref,
@@ -2190,9 +2206,12 @@ def make_benchmark_jvalue_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    refds = xr.Dataset()
-    devds = xr.Dataset()
-
+    #refds = xr.Dataset()
+    #devds = xr.Dataset()
+    del refds
+    del devds
+    gc.collect()
+    
 
 def make_benchmark_aod_plots(
         ref,
@@ -2507,8 +2526,11 @@ def make_benchmark_aod_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    refds = xr.Dataset()
-    devds = xr.Dataset()
+    #refds = xr.Dataset()
+    #devds = xr.Dataset()
+    del refds
+    del devds
+    gc.collect()
 
 
 def make_benchmark_mass_tables(
@@ -2760,9 +2782,12 @@ def make_benchmark_mass_tables(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    refds = xr.Dataset()
-    devds = xr.Dataset()
-
+    #refds = xr.Dataset()
+    #devds = xr.Dataset()
+    del refds
+    del devds
+    gc.collect()
+    
 
 def make_benchmark_oh_metrics(
         ref,
@@ -2987,10 +3012,15 @@ def make_benchmark_oh_metrics(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    refds = xr.Dataset()
-    devds = xr.Dataset()
-    refmetds = xr.Dataset()
-    devmetds = xr.Dataset()
+    #refds = xr.Dataset()
+    #devds = xr.Dataset()
+    #refmetds = xr.Dataset()
+    #devmetds = xr.Dataset()
+    del refds
+    del devds
+    del refmetds
+    del devmetds
+    gc.collect()
 
 
 def make_benchmark_wetdep_plots(
@@ -3272,11 +3302,16 @@ def make_benchmark_wetdep_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    refds = xr.Dataset()
-    devds = xr.Dataset()
-    refmetds = xr.Dataset()
-    devmetds = xr.Dataset()
-
+    #refds = xr.Dataset()
+    #devds = xr.Dataset()
+    #refmetds = xr.Dataset()
+    #devmetds = xr.Dataset()
+    del refds
+    del devds
+    del refmetds
+    del devmetds
+    gc.collect()
+    
 
 def make_benchmark_aerosol_tables(
         devdir,
@@ -3558,10 +3593,14 @@ def make_benchmark_aerosol_tables(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    ds_aer = xr.Dataset()
-    ds_spc = xr.Dataset()
-    ds_met = xr.Dataset()
-
+    #ds_aer = xr.Dataset()
+    #ds_spc = xr.Dataset()
+    #ds_met = xr.Dataset()
+    del ds_aer
+    del ds_spc
+    del ds_met
+    gc.collect()
+    
 
 def make_benchmark_operations_budget(
         refstr,
@@ -4089,10 +4128,14 @@ def make_benchmark_operations_budget(
     # ------------------------------------------
     # Clean up
     # ------------------------------------------
-    df = pd.DataFrame()
-    ref_ds = xr.Dataset()
-    dev_ds = xr.Dataset()
-
+    #df = pd.DataFrame()
+    #ref_ds = xr.Dataset()
+    #dev_ds = xr.Dataset()
+    del df
+    del ref_ds
+    del dev_ds
+    gc.collect()
+    
 
 def make_benchmark_mass_conservation_table(
         datafiles,
@@ -4238,6 +4281,8 @@ def make_benchmark_mass_conservation_table(
         print(' Min mass =  {:2.13f} Tg'.format(min_mass), file=f)
         print(' Abs diff =  {:>16.3f} g'.format(absdiff), file=f)
         print(' Pct diff =  {:>16.10f} %'.format(pctdiff), file=f)
+
+    gc.collect()
 
 
 def get_species_database_dir(config):
