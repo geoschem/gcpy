@@ -263,13 +263,13 @@ def run_benchmark_default(config):
                 config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"],
             ],
         ):
-            if plotting_type and not exists(resdir):
+            if plotting_type and not os.path.exists(resdir):
                 os.mkdir(resdir)
                 if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
                     # Make copy of benchmark script in results directory
                     curfile = os.path.realpath(__file__)
                     dest = os.path.join(resdir, curfile.split("/")[-1])
-                    if exists(dest):
+                    if os.path.exists(dest):
                         copyfile(curfile, dest)
 
     gcc_vs_gcc_tablesdir = os.path.join(
