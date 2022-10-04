@@ -2,7 +2,7 @@
 
 #SBATCH -c 12
 #SBATCH -N 1
-#SBATCH -t 0-3:00
+#SBATCH -t 0-4:00
 #SBATCH -p huce_intel
 #SBATCH --mem=50000
 #SBATCH --mail-type=END

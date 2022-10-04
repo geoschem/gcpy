@@ -7,10 +7,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 ## Unreleased
 ### Added
 - New features in benchmarking scripts (@lizziel, @yantosca)
+  - Force garbage collection at end benchmarking functions (@yantosca)
   - Extra print statements (@lizziel)
   - Diff-of-diffs plots for 1-year benchmarks (@lizziel)
   - sparselt is now a GCPy requirement (@lizziel)
-  - Add switch for 
 - Removed obsolete environment.yml files (@yantosca)
 - Added requirements.yml to docs folder for Sphinx/RTD documentation (@yantosca)
 - New regridding script `regrid_restart_file.py` (@liambindle)
