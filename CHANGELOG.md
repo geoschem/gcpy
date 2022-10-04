@@ -6,7 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased
 ### Added
+- New features in benchmarking scripts (@lizziel, @yantosca)
+  - Extra print statements (@lizziel)
+  - Diff-of-diffs plots for 1-year benchmarks (@lizziel)
+  - sparselt is now a GCPy requirement (@lizziel)
+  - Add switch for 
+- Removed obsolete environment.yml files (@yantosca)
+- Added requirements.yml to docs folder for Sphinx/RTD documentation (@yantosca)
+- New regridding script `regrid_restart_file.py` (@liambindle)
 ### Changed
+- Fixed several issues in benchmarking scripts (@laestrada, @lizziel, @yantosca)
+  - Add OMP_NUM_THREADS and OMP_STACKSIZE in `plot_driver.sh` (@yantosca)
+  - Increase requested memory to 50MB in `plot_driver.sh` (@yantosca)
+  - Benchmark scripts print a message upon completion (@yantosca)
+  - Linted several benchmarking routines with Pylint (@yantosca)
+  - Rewrote algorithm of add_lumped_species_to_dataset for speed (@yantosca)
+  - Can now specify the path to species_database.yml for 1yr benchmarks (@yantosca)
+  - 1-yr benchmarks now save output in subdirs of the same path (@lizziel)
+  - Avoid hardwiring restart file paths in benchmark scripts (@yantosca)
+  - Now use outputs_subdir tag from YAML file for paths to diagnostic files (@yantosca)
+  - Now use restarts_subdir tag from YAML file for paths to restart files (@yantosca)
+  - GCPy now uses proper year for dev in 1-yr benchmarks (@laestrada)
+  - Fixed date string issue in benchmarking scripts (@lizziel)
+  - Updates for new GCHP restart file format (@lizziel)  
+- Updated environment.yml with package versions that work together (@yantosca)
+- Updated the AUTHORS.txt and LICENSE.txt files (@yantosca)
+
 ## [1.2.0] - 2021-09-22
 ### Added
 - Added Parameter for single_panel to support return of all 6 cubedsphere plots
