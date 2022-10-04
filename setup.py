@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+\#!/usr/bin/env python
 
 import os
 import warnings
@@ -91,10 +91,35 @@ setup(
     version = VERSION,
     packages = find_packages(),
     include_package_data=True,
-    install_requires=["xesmf>=0.2.1", "scipy>=1.3.1", "Cartopy>=0.17.0", "pandas>=0.25.1",
-                      "matplotlib>=3.1.1", "tabulate>=0.8.3", "joblib>=0.17.0", "xbpch>=0.3.5",
-                      "numpy>=1.19.1", "PyPDF2>=1.26.0", "sphinx", "sphinx_rtd_theme",
-                      "sphinx-autoapi", "sparselt>=0.1.3"],
+    install_requires=[
+        "cartopy=0.19.0.post1",
+        "dask==2021.7.1",          
+        "docutils==0.16",      
+        "esmf==8.1.1",
+        "esmpy==8.1.1",
+        "h5netcdf==0.11.0",
+        "h5py==3.3.0",
+        "jinja2==3.0.3",
+        "joblib==1.0.1",
+        "matplotlib==3.4.2",
+        "pandas==1.3.1",
+        "netcdf4==1.6.0",
+        "netcdf-fortran==4.5.4",
+        "numpy==1.21.1",
+        "pypdf2==1.26.0",
+        "recommonmark==0.7.1",
+        "requests==2.26.0",
+        "scipy==1.7.0",
+        "sparselt>=0.1.3",
+        "sphinx==3.5.4",
+        "sphinx-autoapi==1.9.0",
+        "sphinx-autobuild==2021.3.14",
+        "sphinxcontrib-bibtex==2.2.0",
+        "sphinx_rtd_theme==0.5.2",
+        "tabulate==0.8.9",
+        "xarray==0.17.0",
+        "xesmf==0.5.1"
+    ],
     classifiers = CLASSIFIERS
 )
 
