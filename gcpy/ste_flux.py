@@ -15,6 +15,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import gcpy.constants as physconsts
+import gc
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -325,3 +326,8 @@ def make_benchmark_ste_table(devstr, files, year,
 
     # Print the STE fluxes
     print_ste(globvars, df)
+
+    # Force garbage collection
+    del globvars
+    del df
+    gc.collect()

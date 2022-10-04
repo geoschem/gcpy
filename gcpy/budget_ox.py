@@ -15,6 +15,7 @@ import xarray as xr
 import gcpy.constants as constants
 from gcpy.grid import get_troposphere_mask
 import gcpy.util as util
+import gc
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -753,3 +754,14 @@ def global_ox_budget(
         drydep,
         metrics
     )
+
+    # ==================================================================
+    # Force garbage collection
+    # ==================================================================
+    del globvars
+    del mass
+    del prodloss
+    del wetdep
+    del drydep
+    del metrics
+    gc.collect()
