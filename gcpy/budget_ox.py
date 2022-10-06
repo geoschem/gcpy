@@ -267,7 +267,7 @@ class _GlobVars:
             area_m2 = self.ds_met["Met_AREAM2"].isel(time=0)
             area_m2 = util.reshape_MAPL_CS(area_m2)
             self.area_m2 = area_m2
-            self.area_cm2 = self.ds_met["Met_AREAM2"] * 1.0e4
+            self.area_cm2 = self.ds_met["Met_AREAM2"].isel(time=0) * 1.0e4
         else:
             self.area_m2 = self.ds_met["AREA"].isel(time=0)
             self.area_cm2 = self.area_m2 * 1.0e4
@@ -359,7 +359,7 @@ def init_and_final_mass(
     g100 = 100.0 / constants.G
     airmass_ini = (deltap_ini * globvars.area_m2.values) * g100
     airmass_end = (deltap_end * globvars.area_m2.values) * g100
-
+    
     # Conversion factors
     mw_ratio = globvars.mw["O3"] / globvars.mw["Air"]
     kg_to_tg = 1.0e-9
@@ -463,11 +463,11 @@ def annual_average_drydep(
     mw_avo = (globvars.mw["Ox"] / constants.AVOGADRO)
     kg_to_tg = 1.0e-9
     area_cm2 = globvars.area_cm2.values
-
-    # Get P(Ox) AND L(Ox) [kg/s]
+    
+    # Get drydep flux of Ox [molec/cm2/s]
     dry = globvars.ds_dry["DryDep_Ox"].values
 
-    # Monthly-weighted conv & LS wet losses [kg HNO3/s]
+    # Convert to Tg Ox 
     dry_tot = 0.0
     for t in range(globvars.N_MONTHS):
         dry_tot += np.nansum(dry[t, :, :] * area_cm2) * globvars.frac_of_a[t]
