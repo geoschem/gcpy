@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - New regridding script `regrid_restart_file.py` (@liambindle)
 ### Changed
 - Fixed several issues in benchmarking scripts (@laestrada, @lizziel, @yantosca)
+  - Fixed bug in `budget_ox.py`; The drydep loss of Ox for GCHP was 12x too high
   - Add OMP_NUM_THREADS and OMP_STACKSIZE in `plot_driver.sh` (@yantosca)
   - Increase requested memory to 50MB in `plot_driver.sh` (@yantosca)
   - Benchmark scripts print a message upon completion (@yantosca)
