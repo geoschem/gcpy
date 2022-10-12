@@ -44,11 +44,11 @@ versions of GCPy on Github, PyPi, and conda-forge.
 #. To package GCPy for publication to PyPi, run the following from the
    root of your local GCPy repository:
 
-.. code-block:: console
+   .. code-block:: console
      
-   $ run python setup.py sdist bdist_wheel
-   $ run twine check dist/*
-   $ run twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+      $ run python setup.py sdist bdist_wheel
+      $ run twine check dist/*
+      $ run twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
    Enter your login credentials for :file:`test.pypi.org` as
    requested. Publishing to test.pypi ensures there are no issues with
