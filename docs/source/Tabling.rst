@@ -1,12 +1,16 @@
+.. _table:
+
+#######
 Tabling
-========
+#######
 
-This page describes the tabling capabilities of GCPy, including possible argument values for every tabling function.
-These functions are primarily used for model benchmarking purposes. All tables are printed to text files.
+This page describes the tabling capabilities of GCPy, including
+possible argument values for every tabling function. These functions are primarily used for model benchmarking purposes. All tables are printed to text files.
 
 
+================
 Emissions tables
-----------------
+================
 
 .. code-block:: python
 
@@ -22,10 +26,10 @@ Emissions tables
         """
 
 Arguments:
-~~~~~~~~~~
+----------
 
 .. option:: reflist: list of str
-  
+
    List with the path names of the emissions file or files
    (multiple months) that will constitute the "Ref"
    (aka "Reference") data set.
@@ -46,7 +50,7 @@ Arguments:
 
 
 Keyword arguments:
-~~~~~~~~~~~~~~~~~~
+------------------
 
 .. option:: dst : str
 
@@ -63,7 +67,7 @@ Keyword arguments:
 
 .. option:: devmet : str
 
-   Path name for dev meteorology  
+   Path name for dev meteorology
 
    Default value: None
 
@@ -97,21 +101,26 @@ Keyword arguments:
    Default value: Directory of GCPy code repository
 
 
-``gcpy.benchmark.make_benchmark_emis_tables()`` generates tables of total emissions categorized by species or by inventory.
-These tables contain total global emissions over the lengths of the Ref and Dev datasets, as well as the differences between
-totals across the two datasets. Passing a list of datasets as Ref or Dev (e.g. multiple months of emissions files) will result
-in printing totals emissions summed across all files in the list. Make sure to update the ``ref_interval`` and/or ``dev_interval``
-arguments if you pass input that does not correspond with 1 31 day month.   
+:code:`gcpy.benchmark.make_benchmark_emis_tables()` generates tables
+of total emissions categorized by species or by inventory. These
+tables contain total global emissions over the lengths of the Ref and
+Dev datasets, as well as the differences between totals across the two
+datasets. Passing a list of datasets as Ref or Dev (e.g. multiple
+months of emissions files) will result in printing totals emissions
+summed across all files in the list. Make sure to update the
+literal:`ref_interval` and/or :literal:`dev_interval` arguments if you
+pass input that does not correspond with 1 31 day month.
 
-
+===========
 Mass Tables
------------
+===========
 
 .. code-block:: python
 
    def make_benchmark_mass_tables(ref, refstr, dev, devstr,
       varlist=None, dst="./benchmark", subdst=None, overwrite=False,
-      verbose=False, label="at end of simulation", spcdb_dir=os.path.dirname(__file__),
+      verbose=False, label="at end of simulation",
+      spcdb_dir=os.path.dirname(__file__),
       ref_met_extra='', dev_met_extra=''
    ):
       """
@@ -120,7 +129,7 @@ Mass Tables
       """
 
 Arguments:
-~~~~~~~~~~
+----------
 
 .. option:: reflist : str
 
@@ -143,7 +152,7 @@ Arguments:
 
 
 Keyword arguments:
-~~~~~~~~~~~~~~~~~~
+------------------
 
 .. option:: varlist : list of str
 
@@ -202,19 +211,26 @@ Keyword arguments:
    Path to dev Met file containing area data for use with restart files
    which do not contain the Area variable.
 
-   Default value: ''         
+   Default value: ''
 
 
-``gcpy.benchmark.make_benchmark_mass_tables`` is used to create global mass tables of GEOS-Chem species from a ``Restart`` file.
-This function will create one table of total mass by species from the earth's surface to the top of the stratosphere and one table for only the troposphere.
-The tables contain total mass for each of the ref and dev datasets in Gg, as well as absolute and percentage difference between the two datasets.
-If your restart files do not contain an Area variable (``"AREA`` for GEOS-Chem Classic or ``"Met_AREAM2`` for GCHP) then you will need to use the 
-``ref_met_extra`` and/or ``dev_met_extra`` arguments to pass the paths of NetCDF files containing the corresponding area variables 
-(usually contained in meteorology diagnostic output).
+:code:`gcpy.benchmark.make_benchmark_mass_tables` is used to create
+global mass tables of GEOS-Chem species from a
+:literal:`Restart` file. This function will create one table of total
+mass by species from the earth's surface to the top of the
+stratosphere and one table for only the troposphere.
+The tables contain total mass for each of the ref and dev datasets in
+Gg, as well as absolute and percentage difference between the two
+datasets. If your restart files do not contain an Area variable
+(:literal:`AREA` for GEOS-Chem Classic or :literal:`Met_AREAM2` for
+GCHP) then you will need to use the :literal:`ref_met_extra` and/or
+:literal:`dev_met_extra` arguments to pass the paths of NetCDF files
+containing the corresponding area variables (usually contained in
+meteorology diagnostic output).
 
-
+========================
 Operations Budget Tables
-------------------------
+========================
 
 .. code-block:: python
 
@@ -232,7 +248,7 @@ Operations Budget Tables
 
 
 Arguments:
-~~~~~~~~~~
+----------
 
 .. option:: refstr : str
 
@@ -256,6 +272,7 @@ Arguments:
 
 
 Keyword arguments:
+------------------
 
 .. option:: benchmark_type : str
 
@@ -285,11 +302,11 @@ Keyword arguments:
    compute_accum is True.
 
    Default value: ["Chemistry","Convection","EmisDryDep",
-          "Mixing","Transport","WetDep"]
+   "Mixing","Transport","WetDep"]
 
 .. option:: compute_accum : bool
 
-   Optionally turn on/off accumulation calculation. If True, will 
+   Optionally turn on/off accumulation calculation. If True, will
    only compute accumulation if all six GEOS-Chem operations budgets
    are computed. Otherwise a message will be printed warning that
    accumulation will not be calculated.
@@ -321,17 +338,22 @@ Keyword arguments:
 
    Default value: True
 
+:code:`gcpy.benchmark.make_benchmark_operations_budget()` creates
+tables of budgets for species separated by model operation. The tables
+show budgets for each of the ref and dev datasets in Gg, as well as
+absolute and percentage difference between the two datasets.
+Note that total accumulation across all operations will only be
+printed if you set :code:`compute_accum==True` and
+all operations are included in :literal:`operations`. Note also that
+when using the non-local mixing scheme (default), :literal:`'Mixing'`
+includes emissions and dry deposition applied below the
+PBL. :literal:`'EmisDryDep'` therefore only captures fluxes above the
+PBL.  When using full mixing, :literal:`'Mixing'` and
+:literal:`'EmisDryDep'` are fully separated.
 
-
-``gcpy.benchmark.make_benchmark_operations_budget()`` creates tables of budgets for species separated by model operation.
-The tables show budgets for each of the ref and dev datasets in Gg, as well as absolute and percentage difference between the two datasets.
-Note that total accumulation across all operations will only be printed if you set ``compute_accum==True`` and
-all operations are included in ``operations``. Note also that when using the non-local mixing scheme (default), ``'Mixing'`` 
-includes emissions and dry deposition applied below the PBL. ``'EmisDryDep'`` therefore only captures fluxes above the PBL.
-When using full mixing, ``'Mixing'`` and ``'EmisDryDep'`` are fully separated.
-
+===========================
 Aerosol Budgets and Burdens
----------------------------
+===========================
 
 .. code-block:: python
 
@@ -345,8 +367,8 @@ Aerosol Budgets and Burdens
 
 
 Arguments:
-~~~~~~~~~~
-        
+----------
+
 .. option:: devdir: str
 
    Path to development ("Dev") data directory
@@ -369,7 +391,7 @@ Arguments:
 
 .. option:: year : str
 
-   The year of the benchmark simulation (e.g. '2016'). 
+   The year of the benchmark simulation (e.g. '2016').
 
 .. option:: days_per_mon : list of int
 
@@ -377,13 +399,13 @@ Arguments:
 
 
 Keyword arguments:
-~~~~~~~~~~~~~~~~~~
+------------------
 
-.. option:: dst : str 
+.. option:: dst : str
 
    Directory where budget tables will be created.
 
-   Default value: './benchmark'         
+   Default value: './benchmark'
 
 .. option:: overwrite : bool
 
@@ -404,7 +426,11 @@ Keyword arguments:
    Default value: Directory of GCPy code repository
 
 
-``gcpy.benchmark.make_benchmark_aerosol_tables()`` generates two different tables using output from a single dataset. One contains annual mean aerosol burdens in Tg in the stratosphere, 
-troposphere, and combined stratosphere and troposphere. The other table shows annual global mean AOD in the stratosphere, troposphere, and combined
-stratosphere and troposphere. Aerosol species used are pre-defined in ``aod_species.yml``: BCPI, OCPI, SO4, DST1, SALA, and SALC.
-
+:code:`gcpy.benchmark.make_benchmark_aerosol_tables()` generates two
+different tables using output from a single dataset. One
+contains annual mean aerosol burdens in Tg in the stratosphere,
+troposphere, and combined stratosphere and troposphere. The other
+table shows annual global mean AOD in the stratosphere, troposphere,
+and combined stratosphere and troposphere. Aerosol species used are
+pre-defined in :code:`aod_species.yml`: BCPI, OCPI, SO4, DST1, SALA,
+and SALC.
