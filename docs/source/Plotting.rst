@@ -465,7 +465,7 @@ arrays to plot, though you'll need to manually pass grid info in this
 case.
 
 Arguments:
-~~~~~~~~~~
+----------
 
 In addition to the specific arguments listed below, any other keyword
 arguments will be forwarded to :code:`matplotlib.pyplot.imshow()` /
@@ -629,7 +629,7 @@ arguments will be forwarded to :code:`matplotlib.pyplot.imshow()` /
 
 
 Function-specific return value:
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+-------------------------------
 
 :code:`single_panel()` returns the following object:
 
