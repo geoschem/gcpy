@@ -1207,30 +1207,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "is_pre_14.0"]
                 )
 
-                # use initial restart if no checkpoint present (intended for
-                # first month).  need to pass path of meteorology file with
-                # area variable in this scenario
-                dev_extra = ""
-                if not os.path.isfile(devpath):
-                    print(f"WARNING: dev restart not found: {devpath}")
-                    devpath = os.path.join(
-                        gchp_vs_gcc_devrstdir,
-                        "initial_GEOSChem_rst."
-                        + config["data"]["dev"]["gchp"]["resolution"]
-                        + "_benchmark.nc",
-                    )
-                    dev_extra = get_filepath(
-                        gchp_vs_gcc_devrstdir,
-                        "Restart",
-                        bmk_mons_dev[m + 1],
-                        is_gchp=True,
-                        gchp_res=config["data"]["dev"]["gchp"]["resolution"],
-                        gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                            "is_pre_13.1"],
-                        gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
-                            "is_pre_14.0"]
-                    )
-
+                # KLUDGE: ewl, bmy, 13 Oct 2022
+                # Use last GCHP restart file, which has correct area values
+                devareapath = get_filepath(
+                    gchp_vs_gcc_devrstdir,
+                    "Restart",
+                    bmk_end_dev,
+                    is_gchp=True,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                        "is_pre_13.1"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
+                )
+                                
                 # Create tables
                 bmk.make_benchmark_mass_tables(
                     refpath,
@@ -1241,9 +1231,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     subdst=bmk_mon_yr_strs_dev[m],
                     label=f"at 01{bmk_mon_yr_strs_dev[m]}",
                     overwrite=True,
-                    spcdb_dir=spcdb_dir,
-                    dev_met_extra=dev_extra,
-                )
+                    spcdb_dir=spcdb_dir,      
+                    dev_met_extra=devareapath
+                )                             
 
             results = Parallel(n_jobs=-1)(
                 delayed(gchp_vs_gcc_mass_table)(t) for t in range(bmk_n_months)
@@ -1769,28 +1759,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "is_pre_14.0"]
                 )
 
-                # Use initial checkpoint if Ref restart is not present
-                ref_extra = ""
-                if not os.path.isfile(refpath):
-                    print(f"WARNING: ref restart not found: {refpath}")
-                    refpath = os.path.join(
-                        gchp_vs_gchp_refrstdir,
-                        "initial_GEOSChem_rst."
-                        + config["data"]["ref"]["gchp"]["resolution"]
-                        + "_benchmark.nc",
-                    )
-                    ref_extra = get_filepath(
-                        gchp_vs_gchp_refrstdir,
-                        "Restart",
-                        bmk_mons_ref[m + 1],
-                        is_gchp=True,
-                        gchp_res=config["data"]["ref"]["gchp"]["resolution"],
-                        gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
-                            "is_pre_13.1"],
-                        gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
-                            "is_pre_14.0"],
-                    )
-
                 # Dev filepaths
                 devpath = get_filepath(
                     gchp_vs_gchp_devrstdir,
@@ -1804,27 +1772,30 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "is_pre_14.0"]
                 )
 
-                # Use initial checkpoint if Dev restart is not present
-                dev_extra = ""
-                if not os.path.isfile(devpath):
-                    print(f"WARNING: dev restart not found: {devpath}")
-                    devpath = os.path.join(
-                        gchp_vs_gchp_devrstdir,
-                        "initial_GEOSChem_rst."
-                        + config["data"]["dev"]["gchp"]["resolution"]
-                        + "_benchmark.nc",
-                    )
-                    dev_extra = get_filepath(
-                        gchp_vs_gchp_devrstdir,
-                        "Restart",
-                        bmk_mons_dev[m + 1],
-                        is_gchp=True,
-                        gchp_res=config["data"]["dev"]["gchp"]["resolution"],
-                        gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                            "is_pre_13.1"],
-                        gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
-                            "is_pre_14.0"]
-                    )
+                # KLUDGE: ewl, bmy, 13 Oct 2022
+                # Use last GCHP restart file, which has correct area values
+                refareapath = get_filepath(
+                    gchp_vs_gcc_refrstdir,
+                    "Restart",
+                    bmk_end_ref,
+                    is_gchp=True,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                        "is_pre_13.1"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
+                )
+                devareapath = get_filepath(
+                    gchp_vs_gcc_devrstdir,
+                    "Restart",
+                    bmk_end_dev,
+                    is_gchp=True,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
+                        "is_pre_13.1"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
+                )
 
                 # Create tables
                 bmk.make_benchmark_mass_tables(
@@ -1837,8 +1808,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     label=f"at 01{bmk_mon_yr_strs_dev[m]}",
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
-                    ref_met_extra=ref_extra,
-                    dev_met_extra=dev_extra,
+                    ref_met_extra=refareapath,
+                    dev_met_extra=devareapath
                 )
 
             # Run in parallel
