@@ -1,0 +1,4 @@
+/* Sets the color of text above the GEOS-Chem logo to black at top left */
+.wy-side-nav-search a {
+    color: black;
+}

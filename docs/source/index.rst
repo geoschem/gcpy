@@ -1,6 +1,6 @@
-
-Welcome to GCPy's documentation!
-================================
+##############################
+GCPy: GEOS-Chem Python toolkit
+##############################
 
 Welcome to the GCPy ReadTheDocs documentation! This site provides documentation
 on the functionality of GCPy and instructions for common use cases.
@@ -8,11 +8,11 @@ on the functionality of GCPy and instructions for common use cases.
 **GCPy** is a Python-based toolkit containing useful functions for
 working specifically with the **GEOS-Chem** model of atmospheric
 chemistry and composition. GCPy is primarily used for plotting/tabling
-GEOS-Chem output and regridding input files in special cases. For
-documentation on setting up and running GEOS-Chem, please see the
-`GEOS-Chem
-Wiki <http://wiki.seas.harvard.edu/geos-chem/index.php/Main_Page>`__.
+GEOS-Chem output and regridding input files in special cases.
 
+For documentation on setting up and running GEOS-Chem please see our
+`list of manuals for GEOS-Chem and related software
+<https://geos-chem.readthedocs.io/en/latest/geos-chem-shared-docs/supplemental-guides/related-docs.html>`_.
 
 .. toctree::
    :maxdepth: 3
