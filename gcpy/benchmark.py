@@ -2545,8 +2545,8 @@ def make_benchmark_mass_tables(
         verbose=False,
         label="at end of simulation",
         spcdb_dir=os.path.dirname(__file__),
-        ref_met_extra='',
-        dev_met_extra=''
+        ref_met_extra=None,
+        dev_met_extra=None
 ):
     """
     Creates a text file containing global mass totals by species and
@@ -2643,26 +2643,31 @@ def make_benchmark_mass_tables(
     # ==================================================================
     # Make sure that all necessary meteorological variables are found
     # ==================================================================
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+        
+        # Find the area variable in Ref
+        if ref_met_extra is None:
+            ref_area = util.get_area_from_dataset(refds)
+        else:
+            ref_area = util.get_area_from_dataset(
+                xr.open_dataset(
+                    ref_met_extra,
+                    drop_variables=gcon.skip_these_vars
+                )
+            )
 
-    # Find the area variables in Ref and Dev
-    try:
-        ref_area = util.get_area_from_dataset(refds)
-    except ValueError:
-        if ref_met_extra != '':
-            ref_met_extra = xr.open_dataset(ref_met_extra)
-            ref_area = util.get_area_from_dataset(ref_met_extra)
+        # Find the area variable in Dev
+        if dev_met_extra is None:
+            dev_area = util.get_area_from_dataset(devds)
         else:
-            raise ValueError(
-                'Must pass Met data if using a restart file without area')
-    try:
-        dev_area = util.get_area_from_dataset(devds)
-    except ValueError:
-        if dev_met_extra != '':
-            dev_met_extra = xr.open_dataset(dev_met_extra)
-            dev_area = util.get_area_from_dataset(dev_met_extra)
-        else:
-            raise ValueError(
-                'Must pass Met data if using a restart file without area')
+            dev_area = util.get_area_from_dataset(
+                xr.open_dataset(
+                    dev_met_extra,
+                    drop_variables=gcon.skip_these_vars
+                )
+            )
+
     # Find required meteorological variables in Ref
     # (or exit with an error if we can't find them)
     metvar_list = ["Met_DELPDRY", "Met_BXHEIGHT", "Met_TropLev"]
