@@ -373,7 +373,7 @@ One-time setup per grid resolution combination
               # Latlon gridspec file
               ll_grid_info="${grids_dir}/latlon/regular_lat_lon_${ll}.nc"
               if [[ ! -f ${ll_grid_info} ]]; then
-                  echo "Could not find ${cs_grid_info}!"
+                  echo "Could not find ${ll_grid_info}!"
                   exit 1
               fi
 
