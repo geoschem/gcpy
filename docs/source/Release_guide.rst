@@ -20,10 +20,6 @@ versions of GCPy on Github, PyPi, and conda-forge.
    - :file:`benchmark/run_benchmark.py`
    - :file:`benchmark/modules/run_1yr_fullchem_benchmark.py`
    - :file:`benchmark/modules/run_1yr_tt_benchmark.py`
-
-   |br|
-
-#. Update the version number in :file:`docs/source/conf.py`. |br|
    |br|
 
    
