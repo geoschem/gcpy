@@ -1,25 +1,36 @@
 #!/usr/bin/env python
 """
-run_1yr_benchmark.py: Driver script for creating benchmark plots and testing
-                      gcpy 1-year TransportTracers benchmark capability.
+run_1yr_tt_benchmark.py:
+    Script containing code for creating benchmark plots and testing
+    gcpy 1-year TransportTracers benchmark capability.
 
 Run this script to generate benchmark comparisons between:
 
     (1) GCC (aka GEOS-Chem "Classic") vs. GCC
-    (2) GCHP vs GCC (not yet tested)
-    (3) GCHP vs GCHP (not yet tested)
+    (2) GCHP vs GCC
+    (3) GCHP vs GCHP
 
 You can customize this by editing the settings in the corresponding yaml
 config file (eg. 1yr_tt_benchmark.yml).
 
-Calling sequence:
+To generate benchmark output:
 
-    ./run_1yr_tt_benchmark.py <path-to-configuration-file>
+    (1) Copy the gcpy/benchmark/run_benchmark.py script and the
+        1yr_tt_benchmark.yml file anywhere you want to run the test.
 
-To test gcpy, copy this script and the corresponding yaml config file
-anywhere you want to run the test. Set gcpy_test to True at the top
-of the script. Benchmark artifacts will be created locally in new folder
-called Plots.
+    (2) Edit the 1yr_tt_benchmark.yml to point to the proper file paths
+        on your disk space.
+
+    (3) Make sure the /path/to/gcpy/benchmark is in your PYTHONPATH
+        shell environment variable.
+
+    (4) If you wish to use the gcpy test data, then set "gcpy_test: True"
+        in 1yr_tt_benchmark.yml.  If you wish to use actual GEOS-Chem
+        output data, then set "gcpy_test: False".
+
+    (5) Type at the command line
+
+        ./run_benchmark.py 1yr_tt_benchmark.yml
 
 Remarks:
 
@@ -35,7 +46,7 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.2.0. Edit this version ID if releasing
+This script corresponds with GCPy 1.3.0. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -48,7 +59,7 @@ import warnings
 from shutil import copyfile
 from calendar import monthrange
 import numpy as np
-from gcpy.util import get_filepaths
+from gcpy.util import get_filepath, get_filepaths
 from gcpy import benchmark as bmk
 import gcpy.budget_tt as ttbdg
 import gcpy.ste_flux as ste
@@ -128,76 +139,53 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         config["data"]["dev"]["gchp"]["restarts_subdir"]
     )
 
-    # Plots directories
-    if config["options"]["gcpy_test"]:
-        mainresultsdir = os.path.join(".", config["paths"]["results_dir"])
-        gcc_vs_gcc_resultsdir = os.path.join(
-            mainresultsdir,
-            config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
-        )
-        gchp_vs_gcc_resultsdir = os.path.join(
-            mainresultsdir,
-            config["options"]["comparisons"]["gchp_vs_gcc"]["dir"]
-        )
-        gchp_vs_gchp_resultsdir = os.path.join(
-            mainresultsdir,
-            config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
-        )
-        if not os.path.exists(mainresultsdir):
-            os.mkdir(mainresultsdir)
-        # Make copy of benchmark script in results directory
-        curfile = os.path.realpath(__file__)
-        dest = os.path.join(mainresultsdir, curfile.split("/")[-1])
-        if not os.path.exists(dest):
-            copyfile(curfile, dest)
+    # Directories where plots & tables will be created
+    mainresultsdir = os.path.join(
+        config["paths"]["results_dir"]
+    )
+    gcc_vs_gcc_resultsdir = os.path.join(
+        mainresultsdir,
+        config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
+    )
+    gchp_vs_gcc_resultsdir = os.path.join(
+        mainresultsdir,
+        config["options"]["comparisons"]["gchp_vs_gcc"]["dir"]
+    )
+    gchp_vs_gchp_resultsdir = os.path.join(
+        mainresultsdir,
+        config["options"]["comparisons"]["gchp_vs_gchp"]["dir"]
+    )
 
-    else:
-        gcc_vs_gcc_resultsdir = os.path.join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gcc"]["dir"],
-            config["paths"]["results_dir"],
-        )
-        gchp_vs_gchp_resultsdir = os.path.join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["dir"],
-            config["paths"]["results_dir"],
-            config["options"]["comparisons"]["gcc_vs_gcc"]["dir"],
-        )
-        gchp_vs_gcc_resultsdir = os.path.join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["dir"],
-            config["paths"]["results_dir"],
-            config["options"]["comparisons"]["gchp_vs_gcc"]["dir"],
-        )
-        base_gchp_resultsdir = os.path.join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["dir"],
-            config["paths"]["results_dir"],
-        )
-        # make results directories that don't exist
-        for resdir, plotting_type in zip(
-            [
-                gcc_vs_gcc_resultsdir,
-                base_gchp_resultsdir,
-                gchp_vs_gchp_resultsdir,
-                gchp_vs_gcc_resultsdir,
-            ],
-            [
-                config["options"]["comparisons"]["gcc_vs_gcc"]["run"],
-                config["options"]["comparisons"]["gchp_vs_gcc"]["run"]
-                or config["options"]["comparisons"]["gchp_vs_gchp"]["run"],
-                config["options"]["comparisons"]["gchp_vs_gchp"]["run"],
-                config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
-            ],
-        ):
-            if plotting_type and not os.path.exists(resdir):
-                os.mkdir(resdir)
-                if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
-                    # Make copy of benchmark script in results directory
-                    curfile = os.path.realpath(__file__)
-                    dest = os.path.join(resdir, curfile.split("/")[-1])
-                    if not os.path.exists(dest):
-                        copyfile(curfile, dest)
+    # Create the main results directory
+    if not os.path.exists(mainresultsdir):
+        os.mkdir(mainresultsdir)
+
+    # Make copy of benchmark script in results directory
+    curfile = os.path.realpath(__file__)
+    dest = os.path.join(mainresultsdir, curfile.split("/")[-1])
+    if not os.path.exists(dest):
+        copyfile(curfile, dest)
+
+    # Create results directories that don't exist,
+    # and place a copy of this file in each results directory
+    resdir_list = [
+        gcc_vs_gcc_resultsdir,
+        gchp_vs_gcc_resultsdir,
+        gchp_vs_gchp_resultsdir
+    ]
+    comparisons_list =  [
+        config["options"]["comparisons"]["gcc_vs_gcc"]["run"],
+        config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
+        config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
+    ]
+    for resdir, plotting_type in zip(resdir_list, comparisons_list):
+        if plotting_type and not os.path.exists(resdir):
+            os.mkdir(resdir)
+            if resdir in resdir_list:
+                curfile = os.path.realpath(__file__)
+                dest = os.path.join(resdir, curfile.split("/")[-1])
+                if not os.path.exists(dest):
+                    copyfile(curfile, dest)
 
     # Tables directories
     gcc_vs_gcc_tablesdir = os.path.join(
@@ -1070,19 +1058,37 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )[0]
 
+            # KLUDGE: ewl, bmy, 14 Oct 2022
+            # Read the AREA from the restart file at the end of the
+            # simulation.  Due to a GCHP bug, intermediate restarts
+            # have AREA with all zeroes.
+            areapath = get_filepath(
+                gchp_vs_gcc_devrstdir,
+                "Restart",
+                bmk_end_dev,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+            )
+
             # Pick output folder
             if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
                 tablesdir = gchp_vs_gcc_tablesdir
             else:
                 tablesdir = gchp_vs_gchp_tablesdir
 
-            # Create table
+            # KLUDGE: ewl, bmy, 14 Oct 2022
+            # Read the AREA from the restart file at the end of the
+            # simulation.  Due to a GCHP bug, intermediate restarts
+            # have AREA with all zeroes.
             bmk.make_benchmark_mass_conservation_table(
                 datafiles,
                 config["data"]["dev"]["gchp"]["dir"],
                 dst=tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                areapath=areapath
             )
 
     # ==================================================================
