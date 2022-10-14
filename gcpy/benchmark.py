@@ -1204,12 +1204,6 @@ def make_benchmark_conc_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    #refds = xr.Dataset()
-    #devds = xr.Dataset()
-    #refmetds = xr.Dataset()
-    #devmetds = xr.Dataset()
-    #second_ref = xr.Dataset()
-    #second_dev = xr.Dataset()
     del refds
     del devds
     del refmetds
@@ -1217,7 +1211,7 @@ def make_benchmark_conc_plots(
     del second_ref
     del second_dev
     gc.collect()
-    
+
 
 def make_benchmark_emis_plots(
         ref,
@@ -1625,8 +1619,6 @@ def make_benchmark_emis_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    #refds = xr.Dataset()
-    #devds = xr.Dataset()
     del refds
     del devds
     gc.collect()
@@ -1803,16 +1795,12 @@ def make_benchmark_emis_tables(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    #refds = xr.Dataset()
-    #devds = xr.Dataset()
-    #refmetds = xr.Dataset()
-    #devmetds = xr.Dataset()
     del refds
     del devds
     del refmetds
     del devmetds
     gc.collect()
-    
+
 
 def make_benchmark_jvalue_plots(
         ref,
@@ -2206,12 +2194,10 @@ def make_benchmark_jvalue_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    #refds = xr.Dataset()
-    #devds = xr.Dataset()
     del refds
     del devds
     gc.collect()
-    
+
 
 def make_benchmark_aod_plots(
         ref,
@@ -2526,8 +2512,6 @@ def make_benchmark_aod_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    #refds = xr.Dataset()
-    #devds = xr.Dataset()
     del refds
     del devds
     gc.collect()
@@ -2645,7 +2629,7 @@ def make_benchmark_mass_tables(
     # ==================================================================
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=xr.SerializationWarning)
-        
+
         # Find the area variable in Ref
         if ref_met_extra is None:
             ref_area = util.get_area_from_dataset(refds)
@@ -2787,12 +2771,10 @@ def make_benchmark_mass_tables(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    #refds = xr.Dataset()
-    #devds = xr.Dataset()
     del refds
     del devds
     gc.collect()
-    
+
 
 def make_benchmark_oh_metrics(
         ref,
@@ -3017,10 +2999,6 @@ def make_benchmark_oh_metrics(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    #refds = xr.Dataset()
-    #devds = xr.Dataset()
-    #refmetds = xr.Dataset()
-    #devmetds = xr.Dataset()
     del refds
     del devds
     del refmetds
@@ -3307,16 +3285,12 @@ def make_benchmark_wetdep_plots(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    #refds = xr.Dataset()
-    #devds = xr.Dataset()
-    #refmetds = xr.Dataset()
-    #devmetds = xr.Dataset()
     del refds
     del devds
     del refmetds
     del devmetds
     gc.collect()
-    
+
 
 def make_benchmark_aerosol_tables(
         devdir,
@@ -3598,14 +3572,11 @@ def make_benchmark_aerosol_tables(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    #ds_aer = xr.Dataset()
-    #ds_spc = xr.Dataset()
-    #ds_met = xr.Dataset()
     del ds_aer
     del ds_spc
     del ds_met
     gc.collect()
-    
+
 
 def make_benchmark_operations_budget(
         refstr,
@@ -4133,20 +4104,18 @@ def make_benchmark_operations_budget(
     # ------------------------------------------
     # Clean up
     # ------------------------------------------
-    #df = pd.DataFrame()
-    #ref_ds = xr.Dataset()
-    #dev_ds = xr.Dataset()
     del df
     del ref_ds
     del dev_ds
     gc.collect()
-    
+
 
 def make_benchmark_mass_conservation_table(
         datafiles,
         runstr,
         dst="./benchmark",
         overwrite=False,
+        areapath=None,
         spcdb_dir=os.path.dirname(__file__)
 ):
     """
@@ -4177,6 +4146,12 @@ def make_benchmark_mass_conservation_table(
             Set this flag to True to overwrite files in the
             destination folder (specified by the dst argument).
             Default value: False
+        areapath: str
+            Path to a restart file containing surface area data.
+            Default value: None
+        spcdb_dir: str
+            Path to the species_database.yml
+            Default value: points to gcpy/gcpy folder
     """
 
     # ==================================================================
@@ -4208,6 +4183,13 @@ def make_benchmark_mass_conservation_table(
     masses = []
 
     # ==================================================================
+    # Make sure that surface area data is found
+    # ==================================================================
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+
+
+    # ==================================================================
     # Calculate global mass for the tracer at all restart dates
     # ==================================================================
     for f in datafiles:
@@ -4217,12 +4199,22 @@ def make_benchmark_mass_conservation_table(
         #datestr = str(pd.to_datetime(ds.time.values[0]))
         #dates.append(datestr[:4] + '-' + datestr[5:7] + '-' + datestr[8:10])
 
+        # Find the area variable in Dev
+        if areapath is None:
+            area = util.get_area_from_dataset(ds)
+        else:
+            area = util.get_area_from_dataset(
+                xr.open_dataset(
+                    areapath,
+                    drop_variables=gcon.skip_these_vars
+                )
+            )
+
         # Assume typical restart file name format, but avoid using dates
         # from within files which may be incorrect for the initial restart
         datestr = f.split('/')[-1].split('.')[2][:9]
         dates.append(datestr[:4] + '-' + datestr[4:6] + '-' + datestr[6:8])
 
-        area = util.get_area_from_dataset(ds)
         # Select for GCC or GCHP
         delta_p = ds['Met_DELPDRY'] if 'Met_DELPDRY' in list(ds.data_vars) else ds['DELP_DRY']
 
@@ -4250,9 +4242,11 @@ def make_benchmark_mass_conservation_table(
 
         # Save total global mass
         masses.append(np.sum(da.values))
+
         # Clean up
-        ds = xr.Dataset()
-        da = xr.DataArray()
+        del ds
+        del da
+        gc.collect()
 
     # Calclate max and min mass, absolute diff, percent diff
     max_mass = np.max(masses)
