@@ -243,12 +243,18 @@ One-time setup per grid resolution combination
 
       $ gridspec-create gcs 24
 
-   For uniform global lat-lon grid, specify latitude and longitude:
+   For uniform global lat-lon grid, specify the number of latitude and
+   longitude grid boxes. For a list of optional settings, run the
+   command :command:`gridspec-create latlon --help`.
 
    .. code-block:: console
 
-      $ gridspec-create latlon 90 180
-
+      $ gridspec-create latlon 90 180                # Generic 1 x 1 grid
+      $ gridspec-create latlon 46 72 -dc -pc -hp     # GEOS-Chem Classic 4 x 5
+      $ gridspec-create latlon 91 144 -dc -pc -hp    # GEOS-Chem Classic 2 x 2.5
+      $ gridspec-create latlon 361 576 -dc -pc -hp   # MERRA-2 0.5 x 0.625
+      $ gridspec-create latlon 721 1172 -dc -pc -hp  # GEOS-FP 0.25 x  0.3125
+      
    For stretched grid, specify face side length, stretch factor, and
    target latitude and longitude: 
 
