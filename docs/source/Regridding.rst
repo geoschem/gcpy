@@ -226,60 +226,94 @@ First-time setup
 One-time setup per grid resolution combination
 ----------------------------------------------
 
-#.  Create a folder to store grid files if one does not already
-    exist. Ideally there would be one location per institution to
-    avoid duplicates. |br|
-    |br|
+#. Create a directory structure to store files that you will use in
+   regridding. Ideally this would be in a shared location where all of
+   the GCPy users at your institution coud access it.
 
-#. Change directories to the grid file directory. |br|
-   |br|
+   Navigate to this directory.
 
+   .. code-block:: console
+
+      $ mkdir /path/to/RegridInfo
+
+#. Within this top level directory, create two directories that will
+   store grid information and regridding weights.  Navigate to the
+   grid information folder.
+
+   .. code-block:: console
+   
+      $ mkdir Grids
+      $ mkdir Weights
+      $ cd Grids
+  
 #. Create tilefiles (if cubed-sphere) and grid spec file for each
    input and output grid resolution (see also gridspec README):
 
-   For uniform cubed-sphere global grid, specify face side length:
+   For uniform cubed-sphere global grid, specify face side length.
 
-   .. code-block:: console
+   #. For simplicity, keep all cubed-sphere data in subdirectories
+      of the Grids folder.
 
-      $ gridspec-create gcs 24
+      .. code-block:: console
 
-   For uniform global lat-lon grid, specify the number of latitude and
-   longitude grid boxes. For a list of optional settings, run the
-   command :command:`gridspec-create latlon --help`.
+         $ mkdir c24		   
+         $ gridspec-create gcs 24
+         $ mv c24*.nc c24
 
-   .. code-block:: console
+         $ mkdir c48
+         $ gridspec-create gcs 48
+         $ mv c48*.nc c48
 
-      $ gridspec-create latlon 90 180                # Generic 1 x 1 grid
-      $ gridspec-create latlon 46 72 -dc -pc -hp     # GEOS-Chem Classic 4 x 5
-      $ gridspec-create latlon 91 144 -dc -pc -hp    # GEOS-Chem Classic 2 x 2.5
-      $ gridspec-create latlon 361 576 -dc -pc -hp   # MERRA-2 0.5 x 0.625
-      $ gridspec-create latlon 721 1172 -dc -pc -hp  # GEOS-FP 0.25 x  0.3125
+          ... etc for other grids ...
+
+   #. For cubed-sphere stretched grid, specify face side length,
+      stretch factor, and target latitude and longitude: 
+
+      .. code-block:: console
+
+         $ mkdir sc24		  
+         $ gridspec-create sgcs 24 -s 2 -t 40 -100
+         $ mv *c24*.nc sc24
+         
+   #. For uniform global lat-lon grid, specify the number of latitude and
+      longitude grid boxes. For a list of optional settings, run the
+      command :command:`gridspec-create latlon --help`.
+
+      Create a subdirectory named latlon and move all of your latlon grid
+      specification files there.
+   
+      .. code-block:: console
+
+         $ gridspec-create latlon 90 180                # Generic 1 x 1 grid
+         $ gridspec-create latlon 46 72 -dc -pc -hp     # GEOS-Chem Classic 4 x 5
+         $ gridspec-create latlon 91 144 -dc -pc -hp    # GEOS-Chem Classic 2 x 2.5
+         $ gridspec-create latlon 361 576 -dc -pc -hp   # MERRA-2 0.5 x 0.625
+         $ gridspec-create latlon 721 1172 -dc -pc -hp  # GEOS-FP 0.25 x  0.3125
+
+         $ mkdir latlon
+         $ mv regular_lat_lon*.nc latlon
       
-   For stretched grid, specify face side length, stretch factor, and
-   target latitude and longitude: 
-
-   .. code-block:: console
-
-      $ gridspec-create sgcs 24 -s 2 -t 40 -100
-
 #. (Optional) View contents of grid spec file:
 
    .. code-block:: console
 
-      $ gridspec-dump c24_gridspec.nc
+      $ gridspec-dump c24/c24_gridspec.nc
+      
+      ... etc. for other grids ...
 
-#. Initialize your conda environmnt and load ESMF (included in all
-   GCHP environment files):
+#. Initialize your GCPy conda environmnt (which includes ESMF as a
+   dependency): 
 
    .. code-block:: console
 
       $ conda activate gcpy_env
-      (gcpy-env) $ import esmf
    
-#. Create a folder to store regridding weights if one does not already
-   exist. Ideally there would be one location per institution to avoid
-   duplicates. |br|
-   |br|
+#. Navigate to the directory that will store the regridding
+   weights. (Recall that we created this in created this in step #2.
+
+   .. code-block:: console
+
+      $ cd /path/to/RegriddingFiles/Weights
 
 #. Generate regridding weights (see also sparselt sample data files
    README), specifying the following:
@@ -293,8 +327,19 @@ One-time setup per grid resolution combination
 
    .. code-block:: console
 
-      (gcpy_env) $ ESMF_RegridWeightGen -s c48_gridspec/c48_gridspec.nc -d regular_lat_lon_90x180.nc -m conserve -w esmf_regrid_weights_c48_to_latlon90x180.nc --tilefile_path c48_gridspec
+      (gcpy_env) $ /ESMF_RegridWeightGen                                  \
+                   -s /path/to/RegridInfo/Grids/c48/c48_gridspec.nc       \
+                   -d /path/to/RegridInfo/Grids/regular_lat_lon_90x180.nc \
+                   -m conserve                                            \
+                   -w ./regrid_weights_c48_to_latlon90x180.nc             \
+                   --tilefile_path /path/to/RegridInfo/Grids/c48
 
+#. (Optional) Consider using a bash script such as the one shown below
+   if you need to create regridding weights to/from several grids.
+
+   .. code-block:: bash
+  
+	
 .. _regrid-sparselt-regrid:
 
 Sample regridding script
