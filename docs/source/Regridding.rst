@@ -268,11 +268,13 @@ One-time setup per grid resolution combination
 
       $ gridspec-dump c24_gridspec.nc
 
-#. Load ESMF (included in all GCHP environment files)
+#. Initialize your conda environmnt and load ESMF (included in all
+   GCHP environment files):
 
    .. code-block:: console
 
-      $ import esmpy
+      $ conda activate gcpy_env
+      (gcpy-env) $ import esmf
    
 #. Create a folder to store regridding weights if one does not already
    exist. Ideally there would be one location per institution to avoid
@@ -291,7 +293,7 @@ One-time setup per grid resolution combination
 
    .. code-block:: console
 
-      $ ESMF_RegridWeightGen -s c48_gridspec/c48_gridspec.nc -d regular_lat_lon_90x180.nc -m conserve -w esmf_regrid_weights_c48_to_latlon90x180.nc --tilefile_path c48_gridspec
+      (gcpy_env) $ ESMF_RegridWeightGen -s c48_gridspec/c48_gridspec.nc -d regular_lat_lon_90x180.nc -m conserve -w esmf_regrid_weights_c48_to_latlon90x180.nc --tilefile_path c48_gridspec
 
 .. _regrid-sparselt-regrid:
 
