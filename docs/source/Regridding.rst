@@ -339,71 +339,70 @@ One-time setup per grid resolution combination
 
    .. code-block:: bash
 
-   #!/bin/bash
+      #!/bin/bash
 
-   # Generates regridding weights with ESMF_RegridWeightGen
+      # Generates regridding weights with ESMF_RegridWeightGen
 
-   # The top-level directory containing Grids and Weights subdirectories
-   # (EDIT AS NEEDED)
-   #main_dir="/path/to/RegridInfo"
-   main_dir="."
+      # The top-level directory containing Grids and Weights subdirectories
+      # (EDIT AS NEEDED)
+      main_dir="/path/to/RegridInfo"
 
-   # Subdirectories for grid specifications and regridding weights
-   grids_dir="${main_dir}/Grids"
-   weights_dir="${main_dir}/Weights"
+      # Subdirectories for grid specifications and regridding weights
+      grids_dir="${main_dir}/Grids"
+      weights_dir="${main_dir}/Weights"
 
-   # GCHP cubed-sphere grids (EDIT AS NEEDED)
-   cs_list=(c24 c48 c90 c180 c360)
+      # GCHP cubed-sphere grids (EDIT AS NEEDED)
+      cs_list=(c24 c48 c90 c180 c360)
 
-   # GCClassic lat-lon grids (EDIT AS NEEDED)
-   ll_list=(46x72 91x144 361x576 721x1172)
+      # GCClassic lat-lon grids (EDIT AS NEEDED)
+      ll_list=(46x72 91x144 361x576 721x1172)
 
-   # Loop over cubed-sphere grids
-   for cs in ${cs_list[@]}; do
+      # Loop over cubed-sphere grids
+      for cs in ${cs_list[@]}; do
 
-       # Cubed-sphere gridspec file
-       cs_grid_info="${grids_dir}/${cs}/${cs}_gridspec.nc"
-       if [[ ! -f ${cs_grid_info} ]]; then
-   	echo "Could not find ${cs_grid_info}!"
-   	exit 1
-       fi
+          # Cubed-sphere gridspec file
+          cs_grid_info="${grids_dir}/${cs}/${cs}_gridspec.nc"
+          if [[ ! -f ${cs_grid_info} ]]; then
+              echo "Could not find ${cs_grid_info}!"
+              exit 1
+          fi
 
-       # Loop over latlon grids
-       for ll in ${ll_list[@]}; do
+          # Loop over latlon grids
+          for ll in ${ll_list[@]}; do
 
-   	# Latlon gridspec file
-           ll_grid_info="${grids_dir}/latlon/regular_lat_lon_${ll}.nc"
-   	if [[ ! -f ${ll_grid_info} ]]; then
-   	    echo "Could not find ${cs_grid_info}!"
-   	    exit 1
-   	fi
+              # Latlon gridspec file
+              ll_grid_info="${grids_dir}/latlon/regular_lat_lon_${ll}.nc"
+              if [[ ! -f ${ll_grid_info} ]]; then
+                  echo "Could not find ${cs_grid_info}!"
+                  exit 1
+              fi
 
-           # Cubed-sphere -> latlon regridding
-   	echo "----"
-   	echo "Regridding from ${cs} to ${ll}"
-           weightfile="${weights_dir}/regrid_weights_${cs}_to_latlon${ll}.nc"
-           ESMF_RegridWeightGen                  \
-               -s ${cs_grid_info}                \
-               -d ${ll_grid_info}                \
-               -m conserve                       \
-               -w ${weightfile}                  \
-               --tilefile_path ${grids_dir}/${cs}
-   	unset weightfile
+              # Cubed-sphere -> latlon regridding
+              echo "----"
+              echo "Regridding from ${cs} to ${ll}"
+              weightfile="${weights_dir}/regrid_weights_${cs}_to_latlon${ll}.nc"
+              ESMF_RegridWeightGen                  \
+                  -s ${cs_grid_info}                \
+                  -d ${ll_grid_info}                \
+                  -m conserve                       \
+                  -w ${weightfile}                  \
+                  --tilefile_path ${grids_dir}/${cs}
+              unset weightfile
 
-           # Latlon -> cubed-sphere regridding
-   	echo "----"
-   	echo "Regridding from ${ll} to ${cs}"
-           weightfile="${weights_dir}/regrid_weights_latlon${ll}_to_${cs}.nc"
-           ESMF_RegridWeightGen                  \
-               -s ${ll_grid_info}                \
-               -d ${cs_grid_info}                \
-               -m conserve                       \
-               -w ${weightfile}                  \
-               --tilefile_path ${grids_dir}/${cs}
-   	unset weightfile
+              # Latlon -> cubed-sphere regridding
+              echo "----"
+              echo "Regridding from ${ll} to ${cs}"
+              weightfile="${weights_dir}/regrid_weights_latlon${ll}_to_${cs}.nc"
+              ESMF_RegridWeightGen                  \
+                  -s ${ll_grid_info}                \
+                  -d ${cs_grid_info}                \
+                  -m conserve                       \
+                  -w ${weightfile}                  \
+                  --tilefile_path ${grids_dir}/${cs}
+              unset weightfile
 
-       done
-   done
+          done
+      done
 
 .. _regrid-sparselt-regrid:
 
