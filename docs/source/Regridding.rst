@@ -29,7 +29,7 @@ and :code:`compare_zonal_mean()`.  Note that all regridding in these
 plotting functions only applies to the comparison panels (not the top
 two panels which show data directly from each dataset). There are only
 two scenarios where you will need to pass extra information to GCPy to
-help it determine grids and to regrid when plotting. 
+help it determine grids and to regrid when plotting.
 
 Pass stretched-grid file paths
 ------------------------------
@@ -39,7 +39,7 @@ from grid coordinates. If you are plotting stretched-grid data in
 :code:`compare_single_level()` or :code:`compare_zonal_mean()` (even
 if regridding to another format), you need to use the
 :code:`sg_ref_path` or :code:`sg_dev_path` arguments to pass the path
-of your original stretched-grid restart file to GCPy.  
+of your original stretched-grid restart file to GCPy.
 If using :code:`single_panel()`, pass the file path using
 :code:`sg_path`. Stretched-grid restart files created using GCPy
 contain the specified stretch factor, target longitude, and
@@ -57,7 +57,7 @@ vertical grid, you will need to pass the corresponding `grid
 parameters
 <http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_vertical_grids#Reference_section_for_vertical_grids>`_
 using the :code:`ref_vert_params` or :code:`dev_vert_params` keyword
-arguments.  
+arguments.
 
 Automatic regridding decision process
 -------------------------------------
@@ -65,22 +65,22 @@ Automatic regridding decision process
 When you do not specify a horizontal comparison resolution using the
 :code:`cmpres` argument in :code:`compare_single_level()` and
 :code:`compare_zonal_mean()`, GCPy follows several steps to determine
-what comparison resolution it should use: 
+what comparison resolution it should use:
 
 - If both input grids are lat/lon, use the highest resolution between
-  them (don't regrid if they are the same resolution). 
+  them (don't regrid if they are the same resolution).
 - Else if one grid is lat/lon and the other is cubed-sphere (standard
-  or stretched-grid), use a 1x1.25 lat/lon grid. 
+  or stretched-grid), use a 1x1.25 lat/lon grid.
 - Else if both grids are cubed-sphere and you are plotting zonal
-  means, use a 1x1.25 lat/lon grid. 
+  means, use a 1x1.25 lat/lon grid.
 - Else if both grids are standard cubed-sphere, use the highest
   resolution between them (don't regrid if they are the same
-  resolution). 
+  resolution).
 - Else if one or more grids is a stretched-grid, use the grid of the
-  ref dataset. 
+  ref dataset.
 
 For differing vertical grids, the smaller vertical grid is currently
-used for comparisons. 
+used for comparisons.
 
 ================
 Regridding Files
@@ -92,12 +92,12 @@ between lat/lon and cubed-sphere formats using
 called directly from the command line using :code:`python -m
 gcpy.file_regrid` or as a function
 (:code:`gcpy.file_regrid.file_regrid()`) from a Python script or
-interpreter. The syntax of :code:`file_regrid` is as follows:  
+interpreter. The syntax of :code:`file_regrid` is as follows:
 
 .. code-block:: python
 
    def file_regrid(fin, fout, dim_format_in, dim_format_out,
-   cs_res_out=0, ll_res_out='0x0',  
+   cs_res_out=0, ll_res_out='0x0',
    sg_params_in=[1.0, 170.0, -90.0], sg_params_out=[1.0, 170.0, -90.0]
    ):
    """
@@ -135,7 +135,7 @@ Optional arguments:
 
       The cubed-sphere resolution of the output dataset. Not used if
       dim_format_out is classic.
-      
+
       Default value: 0
 
 .. option:: ll_res_out : str
@@ -168,7 +168,7 @@ format (e.g. standard cubed-sphere checkpoint to stretched-grid
 checkpoint). Note that although the :code:`cs_res_out` and
 :code:`ll_res_out` parameters are technically optional in the
 function, you must specify at least one of these in your call to
-:code:`file_regrid`. 
+:code:`file_regrid`.
 
 As stated previously, you can either call
 :code:`file_regrid.file_regrid()` directly or call it from the command
@@ -189,7 +189,7 @@ factor of 3, a target longitude of 260.0, and a target latitude of
          --dim_format_out checkpoint
 
 .. _regrid-sparselt:
-	 
+
 =====================================
 Regridding with gridspec and sparselt
 =====================================
@@ -207,12 +207,12 @@ First-time setup
    .. code-block:: console
 
       $ pip install git+https://github.com/LiamBindle/gridspec.git
-      
+
 #. Make sure location of installation is added to path in your bashrc
    (or equivalent)
 
    .. code-block:: bash
-   
+
       $ export PATH=/path/to/home/.local/bin:$PATH
 
 #. Install sparselt as a python package.
@@ -222,7 +222,7 @@ First-time setup
       $ conda install -c conda-forge sparselt==0.1.3
 
 .. _regrid-sparselt-gridcombo:
-      
+
 One-time setup per grid resolution combination
 ----------------------------------------------
 
@@ -241,11 +241,11 @@ One-time setup per grid resolution combination
    grid information folder.
 
    .. code-block:: console
-   
+
       $ mkdir Grids
       $ mkdir Weights
       $ cd Grids
-  
+
 #. Create tilefiles (if cubed-sphere) and grid spec file for each
    input and output grid resolution (see also gridspec README):
 
@@ -256,7 +256,7 @@ One-time setup per grid resolution combination
 
       .. code-block:: console
 
-         $ mkdir c24		   
+         $ mkdir c24
          $ gridspec-create gcs 24
          $ mv c24*.nc c24
 
@@ -267,21 +267,21 @@ One-time setup per grid resolution combination
           ... etc for other grids ...
 
    #. For cubed-sphere stretched grid, specify face side length,
-      stretch factor, and target latitude and longitude: 
+      stretch factor, and target latitude and longitude:
 
       .. code-block:: console
 
-         $ mkdir sc24		  
+         $ mkdir sc24
          $ gridspec-create sgcs 24 -s 2 -t 40 -100
          $ mv *c24*.nc sc24
-         
+
    #. For uniform global lat-lon grid, specify the number of latitude and
       longitude grid boxes. For a list of optional settings, run the
       command :command:`gridspec-create latlon --help`.
 
       Create a subdirectory named latlon and move all of your latlon grid
       specification files there.
-   
+
       .. code-block:: console
 
          $ gridspec-create latlon 90 180                # Generic 1 x 1 grid
@@ -292,22 +292,22 @@ One-time setup per grid resolution combination
 
          $ mkdir latlon
          $ mv regular_lat_lon*.nc latlon
-      
+
 #. (Optional) View contents of grid spec file:
 
    .. code-block:: console
 
       $ gridspec-dump c24/c24_gridspec.nc
-      
+
       ... etc. for other grids ...
 
 #. Initialize your GCPy conda environmnt (which includes ESMF as a
-   dependency): 
+   dependency):
 
    .. code-block:: console
 
       $ conda activate gcpy_env
-   
+
 #. Navigate to the directory that will store the regridding
    weights. (Recall that we created this in created this in step #2.
 
@@ -338,8 +338,73 @@ One-time setup per grid resolution combination
    if you need to create regridding weights to/from several grids.
 
    .. code-block:: bash
-  
-	
+
+   #!/bin/bash
+
+   # Generates regridding weights with ESMF_RegridWeightGen
+
+   # The top-level directory containing Grids and Weights subdirectories
+   # (EDIT AS NEEDED)
+   #main_dir="/path/to/RegridInfo"
+   main_dir="."
+
+   # Subdirectories for grid specifications and regridding weights
+   grids_dir="${main_dir}/Grids"
+   weights_dir="${main_dir}/Weights"
+
+   # GCHP cubed-sphere grids (EDIT AS NEEDED)
+   cs_list=(c24 c48 c90 c180 c360)
+
+   # GCClassic lat-lon grids (EDIT AS NEEDED)
+   ll_list=(46x72 91x144 361x576 721x1172)
+
+   # Loop over cubed-sphere grids
+   for cs in ${cs_list[@]}; do
+
+       # Cubed-sphere gridspec file
+       cs_grid_info="${grids_dir}/${cs}/${cs}_gridspec.nc"
+       if [[ ! -f ${cs_grid_info} ]]; then
+   	echo "Could not find ${cs_grid_info}!"
+   	exit 1
+       fi
+
+       # Loop over latlon grids
+       for ll in ${ll_list[@]}; do
+
+   	# Latlon gridspec file
+           ll_grid_info="${grids_dir}/latlon/regular_lat_lon_${ll}.nc"
+   	if [[ ! -f ${ll_grid_info} ]]; then
+   	    echo "Could not find ${cs_grid_info}!"
+   	    exit 1
+   	fi
+
+           # Cubed-sphere -> latlon regridding
+   	echo "----"
+   	echo "Regridding from ${cs} to ${ll}"
+           weightfile="${weights_dir}/regrid_weights_${cs}_to_latlon${ll}.nc"
+           ESMF_RegridWeightGen                  \
+               -s ${cs_grid_info}                \
+               -d ${ll_grid_info}                \
+               -m conserve                       \
+               -w ${weightfile}                  \
+               --tilefile_path ${grids_dir}/${cs}
+   	unset weightfile
+
+           # Latlon -> cubed-sphere regridding
+   	echo "----"
+   	echo "Regridding from ${ll} to ${cs}"
+           weightfile="${weights_dir}/regrid_weights_latlon${ll}_to_${cs}.nc"
+           ESMF_RegridWeightGen                  \
+               -s ${ll_grid_info}                \
+               -d ${cs_grid_info}                \
+               -m conserve                       \
+               -w ${weightfile}                  \
+               --tilefile_path ${grids_dir}/${cs}
+   	unset weightfile
+
+       done
+   done
+
 .. _regrid-sparselt-regrid:
 
 Sample regridding script
@@ -374,4 +439,4 @@ that you can modify.
    ds = sparselt.xr.apply(transform, ds)
 
    # Write xarray DataSet contents to netcdf file.
-   ds.to_netcdf("my_regridded_data.nc")		   
+   ds.to_netcdf("my_regridded_data.nc")
