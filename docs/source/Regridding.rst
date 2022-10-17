@@ -313,7 +313,7 @@ One-time setup per grid resolution combination
 
    .. code-block:: console
 
-      $ cd /path/to/RegriddingFiles/Weights
+      $ cd /path/to/RegridInfo/Weights
 
 #. Generate regridding weights (see also sparselt sample data files
    README), specifying the following:
@@ -333,6 +333,8 @@ One-time setup per grid resolution combination
                    -m conserve                                            \
                    -w ./regrid_weights_c48_to_latlon90x180.nc             \
                    --tilefile_path /path/to/RegridInfo/Grids/c48
+
+      ... etc. for other grid combinations ...
 
 #. (Optional) Consider using a bash script such as the one shown below
    if you need to create regridding weights to/from several grids.
@@ -424,18 +426,17 @@ that you can modify.
 
    # Create a linear transform object from the regridding weights file
    # for the combination of source and target horizontal resolutions.
-   # NOTE: "regrid_weights.nc" is created by ESMF_RegridWeightGen.
    transform = sparselt.esmf.load_weights(
-       'regrid_weights.nc',
+       'path/to/RegridInfo/Weights/regrid_weights_c48_to_latlon90x180.nc',
         input_dims=[('nf', 'Ydim', 'Xdim'), (6, 48, 48)]
         output_dims=[('lat', 'lon'), (90, 180)],
    )
 
    # Open file to regrid as xarray DataSet.
-   ds = xr.open_dataset('my_data.nc')
+   ds = xr.open_dataset('my_data_c48.nc')
 
    # Regrid the DataSet using the transform object.
    ds = sparselt.xr.apply(transform, ds)
 
    # Write xarray DataSet contents to netcdf file.
-   ds.to_netcdf("my_regridded_data.nc")
+   ds.to_netcdf("my_data_latlon90x180.nc")
