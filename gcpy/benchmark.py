@@ -279,7 +279,7 @@ def create_total_emissions_table(
                 )
 
                 # Set Dev to NaN (missing values) everywhere
-                devarray = util.create_dataarray_of_nan(
+                devarray = util.create_blank_dataarray(
                     name=refdata[v].name,
                     sizes=devdata.sizes,
                     coords=devdata.coords,
@@ -299,7 +299,7 @@ def create_total_emissions_table(
                 )
 
                 # Set Ref to NaN (missing values) everywhere
-                refarray = util.create_dataarray_of_nan(
+                refarray = util.create_blank_dataarray(
                     name=devdata[v].name,
                     sizes=refdata.sizes,
                     coords=refdata.coords,
