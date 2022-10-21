@@ -477,6 +477,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "plot_options"]["by_spc_cat"],
                 plot_by_hco_cat=config["options"]["outputs"][
                     "plot_options"]["by_hco_cat"],
+                benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
@@ -501,6 +502,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     plot_by_hco_cat=config["options"]["outputs"][
                         "plot_options"]["by_hco_cat"],
+                    benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )

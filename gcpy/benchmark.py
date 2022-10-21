@@ -1222,6 +1222,7 @@ def make_benchmark_emis_plots(
         subdst=None,
         plot_by_spc_cat=False,
         plot_by_hco_cat=False,
+        benchmark_type="FullChemBenchmark",
         cmpres=None,
         overwrite=False,
         verbose=False,
@@ -1274,6 +1275,10 @@ def make_benchmark_emis_plots(
             according to HEMCO emissions categories (e.g. Anthro,
             Aircraft, Bioburn, etc.)
             Default value: False
+        benchmark_type: str
+            A string denoting the type of benchmark output to plot,
+            either FullChemBenchmark or TransportTracersBenchmark.
+            Default value: "FullChemBenchmark"
         cmpres: string
             Grid resolution at which to compare ref and dev data, e.g. '1x1.25'
         overwrite: bool
@@ -1529,7 +1534,7 @@ def make_benchmark_emis_plots(
     # ==================================================================
     if plot_by_spc_cat:
 
-        catdict = util.get_species_categories()
+        catdict = util.get_species_categories(benchmark_type)
         # in case any emissions are skipped (for use in nested pdf bookmarks)
         warninglist = ([])
         # for checking if emissions species not defined in benchmark category

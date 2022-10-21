@@ -77,10 +77,12 @@ def choose_benchmark_type(config):
     if not (
         config["options"]["bmk_type"] == "FullChemBenchmark"
         or config["options"]["bmk_type"] == "TransportTracersBenchmark"
+        or config["options"]["bmk_type"] == "CH4Benchmark"
     ):
         print(
             f"Error: invalid benchmark type {config['options']['bmk_type']}. "
-            + "Please enter FullChemBenchmark or TransportTracersBenchmark."
+            + "Please enter FullChemBenchmark, TransportTracersBenchmark, or "
+            + "CH4Benchmark."
         )
         sys.exit()
 
@@ -88,7 +90,10 @@ def choose_benchmark_type(config):
     end = np.datetime64(config["data"]["ref"]["gcc"]["bmk_end"])
     # determine benchmark type and run relevant script
     if is_full_year(start, end):
-        if config["options"]["bmk_type"] == "FullChemBenchmark":
+        if (
+            config["options"]["bmk_type"] == "FullChemBenchmark"
+            or config["options"]["bmk_type"] == "CH4Benchmark"
+        ):
             run_1yr_benchmark(
                 config,
                 str(start.astype(datetime).year),
