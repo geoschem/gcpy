@@ -532,7 +532,7 @@ def add_missing_variables(
         for v in refonly:
             if verbose:
                 print(f"Creating array of NaN in devdata for: {v}")
-            dr = create_dataarray_of_nan(
+            dr = create_blank_dataarray(
                 name=refdata[v].name,
                 sizes=devdata.sizes,
                 coords=devdata.coords,
@@ -552,7 +552,7 @@ def add_missing_variables(
         for v in devonly:
             if verbose:
                 print(f"Creating array of NaN in refdata for: {v}")
-            dr = create_dataarray_of_nan(
+            dr = create_blank_dataarray(
                 name=devdata[v].name,
                 sizes=refdata.sizes,
                 coords=refdata.coords,
@@ -1508,17 +1508,19 @@ def get_variables_from_dataset(
     return ds_subset
 
 
-def create_dataarray_of_nan(
+def create_blank_dataarray(
         name,
         sizes,
         coords,
         attrs,
+        fill_value=np.nan,
+        fill_type=np.float64,
         vertical_dim="lev"
 ):
     """
     Given an xarray DataArray dr, returns a DataArray object with
     the same dimensions, coordinates, attributes, and name, but
-    with its data set to missing values (NaN) everywhere.
+    with its data set to missing values (default=NaN) everywhere.
     This is useful if you need to plot or compare two DataArray
     variables, and need to represent one as missing or undefined.
 
@@ -1538,11 +1540,20 @@ def create_dataarray_of_nan(
         Dictionary containing the DataArray variable attributes
         (such as "units", "long_name", etc.).  This can be obtained
         from an xarray Dataset with dr.attrs.
+    fill_value: np.nan or numeric type
+        Value with which the DataArray object will be filled.
+        Default value: np.nan
+    fill_type: numeric type
+        Specifies the numeric type of the DataArray object.
+        Default value: np.float64 (aka "double")
+    vertical_dim: str
+        Specifies the name of the vertical dimension (e.g. "lev", "ilev")
+        Default: "lev"
 
     Returns:
     dr: xarray DataArray
-        The output DataArray object, which will contain NaN values
-        everywhere.  This will denote missing data.
+        The output DataArray object, which will be set to the value
+        specified by the fill_value argument everywhere.
     """
 
     # Save dims and coords into local variables
@@ -1568,12 +1579,16 @@ def create_dataarray_of_nan(
     [new_shape, new_dims] = get_shape_of_data(new_sizes, return_dims=True)
 
     # Create an array full of NaNs of the required size
-    nan_arr = np.empty(new_shape, np.float)
-    nan_arr.fill(np.nan)
+    fill_arr = np.empty(new_shape, dtype=fill_type)
+    fill_arr.fill(fill_value)
 
     # Create a DataArray of NaN's
     return xr.DataArray(
-        nan_arr, name=name, dims=new_dims, coords=new_coords, attrs=attrs
+        fill_arr,
+        name=name,
+        dims=new_dims,
+        coords=new_coords,
+        attrs=attrs
     )
 
 
