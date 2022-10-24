@@ -21,48 +21,58 @@ month_list = ["01", "07"]
 # List of cubed-sphere grids (EDIT AS NEEDED)
 cubed_sphere_grid_list = ["c24", "c48", "c90", "c180", "c360"]
 
-# Loop over simulation types
-for sim in simulation_list:
+# Preserves all global and variable attributes
+with xr.set_options(keep_attrs=True):
 
-    # Loop over months
-    for mm in month_list:
+    # Loop over simulation types
+    for sim in simulation_list:
 
-        # Read input data
-        infile = f"GEOSChem.Restart.{sim}.2019{mm}01_0000z.nc4"
-        print(f"Reading {infile}")
-        ds_in = xr.open_dataset(infile)
+        # Loop over months
+        for mm in month_list:
 
-        # Loop over cubed-sphere grids
-        for cs in cubed_sphere_grid_list:
+            # Read input data
+            infile = f"GEOSChem.Restart.{sim}.2019{mm}01_0000z.nc4"
+            print(f"Reading {infile}")
+            ds_in = xr.open_dataset(infile)
 
-            # Number of grid points per side
-            cs_res = int(cs[1:])
-    
-            # Regridding transform file
-            regrid_file = f"regrid_weights_latlon46x72_to_{cs}.nc"
-            weights_file = join(weights_dir, regrid_file)
-   
-            # Create a linear transform object from the regridding
-            # weights file for the combination of source and target
-            # horizontal resolutions.  NOTE: GCHP restart files use
-            # a grid where lat = 6*cs_res.
-            transform = sparselt.esmf.load_weights(
-                weights_file,
-                input_dims=[('lat', 'lon'), (46, 72)],
-                output_dims=[('lat', 'lon'), (6*cs_res, cs_res)]
-            )
-            
-            # Regrid to cubed-sphere
-            ds_out = sparselt.xr.apply(transform, ds_in)
-            
-            # Write to output resolution 
-            outfile = f"GEOSChem.Restart.{sim}.2019{mm}01_0000z.{cs}.nc4"
-            print(f"Writing {outfile}")
-            ds_out.to_netcdf(outfile)
+            # Rename GCClassic "SpeciesRst_" prefix to GCHP "SPC_" prefix
+            old_to_new_names = {}
+            for v in ds_in.data_vars.keys():
+                if "SpeciesRst_" in v:
+                    old_to_new_names[v] = v.replace("SpeciesRst_", "SPC_")
+            ds_in = ds_in.rename(old_to_new_names)
+
+            # Loop over cubed-sphere grids
+            for cs in cubed_sphere_grid_list:
+
+                # Number of grid points per side
+                cs_res = int(cs[1:])
+
+                # Regridding transform file
+                regrid_file = f"regrid_weights_latlon46x72_to_{cs}.nc"
+                weights_file = join(weights_dir, regrid_file)
+
+                # Create a linear transform object from the regridding
+                # weights file for the combination of source and target
+                # horizontal resolutions.  NOTE: GCHP restart files use
+                # a grid where lat = 6*cs_res.
+                transform = sparselt.esmf.load_weights(
+                    weights_file,
+                    input_dims=[('lat', 'lon'), (46, 72)],
+                    output_dims=[('lat', 'lon'), (6*cs_res, cs_res)]
+                )
+
+                # Regrid to cubed-sphere
+                ds_out = sparselt.xr.apply(transform, ds_in)
+
+                # Write to output resolution
+                outfile = f"GEOSChem.Restart.{sim}.2019{mm}01_0000z.{cs}.nc4"
+                print(f"Writing {outfile}")
+                ds_out.to_netcdf(outfile)
+
+                # Cleanup
+                del transform
+                del ds_out
 
             # Cleanup
-            del transform
-            del ds_out
-
-        # Cleanup
-        del ds_in
+            del ds_in
