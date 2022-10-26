@@ -24,14 +24,12 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
     'Intended Audience :: Science/Research',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 3.6',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
     'Topic :: Scientific/Engineering',
 ]
 
 MAJOR = 1
-MINOR = 2
+MINOR = 3
 MICRO = 0
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
