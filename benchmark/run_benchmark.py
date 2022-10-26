@@ -36,7 +36,7 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.3.1. Edit this version ID if releasing
+This script corresponds with GCPy 1.3.2. Edit this version ID if releasing
 a new version of GCPy.
 """
 
