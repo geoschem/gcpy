@@ -103,7 +103,7 @@ setup(
         "pandas==1.3.1",
         "netcdf4==1.6.0",
         "netcdf-fortran==4.5.4",
-        "numpy==1.21.1",
+        "numpy==1.22.0",
         "pypdf2==1.26.0",
         "recommonmark==0.7.1",
         "requests==2.26.0",
