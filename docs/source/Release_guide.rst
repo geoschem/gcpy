@@ -15,7 +15,7 @@ versions of GCPy on Github, PyPi, and conda-forge.
    following locations:
 
    - :file:`setup.py`
-   - :file:`_version.py`
+   - :file:`gcpy/_version.py`
    - :file:`docs/source/conf.py`
    - :file:`benchmark/run_benchmark.py`
    - :file:`benchmark/modules/run_1yr_fullchem_benchmark.py`
@@ -41,8 +41,9 @@ versions of GCPy on Github, PyPi, and conda-forge.
 
    .. code-block:: console
      
-      $ run python setup.py sdist bdist_wheel
-      $ run twine check dist/*
+      $ conda activate gcpy_env   # or whatever your conda env is named
+      $ python setup.py sdist bdist_wheel
+      $ twine check dist/*
       $ run twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 
    Enter your login credentials for :file:`test.pypi.org` as

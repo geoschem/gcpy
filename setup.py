@@ -30,7 +30,7 @@ CLASSIFIERS = [
 
 MAJOR = 1
 MINOR = 3
-MICRO = 0
+MICRO = 2
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
 VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, EXTRA)
@@ -90,7 +90,7 @@ setup(
     packages = find_packages(),
     include_package_data=True,
     install_requires=[
-        "cartopy=0.19.0.post1",
+        "cartopy==0.19.0.post1",
         "dask==2021.7.1",          
         "docutils==0.16",      
         "esmf==8.1.1",
