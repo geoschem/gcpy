@@ -104,7 +104,7 @@ setup(
         "netcdf4==1.6.0",
         "netcdf-fortran==4.5.4",
         "numpy==1.21.1",
-        "pypdf2==1.26.0",
+        "pypdf2==1.27.5",
         "recommonmark==0.7.1",
         "requests==2.26.0",
         "scipy==1.7.0",
