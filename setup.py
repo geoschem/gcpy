@@ -98,7 +98,7 @@ setup(
         "h5netcdf==0.11.0",
         "h5py==3.3.0",
         "jinja2==3.0.3",
-        "joblib==1.0.1",
+        "joblib==1.2.0",
         "matplotlib==3.4.2",
         "pandas==1.3.1",
         "netcdf4==1.6.0",
