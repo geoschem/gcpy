@@ -5,6 +5,7 @@ Regrids a 4x5 GEOS-Chem Classic restart file to cubed-sphere resolutions.
 
 # Imports
 from os.path import join
+import numpy as np
 import xarray as xr
 import sparselt.esmf
 import sparselt.xr
@@ -39,7 +40,8 @@ with xr.set_options(keep_attrs=True):
             old_to_new_names = {}
             for v in ds_in.data_vars.keys():
                 if "SpeciesRst_" in v:
-                    old_to_new_names[v] = v.replace("SpeciesRst_", "SPC_")
+                    new_name = v.replace("SpeciesRst_", "SPC_")
+                    old_to_new_names[v] = new_name
             ds_in = ds_in.rename(old_to_new_names)
 
             # Loop over cubed-sphere grids
@@ -65,8 +67,17 @@ with xr.set_options(keep_attrs=True):
                 # Regrid to cubed-sphere
                 ds_out = sparselt.xr.apply(transform, ds_in)
 
+                # Redefine coordinate arrays to be consistent
+                # with GCHP restart file expectations
+                coords_dict = {
+                    "lon": np.arange(1, cs_res+1, dtype=np.float64),
+                    "lat": np.arange(1, 6*cs_res+1, dtype=np.float64),
+                    "lev": np.arange(1, 73, dtype=np.float64),
+                }
+                ds_out = ds_out.assign_coords(coords_dict)
+
                 # Write to output resolution
-                outfile = f"GEOSChem.Restart.{sim}.2019{mm}01_0000z.{cs}.nc4"
+                outfile = f"GEOSChem.Restart.{sim}.2015{mm}01_0000z.{cs}.nc4"
                 print(f"Writing {outfile}")
                 ds_out.to_netcdf(outfile)
 
