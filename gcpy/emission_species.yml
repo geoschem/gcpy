@@ -1,50 +1,52 @@
-ACET: Tg
-ALD2: Tg
-ALK4: Tg
-BCPI: Tg
-BCPO: Tg
-BENZ: Tg
-C2H6: Tg
-C3H8: Tg
-CH2Br2: Tg
-CH2O: Tg
-CH4: Tg
-CHBr3: Tg
-CO: Tg
-DMS: Tg
-DST1: Tg
-DST2: Tg
-DST3: Tg
-DST4: Tg
-EOH: Tg
-ETNO3: Tg
-GLYC: Tg
-GLYX: Tg
-HAC: Tg
-HCOOH: Tg
-HNO2: Tg
-HNO3: Tg
-ISOP: Tg
-LIMO: Tg
-MACR: Tg
-MEK: Tg
-MENO3: Tg
-MGLY: Tg
-MTPA: Tg
-MTPO: Tg
-NH3: Tg
-'NO': Tg
-NO2: Tg
-OCPI: Tg
-OCPO: Tg
-PRPE: Tg
-RCHO: Tg
-SALA: Tg
-SALC: Tg
-SO2: Tg
-SO4: Tg
-SOAP: Tg
-SOAS: Tg
-TOLU: Tg
-XYLE: Tg
-pFe: Tg
+FullChemBenchmark:
+  ACET: Tg
+  ALD2: Tg
+  ALK4: Tg
+  BCPI: Tg
+  BCPO: Tg
+  BENZ: Tg
+  C2H6: Tg
+  C3H8: Tg
+  CH2Br2: Tg
+  CH2O: Tg
+  CHBr3: Tg
+  CO: Tg
+  DMS: Tg
+  DST1: Tg
+  DST2: Tg
+  DST3: Tg
+  DST4: Tg
+  EOH: Tg
+  ETNO3: Tg
+  GLYC: Tg
+  GLYX: Tg
+  HAC: Tg
+  HCOOH: Tg
+  HNO2: Tg
+  HNO3: Tg
+  ISOP: Tg
+  LIMO: Tg
+  MACR: Tg
+  MEK: Tg
+  MENO3: Tg
+  MGLY: Tg
+  MTPA: Tg
+  MTPO: Tg
+  NH3: Tg
+  'NO': Tg
+  NO2: Tg
+  OCPI: Tg
+  OCPO: Tg
+  PRPE: Tg
+  RCHO: Tg
+  SALA: Tg
+  SALC: Tg
+  SO2: Tg
+  SO4: Tg
+  SOAP: Tg
+  SOAS: Tg
+  TOLU: Tg
+  XYLE: Tg
+  pFe: Tg
+CH4Benchmark:
+  CH4: Tg
