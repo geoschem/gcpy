@@ -527,7 +527,7 @@ def run_benchmark_default(config):
         # GCC vs. GCC tables of emission and inventory totals
         # ==================================================================
         if config["options"]["outputs"]["emis_table"]:
-            print("\n%%% Creating GCC vs. GCC emissions/inventory tables %%%")
+            print("\n%%% Creating GCC vs. GCC emissions & inventory tables %%%")
 
             # Filepaths
             ref = get_filepath(gcc_vs_gcc_refdir, "Emissions", gcc_ref_date)

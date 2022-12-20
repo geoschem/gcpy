@@ -532,6 +532,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dev,
                 gcc_vs_gcc_devstr,
                 dst=gcc_vs_gcc_resultsdir,
+                benchmark_type=bmk_type,
                 ref_interval=sec_per_month_ref,
                 dev_interval=sec_per_month_dev,
                 overwrite=True,

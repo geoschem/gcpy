@@ -30,7 +30,6 @@ np.seterr(divide="ignore", invalid="ignore")
 
 # YAML files
 aod_spc = "aod_species.yml"
-spc_categories = "benchmark_categories.yml"
 emission_spc = "emission_species.yml"
 emission_inv = "emission_inventories.yml"
 
@@ -616,8 +615,8 @@ def make_benchmark_conc_plots(
             Name of collection to use for plotting.
             Default value: "SpeciesConc"
         benchmark_type: str
-            A string denoting the type of benchmark output to plot,
-            either FullChemBenchmark or TransportTracersBenchmark.
+            A string denoting the type of benchmark output to plot, options are
+            FullChemBenchmark, TransportTracersBenchmark, or CH4Benchmark.
             Default value: "FullChemBenchmark"
         cmpres: string
             Grid resolution at which to compare ref and dev data, e.g. '1x1.25'
@@ -897,7 +896,7 @@ def make_benchmark_conc_plots(
     # aerosol categories: Aerosols and Secondary Organic Aerosols.
     # ==================================================================
 
-    # FullChemBenchmark has lumped species (TransportTracers does not)
+    # FullChemBenchmark has lumped species (TransportTracers, CH4 do not)
     if "FullChem" in benchmark_type:
         print("\nComputing lumped species for full chemistry benchmark")
         print("-->Adding lumped species to ref dataset")
@@ -1276,8 +1275,8 @@ def make_benchmark_emis_plots(
             Aircraft, Bioburn, etc.)
             Default value: False
         benchmark_type: str
-            A string denoting the type of benchmark output to plot,
-            either FullChemBenchmark or TransportTracersBenchmark.
+            A string denoting the type of benchmark output to plot, options are
+            FullChemBenchmark, TransportTracersBenchmark, or CH4Benchmark.
             Default value: "FullChemBenchmark"
         cmpres: string
             Grid resolution at which to compare ref and dev data, e.g. '1x1.25'
@@ -1635,6 +1634,7 @@ def make_benchmark_emis_tables(
         devlist,
         devstr,
         dst="./benchmark",
+        benchmark_type="FullChemBenchmark",
         refmet=None,
         devmet=None,
         overwrite=False,
@@ -1665,6 +1665,10 @@ def make_benchmark_emis_tables(
             A string denoting the destination folder where the file
             containing emissions totals will be written.
             Default value: ./benchmark
+        benchmark_type: str
+            A string denoting the type of benchmark output to plot, options are
+            FullChemBenchmark, TransportTracersBenchmark or CH4Benchmark.
+            Default value: "FullChemBenchmark"
         refmet: str
             Path name for ref meteorology
             Default value: None
@@ -1752,14 +1756,16 @@ def make_benchmark_emis_tables(
     # ==================================================================
 
     # Emissions species dictionary
-    species = yaml.load(
+    spc_dict = yaml.load(
         open(os.path.join(os.path.dirname(__file__), emission_spc)),
         Loader=yaml.FullLoader
     )
-    inventories = yaml.load(
+    species=spc_dict[benchmark_type]
+    inv_dict = yaml.load(
         open(os.path.join(os.path.dirname(__file__), emission_inv)),
         Loader=yaml.FullLoader
     )
+    inventories=inv_dict[benchmark_type]
 
     # Destination files
     file_emis_totals = os.path.join(emisdir, "Emission_totals.txt")
@@ -3063,8 +3069,8 @@ def make_benchmark_wetdep_plots(
             for writing plots
             Default value: None
         benchmark_type: str
-            A string denoting the type of benchmark output to plot,
-            either FullChemBenchmark or TransportTracersBenchmark.
+            A string denoting the type of benchmark output to plot, options are
+            FullChemBenchmark, TransportTracersBenchmark, or CH4Benchmark.
             Default value: "FullChemBenchmark"
         overwrite: bool
             Set this flag to True to overwrite files in the
@@ -3620,7 +3626,8 @@ def make_benchmark_operations_budget(
 
     Keyword Args (optional):
         benchmark_type: str
-            "TransportTracersBenchmark" or "FullChemBenchmark".
+            A string denoting the type of benchmark output to plot, options are
+            FullChemBenchmark, TransportTracersBenchmark, or CH4Benchmark.
             Default value: None
         label: str
             Contains the date or date range for each dataframe title.
