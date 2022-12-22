@@ -713,19 +713,30 @@ def make_benchmark_conc_plots(
     refds = reader(ref, drop_variables=gcon.skip_these_vars).load()
     devds = reader(dev, drop_variables=gcon.skip_these_vars).load()
 
+    # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
+    # naming introduced in GEOS-Chem 14.1.0
+    for v in refds.data_vars.keys():
+        if v.startswith('SpeciesConc_'):
+            spc = v.replace('SpeciesConc_', '')
+            refds = refds.rename({v: 'SpeciesConcVV_' + spc})
+    for v in devds.data_vars.keys():
+        if v.startswith('SpeciesConc_'):
+            spc = v.replace('Species_Conc', '')
+            devds = devds.rename({v: 'SpeciesConcVV_' + spc})
+
+    # -----------------------------------------------------------------
+    # Kludge, rename wrong variable name
+    if "SpeciesConcVV_PFE" in refds.data_vars.keys():
+        refds = refds.rename({"SpeciesConcVV_PFE": "SpeciesConcVV_pFe"})
+    if "SpeciesConcVV_PFE" in devds.data_vars.keys():
+        devds = devds.rename({"SpeciesConcVV_PFE": "SpeciesConcVV_pFe"})
+    # -----------------------------------------------------------------
+
     if verbose:
         print('\nPrinting refds (comparison ref)\n')
         print(refds)
         print('\nPrinting devds (comparison dev)\n')
         print(devds)
-
-    # -----------------------------------------------------------------
-    # Kludge, rename wrong variable name
-    if "SpeciesConc_PFE" in refds.data_vars.keys():
-        refds = refds.rename({"SpeciesConc_PFE": "SpeciesConc_pFe"})
-    if "SpeciesConc_PFE" in devds.data_vars.keys():
-        devds = devds.rename({"SpeciesConc_PFE": "SpeciesConc_pFe"})
-    # -----------------------------------------------------------------
 
     # Open met datasets if passed as arguments
     refmetds = None
@@ -835,7 +846,7 @@ def make_benchmark_conc_plots(
     # ==================================================================
     if not plot_by_spc_cat:
         [refds, devds] = util.add_missing_variables(refds, devds)
-        var_prefix = 'SpeciesConc_'
+        var_prefix = 'SpeciesConcVV_'
         varlist = [k for k in refds.data_vars.keys() if var_prefix in k]
         varlist.sort()
 
@@ -900,14 +911,18 @@ def make_benchmark_conc_plots(
     # FullChemBenchmark has lumped species (TransportTracers does not)
     if "FullChem" in benchmark_type:
         print("\nComputing lumped species for full chemistry benchmark")
+
         print("-->Adding lumped species to ref dataset")
         refds = util.add_lumped_species_to_dataset(refds)
+
         print("-->Adding lumped species to dev dataset")
         devds = util.add_lumped_species_to_dataset(devds)
+
         if diff_of_diffs:
             print("-->Adding lumped species to dev datasets")
             second_refds = util.add_lumped_species_to_dataset(second_refds)
             second_devds = util.add_lumped_species_to_dataset(second_devds)
+
         util.archive_lumped_species_definitions(dst)
         print("Lumped species computation complete.\n")
 
@@ -925,7 +940,10 @@ def make_benchmark_conc_plots(
         [devds, second_devds] = util.add_missing_variables(devds, second_devds)
 
     # Collection prefix
-    coll_prefix = collection.strip() + "_"
+    if "SpeciesConc" in collection:
+        coll_prefix = "SpeciesConcVV_"
+    else:
+        coll_prefix = collection.strip() + "_"
 
     # ==================================================================
     # Create the plots!
@@ -3402,6 +3420,13 @@ def make_benchmark_aerosol_tables(
                                    drop_variables=gcon.skip_these_vars)  # ,
         # combine="nested", concat_dim="time")
 
+    # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
+    # naming introduced in GEOS-Chem 14.1.0
+    for v in ds_spc.data_vars.keys():
+        if v.startswith('SpeciesConc_'):
+            spc = v.replace('Species_Conc', '')
+            ds_spc = ds_spc.rename({v: 'SpeciesConcVV_' + spc})
+
     # Get troposphere mask
     tropmask = get_troposphere_mask(ds_met)
 
@@ -3501,7 +3526,7 @@ def make_benchmark_aerosol_tables(
 
         # Whole-atmosphere and trop-only quantities [g]
         # NOTE: DryDep is by nature trop-only
-        varname = "SpeciesConc_" + spc
+        varname = "SpeciesConcVV_" + spc
         q[spc + "_f"] = ds_spc[varname].values * vv_to_Tg[spc]
         q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
 

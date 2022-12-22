@@ -344,8 +344,8 @@ def add_bookmarks_to_pdf(
         remove_prefix: str
             Specifies a prefix to remove from each entry in varlist
             when creating bookmarks.  For example, if varlist has
-            a variable name "SpeciesConc_NO", and you specify
-            remove_prefix="SpeciesConc_", then the bookmark for
+            a variable name "SpeciesConcVV_NO", and you specify
+            remove_prefix="SpeciesConcVV_", then the bookmark for
             that variable will be just "NO", etc.
          verbose: bool
             Set this flag to True to print extra informational output.
@@ -1168,7 +1168,7 @@ def add_lumped_species_to_dataset(
         lspc_yaml="",
         verbose=False,
         overwrite=False,
-        prefix="SpeciesConc_",
+        prefix="SpeciesConcVV_",
 ):
     """
     Function to calculate lumped species concentrations and add
@@ -1204,7 +1204,7 @@ def add_lumped_species_to_dataset(
             also used to extract an existing dataarray in the dataset with
             the correct size and dimensions to use during initialization of
             new lumped species dataarrays.
-            Default value: "SpeciesConc_"
+            Default value: "SpeciesConcVV_"
 
     Returns:
         ds: xarray Dataset
