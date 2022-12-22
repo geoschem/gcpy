@@ -1,4 +1,4 @@
-\#!/usr/bin/env python
+#!/usr/bin/env python
 
 import os
 import warnings
@@ -24,15 +24,13 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
     'Intended Audience :: Science/Research',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 3.6',
-    'Programming Language :: Python :: 3.7',
-    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
     'Topic :: Scientific/Engineering',
 ]
 
 MAJOR = 1
-MINOR = 2
-MICRO = 0
+MINOR = 3
+MICRO = 2
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
 VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, EXTRA)
@@ -92,7 +90,7 @@ setup(
     packages = find_packages(),
     include_package_data=True,
     install_requires=[
-        "cartopy=0.19.0.post1",
+        "cartopy==0.19.0.post1",
         "dask==2021.7.1",          
         "docutils==0.16",      
         "esmf==8.1.1",
