@@ -721,7 +721,7 @@ def make_benchmark_conc_plots(
             refds = refds.rename({v: 'SpeciesConcVV_' + spc})
     for v in devds.data_vars.keys():
         if v.startswith('SpeciesConc_'):
-            spc = v.replace('Species_Conc', '')
+            spc = v.replace('SpeciesConc_', '')
             devds = devds.rename({v: 'SpeciesConcVV_' + spc})
 
     # -----------------------------------------------------------------
@@ -3424,7 +3424,7 @@ def make_benchmark_aerosol_tables(
     # naming introduced in GEOS-Chem 14.1.0
     for v in ds_spc.data_vars.keys():
         if v.startswith('SpeciesConc_'):
-            spc = v.replace('Species_Conc', '')
+            spc = v.replace('SpeciesConc_', '')
             ds_spc = ds_spc.rename({v: 'SpeciesConcVV_' + spc})
 
     # Get troposphere mask
