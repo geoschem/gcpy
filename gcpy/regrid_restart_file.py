@@ -10,6 +10,7 @@
 #       4x5_to_c24_weights.nc \
 #       GCHP.Restart.fullchem.20190701_0000z.c24.nc4
 
+import argparse
 import os
 import sys
 import re
@@ -23,7 +24,76 @@ from pathlib import Path
 import requests
 
 
-temp_files=[]
+temp_files = []
+
+
+def file_path(file_path):
+    if not os.path.isfile(file_path):
+        raise argparse.ArgumentTypeError
+    return file_path
+
+
+def parse_command_line():
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument(
+        "file_to_regrid",
+        type=file_path,
+        metavar="file_to_regrid",
+        help="The GEOS-Chem restart file to be regridded",
+    )
+    parser.add_argument(
+        "regridding_weights_file",
+        type=file_path,
+        metavar="regridding_weights_file",
+        help=(
+            "The regridding weights file for this regridding, generated ",
+            "by ESMF_RegridWeightGen",
+        ),
+    )
+    parser.add_argument(
+        "template_file",
+        type=file_path,
+        metavar="template_file",
+        help=(
+            "The GEOS-Chem restart file to use as a template for regridding - ",
+            "attributes, dimensions, and variables for the output file will ",
+            "be taken from this template",
+        ),
+    )
+
+    parser.add_argument(
+        "--stretched-grid",
+        action="store_true",
+        help=(
+            "Create a stretched-grid restart file - you must also pass ",
+            "stretched-grid parameters!",
+        ),
+    )
+
+    parser.add_argument(
+        "--stretch-factor",
+        type=np.float32,
+        metavar="stretch_factor",
+        help="The stretch factor, if creating a stretched-grid restart file",
+        required=False,
+    )
+    parser.add_argument(
+        "--target-latitude",
+        type=np.float32,
+        metavar="target_latitude",
+        help="The target latitude, if creating a stretched-grid restart file",
+        required=False,
+    )
+    parser.add_argument(
+        "--target-longitude",
+        type=np.float32,
+        metavar="target_longitude",
+        help="The target longitude, if creating a stretched-grid restart file",
+        required=False,
+    )
+
+    return parser.parse_args()
 
 
 def cleanup_tempfile():
@@ -36,22 +106,24 @@ def cleanup_tempfile():
 
 
 def is_gchp_restart_file(ds):
-    is_gchp_restart = 'SPC_O3' in ds.data_vars
-    is_gcclassic = 'SpeciesRst_O3' in ds.data_vars
+    is_gchp_restart = "SPC_O3" in ds.data_vars
+    is_gcclassic = "SpeciesRst_O3" in ds.data_vars
     if not any((is_gchp_restart, is_gcclassic)):
-        raise ValueError("Couldn't determine if the provided file is a GC-Classic or GCHP restart file.")
+        raise ValueError(
+            "Couldn't determine if the provided file is a GC-Classic or GCHP restart file."
+        )
     return is_gchp_restart
 
 
 def open_dataset(file_or_url, CHUNK_SIZE=8192):
     global temp_files
-    is_url = bool(re.match(r'https?://', file_or_url))
+    is_url = bool(re.match(r"https?://", file_or_url))
     if is_url:
         logging.debug(f"Downloading {file_or_url}")
         with requests.get(file_or_url, stream=True) as r:
             r.raise_for_status()  # raise HTTPError
             tempfile_fd, tempfile_path = tempfile.mkstemp()
-            with open(tempfile_fd, 'wb') as f:
+            with open(tempfile_fd, "wb") as f:
                 bytes_downloaded = 0
                 for chunk in r.iter_content(chunk_size=CHUNK_SIZE):
                     bytes_downloaded += len(chunk)
@@ -64,22 +136,29 @@ def open_dataset(file_or_url, CHUNK_SIZE=8192):
 
 def rename_variables(ds, to_gchp=True):
     to_gchp_re_sub = [
-        (r'SpeciesRst_(.+)', r'SPC_\1'),
-        (r'Met_(.+)', r'\1'),
-        (r'Met_DELPDRY', r'DELP_DRY'),
-        (r'Chem_(WetDepNitrogen|DryDepNitrogen|H2O2AfterChem|SO2AfterChem|KPPHvalue)', r'\1'),
+        (r"SpeciesRst_(.+)", r"SPC_\1"),
+        (r"Met_(.+)", r"\1"),
+        (r"Met_DELPDRY", r"DELP_DRY"),
+        (
+            r"Chem_(WetDepNitrogen|DryDepNitrogen|H2O2AfterChem|SO2AfterChem|KPPHvalue)",
+            r"\1",
+        ),
     ]
     to_gcclassic_re_sub = [
-        (r'SPC_(.+)', r'SpeciesRst_\1'),
-        (r'(TropLev|BXHEIGHT)', r'Met_\1')
+        (r"SPC_(.+)", r"SpeciesRst_\1"),
+        (r"(TropLev|BXHEIGHT)", r"Met_\1"),
     ]
     re_sub_arg_list = to_gchp_re_sub if to_gchp else to_gcclassic_re_sub
 
     rename_dict = {}
     for re_sub_args in re_sub_arg_list:
-        rename_dict.update({
-            name: re.sub(*re_sub_args, name) for name in ds.data_vars if re.match(re_sub_args[0], name)
-        })
+        rename_dict.update(
+            {
+                name: re.sub(*re_sub_args, name)
+                for name in ds.data_vars
+                if re.match(re_sub_args[0], name)
+            }
+        )
     logging.info(f"Renaming {len(rename_dict)} variables")
     return ds.rename(rename_dict)
 
@@ -97,48 +176,74 @@ def drop_variables(ds, output_template):
     drop_vars = input_var_set - output_var_set
     missing_vars = output_var_set - input_var_set
     if len(drop_vars) > 0:
-        logging.info(f"Dropping {len(drop_vars)} variables from the input restart file that dont exist in the output template")
-        logging.debug(f"Variables being dropped from the input restart file: {drop_vars}")
+        logging.info(
+            f"Dropping {len(drop_vars)} variables from the input restart file that dont exist in the output template"
+        )
+        logging.debug(
+            f"Variables being dropped from the input restart file: {drop_vars}"
+        )
         ds = ds.drop(drop_vars)
     if len(missing_vars) > 0:
-        logging.warning(f"The input restart file is missing {len(missing_vars)} variables that exist in the output template")
-        logging.debug(f"Variables missing in the input restart file: {missing_vars}")
+        logging.warning(
+            f"The input restart file is missing {len(missing_vars)} variables that exist in the output template"
+        )
+        logging.debug(
+            f"Variables missing in the input restart file: {missing_vars}"
+        )
         output_template = output_template.drop(missing_vars)
     return ds, output_template
 
 
 def regrid(ds, output_template, weights_file):
     weights = open_dataset(weights_file)
-    input_dims = [('lat', 'lon'), (ds.dims['lat'], ds.dims['lon'])]
+    input_dims = [("lat", "lon"), (ds.dims["lat"], ds.dims["lon"])]
 
-    output_template_shape = (output_template.dims['lat'], output_template.dims['lon'])
-    resize_output_template = np.prod(output_template_shape) != weights.dst_grid_dims.item()
+    output_template_shape = (
+        output_template.dims["lat"],
+        output_template.dims["lon"],
+    )
+    resize_output_template = (
+        np.prod(output_template_shape) != weights.dst_grid_dims.item()
+    )
     if resize_output_template:
         if is_gchp_restart_file(output_template):
-            # This is useful for stretched-grid simulations because they usually don't have a "normal" grid size    
+            # This is useful for stretched-grid simulations because they usually don't have a "normal" grid size
             cs_res = np.sqrt(weights.dst_grid_dims.item() / 6).astype(int)
-            logging.info(f"Reshaping the output restart file template to grid size C{cs_res}")
-            output_shape = (6 * cs_res, cs_res)
-            func = lambda *args, **kwargs: np.ones(output_shape)*np.nan
-            vfunc = np.vectorize(func, signature='(lat,lon)->(lat1,lon1)')
-            new_output_template = xr.apply_ufunc(
-                vfunc, output_template, keep_attrs=True,
-                input_core_dims=[['lat', 'lon']], output_core_dims=[['lat1', 'lon1']], 
+            logging.info(
+                f"Reshaping the output restart file template to grid size C{cs_res}"
             )
-            new_output_template = new_output_template.rename({'lat1': 'lat', 'lon1': 'lon'})
-            new_output_template['lat'].attrs = output_template['lat'].attrs
-            new_output_template['lon'].attrs = output_template['lat'].attrs
+            output_shape = (6 * cs_res, cs_res)
+            func = lambda *args, **kwargs: np.ones(output_shape) * np.nan
+            vfunc = np.vectorize(func, signature="(lat,lon)->(lat1,lon1)")
+            new_output_template = xr.apply_ufunc(
+                vfunc,
+                output_template,
+                keep_attrs=True,
+                input_core_dims=[["lat", "lon"]],
+                output_core_dims=[["lat1", "lon1"]],
+            )
+            new_output_template = new_output_template.rename(
+                {"lat1": "lat", "lon1": "lon"}
+            )
+            new_output_template["lat"].attrs = output_template["lat"].attrs
+            new_output_template["lon"].attrs = output_template["lat"].attrs
             new_output_template = new_output_template.assign_coords(
-                lat=np.arange(new_output_template.dims['lat'], dtype=np.float64),
-                lon=np.arange(new_output_template.dims['lon'], dtype=np.float64),
+                lat=np.arange(
+                    new_output_template.dims["lat"], dtype=np.float64
+                ),
+                lon=np.arange(
+                    new_output_template.dims["lon"], dtype=np.float64
+                ),
             )
             output_template = new_output_template
         else:
-            raise ValueError("GC-Classic restart resizing not implemented. Please provide a restart file template with the proper resolution.")
+            raise ValueError(
+                "GC-Classic restart resizing not implemented. Please provide a restart file template with the proper resolution."
+            )
     else:
         output_shape = output_template_shape
 
-    output_dims = [('lat', 'lon'), output_shape]
+    output_dims = [("lat", "lon"), output_shape]
     logging.info("Regridding the input restart file")
     transform = sparselt.esmf.load_weights(weights, input_dims, output_dims)
     ds = sparselt.xr.apply(transform, ds, output_template)
@@ -148,9 +253,12 @@ def regrid(ds, output_template, weights_file):
 def update_encoding(ds):
     logging.info(f"Updating encoding")
     for name in ds.data_vars:
-        ds[name].encoding.update({'dtype': 'float32'})
-        if 'missing_value' in ds[name].encoding and '_FillValue' in ds[name].encoding:
-            del ds[name].encoding['missing_value']
+        ds[name].encoding.update({"dtype": "float32"})
+        if (
+            "missing_value" in ds[name].encoding
+            and "_FillValue" in ds[name].encoding
+        ):
+            del ds[name].encoding["missing_value"]
     return ds
 
 
@@ -160,24 +268,37 @@ def check_for_nans(ds):
         if ds[name].isnull().any().item():
             nan_vars.append(name)
     if len(nan_vars) > 0:
-        logging.warning(f"Dataset has {len(nan_vars)}/{len(ds.data_vars)} variables with NaN values")
+        logging.warning(
+            f"Dataset has {len(nan_vars)}/{len(ds.data_vars)} variables with NaN values"
+        )
         logging.debug(f"Variables with NaN values: {nan_vars}")
 
 
-def regrid_restart_file(input_restart, regrid_weights, output_restart_template):
+def regrid_restart_file(
+    input_restart,
+    regrid_weights,
+    output_restart_template,
+    stretch_factor=None,
+    target_lat=None,
+    target_lon=None,
+):
     logging.info(f"Input restart file: {input_restart}")
     logging.info(f"Regridding weights: {regrid_weights}")
     logging.info(f"Output template restart file: {output_restart_template}")
-        
+
     ds = open_dataset(input_restart)
     check_for_nans(ds)
     output_template = open_dataset(output_restart_template)
 
     input_is_gchp_restart = is_gchp_restart_file(ds)
     output_is_gchp_restart = is_gchp_restart_file(output_template)
-    logging.info(f"Input restart file type is '{'GCHP' if input_is_gchp_restart else 'GC-Classic'}'")
-    logging.info(f"Output restart file type is '{'GCHP' if output_is_gchp_restart else 'GC-Classic'}'")
-    is_conversion = (input_is_gchp_restart != output_is_gchp_restart)
+    logging.info(
+        f"Input restart file type is '{'GCHP' if input_is_gchp_restart else 'GC-Classic'}'"
+    )
+    logging.info(
+        f"Output restart file type is '{'GCHP' if output_is_gchp_restart else 'GC-Classic'}'"
+    )
+    is_conversion = input_is_gchp_restart != output_is_gchp_restart
     if is_conversion:
         to_gchp = output_is_gchp_restart
         ds = rename_variables(ds, to_gchp)
@@ -187,17 +308,58 @@ def regrid_restart_file(input_restart, regrid_weights, output_restart_template):
     ds = regrid(ds, output_template, weights_file=regrid_weights)
     ds = update_encoding(ds)
     check_for_nans(ds)
-    ds.to_netcdf('new_restart_file.nc')
-    logging.info(f"Wrote 'new_restart_file.nc' with {len(ds.data_vars)} variables")
+
+    if stretch_factor and target_lat and target_lon:
+        try:
+            ds.attrs["STRETCH_FACTOR"] = np.float32(stretch_factor)
+            ds.attrs["TARGET_LAT"] = np.float32(target_lat)
+            ds.attrs["TARGET_LON"] = np.float32(target_lon)
+        except Exception as e:
+            raise Exception(
+                "Error when processing your stretched-grid parameters - are they correct?"
+            ) from e
+
+    ds.to_netcdf("new_restart_file.nc")
+    logging.info(
+        f"Wrote 'new_restart_file.nc' with {len(ds.data_vars)} variables"
+    )
     cleanup_tempfile()
 
 
-if __name__ == '__main__':
-    logging.basicConfig(level=os.environ.get('LOGLEVEL', 'INFO').upper())
-    if len(sys.argv) != 4:
-        logging.error("This program has 3 required arguments:  input_restart regrid_weights output_restart_template")
-        exit(1)
-    input_restart = sys.argv[1]
-    regrid_weights = sys.argv[2]
-    output_restart_template = sys.argv[3]
-    regrid_restart_file(input_restart, regrid_weights, output_restart_template)
+if __name__ == "__main__":
+    logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO").upper())
+    COMMAND_LINE = parse_command_line()
+    input_restart = COMMAND_LINE.file_to_regrid
+    regrid_weights = COMMAND_LINE.regridding_weights_file
+    output_restart_template = COMMAND_LINE.template_file
+
+    if COMMAND_LINE.stretched_grid:
+        logging.info("Creating a stretched-grid restart file")
+
+        if (
+            (not COMMAND_LINE.stretch_factor)
+            or (not COMMAND_LINE.target_latitude)
+            or (not COMMAND_LINE.target_longitude)
+        ):
+            error_message = (
+                "--stretched-grid was set but not all stretched-",
+                "grid parameters were passed!",
+            )
+            raise RuntimeError(error_message)
+        else:
+            stretch_factor = COMMAND_LINE.stretch_factor
+            target_latitude = COMMAND_LINE.target_latitude
+            target_longitude = COMMAND_LINE.target_longitude
+
+            regrid_restart_file(
+                input_restart,
+                regrid_weights,
+                output_restart_template,
+                stretch_factor=stretch_factor,
+                target_lat=target_latitude,
+                target_lon=target_longitude,
+            )
+    else:
+        regrid_restart_file(
+            input_restart, regrid_weights, output_restart_template
+        )
