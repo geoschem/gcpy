@@ -78,7 +78,7 @@ def parse_command_line():
         type=file_path,
         metavar="regridding_weights_file",
         help=(
-            "The regridding weights file for this regridding, generated ",
+            "The regridding weights file for this regridding, generated "
             "by ESMF_RegridWeightGen",
         ),
     )
@@ -87,8 +87,8 @@ def parse_command_line():
         type=file_path,
         metavar="template_file",
         help=(
-            "The GEOS-Chem restart file to use as a template for regridding - ",
-            "attributes, dimensions, and variables for the output file will ",
+            "The GEOS-Chem restart file to use as a template for regridding - "
+            "attributes, dimensions, and variables for the output file will "
             "be taken from this template",
         ),
     )
@@ -97,8 +97,8 @@ def parse_command_line():
         "--stretched-grid",
         action="store_true",
         help=(
-            "Create a stretched-grid restart file - you must also pass ",
-            "stretched-grid parameters!",
+            "Create a stretched-grid restart file - you must also pass "
+            "stretched-grid parameters!"
         ),
     )
 
@@ -150,7 +150,8 @@ def is_gchp_restart_file(dataset):
     is_gcclassic = "SpeciesRst_O3" in dataset.data_vars
     if not any((is_gchp_restart, is_gcclassic)):
         raise ValueError(
-            "Couldn't determine if the provided file is a GC-Classic or GCHP restart file."
+            "Couldn't determine if the provided file is a GC-Classic or GCHP "
+            "restart file."
         )
     return is_gchp_restart
 
@@ -259,22 +260,21 @@ def drop_variables(dataset, output_template):
     missing_vars = output_var_set - input_var_set
     if len(drop_vars) > 0:
         info_message = (
-            "Dropping %d variables from the input restart file ",
-            "that don't exist in the output template",
+            "Dropping %d variables from the input restart file "
+            "that don't exist in the output template"
         )
         logging.info(info_message, len(drop_vars))
 
         debug_message = (
-            "Variables being dropped from the input restart file:",
-            " %s",
+            "Variables being dropped from the input restart file:" " %s"
         )
         logging.debug(debug_message, drop_vars)
 
         dataset = dataset.drop(drop_vars)
     if len(missing_vars) > 0:
         warning_message = (
-            "The input restart file is missing %d variables ",
-            "that exist in the output template",
+            "The input restart file is missing %d variables "
+            "that exist in the output template"
         )
         logging.warning(warning_message, len(missing_vars))
 
@@ -317,8 +317,7 @@ def regrid(dataset, output_template, weights_file):
             cs_res = np.sqrt(weights.dst_grid_dims.item() / 6).astype(int)
 
             info_message = (
-                "Reshaping the output restart file template to ",
-                "grid size C%f",
+                "Reshaping the output restart file template to " "grid size C%f"
             )
             logging.info(info_message, cs_res)
 
@@ -348,9 +347,9 @@ def regrid(dataset, output_template, weights_file):
             output_template = new_output_template
         else:
             error_message = (
-                "GC-Classic restart resizing not implemented. ",
-                "Please provide a restart file template with ",
-                "the proper resolution.",
+                "GC-Classic restart resizing not implemented. "
+                "Please provide a restart file template with "
+                "the proper resolution."
             )
             raise ValueError(error_message)
     else:
@@ -492,8 +491,8 @@ if __name__ == "__main__":
             or (not COMMAND_LINE.target_longitude)
         ):
             error_message = (
-                "--stretched-grid was set but not all stretched-",
-                "grid parameters were passed!",
+                "--stretched-grid was set but not all stretched-"
+                "grid parameters were passed!"
             )
             raise RuntimeError(error_message)
 
