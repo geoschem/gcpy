@@ -79,7 +79,7 @@ def parse_command_line():
         metavar="regridding_weights_file",
         help=(
             "The regridding weights file for this regridding, generated "
-            "by ESMF_RegridWeightGen",
+            "by ESMF_RegridWeightGen"
         ),
     )
     parser.add_argument(
