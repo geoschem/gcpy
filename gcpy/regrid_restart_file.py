@@ -40,6 +40,7 @@ import requests
 
 TEMP_FILES = []
 
+
 def file_path(path):
     """
     Checks whether or not a regular file exists at the passed path.
