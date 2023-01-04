@@ -89,7 +89,7 @@ def parse_command_line():
         help=(
             "The GEOS-Chem restart file to use as a template for regridding - "
             "attributes, dimensions, and variables for the output file will "
-            "be taken from this template",
+            "be taken from this template"
         ),
     )
 
