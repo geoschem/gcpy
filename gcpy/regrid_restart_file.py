@@ -40,7 +40,6 @@ import requests
 
 TEMP_FILES = []
 
-
 def file_path(path):
     """
     Checks whether or not a regular file exists at the passed path.
@@ -479,9 +478,9 @@ def regrid_restart_file(
 if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO").upper())
     COMMAND_LINE = parse_command_line()
-    input_restart = COMMAND_LINE.file_to_regrid
-    regrid_weights = COMMAND_LINE.regridding_weights_file
-    output_restart_template = COMMAND_LINE.template_file
+    file_to_regrid = COMMAND_LINE.file_to_regrid
+    regridding_weights_file = COMMAND_LINE.regridding_weights_file
+    template_file = COMMAND_LINE.template_file
 
     if COMMAND_LINE.stretched_grid:
         logging.info("Creating a stretched-grid restart file")
@@ -502,14 +501,14 @@ if __name__ == "__main__":
         target_longitude = COMMAND_LINE.target_longitude
 
         regrid_restart_file(
-            input_restart,
-            regrid_weights,
-            output_restart_template,
+            file_to_regrid,
+            regridding_weights_file,
+            template_file,
             stretch_factor=stretch_factor,
             target_lat=target_latitude,
             target_lon=target_longitude,
         )
     else:
         regrid_restart_file(
-            input_restart, regrid_weights, output_restart_template
+            file_to_regrid, regridding_weights_file, template_file
         )
