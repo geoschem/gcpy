@@ -65,7 +65,50 @@ def parse_command_line():
         argparse.Namespace: A dict-like object containing command line
                             argument and option values.
     """
-    parser = argparse.ArgumentParser()
+    description_text = (
+        "regrid_restart_file - Regrid GCHP restart files"
+        "\n\n"
+        "regrid_restart_file is a tool for regridding  GCHP restart "
+        "files. You can resize restart files from their original "
+        "resolution to a new resolution, stretch an unstretched restart "
+        "file, unstretch a stretched restart file, and re-stretch a "
+        "stretched restart file."
+        "\n\n"
+        "To use this tool, you must first generate regridding weights for "
+        "the regridding you would like to carry out, using "
+        "ESMF_RegridWeightGen."
+        "\n\n"
+        "NOTE: GC-Classic regridding is not currently supported by this"
+        "tool. If this is something you would like to be supported, please "
+        "raise an issue via "
+        "https://github.com/geoschem/gcpy/issues/new/choose"
+    )
+
+    epilog_text = (
+        "Example usage (unstretched grid resizing): "
+        "\n\n"
+        "python -m gcpy.regrid_restart_file \\ "
+        "\n\tGEOSChem.Restart.20190701_0000z.c90.nc4 \\ "
+        "\n\tC90_to_C48_weights.nc \\ "
+        "\n\tGEOSChem.Restart.20190701_0000z.c90.nc4"
+        "\n\n"
+        "Example usage (stretching a grid): "
+        "\n\n"
+        "python -m gcpy.regrid_restart_file \\ "
+        "\n\t--stretched-grid \\ "
+        "\n\t--stretch-factor 2.0 \\ "
+        "\n\t--target-latitude 32.0 \\ "
+        "\n\t--target-longitude -64.0 \\ "
+        "\n\tGEOSChem.Restart.20190701_0000z.c90.nc4 \\ "
+        "\n\tC90_to_C48_weights.nc \\ "
+        "\n\tGEOSChem.Restart.20190701_0000z.c90.nc4"
+    )
+
+    parser = argparse.ArgumentParser(
+        description=description_text,
+        epilog=epilog_text,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
 
     parser.add_argument(
         "file_to_regrid",
@@ -266,7 +309,7 @@ def drop_variables(dataset, output_template):
         logging.info(info_message, len(drop_vars))
 
         debug_message = (
-            "Variables being dropped from the input restart file:" " %s"
+            "Variables being dropped from the input restart file: %s"
         )
         logging.debug(debug_message, drop_vars)
 
@@ -317,7 +360,7 @@ def regrid(dataset, output_template, weights_file):
             cs_res = np.sqrt(weights.dst_grid_dims.item() / 6).astype(int)
 
             info_message = (
-                "Reshaping the output restart file template to " "grid size C%f"
+                "Reshaping the output restart file template to grid size C%f"
             )
             logging.info(info_message, cs_res)
 
@@ -478,9 +521,9 @@ def regrid_restart_file(
 if __name__ == "__main__":
     logging.basicConfig(level=os.environ.get("LOGLEVEL", "INFO").upper())
     COMMAND_LINE = parse_command_line()
-    file_to_regrid = COMMAND_LINE.file_to_regrid
-    regridding_weights_file = COMMAND_LINE.regridding_weights_file
-    template_file = COMMAND_LINE.template_file
+    FILE_TO_REGRID = COMMAND_LINE.file_to_regrid
+    REGRIDDING_WEIGHTS_FILE = COMMAND_LINE.regridding_weights_file
+    TEMPLATE_FILE = COMMAND_LINE.template_file
 
     if COMMAND_LINE.stretched_grid:
         logging.info("Creating a stretched-grid restart file")
@@ -490,25 +533,25 @@ if __name__ == "__main__":
             or (not COMMAND_LINE.target_latitude)
             or (not COMMAND_LINE.target_longitude)
         ):
-            error_message = (
+            ERROR_MESSAGE = (
                 "--stretched-grid was set but not all stretched-"
                 "grid parameters were passed!"
             )
-            raise RuntimeError(error_message)
+            raise RuntimeError(ERROR_MESSAGE)
 
-        stretch_factor = COMMAND_LINE.stretch_factor
-        target_latitude = COMMAND_LINE.target_latitude
-        target_longitude = COMMAND_LINE.target_longitude
+        STRETCH_FACTOR = COMMAND_LINE.stretch_factor
+        TARGET_LATITUDE = COMMAND_LINE.target_latitude
+        TARGET_LONGITUDE = COMMAND_LINE.target_longitude
 
         regrid_restart_file(
-            file_to_regrid,
-            regridding_weights_file,
-            template_file,
-            stretch_factor=stretch_factor,
-            target_lat=target_latitude,
-            target_lon=target_longitude,
+            FILE_TO_REGRID,
+            REGRIDDING_WEIGHTS_FILE,
+            TEMPLATE_FILE,
+            stretch_factor=STRETCH_FACTOR,
+            target_lat=TARGET_LATITUDE,
+            target_lon=TARGET_LONGITUDE,
         )
     else:
         regrid_restart_file(
-            file_to_regrid, regridding_weights_file, template_file
+            FILE_TO_REGRID, REGRIDDING_WEIGHTS_FILE, TEMPLATE_FILE
         )
