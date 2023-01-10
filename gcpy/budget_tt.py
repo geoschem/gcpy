@@ -559,17 +559,17 @@ def annual_average_sources(globvars):
         raise ValueException(msg)
 
     # Convert Be7 and Be10 sources from kg/m2/s to g/day
-    # NOTE: This is a kludgey way to do it but it works and
-    # preserves the shape of the data as (time,lev,lat,lon).
+    # If GCHP data, must vertically flip the emissions diagnostic
     for t in range(globvars.N_MONTHS):
         for k in range(n_levs):
             if globvars.is_gchp:
+                kf = n_levs - k - 1
                 q["Be7_f"][t, k, :, :, :] = \
-                    globvars.ds_hco["EmisBe7_Cosmic"].isel(time=t, lev=k) * \
+                    globvars.ds_hco["EmisBe7_Cosmic"].isel(time=t, lev=kf) * \
                     globvars.ds_met[area_var].isel(time=t) * \
                     globvars.kg_s_to_g_d["Be7"]
                 q["Be10_f"][t, k, :, :, :] = \
-                    globvars.ds_hco["EmisBe10_Cosmic"].isel(time=t, lev=k) * \
+                    globvars.ds_hco["EmisBe10_Cosmic"].isel(time=t, lev=kf) * \
                     globvars.ds_met[area_var].isel(time=t) * \
                     globvars.kg_s_to_g_d["Be10"]
             else:

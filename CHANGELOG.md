@@ -8,11 +8,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.3.2] -- 2022-10-25
 
-### Changed
-- Bug fix: Fixed malformed version declaration for cartopy (use `==`
+### Fixes
+- Fixed malformed version declaration for cartopy (use `==`
   instead of `=`) in setup.py.  This was preventing upload to
   conda-forge.
-     
+- Vertically flip GCHP emissions when computing transport tracers budget
+
 ## [1.3.1] -- 2022-10-25
 
 ### Changed
