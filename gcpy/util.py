@@ -676,7 +676,7 @@ def slice_by_lev_and_time(
         flip
 ):
     """
-    Slice a DataArray by desired time and level.
+    Given a Dataset, returns a DataArray sliced by desired time and level.
 
     Args:
         ds: xarray Dataset
@@ -691,24 +691,32 @@ def slice_by_lev_and_time(
             Whether to flip ilev to be indexed from ground or top of atmosphere
 
     Returns:
-        ds[varname]: xarray DataArray
+        dr: xarray DataArray
             DataArray of data variable sliced according to ilev and itime
     """
     # used in compare_single_level and compare_zonal_mean to get dataset slices
-    vdims = ds[varname].dims
+    if not isinstance(ds, xr.Dataset):
+        msg="ds is not of type xarray.Dataset!"
+        raise TypeError(msg)
+
+    # NOTE: isel no longer seems to work on a Dataset, so
+    # first createthe DataArray object, then use isel on it. 
+    #  -- Bob Yantosca (19 Jan 2023)
+    dr = ds[varname]    
+    vdims = dr.dims
     if "time" in vdims and "lev" in vdims:
         if flip:
-            maxlev_i = len(ds['lev'])-1
-            return ds[varname].isel(time=itime, lev=maxlev_i - ilev)
-        return ds[varname].isel(time=itime, lev=ilev)
+            fliplev=len(dr['lev'])-1 - ilev
+            return dr.isel(time=itime, lev=fliplev)
+        return dr.isel(time=itime, lev=ilev)
     if ("time" not in vdims or itime == -1) and "lev" in vdims:
         if flip:
-            maxlev_i = len(ds['lev'])-1
-            return ds[varname].isel(lev=maxlev_i - ilev)
-        return ds[varname].isel(lev=ilev)
+            fliplev= len(dr['lev'])-1 - ilev
+            return dr.isel(lev=fliplev)
+        return dr.isel(lev=ilev)
     if "time" in vdims and "lev" not in vdims and itime != -1:
-        return ds[varname].isel(time=itime)
-    return ds[varname]
+        return dr.isel(time=itime)
+    return dr
 
 
 def rename_and_flip_gchp_rst_vars(
