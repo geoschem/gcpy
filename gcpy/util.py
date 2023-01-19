@@ -629,6 +629,11 @@ def get_diff_of_diffs(
     ref = ref[varlist]
     dev = dev[varlist]
     if 'nf' not in ref.dims and 'nf' not in dev.dims:
+        # if the coords do not align then set time dimensions equal
+        try:
+            xr.align(dev, ref, join='exact')
+        except:
+            ref.coords["time"] = dev.coords["time"]
         with xr.set_options(keep_attrs=True):
             absdiffs = dev - ref
             fracdiffs = dev / ref
