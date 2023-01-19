@@ -698,23 +698,27 @@ def slice_by_lev_and_time(
     if not isinstance(ds, xr.Dataset):
         msg="ds is not of type xarray.Dataset!"
         raise TypeError(msg)
+    if not varname in ds.data_vars.keys():
+        msg="Could not find 'varname' in ds!"
+        raise ValueError(msg)
 
     # NOTE: isel no longer seems to work on a Dataset, so
     # first createthe DataArray object, then use isel on it. 
     #  -- Bob Yantosca (19 Jan 2023)
     dr = ds[varname]    
     vdims = dr.dims
-    if "time" in vdims and "lev" in vdims:
+    if ("time" in vdims and dr.time.size > 0) and "lev" in vdims:
         if flip:
-            fliplev=len(dr['lev'])-1 - ilev
+            fliplev=len(dr['lev']) - 1 - ilev
             return dr.isel(time=itime, lev=fliplev)
         return dr.isel(time=itime, lev=ilev)
     if ("time" not in vdims or itime == -1) and "lev" in vdims:
         if flip:
-            fliplev= len(dr['lev'])-1 - ilev
+            fliplev= len(dr['lev']) - 1 - ilev
             return dr.isel(lev=fliplev)
         return dr.isel(lev=ilev)
-    if "time" in vdims and "lev" not in vdims and itime != -1:
+    if ("time" in vdims and dr.time.size > 0 and itime != -1) and \
+       "lev" not in vdims:
         return dr.isel(time=itime)
     return dr
 
