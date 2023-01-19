@@ -14,6 +14,7 @@ dependencies:
     - xesmf==0.5.1                    # Universal regridder
     - pip:
         - awscli>=1.22.83             # Utilities for AWS cloud
+        - cf_xarray==0.7.4            # CF conventions for xarray
         - dask==2021.7.1              # Parallel library; backend for xarray
         - docutils==0.16              # Convert text to other formats
         - h5netcdf==0.11.0            # Python interface to netCDF4/HDF5
