@@ -227,34 +227,34 @@ def print_totals(
     # ==================================================================
     # Sum the Ref array (or set to NaN if missing)
     # ==================================================================
+    refarr = ref.values
     if ref_is_all_nan:
         total_ref = np.nan
     else:
-        if masks is None:
-            total_ref = np.sum(ref.values)
-        else:
-            arr = np.ma.masked_array(ref.values, masks["Ref_TropMask"])
-            total_ref = np.sum(arr)
+        if masks is not None:
+            refarr = np.ma.masked_array(refarr, masks["Ref_TropMask"])
+        total_ref = np.sum(refarr)
 
     # ==================================================================
     # Sum the Dev array (or set to NaN if missing)
     # ==================================================================
+    devarr = dev.values
     if dev_is_all_nan:
         total_dev = np.nan
     else:
-        if masks is None:
-            total_dev = np.sum(dev.values)
-        else:
-            arr = np.ma.masked_array(dev.values, masks["Dev_TropMask"])
-            total_dev = np.sum(arr)
+        if masks is not None:
+            devarr = np.ma.masked_array(devarr, masks["Dev_TropMask"])
+        total_dev = np.sum(devarr)
 
     # ==================================================================
     # Compute differences (or set to NaN if missing)
     # ==================================================================
     if ref_is_all_nan or dev_is_all_nan:
         diff = np.nan
+        zero_diff = False
     else:
         diff = total_dev - total_ref
+        zero_diff = np.array_equal(refarr, devarr)
 
     # ==================================================================
     # Compute % differences (or set to NaN if missing)
@@ -270,10 +270,7 @@ def print_totals(
     # ==================================================================
     # Write output to file
     # ==================================================================
-    print(
-        f"{display_name.ljust(18)} : {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}", file=f
-    )
-
+    print(f"{display_name.ljust(14)} : {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {zero_diff}", file=f)
 
 def get_species_categories(
         benchmark_type="FullChemBenchmark"
@@ -2119,3 +2116,20 @@ def read_config_file(config_file, quiet=False):
         raise Exception(msg) from err
 
     return config
+
+
+def is_zero_diff(refdr, devdr):
+    """
+    Returns True if two DataArray objects contain identical data,
+    or False otherwise
+
+    Args:
+    -----
+    refdr (xarray DataArray)
+        The "Ref" DataArray object to be tested.
+    devdr (xarray DataArray)
+        The "Dev" DataArray object to be tested
+    """
+    if not np.array_equal(refdr.values, devdr.values):
+        return False
+    return True
