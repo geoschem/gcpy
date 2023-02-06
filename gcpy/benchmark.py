@@ -433,32 +433,29 @@ def create_global_mass_table(
     # Create file
     try:
         f = open(outfilename, "w")
-    except FileNotFoundError:
-        msg = "Could not open {} for writing!".format(outfilename)
+    except (IOError, OSError, FileNotFoundError) as e:
+        msg = f"Could not open {outfilename} for writing!"
         raise FileNotFoundError(msg)
 
+    # Determine if the two data sets are identical
+    diff_str="### Dev differs from Ref"
+    if xr.Dataset.equals(refdata, devdata):
+        diff_str="### Dev is identical to Ref"
+
     # Title strings
+    title1 = f"### Global mass (Gg) {label} (Trop + Strat)"
     if trop_only:
-        title1 = "### Global mass (Gg) {} (Trop only)".format(label)
-    else:
-        title1 = "### Global mass (Gg) {} (Trop + Strat)".format(label)
-    title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+        title1 = f"### Global mass (Gg) {label} (Trop only)"
+    title2 = f"### Ref = {refstr}; Dev = {devstr}"
 
     # Print header to file
     print("#" * 83, file=f)
-    print("{}{}".format(title1.ljust(80), "###"), file=f)
-    print("{}{}".format(title2.ljust(80), "###"), file=f)
+    print(f"{title1 : <80}{'###'}", file=f)
+    print(f"{title2 : <80}{'###'}", file=f)
+    print(f"{'###' : <80}{'###'}", file=f)
+    print(f"{diff_str : <80}{'###'}", file=f)
     print("#" * 83, file=f)
-    print(
-        "{}{}{}{}{}".format(
-            " ".ljust(19),
-            "Ref".rjust(20),
-            "Dev".rjust(20),
-            "Dev - Ref".rjust(14),
-            "% diff".rjust(10),
-        ),
-        file=f,
-    )
+    print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'no-diff'}", file=f)
 
     # ==================================================================
     # Print global masses for all species
@@ -521,7 +518,7 @@ def create_global_mass_table(
                 delta_p=met_and_masks["Dev_Delta_P"],
                 box_height=met_and_masks["Dev_BxHeight"],
             )
-
+            
         # ==============================================================
         # Print global masses for Ref and Dev
         # (we will mask out tropospheric boxes in util.print_totals)
@@ -531,13 +528,13 @@ def create_global_mass_table(
                 refarray,
                 devarray,
                 f,
-                masks=met_and_masks,
+                masks=met_and_masks
             )
         else:
             util.print_totals(
                 refarray,
                 devarray,
-                f,
+                f
             )
 
     # ==================================================================
