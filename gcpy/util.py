@@ -222,7 +222,7 @@ def print_totals(
 
     # Special handling for totals
     if "_TOTAL" in diagnostic_name.upper():
-        print("-"*83, file=f)
+        print("-"*90, file=f)
 
     # ==================================================================
     # Sum the Ref array (or set to NaN if missing)
@@ -270,7 +270,7 @@ def print_totals(
     # ==================================================================
     # Write output to file
     # ==================================================================
-    print(f"{display_name.ljust(19)} : {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {zero_diff}", file=f)
+    print(f"{display_name.ljust(19)}: {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {zero_diff}", file=f)
 
 
 def get_species_categories(
@@ -2117,20 +2117,3 @@ def read_config_file(config_file, quiet=False):
         raise Exception(msg) from err
 
     return config
-
-
-def is_zero_diff(refdr, devdr):
-    """
-    Returns True if two DataArray objects contain identical data,
-    or False otherwise
-
-    Args:
-    -----
-    refdr (xarray DataArray)
-        The "Ref" DataArray object to be tested.
-    devdr (xarray DataArray)
-        The "Dev" DataArray object to be tested
-    """
-    if not np.array_equal(refdr.values, devdr.values):
-        return False
-    return True
