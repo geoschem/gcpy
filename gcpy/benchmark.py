@@ -176,10 +176,11 @@ def create_total_emissions_table(
     # =================================================================
     # Open the file for output
     # =================================================================
+    # Create file
     try:
         f = open(outfilename, "w")
-    except FileNotFoundError:
-        msg = "Could not open {} for writing!".format(outfilename)
+    except (IOError, OSError, FileNotFoundError) as e:
+        msg = f"Could not open {outfilename} for writing!"
         raise FileNotFoundError(msg)
 
     # =================================================================
@@ -220,29 +221,35 @@ def create_total_emissions_table(
 
         # Title strings
         if "Inv" in template:
-            print("Computing inventory totals for {}".format(species_name))
-            title1 = "### Emissions totals for inventory {} [Tg]".format(
-                species_name)
+            print(f"Computing inventory totals for {species_name}")
+            title0 = f"for inventory {species_name}"
+            title1 = f"### Emissions totals {title0} [Tg]"
         else:
-            print("Computing emissions totals for {}".format(species_name))
-            title1 = "### Emissions totals for species {} [Tg]".format(species_name)
+            print(f"Computing emissions totals for {species_name}")
+            title0 = f"for species {species_name}"
+            title1 = f"### Emissions totals {title0} [Tg]"
 
-        title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+        title2 = f"### Ref = {refstr}; Dev = {devstr}"
+
+        # Determine if the all DataArrays for a given species or
+        # have identical data, and define a display string.
+        diagnames = [v for v in varnames if species_name in v]
+        diff_ct = 0
+        for v in diagnames:
+            if np.array_equal(refdata[v].values, devdata[v].values):
+                diff_ct += 1
+        diff_str = f"### Dev differs from Ref {title0}"
+        if diff_ct == len(diagnames):
+            diff_str = f"### Dev is identical to Ref {title0}"
 
         # Print header to file
-        print("#" * 83, file=f)
-        print("{}{}".format(title1.ljust(80), "###"), file=f)
-        print("{}{}".format(title2.ljust(80), "###"), file=f)
-        print("#" * 83, file=f)
-        print(
-            "{}{}{}{}{}".format(
-                " ".ljust(19),
-                "Ref".rjust(20),
-                "Dev".rjust(20),
-                "Dev - Ref".rjust(14),
-                "% diff".rjust(10),
-            ),
-            file=f)
+        print("#" * 91, file=f)
+        print(f"{title1 : <88}{'###'}", file=f)
+        print(f"{title2 : <88}{'###'}", file=f)
+        print(f"{'###' : <88}{'###'}", file=f)
+        print(f"{diff_str : <88}{'###'}", file=f)
+        print("#" * 91, file=f)
+        print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'no-diff'}", file=f)
 
         # =============================================================
         # Loop over all emissions variables corresponding to this
@@ -449,12 +456,12 @@ def create_global_mass_table(
     title2 = f"### Ref = {refstr}; Dev = {devstr}"
 
     # Print header to file
-    print("#" * 83, file=f)
-    print(f"{title1 : <80}{'###'}", file=f)
-    print(f"{title2 : <80}{'###'}", file=f)
-    print(f"{'###' : <80}{'###'}", file=f)
-    print(f"{diff_str : <80}{'###'}", file=f)
-    print("#" * 83, file=f)
+    print("#" * 91, file=f)
+    print(f"{title1 : <88}{'###'}", file=f)
+    print(f"{title2 : <88}{'###'}", file=f)
+    print(f"{'###' : <88}{'###'}", file=f)
+    print(f"{diff_str : <88}{'###'}", file=f)
+    print("#" * 91, file=f)
     print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'no-diff'}", file=f)
 
     # ==================================================================
