@@ -270,7 +270,8 @@ def print_totals(
     # ==================================================================
     # Write output to file
     # ==================================================================
-    print(f"{display_name.ljust(14)} : {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {zero_diff}", file=f)
+    print(f"{display_name.ljust(19)} : {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {zero_diff}", file=f)
+
 
 def get_species_categories(
         benchmark_type="FullChemBenchmark"
