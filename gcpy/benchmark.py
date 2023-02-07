@@ -1,4 +1,4 @@
-"""
+6"""
 Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 """
 
@@ -180,8 +180,16 @@ def create_total_emissions_table(
     try:
         f = open(outfilename, "w")
     except (IOError, OSError, FileNotFoundError) as e:
-        msg = f"Could not open {outfilename} for writing!"
-        raise FileNotFoundError(msg)
+        raise e(f"Could not open {outfilename} for writing!")
+
+    # Write a placeholder to the file that denotes where
+    # the list of species with differences will be written
+    placeholder = "@%% insert diff_list here %%@"
+    print(f"Species that differ between {refstr} and {devstr}", file=f)
+    print(f"{placeholder}\n\n", file=f)
+
+    # Define a list for differences
+    diff_list = []
 
     # =================================================================
     # Loop through all of the species are in species_dict
@@ -231,25 +239,12 @@ def create_total_emissions_table(
 
         title2 = f"### Ref = {refstr}; Dev = {devstr}"
 
-        # Determine if the all DataArrays for a given species or
-        # have identical data, and define a display string.
-        diagnames = [v for v in varnames if species_name in v]
-        diff_ct = 0
-        for v in diagnames:
-            if np.array_equal(refdata[v].values, devdata[v].values):
-                diff_ct += 1
-        diff_str = f"### Dev differs from Ref {title0}"
-        if diff_ct == len(diagnames):
-            diff_str = f"### Dev is identical to Ref {title0}"
-
         # Print header to file
-        print("#" * 91, file=f)
-        print(f"{title1 : <88}{'###'}", file=f)
-        print(f"{title2 : <88}{'###'}", file=f)
-        print(f"{'###' : <88}{'###'}", file=f)
-        print(f"{diff_str : <88}{'###'}", file=f)
-        print("#" * 91, file=f)
-        print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'no-diff'}", file=f)
+        print("#" * 89, file=f)
+        print(f"{title1 : <86}{'###'}", file=f)
+        print(f"{title2 : <86}{'###'}", file=f)
+        print("#" * 89, file=f)
+        print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'diffs'}", file=f)
 
         # =============================================================
         # Loop over all emissions variables corresponding to this
@@ -335,17 +330,30 @@ def create_total_emissions_table(
             # ==========================================================
             # Print emission totals for Ref and Dev
             # ==========================================================
-            util.print_totals(refarray, devarray, f)
+            util.print_totals(
+                refarray,
+                devarray,
+                f,
+                diff_list
+            )
 
         # Add newlines before going to the next species
         print(file=f)
         print(file=f)
 
     # =================================================================
-    # Close file
+    # Cleanup and quit
     # =================================================================
+
+    # Close file
     f.close()
 
+    # Reopen file and insert list of species with nonzero diffs
+    util.insert_text_into_file(
+        filename=outfilename,
+        search_text=placeholder,
+        replace_text=util.unique_values(diff_list, drop=[None])
+    )
 
 def create_global_mass_table(
         refdata,
@@ -444,10 +452,8 @@ def create_global_mass_table(
         msg = f"Could not open {outfilename} for writing!"
         raise FileNotFoundError(msg)
 
-    # Determine if the two data sets are identical
-    diff_str="### Dev differs from Ref"
-    if xr.Dataset.equals(refdata, devdata):
-        diff_str="### Dev is identical to Ref"
+    # Define a list for differences
+    diff_list = []
 
     # Title strings
     title1 = f"### Global mass (Gg) {label} (Trop + Strat)"
@@ -456,18 +462,25 @@ def create_global_mass_table(
     title2 = f"### Ref = {refstr}; Dev = {devstr}"
 
     # Print header to file
-    print("#" * 91, file=f)
-    print(f"{title1 : <88}{'###'}", file=f)
-    print(f"{title2 : <88}{'###'}", file=f)
-    print(f"{'###' : <88}{'###'}", file=f)
-    print(f"{diff_str : <88}{'###'}", file=f)
-    print("#" * 91, file=f)
-    print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'no-diff'}", file=f)
+    print("#" * 89, file=f)
+    print(f"{title1 : <86}{'###'}", file=f)
+    print(f"{title2 : <86}{'###'}", file=f)
+    print("#" * 89, file=f)
+
+    # Write a placeholder to the file that denotes where
+    # the list of species with differences will be written
+    placeholder = "@%% insert diff_list here %%@"
+    print(f"\nSpecies that differ between {refstr} and {devstr}", file=f)
+    print(f"{placeholder}\n\n", file=f)
+
+    # Column headers
+    print(f"{title2}", file=f)
+    print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'diffs'}", file=f)
 
     # ==================================================================
     # Print global masses for all species
     #
-    # NOTE: By this point, all species will be in both Ref and Dev'
+    # NOTE: By this point, all secies will be in both Ref and Dev'
     # because we have added them in the calling routine
     # ==================================================================
     for v in varlist:
@@ -525,7 +538,7 @@ def create_global_mass_table(
                 delta_p=met_and_masks["Dev_Delta_P"],
                 box_height=met_and_masks["Dev_BxHeight"],
             )
-            
+
         # ==============================================================
         # Print global masses for Ref and Dev
         # (we will mask out tropospheric boxes in util.print_totals)
@@ -535,19 +548,30 @@ def create_global_mass_table(
                 refarray,
                 devarray,
                 f,
+                diff_list,
                 masks=met_and_masks
             )
         else:
             util.print_totals(
                 refarray,
                 devarray,
-                f
+                f,
+                diff_list
             )
 
     # ==================================================================
-    # Close files
+    # Cleanup and quit
     # ==================================================================
+
+    # Close file
     f.close()
+
+    # Reopen file and insert list of species with nonzero diffs
+    util.insert_text_into_file(
+        filename=outfilename,
+        search_text=placeholder,
+        replace_text=util.unique_values(diff_list, drop=[None])
+    )
 
 
 def make_benchmark_conc_plots(
@@ -4367,3 +4391,109 @@ def get_species_database_dir(config):
     else:
         msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
         raise FileNotFoundError(msg)
+
+
+def create_benchmark_summary_table(
+        refpath,
+        refstr,
+        devpath,
+        devstr,
+        dst="./benchmark",
+        overwrite=False,
+        outfilename="Summary.txt",
+        verbose=False,
+        spcdb_dir=os.path.dirname(__file__)
+):
+    """
+    Creates a table of global masses for a list of species in contained in
+    two data sets.  The data sets,  which typically represent output from two
+    different model versions, are usually contained in netCDF data files.
+
+    Args:
+        refdata: xarray Dataset
+            The first data set to be compared (aka "Reference").
+        refstr: str
+            A string that can be used to identify refdata
+            (e.g. a model v2ersion number or other identifier).
+        devdata: xarray Dataset
+            The second data set to be compared (aka "Development").
+        devstr: str
+            A string that can be used to identify the data set specified
+            by devfile (e.g. a model version number or other identifier).
+        varlist: list of strings
+            List of species concentation variable names to include
+            in the list of global totals.
+        met_and_masks: dict of xarray DataArray
+            Dictionary containing the meterological variables and
+            masks for the Ref and Dev datasets.
+        label: str
+            Label to go in the header string.  Can be used to
+            pass the month & year.
+
+    Keyword Args (optional):
+        trop_only: bool
+            Set this switch to True if you wish to print totals
+            only for the troposphere.
+            Default value: False (i.e. print whole-atmosphere totals).
+        outfilename: str
+            Name of the text file which will contain the table of
+            emissions totals.
+            Default value: "GlobalMass_TropStrat.txt"
+        verbose: bool
+            Set this switch to True if you wish to print out extra
+            informational messages.
+            Default value: False
+        spcdb_dir: str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
+
+    Remarks:
+        This method is mainly intended for model benchmarking purposes,
+        rather than as a general-purpose tool.
+
+        Species properties (such as molecular weights) are read from a
+        YAML file called "species_database.yml".
+    """
+
+    # ==================================================================
+    # Initialization and data read
+    # ==================================================================
+    if os.path.isdir(dst) and not overwrite:
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any."
+        msg = msg.format(dst)
+        raise ValueError(msg)
+    if not os.path.isdir(dst):
+        os.mkdir(dst)
+
+#    # ==================================================================
+#    # Close files
+#    # ==================================================================
+#
+#    # Get a list of files in the Ref path
+#    ref_files = []
+#    for (path, names, files) in os.walk(refpath):
+#        for rf in files:
+#            ref_files.append(os.path.join(path, rf))
+#
+#    # Get a list of files in the Ref path
+#    dev_files = []
+#    for (path, names, files) in os.walk(devpath):
+#        for df in files:
+#            dev_files.append(os.path.join(path, df)
+#
+#    # ==================================================================
+#    # Open file for output
+#    # ==================================================================
+#
+#    # Create file
+#    try:
+#        f = open(os.path.join(dst, outfilename), "w")
+#    except (IOError, OSError, FileNotFoundError) as e:
+#        msg = f"Could not open {outfilename} for writing!"
+#        raise e(msg)
+#
+#    # ==================================================================
+#    # Close files
+#    # ==================================================================
+#    f.close()

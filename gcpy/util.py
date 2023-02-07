@@ -10,6 +10,7 @@ import yaml
 import numpy as np
 import xarray as xr
 from PyPDF2 import PdfFileWriter, PdfFileReader
+from textwrap import wrap
 
 def convert_lon(
         data,
@@ -161,7 +162,8 @@ def print_totals(
         ref,
         dev,
         f,
-        masks=None
+        diff_list,
+        masks=None,
 ):
     """
     Computes and prints Ref and Dev totals (as well as the difference
@@ -194,9 +196,11 @@ def print_totals(
 
     # Make sure that both Ref and Dev are xarray DataArray objects
     if not isinstance(ref, xr.DataArray):
-        raise TypeError("The ref argument must be an xarray DataArray!")
+        raise TypeError("The 'ref' argument must be an xarray DataArray!")
     if not isinstance(dev, xr.DataArray):
-        raise TypeError("The dev argument must be an xarray DataArray!")
+        raise TypeError("The 'dev' argument must be an xarray DataArray!")
+    if not isinstance(diff_list, list):
+        raise TypeError("The 'diff_list' argument must be a list!")
 
     # Determine if either Ref or Dev have all NaN values:
     ref_is_all_nan = np.isnan(ref.values).all()
@@ -220,6 +224,12 @@ def print_totals(
     # Create the display name by editing the diagnostic name
     display_name = create_display_name(diagnostic_name)
 
+    # Get the species name from the display name
+    species_name = display_name
+    c = species_name.find(" ")
+    if c > 0:
+        species_name = display_name[0:c]
+
     # Special handling for totals
     if "_TOTAL" in diagnostic_name.upper():
         print("-"*90, file=f)
@@ -233,7 +243,7 @@ def print_totals(
     else:
         if masks is not None:
             refarr = np.ma.masked_array(refarr, masks["Ref_TropMask"])
-        total_ref = np.sum(refarr)
+        total_ref = np.sum(refarr, dtype=np.float64)
 
     # ==================================================================
     # Sum the Dev array (or set to NaN if missing)
@@ -244,17 +254,25 @@ def print_totals(
     else:
         if masks is not None:
             devarr = np.ma.masked_array(devarr, masks["Dev_TropMask"])
-        total_dev = np.sum(devarr)
+        total_dev = np.sum(devarr, dtype=np.float64)
 
     # ==================================================================
     # Compute differences (or set to NaN if missing)
     # ==================================================================
     if ref_is_all_nan or dev_is_all_nan:
         diff = np.nan
-        zero_diff = False
     else:
         diff = total_dev - total_ref
-        zero_diff = np.array_equal(refarr, devarr)
+    has_diffs = abs(diff) > np.float64(0.0)
+
+    # Append to the list of differences.  If no differences then append
+    # None.  Duplicates can be stripped out in the calling routine.
+    if has_diffs:
+        diff_str = " * "
+        diff_list.append(species_name)
+    else:
+        diff_str = ""
+        diff_list.append(None)
 
     # ==================================================================
     # Compute % differences (or set to NaN if missing)
@@ -268,9 +286,11 @@ def print_totals(
             pctdiff = np.nan
 
     # ==================================================================
-    # Write output to file
+    # Write output to file and return
     # ==================================================================
-    print(f"{display_name.ljust(19)}: {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {zero_diff}", file=f)
+    print(f"{display_name.ljust(19)}: {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {diff_str}", file=f)
+
+    return diff_list
 
 
 def get_species_categories(
@@ -706,9 +726,9 @@ def slice_by_lev_and_time(
         raise ValueError(msg)
 
     # NOTE: isel no longer seems to work on a Dataset, so
-    # first createthe DataArray object, then use isel on it. 
+    # first createthe DataArray object, then use isel on it.
     #  -- Bob Yantosca (19 Jan 2023)
-    dr = ds[varname]    
+    dr = ds[varname]
     vdims = dr.dims
     if ("time" in vdims and dr.time.size > 0) and "lev" in vdims:
         if flip:
@@ -2117,3 +2137,92 @@ def read_config_file(config_file, quiet=False):
         raise Exception(msg) from err
 
     return config
+
+
+def unique_values(
+        this_list,
+        drop=None,
+):
+    """
+    Given a list, returns a sorted list of unique values.
+
+    Args:
+    -----
+    this_list : list
+        Input list (may contain duplicate values)
+
+    drop: list of str
+        List of variable names to exclude
+
+    Returns:
+    --------
+    unique: list
+        List of unique values from this_list
+    """
+    if not isinstance(this_list, list):
+        raise ValueError("Argument 'this_list' must be a list object!")
+    if not isinstance(drop, list):
+        raise ValueError("Argument 'drop' must be a list object!")
+
+    unique = list(set(this_list))
+
+    if drop is not None:
+        for d in drop:
+            unique.remove(d)
+
+    unique.sort()
+
+    return unique
+
+
+def insert_text_into_file(
+        filename,
+        search_text,
+        replace_text,
+        width=80
+):
+    """
+    Convenience routine to insert text into a file.  The best way
+    to do this is to read the contents of the file, manipulate the
+    text, and then overwrite the file.
+
+    Args:
+    -----
+    filename: str
+        The file with text to be replaced.
+
+    search_text: str
+        Text string in the file that will be replaced.
+
+    replace_text: str or list of str
+        Text that will replace 'search_text'
+
+    width: int
+        Will "word-wrap" the text in 'replace_text' to this width
+    """
+    if not isinstance(search_text, str):
+        raise ValueError("Argument 'search_text' needs to be a string!")
+    if not isinstance(replace_text, str):
+        if isinstance(replace_text, list):
+            replace_text = ' '.join(replace_text)
+        else:
+            raise ValueError(
+                "Argument 'replace_text' needs to be a list or a string"
+            )
+
+    # Word-wrap the replacement text
+    replace_text = wrap(replace_text, width=width)
+    replace_text = '\n'.join(replace_text)
+
+    with open(filename, "r") as f:
+        filedata = f.read()
+        f.close()
+
+    filedata = filedata.replace(
+        search_text,
+        replace_text
+    )
+
+    with open(filename, "w") as f:
+        f.write(filedata)
+        f.close()
