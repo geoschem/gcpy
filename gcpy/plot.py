@@ -1,6 +1,5 @@
 import os
 import copy
-import yaml
 import matplotlib as mpl
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -16,7 +15,7 @@ from .grid import get_vert_grid, get_pressure_indices, \
 from .regrid import regrid_comparison_data, create_regridders, gen_xmat, \
     regrid_vertical
 from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, \
-    all_zero_or_nan, slice_by_lev_and_time, compare_varnames                                                                               
+    all_zero_or_nan, slice_by_lev_and_time, compare_varnames, read_config_file
 from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
 from joblib import Parallel, delayed
@@ -516,8 +515,13 @@ def compare_single_level(
     if pdfname == "":
         savepdf = False
     if convert_to_ugm3:
-        properties_path = os.path.join(spcdb_dir, "species_database.yml")
-        properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+        properties = read_config_file(
+            os.path.join(
+                spcdb_dir,
+                "species_database.yml"
+            ),
+            quiet=True
+        )
 
     sg_ref_params = [1, 170, -90]
     sg_dev_params = [1, 170, -90]
@@ -1659,8 +1663,13 @@ def compare_zonal_mean(
         savepdf = False
     # If converting to ug/m3, load the species database
     if convert_to_ugm3:
-        properties_path = os.path.join(spcdb_dir, "species_database.yml")
-        properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+        properties = read_config_file(
+            os.path.join(
+                spcdb_dir,
+                "species_database.yml"
+            ),
+            quiet=True
+        )
 
     # Get mid-point pressure and edge pressures for this grid
     ref_pedge, ref_pmid, _ = get_vert_grid(refdata, *ref_vert_params)
