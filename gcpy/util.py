@@ -6,7 +6,7 @@ objects used throughout GCPy
 import os
 import warnings
 import shutil
-import yaml
+from yaml import safe_load as yaml_safe_load
 import numpy as np
 import xarray as xr
 from PyPDF2 import PdfFileWriter, PdfFileReader
@@ -314,9 +314,12 @@ def get_species_categories(
     NOTE: The benchmark categories are specified in YAML file
     benchmark_species.yml.
     """
-    spc_categories = "benchmark_categories.yml"
-    yamlfile = os.path.join(os.path.dirname(__file__), spc_categories)
-    spc_cat_dict = read_config_file(yamlfile)
+    spc_cat_dict = read_config_file(
+        os.path.join(
+            os.path.dirname(__file__), 
+            "benchmark_categories.yml"
+        )
+    )
     return spc_cat_dict[benchmark_type]
 
 
@@ -1002,9 +1005,13 @@ def convert_bpch_names_to_netcdf_names(
     # Names dictionary (key = bpch id, value[0] = netcdf id,
     # value[1] = action to create full name using id)
     # Now read from YAML file (bmy, 4/5/19)
-    bpch_to_nc_names = "bpch_to_nc_names.yml"
-    yamlfile = os.path.join(os.path.dirname(__file__), bpch_to_nc_names)
-    names = yaml.load(open(yamlfile), Loader=yaml.FullLoader)
+    names = read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "bpch_to_nc_names.yml"
+        ).
+        quiet=True
+    )
 
     # define some special variable to overwrite above
     special_vars = {
@@ -1180,11 +1187,12 @@ def get_lumped_species_definitions():
         lumped_spc_dict : dict of str
             Dictionary of lumped species
     """
-    lumped_spc = "lumped_species.yml"
-    yamlfile = os.path.join(os.path.dirname(__file__), lumped_spc)
-    with open(yamlfile, "r") as f:
-        lumped_spc_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
-    return lumped_spc_dict
+    return read_config_file(
+        os.path.join(
+            os.path.dirname(__file__), 
+            "lumped_species.yml"
+        )
+    )
 
 
 def archive_lumped_species_definitions(
@@ -2141,7 +2149,7 @@ def read_config_file(config_file, quiet=False):
     try:
         if not quiet:
             print(f"Using configuration file {config_file}")
-        config = yaml.safe_load(open(config_file))
+        config = yaml_safe_load(open(config_file))
     except Exception as err:
         msg = f"Error reading configuration in {config_file}: {err}"
         raise Exception(msg) from err

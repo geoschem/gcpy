@@ -14,7 +14,6 @@ import os
 import warnings
 import numpy as np
 import xarray as xr
-import yaml
 import gcpy.constants as const
 
 # =====================================================================
@@ -221,8 +220,13 @@ def init_common_vars(ref, refstr, dev, devstr, spcdb_dir):
     """
 
     # Get species database
-    spcdb_file = os.path.join(spcdb_dir, "species_database.yml")
-    spcdb = yaml.load(open(spcdb_file), Loader=yaml.FullLoader)
+    spcdb = util.read_config_file(
+        os.path.join(
+            spcdb_dir,
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # Define common_vars dictionary
     common_vars = {

@@ -154,8 +154,13 @@ def create_total_emissions_table(
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this folder where
     # this benchmark.py file is found.
-    properties_path = os.path.join(spcdb_dir, "species_database.yml")
-    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+    properties = util.read_config_file(
+        os.path.join(
+            spcdb_dir, 
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # ==================================================================
     # Get the list of emission variables for which we will print totals
@@ -442,8 +447,13 @@ def create_global_mass_table(
     # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
-    properties_path = os.path.join(spcdb_dir, "species_database.yml")
-    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+    properties = util.read_config_file(
+        os.path.join(
+            spcdb_dir,
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # ==================================================================
     # Open file for output
@@ -1812,14 +1822,20 @@ def make_benchmark_emis_tables(
     # ==================================================================
 
     # Emissions species dictionary
-    spc_dict = yaml.load(
-        open(os.path.join(os.path.dirname(__file__), emission_spc)),
-        Loader=yaml.FullLoader
+    spc_dict = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            emission_spc
+        ),
+        quiet=True
     )
     species=spc_dict[benchmark_type]
-    inv_dict = yaml.load(
-        open(os.path.join(os.path.dirname(__file__), emission_inv)),
-        Loader=yaml.FullLoader
+    inv_dict = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            emission_inv
+        ),
+        quiet=True
     )
     inventories=inv_dict[benchmark_type]
 
@@ -2439,9 +2455,12 @@ def make_benchmark_aod_plots(
         varlist = [v for v in cmn3D if "AOD" in v and "_bin" not in v]
 
     # Dictionary and list for new display names
-    newvars = yaml.load(
-        open(os.path.join(os.path.dirname(__file__), aod_spc)),
-        Loader=yaml.FullLoader
+    newvars = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            aod_spc
+        ),
+        quiet=True
     )
     newvarlist = []
 
@@ -3419,8 +3438,13 @@ def make_benchmark_aerosol_tables(
     species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC"]
 
     # Read the species database
-    path = os.path.join(spcdb_dir, "species_database.yml")
-    spcdb = yaml.load(open(path), Loader=yaml.FullLoader)
+    spcdb = util.read_config_file(
+        os.path.join(
+            spcdb_dir, 
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # Molecular weights [g mol-1], as taken from the species database
     mw = {}
@@ -3429,8 +3453,14 @@ def make_benchmark_aerosol_tables(
     mw["Air"] = gcon.MW_AIR_g
 
     # Get the list of relevant AOD diagnostics from a YAML file
-    path = os.path.join(os.path.dirname(__file__), "aod_species.yml")
-    aod = yaml.load(open(path), Loader=yaml.FullLoader)
+    aod = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "aod_species.yml"
+        ),
+        quiet=True
+    )
+
     aod_list = [v for v in aod.keys() if "Dust" in v or "Hyg" in v]
     # different names for GCHP
     if is_gchp:
@@ -3861,9 +3891,13 @@ def make_benchmark_operations_budget(
     # ------------------------------------------
 
     # Load a YAML file containing species properties
-    spc_properties = yaml.load(open(os.path.join(os.path.dirname(__file__),
-                                                 "species_database.yml")),
-                               Loader=yaml.FullLoader)
+    spc_properties = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # Determine what the converted units and conversion factor should be
     # based on benchmark type and species (tracer) name. Assume raw data [kg/s]
@@ -4242,8 +4276,13 @@ def make_benchmark_mass_conservation_table(
 
     # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
-    properties_path = os.path.join(spcdb_dir, "species_database.yml")
-    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+    properties = util.read_config_file(
+        os.path.join(
+            spcdb_dir,
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # Get the species name
     spc_name = 'PassiveTracer'
