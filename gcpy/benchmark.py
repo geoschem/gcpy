@@ -1,4 +1,4 @@
-6"""
+"""
 Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 """
 
@@ -185,7 +185,10 @@ def create_total_emissions_table(
     # Write a placeholder to the file that denotes where
     # the list of species with differences will be written
     placeholder = "@%% insert diff_list here %%@"
-    print(f"Species that differ between {refstr} and {devstr}", file=f)
+    if "Inv" in template:
+        print(f"Inventories that differ btw {refstr} and {devstr}:", file=f)
+    else:
+        print(f"Species that differ btw {refstr} and {devstr}:", file=f)
     print(f"{placeholder}\n\n", file=f)
 
     # Define a list for differences
@@ -262,7 +265,7 @@ def create_total_emissions_table(
 
             # If no properties are found, then skip to next species
             if species_properties is None:
-                print("No properties found for {} ... skippping".format(spc_name))
+                print(f"No properties found for {spc_name} ... skippping")
                 continue
 
             # Convert units of Ref and Dev and save to numpy ndarray objects
@@ -348,11 +351,12 @@ def create_total_emissions_table(
     # Close file
     f.close()
 
-    # Reopen file and insert list of species with nonzero diffs
+    # Reopen file and replace placeholder with list of diffs
     util.insert_text_into_file(
         filename=outfilename,
         search_text=placeholder,
-        replace_text=util.unique_values(diff_list, drop=[None])
+        replace_text=diff_list_to_text(diff_list),
+        width=90
     )
 
 def create_global_mass_table(
@@ -460,21 +464,23 @@ def create_global_mass_table(
     if trop_only:
         title1 = f"### Global mass (Gg) {label} (Trop only)"
     title2 = f"### Ref = {refstr}; Dev = {devstr}"
+    title3 = f"### Species that differ btw {refstr} and {devstr}:"
+
+    # Write a placeholder to the file that denotes where
+    # the list of species with differences will be written
+    placeholder = "@%% insert diff_list here %%@"
+    title4 = f"{placeholder}"
 
     # Print header to file
     print("#" * 89, file=f)
     print(f"{title1 : <86}{'###'}", file=f)
     print(f"{title2 : <86}{'###'}", file=f)
+    print(f"{'###'  : <86}{'###'}", file=f)
+    print(f"{title3 : <86}{'###'}", file=f)
+    print(f"{placeholder}", file=f)
     print("#" * 89, file=f)
 
-    # Write a placeholder to the file that denotes where
-    # the list of species with differences will be written
-    placeholder = "@%% insert diff_list here %%@"
-    print(f"\nSpecies that differ between {refstr} and {devstr}", file=f)
-    print(f"{placeholder}\n\n", file=f)
-
     # Column headers
-    print(f"{title2}", file=f)
     print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'diffs'}", file=f)
 
     # ==================================================================
@@ -566,11 +572,15 @@ def create_global_mass_table(
     # Close file
     f.close()
 
-    # Reopen file and insert list of species with nonzero diffs
+    # Reopen file and replace placeholder text by diff_text
     util.insert_text_into_file(
         filename=outfilename,
         search_text=placeholder,
-        replace_text=util.unique_values(diff_list, drop=[None])
+        replace_text=diff_list_to_text(
+            diff_list,
+            fancy_format=True
+        ),
+        width=100  # Force it not to wrap
     )
 
 
@@ -4396,49 +4406,61 @@ def get_species_database_dir(config):
 def create_benchmark_summary_table(
         refpath,
         refstr,
+        refdate,
         devpath,
         devstr,
+        devdate,
+        collections,
         dst="./benchmark",
         overwrite=False,
         outfilename="Summary.txt",
         verbose=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=os.path.dirname(__file__),
+        ref_gchp=False,
+        dev_gchp=False
 ):
     """
-    Creates a table of global masses for a list of species in contained in
-    two data sets.  The data sets,  which typically represent output from two
-    different model versions, are usually contained in netCDF data files.
+    Creates a benchmark summary table that shows which data collections
+    have difference.  Useful for scanning the 1-hr and 1-month benchmark
+    outputs.
 
     Args:
-        refdata: xarray Dataset
-            The first data set to be compared (aka "Reference").
+        refpath: str
+            Path to the first data set to be compared (aka "Ref").
         refstr: str
             A string that can be used to identify refdata
-            (e.g. a model v2ersion number or other identifier).
-        devdata: xarray Dataset
-            The second data set to be compared (aka "Development").
+            (e.g. a model version number or other identifier).
+        refdate: np.datetime64
+            Date/time stamp used by the "Ref" data files.
+        ref_gchp: bool
+            Set to True if the "Ref" data comes from a GCHP run.
+            Default value: False
+        devpath: str
+            Path to the second data set to be compared (aka "Dev").
         devstr: str
             A string that can be used to identify the data set specified
             by devfile (e.g. a model version number or other identifier).
-        varlist: list of strings
-            List of species concentation variable names to include
-            in the list of global totals.
-        met_and_masks: dict of xarray DataArray
-            Dictionary containing the meterological variables and
-            masks for the Ref and Dev datasets.
-        label: str
-            Label to go in the header string.  Can be used to
-            pass the month & year.
+        dev_gchp: bool
+            Set to True if the "Ref" data comes from a GCHP run.
+            Default value: False
+        devdate: np.datetime64
+            Date/time stamp used by the "Dev" data files.
+        collections: list of strings
+            List of diagnostic collections to examine.
 
     Keyword Args (optional):
-        trop_only: bool
-            Set this switch to True if you wish to print totals
-            only for the troposphere.
-            Default value: False (i.e. print whole-atmosphere totals).
+        dst: str
+            A string denoting the destination folder where the file
+            containing emissions totals will be written.
+            Default value: "./benchmark"
+        overwrite: bool
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False
         outfilename: str
             Name of the text file which will contain the table of
             emissions totals.
-            Default value: "GlobalMass_TropStrat.txt"
+            Default value: "Summary.txt"
         verbose: bool
             Set this switch to True if you wish to print out extra
             informational messages.
@@ -4456,44 +4478,183 @@ def create_benchmark_summary_table(
     """
 
     # ==================================================================
-    # Initialization and data read
+    # Open file for output
     # ==================================================================
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any."
-        msg = msg.format(dst)
-        raise ValueError(msg)
-    if not os.path.isdir(dst):
-        os.mkdir(dst)
 
-#    # ==================================================================
-#    # Close files
-#    # ==================================================================
-#
-#    # Get a list of files in the Ref path
-#    ref_files = []
-#    for (path, names, files) in os.walk(refpath):
-#        for rf in files:
-#            ref_files.append(os.path.join(path, rf))
-#
-#    # Get a list of files in the Ref path
-#    dev_files = []
-#    for (path, names, files) in os.walk(devpath):
-#        for df in files:
-#            dev_files.append(os.path.join(path, df)
-#
-#    # ==================================================================
-#    # Open file for output
-#    # ==================================================================
-#
-#    # Create file
-#    try:
-#        f = open(os.path.join(dst, outfilename), "w")
-#    except (IOError, OSError, FileNotFoundError) as e:
-#        msg = f"Could not open {outfilename} for writing!"
-#        raise e(msg)
-#
-#    # ==================================================================
-#    # Close files
-#    # ==================================================================
-#    f.close()
+    # Create the directory for output
+    make_directory(dst, overwrite)
+
+    # Create file
+    try:
+        f = open(os.path.join(dst, outfilename), "w")
+    except (IOError, OSError, FileNotFoundError) as e:
+        msg = f"Could not open {outfilename} for writing!"
+        raise e(msg)
+
+    # Title strings
+    title1 = f"### Benchmark summary table"
+    title2 = f"### Ref = {refstr}; Dev = {devstr}"
+
+    # Write a placeholder to the file that denotes where
+    # the list of species with differences will be written
+    placeholder = "@%% insert diff_list here %%@"
+    title4 = f"{placeholder}"
+
+    # Print header to file
+    print("#" * 80, file=f)
+    print(f"{title1 : <77}{'###'}", file=f)
+    print(f"{title2 : <77}{'###'}", file=f)
+    print("#" * 80, file=f)
+    print(file=f)
+
+    # ==================================================================
+    # Read data and look differences btw Ref & Dev versions
+    # ==================================================================
+
+    # Variables to skip
+    skip_vars = gcon.skip_these_vars
+    skip_vars.append("corner_lats")
+    skip_vars.append("corner_lons")
+
+    # Pick the proper function to read the data
+    reader = util.dataset_reader(
+        multi_files=False,
+        verbose=verbose
+    )
+
+    # Make a directory to store the list of species that differ
+    diff_dict = {}
+
+    # Loop over diagnostic files
+    for col in collections:
+
+        # Read Ref data
+        refdata = reader(
+            util.get_filepath(
+                refpath,
+                col,
+                refdate,
+                is_gchp=ref_gchp
+            ),
+            drop_variables=skip_vars
+        ).load()
+
+        # Get Dev data
+        devdata = reader(
+            util.get_filepath(
+                devpath,
+                col,
+                devdate,
+                is_gchp=dev_gchp
+            ),
+            drop_variables=skip_vars
+        ).load()
+
+        # Make sure that Ref and Dev datasets have the same variables.
+        # Variables that are in Ref but not in Dev will be added to Dev
+        # with all missing values (NaNs). And vice-versa.
+        [refdata, devdata] = util.add_missing_variables(
+            refdata,
+            devdata
+        )
+
+        # Find all common variables between the two datasets
+        vardict = util.compare_varnames(
+            refdata,
+            devdata,
+            quiet=True
+        )
+
+        # List of differences for this collection
+        diff_list = []
+
+        # Keep track of which variables are different
+        # Loop over the common variables
+        for v in vardict["commonvarsData"]:
+            if not util.array_equals(refdata[v], devdata[v]):
+                diff_list.append(v)
+
+        # Drop duplicate values from diff_list
+        diff_list = util.unique_values(diff_list, drop=[None])
+
+        if len(diff_list) == 0:
+            print("-" *  79, file=f)
+            print(f"{col}: {devstr} is identical to {refstr}", file=f)
+            print(file=f)
+        else:
+            c = 0
+            print("-" *  79, file=f)
+            print(f"{col}: {devstr} differs from {refstr}", file=f)
+            print("\n  Diagnostics that differ", file=f)
+            for i, v in enumerate(diff_list):
+                print(f"    {v}", file=f)
+                if i > 10:
+                    print(f"    ... and {len(diff_list) - 10} others", file=f)
+                    break
+            print(file=f)
+
+    # ==================================================================
+    # Close files
+    # ==================================================================
+    f.close()
+
+
+def diff_list_to_text(
+        diff_list,
+        fancy_format=False
+):
+    """
+    Converts a list of species/emissions/inventories/diagnostics that
+    show differences between GEOS-Chem versions ot a printable text
+    string.
+
+    Args:
+    -----
+    diff_list : list
+        List to be converted into text.  "None" values will be dropped.
+    fancy_format: bool
+        Set to True if you wish output text to be bookended with '###'.
+
+    Returns:
+    diff_text : str
+        String with concatenated list values.
+    """
+    if not isinstance(diff_list, list):
+        raise ValueError("Argument 'diff_list' must be a list!")
+
+    # Strip out duplicates from diff_list
+    # Prepare a message about species differences (or alternate msg)
+    diff_list = util.unique_values(diff_list, drop=[None])
+    diff_text = util.wrap_text(diff_list, width=85)
+    if len(diff_text) > 85:
+        diff_text = "... Too many diffs to print (see below for details)"
+
+    if fancy_format:
+        diff_text = f"### {diff_text : <82}{'###'}"
+
+    return diff_text.strip()
+
+
+def make_directory(
+        dir_name,
+        overwrite
+):
+    """
+    Creates a directory where benchmark plots/tables will be placed.
+
+    Args:
+    -----
+    dir_name : str
+        Name of the directory to be created.
+    overwrite : bool
+        Set to True if you wish to overwrite prior contents in
+        the directory 'dir_name'
+    """
+
+    if os.path.isdir(dir_name) and not overwrite:
+        msg = f"Directory {dir_name} exists!\n"
+        msg += "Pass overwrite=True to overwrite files in that directory."
+        raise ValueError(msg)
+
+    if not os.path.isdir(dir_name):
+        os.mkdir(dir_name)

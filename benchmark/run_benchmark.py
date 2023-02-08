@@ -642,29 +642,6 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["OH_metrics"]:
             print("\n%%% Creating GCC vs. GCC OH metrics table %%%")
 
-            # Use this for benchmarks prior to GEOS-Chem 13.0.0
-            #        # Diagnostic collection files to read
-            #        col  = "ConcAfterChem"
-            #        ref = get_filepath(gcc_vs_gcc_refdir, col, gcc_ref_date)
-            #        dev = get_filepath(gcc_vs_gcc_devdir, col, gcc_dev_date)
-            #
-            #        # Meteorology data needed for calculations
-            #        col = "StateMet"
-            #        refmet = get_filepath(gcc_vs_gcc_refdir, col, gcc_ref_date)
-            #        devmet = get_filepath(gcc_vs_gcc_devdir, col, gcc_dev_date)
-            #
-            #        # Print OH metrics
-            #        bmk.make_benchmark_oh_metrics(
-            #            ref,
-            #            refmet,
-            #            config["data"]["ref"]["gcc"]["version"],
-            #            dev,
-            #            devmet,
-            #            config["data"]["dev"]["gcc"]["version"],
-            #            dst=gcc_vs_gcc_tablesdir,
-            #            overwrite=True
-            #        )
-
             # Filepaths
             ref = get_filepath(gcc_vs_gcc_refdir, "Metrics", gcc_ref_date)
             dev = get_filepath(gcc_vs_gcc_devdir, "Metrics", gcc_dev_date)
@@ -702,6 +679,48 @@ def run_benchmark_default(config):
                     overwrite=True,
                     month=gcc_dev_date.astype(datetime).month,
                 )
+
+        # ==================================================================
+        # GCC vs. GCC summary table
+        # ==================================================================
+        if config["options"]["outputs"]["summary_table"]:
+            print("\n%%% Creating GCC vs. GCC summary table %%%")
+
+            # Diagnostic collections to check
+            collections = [
+                'AerosolMass',
+                'Aerosols',
+                'Emissions',
+                'JValues',
+                'Metrics',
+                'SpeciesConc',
+                'StateMet',
+            ]
+
+            # Print summary of which collections are identical
+            # between Ref & Dev, and which are not identical.
+            bmk.create_benchmark_summary_table(
+                gcc_vs_gcc_refdir,
+                config["data"]["ref"]["gcc"]["version"],
+                gcc_ref_date,
+                gcc_vs_gcc_devdir,
+                config["data"]["dev"]["gcc"]["version"],
+                gcc_dev_date,
+                collections = [
+                    'AerosolMass',
+                    'Aerosols',
+                    'Emissions',
+                    'JValues',
+                    'Metrics',
+                    'SpeciesConc',
+                    'StateMet'
+                ],
+                dst=gcc_vs_gcc_tablesdir,
+                outfilename="Summary.txt",
+                overwrite=True,
+                verbose=False,
+            )
+
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC benchmark plots and tables
@@ -1013,6 +1032,38 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["ste_table"]:
             title = "\n%%% Skipping GCHP vs. GCC Strat-Trop Exchange table %%%"
             print(title)
+
+
+        # ==================================================================
+        # GCHP vs. GCC summary table
+        # ==================================================================
+        if config["options"]["outputs"]["summary_table"]:
+            print("\n%%% Creating GCHP vs. GCC summary table %%%")
+
+            # Print summary of which collections are identical
+            # between Ref & Dev, and which are not identical.
+            bmk.create_benchmark_summary_table(
+                gchp_vs_gcc_refdir,
+                config["data"]["dev"]["gcc"]["version"],
+                gcc_dev_date,
+                gchp_vs_gcc_devdir,
+                config["data"]["dev"]["gchp"]["version"],
+                gchp_dev_date,
+                collections=[
+                    'AerosolMass',
+                    'Aerosols',
+                    'Emissions',
+                    'JValues',
+                    'Metrics',
+                    'SpeciesConc',
+                    'StateMet',
+                ],
+                dst=gchp_vs_gcc_tablesdir,
+                outfilename="Summary.txt",
+                overwrite=True,
+                verbose=False,
+                dev_gchp=True
+            )
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCHP benchmark plots and tables
@@ -1376,6 +1427,38 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["ste_table"]:
             print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
 
+        # ==================================================================
+        # GCHP vs. GCHP summary table
+        # ==================================================================
+        if config["options"]["outputs"]["summary_table"]:
+            print("\n%%% Creating GCHP vs. GCHP summary table %%%")
+
+            # Print summary of which collections are identical
+            # between Ref & Dev, and which are not identical.
+            bmk.create_benchmark_summary_table(
+                gchp_vs_gchp_refdir,
+                config["data"]["ref"]["gchp"]["version"],
+                gchp_ref_date,
+                gchp_vs_gchp_devdir,
+                config["data"]["dev"]["gchp"]["version"],
+                gchp_dev_date,
+                collections=[
+                    'AerosolMass',
+                    'Aerosols',
+                    'Emissions',
+                    'JValues',
+                    'Metrics',
+                    'SpeciesConc', 
+                    'StateMet',
+                ],
+                dst=gchp_vs_gchp_tablesdir,
+                outfilename="Summary.txt",
+                overwrite=True,
+                verbose=False,
+                ref_gchp=True,
+                dev_gchp=True,
+            )
+
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC difference of differences benchmark plots
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1423,7 +1506,7 @@ def run_benchmark_default(config):
     # ==================================================================
     # Print a message indicating that the benchmarks finished
     # ==================================================================
-    print("\n %%%% All requested benchmark plots/tables created! %%%%")
+    print("\n%%%% All requested benchmark plots/tables created! %%%%")
 
 
 def main():
