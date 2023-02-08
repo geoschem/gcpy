@@ -842,6 +842,8 @@ def compare_varnames(
             commonvars3D     List of variables that are common to
                              refdata and devdata, and that have lat,
                              lon, and level dimensions.
+            commonvarsData   List of all commmon 2D or 3D data variables,
+                             excluding index variables.
             refonly          List of 2D or 3D variables that are only
                              present in refdata.
             devonly          List of 2D or 3D variables that are only
@@ -854,30 +856,36 @@ def compare_varnames(
     devonly = [v for v in devvars if v not in refvars]
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
     commonvarsOther = [
-        v
-        for v in commonvars
-        if (
+        v for v in commonvars if (
+          (
             ("lat" not in refdata[v].dims or "Xdim" not in refdata[v].dims)
-            and ("lon" not in refdata[v].dims or "Ydim" not in refdata[v].dims)
-            and ("lev" not in refdata[v].dims)
+            and
+            ("lon" not in refdata[v].dims or "Ydim" not in refdata[v].dims)
+            and
+            ("lev" not in refdata[v].dims)
+          )
+          or
+          (
+            ("hyam" in v or "hybm" in v)  # Omit these from plottable data
+          )
         )
     ]
     commonvars2D = [
-        v
-        for v in commonvars
-        if (
-            ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
-            and ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
-            and ("lev" not in refdata[v].dims)
+        v for v in commonvars if (
+          ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
+          and
+          ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
+          and
+          ("lev" not in refdata[v].dims)
         )
     ]
     commonvars3D = [
-        v
-        for v in commonvars
-        if (
-            ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
-            and ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
-            and ("lev" in refdata[v].dims)
+        v for v in commonvars if (
+          ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
+          and
+          ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
+          and
+          ("lev" in refdata[v].dims)
         )
     ]
 
@@ -903,18 +911,20 @@ def compare_varnames(
                     print("All variables have same dimensions in ref and dev")
 
     # For safety's sake, remove the 0-D and 1-D variables from
-    # refonly and devonly.  This will ensure that refonly and
-    # devonly will only contain variables that can be plotted.
+    # commonvarsData, refonly, and devonly.  This will ensure that
+    # these lists will only contain variables that can be plotted.
+    commonvarsData = [v for v in commonvars if v not in commonvarsOther]
     refonly = [v for v in refonly if v not in commonvarsOther]
     devonly = [v for v in devonly if v not in commonvarsOther]
 
     return {
         "commonvars": commonvars,
-        "commonvarsOther": commonvarsOther,
         "commonvars2D": commonvars2D,
         "commonvars3D": commonvars3D,
+        "commonvarsData": commonvarsData,
+        "commonvarsOther": commonvarsOther,
         "refonly": refonly,
-        "devonly": devonly,
+        "devonly": devonly
     }
 
 
@@ -2168,11 +2178,44 @@ def unique_values(
 
     if drop is not None:
         for d in drop:
-            unique.remove(d)
+            if d in unique:
+                unique.remove(d)
 
     unique.sort()
 
     return unique
+
+
+def wrap_text(
+        text,
+        width=80
+):
+    """
+    Wraps text so that it fits within a certain line width.
+
+    Args:
+    -----
+    text: str or list of str
+        Input text to be word-wrapped.
+    width: int
+        Line width, in characters.
+        Default value: 80
+
+    Returns:
+    --------
+    Original text reformatted so that it fits within lines
+    of 'width' characters or less.
+    """
+    if not isinstance(text, str):
+        if isinstance(text, list):
+            text = ' '.join(text)  # List -> str conversion
+        else:
+            raise ValueError("Argument 'text' must be either str or list!")
+
+    text = wrap(text, width=width)
+    text = '\n'.join(text)
+
+    return text
 
 
 def insert_text_into_file(
@@ -2190,29 +2233,27 @@ def insert_text_into_file(
     -----
     filename: str
         The file with text to be replaced.
-
     search_text: str
         Text string in the file that will be replaced.
-
     replace_text: str or list of str
         Text that will replace 'search_text'
-
     width: int
         Will "word-wrap" the text in 'replace_text' to this width
     """
     if not isinstance(search_text, str):
         raise ValueError("Argument 'search_text' needs to be a string!")
-    if not isinstance(replace_text, str):
-        if isinstance(replace_text, list):
-            replace_text = ' '.join(replace_text)
-        else:
-            raise ValueError(
-                "Argument 'replace_text' needs to be a list or a string"
-            )
+    if not isinstance(replace_text, str) and \
+       not isinstance(replace_text, list):
+        raise ValueError(
+            "Argument 'replace_text' needs to be a list or a string"
+        )
 
     # Word-wrap the replacement text
-    replace_text = wrap(replace_text, width=width)
-    replace_text = '\n'.join(replace_text)
+    # (does list -> str conversion if necessary)
+    replace_text = wrap_text(
+        replace_text,
+        width=width
+    )
 
     with open(filename, "r") as f:
         filedata = f.read()
@@ -2226,3 +2267,44 @@ def insert_text_into_file(
     with open(filename, "w") as f:
         f.write(filedata)
         f.close()
+
+
+def array_equals(
+        refdata,
+        devdata
+):
+    """
+    Tests two arrays for equality.  Useful for checking which
+    species have nonzero differences in benchmark output.
+
+    Args:
+    -----
+    refdata: xarray DataArray or numpy ndarray
+        The first array to be checked.
+    devdata: xarray DataArray or numpy ndarray
+        The second array to be checked.
+
+    Returns:
+    --------
+    True if both arrays are equal; False if not
+    """
+    if not isinstance(refdata, np.ndarray):
+        if isinstance(refdata, xr.DataArray):
+            refdata = refdata.values
+        else:
+            raise ValueError(
+            "Argument 'refdata' must be an xarray DataArray or numpy ndarray!"
+            )
+    if not isinstance(devdata, np.ndarray):
+        if isinstance(devdata, xr.DataArray):
+            devdata = devdata.values
+        else:
+            raise ValueError(
+            "Argument 'devdata' must be an xarray DataArray or numpy ndarray!"
+            )
+
+    # This method will work if the arrays hve different dimensions
+    # but an element-by-element search will not!
+    refsum = np.sum(refdata, dtype=np.float64)
+    devsum = np.sum(devdata, dtype=np.float64)
+    return np.abs(devsum - refsum) > np.float64(0.0)
