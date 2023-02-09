@@ -2264,7 +2264,8 @@ def insert_text_into_file(
 
 def array_equals(
         refdata,
-        devdata
+        devdata,
+        dtype=np.float64
 ):
     """
     Tests two arrays for equality.  Useful for checking which
@@ -2276,6 +2277,9 @@ def array_equals(
         The first array to be checked.
     devdata: xarray DataArray or numpy ndarray
         The second array to be checked.
+    dtype : np.float32 or np.float64
+        The precision that will be used to make the evaluation.
+        Default: np.float64
 
     Returns:
     --------
@@ -2298,6 +2302,6 @@ def array_equals(
 
     # This method will work if the arrays hve different dimensions
     # but an element-by-element search will not!
-    refsum = np.sum(refdata, dtype=np.float64)
-    devsum = np.sum(devdata, dtype=np.float64)
-    return np.abs(devsum - refsum) > np.float64(0.0)
+    refsum = np.nansum(refdata, dtype=dtype)
+    devsum = np.nansum(devdata, dtype=dtype)
+    return (not np.abs(devsum - refsum) > dtype(0.0))

@@ -4513,8 +4513,7 @@ def create_benchmark_summary_table(
 
     # Variables to skip
     skip_vars = gcon.skip_these_vars
-    skip_vars.append("corner_lats")
-    skip_vars.append("corner_lons")
+    skip_vars.append("AREA")
 
     # Pick the proper function to read the data
     reader = util.dataset_reader(
@@ -4569,9 +4568,14 @@ def create_benchmark_summary_table(
         diff_list = []
 
         # Keep track of which variables are different
-        # Loop over the common variables
+        # NOTE: Use 32-point float for comparisons since this is
+        # the precision used for History diagnostics.
         for v in vardict["commonvarsData"]:
-            if not util.array_equals(refdata[v], devdata[v]):
+            if not util.array_equals(
+                    refdata[v],
+                    devdata[v],
+                    dtype=np.float32
+            ):
                 diff_list.append(v)
 
         # Drop duplicate values from diff_list
