@@ -2317,3 +2317,28 @@ def array_equals(
     refsum = np.sum(refdata, dtype=np.float64)
     devsum = np.sum(devdata, dtype=np.float64)
     return np.abs(devsum - refsum) > np.float64(0.0)
+
+
+def make_directory(
+        dir_name,
+        overwrite
+):
+    """
+    Creates a directory where benchmark plots/tables will be placed.
+
+    Args:
+    -----
+    dir_name : str
+        Name of the directory to be created.
+    overwrite : bool
+        Set to True if you wish to overwrite prior contents in
+        the directory 'dir_name'
+    """
+
+    if os.path.isdir(dir_name) and not overwrite:
+        msg = f"Directory {dir_name} exists!\n"
+        msg += "Pass overwrite=True to overwrite files in that directory."
+        raise ValueError(msg)
+
+    if not os.path.isdir(dir_name):
+        os.makedirs(dir_name)
