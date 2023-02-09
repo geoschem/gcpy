@@ -12,8 +12,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - New functions in `benchmark.py` and `util.py` to facilitate printing of the species/emissions/inventories that differ between Dev & Ref versions.
 
 ### Changed
-- Applied cleanup susggestions from pylint to `benchmark.py`, `util.py`, `plot.py`
-- Replaced format with f-strings in `benchmark.py`, `util.py`
+- Applied cleanup susggestions from pylint to `benchmark.py`, `util.py`, `plot.py`, `oh_metrics.py`, `ste_flux.py`
+- Replaced format with f-strings in `benchmark.py`, `util.py`, `plot.py`, `oh_metrics.py`, `ste_flux.py`
 - Abstract some common in `benchmark.py` into functions
 - Replaced direct calls to `yaml.load` with `util.read_config.file` (mostly using `quiet=True`)
 
