@@ -738,7 +738,7 @@ def make_benchmark_conc_plots(
     # ==================================================================
 
     # Create the destination folder
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Define extra title text (usually a date string)
     # for the top-title of the plot
@@ -1406,7 +1406,7 @@ def make_benchmark_emis_plots(
     # =================================================================
 
     # Create the destination folder
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Create the "Emissions" category folder.  If subdst is passed,
     # then create a sub-folder (needed for the 1-year benchmarks).
@@ -1776,7 +1776,7 @@ def make_benchmark_emis_tables(
     # ==================================================================
 
     # Create the destination folder
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Create the "Tables" category folder if it does not exist
     emisdir = os.path.join(dst, "Tables")
@@ -2021,7 +2021,7 @@ def make_benchmark_jvalue_plots(
     # ==================================================================
 
     # Create the directory for output
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Get the function that will read file(s) into a Dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -2386,7 +2386,7 @@ def make_benchmark_aod_plots(
     # ==================================================================
 
     # Create destination plots directory
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Create the "Aerosols" directory as a subfolder of dst.
     # If subdst is passed, then create a subdirectory of the "Aerosols"
@@ -2916,7 +2916,7 @@ def make_benchmark_oh_metrics(
     # ==================================================================
     # Define destination directory
     # ==================================================================
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -3187,7 +3187,7 @@ def make_benchmark_wetdep_plots(
     """
 
     # Create destination plot directory
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Make a collection subdirectory
     targetdst = os.path.join(dst, collection)
@@ -3418,7 +3418,7 @@ def make_benchmark_aerosol_tables(
     """
 
     # Create destination directory
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # List of species (and subsets for the trop & strat)
     species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC"]
@@ -4120,7 +4120,7 @@ def make_benchmark_operations_budget(
     # ------------------------------------------
 
     # Create the target output directory hierarchy if it doesn't already exist
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Print budgets to file
     if label is not None:
@@ -4236,7 +4236,7 @@ def make_benchmark_mass_conservation_table(
     # ==================================================================
 
     # Create the destination folder
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
@@ -4483,7 +4483,7 @@ def create_benchmark_summary_table(
     # ==================================================================
 
     # Create the directory for output
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Create file
     try:
@@ -4625,28 +4625,3 @@ def diff_list_to_text(
         diff_text = f"### {diff_text : <82}{'###'}"
 
     return diff_text.strip()
-
-
-def make_directory(
-        dir_name,
-        overwrite
-):
-    """
-    Creates a directory where benchmark plots/tables will be placed.
-
-    Args:
-    -----
-    dir_name : str
-        Name of the directory to be created.
-    overwrite : bool
-        Set to True if you wish to overwrite prior contents in
-        the directory 'dir_name'
-    """
-
-    if os.path.isdir(dir_name) and not overwrite:
-        msg = f"Directory {dir_name} exists!\n"
-        msg += "Pass overwrite=True to overwrite files in that directory."
-        raise ValueError(msg)
-
-    if not os.path.isdir(dir_name):
-        os.makedirs(dir_name)
