@@ -371,7 +371,7 @@ def print_metrics(common_vars, dst):
         print("#" * 79, file=f)
         print("### OH Metrics", file=f)
         print(\
-          f"### Ref = {common_vars['refstr'],}; Dev = {common_vars['devstr']}",
+          f"### Ref = {common_vars['refstr']}; Dev = {common_vars['devstr']}",
           file=f
         )
         print("#" * 79, file=f)
