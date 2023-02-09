@@ -846,7 +846,8 @@ def compare_varnames(
                              refdata and devdata, and that have lat,
                              lon, and level dimensions.
             commonvarsData   List of all commmon 2D or 3D data variables,
-                             excluding index variables.
+                             excluding index variables.  This is the
+                             list of "plottable" variables.
             refonly          List of 2D or 3D variables that are only
                              present in refdata.
             devonly          List of 2D or 3D variables that are only
@@ -858,37 +859,29 @@ def compare_varnames(
     refonly = [v for v in refvars if v not in devvars]
     devonly = [v for v in devvars if v not in refvars]
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
+    # Assume plottable data has lon and lat
+    # This is OK for purposes of benchmarking
+    #  -- Bob Yantosca (09 Feb 2023)
+    commonvarsData = [
+        v for v in commonvars if (
+            ("lat" in refdata[v].dims or "Ydim" in refdata[v].dims)
+            and
+            ("lon" in refdata[v].dims or "Xdim" in refdata[v].dims)
+        )
+    ]        
     commonvarsOther = [
         v for v in commonvars if (
-          (
-            ("lat" not in refdata[v].dims or "Xdim" not in refdata[v].dims)
-            and
-            ("lon" not in refdata[v].dims or "Ydim" not in refdata[v].dims)
-            and
-            ("lev" not in refdata[v].dims)
-          )
-          or
-          (
-            ("hyam" in v or "hybm" in v)  # Omit these from plottable data
-          )
-        )
+           v not in commonvarsData
+        )    
     ]
     commonvars2D = [
         v for v in commonvars if (
-          ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
-          and
-          ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
-          and
-          ("lev" not in refdata[v].dims)
+            (v in commonvarsData) and ("lev" not in refdata[v].dims)
         )
     ]
     commonvars3D = [
         v for v in commonvars if (
-          ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
-          and
-          ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
-          and
-          ("lev" in refdata[v].dims)
+            (v in commonvarsData) and ("lev" in refdata[v].dims)
         )
     ]
 
@@ -2280,7 +2273,8 @@ def insert_text_into_file(
 
 def array_equals(
         refdata,
-        devdata
+        devdata,
+        dtype=np.float64
 ):
     """
     Tests two arrays for equality.  Useful for checking which
@@ -2292,6 +2286,9 @@ def array_equals(
         The first array to be checked.
     devdata: xarray DataArray or numpy ndarray
         The second array to be checked.
+    dtype : np.float32 or np.float64
+        The precision that will be used to make the evaluation.
+        Default: np.float64
 
     Returns:
     --------
@@ -2314,9 +2311,9 @@ def array_equals(
 
     # This method will work if the arrays hve different dimensions
     # but an element-by-element search will not!
-    refsum = np.sum(refdata, dtype=np.float64)
-    devsum = np.sum(devdata, dtype=np.float64)
-    return np.abs(devsum - refsum) > np.float64(0.0)
+    refsum = np.nansum(refdata, dtype=dtype)
+    devsum = np.nansum(devdata, dtype=dtype)
+    return (not np.abs(devsum - refsum) > dtype(0.0))
 
 
 def make_directory(

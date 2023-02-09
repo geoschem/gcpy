@@ -188,11 +188,7 @@ def create_total_emissions_table(
 
     # Write a placeholder to the file that denotes where
     # the list of species with differences will be written
-    placeholder = "@%% insert diff_list here %%@"
-    if "Inv" in template:
-        print(f"Inventories that differ btw {refstr} and {devstr}:", file=f)
-    else:
-        print(f"Species that differ btw {refstr} and {devstr}:", file=f)
+    placeholder = "@%% insert diff status here %%@"
     print(f"{placeholder}\n\n", file=f)
 
     # Define a list for differences
@@ -359,7 +355,10 @@ def create_total_emissions_table(
     util.insert_text_into_file(
         filename=outfilename,
         search_text=placeholder,
-        replace_text=diff_list_to_text(diff_list),
+        replace_text=diff_list_to_text(
+            refstr,
+            devstr,
+            diff_list),
         width=90
     )
 
@@ -472,18 +471,16 @@ def create_global_mass_table(
     if trop_only:
         title1 = f"### Global mass (Gg) {label} (Trop only)"
     title2 = f"### Ref = {refstr}; Dev = {devstr}"
-    title3 = f"### Species that differ btw {refstr} and {devstr}:"
 
     # Write a placeholder to the file that denotes where
     # the list of species with differences will be written
-    placeholder = "@%% insert diff_list here %%@"
+    placeholder = "@%% insert diff status here %%@"
 
     # Print header to file
     print("#" * 89, file=f)
     print(f"{title1 : <86}{'###'}", file=f)
     print(f"{title2 : <86}{'###'}", file=f)
     print(f"{'###'  : <86}{'###'}", file=f)
-    print(f"{title3 : <86}{'###'}", file=f)
     print(f"{placeholder}", file=f)
     print("#" * 89, file=f)
 
@@ -585,6 +582,8 @@ def create_global_mass_table(
         filename=outfilename,
         search_text=placeholder,
         replace_text=diff_list_to_text(
+            refstr,
+            devstr,
             diff_list,
             fancy_format=True
         ),
@@ -4509,8 +4508,7 @@ def create_benchmark_summary_table(
 
     # Variables to skip
     skip_vars = gcon.skip_these_vars
-    skip_vars.append("corner_lats")
-    skip_vars.append("corner_lons")
+    skip_vars.append("AREA")
 
     # Pick the proper function to read the data
     reader = util.dataset_reader(
@@ -4562,9 +4560,14 @@ def create_benchmark_summary_table(
         diff_list = []
 
         # Keep track of which variables are different
-        # Loop over the common variables
+        # NOTE: Use 32-point float for comparisons since this is
+        # the precision used for History diagnostics.
         for v in vardict["commonvarsData"]:
-            if not util.array_equals(refdata[v], devdata[v]):
+            if not util.array_equals(
+                    refdata[v],
+                    devdata[v],
+                    dtype=np.float32
+            ):
                 diff_list.append(v)
 
         # Drop duplicate values from diff_list
@@ -4592,6 +4595,8 @@ def create_benchmark_summary_table(
 
 
 def diff_list_to_text(
+        refstr,
+        devstr,
         diff_list,
         fancy_format=False
 ):
@@ -4617,11 +4622,19 @@ def diff_list_to_text(
     # Strip out duplicates from diff_list
     # Prepare a message about species differences (or alternate msg)
     diff_list = util.unique_values(diff_list, drop=[None])
-    diff_text = util.wrap_text(diff_list, width=85)
-    if len(diff_text) > 85:
-        diff_text = "... Too many diffs to print (see below for details)"
 
+    # Print the text
+    n_diff = len(diff_list)
+    if n_diff > 0:
+        diff_text = f"{devstr} and {refstr} show {n_diff} differences"
+    else:
+        diff_text = f"{devstr} and {refstr} are identical"
+    diff_text = util.wrap_text(
+        diff_text,
+        width=83
+    )
+        
     if fancy_format:
         diff_text = f"### {diff_text : <82}{'###'}"
-
+        
     return diff_text.strip()
