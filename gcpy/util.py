@@ -1191,7 +1191,8 @@ def get_lumped_species_definitions():
         os.path.join(
             os.path.dirname(__file__),
             "lumped_species.yml"
-        )
+        ),
+        quiet=True
     )
 
 
