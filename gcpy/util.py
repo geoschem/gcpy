@@ -2339,3 +2339,25 @@ def make_directory(
 
     if not os.path.isdir(dir_name):
         os.makedirs(dir_name)
+
+
+def trim_cloud_benchmark_label(
+        label
+):
+    """
+    Removes the first part of the cloud benchmark label string
+    (e.g. "gchp-c24-1Hr", "gcc-4x5-1Mon", etc) to avoid clutter.
+    """
+    if not isinstance(label, str):
+        raise ValueError("Argument 'label' must be a string!")
+
+    for v in [
+        "gcc-4x5-1Hr",
+        "gchp-c24-1Hr",
+        "gcc-4x5-1Mon",
+        "gchp-c24-1Mon",
+    ]:
+        if v in label:
+            label.replace(v, "")
+            
+    return label

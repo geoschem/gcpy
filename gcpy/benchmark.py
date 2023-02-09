@@ -240,12 +240,14 @@ def create_total_emissions_table(
             title0 = f"for species {species_name}"
             title1 = f"### Emissions totals {title0} [Tg]"
 
-        title2 = f"### Ref = {refstr}; Dev = {devstr}"
+        title2 = f"### Ref = {refstr}"
+        title3 = f"### Dev = {devstr}"
 
         # Print header to file
         print("#" * 89, file=f)
         print(f"{title1 : <86}{'###'}", file=f)
         print(f"{title2 : <86}{'###'}", file=f)
+        print(f"{title3 : <86}{'###'}", file=f)
         print("#" * 89, file=f)
         print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'diffs'}", file=f)
 
@@ -470,7 +472,8 @@ def create_global_mass_table(
     title1 = f"### Global mass (Gg) {label} (Trop + Strat)"
     if trop_only:
         title1 = f"### Global mass (Gg) {label} (Trop only)"
-    title2 = f"### Ref = {refstr}; Dev = {devstr}"
+    title2 = f"### Ref = {refstr}"
+    title3 = f"### Dev = {devstr}"
 
     # Write a placeholder to the file that denotes where
     # the list of species with differences will be written
@@ -479,7 +482,9 @@ def create_global_mass_table(
     # Print header to file
     print("#" * 89, file=f)
     print(f"{title1 : <86}{'###'}", file=f)
+    print(f"{'###'  : <86}{'###'}", file=f)
     print(f"{title2 : <86}{'###'}", file=f)
+    print(f"{title3 : <86}{'###'}", file=f)
     print(f"{'###'  : <86}{'###'}", file=f)
     print(f"{placeholder}", file=f)
     print("#" * 89, file=f)
@@ -4493,12 +4498,15 @@ def create_benchmark_summary_table(
 
     # Title strings
     title1 = "### Benchmark summary table"
-    title2 = f"### Ref = {refstr}; Dev = {devstr}"
+    title2 = f"### Ref = {refstr}"
+    title3 = f"### Dev = {devstr}"
 
     # Print header to file
     print("#" * 80, file=f)
     print(f"{title1 : <77}{'###'}", file=f)
+    print(f"{'###'  : <77}{'###'}", file=f)   
     print(f"{title2 : <77}{'###'}", file=f)
+    print(f"{title3 : <77}{'###'}", file=f)
     print("#" * 80, file=f)
     print(file=f)
 
@@ -4619,6 +4627,11 @@ def diff_list_to_text(
     if not isinstance(diff_list, list):
         raise ValueError("Argument 'diff_list' must be a list!")
 
+    # Use "Dev" and "Ref" for inserting into a header
+    if fancy_format:
+        refstr = "Ref"
+        devstr = "Dev"
+        
     # Strip out duplicates from diff_list
     # Prepare a message about species differences (or alternate msg)
     diff_list = util.unique_values(diff_list, drop=[None])
@@ -4629,12 +4642,14 @@ def diff_list_to_text(
         diff_text = f"{devstr} and {refstr} show {n_diff} differences"
     else:
         diff_text = f"{devstr} and {refstr} are identical"
-    diff_text = util.wrap_text(
-        diff_text,
-        width=83
-    )
-        
+
+    # If we are placing the text in a header,
+    # then trim the length of diff_text to fit.
     if fancy_format:
+        diff_text = util.wrap_text(
+            diff_text,
+            width=83
+        )
         diff_text = f"### {diff_text : <82}{'###'}"
         
     return diff_text.strip()
