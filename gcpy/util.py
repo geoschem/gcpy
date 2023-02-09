@@ -6,11 +6,11 @@ objects used throughout GCPy
 import os
 import warnings
 import shutil
+from textwrap import wrap
 from yaml import safe_load as yaml_safe_load
 import numpy as np
 import xarray as xr
 from PyPDF2 import PdfFileWriter, PdfFileReader
-from textwrap import wrap
 
 def convert_lon(
         data,
@@ -316,7 +316,7 @@ def get_species_categories(
     """
     spc_cat_dict = read_config_file(
         os.path.join(
-            os.path.dirname(__file__), 
+            os.path.dirname(__file__),
             "benchmark_categories.yml"
         )
     )
@@ -1009,7 +1009,7 @@ def convert_bpch_names_to_netcdf_names(
         os.path.join(
             os.path.dirname(__file__),
             "bpch_to_nc_names.yml"
-        ).
+        ),
         quiet=True
     )
 
@@ -1167,7 +1167,7 @@ def convert_bpch_names_to_netcdf_names(
     if verbose:
         print("\nList of bpch names and netCDF names")
         for key in old_to_new:
-            print("{} ==> {}".format(key.ljust(25), old_to_new[key].ljust(40)))
+            print(f"{key : <25} ==> {old_to_new[key] : <40}")
 
     # Rename the variables in the dataset
     if verbose:
@@ -1189,7 +1189,7 @@ def get_lumped_species_definitions():
     """
     return read_config_file(
         os.path.join(
-            os.path.dirname(__file__), 
+            os.path.dirname(__file__),
             "lumped_species.yml"
         )
     )
@@ -1211,7 +1211,7 @@ def archive_lumped_species_definitions(
     src = os.path.join(os.path.dirname(__file__), lumped_spc)
     copy = os.path.join(dst, lumped_spc)
     if not os.path.exists(copy):
-        print("\nArchiving {} in {}".format(lumped_spc, dst))
+        print(f"\nArchiving {lumped_spc} in {dst}")
         shutil.copyfile(src, copy)
 
 
