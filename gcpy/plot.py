@@ -1,5 +1,11 @@
+"""
+Module containing functions for creating plots
+"""
 import os
 import copy
+import warnings
+from multiprocessing import current_process
+from tempfile import TemporaryDirectory
 import matplotlib as mpl
 import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
@@ -8,6 +14,7 @@ import numpy as np
 import xarray as xr
 import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
+from joblib import Parallel, delayed
 from PyPDF2 import PdfFileMerger
 from .grid import get_vert_grid, get_pressure_indices, \
     pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, \
@@ -18,11 +25,6 @@ from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, \
     all_zero_or_nan, slice_by_lev_and_time, compare_varnames, read_config_file
 from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
-from joblib import Parallel, delayed
-from multiprocessing import current_process
-from tempfile import TemporaryDirectory
-import warnings
-import copy
 
 # Save warnings format to undo overwriting built into PyPDF2
 _warning_format = warnings.showwarning
@@ -76,7 +78,7 @@ def six_plot(
 
     Args:
         subplot: str
-            Type of plot to create (ref, dev, absolute difference or 
+            Type of plot to create (ref, dev, absolute difference or
             fractional difference)
         all_zero: bool
             Set this flag to True if the data to be plotted consist only of zeros
@@ -87,7 +89,7 @@ def six_plot(
         grid: dict
             Dictionary mapping plot_val to plottable coordinates
         ax: matplotlib axes
-            Axes object to plot information. Will create a new axes 
+            Axes object to plot information. Will create a new axes
             if none is passed.
         rowcol: tuple
             Subplot position in overall Figure
@@ -102,7 +104,7 @@ def six_plot(
         masked_data: numpy array
             Masked area for cubed-sphere plotting
         other_all_nan: bool
-            Set this flag to True if plotting ref/dev and the other of ref/dev 
+            Set this flag to True if plotting ref/dev and the other of ref/dev
             is all nan
         gridtype: str
             "ll" for lat/lon or "cs" for cubed-sphere
@@ -113,7 +115,7 @@ def six_plot(
         use_cmap_RdBu: bool
             Set this flag to True to use a blue-white-red colormap
         match_cbar: bool
-            Set this flag to True if you are plotting with the same colorbar 
+            Set this flag to True if you are plotting with the same colorbar
             for ref and dev
         verbose: bool
             Set this flag to True to enable informative printout.
@@ -128,7 +130,7 @@ def six_plot(
             Indices where edge pressure values are within a given pressure range
             Default value: np.full((1,1), -1)
         log_yaxis: bool
-            Set this flag to True to enable log scaling of pressure in zonal 
+            Set this flag to True to enable log scaling of pressure in zonal
             mean plots
             Default value: False
         xtick_positions: list of float
@@ -216,7 +218,7 @@ def six_plot(
             else:
                 [vmin, vmax] = [0.5, 2]
     if verbose:
-        print("Subplot ({}) vmin, vmax: {}, {}".format(rowcol, vmin, vmax))
+        print(f"Subplot ({rowcol}) vmin, vmax: {vmin}, {vmax}")
 
     # Normalize colors (put into range [0..1] for matplotlib methods)
     if subplot in ("ref", "dev"):
@@ -431,12 +433,12 @@ def compare_single_level(
             Default value: None
         extent: list
             Defines the extent of the region to be plotted in form
-            [minlon, maxlon, minlat, maxlat]. 
+            [minlon, maxlon, minlat, maxlat].
             Default value plots extent of input grids.
             Default value: [-1000, -1000, -1000, -1000]
         n_job: int
             Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting. 
+            Set to 1 to disable parallel plotting.
             Value of -1 allows the application to decide.
             Default value: -1
         sigdiff_list: list of str
@@ -444,22 +446,22 @@ def compare_single_level(
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
         second_ref: xarray Dataset
-            A dataset of the same model type / grid as refdata, 
+            A dataset of the same model type / grid as refdata,
             to be used in diff-of-diffs plotting.
             Default value: None
         second_dev: xarray Dataset
-            A dataset of the same model type / grid as devdata, 
+            A dataset of the same model type / grid as devdata,
             to be used in diff-of-diffs plotting.
             Default value: None
         spcdb_dir: str
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
         sg_ref_path: str
-            Path to NetCDF file containing stretched-grid info 
+            Path to NetCDF file containing stretched-grid info
             (in attributes) for the ref dataset
             Default value: '' (will not be read in)
         sg_dev_path: str
-            Path to NetCDF file containing stretched-grid info 
+            Path to NetCDF file containing stretched-grid info
             (in attributes) for the dev dataset
             Default value: '' (will not be read in)
         ll_plot_func: str
@@ -559,7 +561,7 @@ def compare_single_level(
     # Get lat/lon extents, if applicable
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
-    
+
     if -1000 not in extent:
         cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = extent
     else:
@@ -576,7 +578,7 @@ def compare_single_level(
              np.min([uniform_refmaxlon, uniform_devmaxlon]),
              np.max([refminlat, devminlat]),
              np.min([refmaxlat, devmaxlat])]
-    
+
     # Set plot bounds for non cubed-sphere regridding and plotting
     ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
     dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
@@ -670,10 +672,10 @@ def compare_single_level(
             if refmet is None or devmet is None:
                 msg = "Met mata ust be passed to convert units to ug/m3."
                 raise ValueError(msg)
-            elif normalize_by_area:
+            if normalize_by_area:
                 msg = "Normalizing by area is not allowed if plotting ug/m3"
                 raise ValueError(msg)
-            elif ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
+            if ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
                 msg = "Units must be mol/mol if converting to ug/m3."
                 raise ValueError(msg)
 
@@ -705,15 +707,15 @@ def compare_single_level(
                 if spc_name in ["Simple_SOA", "Complex_SOA"]:
                     spc_mw_g = 150.0
                 else:
-                    msg = "No properties found for {}. Cannot convert" \
+                    msg = f"No properties found for {spc_name}. Cannot convert" \
                           + " to ug/m3."
-                    raise ValueError(msg.format(spc_name))
+                    raise ValueError(msg)
             else:
                 spc_mw_g = species_properties.get("MW_g")
                 if spc_mw_g is None:
-                    msg = "Molecular weight not found for species {}!" \
+                    msg = f"Molecular weight not found for species {spc_name}!" \
                           + " Cannot convert to ug/m3."
-                    raise ValueError(msg.format(spc_name))
+                    raise ValueError(msg)
 
             # Convert values from ppb to ug/m3:
             # ug/m3 = mol/mol * mol/g air * kg/m3 air * 1e3g/kg
@@ -808,8 +810,8 @@ def compare_single_level(
     else:
         regional_cmp_extent = [-180, 180, -90, 90]
 
-    regional_cmp_grid = call_make_grid(cmpres, cmpgridtype, 
-                                       in_extent=[-180,180,-90,90], 
+    regional_cmp_grid = call_make_grid(cmpres, cmpgridtype,
+                                       in_extent=[-180,180,-90,90],
                                        out_extent=regional_cmp_extent)[0]
 
     # Get comparison data extents in same midpoint format as lat-lon grid.
@@ -914,7 +916,7 @@ def compare_single_level(
         warnings.filterwarnings('ignore', category=UserWarning)
 
         if savepdf and verbose:
-            print("{} ".format(ivar), end="")
+            print(f"{ivar} ", end="")
         varname = varlist[ivar]
 
         ds_ref = ds_refs[ivar]
@@ -931,9 +933,9 @@ def compare_single_level(
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
                 if "/" in cmn_units:
-                    cmn_units = "{}/m2".format(cmn_units)
+                    cmn_units = f"{cmn_units}/m2"
                 else:
-                    cmn_units = "{} m-2".format(cmn_units)
+                    cmn_units = f"{cmn_units} m-2"
                 ds_ref.attrs["units"] = cmn_units
                 ds_dev.attrs["units"] = cmn_units
                 subtitle_extra = ", Normalized by Area"
@@ -959,9 +961,9 @@ def compare_single_level(
         if cmpgridtype == "cs":
             def call_reshape(cmp_data):
                 new_data = None
-                if type(cmp_data) == xr.DataArray:
+                if isinstance(cmp_data, xr.DataArray):
                     new_data = cmp_data.data.reshape(6, cmpres, cmpres)
-                elif type(cmp_data) == np.ndarray:
+                elif isinstance(cmp_data, np.ndarray):
                     new_data = cmp_data.reshape(6, cmpres, cmpres)
                 return new_data
 
@@ -1027,11 +1029,11 @@ def compare_single_level(
             vmax_ref_cmp = float(np.nanmax(ds_ref_cmp))
             vmin_dev_cmp = float(np.nanmin(ds_dev_cmp))
             vmax_dev_cmp = float(np.nanmax(ds_dev_cmp))
-            vmin_cmp = np.nanmin([vmin_ref_cmp, vmin_dev_cmp])
-            vmax_cmp = np.nanmax([vmax_ref_cmp, vmax_dev_cmp])
-        else:
-            vmin_cmp = np.nanmin([np.nanmin(ds_ref_cmp), np.nanmin(ds_dev_cmp)])
-            vmax_cmp = np.nanmax([np.nanmax(ds_ref_cmp), np.nanmax(ds_dev_cmp)])
+#            vmin_cmp = np.nanmin([vmin_ref_cmp, vmin_dev_cmp])
+#            vmax_cmp = np.nanmax([vmax_ref_cmp, vmax_dev_cmp])
+#        else:
+#            vmin_cmp = np.nanmin([np.nanmin(ds_ref_cmp), np.nanmin(ds_dev_cmp)])
+#            vmax_cmp = np.nanmax([np.nanmax(ds_ref_cmp), np.nanmax(ds_dev_cmp)])
 
         # Get overall min & max
         vmin_abs = np.nanmin([vmin_ref, vmin_dev])#, vmin_cmp])
@@ -1129,13 +1131,13 @@ def compare_single_level(
                 levstr = "Level " + str(ilev - 1)
             if extra_title_txt is not None:
                 figs.suptitle(
-                    "{}, {} ({})".format(varname, levstr, extra_title_txt),
+                    f"{varname}, {levstr} ({extra_title_txt})",
                     fontsize=fontsize,
                     y=offset,
                 )
             else:
                 figs.suptitle(
-                    "{}, {}".format(varname, levstr),
+                    f"{varname}, {levstr}",
                     fontsize=fontsize, y=offset
                 )
         elif (
@@ -1146,17 +1148,17 @@ def compare_single_level(
         ):
             if extra_title_txt is not None:
                 figs.suptitle(
-                    "{} ({})".format(varname, extra_title_txt),
+                    f"{varname} ({extra_title_txt})",
                     fontsize=fontsize,
                     y=offset,
                 )
             else:
                 figs.suptitle(
-                    "{}".format(varname),
+                    f"{varname}",
                     fontsize=fontsize,
                     y=offset)
         else:
-            print("Incorrect dimensions for {}!".format(varname))
+            print(f"Incorrect dimensions for {varname}!")
 
         # ==============================================================
         # Set colormaps for data plots
@@ -1196,46 +1198,38 @@ def compare_single_level(
         # ==============================================================
 
         if refgridtype == "ll":
-            ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
+            ref_title = f"{refstr} (Ref){subtitle_extra}\n{refres}"
         else:
-            ref_title = "{} (Ref){}\nc{}".format(
-                refstr, subtitle_extra, refres)
+            ref_title = f"{refstr} (Ref){subtitle_extra}\nc{refres}"
 
         if devgridtype == "ll":
-            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
+            dev_title = f"{devstr} (Dev){subtitle_extra}\n{devres}"
         else:
-            dev_title = "{} (Dev){}\nc{}".format(
-                devstr, subtitle_extra, devres)
-
+            dev_title = f"{devstr} (Dev){subtitle_extra}\nc{devres}"
         if regridany:
             absdiff_dynam_title = \
-                "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+                f"Difference ({cmpres})\nDev - Ref, Dynamic Range"
             absdiff_fixed_title = \
-                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".\
-                format(cmpres)
+                f"Difference ({cmpres})\nDev - Ref, Restricted Range [5%,95%]"
             if diff_of_diffs:
                 fracdiff_dynam_title = \
-                    "Difference ({}), Dynamic Range\n{} - {}".\
-                    format(cmpres, frac_devstr, frac_refstr)
+                    f"Difference ({cmpres}), Dynamic Range\n{frac_devstr} - {frac_refstr}"
                 fracdiff_fixed_title = \
-                    "Difference ({}), Restricted Range [5%,95%]\n{} - {}".\
-                    format(cmpres, frac_devstr, frac_refstr)
+                    f"Difference ({cmpres}), Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
             else:
                 fracdiff_dynam_title = \
-                    "Ratio ({})\nDev/Ref, Dynamic Range".format(cmpres)
+                    f"Ratio ({cmpres})\nDev/Ref, Dynamic Range"
                 fracdiff_fixed_title = \
-                    "Ratio ({})\nDev/Ref, Fixed Range".format(cmpres)
+                    f"Ratio ({cmpres})\nDev/Ref, Fixed Range"
         else:
             absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
             absdiff_fixed_title = \
                 "Difference\nDev - Ref, Restricted Range [5%,95%]"
             if diff_of_diffs:
                 fracdiff_dynam_title = \
-                    "Difference, Dynamic Range\n{} - {}".\
-                    format(frac_devstr, frac_refstr)
+                    f"Difference, Dynamic Range\n{frac_devstr} - {frac_refstr}"
                 fracdiff_fixed_title = \
-                    "Difference, Restricted Range [5%,95%]\n{} - {}".\
-                    format(frac_devstr, frac_refstr)
+                    "Difference, Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
             else:
                 fracdiff_dynam_title = "Ratio \nDev/Ref, Dynamic Range"
                 fracdiff_fixed_title = "Ratio \nDev/Ref, Fixed Range"
@@ -1286,7 +1280,7 @@ def compare_single_level(
                        plot_extent[:], plot_extent[:],
                        plot_extent[:], plot_extent[:]]
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
-        grids = [refgrid, devgrid, regional_cmp_grid.copy(), regional_cmp_grid.copy(), 
+        grids = [refgrid, devgrid, regional_cmp_grid.copy(), regional_cmp_grid.copy(),
                  regional_cmp_grid.copy(), regional_cmp_grid.copy()]
         axs = [ax0, ax1, ax2, ax3, ax4, ax5]
         rowcols = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
@@ -1400,8 +1394,7 @@ def compare_single_level(
         if np.abs(1 - np.nanmax(fracdiff)) > 0.1:
             sigdiff_list.append(varname)
             return varname
-        else:
-            return
+        return ""
 
     # ==================================================================
     # Call figure generation function in a parallel loop over variables
@@ -1423,7 +1416,7 @@ def compare_single_level(
             # update sig diffs after parallel calls
             if current_process().name == "MainProcess":
                 for varname in results:
-                    if type(varname) is str:
+                    if isinstance(varname, str):
                         sigdiff_list.append(varname)
 
             # ==================================================================
@@ -1574,7 +1567,7 @@ def compare_zonal_mean(
             Default value: None
         n_job: int
             Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting. 
+            Set to 1 to disable parallel plotting.
             Value of -1 allows the application to decide.
             Default value: -1
         sigdiff_list: list of str
@@ -1582,30 +1575,30 @@ def compare_zonal_mean(
             differences (where |max(fractional difference)| > 0.1).
             Default value: []
         second_ref: xarray Dataset
-            A dataset of the same model type / grid as refdata, 
+            A dataset of the same model type / grid as refdata,
             to be used in diff-of-diffs plotting.
             Default value: None
         second_dev: xarray Dataset
-            A dataset of the same model type / grid as devdata, 
+            A dataset of the same model type / grid as devdata,
             to be used in diff-of-diffs plotting.
             Default value: None
         spcdb_dir: str
             Directory containing species_database.yml file.
             Default value: Path of GCPy code repository
         sg_ref_path: str
-            Path to NetCDF file containing stretched-grid info 
+            Path to NetCDF file containing stretched-grid info
             (in attributes) for the ref dataset
             Default value: '' (will not be read in)
         sg_dev_path: str
-            Path to NetCDF file containing stretched-grid info 
+            Path to NetCDF file containing stretched-grid info
             (in attributes) for the dev dataset
             Default value: '' (will not be read in)
         ref_vert_params: list(AP, BP) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless). 
+            Hybrid grid parameter A in hPa and B (unitless).
             Needed if ref grid is not 47 or 72 levels.
             Default value: [[], []]
         dev_vert_params: list(AP, BP) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless). 
+            Hybrid grid parameter A in hPa and B (unitless).
             Needed if dev grid is not 47 or 72 levels.
             Default value: [[], []]
         extra_plot_args: various
@@ -1835,10 +1828,10 @@ def compare_zonal_mean(
             if refmet is None or devmet is None:
                 msg = "Met mata ust be passed to convert units to ug/m3."
                 raise ValueError(msg)
-            elif normalize_by_area:
+            if normalize_by_area:
                 msg = "Normalizing by area is now allowed if plotting ug/m3"
                 raise ValueError(msg)
-            elif ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
+            if ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
                 msg = "Units must be mol/mol if converting to ug/m3."
                 raise ValueError(msg)
 
@@ -1866,16 +1859,16 @@ def compare_zonal_mean(
                 if spc_name in ["Simple_SOA", "Complex_SOA"]:
                     spc_mw_g = 150.0
                 else:
-                    msg = "No properties found for {}. Cannot convert" \
+                    msg = f"No properties found for {spc_name}. Cannot convert" \
                           + " to ug/m3."
-                    raise ValueError(msg.format(spc_name))
+                    raise ValueError(msg)
             else:
                 # Get the species molecular weight in g/mol
                 spc_mw_g = species_properties.get("MW_g")
                 if spc_mw_g is None:
-                    msg = "Molecular weight not found for for species {}!" \
+                    msg = f"Molecular weight not found for for species {spc_name}!" \
                           + " Cannot convert to ug/m3."
-                    raise ValueError(msg.format(spc_name))
+                    raise ValueError(msg)
 
             # Convert values from ppb to ug/m3:
             # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
@@ -2085,7 +2078,7 @@ def compare_zonal_mean(
         warnings.filterwarnings('ignore', category=UserWarning)
 
         if savepdf and verbose:
-            print("{} ".format(ivar), end="")
+            print(f"{ivar} ", end="")
         varname = varlist[ivar]
 
         # ==============================================================
@@ -2110,9 +2103,9 @@ def compare_zonal_mean(
             exclude_list = ["WetLossConvFrac", "Prod_", "Loss_"]
             if not any(s in varname for s in exclude_list):
                 if "/" in cmn_units:
-                    cmn_units = "{}/m2".format(cmn_units)
+                    cmn_units = f"{cmn_units}/m2"
                 else:
-                    cmn_units = "{} m-2".format(cmn_units)
+                    cmn_units = f"{cmn_units} m-2"
                 ref_units[ivar] = cmn_units
                 dev_units[ivar] = cmn_units
                 subtitle_extra = ", Normalized by Area"
@@ -2163,8 +2156,8 @@ def compare_zonal_mean(
         # This will have implications as to how we set min and max
         # values for the color ranges below.
         # ==============================================================
-        ref_values = ds_ref.values if type(ds_ref) == xr.DataArray else ds_ref
-        dev_values = ds_dev.values if type(ds_dev) == xr.DataArray else ds_dev
+        ref_values = ds_ref.values if isinstance(ds_ref, xr.DataArray) else ds_ref
+        dev_values = ds_dev.values if isinstance(ds_dev, xr.DataArray) else ds_dev
         ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ref_values)
         dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(dev_values)
 
@@ -2211,12 +2204,12 @@ def compare_zonal_mean(
         fontsize = 25
         if extra_title_txt is not None:
             figs.suptitle(
-                "{}, Zonal Mean ({})".format(varname, extra_title_txt),
+                f"{varname}, Zonal Mean ({extra_title_txt})",
                 fontsize=fontsize,
                 y=offset,
             )
         else:
-            figs.suptitle("{}, Zonal Mean".format(varname),
+            figs.suptitle(f"{varname}, Zonal Mean",
                           fontsize=fontsize, y=offset)
 
         # ==============================================================
@@ -2242,47 +2235,39 @@ def compare_zonal_mean(
         # ==============================================================
 
         if refgridtype == "ll":
-            ref_title = "{} (Ref){}\n{}".format(refstr, subtitle_extra, refres)
+            ref_title = f"{refstr} (Ref){subtitle_extra}\n{refres}"
         else:
-            ref_title = "{} (Ref){}\n{} regridded from c{}".format(
-                refstr, subtitle_extra, cmpres, refres
-            )
+            ref_title = f"{refstr} (Ref){subtitle_extra}\n{cmpres} regridded from c{refres}"
 
         if devgridtype == "ll":
-            dev_title = "{} (Dev){}\n{}".format(devstr, subtitle_extra, devres)
+            dev_title = f"{devstr} (Dev){subtitle_extra}\n{devres}"
         else:
-            dev_title = "{} (Dev){}\n{} regridded from c{}".format(
-                devstr, subtitle_extra, cmpres, devres)
+            dev_title = f"{devstr} (Dev){subtitle_extra}\n{cmpres} regridded from c{devres}"
 
         if regridany:
             absdiff_dynam_title = \
-                "Difference ({})\nDev - Ref, Dynamic Range".format(cmpres)
+                f"Difference ({cmpres})\nDev - Ref, Dynamic Range"
             absdiff_fixed_title = \
-                "Difference ({})\nDev - Ref, Restricted Range [5%,95%]".\
-                format(cmpres)
+                f"Difference ({cmpres})\nDev - Ref, Restricted Range [5%,95%]"
             if diff_of_diffs:
                 fracdiff_dynam_title = \
-                    "Difference ({}), Dynamic Range\n{} - {}".\
-                    format(cmpres, frac_devstr, frac_refstr)
+                    f"Difference ({cmpres}), Dynamic Range\n{frac_devstr} - {frac_refstr}"
                 fracdiff_fixed_title = \
-                    "Difference ({}), Restricted Range [5%,95%]\n{} - {}".\
-                    format(cmpres, frac_devstr, frac_refstr)
+                    f"Difference ({cmpres}), Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
             else:
                 fracdiff_dynam_title = \
-                    "Ratio ({})\nDev/Ref, Dynamic Range".format(cmpres)
+                    f"Ratio ({cmpres})\nDev/Ref, Dynamic Range"
                 fracdiff_fixed_title = \
-                    "Ratio ({})\nDev/Ref, Fixed Range".format(cmpres)
+                    f"Ratio ({cmpres})\nDev/Ref, Fixed Range"
         else:
             absdiff_dynam_title = "Difference\nDev - Ref, Dynamic Range"
             absdiff_fixed_title = \
                 "Difference\nDev - Ref, Restricted Range [5%,95%]"
             if diff_of_diffs:
                 fracdiff_dynam_title = \
-                    "Difference, Dynamic Range\n{} - {}".\
-                    format(frac_devstr, frac_refstr)
+                    f"Difference, Dynamic Range\n{frac_devstr} - {frac_refstr}".\
                 fracdiff_fixed_title = \
-                    "Difference, Restricted Range [5%,95%]\n{} - {}".\
-                    format(frac_devstr, frac_refstr)
+                    f"Difference, Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
             else:
                 fracdiff_dynam_title = "Ratio \nDev/Ref, Dynamic Range"
                 fracdiff_fixed_title = "Ratio \nDev/Ref, Fixed Range"
@@ -2433,8 +2418,7 @@ def compare_zonal_mean(
         if np.abs(1 - np.nanmax(zm_fracdiff)) > 0.1:
             sigdiff_list.append(varname)
             return varname
-        else:
-            return
+        return ""
 
     # ==================================================================
     # Call figure generation function in a parallel loop over variables
@@ -2517,6 +2501,9 @@ def normalize_colors(vmin, vmax, is_difference=False,
 
     # Define class for logarithmic non-symmetric color scheme
     class MidpointLogNorm(mcolors.LogNorm):
+        """
+        Class for logarithmic non-symmetric color scheme
+        """
         def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
             mcolors.LogNorm.__init__(self, vmin=vmin, vmax=vmax, clip=clip)
             self.midpoint = midpoint
@@ -2537,18 +2524,15 @@ def normalize_colors(vmin, vmax, is_difference=False,
         # add a single tick.
         if is_difference:
             return mcolors.Normalize(vmin=-1.0, vmax=1.0)
-        else:
-            return mcolors.Normalize(vmin=0.0, vmax=1.0)
+        return mcolors.Normalize(vmin=0.0, vmax=1.0)
 
-    else:
-        # For log color scales, assume a range 3 orders of magnitude
-        # below the maximum value.  Otherwise use a linear scale.
-        if log_color_scale and not ratio_log:
-            return mcolors.LogNorm(vmin=vmax / 1e3, vmax=vmax)
-        elif log_color_scale:
-            return MidpointLogNorm(vmin=vmin, vmax=vmax, midpoint=1)
-        else:
-            return mcolors.Normalize(vmin=vmin, vmax=vmax)
+    # For log color scales, assume a range 3 orders of magnitude
+    # below the maximum value.  Otherwise use a linear scale.
+    if log_color_scale and not ratio_log:
+        return mcolors.LogNorm(vmin=vmax / 1e3, vmax=vmax)
+    if log_color_scale:
+        return MidpointLogNorm(vmin=vmin, vmax=vmax, midpoint=1)
+    return mcolors.Normalize(vmin=vmin, vmax=vmax)
 
 
 def single_panel(plot_vals,
@@ -2634,7 +2618,7 @@ def single_panel(plot_vals,
             Range from minimum to maximum pressure for zonal mean plotting
             Default value: [0, 2000] (will plot entire atmosphere)
         pedge: numpy array
-            Edge pressures of vertical grid cells in plot_vals 
+            Edge pressures of vertical grid cells in plot_vals
             for zonal mean plotting
             Default value: np.full((1, 1), -1) (will determine automatically)
         pedge_ind: numpy array
@@ -2691,7 +2675,7 @@ def single_panel(plot_vals,
 
     # Eliminate 1D level or time dimensions
     plot_vals = plot_vals.squeeze()
-    data_is_xr = type(plot_vals) is xr.DataArray
+    data_is_xr = isinstance(plot_vals, xr.DataArray)
     if xtick_positions == []:
         # if plot_type == "single_level":
         #    xtick_positions = np.arange(extent[0], extent[1], (extent[1]-extent[0])/12)
@@ -2776,7 +2760,7 @@ def single_panel(plot_vals,
             # average across longitude bands
             # assume lon dim is index 2 (no time dim) if a numpy array is passed
             lon_ind = 2
-            if type(plot_vals) is xr.DataArray:
+            if isinstance(plot_vals, xr.DataArray):
                 lon_ind = plot_vals.dims.index('lon')
             # calculate zonal means
             plot_vals = plot_vals.mean(axis=lon_ind)
@@ -2804,12 +2788,13 @@ def single_panel(plot_vals,
             # needed for numpy arrays if doing pcolormesh / imshow, and xarray DataArrays
             # if using imshow
             proj = ccrs.PlateCarree(central_longitude=180)
-            if ll_plot_func == "imshow" or type(plot_vals) is not xr.DataArray:
+            if ll_plot_func == "imshow" or \
+               not isinstance(plot_vals, xr.DataArray):
                 i = 0
                 while grid['lon_b'][i] < 0:
                     i = i+1
                 plot_vals_holder = copy.deepcopy(plot_vals)
-                if type(plot_vals) is not xr.DataArray:
+                if not isinstance(plot_vals, xr.DataArray):
                     plot_vals_holder[:,:-i] = plot_vals[:,i:]
                     plot_vals_holder[:,-i:] = plot_vals[:,:i]
                 else:
@@ -2820,17 +2805,18 @@ def single_panel(plot_vals,
             extent[1] = extent[1] % 360 - 180
             grid["lon_b"] = grid["lon_b"] % 360 - 180
             grid["lon"] = grid["lon"] % 360 - 180
-            if type(plot_vals) is xr.DataArray:                
+            if isinstance(plot_vals, xr.DataArray):
                 plot_vals['lon'] = plot_vals['lon'] % 360 - 180
             # realign grid also if doing imshow or using numpy arrays
-            if ll_plot_func == "imshow" or type(plot_vals) is not xr.DataArray:
+            if ll_plot_func == "imshow" or \
+               not isinstance(plot_vals, xr.DataArray):
                 temp_grid = copy.deepcopy(grid)
                 temp_grid['lon_b'][:-i] = grid['lon_b'][i:]
                 temp_grid['lon_b'][-i:] = grid['lon_b'][:i]
                 temp_grid['lon'][:-i] = grid['lon'][i:]
                 temp_grid['lon'][-i:] = grid['lon'][:i]
                 grid = temp_grid
-                if type(plot_vals) is xr.DataArray:
+                if isinstance(plot_vals, xr.DataArray):
                     plot_vals = plot_vals.assign_coords({'lon' : grid['lon']})
         if gridtype == "cs":
             proj = ccrs.PlateCarree(central_longitude=180)
@@ -2846,13 +2832,13 @@ def single_panel(plot_vals,
             ax = plt.axes(projection=proj)
 
     fig = plt.gcf()
-    data_is_xr = type(plot_vals) is xr.DataArray
+    data_is_xr = isinstance(plot_vals, xr.DataArray)
     # Normalize colors (put into range [0..1] for matplotlib methods)
     if norm == []:
         if data_is_xr:
             vmin = plot_vals.data.min() if vmin is None else vmin
             vmax = plot_vals.data.max() if vmax is None else vmax
-        elif type(plot_vals) is np.ndarray:
+        elif isinstance(plot_vals, np.ndarray):
             vmin = np.min(plot_vals) if vmin is None else vmin
             vmax = np.max(plot_vals) if vmax is None else vmax
         norm = normalize_colors(
@@ -2891,7 +2877,7 @@ def single_panel(plot_vals,
             #[dlat,dlon] = list(map(float, res.split('x')))
             dlon = grid['lon'][2] - grid['lon'][1]
             dlat = grid['lat'][2] - grid['lat'][1]
-            
+
             def get_nearest_extent(val, array, direction, spacing):
                 # choose nearest values in grid to desired extent to minimize distortion
                 grid_vals = np.asarray(array)
@@ -2903,8 +2889,7 @@ def single_panel(plot_vals,
                         # expand extent to value beyond grid limits if extent
                         # is already > max grid value
                         return grid_vals[(np.abs(grid_vals - val)).argmin()]
-                    else:
-                        return grid_vals[i]
+                    return grid_vals[i]
                 else:
                     diff[diff > 0] = -np.inf
                     i = diff.argmax()
@@ -2914,8 +2899,7 @@ def single_panel(plot_vals,
                         # cartopy issues
                         return grid_vals[(
                             np.abs(grid_vals - val)).argmin()] - spacing
-                    else:
-                        return max(grid_vals[i], -180)
+                    return max(grid_vals[i], -180)
             closest_minlon = get_nearest_extent(
                 minlon, grid['lon_b'], 'less', dlon)
             closest_maxlon = get_nearest_extent(
@@ -2944,7 +2928,7 @@ def single_panel(plot_vals,
                 closest_maxlon,
                 closest_minlat,
                 closest_maxlat]
-            if type(plot_vals) is xr.DataArray:
+            if isinstance(plot_vals, xr.DataArray):
                 # filter data by bounds of extent
                 plot_vals = plot_vals.where(
                     plot_vals.lon > closest_minlon,
@@ -2966,7 +2950,7 @@ def single_panel(plot_vals,
                 if len(maxlon_i) == 0:
                     maxlon_i = -1
                 else:
-                    maxlon_i = int(maxlon_i)                
+                    maxlon_i = int(maxlon_i)
                 minlat_i = np.where(grid['lat_b']==closest_minlat)[0]
                 if len(minlat_i) == 0:
                     minlat_i = 0
@@ -3081,8 +3065,7 @@ def single_panel(plot_vals,
         pdf.close()
 
     # in some cases users may wish to get a list of all associated plots
-    # eg. cubedsphere grids have six plots associated with them 
+    # eg. cubedsphere grids have six plots associated with them
     if return_list_of_plots:
         return plots if 'plots' in locals() else [plot]
-    else: 
-        return plot
+    return plot
