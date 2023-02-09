@@ -375,8 +375,7 @@ def print_metrics(common_vars, dst):
           file=f
         )
         print("#" * 79, file=f)
-        print("\n")
-
+        
         # ==============================================================
         # Mean OH concentration [1e5 molec/cm3]
         # ==============================================================
