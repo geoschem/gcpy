@@ -843,7 +843,8 @@ def compare_varnames(
                              refdata and devdata, and that have lat,
                              lon, and level dimensions.
             commonvarsData   List of all commmon 2D or 3D data variables,
-                             excluding index variables.
+                             excluding index variables.  This is the
+                             list of "plottable" variables.
             refonly          List of 2D or 3D variables that are only
                              present in refdata.
             devonly          List of 2D or 3D variables that are only
@@ -855,37 +856,29 @@ def compare_varnames(
     refonly = [v for v in refvars if v not in devvars]
     devonly = [v for v in devvars if v not in refvars]
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
+    # Assume plottable data has lon and lat
+    # This is OK for purposes of benchmarking
+    #  -- Bob Yantosca (09 Feb 2023)
+    commonvarsData = [
+        v for v in commonvars if (
+            ("lat" in refdata[v].dims or "Ydim" in refdata[v].dims)
+            and
+            ("lon" in refdata[v].dims or "Xdim" in refdata[v].dims)
+        )
+    ]        
     commonvarsOther = [
         v for v in commonvars if (
-          (
-            ("lat" not in refdata[v].dims or "Xdim" not in refdata[v].dims)
-            and
-            ("lon" not in refdata[v].dims or "Ydim" not in refdata[v].dims)
-            and
-            ("lev" not in refdata[v].dims)
-          )
-          or
-          (
-            ("hyam" in v or "hybm" in v)  # Omit these from plottable data
-          )
-        )
+           v not in commonvarsData
+        )    
     ]
     commonvars2D = [
         v for v in commonvars if (
-          ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
-          and
-          ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
-          and
-          ("lev" not in refdata[v].dims)
+            (v in commonvarsData) and ("lev" not in refdata[v].dims)
         )
     ]
     commonvars3D = [
         v for v in commonvars if (
-          ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
-          and
-          ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
-          and
-          ("lev" in refdata[v].dims)
+            (v in commonvarsData) and ("lev" in refdata[v].dims)
         )
     ]
 
