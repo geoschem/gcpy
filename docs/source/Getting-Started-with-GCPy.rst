@@ -4,6 +4,8 @@
 Installing GCPy
 ###############
 
+.. _requirements:
+
 ============
 Requirements
 ============
@@ -22,7 +24,7 @@ python version 3.9.
 You can check if you already have conda installed by running the
 following command:
 
-.. code:: console
+.. code-block:: console
 
    $ conda --version
 
@@ -38,85 +40,87 @@ Miniconda follow instructions in the  `Miniconda docs <https://docs.conda.io/en/
 Steps to install GCPy and its dependencies
 ==========================================
 
-#. Step 0: Install conda if not already installed.
+#. Install conda if not already installed.
 
-See the Requirements section above.
+   See the :ref:`Requirements section <requirements>` above.
 
-#. Step 1: Download GCPy
+#. Download GCPy
 
-Create and go to the directory in which you would like to store GCPy. In
-this example we will store GCPy in a python/packages subdirectory in the
-home directory, but you can store it wherever you wish. You can also name
-the GCPy download whatever you want. In this example the GCPy directory
-is called GCPy.
+   Create and go to the directory in which you would like to store GCPy. In
+   this example we will store GCPy in a python/packages subdirectory in the
+   home directory, but you can store it wherever you wish. You can also name
+   the GCPy download whatever you want. In this example the GCPy directory
+   is called GCPy.
 
-.. code:: console
+   .. code-block:: console
 
-   $ cd $HOME/python/packages
-   $ git clone https://github.com/geoschem/gcpy.git GCPy
-   $ cd GCPy
+      $ cd $HOME/python/packages
+      $ git clone https://github.com/geoschem/gcpy.git GCPy
+      $ cd GCPy
 
-#. Step 2: Create new python virtual environment for GCPy
+#. Create new python virtual environment for GCPy
 
-A python virtual environment is a named set of python installs,
-e.g. packages, that are independent of other virtual environments.
-Using an environment dedicated to GCPy is useful to maintain a set
-of package dependencies compatible with GCPy without interfering with
-python packages you use for other work. You can create a python virtual
-environment from anywhere on your system. It will be stored in your
-conda install rather than the directory from which you create it.
+   A python virtual environment is a named set of python installs,
+   e.g. packages, that are independent of other virtual environments.
+   Using an environment dedicated to GCPy is useful to maintain a set
+   of package dependencies compatible with GCPy without interfering with
+   python packages you use for other work. You can create a python virtual
+   environment from anywhere on your system. It will be stored in your
+   conda install rather than the directory from which you create it.
 
-You can create a python virtual environment using a file that lists
-all packages and their versions to be included in the environment.
-GCPy includes such as file, environment.yml, located in the top-level
-directory of the package.
+   You can create a python virtual environment using a file that lists
+   all packages and their versions to be included in the environment.
+   GCPy includes such as file, environment.yml, located in the top-level
+   directory of the package.
 
-Run the following command at the command prompt to create a virtual
-environment for use with GCPy. You can name environment whatever you
-wish. This example names it gcpy_env.
+   Run the following command at the command prompt to create a virtual
+   environment for use with GCPy. You can name environment whatever you
+   wish. This example names it gcpy_env.
 
-.. code:: console
+   .. code-block:: console
 
-   $ conda env create -n gcpy_env --file=environment.yml
+      $ conda env create -n gcpy_env --file=environment.yml
 
-Once successfully created you can load the environment by running the
-following command, specifying the name of your environment.
+   Once successfully created you can load the environment by running the
+   following command, specifying the name of your environment.
 
-.. code:: console
+   .. code-block:: console
 
-   $ conda activate gcpy_env
+      $ conda activate gcpy_env
 
-To exit the environment do the following:
+   To exit the environment do the following:
 
-.. code:: console
+   .. code-block:: console
 
-   $ conda deactivate
+      $ conda deactivate
 
-#. Step 3: Add GCPy to python path
+#. Add GCPy to python path
 
-The environment variable PYTHONPATH specifies the locations of python
-libraries on your system that are not included in your conda environment.
-If GCPy is included in PYTHONPATH then python will recognize its
-existence when you try to use. Add the following line to your startup
-script, e.g. .bashrc, and edit the path to where you are storing GCPy.
+   The environment variable :envvar:`PYTHONPATH` specifies the
+   locations of python libraries on your system that are not included
+   in your conda environment. If GCPy is included in
+   :envvar:`PYTHONPATH` then python will recognize its existence
+   when you try to use. Add the following line to your startup script,
+   e.g. :file:`.bashrc`, and edit the path to where you are storing
+   GCPy.  
 
-.. code:: console
+   .. code-block:: bash
 
-   PYTHONPATH=$PYTHONPATH:$HOME/python/packages/GCPy
+      PYTHONPATH=$PYTHONPATH:$HOME/python/packages/GCPy
 
-#. Step 4: Perform a simple test
+#. Perform a simple test
 
-Run the following commands in your terminal to check if the 
-installation was succcesful.
+   Run the following commands in your terminal to check if the 
+   installation was succcesful.
 
-.. code:: console
+   .. code-block:: console
 
-   $ source $HOME/.bashrc     # Alternatively close and reopen your terminal
-   $ echo $PYTHONPATH         # Check it contains path to your GCPy clone
-   $ conda activate gcpy_env    
-   $ conda list               # Check it contains contents of gcpy env file
-   $ python
-   \>>> import gcpy
+      $ source $HOME/.bashrc     # Alternatively close and reopen your terminal
+      $ echo $PYTHONPATH         # Check it contains path to your GCPy clone
+      $ conda activate gcpy_env    
+      $ conda list               # Check it contains contents of gcpy env file
+      $ python
+      \>>> import gcpy
 
 If no errors were encountered then you successfully installed GCPy and
 its dependencies.
@@ -134,7 +138,7 @@ environment.yml file included in the package.
 Run the following commands to update both your GCPy version to the
 latest available.
 
-.. code:: console
+.. code-block:: console
 
    $ cd $HOME/python/packages/GCPy
    $ git fetch -p
@@ -143,7 +147,7 @@ latest available.
 
 You can also checkout an older version by doing the following:
 
-.. code:: console
+.. code-block:: console
 
    $ cd $HOME/python/packages/GCPy
    $ git fetch -p
@@ -153,7 +157,7 @@ You can also checkout an older version by doing the following:
 Once you have the version you wish you use you can do the following
 commands to then update your virtual environment:
 
-.. code:: console
+.. code-block:: console
 
    $ source activate gcpy_env
    $ cd $HOME/python/packages/GCPy
