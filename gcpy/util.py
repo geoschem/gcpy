@@ -1276,7 +1276,7 @@ def add_lumped_species_to_dataset(
         # Get a dummy DataArray to use for initialization
         dummy_darr = None
         for var in ds.data_vars:
-            if prefix in var:
+            if prefix in var or prefix.replace("VV", "") in var:
                 dummy_darr = ds[var]
                 dummy_type = dummy_darr.dtype
                 dummy_shape = dummy_darr.shape
