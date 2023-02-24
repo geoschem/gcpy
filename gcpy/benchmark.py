@@ -4653,3 +4653,49 @@ def diff_list_to_text(
         diff_text = f"### {diff_text : <82}{'###'}"
         
     return diff_text.strip()
+
+
+def diff_of_diffs_toprow_title(config, model):
+    """
+    Creates the diff-of-diffs plot title for the top row of the
+    six-plot output.  If the title string is too long (as empirically
+    determined), then a newline will be inserted in order to prevent
+    the title strings from overlapping.
+
+    Args:
+    -----
+    config : dict
+       Dictionary containing the benchmark options (as read from a
+       YAML file such as 1mo_benchmark.yml, etc.)
+    model: str
+       The model to plot.  Accepted values are "gcc" or "gchp".
+
+    Returns:
+    --------
+    title: str
+        The plot title string for the diff-of-diff
+    """
+    if not isinstance(config, dict):
+        msg = "The 'config' argument must be of type 'dict`!"
+        raise ValueError(msg)
+    if not isinstance(model, str):
+        msg = "The 'model' argument must be of type 'str'!"
+        raise ValueError(msg)
+    if not "gcc" in model and not "gchp" in model:
+        msg = "The 'model' argument must be either 'gcc' or 'gchp'!"
+        raise ValueError(msg)
+
+    title = (
+        config["data"]["dev"][model]["version"]
+        + " - "
+        + config["data"]["ref"][model]["version"]
+    )
+
+    if len(title) > 40:
+        title = (
+            config["data"]["dev"][model]["version"]
+            + " -\n"
+            + config["data"]["ref"][model]["version"]
+        )
+
+    return title
