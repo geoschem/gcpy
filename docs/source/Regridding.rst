@@ -21,6 +21,8 @@ release, regridding is split into two different categories - regridding
 GEOS-Chem Classic format files (lat/lon), and regridding GCHP format files
 (standard cubed-sphere, stretched cubed-sphere).
 
+.. _regrid-classic:
+
 ====================================
 Regridding Files - GEOS-Chem Classic
 ====================================
@@ -91,7 +93,7 @@ restart file to a 4x5 lat/lon grid looks like:
          --ll_res_out 4x5                         \
          --dim_format_out classic
 
-.. _regrid-sparselt:
+.. _regrid-gchp:
 
 =======================
 Regridding Files - GCHP
@@ -154,7 +156,7 @@ Optional arguments:
       `GCHP documentation <https://gchp.readthedocs.io/en/latest/supplement/stretched-grid.html#choose-stretching-parameters>`_
       for more information
 
-.. _regrid-sparselt-firsttime:
+.. _regrid-gchp-firsttime:
 
 First Time Setup
 -----------------
@@ -186,7 +188,7 @@ will get you set up with an environment for regridding with
 After installing and switching to this new conda environment, you should have
 the :literal:`gridspec` commands available to you at the command line.
 
-.. _regrid-sparselt-gridcombo:
+.. _regrid-gchp-procedure:
 
 Regridding
 ----------
@@ -276,24 +278,29 @@ to demonstrate the stretched cubed-sphere regridding process:
 
    .. code-block:: console
 
-      $ gridspec-create gcs 60
+      $ gridspec-create sgcs 120 -s 4.0 -t 32.0 -64.0
 
-   Again, this will produce 7 files - :literal:`c60_gridspec` and
-   :literal:`c60.tile[1-6].nc`
+   Here, the :code:`-s` option denotes the stretch factor and the :code:`-t`
+   option denotes the latitude / longitude of the centre point of the grid
+   stretch. 
+   
+   Again, this will produce 7 files - :literal:`c120_..._gridspec.nc` and
+   :literal:`c120_..._tile[1-6].nc`, where :literal:`...` denotes randomly
+   generated characters.
 
 #. Create the regridding weights for the regridding transformation using
    :code:`ESMF_RegridWeightGen`:
 
    .. code-block:: console
 
-      $ ESMF_RegridWeightGen            \
-          --source c48_gridspec.nc      \
-          --destination c60_gridspec.nc \
-          --method conserve             \
-          --weight c48_to_c60_weights.nc 
+      $ ESMF_RegridWeightGen                 \
+          --source c48_gridspec.nc           \
+          --destination c120_..._gridspec.nc \
+          --method conserve                  \
+          --weight c48_to_c120_stretched_weights.nc 
 
    This will produce a log file, :literal:`PET0.RegridWeightGen.Log`, and our
-   regridding weights, :literal:`c48_to_c60_weights.nc`
+   regridding weights, :literal:`c48_to_c120_stretched_weights.nc`
 
 #. Finally, use the grid weights produced in step 3 to complete the regridding:
 
@@ -301,228 +308,12 @@ to demonstrate the stretched cubed-sphere regridding process:
 
       $ python -m gcpy.regrid_restart_file    \
           GEOSChem.Restart.20190701_0000z.c48 \
-          c48_to_c60_weights.nc               \
+          c48_to_c120_stretched_weights.nc    \
           GEOSChem.Restart.20190701_0000z.c48
 
    This will produce a single file, :literal:`new_restart_file.nc`, regridded 
-   from C48 to C60, that you can rename and use as you please.
-One-time setup per grid resolution combination
-----------------------------------------------
-
-#. Create a directory structure to store files that you will use in
-   regridding. Ideally this would be in a shared location where all of
-   the GCPy users at your institution coud access it.
-
-   Navigate to this directory.
-
-   .. code-block:: console
-
-      $ mkdir /path/to/RegridInfo
-
-#. Within this top level directory, create two directories that will
-   store grid information and regridding weights.  Navigate to the
-   grid information folder.
-
-   .. code-block:: console
-
-      $ mkdir Grids
-      $ mkdir Weights
-      $ cd Grids
-
-#. Create tilefiles (if cubed-sphere) and grid spec file for each
-   input and output grid resolution (see also gridspec README):
-
-   For uniform cubed-sphere global grid, specify face side length.
-
-   #. For simplicity, keep all cubed-sphere data in subdirectories
-      of the Grids folder.
-
-      .. code-block:: console
-
-         $ mkdir c24
-         $ gridspec-create gcs 24
-         $ mv c24*.nc c24
-
-         $ mkdir c48
-         $ gridspec-create gcs 48
-         $ mv c48*.nc c48
-
-          ... etc for other grids ...
-
-   #. For cubed-sphere stretched grid, specify face side length,
-      stretch factor, and target latitude and longitude:
-
-      .. code-block:: console
-
-         $ mkdir sc24
-         $ gridspec-create sgcs 24 -s 2 -t 40 -100
-         $ mv *c24*.nc sc24
-
-   #. For uniform global lat-lon grid, specify the number of latitude and
-      longitude grid boxes. For a list of optional settings, run the
-      command :command:`gridspec-create latlon --help`.
-
-      Create a subdirectory named latlon and move all of your latlon grid
-      specification files there.
-
-      .. code-block:: console
-
-         $ gridspec-create latlon 90 180                # Generic 1 x 1 grid
-         $ gridspec-create latlon 46 72 -dc -pc -hp     # GEOS-Chem Classic 4 x 5
-         $ gridspec-create latlon 91 144 -dc -pc -hp    # GEOS-Chem Classic 2 x 2.5
-         $ gridspec-create latlon 361 576 -dc -pc -hp   # MERRA-2 0.5 x 0.625
-         $ gridspec-create latlon 721 1172 -dc -pc -hp  # GEOS-FP 0.25 x  0.3125
-
-         $ mkdir latlon
-         $ mv regular_lat_lon*.nc latlon
-
-#. (Optional) View contents of grid spec file:
-
-   .. code-block:: console
-
-      $ gridspec-dump c24/c24_gridspec.nc
-
-      ... etc. for other grids ...
-
-#. Initialize your GCPy conda environmnt (which includes ESMF as a
-   dependency):
-
-   .. code-block:: console
-
-      $ conda activate gcpy_env
-
-#. Navigate to the directory that will store the regridding
-   weights. (Recall that we created this in created this in step #2.
-
-   .. code-block:: console
-
-      $ cd /path/to/RegridInfo/Weights
-
-#. Generate regridding weights (see also sparselt sample data files
-   README), specifying the following:
-
-   - Path to input file horizontal resolution grid spec netcdf file
-   - Path to output file horizontal resolution grid spec netcdf file
-   - Regridding type, e.g. conserve for conservative (string)
-   - Name of output regridding weights file (include input and output
-     resolutions)
-   - Name of directory containing grid spec tilefiles
-
-   .. code-block:: console
-
-      (gcpy_env) $ /ESMF_RegridWeightGen                                  \
-                   -s /path/to/RegridInfo/Grids/c48/c48_gridspec.nc       \
-                   -d /path/to/RegridInfo/Grids/regular_lat_lon_90x180.nc \
-                   -m conserve                                            \
-                   -w ./regrid_weights_c48_to_latlon90x180.nc             \
-                   --tilefile_path /path/to/RegridInfo/Grids/c48
-
-      ... etc. for other grid combinations ...
-
-#. (Optional) Consider using a bash script such as the one shown below
-   if you need to create regridding weights to/from several grids.
-
-   .. code-block:: bash
-
-      #!/bin/bash
-
-      # Generates regridding weights with ESMF_RegridWeightGen
-
-      # The top-level directory containing Grids and Weights subdirectories
-      # (EDIT AS NEEDED)
-      main_dir="/path/to/RegridInfo"
-
-      # Subdirectories for grid specifications and regridding weights
-      grids_dir="${main_dir}/Grids"
-      weights_dir="${main_dir}/Weights"
-
-      # GCHP cubed-sphere grids (EDIT AS NEEDED)
-      cs_list=(c24 c48 c90 c180 c360)
-
-      # GCClassic lat-lon grids (EDIT AS NEEDED)
-      ll_list=(46x72 91x144 361x576 721x1172)
-
-      # Loop over cubed-sphere grids
-      for cs in ${cs_list[@]}; do
-
-          # Cubed-sphere gridspec file
-          cs_grid_info="${grids_dir}/${cs}/${cs}_gridspec.nc"
-          if [[ ! -f ${cs_grid_info} ]]; then
-              echo "Could not find ${cs_grid_info}!"
-              exit 1
-          fi
-
-          # Loop over latlon grids
-          for ll in ${ll_list[@]}; do
-
-              # Latlon gridspec file
-              ll_grid_info="${grids_dir}/latlon/regular_lat_lon_${ll}.nc"
-              if [[ ! -f ${ll_grid_info} ]]; then
-                  echo "Could not find ${ll_grid_info}!"
-                  exit 1
-              fi
-
-              # Cubed-sphere -> latlon regridding
-              echo "----"
-              echo "Regridding from ${cs} to ${ll}"
-              weightfile="${weights_dir}/regrid_weights_${cs}_to_latlon${ll}.nc"
-              ESMF_RegridWeightGen                  \
-                  -s ${cs_grid_info}                \
-                  -d ${ll_grid_info}                \
-                  -m conserve                       \
-                  -w ${weightfile}                  \
-                  --tilefile_path ${grids_dir}/${cs}
-              unset weightfile
-
-              # Latlon -> cubed-sphere regridding
-              echo "----"
-              echo "Regridding from ${ll} to ${cs}"
-              weightfile="${weights_dir}/regrid_weights_latlon${ll}_to_${cs}.nc"
-              ESMF_RegridWeightGen                  \
-                  -s ${ll_grid_info}                \
-                  -d ${cs_grid_info}                \
-                  -m conserve                       \
-                  -w ${weightfile}                  \
-                  --tilefile_path ${grids_dir}/${cs}
-              unset weightfile
-
-          done
-      done
-
-.. _regrid-sparselt-regrid:
-
-Sample regridding script
-------------------------
-
-Once you have created the tilefiles and regridding weights, you can
-use them to regrid data files.  Shown below is a sample Python script
-that you can modify.
-
-.. code-block:: python
-
-   #!/usr/bin/env python
-
-   # Imports
-   import xarray as xr
-   import sparselt.esmf
-   import sparselt.xr
-
-   # Create a linear transform object from the regridding weights file
-   # for the combination of source and target horizontal resolutions.
-   transform = sparselt.esmf.load_weights(
-       'path/to/RegridInfo/Weights/regrid_weights_c48_to_latlon90x180.nc',
-        input_dims=[('nf', 'Ydim', 'Xdim'), (6, 48, 48)]
-        output_dims=[('lat', 'lon'), (90, 180)],
-   )
-
-   # Open file to regrid as xarray DataSet.
-   ds = xr.open_dataset('my_data_c48.nc')
-
-   # Regrid the DataSet using the transform object.
-   ds = sparselt.xr.apply(transform, ds)
-
-   # Write xarray DataSet contents to netcdf file.
-   ds.to_netcdf("my_data_latlon90x180.nc")
+   from C48 to C120, with a stretch factor of 4.0 over 32.0N, -64.0E, that you
+   can rename and use as you please.
 
 .. _regrid-plot:
 
@@ -590,5 +381,4 @@ what comparison resolution it should use:
 
 For differing vertical grids, the smaller vertical grid is currently
 used for comparisons.
-
 
