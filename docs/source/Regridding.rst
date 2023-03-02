@@ -309,6 +309,10 @@ to demonstrate the stretched cubed-sphere regridding process:
    .. code-block:: console
 
       $ python -m gcpy.regrid_restart_file        \
+          --stretched-grid                        \
+          --stretch-factor 4.0                    \
+          --target-latitude 32.0                  \
+          --target-longitude -64.0                \
           GEOSChem.Restart.20190701_0000z.c48.nc4 \
           c48_to_c120_stretched_weights.nc        \
           GEOSChem.Restart.20190701_0000z.c48.nc4
