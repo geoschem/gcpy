@@ -53,7 +53,11 @@ def file_path(path):
 
     """
     if not os.path.isfile(path):
-        raise argparse.ArgumentTypeError
+        error_message = (
+            f"File {path} does not exist! Please double-check the path"
+            " and make sure you have used the correct file extension"
+        )
+        raise argparse.ArgumentTypeError(error_message)
     return path
 
 
