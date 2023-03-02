@@ -8,11 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Updated installation documentation, we now recommend users to create
   a conda environment using the `environment.yml` file
-
-### Added
 - Benchmark summary table output (intended for 1hr & 1mo benchmarks)
 - Species/emissions/inventories that differ between Dev & Ref versions are now printed at the top of the benchmark emissions, inventory, and global mass tables.  if there are too many species with diffs, an alternate message is printed.
 - New functions in `benchmark.py` and `util.py` to facilitate printing of the species/emissions/inventories that differ between Dev & Ref versions.
+
+### Changed
+- Applied cleanup susggestions from pylint to `benchmark.py`, `util.py`, `plot.py`, `oh_metrics.py`, `ste_flux.py`
+- Replaced format with f-strings in `benchmark.py`, `util.py`, `plot.py`, `oh_metrics.py`, `ste_flux.py`
+- Abstract some common in `benchmark.py` into functions
+- Replaced direct calls to `yaml.load` with `util.read_config.file` (mostly using `quiet=True`)
+- Restore tag information to refstr and devstr 
+- Add a newline to diff-of-diffs refstr and devstr if the string is too long.  This prevents plot titles in the top 2 rows of a six-panel plot from running together.
 
 ## [1.3.2] -- 2022-10-25
 

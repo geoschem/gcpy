@@ -6,11 +6,11 @@ objects used throughout GCPy
 import os
 import warnings
 import shutil
-import yaml
+from textwrap import wrap
+from yaml import safe_load as yaml_safe_load
 import numpy as np
 import xarray as xr
 from PyPDF2 import PdfFileWriter, PdfFileReader
-from textwrap import wrap
 
 def convert_lon(
         data,
@@ -314,9 +314,12 @@ def get_species_categories(
     NOTE: The benchmark categories are specified in YAML file
     benchmark_species.yml.
     """
-    spc_categories = "benchmark_categories.yml"
-    yamlfile = os.path.join(os.path.dirname(__file__), spc_categories)
-    spc_cat_dict = read_config_file(yamlfile)
+    spc_cat_dict = read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "benchmark_categories.yml"
+        )
+    )
     return spc_cat_dict[benchmark_type]
 
 
@@ -995,9 +998,13 @@ def convert_bpch_names_to_netcdf_names(
     # Names dictionary (key = bpch id, value[0] = netcdf id,
     # value[1] = action to create full name using id)
     # Now read from YAML file (bmy, 4/5/19)
-    bpch_to_nc_names = "bpch_to_nc_names.yml"
-    yamlfile = os.path.join(os.path.dirname(__file__), bpch_to_nc_names)
-    names = yaml.load(open(yamlfile), Loader=yaml.FullLoader)
+    names = read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "bpch_to_nc_names.yml"
+        ),
+        quiet=True
+    )
 
     # define some special variable to overwrite above
     special_vars = {
@@ -1153,7 +1160,7 @@ def convert_bpch_names_to_netcdf_names(
     if verbose:
         print("\nList of bpch names and netCDF names")
         for key in old_to_new:
-            print("{} ==> {}".format(key.ljust(25), old_to_new[key].ljust(40)))
+            print(f"{key : <25} ==> {old_to_new[key] : <40}")
 
     # Rename the variables in the dataset
     if verbose:
@@ -1173,11 +1180,13 @@ def get_lumped_species_definitions():
         lumped_spc_dict : dict of str
             Dictionary of lumped species
     """
-    lumped_spc = "lumped_species.yml"
-    yamlfile = os.path.join(os.path.dirname(__file__), lumped_spc)
-    with open(yamlfile, "r") as f:
-        lumped_spc_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
-    return lumped_spc_dict
+    return read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "lumped_species.yml"
+        ),
+        quiet=True
+    )
 
 
 def archive_lumped_species_definitions(
@@ -1196,7 +1205,7 @@ def archive_lumped_species_definitions(
     src = os.path.join(os.path.dirname(__file__), lumped_spc)
     copy = os.path.join(dst, lumped_spc)
     if not os.path.exists(copy):
-        print("\nArchiving {} in {}".format(lumped_spc, dst))
+        print(f"\nArchiving {lumped_spc} in {dst}")
         shutil.copyfile(src, copy)
 
 
@@ -1267,7 +1276,7 @@ def add_lumped_species_to_dataset(
         # Get a dummy DataArray to use for initialization
         dummy_darr = None
         for var in ds.data_vars:
-            if prefix in var:
+            if prefix in var or prefix.replace("VV", "") in var:
                 dummy_darr = ds[var]
                 dummy_type = dummy_darr.dtype
                 dummy_shape = dummy_darr.shape
@@ -2134,7 +2143,7 @@ def read_config_file(config_file, quiet=False):
     try:
         if not quiet:
             print(f"Using configuration file {config_file}")
-        config = yaml.safe_load(open(config_file))
+        config = yaml_safe_load(open(config_file))
     except Exception as err:
         msg = f"Error reading configuration in {config_file}: {err}"
         raise Exception(msg) from err
@@ -2305,3 +2314,50 @@ def array_equals(
     refsum = np.nansum(refdata, dtype=dtype)
     devsum = np.nansum(devdata, dtype=dtype)
     return (not np.abs(devsum - refsum) > dtype(0.0))
+
+
+def make_directory(
+        dir_name,
+        overwrite
+):
+    """
+    Creates a directory where benchmark plots/tables will be placed.
+
+    Args:
+    -----
+    dir_name : str
+        Name of the directory to be created.
+    overwrite : bool
+        Set to True if you wish to overwrite prior contents in
+        the directory 'dir_name'
+    """
+
+    if os.path.isdir(dir_name) and not overwrite:
+        msg = f"Directory {dir_name} exists!\n"
+        msg += "Pass overwrite=True to overwrite files in that directory."
+        raise ValueError(msg)
+
+    if not os.path.isdir(dir_name):
+        os.makedirs(dir_name)
+
+
+def trim_cloud_benchmark_label(
+        label
+):
+    """
+    Removes the first part of the cloud benchmark label string
+    (e.g. "gchp-c24-1Hr", "gcc-4x5-1Mon", etc) to avoid clutter.
+    """
+    if not isinstance(label, str):
+        raise ValueError("Argument 'label' must be a string!")
+
+    for v in [
+        "gcc-4x5-1Hr",
+        "gchp-c24-1Hr",
+        "gcc-4x5-1Mon",
+        "gchp-c24-1Mon",
+    ]:
+        if v in label:
+            label.replace(v, "")
+            
+    return label

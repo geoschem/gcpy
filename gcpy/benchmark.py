@@ -6,7 +6,7 @@ import os
 import warnings
 import itertools
 from distutils.version import LooseVersion
-import yaml
+import gc
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -20,7 +20,6 @@ from gcpy.regrid import create_regridders
 from gcpy.grid import get_troposphere_mask
 from gcpy.units import convert_units
 import gcpy.constants as gcon
-import gc
 
 # Save warnings format to undo overwriting built into PyPDF2
 warning_format = warnings.showwarning
@@ -154,8 +153,13 @@ def create_total_emissions_table(
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this folder where
     # this benchmark.py file is found.
-    properties_path = os.path.join(spcdb_dir, "species_database.yml")
-    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+    properties = util.read_config_file(
+        os.path.join(
+            spcdb_dir, 
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # ==================================================================
     # Get the list of emission variables for which we will print totals
@@ -180,7 +184,7 @@ def create_total_emissions_table(
     try:
         f = open(outfilename, "w")
     except (IOError, OSError, FileNotFoundError) as e:
-        raise e(f"Could not open {outfilename} for writing!")
+        raise e(f"Could not open {outfilename} for writing!") from e
 
     # Write a placeholder to the file that denotes where
     # the list of species with differences will be written
@@ -196,7 +200,7 @@ def create_total_emissions_table(
     for species_name, target_units in species.items():
 
         # Get a list of emission variable names for each species
-        diagnostic_template = template.format(species_name)
+        diagnostic_template = f"{species_name}"
         varnames = util.get_emissions_varnames(cvars, diagnostic_template)
 
         # Also add variables that might be in either Ref or Dev
@@ -214,8 +218,8 @@ def create_total_emissions_table(
 
         # If no emissions are found, then skip to next species
         if len(varnames) == 0:
-            msg = "No emissions found for {} ... skippping"
-            print(msg.format(species_name))
+            msg = f"No emissions found for {species_name} ... skippping"
+            print(msg)
             continue
 
         # Check if there is a total emissions variable in the list
@@ -236,12 +240,14 @@ def create_total_emissions_table(
             title0 = f"for species {species_name}"
             title1 = f"### Emissions totals {title0} [Tg]"
 
-        title2 = f"### Ref = {refstr}; Dev = {devstr}"
+        title2 = f"### Ref = {refstr}"
+        title3 = f"### Dev = {devstr}"
 
         # Print header to file
         print("#" * 89, file=f)
         print(f"{title1 : <86}{'###'}", file=f)
         print(f"{title2 : <86}{'###'}", file=f)
+        print(f"{title3 : <86}{'###'}", file=f)
         print("#" * 89, file=f)
         print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'diffs'}", file=f)
 
@@ -441,8 +447,13 @@ def create_global_mass_table(
     # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
-    properties_path = os.path.join(spcdb_dir, "species_database.yml")
-    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+    properties = util.read_config_file(
+        os.path.join(
+            spcdb_dir,
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # ==================================================================
     # Open file for output
@@ -452,8 +463,7 @@ def create_global_mass_table(
     try:
         f = open(outfilename, "w")
     except (IOError, OSError, FileNotFoundError) as e:
-        msg = f"Could not open {outfilename} for writing!"
-        raise FileNotFoundError(msg)
+        raise e(f"Could not open {outfilename} for writing!") from e
 
     # Define a list for differences
     diff_list = []
@@ -462,7 +472,8 @@ def create_global_mass_table(
     title1 = f"### Global mass (Gg) {label} (Trop + Strat)"
     if trop_only:
         title1 = f"### Global mass (Gg) {label} (Trop only)"
-    title2 = f"### Ref = {refstr}; Dev = {devstr}"
+    title2 = f"### Ref = {refstr}"
+    title3 = f"### Dev = {devstr}"
 
     # Write a placeholder to the file that denotes where
     # the list of species with differences will be written
@@ -471,7 +482,9 @@ def create_global_mass_table(
     # Print header to file
     print("#" * 89, file=f)
     print(f"{title1 : <86}{'###'}", file=f)
+    print(f"{'###'  : <86}{'###'}", file=f)
     print(f"{title2 : <86}{'###'}", file=f)
+    print(f"{title3 : <86}{'###'}", file=f)
     print(f"{'###'  : <86}{'###'}", file=f)
     print(f"{placeholder}", file=f)
     print("#" * 89, file=f)
@@ -496,8 +509,8 @@ def create_global_mass_table(
         # If no properties are found, then skip to next species
         if species_properties is None:
             if verbose:
-                msg = "No properties found for {} ... skippping"
-                print(msg.format(spc_name))
+                msg = f"No properties found for {spc_name} ... skippping"
+                print(msg)
             continue
 
         # Specify target units
@@ -505,8 +518,9 @@ def create_global_mass_table(
         mol_wt_g = species_properties.get("MW_g")
         if mol_wt_g is None:
             if verbose:
-                msg = "No molecular weight found for {} ... skippping"
-                print(msg.format(spc_name))
+                msg = \
+                  f"No molecular weight found for {spc_name} ... skippping"
+                print(msg)
             continue
 
         # ==============================================================
@@ -726,13 +740,9 @@ def make_benchmark_conc_plots(
     # ==================================================================
     # Initialization and data read
     # ==================================================================
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any."
-        msg = msg.format(dst)
-        raise ValueError(msg)
-    if not os.path.isdir(dst):
-        os.mkdir(dst)
+
+    # Create the destination folder
+    util.make_directory(dst, overwrite)
 
     # Define extra title text (usually a date string)
     # for the top-title of the plot
@@ -782,10 +792,10 @@ def make_benchmark_conc_plots(
         devmetds = reader(devmet, drop_variables=gcon.skip_these_vars).load()
 
     # Determine if doing diff-of-diffs
+    diff_of_diffs = False
     if second_ref is not None and second_dev is not None:
         diff_of_diffs = True
-    else:
-        diff_of_diffs = False
+   
 
     # Open second datasets if passed as arguments (used for diff of diffs)
     # Regrid to same horz grid resolution if two refs or two devs do not match.
@@ -1028,8 +1038,8 @@ def make_benchmark_conc_plots(
                     continue
                 varlist.append(varname)
         if warninglist != []:
-            msg = "\n\nWarning: variables in {} category not in dataset: {}"
-            print(msg.format(filecat, warninglist))
+            msg = f"\n\nWarning: variables in {filecat} category not in dataset: {warninglist}"
+            print(msg)
 
         # -----------------------
         # Surface plots
@@ -1038,12 +1048,15 @@ def make_benchmark_conc_plots(
 
             if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, "{}_Surface_{}.pdf".format(filecat, subdst)
+                    catdir,
+                    f"{filecat}_Surface_{subdst}.pdf"
                 )
-                print('creating {}'.format(pdfname))
+                print(f"creating {pdfname}")
             else:
                 pdfname = os.path.join(
-                    catdir, "{}_Surface.pdf".format(filecat))
+                    catdir,
+                    f"{filecat}_Surface.pdf"
+                )
 
             diff_sfc = []
             compare_single_level(
@@ -1083,10 +1096,13 @@ def make_benchmark_conc_plots(
 
             if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, "{}_500hPa_{}.pdf".format(filecat, subdst)
+                    catdir, f"{filecat}_500hPa_{subdst}.pdf"
                 )
             else:
-                pdfname = os.path.join(catdir, "{}_500hPa.pdf".format(filecat))
+                pdfname = os.path.join(
+                    catdir,
+                    f"{filecat}_500hPa.pdf"
+                )
 
             diff_500 = []
             compare_single_level(
@@ -1127,12 +1143,13 @@ def make_benchmark_conc_plots(
 
             if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, "{}_FullColumn_ZonalMean_{}.pdf".format(
-                        filecat, subdst)
+                    catdir,
+                    f"{filecat}_FullColumn_ZonalMean_{subdst}.pdf"
                 )
             else:
                 pdfname = os.path.join(
-                    catdir, "{}_FullColumn_ZonalMean.pdf".format(filecat)
+                    catdir,
+                    f"{filecat}_FullColumn_ZonalMean.pdf"
                 )
 
             diff_zm = []
@@ -1169,11 +1186,14 @@ def make_benchmark_conc_plots(
             # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
             if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, "{}_Strat_ZonalMean_{}.pdf".format(filecat, subdst)
+                    catdir,
+                    f"{filecat}_Strat_ZonalMean_{subdst}.pdf"
                 )
             else:
-                pdfname = os.path.join(catdir, "{}_Strat_ZonalMean.pdf".format(
-                    filecat))
+                pdfname = os.path.join(
+                    catdir,
+                    f"{filecat}_Strat_ZonalMean.pdf"
+                )
 
             compare_zonal_mean(
                 refds,
@@ -1228,9 +1248,9 @@ def make_benchmark_conc_plots(
                 if "sfc" in filename:
                     with open(filename, "a+") as f:
                         for c, diff_list in dict_sfc.items():
-                            print("* {}: ".format(c), file=f, end="")
+                            print(f"* {c}: ", file=f, end="")
                             for v in diff_list:
-                                print("{} ".format(v), file=f, end="")
+                                print(f"{v} ", file=f, end="")
                             print(file=f)
                         f.close()
 
@@ -1238,9 +1258,9 @@ def make_benchmark_conc_plots(
                 if "500hpa" in filename:
                     with open(filename, "a+") as f:
                         for c, diff_list in dict_500.items():
-                            print("* {}: ".format(c), file=f, end="")
+                            print(f"* {c}: ", file=f, end="")
                             for v in diff_list:
-                                print("{} ".format(v), file=f, end="")
+                                print(f"{v} ", file=f, end="")
                             print(file=f)
                         f.close()
 
@@ -1248,9 +1268,9 @@ def make_benchmark_conc_plots(
                 if "zonalmean" in filename or "zm" in filename:
                     with open(filename, "a+") as f:
                         for c, diff_list in dict_zm.items():
-                            print("* {}: ".format(c), file=f, end="")
+                            print(f"* {c}: ", file=f, end="")
                             for v in diff_list:
-                                print("{} ".format(v), file=f, end="")
+                                print(f"{v} ", file=f, end="")
                             print(file=f)
                         f.close()
 
@@ -1389,14 +1409,8 @@ def make_benchmark_emis_plots(
     # Initialization and data read
     # =================================================================
 
-    # Create destination folder if it does not exist
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. Pass overwrite=True to overwrite "\
-            + "files in that directory, if any."
-        msg = msg.format(dst)
-        raise ValueError(msg)
-    elif not os.path.isdir(dst):
-        os.mkdir(dst)
+    # Create the destination folder
+    util.make_directory(dst, overwrite)
 
     # Create the "Emissions" category folder.  If subdst is passed,
     # then create a sub-folder (needed for the 1-year benchmarks).
@@ -1417,14 +1431,14 @@ def make_benchmark_emis_plots(
     # Ref dataset
     try:
         refds = reader(ref, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not find Ref file: {}".format(ref))
+    except (OSError, IOError, FileNotFoundError) as e:
+        raise e(f"Could not find Ref file: {ref}") from e
 
     # Dev dataset
     try:
         devds = reader(dev, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not find Dev file: {}".format(dev))
+    except (OSError, IOError, FileNotFoundError) as e:
+        raise e(f"Could not find Ref file: {dev}") from e
 
     # Compute mean of data over the time dimension (if time_mean=True)
     if time_mean:
@@ -1461,9 +1475,15 @@ def make_benchmark_emis_plots(
     # ==================================================================
     if not plot_by_spc_cat and not plot_by_hco_cat:
         if subdst is not None:
-            pdfname = os.path.join(emisdir, "Emissions_{}.pdf".format(subdst))
+            pdfname = os.path.join(
+                emisdir,
+                f"Emissions_{subdst}.pdf"
+            )
         else:
-            pdfname = os.path.join(emisdir, "Emissions.pdf")
+            pdfname = os.path.join(
+                emisdir,
+                "Emissions.pdf"
+            )
 
         compare_single_level(
             refds,
@@ -1526,11 +1546,14 @@ def make_benchmark_emis_plots(
             # subdst to the file name (e.g. as for 1-year benchmarks).
             if subdst is not None:
                 pdfname = os.path.join(
-                    emisspcdir, "{}_Emissions_{}.pdf".format(c, subdst)
+                    emisspcdir,
+                    f"{c}_Emissions_{subdst}.pdf"
                 )
             else:
                 pdfname = os.path.join(
-                    emisspcdir, "{}_Emissions.pdf".format(c))
+                    emisspcdir,
+                    f"{c}_Emissions.pdf"
+                )
             diff_dict = {}
             diff_emis = []
             compare_single_level(
@@ -1575,9 +1598,9 @@ def make_benchmark_emis_plots(
                 if "emis" in filename:
                     with open(filename, "w+") as f:
                         for c, diff_list in dict_emis.items():
-                            print("* {}: ".format(c), file=f, end="")
+                            print(f"* {c}: ", file=f, end="")
                             for v in diff_list:
-                                print("{} ".format(v), file=f, end="")
+                                print(f"{v} ", file=f, end="")
                             print(file=f)
                         f.close()
 
@@ -1615,9 +1638,7 @@ def make_benchmark_emis_plots(
             if not varlist:
                 print(
                     "\nWarning: no emissions species in benchmark species" + \
-                    "category {}".format(
-                        filecat
-                    )
+                    f"category {filecat}"
                 )
                 return catspc
 
@@ -1635,11 +1656,14 @@ def make_benchmark_emis_plots(
             # is needed for the 1-year benchmarks).
             if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, "{}_Emissions_{}.pdf".format(filecat, subdst)
+                    catdir,
+                    f"{filecat}_Emissions_{subdst}.pdf"
                 )
             else:
-                pdfname = os.path.join(catdir, "{}_Emissions.pdf".format(
-                    filecat))
+                pdfname = os.path.join(
+                    catdir,
+                    f"{filecat}_Emissions.pdf"
+                )
             # Create the PDF
             compare_single_level(
                 refds,
@@ -1671,8 +1695,10 @@ def make_benchmark_emis_plots(
         # category
         for spc in emis_spc:
             if spc not in allcatspc:
-                print("Warning: species {} has emissions diagnostics but is not"
-                      " in benchmark_categories.yml".format(spc))
+                print(\
+                    f"Warning: species {spc} has emissions diagnostics but is not"
+                      " in benchmark_categories.yml"
+                )
 
     # -------------------------------------------
     # Clean up
@@ -1753,14 +1779,8 @@ def make_benchmark_emis_tables(
     # Initialization
     # ==================================================================
 
-    # Create destination folder
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any."
-        msg = msg.format(dst)
-        raise ValueError(msg)
-    if not os.path.isdir(dst):
-        os.mkdir(dst)
+    # Create the destination folder
+    util.make_directory(dst, overwrite)
 
     # Create the "Tables" category folder if it does not exist
     emisdir = os.path.join(dst, "Tables")
@@ -1810,14 +1830,20 @@ def make_benchmark_emis_tables(
     # ==================================================================
 
     # Emissions species dictionary
-    spc_dict = yaml.load(
-        open(os.path.join(os.path.dirname(__file__), emission_spc)),
-        Loader=yaml.FullLoader
+    spc_dict = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            emission_spc
+        ),
+        quiet=True
     )
     species=spc_dict[benchmark_type]
-    inv_dict = yaml.load(
-        open(os.path.join(os.path.dirname(__file__), emission_inv)),
-        Loader=yaml.FullLoader
+    inv_dict = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            emission_inv
+        ),
+        quiet=True
     )
     inventories=inv_dict[benchmark_type]
 
@@ -1998,14 +2024,8 @@ def make_benchmark_jvalue_plots(
     # Initialization
     # ==================================================================
 
-    # Create the destination folder if it does not exist
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in tht directory, if any."
-        msg = msg.format(dst)
-        raise ValueError(msg)
-    if not os.path.isdir(dst):
-        os.mkdir(dst)
+    # Create the directory for output
+    util.make_directory(dst, overwrite)
 
     # Get the function that will read file(s) into a Dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -2013,14 +2033,14 @@ def make_benchmark_jvalue_plots(
     # Ref dataset
     try:
         refds = reader(ref, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not find Ref file: {}".format(ref))
+    except (OSError, IOError, FileNotFoundError) as e:
+        raise e(f"Could not find Ref file: {ref}") from e
 
     # Dev dataset
     try:
         devds = reader(dev, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not find Dev file: {}".format(dev))
+    except (OSError, IOError, FileNotFoundError) as e:
+        raise e(f"Could not find Ref file: {dev}") from e
 
     # Compute mean of data over the time dimension (if time_mean=True)
     if time_mean:
@@ -2099,10 +2119,15 @@ def make_benchmark_jvalue_plots(
     # Surface plots
     if "sfc" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}_Surface_{}.pdf".format(
-                prefix, subdst))
+            pdfname = os.path.join(
+                jvdir,
+                f"{prefix}_Surface_{subdst}.pdf"
+            )
         else:
-            pdfname = os.path.join(jvdir, "{}_Surface.pdf".format(prefix))
+            pdfname = os.path.join(
+                jvdir,
+                f"{prefix}_Surface.pdf"
+            )
 
         diff_sfc = []
         compare_single_level(
@@ -2132,10 +2157,14 @@ def make_benchmark_jvalue_plots(
     # 500hPa plots
     if "500hpa" in plots:
         if subdst is not None:
-            pdfname = os.path.join(jvdir, "{}_500hPa_{}.pdf".format(
-                prefix, subdst))
+            pdfname = os.path.join(
+                jvdir,
+                f"{prefix}_500hPa_{subdst}.pdf"
+            )
         else:
-            pdfname = os.path.join(jvdir, "{}_500hPa.pdf".format(prefix))
+            pdfname = os.path.join(
+                jvdir, f"{prefix}_500hPa.pdf"
+            )
 
         diff_500 = []
         compare_single_level(
@@ -2163,11 +2192,13 @@ def make_benchmark_jvalue_plots(
     if "zonalmean" in plots:
         if subdst is not None:
             pdfname = os.path.join(
-                jvdir, "{}_FullColumn_ZonalMean_{}.pdf".format(prefix, subdst)
+                jvdir,
+                f"{prefix}_FullColumn_ZonalMean_{subdst}.pdf"
             )
         else:
-            pdfname = os.path.join(jvdir, "{}_FullColumn_ZonalMean.pdf".format(
-                prefix))
+            pdfname = os.path.join(
+                jvdir, f"{prefix}_FullColumn_ZonalMean.pdf"
+            )
 
         diff_zm = []
         compare_zonal_mean(
@@ -2197,11 +2228,14 @@ def make_benchmark_jvalue_plots(
         # a range of 1..100 hPa, as per GCSC request. (bmy, 8/13/19)
         if subdst is not None:
             pdfname = os.path.join(
-                jvdir, "{}_Strat_ZonalMean_{}.pdf".format(prefix, subdst)
+                jvdir,
+                f"{prefix}_Strat_ZonalMean_{subdst}.pdf"
             )
         else:
             pdfname = os.path.join(
-                jvdir, "{}_Strat_ZonalMean.pdf".format(prefix))
+                jvdir,
+                f"{prefix}_Strat_ZonalMean.pdf"
+            )
 
         compare_zonal_mean(
             refds,
@@ -2234,7 +2268,7 @@ def make_benchmark_jvalue_plots(
                         with open(filename, "a+") as f:
                             print("* J-Values: ", file=f, end="")
                             for v in diff_sfc:
-                                print("{} ".format(v), file=f, end="")
+                                print(f"{v} ", file=f, end="")
                             print(file=f)
                             f.close()
 
@@ -2243,7 +2277,7 @@ def make_benchmark_jvalue_plots(
                         with open(filename, "a+") as f:
                             print("* J-Values: ", file=f, end="")
                             for v in diff_500:
-                                print("{} ".format(v), file=f, end="")
+                                print(f"{v} ", file=f, end="")
                             print(file=f)
                             f.close()
 
@@ -2252,7 +2286,7 @@ def make_benchmark_jvalue_plots(
                         with open(filename, "a+") as f:
                             print("* J-Values: ", file=f, end="")
                             for v in diff_zm:
-                                print("{} ".format(v), file=f, end="")
+                                print(f"{v} ", file=f, end="")
                             print(file=f)
                             f.close()
 
@@ -2355,14 +2389,8 @@ def make_benchmark_aod_plots(
     # Initialization and also read data
     # ==================================================================
 
-    # Create the destination directory if it does not exist
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any."
-        msg = msg.format(dst)
-        raise ValueError(msg)
-    if not os.path.isdir(dst):
-        os.mkdir(dst)
+    # Create destination plots directory
+    util.make_directory(dst, overwrite)
 
     # Create the "Aerosols" directory as a subfolder of dst.
     # If subdst is passed, then create a subdirectory of the "Aerosols"
@@ -2384,14 +2412,14 @@ def make_benchmark_aod_plots(
     # Read the Ref dataset
     try:
         refds = reader(ref, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not find Ref file: {}".format(ref))
+    except (OSError, IOError, FileNotFoundError) as e:
+        raise e(f"Could not find Ref file: {ref}") from e
 
     # Read the Dev dataset
     try:
         devds = reader(dev, drop_variables=gcon.skip_these_vars)
-    except FileNotFoundError:
-        raise FileNotFoundError("Could not find Dev file: {}".format(dev))
+    except (OSError, IOError, FileNotFoundError) as e:
+        raise e(f"Could not find Ref file: {dev}") from e
 
     # Compute mean of data over the time dimension (if time_mean=True)
     if time_mean:
@@ -2437,9 +2465,12 @@ def make_benchmark_aod_plots(
         varlist = [v for v in cmn3D if "AOD" in v and "_bin" not in v]
 
     # Dictionary and list for new display names
-    newvars = yaml.load(
-        open(os.path.join(os.path.dirname(__file__), aod_spc)),
-        Loader=yaml.FullLoader
+    newvars = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            aod_spc
+        ),
+        quiet=True
     )
     newvarlist = []
 
@@ -2512,7 +2543,7 @@ def make_benchmark_aod_plots(
             newname = newvars[v]
             newvarlist.append(newname)
         else:
-            raise ValueError("Could not find a display name for {}".format(v))
+            raise ValueError(f"Could not find a display name for {v}")
 
         # Don't clobber existing DataArray and Dataset attributes
         with xr.set_options(keep_attrs=True):
@@ -2533,10 +2564,15 @@ def make_benchmark_aod_plots(
     # Create the plots
     # ==================================================================
     if subdst is not None:
-        pdfname = os.path.join(aoddir, "Aerosols_ColumnOptDepth_{}.pdf".format(
-            subdst))
+        pdfname = os.path.join(
+            aoddir,
+            f"Aerosols_ColumnOptDepth_{subdst}.pdf"
+        )
     else:
-        pdfname = os.path.join(aoddir, "Aerosols_ColumnOptDepth.pdf")
+        pdfname = os.path.join(
+            aoddir,
+            "Aerosols_ColumnOptDepth.pdf"
+        )
 
     diff_aod = []
     compare_single_level(
@@ -2570,7 +2606,7 @@ def make_benchmark_aod_plots(
                 with open(filename, "a+") as f:
                     print("* Column AOD: ", file=f, end="")
                     for v in diff_aod:
-                        print("{} ".format(v), file=f, end="")
+                        print(f"{v} ", file=f, end="")
                     print(file=f)
                     f.close()
 
@@ -2761,8 +2797,8 @@ def make_benchmark_mass_tables(
         for v in varlist:
             if v not in commonspc:
                 raise ValueError(
-                    '{} folder error: Variable {} in varlist passed to make_benchmark_mass_tables ' + \
-                    'is not present in ref and dev datasets'.format(dst, v))
+                    f"{dst} folder error: Variable {v} in varlist passed to make_benchmark_mass_tables is not present in Ref and Dev datasets"
+                )
     else:
         varlist = commonspc
 
@@ -2794,7 +2830,7 @@ def make_benchmark_mass_tables(
     # Create global mass table
     # ==================================================================
     if subdst is not None:
-        mass_filename = "GlobalMass_TropStrat_{}.txt".format(subdst)
+        mass_filename = f"GlobalMass_TropStrat_{subdst}.txt"
     else:
         mass_filename = "GlobalMass_TropStrat.txt"
     mass_file = os.path.join(dst, mass_filename)
@@ -2815,7 +2851,7 @@ def make_benchmark_mass_tables(
     # Create tropospheric mass table
     # ==================================================================
     if subdst is not None:
-        mass_filename = 'GlobalMass_Trop_{}.txt'.format(subdst)
+        mass_filename = f"GlobalMass_Trop_{subdst}.txt"
     else:
         mass_filename = 'GlobalMass_Trop.txt'
     mass_file = os.path.join(dst, mass_filename)
@@ -2884,13 +2920,7 @@ def make_benchmark_oh_metrics(
     # ==================================================================
     # Define destination directory
     # ==================================================================
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any."
-        msg = msg.format(dst)
-        raise ValueError(msg)
-    if not os.path.isdir(dst):
-        os.makedirs(dst)
+    util.make_directory(dst, overwrite)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -3026,14 +3056,12 @@ def make_benchmark_oh_metrics(
 
     def print_metrics_to_file(f, title1, title2, ref, dev, diff, pctdiff):
         print("#" * 79, file=f)
-        print("{}{}".format(title1.ljust(76), "###"), file=f)
-        print("{}{}".format(title2.ljust(76), "###"), file=f)
+        print(f"{title1 : <76}{'###'}", file=f)
+        print(f"{title2 : <76}{'###'}", file=f)
         print("#" * 79, file=f)
-        print("{}{}{}{}".format("  Ref".ljust(15),
-                                "Dev".ljust(13), "Dev - Ref".ljust(13),
-                                "% diff".ljust(11),), file=f)
-        print("{:11.6f}  {:11.6f}  {:11.6f}  {:9.4f}".format(ref, dev, diff,
-                                                             pctdiff), file=f,)
+        print("'{Ref' : <15}{'Dev' : <13}{'Dev - Ref` : <13}{'% diff' : <11}",
+              file=f)
+        print("{ref:11.6f}  {dev:11.6f}  {diff:11.6f}  {pctdiff:9.4f}", file=f)
 
     # ==================================================================
     # Print metrics to file
@@ -3045,19 +3073,19 @@ def make_benchmark_oh_metrics(
 
     # Write mean OH
     title1 = "### Global mass-weighted OH concentration [1e5 molec/cm3]"
-    title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+    title2 = f"### Ref = {refstr}; Dev = {devstr}"
     print_metrics_to_file(f, title1, title2, ref_mean_oh, dev_mean_oh,
                           oh_diff, oh_pctdiff)
 
     # Write MCF lifetime
     title1 = "### MCF lifetime w/r/t tropospheric OH [years]"
-    title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+    title2 = f"### Ref = {refstr}; Dev = {devstr}"
     print_metrics_to_file(f, title1, title2, ref_mcf_lifetime,
                           dev_mcf_lifetime, mcf_diff, mcf_pctdiff)
 
     # Write CH4 lifetime
     title1 = "### CH4 lifetime w/r/t tropospheric OH [years]"
-    title2 = "### Ref = {}; Dev = {}".format(refstr, devstr)
+    title2 = f"### Ref = {refstr}; Dev = {devstr}"
     print_metrics_to_file(f, title1, title2, ref_ch4_lifetime,
                           dev_ch4_lifetime, ch4_diff, ch4_pctdiff)
 
@@ -3162,14 +3190,8 @@ def make_benchmark_wetdep_plots(
             Default value: False
     """
 
-    #  Make sure destination directory exists
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any."
-        msg = msg.format(dst)
-        raise ValueError(msg)
-    if not os.path.isdir(dst):
-        os.mkdir(dst)
+    # Create destination plot directory
+    util.make_directory(dst, overwrite)
 
     # Make a collection subdirectory
     targetdst = os.path.join(dst, collection)
@@ -3221,9 +3243,9 @@ def make_benchmark_wetdep_plots(
     # Surface plots
     if "sfc" in plots:
         if datestr is not None:
-            plotfilename = "{}_Surface_{}.pdf".format(collection, datestr)
+            plotfilename = f"{collection}_Surface_{datestr}.pdf"
         else:
-            plotfilename = "{}_Surface.pdf".format(collection)
+            plotfilename = f"{collection}_Surface.pdf"
         pdfname = os.path.join(targetdst, plotfilename)
         compare_single_level(
             refds,
@@ -3251,9 +3273,9 @@ def make_benchmark_wetdep_plots(
     # 500 hPa plots
     if "500hpa" in plots:
         if datestr is not None:
-            plotfilename = "{}_500hPa_{}.pdf".format(collection, datestr)
+            plotfilename = f"{collection}_500hPa_{datestr}.pdf"
         else:
-            plotfilename = "{}_500hPa.pdf".format(collection)
+            plotfilename = f"{collection}_500hPa.pdf"
         pdfname = os.path.join(targetdst, plotfilename)
         compare_single_level(
             refds,
@@ -3284,12 +3306,9 @@ def make_benchmark_wetdep_plots(
 
         # Full column
         if datestr is not None:
-            plotfilename = "{}_FullColumn_ZonalMean_{}.pdf".format(
-                collection,
-                datestr
-            )
+            plotfilename = f"{collection}_FullColumn_ZonalMean_{datestr}.pdf"
         else:
-            plotfilename = "{}_FullColumn_ZonalMean.pdf".format(collection)
+            plotfilename = f"{collection}_FullColumn_ZonalMean.pdf"
         pdfname = os.path.join(targetdst, plotfilename)
         compare_zonal_mean(
             refds,
@@ -3316,12 +3335,9 @@ def make_benchmark_wetdep_plots(
 
         # Stratosphere
         if datestr is not None:
-            plotfilename = "{}_Strat_ZonalMean_{}.pdf".format(
-                collection,
-                datestr
-            )
+            plotfilename = f"{collection}_Strat_ZonalMean_{datestr}.pdf"
         else:
-            plotfilename = "{}_Strat_ZonalMean.pdf".format(collection)
+            plotfilename = f"{collection}_Strat_ZonalMean.pdf"
         pdfname = os.path.join(targetdst, plotfilename)
         compare_zonal_mean(
             refds,
@@ -3405,20 +3421,20 @@ def make_benchmark_aerosol_tables(
 
     """
 
-    # Create the plot directory hierarchy if it doesn't already exist
-    if os.path.isdir(dst) and not overwrite:
-        err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(dst, err_str))
-        return
-    if not os.path.isdir(dst):
-        os.makedirs(dst)
+    # Create destination directory
+    util.make_directory(dst, overwrite)
 
     # List of species (and subsets for the trop & strat)
     species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC"]
 
     # Read the species database
-    path = os.path.join(spcdb_dir, "species_database.yml")
-    spcdb = yaml.load(open(path), Loader=yaml.FullLoader)
+    spcdb = util.read_config_file(
+        os.path.join(
+            spcdb_dir, 
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # Molecular weights [g mol-1], as taken from the species database
     mw = {}
@@ -3427,8 +3443,14 @@ def make_benchmark_aerosol_tables(
     mw["Air"] = gcon.MW_AIR_g
 
     # Get the list of relevant AOD diagnostics from a YAML file
-    path = os.path.join(os.path.dirname(__file__), "aod_species.yml")
-    aod = yaml.load(open(path), Loader=yaml.FullLoader)
+    aod = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "aod_species.yml"
+        ),
+        quiet=True
+    )
+
     aod_list = [v for v in aod.keys() if "Dust" in v or "Hyg" in v]
     # different names for GCHP
     if is_gchp:
@@ -3525,7 +3547,7 @@ def make_benchmark_aerosol_tables(
 
             # Print top header
             print("%" * 79, file=f)
-            print(" {} for {} in {}".format(title, year, devstr), file=f)
+            print(f" {title} for {year} in {devstr}")
             print(" (weighted by the number of days per month)", file=f)
             print("%" * 79, file=f)
             line = "\n" + " " * 40 + "Strat         Trop         Strat+Trop\n"
@@ -3534,13 +3556,7 @@ def make_benchmark_aerosol_tables(
 
             # Print data
             for spc in species_list:
-                line = "{} ({}) {} :  {:11.9f}   {:10.8f}   {:10.8f}\n".format(
-                    spc2name[spc].ljust(17),
-                    spc.ljust(4),
-                    label,
-                    data[spc + "_s"],
-                    data[spc + "_t"],
-                    data[spc + "_f"])
+                line = f"{spc2name[spc] : <17} ({spc : <4}) {label} :  {data[spc + '_s']:11.9f}   {data[spc + '_t']:10.8f}   {data[spc + '_f']:10.8f}\n"
                 print(line, file=f)
 
     # --------------------------------------
@@ -3548,11 +3564,11 @@ def make_benchmark_aerosol_tables(
     # --------------------------------------
 
     # Table info
-    filename = "{}/Aerosol_Burdens.txt".format(dst)
+    filename = f"{dst}/Aerosol_Burdens.txt"
     if n_mon == 12:
         title = "Annual average global aerosol burdens"
     else:
-        title = "Average global aerosol burdens across {} months".format(n_mon)
+        title = f"Average global aerosol burdens across {n_mon} months"
     label = "burden [Tg]"
 
     # Initialize
@@ -3594,11 +3610,11 @@ def make_benchmark_aerosol_tables(
     # -------------------------------------------
 
     # Table info
-    filename = "{}/Global_Mean_AOD.txt".format(dst)
+    filename = f"{dst}/Global_Mean_AOD.txt"
     if n_mon == 12:
         title = "Annual average global AODs"
     else:
-        title = "Average global AODs across {} months".format(n_mon)
+        title = f"Average global AODs across {n_mon} months"
     label = "mean AOD [1]"
 
     # Initialize
@@ -3737,7 +3753,7 @@ def make_benchmark_operations_budget(
     # Print info. Only allow Strat if Trop and Full are present
     print("Column sections:")
     for col_section in col_sections:
-        print("  {}".format(col_section))
+        print(f"  {col_section}")
     n_sections = len(col_sections)
     compute_strat = False
     if "Strat" in col_sections:
@@ -3768,7 +3784,7 @@ def make_benchmark_operations_budget(
     # Print info
     print("Operations:")
     for all_operation in all_operations:
-        print("  {}".format(all_operation))
+        print(f"  {all_operation}")
     if compute_accum:
         if "ACCUMULATION" in all_operations:
             print("*** Will compute ACCUMULATION operation as sum of all "
@@ -3859,9 +3875,13 @@ def make_benchmark_operations_budget(
     # ------------------------------------------
 
     # Load a YAML file containing species properties
-    spc_properties = yaml.load(open(os.path.join(os.path.dirname(__file__),
-                                                 "species_database.yml")),
-                               Loader=yaml.FullLoader)
+    spc_properties = util.read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # Determine what the converted units and conversion factor should be
     # based on benchmark type and species (tracer) name. Assume raw data [kg/s]
@@ -3930,8 +3950,7 @@ def make_benchmark_operations_budget(
 
             # Keep track of progress
             if (i + 1) % 50 == 0:
-                print('  {}: species {} of {}'.format(gc_section, i + 1,
-                                                      n_spc))
+                print(f"  {gc_section}: species {i + 1} of {n_spc}")
 
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
@@ -3995,7 +4014,7 @@ def make_benchmark_operations_budget(
 
             # Keep track of progress
             if (i + 1) % 50 == 0:
-                print('  Strat: species {} of {}'.format(i + 1, n_spc))
+                print(f"  Strat: species {i + 1} of {n_spc}")
 
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
@@ -4060,8 +4079,7 @@ def make_benchmark_operations_budget(
 
                 # Keep track of progress
                 if (i + 1) % 50 == 0:
-                    print('  {}: species {} of {}'.
-                          format(col_section, i + 1, n_spc))
+                    print(f"  {col_section}: species {i + 1} of {n_spc}")
 
                 # Get the accumulation dataframe row to fill.Skip if not found.
                 dfrow = (df["Column_Section"] == col_section) \
@@ -4106,25 +4124,19 @@ def make_benchmark_operations_budget(
     # ------------------------------------------
 
     # Create the target output directory hierarchy if it doesn't already exist
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. ".format(dst)
-        msg += "Pass overwrite=True to overwrite files in that directory"
-        raise ValueError(msg)
-    if not os.path.isdir(dst):
-        os.makedirs(dst)
+    util.make_directory(dst, overwrite)
 
     # Print budgets to file
     if label is not None:
-        filename = "{}/Budgets_After_Operations_{}.txt".format(dst, label)
+        filename = f"{dst}/Budgets_After_Operations_{label}.txt"
     else:
-        filename = "{}/Budgets_After_Operations.txt".format(dst)
+        filename = f"{dst}/Budgets_After_Operations.txt".format(dst)
     with open(filename, "w+") as f:
         print("#" * 78, file=f)
         if label is not None and benchmark_type is not None:
-            print("{} budgets for {}".format(benchmark_type, label),
-                  file=f)
+            print(f"{benchmark_type} budgets for {label}", file=f)
         else:
-            print("Budgets across {}/{} sec".format(ref_interval, dev_interval), file=f)
+            print(f"Budgets across {ref_interval}/{dev_interval} sec", file=f)
         print("\n", file=f)
         print("NOTES:", file=f)
         msg = " - When using the non-local mixing scheme (default), "\
@@ -4141,8 +4153,7 @@ def make_benchmark_operations_budget(
 
         # Loop over species
         for i, spc in enumerate(spclist):
-            print("{} budgets (Ref={}; Dev={})".format(
-                spc, refstr, devstr), file=f)
+            print(f"{spc} budgets (Ref={refstr}; Dev={devstr})", file=f)
 
             # Print a table for each column section
             for col_section in col_sections:
@@ -4155,23 +4166,20 @@ def make_benchmark_operations_budget(
                     continue
 
                 # Print dataframe subset to file
-                print(
-                    "{} {} : {}".format(
-                        col_section,
-                        units[spc],
-                        spc),
-                    file=f)
-                print(tabulate(df.loc[dfrows, ["Operation",
-                                               "Ref",
-                                               "Dev",
-                                               "Diff",
-                                               "Pct_diff"]],
-                               headers='keys',
-                               tablefmt='psql',
-                               showindex=False,
-                               floatfmt=(".5f", ".5f", ".5f", ".5f", ".5f"),
-                               ), file=f
-                      )
+                print(f"{col_section} {units[spc]} : {spc}", file=f)
+                print(tabulate(
+                    df.loc[dfrows,
+                           ["Operation",
+                            "Ref",
+                            "Dev",
+                            "Diff",
+                            "Pct_diff"]],
+                    headers='keys',
+                    tablefmt='psql',
+                    showindex=False,
+                    floatfmt=(".5f", ".5f", ".5f", ".5f", ".5f"),
+                ), file=f
+            )
             print("\n", file=f)
 
     # ------------------------------------------
@@ -4228,20 +4236,21 @@ def make_benchmark_mass_conservation_table(
     """
 
     # ==================================================================
-    # Define destination directory
+    # Initialize
     # ==================================================================
-    if os.path.isdir(dst) and not overwrite:
-        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-            + "files in that directory, if any."
-        msg = msg.format(dst)
-        raise ValueError(msg)
-    if not os.path.isdir(dst):
-        os.makedirs(dst)
+
+    # Create the destination folder
+    util.make_directory(dst, overwrite)
 
     # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
-    properties_path = os.path.join(spcdb_dir, "species_database.yml")
-    properties = yaml.load(open(properties_path), Loader=yaml.FullLoader)
+    properties = util.read_config_file(
+        os.path.join(
+            spcdb_dir,
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # Get the species name
     spc_name = 'PassiveTracer'
@@ -4345,14 +4354,14 @@ def make_benchmark_mass_conservation_table(
         print(' ' + '-' * 10 + '  ' + '-' * 16, file=f)
         #masses
         for i in range(len(masses)):
-            print(' {}  {:11.13f}'.format(dates[i], masses[i]), file=f)
+            print(f" {dates[i]}  {masses[i] : 11.13f}", file=f)
         print(' ', file=f)
         print(' Summary', file=f)
         print(' ' + '-' * 30, file=f)
-        print(' Max mass =  {:2.13f} Tg'.format(max_mass), file=f)
-        print(' Min mass =  {:2.13f} Tg'.format(min_mass), file=f)
-        print(' Abs diff =  {:>16.3f} g'.format(absdiff), file=f)
-        print(' Pct diff =  {:>16.10f} %'.format(pctdiff), file=f)
+        print(f" Max mass =  {max_mass : 2.13f} Tg")
+        print(f" Min mass =  {min_mass : 2.13f} Tg")
+        print(f" Abs diff =  {absdiff : >16.3f} g")
+        print(f" Pct diff =  {pctdiff : >16.10f} %")
 
     gc.collect()
 
@@ -4396,9 +4405,8 @@ def get_species_database_dir(config):
         msg = f"Using species database {spcdb_dir}/species_database.yml"
         print(msg)
         return spcdb_dir
-    else:
-        msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
-        raise FileNotFoundError(msg)
+    msg = f"Could not find the {spcdb_dir}/species_database.yml file!"
+    raise FileNotFoundError(msg)
 
 
 def create_benchmark_summary_table(
@@ -4413,7 +4421,6 @@ def create_benchmark_summary_table(
         overwrite=False,
         outfilename="Summary.txt",
         verbose=False,
-        spcdb_dir=os.path.dirname(__file__),
         ref_gchp=False,
         dev_gchp=False
 ):
@@ -4480,28 +4487,26 @@ def create_benchmark_summary_table(
     # ==================================================================
 
     # Create the directory for output
-    make_directory(dst, overwrite)
+    util.make_directory(dst, overwrite)
 
     # Create file
     try:
         f = open(os.path.join(dst, outfilename), "w")
     except (IOError, OSError, FileNotFoundError) as e:
         msg = f"Could not open {outfilename} for writing!"
-        raise e(msg)
+        raise e(msg) from e
 
     # Title strings
-    title1 = f"### Benchmark summary table"
-    title2 = f"### Ref = {refstr}; Dev = {devstr}"
-
-    # Write a placeholder to the file that denotes where
-    # the list of species with differences will be written
-    placeholder = "@%% insert diff_list here %%@"
-    title4 = f"{placeholder}"
+    title1 = "### Benchmark summary table"
+    title2 = f"### Ref = {refstr}"
+    title3 = f"### Dev = {devstr}"
 
     # Print header to file
     print("#" * 80, file=f)
     print(f"{title1 : <77}{'###'}", file=f)
+    print(f"{'###'  : <77}{'###'}", file=f)   
     print(f"{title2 : <77}{'###'}", file=f)
+    print(f"{title3 : <77}{'###'}", file=f)
     print("#" * 80, file=f)
     print(file=f)
 
@@ -4518,9 +4523,6 @@ def create_benchmark_summary_table(
         multi_files=False,
         verbose=verbose
     )
-
-    # Make a directory to store the list of species that differ
-    diff_dict = {}
 
     # Loop over diagnostic files
     for col in collections:
@@ -4584,7 +4586,6 @@ def create_benchmark_summary_table(
             print(f"{col}: {devstr} is identical to {refstr}", file=f)
             print(file=f)
         else:
-            c = 0
             print("-" *  79, file=f)
             print(f"{col}: {devstr} differs from {refstr}", file=f)
             print("\n  Diagnostics that differ", file=f)
@@ -4626,6 +4627,11 @@ def diff_list_to_text(
     if not isinstance(diff_list, list):
         raise ValueError("Argument 'diff_list' must be a list!")
 
+    # Use "Dev" and "Ref" for inserting into a header
+    if fancy_format:
+        refstr = "Ref"
+        devstr = "Dev"
+        
     # Strip out duplicates from diff_list
     # Prepare a message about species differences (or alternate msg)
     diff_list = util.unique_values(diff_list, drop=[None])
@@ -4636,37 +4642,60 @@ def diff_list_to_text(
         diff_text = f"{devstr} and {refstr} show {n_diff} differences"
     else:
         diff_text = f"{devstr} and {refstr} are identical"
-    diff_text = util.wrap_text(
-        diff_text,
-        width=83
-    )
-        
+
+    # If we are placing the text in a header,
+    # then trim the length of diff_text to fit.
     if fancy_format:
+        diff_text = util.wrap_text(
+            diff_text,
+            width=83
+        )
         diff_text = f"### {diff_text : <82}{'###'}"
         
     return diff_text.strip()
 
 
-def make_directory(
-        dir_name,
-        overwrite
-):
+def diff_of_diffs_toprow_title(config, model):
     """
-    Creates a directory where benchmark plots/tables will be placed.
+    Creates the diff-of-diffs plot title for the top row of the
+    six-plot output.  If the title string is too long (as empirically
+    determined), then a newline will be inserted in order to prevent
+    the title strings from overlapping.
 
     Args:
     -----
-    dir_name : str
-        Name of the directory to be created.
-    overwrite : bool
-        Set to True if you wish to overwrite prior contents in
-        the directory 'dir_name'
-    """
+    config : dict
+       Dictionary containing the benchmark options (as read from a
+       YAML file such as 1mo_benchmark.yml, etc.)
+    model: str
+       The model to plot.  Accepted values are "gcc" or "gchp".
 
-    if os.path.isdir(dir_name) and not overwrite:
-        msg = f"Directory {dir_name} exists!\n"
-        msg += "Pass overwrite=True to overwrite files in that directory."
+    Returns:
+    --------
+    title: str
+        The plot title string for the diff-of-diff
+    """
+    if not isinstance(config, dict):
+        msg = "The 'config' argument must be of type 'dict`!"
+        raise ValueError(msg)
+    if not isinstance(model, str):
+        msg = "The 'model' argument must be of type 'str'!"
+        raise ValueError(msg)
+    if not "gcc" in model and not "gchp" in model:
+        msg = "The 'model' argument must be either 'gcc' or 'gchp'!"
         raise ValueError(msg)
 
-    if not os.path.isdir(dir_name):
-        os.mkdir(dir_name)
+    title = (
+        config["data"]["dev"][model]["version"]
+        + " - "
+        + config["data"]["ref"][model]["version"]
+    )
+
+    if len(title) > 40:
+        title = (
+            config["data"]["dev"][model]["version"]
+            + " -\n"
+            + config["data"]["ref"][model]["version"]
+        )
+
+    return title
