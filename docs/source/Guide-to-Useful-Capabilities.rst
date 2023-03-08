@@ -230,9 +230,13 @@ several horizontal regridding functions built off of xESMF. GCPy
 automatically handles most regridding needs when plotting GEOS-Chem
 data.
 
-:file:`gcpy.file_regrid` allows you to regrid NetCDF files between
-different grid types / resolutions and can be called from the
-command line or as a function.
+:file:`gcpy.file_regrid` allows you to regrid GEOS-Chem Classic files between
+different grid resolutions and can be called from the command line or as a
+function.
+
+:file:`gcpy.regrid_restart_file` allows you to regrid GCHP files between
+between different grid resolutions and grid types (standard and stretched 
+cubed-sphere grids), and can be called from the command line.
 
 The 72-level and 47-level vertical grids are pre-defined in
 GCPy. Other vertical grids can also be defined if you provide `the A
