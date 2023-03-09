@@ -11,7 +11,7 @@
 # when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
 # =====================================================================
 #
-# Configuration for 1 month FullChemBenchmark
+# Configuration for 1yr CH4Benchmark
 #
 # paths:
 #   main_dir:    High-level directory containing ref & dev rundirs
@@ -22,9 +22,9 @@
 #                species_database.yml in one of the Dev rundirs.
 #
 paths:
-  main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon
+  main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1yr_fullchem
   results_dir: /path/to/BenchmarkResults
-  weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+  weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
   spcdb_dir: default
 #
 # data: Contains configurations for ref and dev runs
@@ -43,72 +43,73 @@ data:
       dir: GCC_ref
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00" 
-      bmk_end: "2019-08-01T00:00:00"
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
     gchp:
       version: GCHP_ref
       dir: GCHP_ref
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00"
-      bmk_end: "2019-08-01T00:00:00"
-      is_pre_13.1: False
-      is_pre_14.0: False
-      resolution: c24
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
+      is_pre_13.1: False               # for gcpy_test_data, edit if needed
+      is_pre_14.0: False               # for gcpy_test_data, edit if needed
+      resolution: c24                  # for gcpy_test_data, edit if needed
   dev:
     gcc:
-      version: GCC_dev 
+      version: GCC_dev
       dir: GCC_dev
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00" 
-      bmk_end: "2019-08-01T00:00:00"
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00" 
-      bmk_end: "2019-08-01T00:00:00"
-      is_pre_13.1: False
-      is_pre_14.0: False
-      resolution: c24
+      bmk_start: "2019-01-01T00:00:00"
+      bmk_end: "2020-01-01T00:00:00"
+      is_pre_13.1: False              # for gcpy_test_data, edit if needed
+      is_pre_14.0: False              # for gcpy_test_data, edit if needed
+      resolution: c24                 # for gcpy_test_data, edit if needed   
 #
 # options: Specify the types of comparisons to perform
-#   
+# 
 options:
-  bmk_type: FullChemBenchmark
-  gcpy_test: True # Specify if this is a gcpy test validation run
+  bmk_type: CH4Benchmark
+  gcpy_test: False # Specify if this is a gcpy test validation run
   comparisons:
     gcc_vs_gcc: 
       run: True # True to run this comparison
       dir: GCC_version_comparison
       tables_subdir: Tables
     gchp_vs_gcc: 
-      run: True
+      run: False
       dir: GCHP_GCC_comparison 
       tables_subdir: Tables
     gchp_vs_gchp: 
-      run: True
+      run: False
       dir: GCHP_version_comparison
       tables_subdir: Tables
-    gchp_vs_gcc_diff_of_diffs: 
-      run: True
+    gchp_vs_gcc_diff_of_diffs:
+      run: False
       dir: GCHP_GCC_diff_of_diffs
 #
 # outputs: Types of output to generate (plots/tables)
-# 
+#
   outputs:
     plot_conc: True
     plot_emis: True
     emis_table: True
-    plot_jvalues: True
-    plot_aod: True
+    plot_jvalues: False
+    plot_aod: False
     mass_table: True
     ops_budget_table: False
+    aer_budget_table: False
+    Ox_budget_table: False
+    ste_table: False
     OH_metrics: True
-    ste_table: True # GCC only
-    summary_table: True
-    plot_options: # Plot concentrations and emissions by category?
+    plot_options:
       by_spc_cat: True
       by_hco_cat: True

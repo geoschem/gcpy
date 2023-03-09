@@ -14,8 +14,8 @@ import os
 import warnings
 import numpy as np
 import xarray as xr
-import yaml
 import gcpy.constants as const
+from gcpy.util import make_directory, read_config_file
 
 # =====================================================================
 # %%% METHODS %%%
@@ -46,18 +46,18 @@ def combine_dataset(file_list=None):
                 combine="nested",
                 concat_dim="time"
             )
-        except FileNotFoundError:
-            msg = "Could not find one or more files in {}".format(file_list)
-            raise FileNotFoundError(msg)
+        except FileNotFoundError as exc:
+            msg = f"Could not find one or more files in {file_list}"
+            raise FileNotFoundError(msg) from exc
     else:
         try:
             ds = xr.open_mfdataset(
                 file_list,
                 drop_variables=const.skip_these_vars
             )
-        except FileNotFoundError:
-            msg = "Could not find one or more files in {}".format(file_list)
-            raise FileNotFoundError(msg)
+        except FileNotFoundError as exc:
+            msg = f"Could not find one or more files in {file_list}"
+            raise FileNotFoundError(msg) from exc
 
     return ds
 
@@ -221,8 +221,13 @@ def init_common_vars(ref, refstr, dev, devstr, spcdb_dir):
     """
 
     # Get species database
-    spcdb_file = os.path.join(spcdb_dir, "species_database.yml")
-    spcdb = yaml.load(open(spcdb_file), Loader=yaml.FullLoader)
+    spcdb = read_config_file(
+        os.path.join(
+            spcdb_dir,
+            "species_database.yml"
+        ),
+        quiet=True
+    )
 
     # Define common_vars dictionary
     common_vars = {
@@ -333,15 +338,15 @@ def write_to_file(f, title, ref, dev, absdiff, pctdiff, is_mean_oh=False):
     print("-" * 60, file=f)
 
     if is_mean_oh:
-        print("Ref      : {:14.11f}".format(ref), file=f)
-        print("Dev      : {:14.11f}".format(dev), file=f)
-        print("Abs diff : {:14.11f}".format(absdiff), file=f)
-        print("%   diff : {:9.6f}".format(pctdiff), file=f)
+        print(f"Ref      : {ref:14.11f}", file=f)
+        print(f"Dev      : {dev:14.11f}", file=f)
+        print(f"Abs diff : {absdiff:14.11f}", file=f)
+        print(f"%   diff : {pctdiff:9.6f}", file=f)
     else:
-        print("Ref      : {:9.6f}".format(ref), file=f)
-        print("Dev      : {:9.6f}".format(dev), file=f)
-        print("Abs diff : {:9.6f}".format(absdiff), file=f)
-        print("%   diff : {:9.6f}".format(pctdiff), file=f)
+        print(f"Ref      : {ref:9.6f}", file=f)
+        print(f"Dev      : {dev:9.6f}", file=f)
+        print(f"Abs diff : {absdiff:9.6f}", file=f)
+        print(f"%   diff : {pctdiff:9.6f}", file=f)
 
 
 def print_metrics(common_vars, dst):
@@ -365,12 +370,9 @@ def print_metrics(common_vars, dst):
         # ==============================================================
         print("#" * 79, file=f)
         print("### OH Metrics", file=f)
-        print("### Ref = {}; Dev = {}".format(
-            common_vars["refstr"],
-            common_vars["devstr"]
-        ), file=f)
+        print(f"### Ref = {common_vars['refstr']}", file=f)
+        print(f"### Dev = {common_vars['devstr']}", file=f)
         print("#" * 79, file=f)
-        print("\n")
 
         # ==============================================================
         # Mean OH concentration [1e5 molec/cm3]
@@ -473,14 +475,7 @@ def make_benchmark_oh_metrics(
 
     # Make sure that the destination directory exists
     # (or create it if it does not)
-    if os.path.isdir(dst):
-        if not overwrite:
-            msg = "Directory {} exists. Pass overwrite=True to overwrite " \
-                + "files in that directory, if any."
-            msg = msg.format(dst)
-            raise ValueError(msg)
-    else:
-        os.makedirs(dst)
+    make_directory(dst, overwrite)
 
     # Initialize a dictionary containing common variables
     common_vars = init_common_vars(

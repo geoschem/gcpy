@@ -11,11 +11,12 @@ for selected benchmark species.
 import os
 from calendar import monthrange, month_abbr
 import warnings
+import gc
 import numpy as np
 import pandas as pd
 import xarray as xr
 import gcpy.constants as physconsts
-import gc
+from gcpy.util import make_directory
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -96,18 +97,18 @@ class _GlobVars:
                     combine="nested",
                     concat_dim="time"
                 )
-            except FileNotFoundError:
+            except FileNotFoundError as exc:
                 msg = f"Could not find one or more files in {files}"
-                raise FileNotFoundError(msg)
+                raise FileNotFoundError(msg) from exc
         else:
             try:
                 self.ds_flx = xr.open_mfdataset(
                     files,
                     drop_variables=physconsts.skip_these_vars,
                 )
-            except FileNotFoundError:
+            except FileNotFoundError as exc:
                 msg = f"Could not find one or more files in {files}"
-                raise FileNotFoundError(msg)
+                raise FileNotFoundError(msg) from exc
 
         # Set a flag to denote if this data is from GCHP
         self.is_gchp = "nf" in self.ds_flx.dims.keys()
@@ -135,8 +136,7 @@ class _GlobVars:
             # Month names
             self.mon_name = []
             for t in range(self.N_MONTHS):
-                self.mon_name.append("{} {}".format(
-                    month_abbr[t + 1], self.y0_str))
+                self.mon_name.append(f"{ month_abbr[t + 1]} {self.y0_str}")
             self.mon_name.append("Annual Mean")
 
             # Days in the benchmark year
@@ -154,8 +154,7 @@ class _GlobVars:
             self.d_per_mon = [monthrange(self.y0, self.month)[1] * 1.0]
 
             # Month name
-            self.mon_name = ["{} {}".format(month_abbr[self.month],
-                                            self.y0_str)]
+            self.mon_name = [f"{month_abbr[self.month]} {self.y0_str}"]
 
             # Days in benchmark year
             self.d_per_yr = 0.0
@@ -248,12 +247,7 @@ def print_ste(globvars, df):
             Strat-trop exchange table
     """
     # Create plot directory hierarchy if necessary
-    if os.path.isdir(globvars.dst) and not globvars.overwrite:
-        err_str = "Pass overwrite=True to overwrite files in that directory"
-        print(f"Directory {globvars.dst} exists. {err_str}")
-        return
-    elif not os.path.isdir(globvars.dst):
-        os.makedirs(globvars.dst)
+    make_directory(globvars.dst, globvars.overwrite)
 
     # Save the file in the Tables folder of dst
     filename = f"{globvars.dst}/Strat_trop_exchange.txt"
