@@ -17,7 +17,7 @@ stretched-grid. GCPy also supports arbitrary vertical regridding
 across different vertical resolutions.
 
 Regridding with GCPy is currently undergoing an overhaul. As of the current
-release, regridding is split into two different categories - regridding 
+release, regridding is split into two different categories - regridding
 GEOS-Chem Classic format files (lat/lon), and regridding GCHP format files
 (standard cubed-sphere, stretched cubed-sphere).
 
@@ -75,7 +75,7 @@ Optional arguments:
 There is now only one grid format supported for regridding files using the
 :code:`gcpy.file_regrid` method: :literal:`classic`. You must specify
 :literal:`classic` as the value of both :code:`dim_format_in` and
-:code:`dim_format_out`, as well as specifying a resolution as the value of 
+:code:`dim_format_out`, as well as specifying a resolution as the value of
 :code:`ll_res_out`.
 
 As stated previously, you can either call
@@ -117,7 +117,7 @@ Required Arguments:
       The GCHP restart file to be regridded
 
 .. option:: regridding_weights_file : str
-      
+
       Regridding weights to be used in the regridding transformation, generated
       by :literal:`ESMF_RegridWeightGen`
 
@@ -131,8 +131,8 @@ Required Arguments:
 Optional arguments:
 -------------------
 
-.. option:: --stretched-grid : switch 
-      
+.. option:: --stretched-grid : switch
+
       A switch to indicate that the target grid is a stretched cubed-sphere grid
 
 .. option:: --stretch-factor : float
@@ -161,13 +161,13 @@ Optional arguments:
 First Time Setup
 -----------------
 
-Until GCPy contains a complete regridding implementation that works for all 
+Until GCPy contains a complete regridding implementation that works for all
 GEOS-Chem grid formats, we recommend that you create a small
 `conda <https://docs.conda.io/en/latest/>`_ environment in which to carry out
 your GCHP regridding.
 
 The following conda `environment file <https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file>`_
-will get you set up with an environment for regridding with 
+will get you set up with an environment for regridding with
 :literal:`gridspec` and :literal:`sparselt`:
 
 .. code-block:: yaml
@@ -176,7 +176,7 @@ will get you set up with an environment for regridding with
    channels:
      - conda-forge
    dependencies:
-     - python=3.10
+     - python=3.9
      - esmf
      - gridspec
      - numpy
@@ -184,6 +184,12 @@ will get you set up with an environment for regridding with
      - sparselt
      - xarray
      - xesmf
+
+.. tip::
+
+   For your convenience, we have placed a copy of the above
+   environment file at the path
+   :file:`docs/environment/gchp_regridding.yml`.
 
 After installing and switching to this new conda environment, you should have
 the :literal:`gridspec` commands available to you at the command line.
@@ -240,7 +246,7 @@ C60 to demonstrate the standard cubed-sphere regridding process:
           --source c48_gridspec.nc      \
           --destination c60_gridspec.nc \
           --method conserve             \
-          --weight c48_to_c60_weights.nc 
+          --weight c48_to_c60_weights.nc
 
    This will produce a log file, :literal:`PET0.RegridWeightGen.Log`, and our
    regridding weights, :literal:`c48_to_c60_weights.nc`
@@ -254,7 +260,7 @@ C60 to demonstrate the standard cubed-sphere regridding process:
           c48_to_c60_weights.nc                   \
           GEOSChem.Restart.20190701_0000z.c48.nc4
 
-   This will produce a single file, :literal:`new_restart_file.nc`, regridded 
+   This will produce a single file, :literal:`new_restart_file.nc`, regridded
    from C48 to C60, that you can rename and use as you please.
 
 Stretched Cubed-Sphere Regridding
@@ -282,14 +288,14 @@ to demonstrate the stretched cubed-sphere regridding process:
 
    Here, the :code:`-s` option denotes the stretch factor and the :code:`-t`
    option denotes the latitude / longitude of the centre point of the grid
-   stretch. 
-   
+   stretch.
+
    Again, this will produce 7 files - :literal:`c120_..._gridspec.nc` and
    :literal:`c120_..._tile[1-6].nc`, where :literal:`...` denotes randomly
    generated characters.
 
 #. Create the regridding weights for the regridding transformation using
-   :code:`ESMF_RegridWeightGen`, replacing :literal:`c120_..._gridspec.nc` 
+   :code:`ESMF_RegridWeightGen`, replacing :literal:`c120_..._gridspec.nc`
    with the actual name of the file created in the previous step.
 
    .. code-block:: console
@@ -298,12 +304,12 @@ to demonstrate the stretched cubed-sphere regridding process:
           --source c48_gridspec.nc           \
           --destination c120_..._gridspec.nc \
           --method conserve                  \
-          --weight c48_to_c120_stretched_weights.nc 
+          --weight c48_to_c120_stretched_weights.nc
 
    This will produce a log file, :literal:`PET0.RegridWeightGen.Log`, and our
    regridding weights, :literal:`c48_to_c120_stretched_weights.nc`
 
-#. Finally, use the grid weights produced in step 3 to complete the regridding. 
+#. Finally, use the grid weights produced in step 3 to complete the regridding.
    You will need to switch to your GCPy python environment for this step.
 
    .. code-block:: console
@@ -317,10 +323,10 @@ to demonstrate the stretched cubed-sphere regridding process:
           c48_to_c120_stretched_weights.nc        \
           GEOSChem.Restart.20190701_0000z.c48.nc4
 
-   This will produce a single file, :literal:`new_restart_file.nc`, regridded 
-   from C48 to C120, with a stretch factor of 4.0 over 32.0N, -64.0E, that you 
-   can rename and use as you please. It is generally a good idea to rename the 
-   file to include the grid resolution, stretch factor, and target lat/lon for 
+   This will produce a single file, :literal:`new_restart_file.nc`, regridded
+   from C48 to C120, with a stretch factor of 4.0 over 32.0N, -64.0E, that you
+   can rename and use as you please. It is generally a good idea to rename the
+   file to include the grid resolution, stretch factor, and target lat/lon for
    easy reference.
 
    .. code-block:: console
@@ -393,4 +399,3 @@ what comparison resolution it should use:
 
 For differing vertical grids, the smaller vertical grid is currently
 used for comparisons.
-
