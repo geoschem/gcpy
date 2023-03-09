@@ -1,26 +1,31 @@
-AEIC: Tg
-AFCID: Tg
-APEI: Tg
-C2H62010: Tg
-CEDS: Tg
-CEDSship: Tg
-DEAD: Tg
-DICEAfrica: Tg
-GEIAnatural: Tg
-GFED: Tg
-IODINE: Tg
-LIANG: Tg
-LIGHTNOX: Tg
-MEGAN: Tg
-MIX: Tg
-NEI2011: Tg
-ORDONEZ: Tg
-PARANOX: Tg
-PLANTDECAY: Tg
-SEABIRDS: Tg
-SeaFlux: Tg
-SeaSalt: Tg
-SOILNOX: Tg
-VOLCANOdegas: Tg
-VOLCANOerupt: Tg
-XIAO: Tg
+FullChemBenchmark:
+  AEIC: Tg
+  AFCID: Tg
+  APEI: Tg
+  C2H62010: Tg
+  CEDS: Tg
+  CEDSship: Tg
+  DEAD: Tg
+  DICEAfrica: Tg
+  GEIAnatural: Tg
+  GFED: Tg
+  IODINE: Tg
+  LIANG: Tg
+  LIGHTNOX: Tg
+  MEGAN: Tg
+  MIX: Tg
+  NEI2011: Tg
+  ORDONEZ: Tg
+  PARANOX: Tg
+  PLANTDECAY: Tg
+  SEABIRDS: Tg
+  SeaFlux: Tg
+  SeaSalt: Tg
+  SOILNOX: Tg
+  VOLCANOdegas: Tg
+  VOLCANOerupt: Tg
+  XIAO: Tg
+CH4Benchmark:
+  GEPA: Tg
+  Scarpelli_Canada: Tg
+  Scarpelli_Mexico: Tg

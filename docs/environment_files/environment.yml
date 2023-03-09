@@ -1,4 +1,4 @@
-name: gcpy
+name: gcpy_env
 channels:
     - conda-forge
     - defaults
@@ -14,19 +14,22 @@ dependencies:
     - xesmf==0.5.1                    # Universal regridder
     - pip:
         - awscli>=1.22.83             # Utilities for AWS cloud
+        - cf_xarray==0.7.4            # CF conventions for xarray
         - dask==2021.7.1              # Parallel library; backend for xarray
         - docutils==0.16              # Convert text to other formats
         - h5netcdf==0.11.0            # Python interface to netCDF4/HDF5
         - h5py==3.3.0                 # Python interface to HDF5
         - matplotlib==3.4.2           # Creates plots and visualizations
+        - ipython==8.11.0             # Interactive Python (used by Jupyter)
         - jinja2==3.0.3               # Dependency for Sphinx
         - joblib==1.0.1               # Parallelize python code
+        - jupyter==1.0.0              # Jupyter Notebook
         - numpy==1.21.1               # Optimized mathematical functions
         - pandas==1.3.1               # Tables/timeseries manipulation
         - pycodestyle==2.9.1          # Python style checker (formerly PEP8)
         - pylint==2.15.3              # Python linter
         - pypdf2==1.26.0              # PDF utilities (bookmarks, etc.)
-        - recommonmark==0.7.1         # Dependency for Sphinx   
+        - recommonmark==0.7.1         # Dependency for Sphinx
         - requests==2.26.0            # HTTP library
         - scipy==1.7.0                # Scientific python package
         - sphinx==3.5.4               # Generate ReadTheDocs output

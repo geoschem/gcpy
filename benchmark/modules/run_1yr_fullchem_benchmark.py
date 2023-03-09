@@ -242,17 +242,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     gchp_vs_gcc_devstr = config["data"]["dev"]["gchp"]["version"]
     gchp_vs_gchp_refstr = config["data"]["ref"]["gchp"]["version"]
     gchp_vs_gchp_devstr = config["data"]["dev"]["gchp"]["version"]
-    diff_of_diffs_refstr = (
-        config["data"]["dev"]["gcc"]["version"]
-        + " - "
-        + config["data"]["ref"]["gcc"]["version"]
-    )
-    diff_of_diffs_devstr = (
-        config["data"]["dev"]["gchp"]["version"]
-        + " - "
-        + config["data"]["ref"]["gchp"]["version"]
-    )
-
+    diff_of_diffs_refstr = bmk.diff_of_diffs_toprow_title(config, "gcc")
+    diff_of_diffs_devstr = bmk.diff_of_diffs_toprow_title(config, "gchp")
+    
     ########################################################################
     ###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
     ########################################################################
@@ -477,6 +469,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "plot_options"]["by_spc_cat"],
                 plot_by_hco_cat=config["options"]["outputs"][
                     "plot_options"]["by_hco_cat"],
+                benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
@@ -501,6 +494,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     plot_by_hco_cat=config["options"]["outputs"][
                         "plot_options"]["by_hco_cat"],
+                    benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -530,6 +524,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dev,
                 gcc_vs_gcc_devstr,
                 dst=gcc_vs_gcc_resultsdir,
+                benchmark_type=bmk_type,
                 ref_interval=sec_per_month_ref,
                 dev_interval=sec_per_month_dev,
                 overwrite=True,

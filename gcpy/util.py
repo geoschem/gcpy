@@ -6,7 +6,8 @@ objects used throughout GCPy
 import os
 import warnings
 import shutil
-import yaml
+from textwrap import wrap
+from yaml import safe_load as yaml_safe_load
 import numpy as np
 import xarray as xr
 from PyPDF2 import PdfFileWriter, PdfFileReader
@@ -161,7 +162,8 @@ def print_totals(
         ref,
         dev,
         f,
-        masks=None
+        diff_list,
+        masks=None,
 ):
     """
     Computes and prints Ref and Dev totals (as well as the difference
@@ -194,9 +196,11 @@ def print_totals(
 
     # Make sure that both Ref and Dev are xarray DataArray objects
     if not isinstance(ref, xr.DataArray):
-        raise TypeError("The ref argument must be an xarray DataArray!")
+        raise TypeError("The 'ref' argument must be an xarray DataArray!")
     if not isinstance(dev, xr.DataArray):
-        raise TypeError("The dev argument must be an xarray DataArray!")
+        raise TypeError("The 'dev' argument must be an xarray DataArray!")
+    if not isinstance(diff_list, list):
+        raise TypeError("The 'diff_list' argument must be a list!")
 
     # Determine if either Ref or Dev have all NaN values:
     ref_is_all_nan = np.isnan(ref.values).all()
@@ -220,33 +224,37 @@ def print_totals(
     # Create the display name by editing the diagnostic name
     display_name = create_display_name(diagnostic_name)
 
+    # Get the species name from the display name
+    species_name = display_name
+    c = species_name.find(" ")
+    if c > 0:
+        species_name = display_name[0:c]
+
     # Special handling for totals
     if "_TOTAL" in diagnostic_name.upper():
-        print("-"*83, file=f)
+        print("-"*90, file=f)
 
     # ==================================================================
     # Sum the Ref array (or set to NaN if missing)
     # ==================================================================
+    refarr = ref.values
     if ref_is_all_nan:
         total_ref = np.nan
     else:
-        if masks is None:
-            total_ref = np.sum(ref.values)
-        else:
-            arr = np.ma.masked_array(ref.values, masks["Ref_TropMask"])
-            total_ref = np.sum(arr)
+        if masks is not None:
+            refarr = np.ma.masked_array(refarr, masks["Ref_TropMask"])
+        total_ref = np.sum(refarr, dtype=np.float64)
 
     # ==================================================================
     # Sum the Dev array (or set to NaN if missing)
     # ==================================================================
+    devarr = dev.values
     if dev_is_all_nan:
         total_dev = np.nan
     else:
-        if masks is None:
-            total_dev = np.sum(dev.values)
-        else:
-            arr = np.ma.masked_array(dev.values, masks["Dev_TropMask"])
-            total_dev = np.sum(arr)
+        if masks is not None:
+            devarr = np.ma.masked_array(devarr, masks["Dev_TropMask"])
+        total_dev = np.sum(devarr, dtype=np.float64)
 
     # ==================================================================
     # Compute differences (or set to NaN if missing)
@@ -255,6 +263,16 @@ def print_totals(
         diff = np.nan
     else:
         diff = total_dev - total_ref
+    has_diffs = abs(diff) > np.float64(0.0)
+
+    # Append to the list of differences.  If no differences then append
+    # None.  Duplicates can be stripped out in the calling routine.
+    if has_diffs:
+        diff_str = " * "
+        diff_list.append(species_name)
+    else:
+        diff_str = ""
+        diff_list.append(None)
 
     # ==================================================================
     # Compute % differences (or set to NaN if missing)
@@ -268,11 +286,11 @@ def print_totals(
             pctdiff = np.nan
 
     # ==================================================================
-    # Write output to file
+    # Write output to file and return
     # ==================================================================
-    print(
-        f"{display_name.ljust(18)} : {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}", file=f
-    )
+    print(f"{display_name.ljust(19)}: {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {diff_str}", file=f)
+
+    return diff_list
 
 
 def get_species_categories(
@@ -296,9 +314,12 @@ def get_species_categories(
     NOTE: The benchmark categories are specified in YAML file
     benchmark_species.yml.
     """
-    spc_categories = "benchmark_categories.yml"
-    yamlfile = os.path.join(os.path.dirname(__file__), spc_categories)
-    spc_cat_dict = read_config_file(yamlfile)
+    spc_cat_dict = read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "benchmark_categories.yml"
+        )
+    )
     return spc_cat_dict[benchmark_type]
 
 
@@ -344,8 +365,8 @@ def add_bookmarks_to_pdf(
         remove_prefix: str
             Specifies a prefix to remove from each entry in varlist
             when creating bookmarks.  For example, if varlist has
-            a variable name "SpeciesConc_NO", and you specify
-            remove_prefix="SpeciesConc_", then the bookmark for
+            a variable name "SpeciesConcVV_NO", and you specify
+            remove_prefix="SpeciesConcVV_", then the bookmark for
             that variable will be just "NO", etc.
          verbose: bool
             Set this flag to True to print extra informational output.
@@ -629,6 +650,11 @@ def get_diff_of_diffs(
     ref = ref[varlist]
     dev = dev[varlist]
     if 'nf' not in ref.dims and 'nf' not in dev.dims:
+        # if the coords do not align then set time dimensions equal
+        try:
+            xr.align(dev, ref, join='exact')
+        except:
+            ref.coords["time"] = dev.coords["time"]
         with xr.set_options(keep_attrs=True):
             absdiffs = dev - ref
             fracdiffs = dev / ref
@@ -676,7 +702,7 @@ def slice_by_lev_and_time(
         flip
 ):
     """
-    Slice a DataArray by desired time and level.
+    Given a Dataset, returns a DataArray sliced by desired time and level.
 
     Args:
         ds: xarray Dataset
@@ -691,24 +717,36 @@ def slice_by_lev_and_time(
             Whether to flip ilev to be indexed from ground or top of atmosphere
 
     Returns:
-        ds[varname]: xarray DataArray
+        dr: xarray DataArray
             DataArray of data variable sliced according to ilev and itime
     """
     # used in compare_single_level and compare_zonal_mean to get dataset slices
-    vdims = ds[varname].dims
-    if "time" in vdims and "lev" in vdims:
+    if not isinstance(ds, xr.Dataset):
+        msg="ds is not of type xarray.Dataset!"
+        raise TypeError(msg)
+    if not varname in ds.data_vars.keys():
+        msg="Could not find 'varname' in ds!"
+        raise ValueError(msg)
+
+    # NOTE: isel no longer seems to work on a Dataset, so
+    # first createthe DataArray object, then use isel on it.
+    #  -- Bob Yantosca (19 Jan 2023)
+    dr = ds[varname]
+    vdims = dr.dims
+    if ("time" in vdims and dr.time.size > 0) and "lev" in vdims:
         if flip:
-            maxlev_i = len(ds['lev'])-1
-            return ds[varname].isel(time=itime, lev=maxlev_i - ilev)
-        return ds[varname].isel(time=itime, lev=ilev)
+            fliplev=len(dr['lev']) - 1 - ilev
+            return dr.isel(time=itime, lev=fliplev)
+        return dr.isel(time=itime, lev=ilev)
     if ("time" not in vdims or itime == -1) and "lev" in vdims:
         if flip:
-            maxlev_i = len(ds['lev'])-1
-            return ds[varname].isel(lev=maxlev_i - ilev)
-        return ds[varname].isel(lev=ilev)
-    if "time" in vdims and "lev" not in vdims and itime != -1:
-        return ds[varname].isel(time=itime)
-    return ds[varname]
+            fliplev= len(dr['lev']) - 1 - ilev
+            return dr.isel(lev=fliplev)
+        return dr.isel(lev=ilev)
+    if ("time" in vdims and dr.time.size > 0 and itime != -1) and \
+       "lev" not in vdims:
+        return dr.isel(time=itime)
+    return dr
 
 
 def rename_and_flip_gchp_rst_vars(
@@ -807,6 +845,9 @@ def compare_varnames(
             commonvars3D     List of variables that are common to
                              refdata and devdata, and that have lat,
                              lon, and level dimensions.
+            commonvarsData   List of all commmon 2D or 3D data variables,
+                             excluding index variables.  This is the
+                             list of "plottable" variables.
             refonly          List of 2D or 3D variables that are only
                              present in refdata.
             devonly          List of 2D or 3D variables that are only
@@ -818,31 +859,29 @@ def compare_varnames(
     refonly = [v for v in refvars if v not in devvars]
     devonly = [v for v in devvars if v not in refvars]
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
-    commonvarsOther = [
-        v
-        for v in commonvars
-        if (
-            ("lat" not in refdata[v].dims or "Xdim" not in refdata[v].dims)
-            and ("lon" not in refdata[v].dims or "Ydim" not in refdata[v].dims)
-            and ("lev" not in refdata[v].dims)
+    # Assume plottable data has lon and lat
+    # This is OK for purposes of benchmarking
+    #  -- Bob Yantosca (09 Feb 2023)
+    commonvarsData = [
+        v for v in commonvars if (
+            ("lat" in refdata[v].dims or "Ydim" in refdata[v].dims)
+            and
+            ("lon" in refdata[v].dims or "Xdim" in refdata[v].dims)
         )
+    ]        
+    commonvarsOther = [
+        v for v in commonvars if (
+           v not in commonvarsData
+        )    
     ]
     commonvars2D = [
-        v
-        for v in commonvars
-        if (
-            ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
-            and ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
-            and ("lev" not in refdata[v].dims)
+        v for v in commonvars if (
+            (v in commonvarsData) and ("lev" not in refdata[v].dims)
         )
     ]
     commonvars3D = [
-        v
-        for v in commonvars
-        if (
-            ("lat" in refdata[v].dims or "Xdim" in refdata[v].dims)
-            and ("lon" in refdata[v].dims or "Ydim" in refdata[v].dims)
-            and ("lev" in refdata[v].dims)
+        v for v in commonvars if (
+            (v in commonvarsData) and ("lev" in refdata[v].dims)
         )
     ]
 
@@ -868,18 +907,20 @@ def compare_varnames(
                     print("All variables have same dimensions in ref and dev")
 
     # For safety's sake, remove the 0-D and 1-D variables from
-    # refonly and devonly.  This will ensure that refonly and
-    # devonly will only contain variables that can be plotted.
+    # commonvarsData, refonly, and devonly.  This will ensure that
+    # these lists will only contain variables that can be plotted.
+    commonvarsData = [v for v in commonvars if v not in commonvarsOther]
     refonly = [v for v in refonly if v not in commonvarsOther]
     devonly = [v for v in devonly if v not in commonvarsOther]
 
     return {
         "commonvars": commonvars,
-        "commonvarsOther": commonvarsOther,
         "commonvars2D": commonvars2D,
         "commonvars3D": commonvars3D,
+        "commonvarsData": commonvarsData,
+        "commonvarsOther": commonvarsOther,
         "refonly": refonly,
-        "devonly": devonly,
+        "devonly": devonly
     }
 
 
@@ -957,9 +998,13 @@ def convert_bpch_names_to_netcdf_names(
     # Names dictionary (key = bpch id, value[0] = netcdf id,
     # value[1] = action to create full name using id)
     # Now read from YAML file (bmy, 4/5/19)
-    bpch_to_nc_names = "bpch_to_nc_names.yml"
-    yamlfile = os.path.join(os.path.dirname(__file__), bpch_to_nc_names)
-    names = yaml.load(open(yamlfile), Loader=yaml.FullLoader)
+    names = read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "bpch_to_nc_names.yml"
+        ),
+        quiet=True
+    )
 
     # define some special variable to overwrite above
     special_vars = {
@@ -1115,7 +1160,7 @@ def convert_bpch_names_to_netcdf_names(
     if verbose:
         print("\nList of bpch names and netCDF names")
         for key in old_to_new:
-            print("{} ==> {}".format(key.ljust(25), old_to_new[key].ljust(40)))
+            print(f"{key : <25} ==> {old_to_new[key] : <40}")
 
     # Rename the variables in the dataset
     if verbose:
@@ -1135,11 +1180,13 @@ def get_lumped_species_definitions():
         lumped_spc_dict : dict of str
             Dictionary of lumped species
     """
-    lumped_spc = "lumped_species.yml"
-    yamlfile = os.path.join(os.path.dirname(__file__), lumped_spc)
-    with open(yamlfile, "r") as f:
-        lumped_spc_dict = yaml.load(f.read(), Loader=yaml.FullLoader)
-    return lumped_spc_dict
+    return read_config_file(
+        os.path.join(
+            os.path.dirname(__file__),
+            "lumped_species.yml"
+        ),
+        quiet=True
+    )
 
 
 def archive_lumped_species_definitions(
@@ -1158,7 +1205,7 @@ def archive_lumped_species_definitions(
     src = os.path.join(os.path.dirname(__file__), lumped_spc)
     copy = os.path.join(dst, lumped_spc)
     if not os.path.exists(copy):
-        print("\nArchiving {} in {}".format(lumped_spc, dst))
+        print(f"\nArchiving {lumped_spc} in {dst}")
         shutil.copyfile(src, copy)
 
 
@@ -1168,7 +1215,7 @@ def add_lumped_species_to_dataset(
         lspc_yaml="",
         verbose=False,
         overwrite=False,
-        prefix="SpeciesConc_",
+        prefix="SpeciesConcVV_",
 ):
     """
     Function to calculate lumped species concentrations and add
@@ -1204,7 +1251,7 @@ def add_lumped_species_to_dataset(
             also used to extract an existing dataarray in the dataset with
             the correct size and dimensions to use during initialization of
             new lumped species dataarrays.
-            Default value: "SpeciesConc_"
+            Default value: "SpeciesConcVV_"
 
     Returns:
         ds: xarray Dataset
@@ -1229,7 +1276,7 @@ def add_lumped_species_to_dataset(
         # Get a dummy DataArray to use for initialization
         dummy_darr = None
         for var in ds.data_vars:
-            if prefix in var:
+            if prefix in var or prefix.replace("VV", "") in var:
                 dummy_darr = ds[var]
                 dummy_type = dummy_darr.dtype
                 dummy_shape = dummy_darr.shape
@@ -2096,9 +2143,221 @@ def read_config_file(config_file, quiet=False):
     try:
         if not quiet:
             print(f"Using configuration file {config_file}")
-        config = yaml.safe_load(open(config_file))
+        config = yaml_safe_load(open(config_file))
     except Exception as err:
         msg = f"Error reading configuration in {config_file}: {err}"
         raise Exception(msg) from err
 
     return config
+
+
+def unique_values(
+        this_list,
+        drop=None,
+):
+    """
+    Given a list, returns a sorted list of unique values.
+
+    Args:
+    -----
+    this_list : list
+        Input list (may contain duplicate values)
+
+    drop: list of str
+        List of variable names to exclude
+
+    Returns:
+    --------
+    unique: list
+        List of unique values from this_list
+    """
+    if not isinstance(this_list, list):
+        raise ValueError("Argument 'this_list' must be a list object!")
+    if not isinstance(drop, list):
+        raise ValueError("Argument 'drop' must be a list object!")
+
+    unique = list(set(this_list))
+
+    if drop is not None:
+        for d in drop:
+            if d in unique:
+                unique.remove(d)
+
+    unique.sort()
+
+    return unique
+
+
+def wrap_text(
+        text,
+        width=80
+):
+    """
+    Wraps text so that it fits within a certain line width.
+
+    Args:
+    -----
+    text: str or list of str
+        Input text to be word-wrapped.
+    width: int
+        Line width, in characters.
+        Default value: 80
+
+    Returns:
+    --------
+    Original text reformatted so that it fits within lines
+    of 'width' characters or less.
+    """
+    if not isinstance(text, str):
+        if isinstance(text, list):
+            text = ' '.join(text)  # List -> str conversion
+        else:
+            raise ValueError("Argument 'text' must be either str or list!")
+
+    text = wrap(text, width=width)
+    text = '\n'.join(text)
+
+    return text
+
+
+def insert_text_into_file(
+        filename,
+        search_text,
+        replace_text,
+        width=80
+):
+    """
+    Convenience routine to insert text into a file.  The best way
+    to do this is to read the contents of the file, manipulate the
+    text, and then overwrite the file.
+
+    Args:
+    -----
+    filename: str
+        The file with text to be replaced.
+    search_text: str
+        Text string in the file that will be replaced.
+    replace_text: str or list of str
+        Text that will replace 'search_text'
+    width: int
+        Will "word-wrap" the text in 'replace_text' to this width
+    """
+    if not isinstance(search_text, str):
+        raise ValueError("Argument 'search_text' needs to be a string!")
+    if not isinstance(replace_text, str) and \
+       not isinstance(replace_text, list):
+        raise ValueError(
+            "Argument 'replace_text' needs to be a list or a string"
+        )
+
+    # Word-wrap the replacement text
+    # (does list -> str conversion if necessary)
+    replace_text = wrap_text(
+        replace_text,
+        width=width
+    )
+
+    with open(filename, "r") as f:
+        filedata = f.read()
+        f.close()
+
+    filedata = filedata.replace(
+        search_text,
+        replace_text
+    )
+
+    with open(filename, "w") as f:
+        f.write(filedata)
+        f.close()
+
+
+def array_equals(
+        refdata,
+        devdata,
+        dtype=np.float64
+):
+    """
+    Tests two arrays for equality.  Useful for checking which
+    species have nonzero differences in benchmark output.
+
+    Args:
+    -----
+    refdata: xarray DataArray or numpy ndarray
+        The first array to be checked.
+    devdata: xarray DataArray or numpy ndarray
+        The second array to be checked.
+    dtype : np.float32 or np.float64
+        The precision that will be used to make the evaluation.
+        Default: np.float64
+
+    Returns:
+    --------
+    True if both arrays are equal; False if not
+    """
+    if not isinstance(refdata, np.ndarray):
+        if isinstance(refdata, xr.DataArray):
+            refdata = refdata.values
+        else:
+            raise ValueError(
+            "Argument 'refdata' must be an xarray DataArray or numpy ndarray!"
+            )
+    if not isinstance(devdata, np.ndarray):
+        if isinstance(devdata, xr.DataArray):
+            devdata = devdata.values
+        else:
+            raise ValueError(
+            "Argument 'devdata' must be an xarray DataArray or numpy ndarray!"
+            )
+
+    # This method will work if the arrays hve different dimensions
+    # but an element-by-element search will not!
+    refsum = np.nansum(refdata, dtype=dtype)
+    devsum = np.nansum(devdata, dtype=dtype)
+    return (not np.abs(devsum - refsum) > dtype(0.0))
+
+
+def make_directory(
+        dir_name,
+        overwrite
+):
+    """
+    Creates a directory where benchmark plots/tables will be placed.
+
+    Args:
+    -----
+    dir_name : str
+        Name of the directory to be created.
+    overwrite : bool
+        Set to True if you wish to overwrite prior contents in
+        the directory 'dir_name'
+    """
+
+    if os.path.isdir(dir_name) and not overwrite:
+        msg = f"Directory {dir_name} exists!\n"
+        msg += "Pass overwrite=True to overwrite files in that directory."
+        raise ValueError(msg)
+
+    if not os.path.isdir(dir_name):
+        os.makedirs(dir_name)
+
+
+def trim_cloud_benchmark_label(
+        label
+):
+    """
+    Removes the first part of the cloud benchmark label string
+    (e.g. "gchp-c24-1Hr", "gcc-4x5-1Mon", etc) to avoid clutter.
+    """
+    if not isinstance(label, str):
+        raise ValueError("Argument 'label' must be a string!")
+
+    for v in [
+        "gcc-4x5-1Hr",
+        "gchp-c24-1Hr",
+        "gcc-4x5-1Mon",
+        "gchp-c24-1Mon",
+    ]:
+        if v in label:
+            label.replace(v, "")
+            
+    return label
