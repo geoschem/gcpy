@@ -29,10 +29,10 @@ receive an error message if you attempt to use GCPy on Windows.
    present, this is the only way to use GCPy locally on a Windows
    computer.
 
-The only esential software you need before installing GCPy is a
+The only essential software you need before installing GCPy is a
 distribution of the :program:`Conda` package manager. This is used to
 create a Python environment for GCPy containing all of its software
-dependences, including what version of Python you use. We recommend
+dependences, including what version of Python you use. You must
 using GCPy with Python version 3.9.
 
 You can check if you already have Conda installed by running the
@@ -44,21 +44,22 @@ following command:
 
 .. attention::
 
-   We recommend that you use Conda 4.12.0 or earlier to install GCPy
-   and its dependencies.  Newer versions of Conda than this will
-   install Python package versions that are incompatible with GCPy.
-   See :ref:`Installing Conda 4.12.0 with Miniconda <conda412_install>` below.
+   You must use Conda 4.12.0 or earlier to install GCPy and its
+   dependencies.  Newer versions of Conda than this will install
+   Python package versions that are incompatible with GCPy. See
+   :ref:`Installing Conda 4.12.0 with Miniconda <conda412_install>`
+   below.
 
    In the future we hope to be able to resolve this installation issue
    so that you can use the latest Conda version.
 
-If Conda is not already installed, we recommend using
-:program:`Miniconda` to install Conda 4.12.0.  Miniconda is a minimal
-installer for Conda that generally includes many fewer packages in the
-base environment than are available for download. This provides a
-lightweight Conda installation from which you can create custom Python
-environments with whatever Python packages you wish to use, including
-an environment with GCPy dependencies.
+If Conda is not already installed, you must use :program:`Miniconda`
+to install Conda 4.12.0.  Miniconda is a minimal installer for Conda
+that generally includes many fewer packages in the base environment
+than are available for download. This provides a lightweight Conda
+installation from which you can create custom Python environments with
+whatever Python packages you wish to use, including an environment
+with GCPy dependencies.
 
 .. _conda412_install:
 
@@ -103,10 +104,10 @@ If you need to install Conda 4.12.0, follow these steps:
 
 	 $ brew install wget
 
-   In the steps that follow, we will walk thorugh installation using
+   In the steps that follow, we will walk through installation using
    the Linux installer script.  The steps are the same for MacOS; just
    substitute the appropriate MacOS script name for the Linux script
-   name. |br|
+   name in steps 2 and 3 below. |br|
    |br|
 
 
@@ -162,13 +163,13 @@ If you need to install Conda 4.12.0, follow these steps:
    .. code-block:: console
 
       Miniconda3 will now be installed into this location:
-      /home/bob/miniconda3
+      /home/YOUR-USERNAME/miniconda3
 
       - Press ENTER to confirm the location
       - Press CTRL-C to abort the installation
       - Or specify a different location below
 
-      [/home/bob/miniconda3] >>>
+      [/home/YOUR-USERNAME/miniconda3] >>>
 
    Press :literal:`ENTER` to continue, or specify a new path and then
    press :literal:`ENTER`.
@@ -186,8 +187,8 @@ If you need to install Conda 4.12.0, follow these steps:
 
 #. Specify post-installation options.
 
-   If installation is successful you will see this at the bottom of
-   the screen printout:
+   You will see this text at the bottom of the screen printout upon
+   successful installation:
 
    .. code-block:: console
 
@@ -228,7 +229,7 @@ If you need to install Conda 4.12.0, follow these steps:
 #. Disable the base Conda environment from being activated at startup
 
    Close the terminal window that you used to install Conda 4.12.0 and
-   open a new terminal window.  You will this prompt
+   open a new terminal window.  You will see this prompt:
 
    .. code-block:: console
 
