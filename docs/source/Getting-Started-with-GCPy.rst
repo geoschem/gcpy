@@ -150,11 +150,7 @@ If you need to install Conda 4.12.0, follow these steps:
       Do you accept the license terms? [yes|no]
       [no] >>>
 
-   Type :literal:`yes` and hit :literal:`ENTER` to accept.
-
-   You will be asked to review the license agreement.  Scroll down to
-   the end and type :file:`yes` and hit :literal:`ENTER` to
-   accept. |br|
+   Type :literal:`yes` and hit :literal:`ENTER` to accept. |br|
    |br|
 
 
