@@ -193,8 +193,9 @@ def is_gchp_restart_file(dataset):
     Returns:
         bool: True if `dataset` represents a GCHP restart file.
     """
-    is_gchp_restart = "SPC_O3" in dataset.data_vars
-    is_gcclassic = "SpeciesRst_O3" in dataset.data_vars
+    varlist = [v for v in dataset.data_vars.keys()]
+    is_gchp_restart = "SPC_" in varlist
+    is_gcclassic_restart = "SpeciesRst_" in varlist
     if not any((is_gchp_restart, is_gcclassic)):
         raise ValueError(
             "Couldn't determine if the provided file is a GC-Classic or GCHP "
@@ -203,8 +204,7 @@ def is_gchp_restart_file(dataset):
     return is_gchp_restart
 
 
-def open_dataset(file_or_url, chunk_size=8192):
-    """
+def open_dataset(file_or_url, chunk_size=8192):    """
     Open a NetCDF-4 dataset from either file path or URL.
 
     Args:
