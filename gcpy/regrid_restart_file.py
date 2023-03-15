@@ -190,21 +190,27 @@ def is_gchp_restart_file(dataset):
     """
     Checks whether or not an xarray dataset represents a GCHP restart file.
 
+    Args:
+        dataset: xarray Dataset
+
     Returns:
         bool: True if `dataset` represents a GCHP restart file.
     """
-    varlist = [v for v in dataset.data_vars.keys()]
-    is_gchp_restart = "SPC_" in varlist
-    is_gcclassic_restart = "SpeciesRst_" in varlist
-    if not any((is_gchp_restart, is_gcclassic)):
-        raise ValueError(
-            "Couldn't determine if the provided file is a GC-Classic or GCHP "
-            "restart file."
-        )
-    return is_gchp_restart
+    if not isinstance(dataset, xr.Dataset):
+        msg = "Input argument dataset is not an xarray Dataset object!"
+        raise ValueError(msg)
+
+    for v in dataset.data_vars.keys():
+        if "SPC_" in v:
+            return True
+        if "SpeciesRst_" in v:
+            return False
+    msg = "Input file is not a GCHP or GCClassic restart file!"
+    raise ValueError(msg)ls
 
 
-def open_dataset(file_or_url, chunk_size=8192):    """
+def open_dataset(file_or_url, chunk_size=8192):
+    """
     Open a NetCDF-4 dataset from either file path or URL.
 
     Args:
