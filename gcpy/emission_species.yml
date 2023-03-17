@@ -5,6 +5,8 @@ FullChemBenchmark:
   BCPI: Tg
   BCPO: Tg
   BENZ: Tg
+  C2H2: Tg
+  C2H4: Tg
   C2H6: Tg
   C3H8: Tg
   CH2Br2: Tg
