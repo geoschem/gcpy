@@ -4,7 +4,11 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [Unreleased 1.4.0]
+### Added
+- Added C2H2 and C2H4 to `emission_species.yml`
+- Updated `species_database.yml` for consistency with GEOS-Chem 14.2.0
+
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
 
