@@ -11,8 +11,7 @@ Institution:
 ### Confirm you have reviewed the following documentation
 
 - [ ] [Support guidelines](https://gcpy.readthedocs.io/en/stable/reference/SUPPORT.html)
-- [ ] [User manuals](https://gcpy.readthedocs.io/en/stable/geos-chem-shared-docs/supplemental-guides/related-docs.html)
-- [ ] [Debugging GEOS-Chem and HEMCO errors](https://gcpy.readthedocs.io/en/stable/geos-chem-shared-docs/supplemental-guides/debug-guide.html)
+- [ ] [User manual](https://gcpy.readthedocs.io/en/stable)
 - [ ] [Current and past Github issues](https://github.com/geoschem/gcpy/issues)
 
 ### Description of your issue or question

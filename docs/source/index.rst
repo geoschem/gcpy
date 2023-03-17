@@ -44,7 +44,7 @@ For documentation on setting up and running GEOS-Chem please see our
    :maxdepth: 1
    :caption: Help & Reference:
    
-   Report_Request
-   Contributing
+   reference/CONTRIBUTING.md
+   reference/SUPPORT.md
    editing_these_docs
    Release_guide
