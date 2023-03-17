@@ -1,6 +1,6 @@
 ---
 name: Request a new GCPy feature or start a discussion
-about: Use thisform to request a new GCPy feature or start a discussion
+about: Use this form to request a new GCPy feature or start a discussion
 ---
 
 ### Name and Institution (Required)
