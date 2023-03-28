@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `species_database.yml` for consistency with GEOS-Chem 14.2.0
 - Added `.github/ISSUE_TEMPLATE/config.yml` file w/ Github issue options
 - Added `CONTRIBUTING.md` and `SUPPORT.md`, replacing `docs/source/Contributing.rst` and `docs/source/Report_Request.rst`
+- Added option to pass the benchmark type to plotting routines
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -27,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - New functions in `benchmark.py` and `util.py` to facilitate printing of the species/emissions/inventories that differ between Dev & Ref versions.
 - Added new RTD documentation for installing Conda 4.12.0 with Miniconda
 - Added GCHP regridding environnment file `docs/environment_files/gchp_regridding.yml`
+- Added new benchmark type CH4Benchmark
 
 ### Changed
 - Applied cleanup susggestions from pylint to `benchmark.py`, `util.py`, `plot.py`, `oh_metrics.py`, `ste_flux.py`
@@ -62,6 +64,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed obsolete environment.yml files (@yantosca)
 - Added requirements.yml to docs folder for Sphinx/RTD documentation (@yantosca)
 - New regridding script `regrid_restart_file.py` (@liambindle)
+
 ### Changed
 - Fixed several issues in benchmarking scripts (@laestrada, @lizziel, @yantosca)
   - Fixed bug in `budget_ox.py`; The drydep loss of Ox for GCHP was 12x too high
