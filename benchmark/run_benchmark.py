@@ -793,6 +793,7 @@ def run_benchmark_default(config):
                 weightsdir=config["paths"]["weights_dir"],
                 plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
                     "by_spc_cat"
+                benchmark_type=config["options"]["bmk_type"],
                 ],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
@@ -829,6 +830,7 @@ def run_benchmark_default(config):
                 plot_by_hco_cat=config["options"]["outputs"]["plot_options"][
                     "by_hco_cat"
                 ],
+                benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
@@ -859,6 +861,7 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gcc_resultsdir,
                 ref_interval=[gcc_dev_sec_diff],
                 dev_interval=[gchp_dev_sec_diff],
+                benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 devmet=devmet,
                 spcdb_dir=spcdb_dir,
@@ -1148,6 +1151,7 @@ def run_benchmark_default(config):
                 weightsdir=config["paths"]["weights_dir"],
                 plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
                     "by_spc_cat"
+                benchmark_type=config["options"]["bmk_type"],
                 ],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
@@ -1190,6 +1194,7 @@ def run_benchmark_default(config):
                 plot_by_hco_cat=config["options"]["outputs"]["plot_options"][
                     "by_hco_cat"
                 ],
+                benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
@@ -1226,6 +1231,7 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gchp_resultsdir,
                 ref_interval=[gchp_ref_sec_diff],
                 dev_interval=[gchp_dev_sec_diff],
+                benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 refmet=refmet,
                 devmet=devmet,
@@ -1486,6 +1492,7 @@ def run_benchmark_default(config):
                 diff_of_diffs_devstr,
                 dst=diff_of_diffs_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
+                benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 use_cmap_RdBu=True,
                 second_ref=gcc_dev,
