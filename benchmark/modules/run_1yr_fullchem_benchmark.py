@@ -1023,7 +1023,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 ref_interval=sec_per_month_ref,
                 dev_interval=sec_per_month_dev,
                 benchmark_type=bmk_type,
-                verwrite=True,
+                overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
 
