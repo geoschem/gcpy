@@ -200,7 +200,7 @@ def create_total_emissions_table(
     for species_name, target_units in species.items():
 
         # Get a list of emission variable names for each species
-        diagnostic_template = f"{species_name}"
+        diagnostic_template = template.replace("{}", species_name)
         varnames = util.get_emissions_varnames(cvars, diagnostic_template)
 
         # Also add variables that might be in either Ref or Dev
@@ -228,7 +228,7 @@ def create_total_emissions_table(
         # Push the total variable to the last list element
         # so that it will be printed last of all
         if len(vartot) == 1:
-            varnames.append(varnames.pop(varnames.index(vartot[0])))
+            varnames.append(varnames.pop(varnames.index(vartot[0])))        
 
         # Title strings
         if "Inv" in template:
