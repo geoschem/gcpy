@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+ #!/usr/bin/env python
 """
 run_1yr_fullchem_benchmark.py:
     Driver script for creating benchmark plots and testing gcpy
@@ -962,6 +962,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "plot_options"]["by_spc_cat"],
                 plot_by_hco_cat=config["options"]["outputs"][
                     "plot_options"]["by_hco_cat"],
+                benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
@@ -986,6 +987,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     plot_by_hco_cat=config["options"]["outputs"][
                         "plot_options"]["by_hco_cat"],
+                    benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -1020,7 +1022,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gchp_vs_gcc_resultsdir,
                 ref_interval=sec_per_month_ref,
                 dev_interval=sec_per_month_dev,
-                overwrite=True,
+                benchmark_type=bmk_type,
+                verwrite=True,
                 spcdb_dir=spcdb_dir,
             )
 
@@ -1508,6 +1511,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "plot_options"]["by_spc_cat"],
                 plot_by_hco_cat=config["options"]["outputs"][
                     "plot_options"]["by_hco_cat"],
+                benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
@@ -1533,6 +1537,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     plot_by_hco_cat=config["options"]["outputs"][
                         "plot_options"]["by_hco_cat"],
+                    benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                 )
@@ -1570,6 +1575,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gchp_vs_gchp_resultsdir,
                 ref_interval=sec_per_month_ref,
                 dev_interval=sec_per_month_dev,
+                benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
