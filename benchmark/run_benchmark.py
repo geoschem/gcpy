@@ -792,9 +792,8 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                    "by_spc_cat"
+                    "by_spc_cat"],
                 benchmark_type=config["options"]["bmk_type"],
-                ],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
@@ -1150,9 +1149,8 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                    "by_spc_cat"
+                    "by_spc_cat"],
                 benchmark_type=config["options"]["bmk_type"],
-                ],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
@@ -1189,11 +1187,9 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
-                    "by_spc_cat"
-                ],
+                    "by_spc_cat"],
                 plot_by_hco_cat=config["options"]["outputs"]["plot_options"][
-                    "by_hco_cat"
-                ],
+                    "by_hco_cat"],
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
