@@ -596,6 +596,282 @@ def create_global_mass_table(
     )
 
 
+def create_mass_accumulation_table(
+        refdatastart,
+        refdataend,
+        refstr,
+        devdatastart,
+        devdataend,
+        devstr,
+        varlist,
+        met_and_masks,
+        label,
+        trop_only=False,
+        outfilename="GlobalMassAccum_TropStrat.txt",
+        verbose=False,
+        spcdb_dir=os.path.dirname(__file__)
+):
+    """
+    Creates a table of global mass accumulation for a list of species in
+    two data sets.  The data sets, which typically represent output from two
+    different model versions, are usually contained in netCDF data files.
+
+    Args:
+        refdatastart: xarray Dataset
+            The first data set to be compared (aka "Reference").
+        refdataend: xarray Dataset
+            The first data set to be compared (aka "Reference").
+        refstr: str
+            A string that can be used to identify refdata
+            (e.g. a model version number or other identifier).
+        devdatastart: xarray Dataset
+            The second data set to be compared (aka "Development").
+        devdataend: xarray Dataset
+            The second data set to be compared (aka "Development").
+        devstr: str
+            A string that can be used to identify the data set specified
+            by devfile (e.g. a model version number or other identifier).
+        varlist: list of strings
+            List of species concentation variable names to include
+            in the list of global totals.
+        met_and_masks: dict of xarray DataArray
+            Dictionary containing the meterological variables and
+            masks for the Ref and Dev datasets.
+        label: str
+            Label to go in the header string.  Can be used to
+            pass the month & year.
+
+    Keyword Args (optional):
+        trop_only: bool
+            Set this switch to True if you wish to print totals
+            only for the troposphere.
+            Default value: False (i.e. print whole-atmosphere totals).
+        outfilename: str
+            Name of the text file which will contain the table of
+            emissions totals.
+            Default value: "GlobalMass_TropStrat.txt"
+        verbose: bool
+            Set this switch to True if you wish to print out extra
+            informational messages.
+            Default value: False
+        spcdb_dir: str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
+
+    Remarks:
+        This method is mainly intended for model benchmarking purposes,
+        rather than as a general-purpose tool.
+
+        Species properties (such as molecular weights) are read from a
+        YAML file called "species_database.yml".
+    """
+
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
+    # Make sure refdata and devdata are xarray Dataset objects
+    if not isinstance(refdatastart, xr.Dataset):
+        raise TypeError("The refdatastart argument must be an xarray Dataset!")
+    if not isinstance(refdataend, xr.Dataset):
+        raise TypeError("The refdataend argument must be an xarray Dataset!")
+    if not isinstance(devdatastart, xr.Dataset):
+        raise TypeError("The devdatastart argument must be an xarray Dataset!")
+    if not isinstance(devdataend, xr.Dataset):
+        raise TypeError("The devdataend argument must be an xarray Dataset!")
+
+    # Make sure required arguments are passed
+    if varlist is None:
+        raise ValueError('The "varlist" argument was not passed!')
+    if met_and_masks is None:
+        raise ValueError('The "met_and_masks" argument was not passed!')
+
+    # Load a YAML file containing species properties (such as
+    # molecular weights), which we will need for unit conversions.
+    # This is located in the "data" subfolder of this current directory.2
+    properties = util.read_config_file(
+        os.path.join(
+            spcdb_dir,
+            "species_database.yml"
+        ),
+        quiet=True
+    )
+
+    # ==================================================================
+    # Open file for output
+    # ==================================================================
+
+    # Create file
+    try:
+        f = open(outfilename, "w")
+    except (IOError, OSError, FileNotFoundError) as e:
+        raise e(f"Could not open {outfilename} for writing!") from e
+
+    # Define a list for differences
+    diff_list = []
+
+    # Title strings
+    title1 = f"### Global mass change (Gg) {label} (Trop + Strat)"
+    if trop_only:
+        title1 = f"### Global mass change (Gg) {label} (Trop only)"
+    title2 = f"### as computed by comparing start and end restart files"
+    title3 = f"### Ref = {refstr}"
+    title4 = f"### Dev = {devstr}"
+
+    # Write a placeholder to the file that denotes where
+    # the list of species with differences will be written
+    placeholder = "@%% insert diff status here %%@"
+
+    # Print header to file
+    print("#" * 89, file=f)
+    print(f"{title1 : <86}{'###'}", file=f)
+    print(f"{'###'  : <86}{'###'}", file=f)
+    print(f"{title2 : <86}{'###'}", file=f)
+    print(f"{title3 : <86}{'###'}", file=f)
+    print(f"{title4 : <86}{'###'}", file=f)
+    print(f"{'###'  : <86}{'###'}", file=f)
+    print(f"{placeholder}", file=f)
+    print("#" * 89, file=f)
+
+    # Column headers
+    print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'diffs'}", file=f)
+
+    # ==================================================================
+    # Print global masses for all species
+    #
+    # NOTE: By this point, all secies will be in both Ref and Dev'
+    # because we have added them in the calling routine
+    # ==================================================================
+    for v in varlist:
+
+        # Get the species name
+        spc_name = v.split("_")[1]
+
+        # Get a list of properties for the given species
+        species_properties = properties.get(spc_name)
+
+        # If no properties are found, then skip to next species
+        if species_properties is None:
+            if verbose:
+                msg = f"No properties found for {spc_name} ... skippping"
+                print(msg)
+            continue
+
+        # Specify target units
+        target_units = "Gg"
+        mol_wt_g = species_properties.get("MW_g")
+        if mol_wt_g is None:
+            if verbose:
+                msg = \
+                  f"No molecular weight found for {spc_name} ... skippping"
+                print(msg)
+            continue
+
+        # ==============================================================
+        # Convert units of Ref and save to a DataArray
+        # (or skip if Ref contains NaNs everywhere)
+        # ==============================================================
+        refarrays = refdatastart[v]
+        if not np.isnan(refdatastart[v].values).all():
+            refarrays = convert_units(
+                refarrays,
+                spc_name,
+                species_properties,
+                target_units,
+                area_m2=met_and_masks["Refs_Area"],
+                delta_p=met_and_masks["Refs_Delta_P"],
+                box_height=met_and_masks["Refs_BxHeight"],
+            )
+
+        refarraye = refdataend[v]
+        if not np.isnan(refdataend[v].values).all():
+            refarraye = convert_units(
+                refarraye,
+                spc_name,
+                species_properties,
+                target_units,
+                area_m2=met_and_masks["Refe_Area"],
+                delta_p=met_and_masks["Refe_Delta_P"],
+                box_height=met_and_masks["Refe_BxHeight"],
+            )
+
+        refarray = refarrays
+        refarray.values = refarraye.values - refarrays.values
+
+        # ==============================================================
+        # Convert units of Dev and save to a DataArray
+        # (or skip if Dev contains NaNs everywhere)
+        # ==============================================================
+        devarrays = devdatastart[v]
+        if not np.isnan(devdatastart[v].values).all():
+            devarrays = convert_units(
+                devarrays,
+                spc_name,
+                species_properties,
+                target_units,
+                area_m2=met_and_masks["Devs_Area"],
+                delta_p=met_and_masks["Devs_Delta_P"],
+                box_height=met_and_masks["Devs_BxHeight"],
+            )
+        #print('devarrays: {}'.format(devarrays.values))
+
+        devarraye = devdataend[v]
+        if not np.isnan(devdataend[v].values).all():
+            devarraye = convert_units(
+                devarraye,
+                spc_name,
+                species_properties,
+                target_units,
+                area_m2=met_and_masks["Deve_Area"],
+                delta_p=met_and_masks["Deve_Delta_P"],
+                box_height=met_and_masks["Deve_BxHeight"],
+            )
+
+        devarray = devarrays
+        devarray.values = devarraye.values - devarrays.values
+
+        # ==============================================================
+        # Print global masses for Ref and Dev
+        # (we will mask out tropospheric boxes in util.print_totals)
+        # ==============================================================
+        # ewl: for now trop_only is always false for accumulation table
+        if trop_only:
+            util.print_totals(
+                refarray,
+                devarray,
+                f,
+                diff_list,
+                masks=met_and_masks
+            )
+        else:
+            util.print_totals(
+                refarray,
+                devarray,
+                f,
+                diff_list
+            )
+
+    # ==================================================================
+    # Cleanup and quit
+    # ==================================================================
+
+    # Close file
+    f.close()
+
+    # Reopen file and replace placeholder text by diff_text
+    util.insert_text_into_file(
+        filename=outfilename,
+        search_text=placeholder,
+        replace_text=diff_list_to_text(
+            refstr,
+            devstr,
+            diff_list,
+            fancy_format=True
+        ),
+        width=100  # Force it not to wrap
+    )
+
+
 def make_benchmark_conc_plots(
         ref,
         refstr,
@@ -2876,6 +3152,285 @@ def make_benchmark_mass_tables(
     del devds
     gc.collect()
 
+def make_benchmark_mass_accumulation_tables(
+        ref_start,
+        ref_end,
+        refstr,
+        dev_start,
+        dev_end,
+        devstr,
+        varlist=None,
+        dst="./benchmark",
+        subdst=None,
+        overwrite=False,
+        verbose=False,
+        label="at end of simulation",
+        spcdb_dir=os.path.dirname(__file__),
+):
+    """
+    Creates a text file containing global mass totals by species and
+    category for benchmarking purposes.
+
+    Args:
+        ref_start: list of str
+            Pathname that will constitute
+            the "Ref" (aka "Reference") data set.
+        ref_end: list of str
+            Pathname that will constitute
+            the "Ref" (aka "Reference") data set.
+        refstr: str
+            A string to describe ref (e.g. version number)
+        dev_start: list of str
+            Pathname that will constitute
+            the "Dev" (aka "Development") data set.  The "Dev"
+            data set will be compared against the "Ref" data set.
+        dev_end: list of str
+            Pathname that will constitute
+            the "Dev" (aka "Development") data set.  The "Dev"
+            data set will be compared against the "Ref" data set.
+        devstr: str
+            A string to describe dev (e.g. version number)
+
+    Keyword Args (optional):
+        varlist: list of str
+            List of variables to include in the list of totals.
+            If omitted, then all variables that are found in either
+            "Ref" or "Dev" will be included.  The varlist argument
+            can be a useful way of reducing the number of
+            variables during debugging and testing.
+            Default value: None
+        dst: str
+            A string denoting the destination folder where the file
+            containing emissions totals will be written.
+            Default value: ./benchmark
+        subdst: str
+            A string denoting the sub-directory of dst where PDF
+            files containing plots will be written.  In practice,
+            subdst is only needed for the 1-year benchmark output,
+            and denotes a date string (such as "Jan2016") that
+            corresponds to the month that is being plotted.
+            Default value: None
+        overwrite: bool
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False
+        verbose: bool
+            Set this flag to True to print extra informational output.
+            Default value: False.
+        spcdb_dir: str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
+    """
+
+    # ==================================================================
+    # Define destination directory
+    # ==================================================================
+    if os.path.isdir(dst) and not overwrite:
+        msg = "Directory {} exists. Pass overwrite=True to overwrite " \
+            + "files in that directory, if any."
+        msg = msg.format(dst)
+        raise ValueError(msg)
+    if not os.path.isdir(dst):
+        try:
+            os.makedirs(dst)
+        except FileExistsError:
+            pass
+
+    # ==================================================================
+    # Read data from netCDF into Dataset objects
+    # ==================================================================
+
+    print('Creating mass accumulation tables from four restart files:')
+    print('   Ref start: {}'.format(ref_start))
+    print('   Ref end:   {}'.format(ref_end))
+    print('   Dev start: {}'.format(dev_start))
+    print('   Dev end:   {}'.format(dev_end))
+
+    # Read data
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+        refsds = xr.open_dataset(ref_start, drop_variables=gcon.skip_these_vars)
+        refeds = xr.open_dataset(ref_end, drop_variables=gcon.skip_these_vars)
+        devsds = xr.open_dataset(dev_start, drop_variables=gcon.skip_these_vars)
+        deveds = xr.open_dataset(dev_end, drop_variables=gcon.skip_these_vars)
+
+    # ==================================================================
+    # Update GCHP restart dataset (if any)
+    # ==================================================================
+
+    # Ref
+    if any(v.startswith("SPC_") for v in refsds.data_vars.keys()):
+        refsds = util.rename_and_flip_gchp_rst_vars(refsds)
+    if any(v.startswith("SPC_") for v in refeds.data_vars.keys()):
+        refeds = util.rename_and_flip_gchp_rst_vars(refeds)
+
+    # Dev
+    if any(v.startswith("SPC_") for v in devsds.data_vars.keys()):
+        devsds = util.rename_and_flip_gchp_rst_vars(devsds)
+    if any(v.startswith("SPC_") for v in deveds.data_vars.keys()):
+        deveds = util.rename_and_flip_gchp_rst_vars(deveds)
+
+    # ==================================================================
+    # Make sure that all necessary meteorological variables are found
+    # ==================================================================
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+
+        # Find the area variable in Ref
+        refs_area = util.get_area_from_dataset(refsds)
+        refe_area = util.get_area_from_dataset(refeds)
+
+        # Find the area variable in Dev
+        devs_area = util.get_area_from_dataset(devsds)
+        deve_area = util.get_area_from_dataset(deveds)
+
+    # Find required meteorological variables in Ref
+    # (or exit with an error if we can't find them)
+    metvar_list = ["Met_DELPDRY", "Met_BXHEIGHT", "Met_TropLev"]
+    refsmet = util.get_variables_from_dataset(refsds, metvar_list)
+    refemet = util.get_variables_from_dataset(refeds, metvar_list)
+    devsmet = util.get_variables_from_dataset(devsds, metvar_list)
+    devemet = util.get_variables_from_dataset(deveds, metvar_list)
+
+    # ==================================================================
+    # Make sure that all necessary species are found
+    # ==================================================================
+
+    # Get lists of variables names in datasets
+    vardict = util.compare_varnames(refsds, devsds, quiet=(not verbose))
+    commonvars = vardict["commonvars3D"]
+    refonly = vardict['refonly']
+    devonly = vardict['devonly']
+
+    # Narrow down the lists to only include species
+    commonspc = [v for v in commonvars if "SpeciesRst_" in v]
+    refonlyspc = [v for v in refonly if v.startswith('SpeciesRst_')]
+    devonlyspc = [v for v in devonly if v.startswith('SpeciesRst_')]
+
+    # Add ref only species to dev dataset with all nan values
+    if refonlyspc:
+        for v in refonlyspc:
+            devsds[v] = devsds[commonspc[0]]
+            devsds[v].data = np.full(devsds[v].shape, np.nan)
+            devsds[v].attrs['units'] = refsds[v].units
+            deveds[v] = deveds[commonspc[0]]
+            deveds[v].data = np.full(deveds[v].shape, np.nan)
+            deveds[v].attrs['units'] = refeds[v].units
+            commonspc.append(v)
+
+    # Add dev only species to ref dataset with all nan values
+    if devonlyspc:
+        for v in devonlyspc:
+            refsds[v] = refsds[commonspc[0]]
+            refsds[v].data = np.full(refsds[v].shape, np.nan)
+            devsds[v].attrs['units'] = refsds[v].units
+            refeds[v] = refeds[commonspc[0]]
+            refeds[v].data = np.full(refeds[v].shape, np.nan)
+            deveds[v].attrs['units'] = refeds[v].units
+            commonspc.append(v)
+
+    # Set list of variables to print in mass table. If this list was passed
+    # as argument, check that all the vars are now in commonspc to ensure
+    # in both datasets.
+    if varlist:
+        for v in varlist:
+            if v not in commonspc:
+                raise ValueError(
+                    f"{dst} folder error: Variable {v} in varlist passed to make_benchmark_mass_tables is not present in Ref and Dev datasets"
+                )
+    else:
+        varlist = commonspc
+
+    # Sort the list of species to be printed alphabetically
+    varlist.sort()
+
+    # ==================================================================
+    # Create the mask arrays for the troposphere for Ref and Dev
+    # ==================================================================
+    refs_tropmask = get_troposphere_mask(refsmet)
+    refe_tropmask = get_troposphere_mask(refemet)
+    devs_tropmask = get_troposphere_mask(devsmet)
+    deve_tropmask = get_troposphere_mask(devemet)
+
+    # ==================================================================
+    # Create a dictionary to hold all of the meterological
+    # variables and mask variables that we need to pass down
+    # ==================================================================
+    met_and_masks = {
+        "Refs_Area": refs_area,
+        "Refe_Area": refe_area,
+        "Devs_Area": devs_area,
+        "Deve_Area": deve_area,
+        "Refs_Delta_P": refsmet["Met_DELPDRY"],
+        "Refe_Delta_P": refemet["Met_DELPDRY"],
+        "Devs_Delta_P": devsmet["Met_DELPDRY"],
+        "Deve_Delta_P": devemet["Met_DELPDRY"],
+        "Refs_BxHeight": refsmet["Met_BXHEIGHT"],
+        "Refe_BxHeight": refemet["Met_BXHEIGHT"],
+        "Devs_BxHeight": devsmet["Met_BXHEIGHT"],
+        "Deve_BxHeight": devemet["Met_BXHEIGHT"],
+        "Refs_TropMask": refs_tropmask,
+        "Refe_TropMask": refe_tropmask,
+        "Devs_TropMask": devs_tropmask,
+        "Deve_TropMask": deve_tropmask,
+    }
+
+    # ==================================================================
+    # Create global mass accumulation table
+    # ==================================================================
+    if subdst is not None:
+        mass_filename = f"GlobalMassAccumulation_TropStrat_{subdst}.txt"
+    else:
+        mass_filename = "GlobalMassAccumulation_TropStrat.txt"
+    mass_file = os.path.join(dst, mass_filename)
+    create_mass_accumulation_table(
+        refsds,
+        refeds,
+        refstr,
+        devsds,
+        deveds,
+        devstr,
+        varlist,
+        met_and_masks,
+        label,
+        outfilename=mass_file,
+        verbose=verbose,
+        spcdb_dir=spcdb_dir
+    )
+
+    ## ==================================================================
+    ## Create tropospheric mass table
+    ## ==================================================================
+    #if subdst is not None:
+    #    mass_filename = f"GlobalMassAccumulation_Trop_{subdst}.txt"
+    #else:
+    #    mass_filename = 'GlobalMassAccumulation_Trop.txt'
+    #mass_file = os.path.join(dst, mass_filename)
+    #create_mass_accumulation_table(
+    #    refsds,
+    #    refeds,
+    #    refstr,
+    #    devsds,
+    #    deveds,
+    #    devstr,
+    #    varlist,
+    #    met_and_masks,
+    #    label,
+    #    outfilename=mass_file,
+    #    trop_only=True,
+    #    verbose=verbose,
+    #    spcdb_dir=spcdb_dir
+    #)
+
+    # -------------------------------------------
+    # Clean up
+    # -------------------------------------------
+    del refsds
+    del refeds
+    del devsds
+    del deveds
+    gc.collect()
+
 
 def make_benchmark_oh_metrics(
         ref,
@@ -3679,11 +4234,13 @@ def make_benchmark_operations_budget(
         operations=["Chemistry", "Convection", "EmisDryDep",
                     "Mixing", "Transport", "WetDep"],
         compute_accum=True,
+        compute_restart=False,
         require_overlap=False,
         dst='.',
         species=None,
         overwrite=True,
-        verbose=False
+        verbose=False,
+        spcdb_dir=os.path.dirname(__file__)
 ):
     """
     Prints the "operations budget" (i.e. change in mass after
@@ -3727,6 +4284,16 @@ def make_benchmark_operations_budget(
             are computed. Otherwise a message will be printed warning that
             accumulation will not be calculated.
             Default value: True
+        compute_accum: bool
+            Optionally turn on/off accumulation calculation. If True, will
+            only compute accumulation if all six GEOS-Chem operations budgets
+            are computed. Otherwise a message will be printed warning that
+            accumulation will not be calculated.
+            Default value: True
+        compute_restart: bool
+            Optionally turn on/off calculation of mass change based on restart
+            file. Only functional for "Full" column section.
+            Default value: False
         require_overlap: bool
             Whether to calculate budgets for only species that are present in
             both Ref or Dev.
@@ -3779,6 +4346,8 @@ def make_benchmark_operations_budget(
     all_operations = gc_operations
     if compute_accum and len(gc_operations) == 6:
         all_operations = gc_operations + ["ACCUMULATION"]
+    if compute_restart:
+        all_operations = gc_operations + ["RESTART"]
     n_ops = len(all_operations)
 
     # Print info
@@ -3792,6 +4361,9 @@ def make_benchmark_operations_budget(
         else:
             print("***Will not compute ACCUMULATION since not all GEOS-Chem"
                   " operation budgets will be computed.")
+    if compute_restart:
+        print("*** Will compute RESTART operation as mass change "
+              "based on simulation start and end restart files ***")
 
     # ------------------------------------------
     # Read data
@@ -3815,6 +4387,8 @@ def make_benchmark_operations_budget(
     else:
         ref_ds = xr.open_dataset(reffiles, drop_variables=skip_vars)
         dev_ds = xr.open_dataset(devfiles, drop_variables=skip_vars)
+
+    # TODO: Add section for reading files for computing mass from restart file
 
     # ------------------------------------------
     # Species
@@ -4113,6 +4687,111 @@ def make_benchmark_operations_budget(
                 df.loc[dfrow, "Units_converted"] = units[spc]
                 df.loc[dfrow, "Ref"] = refsum
                 df.loc[dfrow, "Dev"] = devsum
+                df.loc[dfrow, "Diff"] = diff
+                df.loc[dfrow, "Pct_diff"] = pctdiff
+
+    # ------------------------------------------
+    # Compute mass change in restarts for each column section (if applicable)
+    # ------------------------------------------
+    if compute_restart:
+        print('Computing RESTART operation budgets...')
+
+        # Load a YAML file containing species properties (such as
+        # molecular weights), which we will need for unit conversions.
+        properties = util.read_config_file(
+            os.path.join(
+                spcdb_dir,
+                "species_database.yml"
+            ),
+            quiet=True
+        )
+
+        # Loop over all column sections
+        for col_section in col_sections:
+
+            # Loop over species
+            for i, spc in enumerate(spclist):
+
+                # Keep track of progress
+                if (i + 1) % 50 == 0:
+                    print(f"  {col_section}: species {i + 1} of {n_spc}")
+
+                # Get the accumulation dataframe row to fill. Skip if not found
+                # of if not Full column section.
+                dfrow = (df["Column_Section"] == "Full") \
+                    & (df["Species"] == spc) \
+                    & (df["Operation"] == "RESTART")
+                if not any(dfrow):
+                    continue
+
+                # Get ref and dev mass
+
+                # Get species properties for unit conversion. If none, skip.
+                species_properties = properties.get(spc)                
+                if species_properties is None:
+                    continue
+                else:
+                    mol_wt_g = species_properties.get("MW_g")
+                    if mol_wt_g is None:
+                        continue
+
+                # Specify target units
+                target_units = "Gg"
+                
+                # ==============================================================
+                # Convert units of Ref and save to a DataArray
+                # (or skip if Ref contains NaNs everywhere)
+                # ==============================================================
+                refarray = refdata[v]
+                if not np.isnan(refdata[v].values).all():
+                    refarray = convert_units(
+                        refarray,
+                        spc,
+                        species_properties,
+                        target_units,
+                        area_m2=met_and_masks["Ref_Area"],
+                        delta_p=met_and_masks["Ref_Delta_P"],
+                        box_height=met_and_masks["Ref_BxHeight"],
+                    )
+                
+                # ==============================================================
+                # Convert units of Dev and save to a DataArray
+                # (or skip if Dev contains NaNs everywhere)
+                # ==============================================================
+                devarray = devdata[v]
+                if not np.isnan(devdata[v].values).all():
+                    devarray = convert_units(
+                        devarray,
+                        spc_name,
+                        species_properties,
+                        target_units,
+                        area_m2=met_and_masks["Dev_Area"],
+                        delta_p=met_and_masks["Dev_Delta_P"],
+                        box_height=met_and_masks["Dev_BxHeight"],
+                    )
+
+
+                # Compute ref mass as end mass minus start mass in ref
+                # TODO
+
+                # Compute dev mass as end mass minus start mass in dev
+                # TODO - copy above once compete. The rest should just work.
+
+                # Calculate diff and % diff
+                if not np.isnan(refmass) and not np.isnan(devmass):
+                    diff = devmass - refmass
+                    try:
+                        pctdiff = diff / refmass * 100
+                    except BaseException:
+                        pctdiff = np.nan
+                else:
+                    diff = np.nan
+                    pctdiff = np.nan
+
+                # Fill dataframe
+                df.loc[dfrow, "Units_converted"] = units[spc]
+                df.loc[dfrow, "Ref"] = refmass
+                df.loc[dfrow, "Dev"] = devmass
                 df.loc[dfrow, "Diff"] = diff
                 df.loc[dfrow, "Pct_diff"] = pctdiff
 

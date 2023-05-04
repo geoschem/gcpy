@@ -105,6 +105,7 @@ options:
     plot_jvalues: True
     plot_aod: True
     mass_table: True
+    mass_accum_table: False
     ops_budget_table: False
     OH_metrics: True
     ste_table: True # GCC only
