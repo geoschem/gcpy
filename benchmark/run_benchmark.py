@@ -402,6 +402,8 @@ def run_benchmark_default(config):
         print(" - Table of emissions totals by spc and inventory")
     if config["options"]["outputs"]["mass_table"]:
         print(" - Table of species mass")
+    if config["options"]["outputs"]["mass_accum_table"]:
+        print(" - Table of species mass accumulation")
     if config["options"]["outputs"]["OH_metrics"]:
         print(" - Table of OH metrics")
     if config["options"]["outputs"]["ste_table"]:
@@ -602,6 +604,31 @@ def run_benchmark_default(config):
                 config["data"]["dev"]["gcc"]["version"],
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+        # ==================================================================
+        # GCC vs GCC global mass accumulation tables
+        # ==================================================================
+        if config["options"]["outputs"]["mass_accum_table"]:
+            print("\n%%% Creating GCC vs. GCC mass accumulation tables %%%")
+
+            # Filepaths for start and end restart files
+            refs = get_filepath(gcc_vs_gcc_refrst, "Restart", gcc_ref_date)
+            devs = get_filepath(gcc_vs_gcc_devrst, "Restart", gcc_dev_date)
+            refe = get_filepath(gcc_vs_gcc_refrst, "Restart", gcc_end_ref_date)
+            deve = get_filepath(gcc_vs_gcc_devrst, "Restart", gcc_end_dev_date)
+
+            # Create tables
+            bmk.make_benchmark_mass_accumulation_tables(
+                refs,
+                refe,
+                config["data"]["ref"]["gcc"]["version"],
+                devs,
+                deve,
+                config["data"]["dev"]["gcc"]["version"],
+                overwrite=True,
+                dst=gcc_vs_gcc_tablesdir,
                 spcdb_dir=spcdb_dir,
             )
 
