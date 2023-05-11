@@ -1,11 +1,19 @@
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/geoschem/gcpy/blob/master/LICENSE.txt)
-
 # GCPy: Python toolkit for GEOS-Chem
+
+<p>
+  <a href="https://github.com/geoschem/gcpy/releases"><img src="https://img.shields.io/github/v/release/geoschem/gcpy?include_prereleases&label=Latest%20Pre-Release"></a>
+  <a href="https://github.com/geoschem/gcpy/releases"><img src="https://img.shields.io/github/v/release/geoschem/gcpy?label=Latest%20Stable%20Release"></a>
+  <a href="https://github.com/geoschem/gcpy/releases/"><img src="https://img.shields.io/github/release-date/geoschem/gcpy"></a>
+  <br />
+  <a href="https://doi.org/10.5281/zenodo.3689589"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3689589.svg" alt="DOI"></a>
+  <a href="https://github.com/geoschem/gcpy/blob/main/LICENSE.txt"><img src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
+  <a href="https://gcpy.readthedocs.io/en/latest/"><img src="https://img.shields.io/readthedocs/gcpy?label=ReadTheDocs"></a>
+</p>
+
 
 **GCPy** is a Python-based toolkit containing useful functions for working specifically with the GEOS-Chem model of atmospheric chemistry and composition.
 
 GCPy aims to build on the well-established scientific Python technical stack, leveraging tools like cartopy and xarray to simplify the task of working with model output and performing atmospheric chemistry analyses.
-
 
 
 ## What GCPy was intended to do:

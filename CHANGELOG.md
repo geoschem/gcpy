@@ -12,10 +12,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `CONTRIBUTING.md` and `SUPPORT.md`, replacing `docs/source/Contributing.rst` and `docs/source/Report_Request.rst`
 - Added option to pass the benchmark type to plotting routines
 - Updated `AUTHORS.txt` as of Apr 2023 (concurrent w/ GEOS-Chem 14.2.0)
+- Added ReadTheDocs badge in `README.md`
+- Added `.readthedocs.yaml` to configure ReadTheDocs builds
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
 - The GitHub PR template is now named `./github/PULL_REQUEST_TEMPLATE.md`
+- Updated badge links in `README.md`
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
