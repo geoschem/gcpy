@@ -600,9 +600,11 @@ def create_mass_accumulation_table(
         refdatastart,
         refdataend,
         refstr,
+        refperiodstr,
         devdatastart,
         devdataend,
         devstr,
+        devperiodstr,
         varlist,
         met_and_masks,
         label,
@@ -624,6 +626,8 @@ def create_mass_accumulation_table(
         refstr: str
             A string that can be used to identify refdata
             (e.g. a model version number or other identifier).
+        refperiodstr: str
+            Ref simulation period start and end
         devdatastart: xarray Dataset
             The second data set to be compared (aka "Development").
         devdataend: xarray Dataset
@@ -631,6 +635,8 @@ def create_mass_accumulation_table(
         devstr: str
             A string that can be used to identify the data set specified
             by devfile (e.g. a model version number or other identifier).
+        devperiodstr: str
+            Ref simulation period start and end
         varlist: list of strings
             List of species concentation variable names to include
             in the list of global totals.
@@ -711,12 +717,14 @@ def create_mass_accumulation_table(
     diff_list = []
 
     # Title strings
-    title1 = f"### Global mass change (Gg) {label} (Trop + Strat)"
+    title1 = f"### Global mass accumulation (Gg) {label} (Trop + Strat)"
     if trop_only:
-        title1 = f"### Global mass change (Gg) {label} (Trop only)"
-    title2 = f"### as computed by comparing start and end restart files"
+        title1 = f"### Global mass accumulation (Gg) {label} (Trop only)"
+    title2 = f"### Computed as change in instantaneous mass across period"
     title3 = f"### Ref = {refstr}"
     title4 = f"### Dev = {devstr}"
+    title5 = f"### Ref period: {refperiodstr}"
+    title6 = f"### Dev period: {devperiodstr}"
 
     # Write a placeholder to the file that denotes where
     # the list of species with differences will be written
@@ -727,8 +735,12 @@ def create_mass_accumulation_table(
     print(f"{title1 : <86}{'###'}", file=f)
     print(f"{'###'  : <86}{'###'}", file=f)
     print(f"{title2 : <86}{'###'}", file=f)
+    print(f"{'###'  : <86}{'###'}", file=f)
     print(f"{title3 : <86}{'###'}", file=f)
     print(f"{title4 : <86}{'###'}", file=f)
+    print(f"{'###'  : <86}{'###'}", file=f)
+    print(f"{title5 : <86}{'###'}", file=f)
+    print(f"{title6 : <86}{'###'}", file=f)
     print(f"{'###'  : <86}{'###'}", file=f)
     print(f"{placeholder}", file=f)
     print("#" * 89, file=f)
@@ -3156,9 +3168,11 @@ def make_benchmark_mass_accumulation_tables(
         ref_start,
         ref_end,
         refstr,
+        refperiodstr,
         dev_start,
         dev_end,
         devstr,
+        devperiodstr,
         varlist=None,
         dst="./benchmark",
         subdst=None,
@@ -3180,6 +3194,8 @@ def make_benchmark_mass_accumulation_tables(
             the "Ref" (aka "Reference") data set.
         refstr: str
             A string to describe ref (e.g. version number)
+        refperiodstr: str
+            Ref simulation period start and end
         dev_start: list of str
             Pathname that will constitute
             the "Dev" (aka "Development") data set.  The "Dev"
@@ -3190,6 +3206,8 @@ def make_benchmark_mass_accumulation_tables(
             data set will be compared against the "Ref" data set.
         devstr: str
             A string to describe dev (e.g. version number)
+        devperiodstr: str
+            Dev simulation period start and end
 
     Keyword Args (optional):
         varlist: list of str
@@ -3249,26 +3267,40 @@ def make_benchmark_mass_accumulation_tables(
     # Read data
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=xr.SerializationWarning)
-        refsds = xr.open_dataset(ref_start, drop_variables=gcon.skip_these_vars)
-        refeds = xr.open_dataset(ref_end, drop_variables=gcon.skip_these_vars)
-        devsds = xr.open_dataset(dev_start, drop_variables=gcon.skip_these_vars)
-        deveds = xr.open_dataset(dev_end, drop_variables=gcon.skip_these_vars)
+        refSds = xr.open_dataset(ref_start, drop_variables=gcon.skip_these_vars)
+        refEds = xr.open_dataset(ref_end, drop_variables=gcon.skip_these_vars)
+        devSds = xr.open_dataset(dev_start, drop_variables=gcon.skip_these_vars)
+        devEds = xr.open_dataset(dev_end, drop_variables=gcon.skip_these_vars)
 
     # ==================================================================
-    # Update GCHP restart dataset (if any)
+    # Update GCHP restart dataset if needed
     # ==================================================================
 
     # Ref
-    if any(v.startswith("SPC_") for v in refsds.data_vars.keys()):
-        refsds = util.rename_and_flip_gchp_rst_vars(refsds)
-    if any(v.startswith("SPC_") for v in refeds.data_vars.keys()):
-        refeds = util.rename_and_flip_gchp_rst_vars(refeds)
+    if any(v.startswith("SPC_") for v in refSds.data_vars.keys()):
+        refSds = util.rename_and_flip_gchp_rst_vars(refSds)
+    if any(v.startswith("SPC_") for v in refEds.data_vars.keys()):
+        refEds = util.rename_and_flip_gchp_rst_vars(refEds)
 
     # Dev
-    if any(v.startswith("SPC_") for v in devsds.data_vars.keys()):
-        devsds = util.rename_and_flip_gchp_rst_vars(devsds)
-    if any(v.startswith("SPC_") for v in deveds.data_vars.keys()):
-        deveds = util.rename_and_flip_gchp_rst_vars(deveds)
+    if any(v.startswith("SPC_") for v in devSds.data_vars.keys()):
+        devSds = util.rename_and_flip_gchp_rst_vars(devSds)
+    if any(v.startswith("SPC_") for v in devEds.data_vars.keys()):
+        devEds = util.rename_and_flip_gchp_rst_vars(devEds)
+
+    # Add area to start restart dataset if area in end but not start
+    # Need to consider area variable names used in both GC-Classic and GCHP
+    # Should put this in a function (todo)
+    refSkeys = refSds.data_vars.keys()
+    refEkeys = refEds.data_vars.keys()
+    devSkeys = devSds.data_vars.keys()
+    devEkeys = devEds.data_vars.keys()
+    areaVars = ["Met_AREAM2", "AREA"]
+    for areaVar in areaVars:
+        if areaVar in refEkeys and areaVar not in refSkeys:
+            refSds[areaVar] = refEds[areaVar]
+        if areaVar in devEkeys and areaVar not in devSkeys:
+            devSds[areaVar] = devEds[areaVar]
 
     # ==================================================================
     # Make sure that all necessary meteorological variables are found
@@ -3277,27 +3309,27 @@ def make_benchmark_mass_accumulation_tables(
         warnings.filterwarnings("ignore", category=xr.SerializationWarning)
 
         # Find the area variable in Ref
-        refs_area = util.get_area_from_dataset(refsds)
-        refe_area = util.get_area_from_dataset(refeds)
+        refs_area = util.get_area_from_dataset(refSds)
+        refe_area = util.get_area_from_dataset(refEds)
 
         # Find the area variable in Dev
-        devs_area = util.get_area_from_dataset(devsds)
-        deve_area = util.get_area_from_dataset(deveds)
+        devs_area = util.get_area_from_dataset(devSds)
+        deve_area = util.get_area_from_dataset(devEds)
 
     # Find required meteorological variables in Ref
     # (or exit with an error if we can't find them)
     metvar_list = ["Met_DELPDRY", "Met_BXHEIGHT", "Met_TropLev"]
-    refsmet = util.get_variables_from_dataset(refsds, metvar_list)
-    refemet = util.get_variables_from_dataset(refeds, metvar_list)
-    devsmet = util.get_variables_from_dataset(devsds, metvar_list)
-    devemet = util.get_variables_from_dataset(deveds, metvar_list)
+    refsmet = util.get_variables_from_dataset(refSds, metvar_list)
+    refemet = util.get_variables_from_dataset(refEds, metvar_list)
+    devsmet = util.get_variables_from_dataset(devSds, metvar_list)
+    devemet = util.get_variables_from_dataset(devEds, metvar_list)
 
     # ==================================================================
     # Make sure that all necessary species are found
     # ==================================================================
 
     # Get lists of variables names in datasets
-    vardict = util.compare_varnames(refsds, devsds, quiet=(not verbose))
+    vardict = util.compare_varnames(refSds, devSds, quiet=(not verbose))
     commonvars = vardict["commonvars3D"]
     refonly = vardict['refonly']
     devonly = vardict['devonly']
@@ -3310,23 +3342,23 @@ def make_benchmark_mass_accumulation_tables(
     # Add ref only species to dev dataset with all nan values
     if refonlyspc:
         for v in refonlyspc:
-            devsds[v] = devsds[commonspc[0]]
-            devsds[v].data = np.full(devsds[v].shape, np.nan)
-            devsds[v].attrs['units'] = refsds[v].units
-            deveds[v] = deveds[commonspc[0]]
-            deveds[v].data = np.full(deveds[v].shape, np.nan)
-            deveds[v].attrs['units'] = refeds[v].units
+            devSds[v] = devSds[commonspc[0]]
+            devSds[v].data = np.full(devSds[v].shape, np.nan)
+            devSds[v].attrs['units'] = refSds[v].units
+            devEds[v] = devEds[commonspc[0]]
+            devEds[v].data = np.full(devEds[v].shape, np.nan)
+            devEds[v].attrs['units'] = refEds[v].units
             commonspc.append(v)
 
     # Add dev only species to ref dataset with all nan values
     if devonlyspc:
         for v in devonlyspc:
-            refsds[v] = refsds[commonspc[0]]
-            refsds[v].data = np.full(refsds[v].shape, np.nan)
-            devsds[v].attrs['units'] = refsds[v].units
-            refeds[v] = refeds[commonspc[0]]
-            refeds[v].data = np.full(refeds[v].shape, np.nan)
-            deveds[v].attrs['units'] = refeds[v].units
+            refSds[v] = refSds[commonspc[0]]
+            refSds[v].data = np.full(refSds[v].shape, np.nan)
+            devSds[v].attrs['units'] = refSds[v].units
+            refEds[v] = refEds[commonspc[0]]
+            refEds[v].data = np.full(refEds[v].shape, np.nan)
+            devEds[v].attrs['units'] = refEds[v].units
             commonspc.append(v)
 
     # Set list of variables to print in mass table. If this list was passed
@@ -3384,12 +3416,14 @@ def make_benchmark_mass_accumulation_tables(
         mass_filename = "GlobalMassAccumulation_TropStrat.txt"
     mass_file = os.path.join(dst, mass_filename)
     create_mass_accumulation_table(
-        refsds,
-        refeds,
+        refSds,
+        refEds,
         refstr,
-        devsds,
-        deveds,
+        refperiodstr,
+        devSds,
+        devEds,
         devstr,
+        devperiodstr,
         varlist,
         met_and_masks,
         label,
@@ -3407,11 +3441,11 @@ def make_benchmark_mass_accumulation_tables(
     #    mass_filename = 'GlobalMassAccumulation_Trop.txt'
     #mass_file = os.path.join(dst, mass_filename)
     #create_mass_accumulation_table(
-    #    refsds,
-    #    refeds,
+    #    refSds,
+    #    refEds,
     #    refstr,
-    #    devsds,
-    #    deveds,
+    #    devSds,
+    #    devEds,
     #    devstr,
     #    varlist,
     #    met_and_masks,
@@ -3425,10 +3459,10 @@ def make_benchmark_mass_accumulation_tables(
     # -------------------------------------------
     # Clean up
     # -------------------------------------------
-    del refsds
-    del refeds
-    del devsds
-    del deveds
+    del refSds
+    del refEds
+    del devSds
+    del devEds
     gc.collect()
 
 

@@ -282,7 +282,7 @@ def print_totals(
         pctdiff = np.nan
     else:
         pctdiff = ((total_dev - total_ref) / total_ref) * 100.0
-        if total_ref < 1.0e-15:
+        if np.abs(total_ref) < 1.0e-15:
             pctdiff = np.nan
 
     # ==================================================================
