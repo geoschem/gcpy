@@ -206,7 +206,7 @@ def is_gchp_restart_file(dataset):
         if "SpeciesRst_" in v:
             return False
     msg = "Input file is not a GCHP or GCClassic restart file!"
-    raise ValueError(msg)ls
+    raise ValueError(msg)
 
 
 def open_dataset(file_or_url, chunk_size=8192):
