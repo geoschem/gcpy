@@ -1690,7 +1690,6 @@ def get_filepath(
         date,
         is_gchp=False,
         gchp_res="c00",
-        gchp_is_pre_13_1=False,
         gchp_is_pre_14_0=False
 ):
     """
@@ -1715,10 +1714,6 @@ def get_filepath(
             Cubed-sphere resolution of GCHP data grid.
             Only needed for restart files.
             Default value: "c00".
-
-        gchp_is_pre_13_1: bool
-            Set this switch to True to obtain GCHP file pathnames used in
-            versions before 13.1. Only needed for diagnostic files.
 
         gchp_is_pre_14_0: bool
             Set this switch to True to obtain GCHP file pathnames used in
@@ -1749,10 +1744,7 @@ def get_filepath(
                     "GEOSChem.Restart."
                 )
         else:
-            if gchp_is_pre_13_1:
-                file_tmpl = os.path.join(datadir, f"GCHP.{col}.")
-            else:
-                file_tmpl = os.path.join(datadir, f"GEOSChem.{col}.")
+            file_tmpl = os.path.join(datadir, f"GEOSChem.{col}.")
     else:
         if "Emissions" in col:
             file_tmpl = os.path.join(datadir, "HEMCO_diagnostics.")
@@ -1782,7 +1774,6 @@ def get_filepaths(
         dates,
         is_gchp=False,
         gchp_res="c00",
-        gchp_is_pre_13_1=False,
         gchp_is_pre_14_0=False
 ):
     """
@@ -1807,10 +1798,6 @@ def get_filepaths(
             Cubed-sphere resolution of GCHP data grid.
             Only needed for restart files.
             Default value: "c00".
-
-        gchp_is_pre_13_1: bool
-            Set this switch to True to obtain GCHP file pathnames used in
-            versions before 13.1. Only needed for diagnostic files.
 
         gchp_is_pre_14_0: bool
             Set this switch to True to obtain GCHP file pathnames used in
@@ -1859,16 +1846,10 @@ def get_filepaths(
                         "GEOSChem.Restart."
                     )
             else:
-                if gchp_is_pre_13_1:
-                    file_tmpl = os.path.join(
-                        datadir,
-                        f"GCHP.{collection}."
-                    )
-                else:
-                    file_tmpl = os.path.join(
-                        datadir,
-                        f"GEOSChem.{collection}."
-                    )
+                file_tmpl = os.path.join(
+                    datadir,
+                    f"GEOSChem.{collection}."
+                )
         else:
             # ---------------------------------------
             # Get the file path template for GCC
