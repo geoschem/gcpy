@@ -318,16 +318,6 @@ def run_benchmark_default(config):
     gcc_end_ref_date = np.datetime64(config["data"]["ref"]["gcc"]["bmk_end"])
     gchp_end_ref_date = np.datetime64(config["data"]["ref"]["gchp"]["bmk_end"])
 
-    # TODO: remove is_pre_13.1 option with 14.0 release
-    if config["data"]["ref"]["gchp"]["is_pre_13.1"]:
-        if add_months(gchp_ref_date, 1) == gchp_end_ref_date:
-            gchp_ref_date = np.datetime(
-                config["data"]["ref"]["gchp"]["bmk_start"][0:8] + "16T12:00:00"
-            )
-        else:
-            print("Error: `is_pre_13.1: True` option only supported for exactly 1 month and 1 year benchmarks")
-            sys.exit()
-
     # Dev start used in diagnostic filename
     gcc_dev_date = np.datetime64(config["data"]["dev"]["gcc"]["bmk_start"])
     gchp_dev_date = np.datetime64(config["data"]["dev"]["gchp"]["bmk_start"])
@@ -335,28 +325,11 @@ def run_benchmark_default(config):
     gcc_end_dev_date = np.datetime64(config["data"]["dev"]["gcc"]["bmk_end"])
     gchp_end_dev_date = np.datetime64(config["data"]["dev"]["gchp"]["bmk_end"])
 
-    # TODO: remove is_pre_13.1 option with 14.0 release
-    if config["data"]["dev"]["gchp"]["is_pre_13.1"]:
-        if add_months(gchp_dev_date, 1) == gchp_end_dev_date:
-            gchp_dev_date = np.datetime(
-                config["data"]["dev"]["gchp"]["bmk_start"][0:8] + "16T12:00:00"
-            )
-        else:
-            print("Error: `is_pre_13.1: True` option only supported for exactly 1 month and 1 year benchmarks")
-            sys.exit()
-
-
     # Seconds per month
     gcc_ref_sec_diff = (gcc_end_ref_date - gcc_ref_date).astype("float64")
     gchp_ref_sec_diff = (gchp_end_ref_date - gchp_ref_date).astype("float64")
     gcc_dev_sec_diff = (gcc_end_dev_date - gcc_dev_date).astype("float64")
     gchp_dev_sec_diff = (gchp_end_dev_date - gchp_dev_date).astype("float64")
-
-    # Double gchp sec/month if mid-point timestamp in filename (legacy format)
-    if config["data"]["ref"]["gchp"]["is_pre_13.1"]:
-        gchp_ref_sec_diff = gchp_ref_sec_diff * 2
-    if config["data"]["dev"]["gchp"]["is_pre_13.1"]:
-        gchp_dev_sec_diff = gchp_dev_sec_diff * 2
 
     # ======================================================================
     # Significant difference filenames
@@ -757,8 +730,7 @@ def run_benchmark_default(config):
             gchp_vs_gcc_devdir,
             "StateMet",
             gchp_dev_date,
-            is_gchp=True,
-            gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+            is_gchp=True
         )
 
         # Get GCHP grid resolution from met collection file
@@ -777,8 +749,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devdir,
                 "SpeciesConc",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create plots
@@ -811,8 +782,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devdir,
                 "Emissions",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create emissions plots
@@ -847,8 +817,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devdir,
                 "Emissions",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create plots
@@ -878,8 +847,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devdir,
                 "JValues",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create plots
@@ -907,8 +875,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devdir,
                 "Aerosols",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create plots
@@ -940,7 +907,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devrst,
                 "Restart",
                 gchp_end_dev_date,
-                is_gchp=True,
+                is_gchp=True
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
@@ -968,8 +935,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devdir,
                 "Budget",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create plots
@@ -1005,8 +971,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devdir,
                 "Metrics",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create table
@@ -1099,15 +1064,13 @@ def run_benchmark_default(config):
             gchp_vs_gchp_refdir,
             "StateMet",
             gchp_ref_date,
-            is_gchp=True,
-            gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+            is_gchp=True
         )
         devmet = get_filepath(
             gchp_vs_gchp_devdir,
             "StateMet",
             gchp_dev_date,
-            is_gchp=True,
-            gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+            is_gchp=True
         )
 
         # Get GCHP grid resolutions from met collection file
@@ -1127,15 +1090,13 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refdir,
                 "SpeciesConc",
                 gchp_ref_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
             dev = get_filepath(
                 gchp_vs_gchp_devdir,
                 "SpeciesConc",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create plots
@@ -1167,15 +1128,13 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refdir,
                 "Emissions",
                 gchp_ref_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
             dev = get_filepath(
                 gchp_vs_gchp_devdir,
                 "Emissions",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create plots
@@ -1207,15 +1166,13 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refdir,
                 "Emissions",
                 gchp_ref_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
             dev = get_filepath(
                 gchp_vs_gchp_devdir,
                 "Emissions",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create tables
@@ -1245,15 +1202,13 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refdir,
                 "JValues",
                 gchp_ref_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
             dev = get_filepath(
                 gchp_vs_gchp_devdir,
                 "JValues",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create plots
@@ -1280,15 +1235,13 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refdir,
                 "Aerosols",
                 gchp_ref_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
             dev = get_filepath(
                 gchp_vs_gchp_devdir,
                 "Aerosols",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create plots
@@ -1350,15 +1303,13 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refdir,
                 "Budget",
                 gchp_ref_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
             dev = get_filepath(
                 gchp_vs_gchp_devdir,
                 "Budget",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create tables
@@ -1393,15 +1344,13 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refdir,
                 "Metrics",
                 gchp_ref_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
             dev = get_filepath(
                 gchp_vs_gchp_devdir,
                 "Metrics",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create table
@@ -1468,15 +1417,13 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refdir,
                 "SpeciesConc",
                 gchp_ref_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
             gchp_dev = get_filepath(
                 gchp_vs_gchp_devdir,
                 "SpeciesConc",
                 gchp_dev_date,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )
 
             # Create diff-of-diff plots for species concentrations

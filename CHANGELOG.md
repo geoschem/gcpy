@@ -20,6 +20,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The GitHub PR template is now named `./github/PULL_REQUEST_TEMPLATE.md`
 - Updated badge links in `README.md`
 
+### Removed
+- Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines
+- Removed `is_pre_13_1` tags from `*_benchmark.yml` config files
+
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
 

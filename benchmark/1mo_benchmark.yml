@@ -22,8 +22,8 @@
 #                species_database.yml in one of the Dev rundirs.
 #
 paths:
-  main_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/geos-chem/validation/gcpy_test_data/1mon
-  results_dir: /path/to/BenchmarkResults
+  main_dir: /path/to/benchmark/main/dir    # EDIT AS NEEDED
+  results_dir: /path/to/BenchmarkResults   # EDIT AS NEEDED
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
   spcdb_dir: default
 #
@@ -52,7 +52,6 @@ data:
       restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
-      is_pre_13.1: False
       is_pre_14.0: False
       resolution: c24
   dev:
@@ -70,7 +69,6 @@ data:
       restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00" 
       bmk_end: "2019-08-01T00:00:00"
-      is_pre_13.1: False
       is_pre_14.0: False
       resolution: c24
 #
