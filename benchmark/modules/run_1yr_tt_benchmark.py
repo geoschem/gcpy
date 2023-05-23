@@ -24,11 +24,7 @@ To generate benchmark output:
     (3) Make sure the /path/to/gcpy/benchmark is in your PYTHONPATH
         shell environment variable.
 
-    (4) If you wish to use the gcpy test data, then set "gcpy_test: True"
-        in 1yr_tt_benchmark.yml.  If you wish to use actual GEOS-Chem
-        output data, then set "gcpy_test: False".
-
-    (5) Type at the command line
+    (4) Type at the command line
 
         ./run_benchmark.py 1yr_tt_benchmark.yml
 
@@ -46,7 +42,7 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.3.2. Edit this version ID if releasing
+This script corresponds with GCPy 1.4.0. Edit this version ID if releasing
 a new version of GCPy.
 """
 
