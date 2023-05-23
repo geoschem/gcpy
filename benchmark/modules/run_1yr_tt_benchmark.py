@@ -237,16 +237,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         days_in_mon = monthrange(int(bmk_year_ref), t + 1)[1]
         sec_per_yr_ref += days_in_mon * 86400.0
 
-    # Overwrite all_months_gchp_ref if GCHP ref is legacy filename format.
-    # Legacy format uses time-averaging period mid-point not start.
-    if config["data"]["ref"]["gchp"]["is_pre_13.1"]:
-        all_months_gchp_ref = np.zeros(12, dtype="datetime64[h]")
-        for t in range(12):
-            days_in_mon = monthrange(int(bmk_year_ref), t + 1)[1]
-            middle_hr = int(days_in_mon * 24 / 2)
-            delta = np.timedelta64(middle_hr, "h")
-            all_months_gchp_ref[t] = all_months_ref[t].astype("datetime64[h]") + delta
-
     # ======================================================================
     # Dates and times -- Dev data
     # ======================================================================
@@ -270,17 +260,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     for t in range(12):
         days_in_mon = monthrange(int(bmk_year_dev), t + 1)[1]
         sec_per_yr_dev += days_in_mon * 86400.0
-
-    # Overwrite all_months_gchp_ref if GCHP ref is legacy filename format.
-    # Legacy format uses time-averaging period mid-point not start.
-    if config["data"]["dev"]["gchp"]["is_pre_13.1"]:
-        sec_per_yr_dev = 0
-        all_months_gchp_dev = np.zeros(12, dtype="datetime64[h]")
-        for t in range(12):
-            days_in_mon = monthrange(int(bmk_year_dev), t + 1)[1]
-            middle_hr = int(days_in_mon * 24 / 2)
-            delta = np.timedelta64(middle_hr, "h")
-            all_months_gchp_dev[t] = all_months_dev[t].astype("datetime64[h]") + delta
 
     # =======================================================================
     # Print the list of plots & tables to the screen
@@ -559,8 +538,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             gchp_vs_gcc_devdir,
             "StateMet",
             all_months_gchp_dev,
-            is_gchp=True,
-            gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+            is_gchp=True
         )[0]
 
         # ==================================================================
@@ -587,8 +565,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gcc_devdir,
                 collection,
                 all_months_gchp_dev,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
+                is_gchp=True
             )[0]
 
             # Create plots
@@ -658,9 +635,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_devdir,
                     collection,
                     all_months_gchp_dev,
-                    is_gchp=True,
-                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                        "is_pre_13.1"],
+                    is_gchp=True
                 )[0]
 
                 # Create plots
@@ -738,8 +713,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gcc_devdir,
                 collection,
                 all_months_gchp_dev,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
+                is_gchp=True
             )[0]
 
             # Make operations budget table
@@ -779,15 +753,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             gchp_vs_gchp_refdir,
             "StateMet",
             all_months_gchp_ref,
-            is_gchp=True,
-            gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"]
+            is_gchp=True
         )[0]
         devmet = get_filepaths(
             gchp_vs_gchp_devdir,
             "StateMet",
             all_months_gchp_dev,
-            is_gchp=True,
-            gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
+            is_gchp=True
         )[0]
 
         # ==================================================================
@@ -809,15 +781,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_refdir,
                 collection,
                 all_months_gchp_ref,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"]
+                is_gchp=True
             )[0]
             dev = get_filepaths(
                 gchp_vs_gchp_devdir,
                 collection,
                 all_months_gchp_dev,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"]
+                is_gchp=True
             )[0]
 
             # Make concentration plots
@@ -884,17 +854,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_refdir,
                     collection,
                     all_months_gchp_ref,
-                    is_gchp=True,
-                    gchp_is_pre_13_1=config["data"]["ref"]["gchp"][
-                        "is_pre_13.1"],
+                    is_gchp=True
                 )[0]
                 dev = get_filepaths(
                     gchp_vs_gchp_devdir,
                     collection,
                     all_months_gchp_dev,
-                    is_gchp=True,
-                    gchp_is_pre_13_1=config["data"]["dev"]["gchp"][
-                        "is_pre_13.1"],
+                    is_gchp=True
                 )[0]
 
                 # Create plots
@@ -970,15 +936,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_refdir,
                 col,
                 all_months_gchp_ref,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["ref"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )[0]
             devs = get_filepaths(
                 gchp_vs_gchp_devdir,
                 col,
                 all_months_gchp_dev,
-                is_gchp=True,
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
+                is_gchp=True
             )[0]
 
             # Create table
@@ -1054,7 +1018,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 all_months_dev,
                 is_gchp=True,
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )[0]
 
@@ -1068,7 +1031,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 bmk_end_dev,
                 is_gchp=True,
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
-                gchp_is_pre_13_1=config["data"]["dev"]["gchp"]["is_pre_13.1"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )
 
