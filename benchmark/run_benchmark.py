@@ -17,11 +17,6 @@ Calling sequence:
 
     ./run_1mo_benchmark.py <path-to-configuration-file>
 
-To test gcpy, copy this script and the corresponding yaml config file
-anywhere you want to run the test. Set gcpy_test to True at the top
-of the script. Benchmark artifacts will be created locally in new folder
-called Plots.
-
 Remarks:
 
     By default, matplotlib will try to open an X window for plotting.
@@ -36,7 +31,7 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.3.2. Edit this version ID if releasing
+This script corresponds with GCPy 1.4.0. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -194,89 +189,63 @@ def run_benchmark_default(config):
     # Benchmark output directories
     # =====================================================================
     # Results directories
-    if config["options"]["gcpy_test"]:
-        mainresultsdir = os.path.join(".", config["paths"]["results_dir"])
-        gcc_vs_gcc_resultsdir = os.path.join(
-            mainresultsdir,
-            config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
-        )
-        gchp_vs_gchp_resultsdir = os.path.join(
-            mainresultsdir,
-            config["options"]["comparisons"]["gchp_vs_gchp"]["dir"]
-        )
-        gchp_vs_gcc_resultsdir = os.path.join(
-            mainresultsdir,
-            "GCHP_GCC_comparison")
-        diff_of_diffs_resultsdir = os.path.join(
-            mainresultsdir,
-            "GCHP_GCC_diff_of_diffs"
-        )
-        if not os.path.exists(mainresultsdir):
-            os.mkdir(mainresultsdir)
-        # Make copy of benchmark script in results directory
-        curfile = os.path.realpath(__file__)
-        dest = os.path.join(mainresultsdir, curfile.split("/")[-1])
-        if not os.path.exists(dest):
-            copyfile(curfile, dest)
+    gcc_vs_gcc_resultsdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gcc"]["dir"],
+        config["paths"]["results_dir"],
+    )
+    gchp_vs_gchp_resultsdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["dir"],
+        config["paths"]["results_dir"],
+        config["options"]["comparisons"]["gchp_vs_gchp"]["dir"],
+    )
+    gchp_vs_gcc_resultsdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["dir"],
+        config["paths"]["results_dir"],
+        config["options"]["comparisons"]["gchp_vs_gcc"]["dir"],
+    )
+    diff_of_diffs_resultsdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["dir"],
+        config["paths"]["results_dir"],
+        "GCHP_GCC_diff_of_diffs",
+    )
+    base_gchp_resultsdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["dir"],
+        config["paths"]["results_dir"],
+    )
 
-    else:
-        gcc_vs_gcc_resultsdir = os.path.join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gcc"]["dir"],
-            config["paths"]["results_dir"],
-        )
-        gchp_vs_gchp_resultsdir = os.path.join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["dir"],
-            config["paths"]["results_dir"],
-            config["options"]["comparisons"]["gchp_vs_gchp"]["dir"],
-        )
-        gchp_vs_gcc_resultsdir = os.path.join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["dir"],
-            config["paths"]["results_dir"],
-            config["options"]["comparisons"]["gchp_vs_gcc"]["dir"],
-        )
-        diff_of_diffs_resultsdir = os.path.join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["dir"],
-            config["paths"]["results_dir"],
-            "GCHP_GCC_diff_of_diffs",
-        )
-        base_gchp_resultsdir = os.path.join(
-            config["paths"]["main_dir"],
-            config["data"]["dev"]["gchp"]["dir"],
-            config["paths"]["results_dir"],
-        )
-
-        # make results directories that don't exist
-        for resdir, plotting_type in zip(
-            [
-                gcc_vs_gcc_resultsdir,
-                base_gchp_resultsdir,
-                gchp_vs_gchp_resultsdir,
-                gchp_vs_gcc_resultsdir,
-                diff_of_diffs_resultsdir,
-            ],
-            [
-                config["options"]["comparisons"]["gcc_vs_gcc"]["run"],
-                config["options"]["comparisons"]["gchp_vs_gcc"]["run"]
-                or config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
-                or config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"],
-                config["options"]["comparisons"]["gchp_vs_gchp"]["run"],
-                config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
-                config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"],
-            ],
-        ):
-            if plotting_type and not os.path.exists(resdir):
-                os.mkdir(resdir)
-                if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
-                    # Make copy of benchmark script in results directory
-                    curfile = os.path.realpath(__file__)
-                    dest = os.path.join(resdir, curfile.split("/")[-1])
-                    if os.path.exists(dest):
-                        copyfile(curfile, dest)
-
+    # make results directories that don't exist
+    for resdir, plotting_type in zip(
+        [
+            gcc_vs_gcc_resultsdir,
+            base_gchp_resultsdir,
+            gchp_vs_gchp_resultsdir,
+            gchp_vs_gcc_resultsdir,
+            diff_of_diffs_resultsdir,
+        ],
+        [
+            config["options"]["comparisons"]["gcc_vs_gcc"]["run"],
+            config["options"]["comparisons"]["gchp_vs_gcc"]["run"]
+            or config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
+            or config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"],
+            config["options"]["comparisons"]["gchp_vs_gchp"]["run"],
+            config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
+            config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"],
+        ],
+    ):
+        if plotting_type and not os.path.exists(resdir):
+            os.mkdir(resdir)
+            if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
+                # Make copy of benchmark script in results directory
+                curfile = os.path.realpath(__file__)
+                dest = os.path.join(resdir, curfile.split("/")[-1])
+                if os.path.exists(dest):
+                    copyfile(curfile, dest)
+                    
     gcc_vs_gcc_tablesdir = os.path.join(
         gcc_vs_gcc_resultsdir,
         config["options"]["comparisons"]["gcc_vs_gcc"]["tables_subdir"],
