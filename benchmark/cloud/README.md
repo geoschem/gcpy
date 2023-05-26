@@ -1,0 +1,1 @@
+This directory contains the templates for automated gcpy plotting of benchmarks on the cloud.
