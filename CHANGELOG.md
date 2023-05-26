@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `AUTHORS.txt` as of Apr 2023 (concurrent w/ GEOS-Chem 14.2.0)
 - Added ReadTheDocs badge in `README.md`
 - Added `.readthedocs.yaml` to configure ReadTheDocs builds
+- Added cloud benchmarking YAML configuration files to `benchmark/cloud` folder
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
