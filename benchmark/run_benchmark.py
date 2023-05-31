@@ -344,6 +344,8 @@ def run_benchmark_default(config):
         print(" - Table of emissions totals by spc and inventory")
     if config["options"]["outputs"]["mass_table"]:
         print(" - Table of species mass")
+    if config["options"]["outputs"]["mass_accum_table"]:
+        print(" - Table of species mass accumulation")
     if config["options"]["outputs"]["OH_metrics"]:
         print(" - Table of OH metrics")
     if config["options"]["outputs"]["ste_table"]:
@@ -544,6 +546,41 @@ def run_benchmark_default(config):
                 config["data"]["dev"]["gcc"]["version"],
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+        # ==================================================================
+        # GCC vs GCC global mass accumulation tables
+        # ==================================================================
+        if config["options"]["outputs"]["mass_accum_table"]:
+            print("\n%%% Creating GCC vs. GCC mass accumulation tables %%%")
+
+            # Filepaths for start and end restart files
+            refs = get_filepath(gcc_vs_gcc_refrst, "Restart", gcc_ref_date)
+            devs = get_filepath(gcc_vs_gcc_devrst, "Restart", gcc_dev_date)
+            refe = get_filepath(gcc_vs_gcc_refrst, "Restart", gcc_end_ref_date)
+            deve = get_filepath(gcc_vs_gcc_devrst, "Restart", gcc_end_dev_date)
+
+            # Get period strings
+            refs_str = np.datetime_as_string(gcc_ref_date, unit="s")
+            devs_str = np.datetime_as_string(gcc_dev_date, unit="s")
+            refe_str = np.datetime_as_string(gcc_end_ref_date, unit="s")
+            deve_str = np.datetime_as_string(gcc_end_dev_date, unit="s")
+            refperiod = refs_str + ' - ' + refe_str
+            devperiod = devs_str + ' - ' + deve_str
+
+            # Create tables
+            bmk.make_benchmark_mass_accumulation_tables(
+                refs,
+                refe,
+                config["data"]["ref"]["gcc"]["version"],
+                refperiod,
+                devs,
+                deve,
+                config["data"]["dev"]["gcc"]["version"],
+                devperiod,
+                overwrite=True,
+                dst=gcc_vs_gcc_tablesdir,
                 spcdb_dir=spcdb_dir,
             )
 
@@ -889,6 +926,63 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devstr,
                 dst=gchp_vs_gcc_tablesdir,
                 overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+        # ==================================================================
+        # GCHP vs GCC global mass accumulation tables
+        # ==================================================================
+        if config["options"]["outputs"]["mass_accum_table"]:
+            print("\n%%% Creating GCHP vs. GCC mass accumulation tables %%%")
+
+            # Filepaths for start and end restart files
+            refs = get_filepath(
+                gchp_vs_gcc_refrst,
+                "Restart",
+                gcc_dev_date
+            )
+            devs = get_filepath(
+                gchp_vs_gcc_devrst,
+                "Restart",
+                gchp_dev_date,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
+            )
+            refe = get_filepath(
+                gchp_vs_gcc_refrst,
+                "Restart",
+                gcc_end_dev_date
+            )
+            deve = get_filepath(
+                gchp_vs_gcc_devrst,
+                "Restart",
+                gchp_end_dev_date,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
+            )
+
+            # Get period strings
+            refs_str = np.datetime_as_string(gcc_dev_date, unit="s")
+            devs_str = np.datetime_as_string(gchp_dev_date, unit="s")
+            refe_str = np.datetime_as_string(gcc_end_dev_date, unit="s")
+            deve_str = np.datetime_as_string(gchp_end_dev_date, unit="s")
+            refperiod = refs_str + ' - ' + refe_str
+            devperiod = devs_str + ' - ' + deve_str
+
+            # Create tables
+            bmk.make_benchmark_mass_accumulation_tables(
+                refs,
+                refe,
+                config["data"]["dev"]["gcc"]["version"],
+                refperiod,
+                devs,
+                deve,
+                config["data"]["dev"]["gchp"]["version"],
+                devperiod,
+                overwrite=True,
+                dst=gchp_vs_gcc_tablesdir,
                 spcdb_dir=spcdb_dir,
             )
 
@@ -1258,6 +1352,69 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_devstr,
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+        # ==================================================================
+        # GCHP vs GCHP global mass accumulation tables
+        # ==================================================================
+        if config["options"]["outputs"]["mass_accum_table"]:
+            print("\n%%% Creating GCHP vs. GCHP mass accumulation tables %%%")
+
+            # Filepaths for start and end restart files
+            refs = get_filepath(
+                gchp_vs_gchp_refrst,
+                "Restart",
+                gchp_ref_date,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
+            )
+            devs = get_filepath(
+                gchp_vs_gchp_devrst,
+                "Restart",
+                gchp_dev_date,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
+            )
+            refe = get_filepath(
+                gchp_vs_gchp_refrst,
+                "Restart",
+                gchp_end_ref_date,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
+            )
+            deve = get_filepath(
+                gchp_vs_gchp_devrst,
+                "Restart",
+                gchp_end_dev_date,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
+            )
+
+            # Get period strings
+            refs_str = np.datetime_as_string(gchp_ref_date, unit="s")
+            devs_str = np.datetime_as_string(gchp_dev_date, unit="s")
+            refe_str = np.datetime_as_string(gchp_end_ref_date, unit="s")
+            deve_str = np.datetime_as_string(gchp_end_dev_date, unit="s")
+            refperiod = refs_str + ' - ' + refe_str
+            devperiod = devs_str + ' - ' + deve_str
+
+            # Create tables
+            bmk.make_benchmark_mass_accumulation_tables(
+                refs,
+                refe,
+                config["data"]["ref"]["gchp"]["version"],
+                refperiod,
+                devs,
+                deve,
+                config["data"]["dev"]["gchp"]["version"],
+                devperiod,
+                overwrite=True,
+                dst=gchp_vs_gchp_tablesdir,
                 spcdb_dir=spcdb_dir,
             )
 

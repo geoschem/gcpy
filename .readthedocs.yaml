@@ -31,3 +31,8 @@ formats: all
 python:
   install:
   - requirements: docs/requirements.txt
+
+# Tell RTD to clone all submodules
+submodules:
+  include: all
+  recursive: true

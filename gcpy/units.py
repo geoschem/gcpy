@@ -234,7 +234,8 @@ def convert_units(
 
     # Mass of dry air in kg (required when converting from v/v)
     if 'molmol-1' in units:
-        air_mass = delta_p * 100.0 / g0 * area_m2
+
+        air_mass = delta_p.values * 100.0 / g0 * area_m2.values
 
         # Conversion factor for v/v to kg
         # v/v * kg dry air / g/mol dry air * g/mol species = kg species

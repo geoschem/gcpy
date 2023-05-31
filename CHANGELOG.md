@@ -14,10 +14,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `AUTHORS.txt` as of Apr 2023 (concurrent w/ GEOS-Chem 14.2.0)
 - Added ReadTheDocs badge in `README.md`
 - Added `.readthedocs.yaml` to configure ReadTheDocs builds
+- Added cloud benchmarking YAML configuration files to `benchmark/cloud` folder
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
 - The GitHub PR template is now named `./github/PULL_REQUEST_TEMPLATE.md`
+- Now specify package `requests-2.31.0` in `environment.py` (fixes a security issue)
 - Updated badge links in `README.md`
 
 ### Removed

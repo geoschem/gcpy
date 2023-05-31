@@ -269,6 +269,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         print(" - Radionuclides budget table")
     if config["options"]["outputs"]["operations_budget"]:
         print(" - Operations budget table")
+    if config["options"]["outputs"]["mass_accumulation"]:
+        print(" - Mass accumulation table")
     if config["options"]["outputs"]["ste_table"]:
         print(" - Table of strat-trop exchange")
     if config["options"]["outputs"]["cons_table"]:
@@ -961,6 +963,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 compute_accum=False,
                 dst=gchp_vs_gchp_tablesdir,
             )
+
+        # ==================================================================
+        # GCHP vs GCHP mass accumulation table
+        # ==================================================================
+        if config["options"]["outputs"]["mass_accumulation"]:
+            print("\n%%% Creating GCHP vs. GCHP mass accumulation table %%%")
+
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create mass conservations tables for GCC and GCHP

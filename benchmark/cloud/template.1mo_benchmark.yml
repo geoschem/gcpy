@@ -1,4 +1,4 @@
-&---
+---
 # =====================================================================
 # Benchmark configuration file (**EDIT AS NEEDED**)
 # customize in the following manner:
@@ -22,9 +22,9 @@
 #                species_database.yml in one of the Dev rundirs.
 #
 paths:
-  main_dir: /path/to/benchmark/main/dir    # EDIT AS NEEDED
-  results_dir: /path/to/BenchmarkResults   # EDIT AS NEEDED
-  weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+  main_dir: ${GEOSCHEM_BENCHMARK_WORKING_DIR}
+  results_dir: BenchmarkResults
+  weights_dir: ${GEOSCHEM_BENCHMARK_WORKING_DIR}/weights
   spcdb_dir: default
 #
 # data: Contains configurations for ref and dev runs
@@ -39,63 +39,65 @@ paths:
 data:
   ref:
     gcc:
-      version: GCC_ref
-      dir: GCC_ref
-      outputs_subdir: OutputDir
-      restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00" 
-      bmk_end: "2019-08-01T00:00:00"
-    gchp:
-      version: GCHP_ref
-      dir: GCHP_ref
+      version: ${GEOSCHEM_BENCHMARK_REF_PRIMARY_KEY}
+      dir: ref-gcc/run-directory
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
+    gchp:
+      version: ${GEOSCHEM_BENCHMARK_REF_PRIMARY_KEY}
+      dir: ref-gchp/run-directory
+      outputs_subdir: OutputDir
+      restarts_subdir: Restarts
+      bmk_start: "2019-07-01T00:00:00"
+      bmk_end: "2019-08-01T00:00:00"
+      is_pre_13.1: False
       is_pre_14.0: False
       resolution: c24
   dev:
     gcc:
-      version: GCC_dev 
-      dir: GCC_dev
+      version: ${GEOSCHEM_BENCHMARK_DEV_PRIMARY_KEY}
+      dir: dev-gcc/run-directory
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00" 
+      bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
     gchp:
-      version: GCHP_dev
-      dir: GCHP_dev
+      version: ${GEOSCHEM_BENCHMARK_DEV_PRIMARY_KEY}
+      dir: dev-gchp/run-directory
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00" 
+      bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
+      is_pre_13.1: False
       is_pre_14.0: False
       resolution: c24
 #
 # options: Specify the types of comparisons to perform
-#   
+#
 options:
   bmk_type: FullChemBenchmark
-  gcpy_test: True # Specify if this is a gcpy test validation run
+  gcpy_test: False
   comparisons:
-    gcc_vs_gcc: 
-      run: True # True to run this comparison
+    gcc_vs_gcc:
+      run: False
       dir: GCC_version_comparison
       tables_subdir: Tables
-    gchp_vs_gcc: 
-      run: True
-      dir: GCHP_GCC_comparison 
+    gchp_vs_gcc:
+      run: False
+      dir: GCHP_GCC_comparison
       tables_subdir: Tables
-    gchp_vs_gchp: 
-      run: True
+    gchp_vs_gchp:
+      run: False
       dir: GCHP_version_comparison
       tables_subdir: Tables
-    gchp_vs_gcc_diff_of_diffs: 
-      run: True
+    gchp_vs_gcc_diff_of_diffs:
+      run: False
       dir: GCHP_GCC_diff_of_diffs
 #
 # outputs: Types of output to generate (plots/tables)
-# 
+#
   outputs:
     plot_conc: True
     plot_emis: True
@@ -108,6 +110,6 @@ options:
     OH_metrics: True
     ste_table: True # GCC only
     summary_table: True
-    plot_options: # Plot concentrations and emissions by category?
+    plot_options:
       by_spc_cat: True
       by_hco_cat: True
