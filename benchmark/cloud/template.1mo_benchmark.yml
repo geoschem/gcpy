@@ -52,7 +52,6 @@ data:
       restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
-      is_pre_13.1: False
       is_pre_14.0: False
       resolution: c24
   dev:
@@ -70,7 +69,6 @@ data:
       restarts_subdir: Restarts
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
-      is_pre_13.1: False
       is_pre_14.0: False
       resolution: c24
 #
