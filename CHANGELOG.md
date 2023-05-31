@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - The GitHub PR template is now named `./github/PULL_REQUEST_TEMPLATE.md`
 - Now specify package `requests-2.31.0` in `environment.py` (fixes a security issue)
 - Updated badge links in `README.md`
+- Updated species_database.yml for consistency with GEOS-Chem 14.2.0
+- Renamed TransportTracers species in `benchmark_categories.yml` and in documentation
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
