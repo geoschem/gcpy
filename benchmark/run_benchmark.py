@@ -913,7 +913,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devrst,
                 "Restart",
                 gchp_end_dev_date,
-                is_gchp=True
+                is_gchp=True,
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
