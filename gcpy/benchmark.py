@@ -5071,10 +5071,10 @@ def make_benchmark_mass_conservation_table(
         print(' ', file=f)
         print(' Summary', file=f)
         print(' ' + '-' * 30, file=f)
-        print(f" Max mass =  {max_mass : 2.13f} Tg")
-        print(f" Min mass =  {min_mass : 2.13f} Tg")
-        print(f" Abs diff =  {absdiff : >16.3f} g")
-        print(f" Pct diff =  {pctdiff : >16.10f} %")
+        print(f" Max mass =  {max_mass : 2.13f} Tg", file=f)
+        print(f" Min mass =  {min_mass : 2.13f} Tg", file=f)
+        print(f" Abs diff =  {absdiff : >16.3f} g", file=f)
+        print(f" Pct diff =  {pctdiff : >16.10f} %", file=f)
 
     gc.collect()
 
