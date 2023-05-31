@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
+- Fixed bug in transport tracer benchmark mass conservation table file write
 
 ## [1.3.3] -- 2023-03-09
 ### Added
