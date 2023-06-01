@@ -76,7 +76,6 @@ data:
 # 
 options:
   bmk_type: CH4Benchmark
-  gcpy_test: False # Specify if this is a gcpy test validation run
   comparisons:
     gcc_vs_gcc: 
       run: True # True to run this comparison

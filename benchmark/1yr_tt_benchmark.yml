@@ -76,7 +76,6 @@ data:
 #
 options:
   bmk_type: TransportTracersBenchmark
-  gcpy_test: True
   comparisons:
     gcc_vs_gcc:
       run: True
