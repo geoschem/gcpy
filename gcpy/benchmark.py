@@ -4840,10 +4840,7 @@ def make_benchmark_operations_budget(
     util.make_directory(dst, overwrite)
 
     # Print budgets to file
-    if label is not None:
-        filename = f"{dst}/Budgets_After_Operations_{label}.txt"
-    else:
-        filename = f"{dst}/Budgets_After_Operations.txt".format(dst)
+    filename = f"{dst}/Budgets_After_Operations.txt"
     with open(filename, "w+") as f:
         print("#" * 78, file=f)
         if label is not None and benchmark_type is not None:
