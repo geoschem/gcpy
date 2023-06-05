@@ -335,7 +335,7 @@ Steps to install GCPy and its dependencies
 
    .. code-block:: bash
 
-      PYTHONPATH=$PYTHONPATH:$HOME/python/packages/GCPy
+      export PYTHONPATH=$PYTHONPATH:$HOME/python/packages/GCPy
 
    |br|
 
