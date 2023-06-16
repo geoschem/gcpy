@@ -22,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Now specify package `requests-2.31.0` in `environment.py` (fixes a security issue)
 - Updated badge links in `README.md`
 - Construct ops budget table filename without using the `label` argument
+- Updated species_database.yml for consistency with GEOS-Chem 14.2.0
+- Renamed TransportTracers species in `benchmark_categories.yml` and in documentation
 
 ### Removed
 - Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines

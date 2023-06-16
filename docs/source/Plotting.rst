@@ -967,10 +967,9 @@ species categories is denoted in :file:`benchmark_categories.yml`
          Peroxides: MP
       Sulfur: SOx, DMS, OCS, SO2, SO4
    TransportTracersBenchmark:
-      RnPbBeTracers: Rn222, Pb210, Pb210Strat, Be7, Be7Strat, Be10, Be10Strat
-      PassiveTracers: PassiveTracer, SF6Tracer, CH3ITracer, COAnthroEmis25dayTracer,
-          COAnthroEmis50dayTracer, COUniformEmis25dayTracer, GlobEmis90dayTracer,
-          NHEmis90dayTracer, SHEmis90dayTracer
+      RnPbBeTracers: Rn222, Pb210, Pb210s, Be7, Be7s, Be10, Be10s
+      TransportTracers: PassiveTracer, SF6, CH3I, aoa, aoa_bl, aoa_nh,
+          CO_25, CO_50, e90, e90_s, e90_n, st80_25, stOX
 
    """
 
