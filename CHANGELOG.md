@@ -16,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `.readthedocs.yaml` to configure ReadTheDocs builds
 - Added cloud benchmarking YAML configuration files to `benchmark/cloud` folder
 - Added `README.md` files in `gcpy/benchmark` directory structure
+- Added `benchmark/modules/benchmark_model_vs_obs.py` script
+- Added `benchmark/modules/GC_72_vertical_levels.csv` file
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
