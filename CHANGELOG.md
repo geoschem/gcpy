@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added ReadTheDocs badge in `README.md`
 - Added `.readthedocs.yaml` to configure ReadTheDocs builds
 - Added cloud benchmarking YAML configuration files to `benchmark/cloud` folder
+- Added `README.md` files in `gcpy/benchmark` directory structure
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -24,10 +25,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Construct ops budget table filename without using the `label` argument
 - Updated species_database.yml for consistency with GEOS-Chem 14.2.0
 - Renamed TransportTracers species in `benchmark_categories.yml` and in documentation
+- YAML files in `benchmark/` have been moved to `benchmark/config`
 
 ### Removed
 - Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines
 - Removed `is_pre_13_1` tags from `*_benchmark.yml` config files
+- Removed `benchmark_emission_totals.ipynb`, this is obsolete
+- Replaced `gcpy/benchmark/README` with `README.md`
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
