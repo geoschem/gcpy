@@ -12,17 +12,17 @@ Linted with PyLint and incorporated into GCPy
 by Bob Yantosca <yantosca@seas.harvard.edu>
 '''
 import os
+import glob
 from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 import xarray as xr
 
-
 def read_nas(input_file):
     '''
     Read nasa ames data files from EBAS (https://ebas-data.nilu.no)
-        Creates data frame of O3 values converted to ppb and dictionary
-        with key site information (name, lat, lon, altitude)
+    Creates data frame of O3 values converted to ppb and dictionary
+    with key site information (name, lat, lon, altitude)
 
     Parameters
     ----------
@@ -104,6 +104,44 @@ def read_nas(input_file):
           }
     }
     return data, coords
+
+
+def read_observational_data(path):
+    '''
+    Reads the observational O3 data from EBAS
+    (taken from https://ebas-data.nilu.no/ on 15/05/2023)
+
+    Loops over all data files (in NASA/Ames format) within
+    a folder and concatenates them into a single DataFrame.
+    '''
+    first = True
+    coords = {}
+    df0 = None
+    for infile in sorted(glob.glob(f"{path}/*nas")):
+        df, xyz = read_nas(
+            infile
+        )
+        if first:
+            df0 = df
+            coords.update(xyz)
+            first=False
+        else:
+            df0 = pd.concat(
+                [df0, df],
+                axis=1
+            )
+            coords.update(xyz)
+
+    # If df0 is undefined, the loop didn't execute... so throw error
+    if df0 is None:
+        raise ValueError(f"Could not find data in {path}!")
+
+    df = df0.groupby(
+        df0.columns,
+        axis=1
+    ).max()
+
+    return df, coords
 
 
 def find_times(data, start_time):
@@ -191,7 +229,7 @@ def get_data_as_xr(path, dates='2019'):
     return ds_o3
 
 
-def find_nearest_3d(ds_gc, lon_value, lat_value, alt_value):
+def find_nearest_3d(ds_gc, gc_alts, lon_value, lat_value, alt_value):
     '''
     Find GEOS-Chem gridbox closest to the observational dataset.
         Uses lat, lon and alt from obs to select most appropriate GC data.
@@ -200,6 +238,8 @@ def find_nearest_3d(ds_gc, lon_value, lat_value, alt_value):
     ----------
     ds_gc : xarray dataset
         GEOS-Chem output to be processed
+    gc_alts: pandas DataFrame
+        Altitudes of GEOS-Chem levels
     lon_value : float
         GAW site longitude
     lat_value : float
@@ -214,16 +254,12 @@ def find_nearest_3d(ds_gc, lon_value, lat_value, alt_value):
     x_idx, y_idx, z_idx
         GEOS-Chem for single gridbox closest to GAW site specifications
     '''
-    gc_alts = pd.read_csv(
-        './GC_72_vertical_levels.csv'
-    )['Altitude (km)'] * 1e3
-
     x_idx=(
         np.abs(
             ds_gc.lon - float(lon_value)
         )
     ).argmin()
-    
+
     y_idx=(
         np.abs(
             ds_gc.lat - float(lat_value)
