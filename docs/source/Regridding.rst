@@ -310,7 +310,7 @@ C60 to demonstrate the standard cubed-sphere regridding process:
 
 #. Switch to your GCPy python environment.
 
-#. Use the grid weights produced in step 3 to complete the regridding.
+#. Use the grid weights produced in earlier steps to complete the regridding.
 
    .. code-block:: console
 
@@ -325,10 +325,13 @@ C60 to demonstrate the standard cubed-sphere regridding process:
 Example 3: Standard to Stretched Cubed-Sphere Regridding
 ---------------------------------------------
 
-We will use the example of regridding the out-of-the-box
-:literal:`GEOSChem.Restart.20190701_0000z.c48.nc4` restart file from C48 to
-a C120 base resolution stretched grid with a stretch factor of 4.0 over Bermuda
-to demonstrate the stretched cubed-sphere regridding process:
+This example regrids the out-of-the-box c48 restart file 
+(:literal:`GEOSChem.Restart.20190701_0000z.c48.nc4`) from a standard cubed-sphere
+grid to a stretched grid. The base resolution will remain the same at c48. The
+regridded file will have a stretch factor of 4.0 over Bermuda which means a
+regional grid resolution of c196 (4 times 48) in that area.
+
+#. Load the :literal:`gchp_regridding` python environment.
 
 #. Create a source grid specification using :code:`gridspec-create`.
 
@@ -339,37 +342,38 @@ to demonstrate the stretched cubed-sphere regridding process:
    This will produce 7 files - :literal:`c48_gridspec.nc` and
    :literal:`c48.tile[1-6].nc`
 
-#. Create a target grid specification using :code:`gridspec-create`.
+#. Create a target grid specification using :code:`gridspec-create`. This will be for the stretched grid.
 
    .. code-block:: console
 
-      $ gridspec-create sgcs 120 -s 4.0 -t 32.0 -64.0
+      $ gridspec-create sgcs 48 -s 4.0 -t 32.0 -64.0
 
    Here, the :code:`-s` option denotes the stretch factor and the :code:`-t`
    option denotes the latitude / longitude of the centre point of the grid
    stretch.
 
-   Again, this will produce 7 files - :literal:`c120_..._gridspec.nc` and
-   :literal:`c120_..._tile[1-6].nc`, where :literal:`...` denotes randomly
-   generated characters.
+   Again, this will produce 7 files - :literal:`c48_..._gridspec.nc` and
+   :literal:`c48_..._tile[1-6].nc`, where :literal:`...` denotes randomly
+   generated characters. Be sure to look for these since you will need them in the next step.
 
 #. Create the regridding weights for the regridding transformation using
-   :code:`ESMF_RegridWeightGen`, replacing :literal:`c120_..._gridspec.nc`
-   with the actual name of the file created in the previous step.
+   :code:`ESMF_RegridWeightGen`, replacing :literal:`c48_..._gridspec.nc`
+   with the actual name of the file created in the previous step. An example is shown below.
 
    .. code-block:: console
 
       $ ESMF_RegridWeightGen                 \
           --source c48_gridspec.nc           \
-          --destination c120_..._gridspec.nc \
+          --destination c48_t9g3t5pq2hg3t_gridspec.nc \
           --method conserve                  \
-          --weight c48_to_c120_stretched_weights.nc
+          --weight c48_to_c48_stretched_weights.nc
 
    This will produce a log file, :literal:`PET0.RegridWeightGen.Log`, and our
-   regridding weights, :literal:`c48_to_c120_stretched_weights.nc`
+   regridding weights, :literal:`c48_to_c48_stretched_weights.nc`
 
-#. Finally, use the grid weights produced in step 3 to complete the regridding.
-   You will need to switch to your GCPy python environment for this step.
+#. Switch to your GCPy python environment.
+
+#. Use the grid weights produced in earlier steps to complete the regridding.
 
    .. code-block:: console
 
@@ -379,14 +383,15 @@ to demonstrate the stretched cubed-sphere regridding process:
           --target-latitude 32.0                  \
           --target-longitude -64.0                \
           GEOSChem.Restart.20190701_0000z.c48.nc4 \
-          c48_to_c120_stretched_weights.nc        \
+          c48_to_c48_stretched_weights.nc        \
           GEOSChem.Restart.20190701_0000z.c48.nc4
 
    This will produce a single file, :literal:`new_restart_file.nc`, regridded
-   from C48 to C120, with a stretch factor of 4.0 over 32.0N, -64.0E, that you
+   from C48 standard to C48 stretched with a stretch factor of 4.0 over 32.0N, -64.0E, that you
    can rename and use as you please. It is generally a good idea to rename the
    file to include the grid resolution, stretch factor, and target lat/lon for
-   easy reference.
+   easy reference. You can copy it somewhere to keep long-term and link to it from
+   the GCHP Restarts subdirectory in the run directory.
 
    .. code-block:: console
 
