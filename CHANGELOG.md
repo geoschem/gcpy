@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed `is_pre_13_1` tags from `*_benchmark.yml` config files
 - Removed `benchmark_emission_totals.ipynb`, this is obsolete
 - Replaced `gcpy/benchmark/README` with `README.md`
+- Removed `gcpy_test_dir` option from `examples/diagnostics/compare_diags.py`
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
