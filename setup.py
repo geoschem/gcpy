@@ -107,7 +107,7 @@ setup(
         "pypdf2==1.26.0",
         "recommonmark==0.7.1",
         "requests==2.26.0",
-        "scipy==1.7.0",
+        "scipy==1.10.0",
         "sparselt>=0.1.3",
         "sphinx==3.5.4",
         "sphinx-autoapi==1.9.0",
