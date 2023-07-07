@@ -1,4 +1,4 @@
- #!/usr/bin/env python
+#!/usr/bin/env python
 """
 run_1yr_fullchem_benchmark.py:
     Driver script for creating benchmark plots and testing gcpy
@@ -62,6 +62,7 @@ import gcpy.ste_flux as ste
 import gcpy.oh_metrics as oh
 import gcpy.budget_ox as ox
 from gcpy import benchmark as bmk
+import modules.benchmark_models_vs_obs as mvo
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -226,6 +227,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     #gchp_vs_gcc_budgetdir = os.path.join(gchp_vs_gcc_resultsdir, "Budget")
     #gchp_vs_gchp_budgetdir = os.path.join(gchp_vs_gchp_resultsdir, "Budget")
 
+    # Models vs. observations directories
+    gcc_vs_gcc_models_vs_obs_dir = os.path.join(
+        gcc_vs_gcc_resultsdir, "Models_vs_Observations"
+    )
+    gchp_vs_gcc_models_vs_obs_dir = os.path.join(
+        gchp_vs_gcc_resultsdir, "Models_vs_Observations"
+    )
+    gchp_vs_gchp_models_vs_obs_dir = os.path.join(
+        gchp_vs_gchp_resultsdir, "Models_vs_Observations"
+    )
+
     # ======================================================================
     # Plot title strings
     # ======================================================================
@@ -318,6 +330,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         print(" - Table of OH metrics")
     if config["options"]["outputs"]["ste_table"]:
         print(" - Table of strat-trop exchange")
+    if config["options"]["outputs"]["plot_models_vs_obs"]:
+        print(" - Plots of models vs. observations")
     print("Comparisons will be made for the following combinations:")
     if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
         print(" - GCC vs GCC")
@@ -811,6 +825,37 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
+
+        # ==================================================================
+        # GCC vs GCC Model vs. Observations plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_models_vs_obs"]:
+            print("\n%%% Creating GCC vs. GCC models vs. obs. plots %%%")
+
+            # Filepaths
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "SpeciesConc",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "SpeciesConc",
+                all_months_dev
+            )[0]
+
+            # Plot models vs. observations (O3 for now)
+            mvo.make_benchmark_models_vs_obs_plots(
+                ref,
+                config["data"]["ref"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gcc"]["version"],
+                config["paths"]["obs_data_dir"],
+                dst=gcc_vs_gcc_models_vs_obs_dir,
+                overwrite=True,
+                verbose=False
+            )
+
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC benchmark plots and tables
@@ -1332,6 +1377,37 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["ste_table"]:
             print("\n%%% Skipping GCHP vs. GCC Strat-Trop Exchange table %%%")
+
+        # ==================================================================
+        # GCHP vs GCC Model vs. Observations plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_models_vs_obs"]:
+            print("\n%%% Creating GCHP vs. GCC models vs. obs. plots %%%")
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "SpeciesConc",
+                all_months_dev
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gcc_devdir,
+                "SpeciesConc",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Plot models vs. observations (O3 for now)
+            mvo.make_benchmark_models_vs_obs_plots(
+                ref,
+                config["data"]["dev"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                config["paths"]["obs_data_dir"],
+                dst=gchp_vs_gcc_models_vs_obs_dir,
+                overwrite=True,
+                verbose=False
+            )
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCHP benchmark plots and tables
@@ -1883,6 +1959,38 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["ste_table"]:
             print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
+
+        # ==================================================================
+        # GCHP vs GCHP Model vs. Observations plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_models_vs_obs"]:
+            print("\n%%% Creating GCHP vs. GCHP models vs. obs. plots %%%")
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gchp_refdir,
+                "SpeciesConc",
+                all_months_gchp_ref,
+                is_gchp=True
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gchp_devdir,
+                "SpeciesConc",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Plot models vs. observations (O3 for now)
+            mvo.make_benchmark_models_vs_obs_plots(
+                ref,
+                config["data"]["ref"]["gchp"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                config["paths"]["obs_data_dir"],
+                dst=gchp_vs_gchp_models_vs_obs_dir,
+                overwrite=True,
+                verbose=False
+            )
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC difference of differences benchmark plots
