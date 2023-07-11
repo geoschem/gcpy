@@ -13,16 +13,16 @@ Linted with PyLint and incorporated into GCPy
 by Bob Yantosca <yantosca@seas.harvard.edu>
 """
 import os
-from math import ceil
 import glob
 from datetime import datetime, timedelta
+from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import xarray as xr
 from gcpy.constants import skip_these_vars
-from gcpy.util import dataset_reader, make_directory
+from gcpy.util import dataset_reader, make_directory, reshape_MAPL_CS
 
 def read_nas(
         input_file,
@@ -47,10 +47,10 @@ def read_nas(
 
     Returns:
     --------
-    dataframe : pandas DataFrame
+    obs_dataframe : pandas DataFrame
         Dataframe containing observational data from input_file.
 
-    coords_dict : dict
+    obs_site_coords : dict
         Dictionary containing formatted site name: lon, lat and altitude.
     """
     if not isinstance(input_file, str):
@@ -96,38 +96,39 @@ def read_nas(
         input_file,
         skiprows=n_hdr
     )
-    dataframe = pd.DataFrame(
+    obs_dataframe = pd.DataFrame(
         file_hdr,
         index=file_hdr[:,0]
     )
-    dataframe, flag = find_times(
-        dataframe,
+    obs_dataframe, qcflag = find_times(
+        obs_dataframe,
         start_date
     )
-    dataframe = pd.DataFrame(
+    obs_dataframe = pd.DataFrame(
         {
-            'Value': dataframe.values/1.99532748,
-            'Flag': flag
+            'Value': obs_dataframe.values/1.99532748,
+            'Flag': qcflag
         },
-        index=dataframe.index
+        index=obs_dataframe.index
     )
-    dataframe = dataframe[dataframe.Flag == 0.000]
-    dataframe = dataframe.loc['2019']
-    dataframe = dataframe.resample('H').mean()
-    dataframe = pd.DataFrame(
+    obs_dataframe = obs_dataframe[obs_dataframe.Flag == 0.000]
+    obs_dataframe = obs_dataframe.loc['2019']
+    obs_dataframe = obs_dataframe.resample('H').mean()
+    obs_dataframe = pd.DataFrame(
         {
-            site: dataframe.Value
+            site: obs_dataframe.Value
         },
-        index=dataframe.index
+        index=obs_dataframe.index
     )
-    coords_dict = { site:
+    obs_site_coords = { site:
           {
               'lon': lon,
               'lat': lat,
               'alt': alt
           }
     }
-    return dataframe, coords_dict
+
+    return obs_dataframe, obs_site_coords
 
 
 def read_observational_data(
@@ -152,45 +153,45 @@ def read_observational_data(
 
     Returns:
     --------
-    dataframe : pandas DataFrame
+    obs_dataframe : pandas DataFrame
         DataFrame object with the observational data (i.e. station
         names, data, metadata).
 
-    coords_dict : dict
-        Dictionary with coordinates of each station name.
+    obs_site_coords : dict
+        Dictionary with coordinates of each observation site
     """
     if not isinstance(path, str):
         raise TypeError("The 'path' argument is not of type str!")
 
     first = True
-    coords_dict = {}
-    dataframe0 = None
+    obs_site_coords = {}
+    dataframe = None
     for infile in sorted(glob.glob(f"{path}/*nas")):
-        dataframe, xyz = read_nas(
+        obs_dataframe, xyz = read_nas(
             infile,
             verbose=verbose
         )
         if first:
-            dataframe0 = dataframe
-            coords_dict.update(xyz)
+            dataframe = obs_dataframe
+            obs_site_coords.update(xyz)
             first = False
         else:
-            dataframe0 = pd.concat(
-                [dataframe0, dataframe],
+            dataframe = pd.concat(
+                [dataframe, obs_dataframe],
                 axis=1
             )
-            coords_dict.update(xyz)
+            obs_site_coords.update(xyz)
 
     # If dataframe0 is undefined, the loop didn't execute... so throw error
-    if dataframe0 is None:
+    if dataframe is None:
         raise ValueError(f"Could not find data in {path}!")
 
-    dataframe = dataframe0.groupby(
-        dataframe0.columns,
+    obs_dataframe = dataframe.groupby(
+        dataframe.columns,
         axis=1
     ).max()
 
-    return dataframe, coords_dict
+    return obs_dataframe, obs_site_coords
 
 
 def read_model_data(
@@ -263,19 +264,25 @@ def read_model_data(
         msg = f"get_model_data: Could not read Ref data for {varname}!"
         raise exc(msg) from exc
 
-    # Convert data to ppbv if necessary
+    # Create a DataArray object and convert to ppbv (if necessary)
+    # Reshape GCHP data so that it has "lon", "lat" dimensions,
+    # which will facilitate data handling elsewhere in this module.
     with xr.set_options(keep_attrs=True):
         dataarray = dataset[varname]
-        units = dataarray.attrs["units"]
-        if "mol mol-1" in units or "v/v" in units:
+        if "mol mol-1" in dataarray.attrs["units"]:
             dataarray.values *= 1.0e9
             dataarray.attrs["units"] = "ppbv"
+        if "nf" in dataarray.dims:
+            dataarray = reshape_MAPL_CS(
+                dataarray,
+                multi_index_lat=False
+            )
 
     return dataarray
 
 
 def find_times(
-        dataframe,
+        obs_dataframe,
         start_time
 ):
     """
@@ -284,7 +291,7 @@ def find_times(
 
     Args:
     ----------
-    dataframe : pandas DataFrame
+    obs_dataframe : pandas DataFrame
         DataFrame with O3 values from GAW site
 
     start_time : str
@@ -292,23 +299,23 @@ def find_times(
 
     Returns
     ------
-    dataframe: pandas DataFrame
+    obs_dataframe: pandas DataFrame
         O3 in ppbV with datetime index
 
     qcflag : pandas Dataframe
         QC flag with datetime index
     """
-    end_time = dataframe[dataframe.columns[1]]
+    end_time = obs_dataframe[obs_dataframe.columns[1]]
     time_x = []
 
     for index in range(len(end_time)):
         time_x.append(start_time + timedelta(days=end_time.values[index]))
 
-    dataframe.index = time_x
-    qcflag = dataframe[dataframe.columns[-1]]
-    dataframe = dataframe[dataframe.columns[2]]
+    obs_dataframe.index = time_x
+    qcflag =obs_dataframe[obs_dataframe.columns[-1]]
+    obs_dataframe = obs_dataframe[obs_dataframe.columns[2]]
 
-    return dataframe, qcflag
+    return obs_dataframe, qcflag
 
 
 def find_nearest_3d(
@@ -327,7 +334,7 @@ def find_nearest_3d(
     gc_data : xarray DataSet
         GEOS-Chem output to be processed
 
-    gc_level_alts_m: pandas DataFrame
+    gc_level_alts_m: pandas Series
         Altitudes of GEOS-Chem levels in meters
 
     lon_value : float
@@ -345,6 +352,7 @@ def find_nearest_3d(
         GEOS-Chem grid box indices for the single gridbox
         closest to GAW site specifications
     """
+
     x_idx=(
         np.abs(
             gc_data.lon - float(lon_value)
@@ -416,12 +424,12 @@ def get_geoschem_level_metadata(
 
 
 def prepare_data_for_plot(
-        station_name,
-        coords_dict,
-        gc_level_alts_m,
         obs_dataframe,
+        obs_site_coords,
+        obs_site_name,
         ref_dataarray,
         dev_dataarray,
+        gc_level_alts_m,
         varname="SpeciesConcVV_O3"
 ):
     """
@@ -434,23 +442,23 @@ def prepare_data_for_plot(
 
     Args:
     -----
-    station_name : str
-        Name of the observation station site.
-
-    coords_dict : dict
-        Coordinates (lon, lat, alt) for each observation station site.
-
-    gc_level_alts_m : pandas DataFrame
-        Metadata pertaining to GEOS-Chem vertical levels
-
     obs_dataframe : pandas DataFrame
         Observations at each station site.
+
+    obs_site_coords : dict
+        Coordinates (lon, lat, alt) for each observation station site.
+
+    obs_site_name : str
+        Name of the observation station site.
 
     ref_dataarray, dev_dataarray : xarray DataArray
         Data from the Ref and Dev model versions.
 
     ref_label, dev_label: str
         Labels describing the Ref and Dev datasets (e.g. version numbers)
+
+    gc_level_alts_m : pandas DataFrame
+        Metadata pertaining to GEOS-Chem vertical levels
 
     Keyword Args (Optional)
     -----------------------
@@ -467,59 +475,76 @@ def prepare_data_for_plot(
         Data from the Ref and Dev model versions at the
         closest grid box to the observation station site.
 
-    plot_title : str
+    subplot_title : str
         Plot title string for the given observation station site.
 
-    yaxis_label : str
+    subplot_ylabel : str
         Label for the Y-axis (e.g. species name).
     """
 
-    # Round the station lon, lat, alt  values
-    sta_lon = round(coords_dict[station_name]['lon'], 2)
-    sta_lat = round(coords_dict[station_name]['lat'], 2)
-    sta_alt = round(coords_dict[station_name]['alt'], 1)
-
-    # Find nearest model box and get model data at that box
+    # Get Ref model data nearest to the observation site
     x_idx, y_idx, z_idx = find_nearest_3d(
         ref_dataarray,
         gc_level_alts_m,
-        lon_value=sta_lon,
-        lat_value=sta_lat,
-        alt_value=sta_alt
+        lon_value=round(obs_site_coords[obs_site_name]['lon'], 2),
+        lat_value=round(obs_site_coords[obs_site_name]['lat'], 2),
+        alt_value=round(obs_site_coords[obs_site_name]['alt'], 1)
     )
     ref_dataframe = ref_dataarray.isel(
         lon=x_idx,
         lat=y_idx,
         lev=z_idx
     ).to_dataframe()
+
+    # Get Dev model data nearest to the observation site
+    x_idx, y_idx, z_idx = find_nearest_3d(
+        dev_dataarray,
+        gc_level_alts_m,
+        lon_value=round(obs_site_coords[obs_site_name]['lon'], 2),
+        lat_value=round(obs_site_coords[obs_site_name]['lat'], 2),
+        alt_value=round(obs_site_coords[obs_site_name]['alt'], 1)
+    )
     dev_dataframe = dev_dataarray.isel(
         lon=x_idx,
         lat=y_idx,
         lev=z_idx
     ).to_dataframe()
 
-    # Take the mean of observations for plotting
+    # Take the monthly mean of observations for plotting
+    # (since some observation sites have multiple months of data)
     obs_dataframe = obs_dataframe.resample('M').mean()
 
-    # Top-of-plot title for the observation station site
-    plot_title = "{station_name} ({sta_lat}$^\\circ$N,{sta_lon}$^\\circ$E)"
+    # Create the top title for the subplot for this observation site
+    # (use integer lon & lat values and N/S lat and E/W lon notation)
+    lon = int(round(obs_site_coords[obs_site_name]['lon'], 0))
+    lat = int(round(obs_site_coords[obs_site_name]['lat'], 0))
+    ystr = "S"
+    if lat >= 0:
+        ystr = "N"
+    xstr = "W"
+    if lon >= 0:
+        xstr = "E"
+    lon = abs(lon)
+    lat = abs(lat)
+    subplot_title = \
+        f"{obs_site_name.strip()} ({lat}$^\\circ${ystr},{lon}$^\\circ${xstr})"
 
     # Y-axis label (i.e. species name)
-    yaxis_label = varname.split("_")[1]
+    subplot_ylabel = varname.split("_")[1] + " (ppbv)"
 
     return obs_dataframe, ref_dataframe[varname], dev_dataframe[varname], \
-        plot_title, yaxis_label
+        subplot_title, subplot_ylabel
 
 
 def plot_single_station(
         fig,
-        n_rows,
-        n_cols,
-        n_station,
-        station_name,
-        plot_title,
-        yaxis_label,
+        rows_per_page,
+        cols_per_page,
+        subplot_index,
+        subplot_title,
+        subplot_ylabel,
         obs_dataframe,
+        obs_site_name,
         ref_series,
         ref_label,
         dev_series,
@@ -531,22 +556,23 @@ def plot_single_station(
     Args:
     -----
     fig : matplotlib.figure.Figure
-        Matplotlib Figure object containing the plot
+        Matplotlib Figure object containing the plot.
 
-    n_rows, n_cols: int
-        Number of rows and columns in the plot.
+    rows_per_page, cols_per_page : int
+        Number of rows and columns on each page of the plot.
 
-    n_station : int
-        Number of the observation station.
+    subplot_index : int
+        Index of the subplot on the page.  Runs from 0 to
+        (cols_per_page * rows_per_page - 1).
 
-    station_name : str
-        Name of the observation station site.
-
-    plot_title, yaxis-label : str
-        Top of plot title and y-axis label.
+    subplot_title, subplot_ylabel : str
+        Top title and y-axis label for each subplot
 
     obs_dataframe : pandas DataFrame
         Observational data.
+
+    obs_site_name: : str
+        Name of the observation station site.
 
     ref_series, dev_series : pandas Series
         GEOS-Chem data at closest grid box to the observation
@@ -558,6 +584,10 @@ def plot_single_station(
     """
     if not isinstance(fig, Figure):
         msg = "The 'fig' argument is not of type matplotlib.figure.Figure!"
+    if not isinstance(cols_per_page, int):
+        msg = "The 'cols_per_page' argument is not of type int!"
+    if not isinstance(rows_per_page, int):
+        msg = "The 'rows_per_page' argument is not of type int!"
     if not isinstance(obs_dataframe, pd.DataFrame):
         msg = "The 'obs_dataframe' argument is not of type pandas.DataFrame!"
         raise TypeError(msg)
@@ -570,11 +600,15 @@ def plot_single_station(
 
     # Create matplotlib axes object for this subplot
     # axes_subplot is of type matplotlib.axes_.subplots.AxesSubplot
-    axes_subplot = fig.add_subplot(n_rows, n_cols, n_station+1)
+    axes_subplot = fig.add_subplot(
+        rows_per_page,
+        cols_per_page,
+        subplot_index + 1,
+    )
 
     # Set title for top of each frame
     axes_subplot.set_title(
-        f"{plot_title}",
+        f"{subplot_title}",
         weight='bold',
         fontsize=7
         )
@@ -582,7 +616,7 @@ def plot_single_station(
     ## Plot observational data
     axes_subplot.plot(
         obs_dataframe.index,
-        obs_dataframe[station_name],
+        obs_dataframe[obs_site_name],
         color='k',
         marker='^',
         markersize=4,
@@ -611,13 +645,13 @@ def plot_single_station(
     )
 
     # Apply y-axis label only if this is a leftmost plot panel
-    if n_station == 0 or n_station % n_cols == 0:
+    if subplot_index == 0 or subplot_index % cols_per_page == 0:
         axes_subplot.set_ylabel(
-            yaxis_label,
+            subplot_ylabel,
             fontsize=8
         )
 
-    # Set X-axis and Y-axis ticks
+    # Set X-axis and Y-axis ticks and labels
     axes_subplot.set_xticks(
         obs_dataframe.index
     )
@@ -630,10 +664,10 @@ def plot_single_station(
     )
     axes_subplot.set_ylim(
         0,
-        75
+        100
     )
     axes_subplot.set_yticks(
-        [0, 25, 50, 75]
+        [0, 25, 50, 75, 100]
     )
     axes_subplot.tick_params(
         axis='both',
@@ -642,23 +676,34 @@ def plot_single_station(
     )
 
 
-def plot_models_vs_obs(
+def plot_one_page(
+        pdf,
+        obs_dataframe,
+        obs_site_coords,
+        obs_site_names,
         ref_dataarray,
         ref_label,
         dev_dataarray,
         dev_label,
         gc_level_alts_m,
-        obs_dataframe,
-        coords_dict,
+        rows_per_page=3,
+        cols_per_page=3,
         varname="SpeciesConcVV_O3",
-        dst="./benchmark",
-        verbose=False
 ):
     """
-    Plots models vs. observations using a 3 rows x 3 column layout.
+    Plots a single page of models vs. observations.
 
     Args:
     -----
+    obs_dataframe : pandas DataFrame
+        Observations at each station site.
+
+    obs_site_coords : dict
+        Coordinates (lon, lat, alt) for each observation station site.
+
+    obs_site_names : list of str
+        Names of observation station sites that fit onto a single page.
+
     ref_dataarray, dev_dataarray : xarray DataArray
         Data from the Ref and Dev model versions.
 
@@ -668,11 +713,131 @@ def plot_models_vs_obs(
     gc_level_alts_m : pandas DataFrame
         Metadata pertaining to GEOS-Chem vertical levels
 
+    Keyword Args:
+    -------------
+
+    rows_per_page, cols_per_page : int
+        Number of rows and columns to plot on a single page.
+        Default values: 3 rows, 3 columns
+
+    varname : str
+        Variable name for GEOS-Chem diagnostic data.
+        Default value: "SpeciesConcVV_O3"
+
+    verbose : bool
+        Toggles verbose printout on (True) or off (False).
+        Default value: False
+    """
+    if not isinstance(obs_dataframe, pd.DataFrame):
+        msg = "The 'obs_dataframe' argument is not of type pandas.DataFrame!"
+        raise TypeError(msg)
+    if not isinstance(obs_site_coords, dict):
+        msg = "The 'obs_site_coords' argument is not of type pandas.DataFrame!"
+        raise TypeError(msg)
+    if not isinstance(ref_dataarray, xr.DataArray):
+        msg = "The 'ref_dataset' argument is not of type xarray.DataArray!"
+        raise TypeError(msg)
+    if not isinstance(ref_label, str):
+        msg = "The 'ref_label' argument is not of type str!"
+        raise TypeError(msg)
+    if not isinstance(dev_dataarray, xr.DataArray):
+        msg = "The 'ref_dataset' argument is not of type xarray.DataArray!"
+        raise TypeError(msg)
+    if not isinstance(dev_label, str):
+        msg = "The 'dev_label' argument is not of type str!"
+        raise TypeError(msg)
+    if not isinstance(gc_level_alts_m, pd.Series):
+        msg = "The 'gc_level_alts_m' argument is not of type pandas.Series!"
+        raise TypeError(msg)
+
+    # Define a new matplotlib.figure.Figure object for this page
+    # Landscape width: 11" x 8"
+    fig = plt.figure(figsize=(11, 8))
+    fig.tight_layout()
+
+    # Loop over all of the stations that fit on the page
+    for subplot_index, obs_site_name in enumerate(obs_site_names):
+
+        # Find the model Ref & Dev data closest to the observational
+        # station site.  Also take monthly average of observations,
+        obs_dataframe, \
+        ref_series, dev_series, \
+        subplot_title, subplot_ylabel \
+        = prepare_data_for_plot(
+            obs_dataframe,                # pandas.DataFrame
+            obs_site_coords,              # dict
+            obs_site_name,                # str
+            ref_dataarray,                # xarray.DataArray
+            dev_dataarray,                # xarray.DataArray
+            gc_level_alts_m,              # pandas.Series
+            varname=varname,              # str
+        )
+
+        # Plot models vs. observation for a single station site
+        plot_single_station(
+            fig,                          # matplotlib.figure.Figure
+            rows_per_page,                # int
+            cols_per_page,                # int
+            subplot_index,                # int
+            subplot_title,                # str
+            subplot_ylabel,               # str
+            obs_dataframe,                # pandas.Dataframe
+            obs_site_name,                # str
+            ref_series,                   # pandas.Series
+            ref_label,                    # str
+            dev_series,                   # pandas.Series
+            dev_label                     # str
+        )
+
+    # Add extra spacing around plots
+    plt.subplots_adjust(
+        hspace=0.4,
+        top=0.9
+    )
+
+    # Add top-of-page legend
+    plt.legend(
+        ncol=3,
+        bbox_to_anchor=(0.5, 0.98),
+        bbox_transform=fig.transFigure,
+        loc='upper center'
+    )
+
+    # Save this page to the PDF file
+    pdf.savefig(fig)
+
+
+def plot_models_vs_obs(
+        obs_dataframe,
+        obs_site_coords,
+        ref_dataarray,
+        ref_label,
+        dev_dataarray,
+        dev_label,
+        gc_level_alts_m,
+        varname="SpeciesConcVV_O3",
+        dst="./benchmark",
+        verbose=False
+):
+    """
+    Plots models vs. observations using a 3 rows x 3 column layout.
+
+    Args:
+    -----
     obs_dataframe : pandas DataFrame
         Observations at each station site.
 
-    coords_dict : dict
+    obs_site_coords : dict
         Coordinates (lon, lat, alt) for each observation station site.
+
+    ref_dataarray, dev_dataarray : xarray DataArray
+        Data from the Ref and Dev model versions.
+
+    ref_label, dev_label: str
+        Labels describing the Ref and Dev datasets (e.g. version numbers)
+
+    gc_level_alts_m : pandas DataFrame
+        Metadata pertaining to GEOS-Chem vertical levels
 
     Keyword Args:
     -------------
@@ -688,108 +853,94 @@ def plot_models_vs_obs(
         Toggles verbose printout on (True) or off (False).
         Default value: False
     """
-    # Error checks
+    if not isinstance(obs_dataframe, pd.DataFrame):
+        msg = "The 'obs_dataframe' argument is not of type pandas.DataFrame!"
+        raise TypeError(msg)
     if not isinstance(ref_dataarray, xr.DataArray):
-        msg = "The 'ref_dataset' argument is not of type xarray DataArray!"
+        msg = "The 'ref_dataset' argument is not of type xarray.DataArray!"
         raise TypeError(msg)
     if not isinstance(ref_label, str):
         msg = "The 'ref_label' argument is not of type str!"
         raise TypeError(msg)
     if not isinstance(dev_dataarray, xr.DataArray):
-        msg = "The 'ref_dataset' argument is not of type xarray DataArray!"
+        msg = "The 'ref_dataset' argument is not of type xarray.DataArray!"
         raise TypeError(msg)
     if not isinstance(dev_label, str):
         msg = "The 'dev_label' argument is not of type str!"
         raise TypeError(msg)
-    if not isinstance(obs_dataframe, pd.DataFrame):
-        msg = "The 'obs_dataframe' argument is not of type pandas DataFrame!"
-        raise TypeError(msg)
     if not isinstance(gc_level_alts_m, pd.Series):
-        msg = "The 'gc_level_alts_m' argument is not of type pandas Series!"
+        msg = "The 'gc_level_alts_m' argument is not of type pandas.Series!"
         raise TypeError(msg)
 
     # Figure setup
     plt.style.use('seaborn-darkgrid')
-    n_cols = 3
-    n_rows = ceil(len(obs_dataframe.columns) / 3)
+    rows_per_page = 3
+    cols_per_page = 3
+    plots_per_page = rows_per_page * cols_per_page
 
-    # Compute nuimber of pages that are necessary
-    #n_pages = ncols * nrows
-    #if n_pages % (nrows * ncols) > 0:
-    #    npages += 1
-    #
-    #
-    #for page in range(npages):
-    #    plot_single_page(
+    # List of observation sites to plot
+    obs_site_names = list(obs_dataframe.columns)
 
-    fig = plt.figure(figsize=(8.27, 29))
+    # Open the plot as a PDF document
+    pdf_file = f"{dst}/models_vs_obs.surface.{varname.split('_')[1]}.pdf"
+    pdf = PdfPages(pdf_file)
 
-    # Loop over the number of columns in the obs_data dataframe
-    for n_station, station_name, in enumerate(obs_dataframe.columns):
-        if verbose:
-            print(f"Plotting data for station: {station_name}")
+    # Loop over the number of obs sites that fit on a page
+    for start in range(0, len(obs_site_names), plots_per_page):
+        end = start + plots_per_page - 1
 
-
-        # Find the model Ref & Dev data closest to the observational
-        # station site.  Also take average of observations for plotting.
-        obs_dataframe, ref_series, dev_series, plot_title, yaxis_label = \
-        prepare_data_for_plot(
-            station_name,
-            coords_dict,
-            gc_level_alts_m,         # pandas.DataFrame
-            obs_dataframe,           # pandas.DataFrame
-            ref_dataarray,           # xarray.DataArray
-            dev_dataarray,           # xarray.DataArray
-            varname=varname
+        # Plot obs sites that fit on a single page
+        plot_one_page(
+            pdf,                          # PdfPages
+            obs_dataframe,                # pandas.DataFrame
+            obs_site_coords,              # dict
+            obs_site_names[start:end+1],  # list of str
+            ref_dataarray,                # xarray.DataArray
+            ref_label,                    # str
+            dev_dataarray,                # xarray.DataArray
+            dev_label,                    # str
+            gc_level_alts_m,              # pandas.Series
+            rows_per_page=rows_per_page,  # int
+            cols_per_page=cols_per_page,  # int
+            varname=varname               # str
         )
 
-        # Plot models vs. observation for a single station site
-        plot_single_station(
-            fig,                     # matplotlib.figure.Figure
-            n_rows,
-            n_cols,
-            n_station,
-            station_name,
-            plot_title,
-            yaxis_label,
-            obs_dataframe,           # pandas.Dataframe
-            ref_series,              # pandas.Series
-            ref_label,
-            dev_series,              # pandas.Series
-            dev_label
-        )
-
-    ## Adjust spacing and save to pdf file
-    plt.tight_layout()
-    plt.subplots_adjust(
-        hspace=0.4,
-        top=0.9
-    )
-    plt.legend(
-        ncol=3,
-        bbox_to_anchor=(1.27, 26.8)
-    )
-    fig.savefig(
-        f"{dst}/models_vs_obs.surface.{varname}.pdf",
-        bbox_inches='tight'
-    )
-    plt.close()
+    # Close the PDF file after all pages are plotted.
+    pdf.close()
 
 
 def make_benchmark_models_vs_obs_plots(
+        obs_filepaths,
         ref_filepaths,
         ref_label,
         dev_filepaths,
         dev_label,
-        obs_filepaths,
         varname="SpeciesConcVV_O3",
         dst="./benchmark",
         verbose=False,
         overwrite=False
 ):
     """
-    Driver rtou
+    Driver routine to create plots
     """
+    if not isinstance(obs_filepaths, list) and \
+       not isinstance(obs_filepaths, str):
+        msg = "The 'obs_filepaths' argument is not of type 'list' or 'str'!"
+        raise TypeError(msg)
+    if not isinstance(ref_filepaths, list) and \
+       not isinstance(ref_filepaths, str):
+        msg = "The 'ref_filepaths' argument is not of type 'list' or 'str'!"
+        raise TypeError(msg)
+    if not isinstance(ref_label, str):
+        msg = "The 'ref_label' argument is not of type 'str'!"
+        raise TypeError(msg)
+    if not isinstance(dev_filepaths, list) and \
+       not isinstance(dev_filepaths, str):
+        msg = "The 'dev_filepaths' argument is not of type 'list' or 'str'!"
+        raise TypeError(msg)
+    if not isinstance(ref_label, str):
+        msg = "The 'dev_label' argument is not of type 'str'!"
+        raise TypeError(msg)
 
     # Create the destination folder
     make_directory(
@@ -804,7 +955,7 @@ def make_benchmark_models_vs_obs_plots(
         ) * 1.0e3
 
     # Read the observational data
-    obs_dataframe, coords_dict = read_observational_data(
+    obs_dataframe, obs_site_coords = read_observational_data(
         obs_filepaths,
         verbose=verbose
     )
@@ -821,14 +972,14 @@ def make_benchmark_models_vs_obs_plots(
 
     # Plot data vs observations
     plot_models_vs_obs(
-        ref_dataarray,
-        ref_label,
-        dev_dataarray,
-        dev_label,
-        gc_level_alts_m,
-        obs_dataframe,
-        coords_dict,
-        varname=varname,
-        dst=dst,
-        verbose=verbose
+        obs_dataframe,                    # pandas.DataFrame
+        obs_site_coords,                  # dict
+        ref_dataarray,                    # xarray.DataArray
+        ref_label,                        # str
+        dev_dataarray,                    # xarray.DataArray
+        dev_label,                        # str
+        gc_level_alts_m,                  # pandas.Series
+        varname=varname,                  # str
+        dst=dst,                          # str
+        verbose=verbose                   # bool
     )
