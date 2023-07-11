@@ -846,11 +846,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Plot models vs. observations (O3 for now)
             mvo.make_benchmark_models_vs_obs_plots(
+                config["paths"]["obs_data_dir"],
                 ref,
                 config["data"]["ref"]["gcc"]["version"],
                 dev,
                 config["data"]["dev"]["gcc"]["version"],
-                config["paths"]["obs_data_dir"],
                 dst=gcc_vs_gcc_models_vs_obs_dir,
                 overwrite=True,
                 verbose=False
@@ -1399,11 +1399,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Plot models vs. observations (O3 for now)
             mvo.make_benchmark_models_vs_obs_plots(
+                config["paths"]["obs_data_dir"],
                 ref,
                 config["data"]["dev"]["gcc"]["version"],
                 dev,
                 config["data"]["dev"]["gchp"]["version"],
-                config["paths"]["obs_data_dir"],
                 dst=gchp_vs_gcc_models_vs_obs_dir,
                 overwrite=True,
                 verbose=False
@@ -1982,11 +1982,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Plot models vs. observations (O3 for now)
             mvo.make_benchmark_models_vs_obs_plots(
+                config["paths"]["obs_data_dir"],
                 ref,
                 config["data"]["ref"]["gchp"]["version"],
                 dev,
                 config["data"]["dev"]["gchp"]["version"],
-                config["paths"]["obs_data_dir"],
                 dst=gchp_vs_gchp_models_vs_obs_dir,
                 overwrite=True,
                 verbose=False
