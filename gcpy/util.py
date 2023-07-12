@@ -587,7 +587,8 @@ def add_missing_variables(
 
 
 def reshape_MAPL_CS(
-        da
+        da,
+        multi_index_lat=True
 ):
     """
     Reshapes data if contains dimensions indicate MAPL v1.0.0+ output
@@ -595,29 +596,47 @@ def reshape_MAPL_CS(
         da: xarray DataArray
             Data array variable
 
+    Keyword Args (Optional):
+        multi_index_lat : bool
+            Determines if the returned "lat" index of the DataArray
+            object will be a MultiIndex (true) or a simple list of
+            latitude values (False).
+            Default value: True
+
     Returns:
         data: xarray DataArray
             Data with dimensions renamed and transposed to match old MAPL format
     """
-
     # Suppress annoying future warnings for now
     warnings.filterwarnings("ignore", category=FutureWarning)
 
-    #if type(da) != np.ndarray:
-    if not isinstance(da, np.ndarray):
-        vdims = da.dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            da = da.stack(lat=("nf", "Ydim"))
-            da = da.rename({"Xdim": "lon"})
-
-        if "lev" in da.dims and "time" in da.dims:
-            da = da.transpose("time", "lev", "lat", "lon")
-        elif "lev" in da.dims:
-            da = da.transpose("lev", "lat", "lon")
-        elif "time" in da.dims:
-            da = da.transpose("time", "lat", "lon")
-        else:
-            da = da.transpose("lat", "lon")
+    # Only do the following for DataArray objects
+    # (otherwise just fall through and return the original argument as-is)
+    if isinstance(da, xr.DataArray):
+        with xr.set_options(keep_attrs=True):
+            if "nf" in da.dims and "Xdim" in da.dims and "Ydim" in da.dims:
+                da = da.stack(lat=("nf", "Ydim"))
+                da = da.rename({"Xdim": "lon"})
+                # NOTE: The da.stack operation will return the da.lat
+                # dimension as a MultiIndex.  In other words, each
+                # element of da.lat is a tuple (face number, latitude
+                # in degrees).  To disable this behavior, set keyword
+                # argument multi_index_lat=False.  This will return
+                # da.lat as an array of latitude values, which is
+                # needed for backwards compatibility.
+                #  -- Bob Yantosca (07 Jul 2023)
+                if not multi_index_lat:
+                    da = da.assign_coords(
+                        {"lat": [list(tpl)[1] for tpl in da.lat.values]}
+                    )
+            if "lev" in da.dims and "time" in da.dims:
+                da = da.transpose("time", "lev", "lat", "lon")
+            elif "lev" in da.dims:
+                da = da.transpose("lev", "lat", "lon")
+            elif "time" in da.dims:
+                da = da.transpose("time", "lat", "lon")
+            else:
+                da = da.transpose("lat", "lon")
     return da
 
 
@@ -868,11 +887,11 @@ def compare_varnames(
             and
             ("lon" in refdata[v].dims or "Xdim" in refdata[v].dims)
         )
-    ]        
+    ]
     commonvarsOther = [
         v for v in commonvars if (
            v not in commonvarsData
-        )    
+        )
     ]
     commonvars2D = [
         v for v in commonvars if (
@@ -2340,5 +2359,5 @@ def trim_cloud_benchmark_label(
     ]:
         if v in label:
             label.replace(v, "")
-            
+
     return label

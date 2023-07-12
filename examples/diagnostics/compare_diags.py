@@ -63,11 +63,8 @@ def read_data(config):
             Contains Ref and Dev data as xarray Dataset fields.
     """
 
-    # If we are using the gcpy_test data, use the gcpy_test_dir
-    if config["options"]["gcpy_test"]:
-        rootdir = config["paths"]["test_data_dir"]
-    else:
-        rootdir = config["paths"]["main_dir"]
+    # Root data path
+    rootdir = config["paths"]["main_dir"]
 
     # Define paths to Ref & Dev files
     ref_file = os.path.join(
