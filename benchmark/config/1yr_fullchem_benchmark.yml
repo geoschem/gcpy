@@ -14,18 +14,20 @@
 # Configuration for 1yr FullChemBenchmark
 #
 # paths:
-#   main_dir:    High-level directory containing ref & dev rundirs
-#   results_dir: Directory where plots/tables will be created
-#   weights_dir: Path to regridding weights
-#   spcdb_dir:   Folder in which the species_database.yml file is
-#                located.  If set to "default", then will look for
-#                species_database.yml in one of the Dev rundirs.
+#   main_dir:     High-level directory containing ref & dev rundirs
+#   results_dir:  Directory where plots/tables will be created
+#   weights_dir:  Path to regridding weights
+#   spcdb_dir:    Folder in which the species_database.yml file is
+#                  located.  If set to "default", then will look for
+#                  species_database.yml in one of the Dev rundirs.
+#   obs_data_dir: Path to observational data (for models vs obs plots)
 #
 paths:
   main_dir: /path/to/benchmark/main/dir    # EDIT AS NEEDED
   results_dir: /path/to/BenchmarkResults   # EDIT AS NEEDED
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
   spcdb_dir: default
+  obs_data_dir: /path/to/observational/data
 #
 # data: Contains configurations for ref and dev runs
 #   version:         Version string (must not contain spaces)
@@ -107,6 +109,7 @@ options:
     Ox_budget_table: True
     ste_table: True # GCC only
     OH_metrics: True
+    plot_models_vs_obs: True
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
