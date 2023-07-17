@@ -197,6 +197,7 @@ FullChemBenchmark:
     Nitrates:
       - ISOPN
     Other:
+      - FURA
       - GLYC
       - GLYX
       - HCOOH
