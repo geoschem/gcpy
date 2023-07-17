@@ -192,21 +192,24 @@ There are four optional arguments, all of which are for regridded to a stretched
       The grid stretching factor for the target stretched grid. Only takes
       effect when :code:`--stretched-grid` is set. See the
       `GCHP documentation <https://gchp.readthedocs.io/en/latest/supplement/stretched-grid.html#choose-stretching-parameters>`_
-      for more information
+      for more information. Make sure this value exactly matches the value you
+      plan to use in GCHP configuration file :file:`setCommonRunSettings.sh`.
 
 .. option:: --target-latitude : float
 
       The latitude of the centre point for stretching the target grid. Only
       takes effect when :code:`--stretched-grid` is set. See the
       `GCHP documentation <https://gchp.readthedocs.io/en/latest/supplement/stretched-grid.html#choose-stretching-parameters>`_
-      for more information
+      for more information. Make sure this value exactly matches the value you
+      plan to use in GCHP configuration file :file:`setCommonRunSettings.sh`.
 
 .. option:: --target-longitude : float
 
       The longitude of the centre point for stretching the target grid. Only
       takes effect when :code:`--stretched-grid` is set. See the
       `GCHP documentation <https://gchp.readthedocs.io/en/latest/supplement/stretched-grid.html#choose-stretching-parameters>`_
-      for more information
+      for more information. Make sure this value exactly matches the value you
+      plan to use in GCHP configuration file :file:`setCommonRunSettings.sh`.
 
 .. _regrid-gchp-procedure:
 
@@ -396,6 +399,12 @@ regional grid resolution of c196 (4 times 48) in that area.
    .. code-block:: console
 
       $ mv new_restart_file.nc GEOSChem.Restart.20190701_0000z.c120.s4_32N_64E.nc
+
+       You can also easily reference the file's stretch parameters by looking
+       at the global attributes in the file. When using the file as a restart
+       file in GCHP make sure that you use the exact same parameters in both
+       the file's global attributes and GCHP configuration file
+       :file:`setCommonRunSettings.sh`.
 
 .. _regrid-plot:
 
