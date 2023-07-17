@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `benchmark/modules/benchmark_models_vs_obs.py` script
 - Added `benchmark/modules/GC_72_vertical_levels.csv` file
 - Added `multi_index_lat` keyword to `reshape_MAPL_CS` function in `gcpy/util.py`
+- Added FURA to `emission_species.yml` and `benchmark_categories.yml`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
