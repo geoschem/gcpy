@@ -732,7 +732,7 @@ def plot_one_page(
         msg = "The 'obs_dataframe' argument is not of type pandas.DataFrame!"
         raise TypeError(msg)
     if not isinstance(obs_site_coords, dict):
-        msg = "The 'obs_site_coords' argument is not of type pandas.DataFrame!"
+        msg = "The 'obs_site_coords' argument is not of type dict!"
         raise TypeError(msg)
     if not isinstance(ref_dataarray, xr.DataArray):
         msg = "The 'ref_dataset' argument is not of type xarray.DataArray!"
@@ -878,12 +878,21 @@ def plot_models_vs_obs(
     cols_per_page = 3
     plots_per_page = rows_per_page * cols_per_page
 
-    # List of observation sites to plot
-    obs_site_names = list(obs_dataframe.columns)
-
     # Open the plot as a PDF document
     pdf_file = f"{dst}/models_vs_obs.surface.{varname.split('_')[1]}.pdf"
     pdf = PdfPages(pdf_file)
+
+    # Sort station sites N to S latitude order according to:
+    # https://www.geeksforgeeks.org/python-sort-nested-dictionary-by-key/
+    # NOTE: obs_site_names will be a MultiIndex list (a list of tuples)
+    obs_site_names = sorted(
+        obs_site_coords.items(),
+        key = lambda x: x[1]['lat'],
+        reverse=True
+    )
+
+    # Convert obs_site_names from a MultiIndex list to a regular list
+    obs_site_names = [list(tpl)[0] for tpl in obs_site_names]
 
     # Loop over the number of obs sites that fit on a page
     for start in range(0, len(obs_site_names), plots_per_page):
