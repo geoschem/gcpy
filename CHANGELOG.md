@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `benchmark/modules/GC_72_vertical_levels.csv` file
 - Added `multi_index_lat` keyword to `reshape_MAPL_CS` function in `gcpy/util.py`
 - Added FURA to `emission_species.yml` and `benchmark_categories.yml`
+- Added new routine `format_number_for_table` in `util.py`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -31,6 +32,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Renamed TransportTracers species in `benchmark_categories.yml` and in documentation
 - YAML files in `benchmark/` have been moved to `benchmark/config`
 - Models vs. O3 obs plots are now arranged by site latitude from north to south
+- Routine `print_totals` now prints small and/or large numbers in scientific notation
+- Truncate names in benchmark & emissions tables to improve readability
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
