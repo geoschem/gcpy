@@ -29,3 +29,5 @@ CH4Benchmark:
   GEPA: Tg
   Scarpelli_Canada: Tg
   Scarpelli_Mexico: Tg
+TransportTracersBenchmark:
+  CEDS: Tg
