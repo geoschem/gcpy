@@ -141,8 +141,11 @@ def create_display_name(
     # Initialize
     display_name = diagnostic_name
 
+    # For restart files, just split at the first underscore and return
+    # the text followiong the underscore.  This will preserve certain
+    # species names, such as the TransportTracers species CO_25, etc.
     if "SpeciesRst" in display_name:
-        display_name = display_name.split("_")[1]
+        return display_name.split("_", 1)[1]
 
     # Special handling for Inventory totals
     if "INV" in display_name.upper():
@@ -152,8 +155,8 @@ def create_display_name(
     for v in ["Emis", "EMIS", "emis", "Inv", "INV", "inv"]:
         display_name = display_name.replace(v, "")
 
-    # Replace underscores
-    display_name = display_name.replace("_", " ")
+    # Replace only the first underscore with a space
+    display_name = display_name.replace("_", " ", 1)
 
     return display_name
 
@@ -261,12 +264,11 @@ def print_totals(
     # ==================================================================
     # Get the diagnostic name and units
     # ==================================================================
+    diagnostic_name = dev.name
     if dev_is_all_nan:
         diagnostic_name = ref.name
-    else:
-        diagnostic_name = dev.name
 
-    # Create the display name by editing the diagnostic name
+    # Create the display name for the table
     display_name = create_display_name(diagnostic_name)
 
     # Get the species name from the display name

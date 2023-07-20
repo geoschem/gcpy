@@ -39,6 +39,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
 - Fixed bug in transport tracer benchmark mass conservation table file write
+- Routine `create_display _name` now splits on only the first `_` in species & diag names
 
 ### Removed
 - Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines
