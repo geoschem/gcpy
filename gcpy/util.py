@@ -141,8 +141,11 @@ def create_display_name(
     # Initialize
     display_name = diagnostic_name
 
+    # For restart files, just split at the first underscore and return
+    # the text followiong the underscore.  This will preserve certain
+    # species names, such as the TransportTracers species CO_25, etc.
     if "SpeciesRst" in display_name:
-        display_name = display_name.split("_")[1]
+        return display_name.split("_", 1)[1]
 
     # Special handling for Inventory totals
     if "INV" in display_name.upper():
@@ -152,10 +155,55 @@ def create_display_name(
     for v in ["Emis", "EMIS", "emis", "Inv", "INV", "inv"]:
         display_name = display_name.replace(v, "")
 
-    # Replace underscores
-    display_name = display_name.replace("_", " ")
+    # Replace only the first underscore with a space
+    display_name = display_name.replace("_", " ", 1)
 
     return display_name
+
+
+def format_number_for_table(
+        number,
+        max_thresh=1.0e8,
+        min_thresh=1.0e-6,
+        f_fmt="18.6f",
+        e_fmt="18.8e"
+):
+    """
+    Returns a format string for use in the "print_totals" routine.
+    If the number is greater than a maximum threshold or smaller
+    than a minimum threshold, then use scientific notation format.
+    Otherwise use floating-piont format.
+
+    Special case: do not convert 0.0 to exponential notation.
+
+    Args:
+    -----
+    number : float
+        Number to be printed
+
+    max_thresh, min_thresh: float
+        If |number| > max_thresh, use scientific notation.
+        If |number| < min_thresh, use scientific notation
+
+    f_fmt, e_fmt : str
+        The default floating point string and default scientific
+        notation string.
+        Default values: 18.6f, 18.6e
+
+    Returns:
+    --------
+    fmt_str : str
+        Formatted string that can be inserted into the print
+        statement in print_totals.
+    """
+    abs_number = np.abs(number)
+
+    if not (abs_number > 1e-60):
+        return f"{number:{f_fmt}}"
+
+    if abs_number > max_thresh or abs_number < min_thresh:
+        return f"{number:{e_fmt}}"
+    return f"{number:{f_fmt}}"
 
 
 def print_totals(
@@ -216,12 +264,11 @@ def print_totals(
     # ==================================================================
     # Get the diagnostic name and units
     # ==================================================================
+    diagnostic_name = dev.name
     if dev_is_all_nan:
         diagnostic_name = ref.name
-    else:
-        diagnostic_name = dev.name
 
-    # Create the display name by editing the diagnostic name
+    # Create the display name for the table
     display_name = create_display_name(diagnostic_name)
 
     # Get the species name from the display name
@@ -288,7 +335,24 @@ def print_totals(
     # ==================================================================
     # Write output to file and return
     # ==================================================================
-    print(f"{display_name.ljust(19)}: {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {diff_str}", file=f)
+    ref_fmt = format_number_for_table(total_ref)
+    dev_fmt = format_number_for_table(total_dev)
+    diff_fmt = format_number_for_table(
+        diff,
+        max_thresh=1.0e4,
+        min_thresh=1.0e-4,
+        f_fmt="12.3f",
+        e_fmt="12.4e"
+    )
+    pctdiff_fmt = format_number_for_table(
+        pctdiff,
+        max_thresh=1.0e3,
+        min_thresh=1.0e-3,
+        f_fmt="8.3f",
+        e_fmt="8.1e"
+    )
+
+    print(f"{display_name[0:19].ljust(19)}: {ref_fmt}  {dev_fmt}  {diff_fmt}  {pctdiff_fmt}  {diff_str}", file=f)
 
     return diff_list
 

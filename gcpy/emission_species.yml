@@ -53,3 +53,22 @@ FullChemBenchmark:
   pFe: Tg
 CH4Benchmark:
   CH4: Tg
+TransportTracersBenchmark:
+#  Rn222: kg
+#  Pb210: kg
+#  Pb210s: kg
+  Be7: kg
+  Be7s: kg
+  Be10: kg
+  Be10s: kg
+  CH3I: Tg
+#  CO_25: Tg
+#  CO_50: Tg
+#  e90: Tg
+#  e90_n: Tg
+#  e90_s: Tg
+#  nh_5: Tg
+#  nh_50: Tg
+  SF6:  Tg
+#  st80_25: Tg
+#  stOX: Tg
