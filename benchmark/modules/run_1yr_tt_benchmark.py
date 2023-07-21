@@ -55,6 +55,7 @@ import warnings
 from shutil import copyfile
 from calendar import monthrange
 import numpy as np
+from joblib import Parallel, delayed
 from gcpy.util import get_filepath, get_filepaths
 from gcpy import benchmark as bmk
 import gcpy.budget_tt as ttbdg
@@ -119,6 +120,21 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     )
 
     # Diagnostic file directory paths
+    gcc_vs_gcc_refrstdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gcc"]["dir"],
+        config["data"]["ref"]["gcc"]["restarts_subdir"]
+    )
+    gchp_vs_gcc_refrstdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gchp"]["dir"],
+        config["data"]["ref"]["gchp"]["restarts_subdir"]
+    )
+    gchp_vs_gchp_refrstdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gchp"]["dir"],
+        config["data"]["ref"]["gchp"]["restarts_subdir"]
+    )
     gcc_vs_gcc_devrstdir = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"]["gcc"]["dir"],
@@ -216,6 +232,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Dates and times -- Ref data
     # ======================================================================
 
+    # Get days per month and seconds per month for ref
+    sec_per_month_ref = np.zeros(12)
+    days_per_month_ref = np.zeros(12)
+    for mon in range(12):
+        days_per_month_ref[mon] = monthrange(int(bmk_year_ref), mon + 1)[1]
+        sec_per_month_ref[mon] = days_per_month_ref[mon] * 86400.0
+
     # Get all months array of start datetimes for benchmark year
     bmk_start_ref = np.datetime64(bmk_year_ref + "-01-01")
     bmk_end_ref = np.datetime64(f"{int(bmk_year_ref) + 1}-01-01")
@@ -226,6 +249,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         dtype="datetime64[M]"
     )
     all_months_gchp_ref = all_months_ref
+
+    # Get subset of month datetimes and seconds per month
+    # for only benchmark months
+    bmk_mons_ref = all_months_ref[bmk_mon_inds]
+    bmk_mons_gchp_ref = all_months_gchp_ref[bmk_mon_inds]
+    bmk_sec_per_month_ref = sec_per_month_ref[bmk_mon_inds]
 
     # Compute seconds in the Ref year
     sec_per_yr_ref = 0
@@ -240,6 +269,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Month/year strings for use in table subdirectories (e.g. Jan2016)
     bmk_mon_yr_strs_dev = [v + bmk_year_dev for v in bmk_mon_strs]
 
+    # Get days per month and seconds per month for dev
+    sec_per_month_dev = np.zeros(12)
+    days_per_month_dev = np.zeros(12)
+    for mon in range(12):
+        days_per_month_dev[mon] = monthrange(int(bmk_year_dev), mon + 1)[1]
+        sec_per_month_dev[mon] = days_per_month_dev[mon] * 86400.0
+
     # Get all months array of start datetimes for benchmark year
     bmk_start_dev = np.datetime64(bmk_year_dev + "-01-01")
     bmk_end_dev = np.datetime64(f"{int(bmk_year_dev) + 1}-01-01")
@@ -250,6 +286,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         dtype="datetime64[M]"
     )
     all_months_gchp_dev = all_months_dev
+
+    bmk_mons_dev = all_months_dev[bmk_mon_inds]
+    bmk_mons_gchp_dev = all_months_gchp_dev[bmk_mon_inds]
+    bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
 
     # Compute seconds in the Dev year
     sec_per_yr_dev = 0
@@ -271,6 +311,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         print(" - Operations budget table")
     if config["options"]["outputs"]["ste_table"]:
         print(" - Table of strat-trop exchange")
+    if config["options"]["outputs"]["mass_table"]:
+        print(" - Table of species mass")
     if config["options"]["outputs"]["cons_table"]:
         print(" - Table of mass conservation")
     print("Comparisons will be made for the following combinations:")
@@ -434,6 +476,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         spcdb_dir=spcdb_dir,
                     )
 
+
         # ==================================================================
         # GCC vs GCC radionuclides budget tables
         # ==================================================================
@@ -447,6 +490,48 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+            )
+
+        # ==================================================================
+        # GCC vs GCC mass tables
+        # ==================================================================
+        if config["options"]["outputs"]["mass_table"]:
+            print("\n%%% Creating GCC vs. GCC mass tables %%%")
+
+            def gcc_vs_gcc_mass_table(mon):
+                """
+                Create mass table for each benchmark month mon in parallel
+                """
+
+                # Filepaths
+                refpath = get_filepath(
+                    gcc_vs_gcc_refrstdir,
+                    "Restart",
+                    bmk_mons_ref[mon]
+                )
+                devpath = get_filepath(
+                    gcc_vs_gcc_devrstdir,
+                    "Restart",
+                    bmk_mons_dev[mon]
+                )
+
+                # Create tables
+                bmk.make_benchmark_mass_tables(
+                    refpath,
+                    gcc_vs_gcc_refstr,
+                    devpath,
+                    gcc_vs_gcc_devstr,
+                    dst=gcc_vs_gcc_tablesdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                )
+
+            # Run in parallel
+            results = Parallel(n_jobs=-1)(
+                delayed(gcc_vs_gcc_mass_table)(mon) \
+                for mon in range(bmk_n_months)
             )
 
         # ==================================================================
@@ -693,6 +778,45 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )
 
         # ==================================================================
+        # GCHP vs GCC global mass tables
+        # ==================================================================
+        if config["options"]["outputs"]["mass_table"]:
+            print("\n%%% Creating GCHP vs. GCC mass tables %%%")
+
+            def gchp_vs_gcc_mass_table(mon):
+                """
+                Create mass table for each benchmark month in parallel
+                """
+
+                # Filepaths
+                refpath = get_filepath(
+                    gchp_vs_gcc_refrstdir,
+                    "Restart",
+                    bmk_mons_dev[mon]
+                )
+                devpath = get_filepath(
+                    gchp_vs_gcc_devrstdir,
+                    "Restart",
+                    bmk_mons_dev[mon],
+                    is_gchp=True,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
+                )
+
+                # KLUDGE: ewl, bmy, 13 Oct 2022
+                # Use last GCHP restart file, which has correct area values
+                devareapath = get_filepath(
+                    gchp_vs_gcc_devrstdir,
+                    "Restart",
+                    bmk_end_dev,
+                    is_gchp=True,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
+                )
+
+        # ==================================================================
         # GCHP vs GCC operations budgets tables
         # ==================================================================
         if config["options"]["outputs"]["operations_budget"]:
@@ -918,6 +1042,81 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir
+            )
+
+        # ==================================================================
+        # GCHP vs GCHP global mass tables
+        # ==================================================================
+        if config["options"]["outputs"]["mass_table"]:
+            print("\n%%% Creating GCHP vs. GCHP mass tables %%%")
+
+            def gchp_vs_gchp_mass_table(mon):
+                """
+                Create mass table for each benchmark month m in parallel
+                """
+
+                # Ref filepaths
+                refpath = get_filepath(
+                    gchp_vs_gchp_refrstdir,
+                    "Restart",
+                    bmk_mons_ref[mon],
+                    is_gchp=True,
+                    gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
+                        "is_pre_14.0"]
+                )
+
+                # Dev filepaths
+                devpath = get_filepath(
+                    gchp_vs_gchp_devrstdir,
+                    "Restarts",
+                    bmk_mons_dev[mon],
+                    is_gchp=True,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
+                )
+
+                # KLUDGE: ewl, bmy, 13 Oct 2022
+                # Use last GCHP restart file, which has correct area values
+                refareapath = get_filepath(
+                    gchp_vs_gchp_refrstdir,
+                    "Restart",
+                    bmk_end_ref,
+                    is_gchp=True,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
+                )
+                devareapath = get_filepath(
+                    gchp_vs_gchp_devrstdir,
+                    "Restart",
+                    bmk_end_dev,
+                    is_gchp=True,
+                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                        "is_pre_14.0"]
+                )
+
+                # Create tables
+                bmk.make_benchmark_mass_tables(
+                    refpath,
+                    gchp_vs_gchp_refstr,
+                    devpath,
+                    gchp_vs_gchp_devstr,
+                    dst=gchp_vs_gchp_tablesdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    ref_met_extra=refareapath,
+                    dev_met_extra=devareapath
+                )
+
+            # Run in parallel
+            results = Parallel(n_jobs=-1)(
+                delayed(gchp_vs_gchp_mass_table)(mon) \
+                for mon in range(bmk_n_months)
             )
 
         # ==================================================================
