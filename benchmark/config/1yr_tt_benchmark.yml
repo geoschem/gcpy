@@ -42,7 +42,7 @@ data:
       version: GCC_ref
       dir: GCC_ref
       outputs_subdir: OutputDir
-      restarts_subdir: restarts
+      restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
     gchp:
@@ -59,7 +59,7 @@ data:
       version: GCC_dev
       dir: GCC_dev
       outputs_subdir: OutputDir
-      restarts_subdir: restarts
+      restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
     gchp:
@@ -98,5 +98,6 @@ options:
     plot_wetdep: True
     rnpbbe_budget: True
     operations_budget: False
+    mass_table: True
     ste_table: True
     cons_table: True
