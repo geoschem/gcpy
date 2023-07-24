@@ -140,6 +140,7 @@ aoa_PROP: &aoaproperties
   Is_Advected: true
   Is_Gas: true
   Is_Tracer: true
+  MW_g: 1.0
   Snk_Mode: constant
   Snk_Value: 0
   Src_Add: true
