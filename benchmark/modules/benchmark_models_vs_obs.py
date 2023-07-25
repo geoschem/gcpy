@@ -348,20 +348,20 @@ def find_nearest_3d(
 
     Returns:
     --------
-    x_idx, y_idx, z_idx
+    x_idx, y_idx, z_idx : numpy.int64
         GEOS-Chem grid box indices for the single gridbox
         closest to GAW site specifications
     """
 
     x_idx=(
         np.abs(
-            gc_data.lon - float(lon_value)
+            gc_data.lon.values - float(lon_value)
         )
     ).argmin()
 
     y_idx=(
         np.abs(
-            gc_data.lat - float(lat_value)
+            gc_data.lat.values - float(lat_value)
         )
     ).argmin()
 
