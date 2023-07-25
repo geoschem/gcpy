@@ -229,13 +229,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
     # Models vs. observations directories
     gcc_vs_gcc_models_vs_obs_dir = os.path.join(
-        gcc_vs_gcc_resultsdir, "Models_vs_Observations"
+        gcc_vs_gcc_resultsdir, "ModelVsObs"
     )
     gchp_vs_gcc_models_vs_obs_dir = os.path.join(
-        gchp_vs_gcc_resultsdir, "Models_vs_Observations"
+        gchp_vs_gcc_resultsdir, "ModelVsObs"
     )
     gchp_vs_gchp_models_vs_obs_dir = os.path.join(
-        gchp_vs_gchp_resultsdir, "Models_vs_Observations"
+        gchp_vs_gchp_resultsdir, "ModelVsObs"
     )
 
     # ======================================================================
