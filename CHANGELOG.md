@@ -36,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Routine `print_totals` now prints small and/or large numbers in scientific notation
 - Truncate names in benchmark & emissions tables to improve readability
 - Add TransportTracers species names to `gcpy/emissions_*.yml` files
+- Updated `docs/environment_files/environment.yml` to install `pyproj==3.6.0` via pip
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
