@@ -2440,19 +2440,12 @@ def verify_variable_type(
     var : variable of any type
         The variable to check.
 
-    var_type : type or list of types
+    var_type : type or tuple of types
         A single type definition (list, str, pandas.Series, etc.)
-        or a list of type definitions.
+        or a tuple of type definitions.
     """
 
     # var_type is a list of types
-    if isinstance(var_type, list):
-        for the_type in var_type:
-            if isinstance(var, the_type):
-                return
-        raise TypeError( f"{var} is not of type: {var_type}!")
-
-    # var_type is a single type
     if isinstance(var, var_type):
         return
     raise TypeError( f"{var} is not of type: {var_type}!")
