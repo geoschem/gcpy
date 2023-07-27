@@ -1,6 +1,5 @@
-import numpy as np
 import xarray as xr
-from numpy import asarray
+import numpy as np
 import scipy.sparse
 from itertools import product
 from .util import get_shape_of_data
@@ -922,8 +921,8 @@ def calc_rectilinear_grid_area(lon_edge, lat_edge):
     # Convert from km to m
     _radius_earth_m = R_EARTH_m
 
-    lon_edge = asarray(lon_edge, dtype=float)
-    lat_edge = asarray(lat_edge, dtype=float)
+    lon_edge = np.asarray(lon_edge, dtype=float)
+    lat_edge = np.asarray(lat_edge, dtype=float)
 
     n_lon = (lon_edge.size) - 1
     n_lat = (lat_edge.size) - 1
@@ -967,7 +966,7 @@ def calc_delta_lon(lon_edge):
 
     n_lon = (lon_edge.size) - 1
 
-    lon_edge = asarray(lon_edge)
+    lon_edge = np.asarray(lon_edge)
 
     # Set up output array
     lon_delta = np.zeros((n_lon))
