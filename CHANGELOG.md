@@ -20,8 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `benchmark/modules/GC_72_vertical_levels.csv` file
 - Added `multi_index_lat` keyword to `reshape_MAPL_CS` function in `gcpy/util.py`
 - Added FURA to `emission_species.yml` and `benchmark_categories.yml`
-- Added new routine `format_number_for_table` in `util.py`
+- Added new routine `format_number_for_table` in `gcpy/util.py`
 - Added module `gcpy/cstools.py` with utility functions for cubed-sphere grids
+- Added new routine `verify_variable_type` function in `gcpy/util.py`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -41,7 +42,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
 - Fixed bug in transport tracer benchmark mass conservation table file write
-- Routine `create_display _name` now splits on only the first `_` in species & diag names
+- Routine `create_display_name` now splits on only the first `_` in species & diag names
 
 ### Removed
 - Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines

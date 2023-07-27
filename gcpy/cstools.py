@@ -48,24 +48,28 @@ DEG_TO_RAD = np.pi / 180.0
 
 
 def extract_grid(
-        data,
-        src_var='Xdim'
+        data
 ):
     """
     Extracts the grid information from an xarray.Dataset object and
-    returns a new xarray.Dataset object on a cubed-sphere grid.
+    returns the grid information as a cubed-sphere xarray.Dataset.
 
     Args:
     -----
-    data : xarray.Dataset
+    data : xarray.Dataset or xarray.DataArray
         The input dataset
 
-    data_cs: xarray.Dataset
+    data_cs: xarray.Dataset or None
         Same data as in argument "ds", but on a cubed-sphere grid
+        If the data is not placed on a cubed-sphere grid, then
+        this will be returned with the value None.
     """
-    if not isinstance(data, xr.Dataset):
-        return TypeError("Argument 'ds' is not of type 'xarray.Dataset'!")
-    n_cs = data[src_var].shape[-1]
+    gcpy.util.verify_variable_type(data, (xr.DataArray, xr.Dataset))
+
+    if not is_cubed_sphere(data):
+        return None
+
+    n_cs = data["Xdim"].shape[-1]
     return gen_grid(n_cs)
 
 
@@ -316,6 +320,7 @@ def gen_grid(
     stretched grid.
 
     Args:
+    -----
     n_cs : int
         Number of grid boxes along a single face of the cubed-sphere.
 
@@ -326,6 +331,16 @@ def gen_grid(
         Specifies the longitude and latitude at the center of the
         cubed-sphere grid face that will be stretched.
         Default values: None, None
+
+    Returns:
+    --------
+    grid : xarray.Dataset
+        Cubed-sphere grid definition containing the variables:
+           {'lat'   : lat midpoints,
+            'lon'   : lon midpoints,
+            'lat_b' : lat edges,
+            'lon_b' : lon edges}
+        where each value has an extra face dimension of length 6.
     """
     if stretch_factor is not None:
         cs_temp, ignore = gcpy.make_grid_SG(
@@ -480,7 +495,11 @@ def find_index_single(
         Ouptut of pyproj.Proj("+proj=latlon")
 
     jitter_size : float
-        ??
+        If the point cannot be matched to a cubed-sphere grid box,
+        then shift longitude by the distance [m] specified in
+        jitter_size before doing the lookup once more.  A nonzero
+        jitter_size value may be needed when the latitude is close
+        to +90 or -90.
 
     Returns:
     --------
@@ -531,9 +550,10 @@ def find_index_single(
         polygon.contains(xy_find_gno) for polygon in four_nearest_polygons_gno
     ]
 
+    # If the point cannot be matched (such as can happen near the poles),
+    # move the longitude by the jitter_size (in meters) and try again.
     if np.count_nonzero(polygon_contains_point) == 0:
         if jitter_size > 0.0:
-            # Move longitude by ~1 m
             nf_cs, ydim_cs, xdim_cs = find_index_single(
                 y_find,
                 x_find+jitter_size,
@@ -578,14 +598,22 @@ def find_index(
         Latitude and longitude (degrees) of the point for which
         cubed-sphere indices are desired.
 
-    grid : dict
-        Cubed-sphere grid definition as a dict of:
+    grid : xarray.Dataset
+        Cubed-sphere grid definition with the following variables:
            {'lat'   : lat midpoints,
             'lon'   : lon midpoints,
             'lat_b' : lat edges,
             'lon_b' : lon edges}
         where each value has an extra face dimension of length 6.
 
+    Keyword Args (optional):
+    ------------------------
+    jitter_size : float
+        If the point cannot be matched to a cubed-sphere grid box,
+        then shift longitude by the distance [m] specified in
+        jitter_size before doing the lookup once more.  A nonzero
+        jitter_size value may be needed when the latitude is close
+        to +90 or -90.  Default value: 0
 
     Returns:
     --------
@@ -595,6 +623,8 @@ def find_index(
             YDim is the cubed-sphere longitude index at (lat, lon)
             XDim is the cubed-sphere latitude index at (lat, lon)
     """
+    gcpy.util.verify_variable_type(grid, xr.Dataset)
+
     lon_vec = np.asarray(lon)
     lat_vec = np.asarray(lat)
     n_find = lon_vec.size
@@ -638,3 +668,29 @@ def find_index(
         idx[:,i_find] = [nf_cs, ydim_cs, xdim_cs]
 
     return idx
+
+
+def is_cubed_sphere(
+        data
+):
+    """
+    Given an xarray Dataset or DataArray object, determines if the
+    data is placed on a cubed-sphere grid
+
+    Args:
+    -----
+    data : xarray.Dataset or xarray.DataArray
+        The input data to be tested
+
+    Returns:
+    --------
+    is_gchp : bool
+        Returns True if data is placed on a cubed-sphere grid,
+        and False otherwise.
+    """
+    gcpy.util.verify_variable_type(data, (xr.DataArray, xr.Dataset))
+
+    if "nf" in data.dims:   # nf = number of cubed-sphere faces
+        return True
+
+    return False

@@ -22,7 +22,8 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 from gcpy.constants import skip_these_vars
-from gcpy.util import dataset_reader, make_directory, reshape_MAPL_CS
+from gcpy.util import verify_variable_type, dataset_reader, make_directory
+from gcpy.cstools import extract_grid, find_index, is_cubed_sphere
 
 def read_nas(
         input_file,
@@ -53,8 +54,7 @@ def read_nas(
     obs_site_coords : dict
         Dictionary containing formatted site name: lon, lat and altitude.
     """
-    if not isinstance(input_file, str):
-        raise TypeError("Argument 'input_file' is not of type str!")
+    verify_variable_type(input_file, str)
 
     if verbose:
         print(f"read_nas: Reading {input_file}")
@@ -160,8 +160,7 @@ def read_observational_data(
     obs_site_coords : dict
         Dictionary with coordinates of each observation site
     """
-    if not isinstance(path, str):
-        raise TypeError("The 'path' argument is not of type str!")
+    verify_variable_type(path, str)
 
     first = True
     obs_site_coords = {}
@@ -265,18 +264,11 @@ def read_model_data(
         raise exc(msg) from exc
 
     # Create a DataArray object and convert to ppbv (if necessary)
-    # Reshape GCHP data so that it has "lon", "lat" dimensions,
-    # which will facilitate data handling elsewhere in this module.
     with xr.set_options(keep_attrs=True):
         dataarray = dataset[varname]
         if "mol mol-1" in dataarray.attrs["units"]:
             dataarray.values *= 1.0e9
             dataarray.attrs["units"] = "ppbv"
-        if "nf" in dataarray.dims:
-            dataarray = reshape_MAPL_CS(
-                dataarray,
-                multi_index_lat=False
-            )
 
     return dataarray
 
@@ -318,21 +310,96 @@ def find_times(
     return obs_dataframe, qcflag
 
 
-def find_nearest_3d(
+def get_nearest_model_data_to_obs_cs(
         gc_data,
+        gc_cs_grid,
         gc_level_alts_m,
         lon_value,
         lat_value,
         alt_value
 ):
     """
-    Find GEOS-Chem gridbox closest to the observational dataset.
-    Uses lat, lon and alt from obs to select most appropriate GC data.
+    Returns GEOS-Chem model data (on a cubed-sphere grid) at the
+    grid box closest to an observation site location.
+
+    Args:
+    -----
+    gc_data : xarray DataArray
+        GEOS-Chem output to be processed
+
+    gc_cs_grid: xarray Dataset
+        Coordinate arrays defining the cubed-sphere grid.
+
+    gc_level_alts_m: pandas Series
+        Altitudes of GEOS-Chem levels in meters
+
+    lon_value : float
+        GAW site longitude
+
+    lat_value : float
+        GAW site latitude
+
+    alt_value : float
+        GAW site altitude
+
+    Keyword Args:
+    -------------
+
+    Returns:
+    --------
+    dataframe: pandas.DataFrame
+        Model data closest to the observation site.
+    """
+    verify_variable_type(gc_data, xr.DataArray)
+    verify_variable_type(gc_cs_grid, xr.Dataset)
+    verify_variable_type(gc_level_alts_m, pd.Series)
+
+    # Prevent the latitude from getting too close to the N or S poles
+    lat_value = max(min(lat_value, 89.75), -89.75)
+
+    # Indices (nf, yInd, xInd) of box nearest to observation site
+    cs_indices = find_index(
+        lat_value,
+        lon_value,
+        gc_cs_grid
+    )
+
+    # Index of nearest vertical levle to observation site
+    z_idx=(
+        np.abs(
+            gc_level_alts_m.values - float(alt_value)
+        )
+    ).argmin()
+
+    return gc_data.isel(
+        nf=cs_indices[0, 0],
+        Ydim=cs_indices[1, 0],
+        Xdim=cs_indices[2, 0],
+        lev=z_idx
+    ).to_dataframe()
+
+
+def get_nearest_model_data_to_obs_ll(
+        gc_data,
+        gc_cs_grid,
+        gc_level_alts_m,
+        lon_value,
+        lat_value,
+        alt_value,
+
+):
+    """
+    Returns GEOS-Chem model data (on a cubed-sphere grid) at the
+    grid box closest to an observation site location.
 
     Args:
     -----
     gc_data : xarray DataSet
         GEOS-Chem output to be processed
+
+    gc_cs_grid : NoneType
+        Dummy variable (needed to make the argument list the
+        same as in get_nearest_model_data_to_obs_ll).
 
     gc_level_alts_m: pandas Series
         Altitudes of GEOS-Chem levels in meters
@@ -348,20 +415,22 @@ def find_nearest_3d(
 
     Returns:
     --------
-    x_idx, y_idx, z_idx
-        GEOS-Chem grid box indices for the single gridbox
-        closest to GAW site specifications
+    dataframe: pandas.DataFrame
+        Model data closest to the observation site.
     """
+    verify_variable_type(gc_data, xr.DataArray)
+    verify_variable_type(gc_cs_grid, type(None))
+    verify_variable_type(gc_level_alts_m, pd.Series)
 
     x_idx=(
         np.abs(
-            gc_data.lon - float(lon_value)
+            gc_data.lon.values - float(lon_value)
         )
     ).argmin()
 
     y_idx=(
         np.abs(
-            gc_data.lat - float(lat_value)
+            gc_data.lat.values - float(lat_value)
         )
     ).argmin()
 
@@ -371,7 +440,39 @@ def find_nearest_3d(
         )
     ).argmin()
 
-    return x_idx, y_idx, z_idx
+    return gc_data.isel(
+        lon=x_idx,
+        lat=y_idx,
+        lev=z_idx
+    ).to_dataframe()
+
+
+def which_finder_function(
+        data
+):
+    """
+    Returns the function that will be used to get the model data nearest
+    to the observation site.  The function that is returned depends on
+    whether the model grid is lat-lon or cubed-sphere, as different
+    handling needs to be applied to each grid
+
+    Args:
+    -----
+    data : xarray.DataArray
+        Model data
+
+    Returns:
+    --------
+    A reference to the function that will read the data, depending
+    on whether the data is placed on a cubed-sphere grid or on
+    a lat-lon grid.
+    """
+    verify_variable_type(data, (xr.DataArray, xr.Dataset))
+
+    if is_cubed_sphere(data):
+        return get_nearest_model_data_to_obs_cs
+
+    return get_nearest_model_data_to_obs_ll
 
 
 def get_geoschem_level_metadata(
@@ -428,9 +529,12 @@ def prepare_data_for_plot(
         obs_site_coords,
         obs_site_name,
         ref_dataarray,
+        ref_cs_grid,
         dev_dataarray,
+        dev_cs_grid,
         gc_level_alts_m,
-        varname="SpeciesConcVV_O3"
+        varname="SpeciesConcVV_O3",
+        **kwargs,
 ):
     """
     Prepares data for passing to routine plot_single_frames as follows:
@@ -454,10 +558,12 @@ def prepare_data_for_plot(
     ref_dataarray, dev_dataarray : xarray DataArray
         Data from the Ref and Dev model versions.
 
-    ref_label, dev_label: str
-        Labels describing the Ref and Dev datasets (e.g. version numbers)
+    ref_cs_grid, dev_cs_grid : xarray.Dataset or NoneType
+        Dictionary containing the cubed-sphere grid definitions for
+        ref_dataarray and dev_dataarray (or None if ref_dataarray or
+        dev_dataarray are not placed on a cubed-sphere grid).
 
-    gc_level_alts_m : pandas DataFrame
+    gc_level_alts_m : pandas Series
         Metadata pertaining to GEOS-Chem vertical levels
 
     Keyword Args (Optional)
@@ -481,34 +587,37 @@ def prepare_data_for_plot(
     subplot_ylabel : str
         Label for the Y-axis (e.g. species name).
     """
+    verify_variable_type(obs_dataframe, pd.DataFrame)
+    verify_variable_type(obs_site_coords, dict)
+    verify_variable_type(obs_site_name, str)
+    verify_variable_type(ref_dataarray, xr.DataArray)
+    verify_variable_type(dev_dataarray, xr.DataArray)
+    verify_variable_type(ref_cs_grid, (xr.Dataset, type(None)))
+    verify_variable_type(dev_cs_grid, (xr.Dataset, type(None)))
+    verify_variable_type(gc_level_alts_m, pd.Series)
+    verify_variable_type(varname, str)
 
-    # Get Ref model data nearest to the observation site
-    x_idx, y_idx, z_idx = find_nearest_3d(
+    # Get data from the Ref model closest to the data site
+    finder_function = which_finder_function(ref_dataarray)
+    ref_dataframe = finder_function(
         ref_dataarray,
+        ref_cs_grid,
         gc_level_alts_m,
         lon_value=round(obs_site_coords[obs_site_name]['lon'], 2),
         lat_value=round(obs_site_coords[obs_site_name]['lat'], 2),
         alt_value=round(obs_site_coords[obs_site_name]['alt'], 1)
     )
-    ref_dataframe = ref_dataarray.isel(
-        lon=x_idx,
-        lat=y_idx,
-        lev=z_idx
-    ).to_dataframe()
 
-    # Get Dev model data nearest to the observation site
-    x_idx, y_idx, z_idx = find_nearest_3d(
+    # Get data from the Dev model closest to the obs site
+    finder_function = which_finder_function(dev_dataarray)
+    dev_dataframe = finder_function(
         dev_dataarray,
+        dev_cs_grid,
         gc_level_alts_m,
         lon_value=round(obs_site_coords[obs_site_name]['lon'], 2),
         lat_value=round(obs_site_coords[obs_site_name]['lat'], 2),
         alt_value=round(obs_site_coords[obs_site_name]['alt'], 1)
     )
-    dev_dataframe = dev_dataarray.isel(
-        lon=x_idx,
-        lat=y_idx,
-        lev=z_idx
-    ).to_dataframe()
 
     # Take the monthly mean of observations for plotting
     # (since some observation sites have multiple months of data)
@@ -548,7 +657,8 @@ def plot_single_station(
         ref_series,
         ref_label,
         dev_series,
-        dev_label
+        dev_label,
+        **kwargs
 ):
     """
     Plots observation data vs. model data at a single station site.
@@ -582,21 +692,17 @@ def plot_single_station(
         Descriptive labels (e.g. version numbers) for the
         GEOS-Chem Ref and Dev model versions.
     """
-    if not isinstance(fig, Figure):
-        msg = "The 'fig' argument is not of type matplotlib.figure.Figure!"
-    if not isinstance(cols_per_page, int):
-        msg = "The 'cols_per_page' argument is not of type int!"
-    if not isinstance(rows_per_page, int):
-        msg = "The 'rows_per_page' argument is not of type int!"
-    if not isinstance(obs_dataframe, pd.DataFrame):
-        msg = "The 'obs_dataframe' argument is not of type pandas.DataFrame!"
-        raise TypeError(msg)
-    if not isinstance(ref_series, pd.Series):
-        msg = "The 'ref_series' argument is not of type pandas.Series!"
-        raise TypeError(msg)
-    if not isinstance(dev_series, pd.Series):
-        msg = "The 'ref_series' argument is not of type pandas.Series!"
-        raise TypeError(msg)
+    verify_variable_type(fig, Figure)
+    verify_variable_type(rows_per_page, int)
+    verify_variable_type(cols_per_page, int)
+    verify_variable_type(subplot_index, int)
+    verify_variable_type(subplot_title, str)
+    verify_variable_type(subplot_ylabel, str)
+    verify_variable_type(obs_dataframe, pd.DataFrame)
+    verify_variable_type(ref_series, pd.Series)
+    verify_variable_type(ref_label, str)
+    verify_variable_type(dev_series, pd.Series)
+    verify_variable_type(dev_label, str)
 
     # Create matplotlib axes object for this subplot
     # axes_subplot is of type matplotlib.axes_.subplots.AxesSubplot
@@ -664,10 +770,10 @@ def plot_single_station(
     )
     axes_subplot.set_ylim(
         0,
-        100
+        80
     )
     axes_subplot.set_yticks(
-        [0, 25, 50, 75, 100]
+        [0, 20, 40, 60, 80]
     )
     axes_subplot.tick_params(
         axis='both',
@@ -683,12 +789,15 @@ def plot_one_page(
         obs_site_names,
         ref_dataarray,
         ref_label,
+        ref_cs_grid,
         dev_dataarray,
         dev_label,
+        dev_cs_grid,
         gc_level_alts_m,
         rows_per_page=3,
         cols_per_page=3,
         varname="SpeciesConcVV_O3",
+        **kwargs
 ):
     """
     Plots a single page of models vs. observations.
@@ -710,6 +819,11 @@ def plot_one_page(
     ref_label, dev_label: str
         Labels describing the Ref and Dev datasets (e.g. version numbers)
 
+    ref_cs_grid, dev_cs_grid : xarray.Dataset or NoneType
+        Dictionary containing the cubed-sphere grid definitions for
+        ref_dataarray and dev_dataarray (or None if ref_dataarray or
+        dev_dataarray are not placed on a cubed-sphere grid).
+
     gc_level_alts_m : pandas DataFrame
         Metadata pertaining to GEOS-Chem vertical levels
 
@@ -728,27 +842,16 @@ def plot_one_page(
         Toggles verbose printout on (True) or off (False).
         Default value: False
     """
-    if not isinstance(obs_dataframe, pd.DataFrame):
-        msg = "The 'obs_dataframe' argument is not of type pandas.DataFrame!"
-        raise TypeError(msg)
-    if not isinstance(obs_site_coords, dict):
-        msg = "The 'obs_site_coords' argument is not of type dict!"
-        raise TypeError(msg)
-    if not isinstance(ref_dataarray, xr.DataArray):
-        msg = "The 'ref_dataset' argument is not of type xarray.DataArray!"
-        raise TypeError(msg)
-    if not isinstance(ref_label, str):
-        msg = "The 'ref_label' argument is not of type str!"
-        raise TypeError(msg)
-    if not isinstance(dev_dataarray, xr.DataArray):
-        msg = "The 'ref_dataset' argument is not of type xarray.DataArray!"
-        raise TypeError(msg)
-    if not isinstance(dev_label, str):
-        msg = "The 'dev_label' argument is not of type str!"
-        raise TypeError(msg)
-    if not isinstance(gc_level_alts_m, pd.Series):
-        msg = "The 'gc_level_alts_m' argument is not of type pandas.Series!"
-        raise TypeError(msg)
+    verify_variable_type(obs_dataframe, pd.DataFrame)
+    verify_variable_type(obs_site_coords, dict)
+    verify_variable_type(obs_site_names, list)
+    verify_variable_type(ref_dataarray, xr.DataArray)
+    verify_variable_type(ref_label, str)
+    verify_variable_type(ref_cs_grid, (xr.Dataset, type(None)))
+    verify_variable_type(dev_dataarray, xr.DataArray)
+    verify_variable_type(dev_label, str)
+    verify_variable_type(dev_cs_grid, (xr.Dataset, type(None)))
+    verify_variable_type(gc_level_alts_m, pd.Series)
 
     # Define a new matplotlib.figure.Figure object for this page
     # Landscape width: 11" x 8"
@@ -768,9 +871,12 @@ def plot_one_page(
             obs_site_coords,              # dict
             obs_site_name,                # str
             ref_dataarray,                # xarray.DataArray
+            ref_cs_grid,                  # dict or none
             dev_dataarray,                # xarray.DataArray
+            dev_cs_grid,                  # dict or none
             gc_level_alts_m,              # pandas.Series
             varname=varname,              # str
+            **kwargs
         )
 
         # Plot models vs. observation for a single station site
@@ -786,7 +892,8 @@ def plot_one_page(
             ref_series,                   # pandas.Series
             ref_label,                    # str
             dev_series,                   # pandas.Series
-            dev_label                     # str
+            dev_label,                    # str
+            **kwargs
         )
 
     # Add extra spacing around plots
@@ -817,7 +924,7 @@ def plot_models_vs_obs(
         gc_level_alts_m,
         varname="SpeciesConcVV_O3",
         dst="./benchmark",
-        verbose=False
+        **kwargs
 ):
     """
     Plots models vs. observations using a 3 rows x 3 column layout.
@@ -853,24 +960,18 @@ def plot_models_vs_obs(
         Toggles verbose printout on (True) or off (False).
         Default value: False
     """
-    if not isinstance(obs_dataframe, pd.DataFrame):
-        msg = "The 'obs_dataframe' argument is not of type pandas.DataFrame!"
-        raise TypeError(msg)
-    if not isinstance(ref_dataarray, xr.DataArray):
-        msg = "The 'ref_dataset' argument is not of type xarray.DataArray!"
-        raise TypeError(msg)
-    if not isinstance(ref_label, str):
-        msg = "The 'ref_label' argument is not of type str!"
-        raise TypeError(msg)
-    if not isinstance(dev_dataarray, xr.DataArray):
-        msg = "The 'ref_dataset' argument is not of type xarray.DataArray!"
-        raise TypeError(msg)
-    if not isinstance(dev_label, str):
-        msg = "The 'dev_label' argument is not of type str!"
-        raise TypeError(msg)
-    if not isinstance(gc_level_alts_m, pd.Series):
-        msg = "The 'gc_level_alts_m' argument is not of type pandas.Series!"
-        raise TypeError(msg)
+    verify_variable_type(obs_dataframe, pd.DataFrame)
+    verify_variable_type(obs_site_coords, dict)
+    verify_variable_type(ref_dataarray, xr.DataArray)
+    verify_variable_type(ref_label, str)
+    verify_variable_type(dev_dataarray, xr.DataArray)
+    verify_variable_type(dev_label, str)
+    verify_variable_type(gc_level_alts_m, pd.Series)
+
+    # Get the cubed-sphere grid definitions for Ref & Dev
+    # (will be returned as "None" for lat/lon grids)
+    ref_cs_grid = extract_grid(ref_dataarray)
+    dev_cs_grid = extract_grid(dev_dataarray)
 
     # Figure setup
     plt.style.use('seaborn-darkgrid')
@@ -906,12 +1007,15 @@ def plot_models_vs_obs(
             obs_site_names[start:end+1],  # list of str
             ref_dataarray,                # xarray.DataArray
             ref_label,                    # str
+            ref_cs_grid,                  # xarray.DataSet or NoneType
             dev_dataarray,                # xarray.DataArray
             dev_label,                    # str
+            dev_cs_grid,                  # xarray.Dataset or NoneType
             gc_level_alts_m,              # pandas.Series
             rows_per_page=rows_per_page,  # int
             cols_per_page=cols_per_page,  # int
-            varname=varname               # str
+            varname=varname,              # str
+            **kwargs
         )
 
     # Close the PDF file after all pages are plotted.
@@ -930,26 +1034,42 @@ def make_benchmark_models_vs_obs_plots(
         overwrite=False
 ):
     """
-    Driver routine to create plots
+    Driver routine to create model vs. observation plots.
+
+    Args:
+    -----
+    obs_filepaths : str or list
+        Path(s) to the observational data.
+
+    ref_filepaths, dev_filepaths: str or list
+        Path(s) to the Ref and Dev model versions to be compared.
+
+    ref_label, dev_label : str
+        Descriptive labels (e.g. for version numbers) for the
+        Ref and Dev model data.
+
+    Keyword Args (optional):
+    ------------------------
+    varname : str
+        Variable name for model data to be plotted against
+        observations.  Default value: "SpeciesConcVV_O3".
+
+    dst : str
+        Path to the root folder where plots will be created.
+
+    verbose : bool
+        Toggles verbose printout on (True) or off (False).
+        Default value: False
+
+    overwrite : bool
+        Toggles whether plots should be overwritten (True)
+        or not (False). Default value: True
     """
-    if not isinstance(obs_filepaths, list) and \
-       not isinstance(obs_filepaths, str):
-        msg = "The 'obs_filepaths' argument is not of type 'list' or 'str'!"
-        raise TypeError(msg)
-    if not isinstance(ref_filepaths, list) and \
-       not isinstance(ref_filepaths, str):
-        msg = "The 'ref_filepaths' argument is not of type 'list' or 'str'!"
-        raise TypeError(msg)
-    if not isinstance(ref_label, str):
-        msg = "The 'ref_label' argument is not of type 'str'!"
-        raise TypeError(msg)
-    if not isinstance(dev_filepaths, list) and \
-       not isinstance(dev_filepaths, str):
-        msg = "The 'dev_filepaths' argument is not of type 'list' or 'str'!"
-        raise TypeError(msg)
-    if not isinstance(ref_label, str):
-        msg = "The 'dev_label' argument is not of type 'str'!"
-        raise TypeError(msg)
+    verify_variable_type(obs_filepaths, (str, list))
+    verify_variable_type(ref_filepaths, (str, list))
+    verify_variable_type(ref_label, str)
+    verify_variable_type(dev_filepaths, (str, list))
+    verify_variable_type(dev_label, str)
 
     # Create the destination folder
     make_directory(
