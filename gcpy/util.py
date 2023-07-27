@@ -2425,3 +2425,34 @@ def trim_cloud_benchmark_label(
             label.replace(v, "")
 
     return label
+
+
+def verify_variable_type(
+        var,
+        var_type
+):
+    """
+    Convenience routine that will raise a TypeError if a variable's
+    type does not match a list of expected types.
+
+    Args:
+    -----
+    var : variable of any type
+        The variable to check.
+
+    var_type : type or list of types
+        A single type definition (list, str, pandas.Series, etc.)
+        or a list of type definitions.
+    """
+
+    # var_type is a list of types
+    if isinstance(var_type, list):
+        for the_type in var_type:
+            if isinstance(var, the_type):
+                return
+        raise TypeError( f"{var} is not of type: {var_type}!")
+
+    # var_type is a single type
+    if isinstance(var, var_type):
+        return
+    raise TypeError( f"{var} is not of type: {var_type}!")
