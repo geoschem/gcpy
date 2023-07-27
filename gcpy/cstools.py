@@ -495,7 +495,11 @@ def find_index_single(
         Ouptut of pyproj.Proj("+proj=latlon")
 
     jitter_size : float
-        ??
+        If the point cannot be matched to a cubed-sphere grid box,
+        then shift longitude by the distance [m] specified in
+        jitter_size before doing the lookup once more.  A nonzero
+        jitter_size value may be needed when the latitude is close
+        to +90 or -90.
 
     Returns:
     --------
@@ -546,9 +550,10 @@ def find_index_single(
         polygon.contains(xy_find_gno) for polygon in four_nearest_polygons_gno
     ]
 
+    # If the point cannot be matched (such as can happen near the poles),
+    # move the longitude by the jitter_size (in meters) and try again.
     if np.count_nonzero(polygon_contains_point) == 0:
         if jitter_size > 0.0:
-            # Move longitude by ~1 m
             nf_cs, ydim_cs, xdim_cs = find_index_single(
                 y_find,
                 x_find+jitter_size,
@@ -600,6 +605,15 @@ def find_index(
             'lat_b' : lat edges,
             'lon_b' : lon edges}
         where each value has an extra face dimension of length 6.
+
+    Keyword Args (optional):
+    ------------------------
+    jitter_size : float
+        If the point cannot be matched to a cubed-sphere grid box,
+        then shift longitude by the distance [m] specified in
+        jitter_size before doing the lookup once more.  A nonzero
+        jitter_size value may be needed when the latitude is close
+        to +90 or -90.  Default value: 0
 
     Returns:
     --------
