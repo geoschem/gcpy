@@ -2,10 +2,14 @@
 # =====================================================================
 # Benchmark configuration file (**EDIT AS NEEDED**)
 # customize in the following manner:
-# (1) Edit the path variables so that they point to folders w/ model data
+#
+# (1) Edit the path variables so that they point to folders
+#     containing model data
 # (2) Edit the version strings for each benchmark simulation
-# (3) Edit the switches that turn on/off creating of plots and tables
+# (3) Edit the switches that turn on/off creating of plots and
+#     tables as well as other plotting options.
 # (4) If necessary, edit labels for the dev and ref versions
+#
 # Note: When doing GCHP vs GCC comparisions gchp_dev will be compared
 # to gcc_dev (not gcc_ref!). This ensures consistency in version names
 # when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
@@ -74,10 +78,16 @@ data:
       is_pre_14.0: False              # for gcpy_test_data, edit if needed
       resolution: c24                 # for gcpy_test_data, edit if needed   
 #
-# options: Specify the types of comparisons to perform
+# options: Customize the benchmark plot output.
 # 
 options:
+#
+# bmk_type: Specifies the type of benchmark
+#
   bmk_type: FullChemBenchmark
+#
+# comparisons: Specifies the comparisons to perform.
+#
   comparisons:
     gcc_vs_gcc: 
       run: True # True to run this comparison
@@ -113,3 +123,10 @@ options:
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
+#
+# n_cores: Specify the number of cores to use:
+# -1: Use as many cores as possible
+#  N: Use N cores
+#  1: Disable parallelization (use a single core)
+#
+  n_cores: -1
