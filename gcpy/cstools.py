@@ -37,10 +37,15 @@ try:
     import pyproj
     import shapely.ops
     import shapely.geometry
-except ImportError as exc:
-    raise ImportError(
-        "gcpy.cstools needs packages 'pyproj' and 'shapely'!"
-    ) from exc
+# HOTFIX: Don't raise an ImportError until we can add pyproj to
+# the AWS cloud container.  This is causing errors that prevent
+# benchmark plotting jobs from finishing. -- Bob Y. (01 Aug 2023)
+#except ImportError as exc:
+#    raise ImportError(
+#        "gcpy.cstools needs packages 'pyproj' and 'shapely'!"
+#    ) from exc
+except:
+    print("pyproj is not available")
 
 # Constants
 RAD_TO_DEG = 180.0 / np.pi
