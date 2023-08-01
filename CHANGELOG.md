@@ -23,6 +23,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new routine `format_number_for_table` in `gcpy/util.py`
 - Added module `gcpy/cstools.py` with utility functions for cubed-sphere grids
 - Added new routine `verify_variable_type` function in `gcpy/util.py`
+- Added new routine `format_number_for_table` in `util.py`
+- Added BrSALA and BrSALC to `emission_species.yml`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
