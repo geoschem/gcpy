@@ -402,6 +402,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -427,6 +428,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -469,6 +471,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -494,6 +497,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -526,6 +530,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dev_interval=sec_per_month_dev,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -563,6 +568,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -583,6 +589,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -620,6 +627,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -640,6 +648,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -923,6 +932,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -948,6 +958,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==============================================================
@@ -991,6 +1002,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1016,6 +1028,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1088,6 +1101,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1108,6 +1122,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1146,6 +1161,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1166,6 +1182,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1483,6 +1500,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "plot_options"]["by_spc_cat"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1509,6 +1527,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1554,6 +1573,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1580,6 +1600,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1656,6 +1677,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1677,6 +1699,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1717,6 +1740,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1738,6 +1762,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -2050,6 +2075,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 second_dev=gchp_dev,
                 cats_in_ugm3=None,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -2077,6 +2103,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     second_dev=gchp_dev[mon_ind],
                     cats_in_ugm3=None,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
     # ==================================================================

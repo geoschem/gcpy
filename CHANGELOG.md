@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new routine `verify_variable_type` function in `gcpy/util.py`
 - Added new routine `format_number_for_table` in `util.py`
 - Added BrSALA and BrSALC to `emission_species.yml`
+- Added `options:n_cores` to all benchmark YAML config files
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -40,6 +41,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Truncate names in benchmark & emissions tables to improve readability
 - Add TransportTracers species names to `gcpy/emissions_*.yml` files
 - Updated `docs/environment_files/environment.yml` to install `pyproj==3.6.0` via pip
+- Now pass `n_job=config["options"]["n_cores"]` to benchmark plotting routines
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`

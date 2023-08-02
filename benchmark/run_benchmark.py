@@ -428,6 +428,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -456,6 +457,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -503,6 +505,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -526,6 +529,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -774,6 +778,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -809,6 +814,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]                
             )
 
         # ==================================================================
@@ -839,6 +845,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 devmet=devmet,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]                
             )
 
         # ==================================================================
@@ -867,6 +874,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]                
             )
 
         # ==================================================================
@@ -895,6 +903,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]                
             )
 
         # ==================================================================
@@ -1001,7 +1010,7 @@ def run_benchmark_default(config):
                 is_gchp=True
             )
 
-            # Create plots
+            # Create table
             bmk.make_benchmark_operations_budget(
                 config["data"]["dev"]["gcc"]["version"],
                 ref,
@@ -1178,6 +1187,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]                
             )
 
         # ==================================================================
@@ -1216,6 +1226,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]                
             )
 
         # ==================================================================
@@ -1285,6 +1296,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]                
             )
 
         # ==================================================================
@@ -1318,6 +1330,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]                
             )
 
         # ==================================================================
@@ -1568,6 +1581,7 @@ def run_benchmark_default(config):
                 second_dev=gchp_dev,
                 cats_in_ugm3=None,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]                
             )
 
 

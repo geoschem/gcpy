@@ -385,6 +385,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 restrict_cats=restrict_cats,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -407,6 +408,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     restrict_cats=restrict_cats,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -453,6 +455,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
                 # ----------------------------------------------------------
@@ -474,6 +477,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         benchmark_type=bmk_type,
                         overwrite=True,
                         spcdb_dir=spcdb_dir,
+                        n_job=config["options"]["n_cores"]
                     )
 
 
@@ -666,6 +670,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 restrict_cats=restrict_cats,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -688,6 +693,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     restrict_cats=restrict_cats,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -735,6 +741,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     normalize_by_area=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
                 # ----------------------------------------------------------
@@ -757,6 +764,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         benchmark_type=bmk_type,
                         normalize_by_area=True,
                         spcdb_dir=spcdb_dir,
+                        n_job=config["options"]["n_cores"]
                     )
 
         # ==================================================================
@@ -928,6 +936,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
                 cmpres=cmpres
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -951,6 +960,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                     cmpres=cmpres
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1001,6 +1011,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     normalize_by_area=True,
                     spcdb_dir=spcdb_dir,
                     cmpres=cmpres
+                    n_job=config["options"]["n_cores"]
                 )
 
                 # ----------------------------------------------------------
@@ -1024,6 +1035,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         normalize_by_area=True,
                         spcdb_dir=spcdb_dir,
                         cmpres=cmpres
+                        n_job=config["options"]["n_cores"]
                     )
 
         # ==================================================================
