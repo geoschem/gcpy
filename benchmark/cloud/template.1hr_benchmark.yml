@@ -122,8 +122,8 @@ options:
       by_hco_cat: True
   #
   # n_cores: Specify the number of cores to use:
-  # -1: Use as many cores as possible
-  #  N: Use N cores
+  # -1: Use all available cores
+  # -N: Use N cores
   #  1: Disable parallelization (use a single core)
   #
   n_cores: -1

@@ -81,13 +81,13 @@ data:
 # options: Customize the benchmark plot output.
 # 
 options:
-#
-# bmk_type: Specifies the type of benchmark
-#
+  #
+  # bmk_type: Specifies the type of benchmark
+  #
   bmk_type: FullChemBenchmark
-#
-# comparisons: Specifies the comparisons to perform.
-#
+  #
+  # comparisons: Specifies the comparisons to perform.
+  #
   comparisons:
     gcc_vs_gcc: 
       run: True # True to run this comparison
@@ -104,9 +104,9 @@ options:
     gchp_vs_gcc_diff_of_diffs:
       run: True
       dir: GCHP_GCC_diff_of_diffs
-#
-# outputs: Types of output to generate (plots/tables)
-#
+  #
+  # outputs: Types of output to generate (plots/tables)
+  #
   outputs:
     plot_conc: True
     plot_emis: True
@@ -123,10 +123,10 @@ options:
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
-#
-# n_cores: Specify the number of cores to use:
-# -1: Use as many cores as possible
-#  N: Use N cores
-#  1: Disable parallelization (use a single core)
-#
+  #
+  # n_cores: Specify the number of cores to use:
+  # -1: Use all available cores
+  # -N: Use N cores
+  #  1: Disable parallelization (use a single core)
+  #
   n_cores: -1
