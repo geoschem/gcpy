@@ -20,6 +20,7 @@ from gcpy.regrid import create_regridders
 from gcpy.grid import get_troposphere_mask
 from gcpy.units import convert_units
 import gcpy.constants as gcon
+from gcpy.constants import TABLE_WIDTH, COL_WIDTH
 
 # Save warnings format to undo overwriting built into PyPDF2
 warning_format = warnings.showwarning
@@ -28,9 +29,9 @@ warning_format = warnings.showwarning
 np.seterr(divide="ignore", invalid="ignore")
 
 # YAML files
-aod_spc = "aod_species.yml"
-emission_spc = "emission_species.yml"
-emission_inv = "emission_inventories.yml"
+AOD_SPC = "aod_species.yml"
+EMISSION_SPC = "emission_species.yml"
+EMISSION_INV = "emission_inventories.yml"
 
 
 def create_total_emissions_table(
@@ -122,12 +123,8 @@ def create_total_emissions_table(
     # ==================================================================
     # Initialization
     # ==================================================================
-
-    # Make sure refdata and devdata are both xarray Dataset objects
-    if not isinstance(refdata, xr.Dataset):
-        raise TypeError("The refdata argument must be an xarray Dataset!")
-    if not isinstance(devdata, xr.Dataset):
-        raise TypeError("The devdata argument must be an xarray Dataset!")
+    util.verify_variable_type(refdata, xr.Dataset)
+    util.verify_variable_type(devdata, xr.Dataset)
 
     # Get ref area [m2]
     if "AREA" in refdata.data_vars.keys():
@@ -155,7 +152,7 @@ def create_total_emissions_table(
     # this benchmark.py file is found.
     properties = util.read_config_file(
         os.path.join(
-            spcdb_dir, 
+            spcdb_dir,
             "species_database.yml"
         ),
         quiet=True
@@ -228,7 +225,7 @@ def create_total_emissions_table(
         # Push the total variable to the last list element
         # so that it will be printed last of all
         if len(vartot) == 1:
-            varnames.append(varnames.pop(varnames.index(vartot[0])))        
+            varnames.append(varnames.pop(varnames.index(vartot[0])))
 
         # Title strings
         if "Inv" in template:
@@ -244,12 +241,12 @@ def create_total_emissions_table(
         title3 = f"### Dev = {devstr}"
 
         # Print header to file
-        print("#" * 89, file=f)
-        print(f"{title1 : <86}{'###'}", file=f)
-        print(f"{title2 : <86}{'###'}", file=f)
-        print(f"{title3 : <86}{'###'}", file=f)
-        print("#" * 89, file=f)
-        print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'diffs'}", file=f)
+        print("#" * TABLE_WIDTH, file=f)
+        print(f"{title1 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+        print(f"{title2 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+        print(f"{title3 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+        print("#" * TABLE_WIDTH, file=f)
+        print(f"{'' : <{COL_WIDTH-1}}{'Ref' : >{COL_WIDTH}}{'Dev' : >{COL_WIDTH}}{'Dev - Ref' : >{COL_WIDTH}}{'% diff' : >{COL_WIDTH}} {'diffs'}", file=f)
 
         # =============================================================
         # Loop over all emissions variables corresponding to this
@@ -361,7 +358,7 @@ def create_total_emissions_table(
             refstr,
             devstr,
             diff_list),
-        width=90
+        width=TABLE_WIDTH
     )
 
 def create_global_mass_table(
@@ -431,12 +428,8 @@ def create_global_mass_table(
     # ==================================================================
     # Initialization
     # ==================================================================
-
-    # Make sure refdata and devdata are xarray Dataset objects
-    if not isinstance(refdata, xr.Dataset):
-        raise TypeError("The refdata argument must be an xarray Dataset!")
-    if not isinstance(devdata, xr.Dataset):
-        raise TypeError("The devdata argument must be an xarray Dataset!")
+    util.verify_variable_type(refdata, xr.Dataset)
+    util.verify_variable_type(devdata, xr.Dataset)
 
     # Make sure required arguments are passed
     if varlist is None:
@@ -480,17 +473,17 @@ def create_global_mass_table(
     placeholder = "@%% insert diff status here %%@"
 
     # Print header to file
-    print("#" * 89, file=f)
-    print(f"{title1 : <86}{'###'}", file=f)
-    print(f"{'###'  : <86}{'###'}", file=f)
-    print(f"{title2 : <86}{'###'}", file=f)
-    print(f"{title3 : <86}{'###'}", file=f)
-    print(f"{'###'  : <86}{'###'}", file=f)
+    print("#" * TABLE_WIDTH, file=f)
+    print(f"{title1 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{'###'  : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{title2 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{title3 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{'###'  : <{TABLE_WIDTH-3}}{'###'}", file=f)
     print(f"{placeholder}", file=f)
-    print("#" * 89, file=f)
+    print("#" * TABLE_WIDTH, file=f)
 
     # Column headers
-    print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'diffs'}", file=f)
+    print(f"{'' : <{COL_WIDTH-1}}{'Ref' : >{COL_WIDTH}}{'Dev' : >{COL_WIDTH}}{'Dev - Ref' : >{COL_WIDTH}}{'% diff' : >{COL_WIDTH}} {'diffs'}", file=f)
 
     # ==================================================================
     # Print global masses for all species
@@ -592,7 +585,7 @@ def create_global_mass_table(
             diff_list,
             fancy_format=True
         ),
-        width=100  # Force it not to wrap
+        width=TABLE_WIDTH
     )
 
 
@@ -675,16 +668,10 @@ def create_mass_accumulation_table(
     # ==================================================================
     # Initialization
     # ==================================================================
-
-    # Make sure refdata and devdata are xarray Dataset objects
-    if not isinstance(refdatastart, xr.Dataset):
-        raise TypeError("The refdatastart argument must be an xarray Dataset!")
-    if not isinstance(refdataend, xr.Dataset):
-        raise TypeError("The refdataend argument must be an xarray Dataset!")
-    if not isinstance(devdatastart, xr.Dataset):
-        raise TypeError("The devdatastart argument must be an xarray Dataset!")
-    if not isinstance(devdataend, xr.Dataset):
-        raise TypeError("The devdataend argument must be an xarray Dataset!")
+    util.verify_variable_type(refdatastart, xr.Dataset)
+    util.verify_variable_type(refdataend, xr.Dataset)
+    util.verify_variable_type(devdatastart, xr.Dataset)
+    util.verify_variable_type(devdataend, xr.Dataset)
 
     # Make sure required arguments are passed
     if varlist is None:
@@ -731,22 +718,22 @@ def create_mass_accumulation_table(
     placeholder = "@%% insert diff status here %%@"
 
     # Print header to file
-    print("#" * 89, file=f)
-    print(f"{title1 : <86}{'###'}", file=f)
-    print(f"{'###'  : <86}{'###'}", file=f)
-    print(f"{title2 : <86}{'###'}", file=f)
-    print(f"{'###'  : <86}{'###'}", file=f)
-    print(f"{title3 : <86}{'###'}", file=f)
-    print(f"{title4 : <86}{'###'}", file=f)
-    print(f"{'###'  : <86}{'###'}", file=f)
-    print(f"{title5 : <86}{'###'}", file=f)
-    print(f"{title6 : <86}{'###'}", file=f)
-    print(f"{'###'  : <86}{'###'}", file=f)
+    print("#" * TABLE_WIDTH, file=f)
+    print(f"{title1 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{'###'  : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{title2 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{'###'  : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{title3 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{title4 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{'###'  : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{title5 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{title6 : <{TABLE_WIDTH-3}}{'###'}", file=f)
+    print(f"{'###'  : <{TABLE_WIDTH-3}}{'###'}", file=f)
     print(f"{placeholder}", file=f)
-    print("#" * 89, file=f)
+    print("#" * TABLE_WIDTH, file=f)
 
     # Column headers
-    print(f"{'' : <19}{'Ref' : >20}{'Dev' : >20}{'Dev - Ref' : >14}{'% diff' : >10} {'diffs'}", file=f)
+    print(f"{'' : <{COL_WIDTH-1}}{'Ref' : >{COL_WIDTH}}{'Dev' : >{COL_WIDTH}}{'Dev - Ref' : >{COL_WIDTH}}{'% diff' : >{COL_WIDTH}} {'diffs'}", file=f)
 
     # ==================================================================
     # Print global masses for all species
@@ -880,7 +867,7 @@ def create_mass_accumulation_table(
             diff_list,
             fancy_format=True
         ),
-        width=100  # Force it not to wrap
+        width=TABLE_WIDTH
     )
 
 
@@ -1083,7 +1070,7 @@ def make_benchmark_conc_plots(
     diff_of_diffs = False
     if second_ref is not None and second_dev is not None:
         diff_of_diffs = True
-   
+
 
     # Open second datasets if passed as arguments (used for diff of diffs)
     # Regrid to same horz grid resolution if two refs or two devs do not match.
@@ -2121,7 +2108,7 @@ def make_benchmark_emis_tables(
     spc_dict = util.read_config_file(
         os.path.join(
             os.path.dirname(__file__),
-            emission_spc
+            EMISSION_SPC
         ),
         quiet=True
     )
@@ -2129,7 +2116,7 @@ def make_benchmark_emis_tables(
     inv_dict = util.read_config_file(
         os.path.join(
             os.path.dirname(__file__),
-            emission_inv
+            EMISSION_INV
         ),
         quiet=True
     )
@@ -2756,7 +2743,7 @@ def make_benchmark_aod_plots(
     newvars = util.read_config_file(
         os.path.join(
             os.path.dirname(__file__),
-            aod_spc
+            AOD_SPC
         ),
         quiet=True
     )
@@ -3163,6 +3150,7 @@ def make_benchmark_mass_tables(
     del refds
     del devds
     gc.collect()
+
 
 def make_benchmark_mass_accumulation_tables(
         ref_start,
@@ -4019,7 +4007,7 @@ def make_benchmark_aerosol_tables(
     # Read the species database
     spcdb = util.read_config_file(
         os.path.join(
-            spcdb_dir, 
+            spcdb_dir,
             "species_database.yml"
         ),
         quiet=True
@@ -4761,7 +4749,7 @@ def make_benchmark_operations_budget(
                 # Get ref and dev mass
 
                 # Get species properties for unit conversion. If none, skip.
-                species_properties = properties.get(spc)                
+                species_properties = properties.get(spc)
                 if species_properties is None:
                     continue
                 else:
@@ -4771,7 +4759,7 @@ def make_benchmark_operations_budget(
 
                 # Specify target units
                 target_units = "Gg"
-                
+
                 # ==============================================================
                 # Convert units of Ref and save to a DataArray
                 # (or skip if Ref contains NaNs everywhere)
@@ -4787,7 +4775,7 @@ def make_benchmark_operations_budget(
                         delta_p=met_and_masks["Ref_Delta_P"],
                         box_height=met_and_masks["Ref_BxHeight"],
                     )
-                
+
                 # ==============================================================
                 # Convert units of Dev and save to a DataArray
                 # (or skip if Dev contains NaNs everywhere)
@@ -5214,7 +5202,7 @@ def create_benchmark_summary_table(
     # Print header to file
     print("#" * 80, file=f)
     print(f"{title1 : <77}{'###'}", file=f)
-    print(f"{'###'  : <77}{'###'}", file=f)   
+    print(f"{'###'  : <77}{'###'}", file=f)
     print(f"{title2 : <77}{'###'}", file=f)
     print(f"{title3 : <77}{'###'}", file=f)
     print("#" * 80, file=f)
@@ -5334,14 +5322,13 @@ def diff_list_to_text(
     diff_text : str
         String with concatenated list values.
     """
-    if not isinstance(diff_list, list):
-        raise ValueError("Argument 'diff_list' must be a list!")
+    util.verify_variable_type(diff_list, list)
 
     # Use "Dev" and "Ref" for inserting into a header
     if fancy_format:
         refstr = "Ref"
         devstr = "Dev"
-        
+
     # Strip out duplicates from diff_list
     # Prepare a message about species differences (or alternate msg)
     diff_list = util.unique_values(diff_list, drop=[None])
@@ -5353,15 +5340,16 @@ def diff_list_to_text(
     else:
         diff_text = f"{devstr} and {refstr} are identical"
 
-    # If we are placing the text in a header,
-    # then trim the length of diff_text to fit.
+    # If we are placing the text in a header, trim the length of diff_text
+    # to fit.  NOTE: TABLE_WIDTH-7 leaves room for the '### ' at the start
+    # of the string and the '###' at the end of the string,
     if fancy_format:
+        diff_text = f"### {diff_text : <{TABLE_WIDTH-7}}{'###'}"
         diff_text = util.wrap_text(
             diff_text,
-            width=83
+            width=TABLE_WIDTH
         )
-        diff_text = f"### {diff_text : <82}{'###'}"
-        
+
     return diff_text.strip()
 
 
@@ -5385,12 +5373,8 @@ def diff_of_diffs_toprow_title(config, model):
     title: str
         The plot title string for the diff-of-diff
     """
-    if not isinstance(config, dict):
-        msg = "The 'config' argument must be of type 'dict`!"
-        raise ValueError(msg)
-    if not isinstance(model, str):
-        msg = "The 'model' argument must be of type 'str'!"
-        raise ValueError(msg)
+    util.verify_variable_type(config, dict)
+    util.verify_variable_type(model, str)
     if not "gcc" in model and not "gchp" in model:
         msg = "The 'model' argument must be either 'gcc' or 'gchp'!"
         raise ValueError(msg)
