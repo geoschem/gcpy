@@ -11,6 +11,11 @@ from yaml import safe_load as yaml_safe_load
 import numpy as np
 import xarray as xr
 from PyPDF2 import PdfFileWriter, PdfFileReader
+from gcpy.constants import TABLE_WIDTH
+
+# ======================================================================
+# %%%%% METHODS %%%%%
+# ======================================================================
 
 def convert_lon(
         data,
@@ -42,6 +47,7 @@ def convert_lon(
     Returns:
         data, with dimension 'dim' altered according to conversion rule
     """
+    verify_variable_type(data, (xr.DataArray, xr.Dataset))
 
     data_copy = data.copy()
 
@@ -241,14 +247,9 @@ def print_totals(
     # ==================================================================
     # Initialization and error checks
     # ==================================================================
-
-    # Make sure that both Ref and Dev are xarray DataArray objects
-    if not isinstance(ref, xr.DataArray):
-        raise TypeError("The 'ref' argument must be an xarray DataArray!")
-    if not isinstance(dev, xr.DataArray):
-        raise TypeError("The 'dev' argument must be an xarray DataArray!")
-    if not isinstance(diff_list, list):
-        raise TypeError("The 'diff_list' argument must be a list!")
+    verify_variable_type(ref, xr.DataArray)
+    verify_variable_type(dev, xr.DataArray)
+    verify_variable_type(diff_list, list)
 
     # Determine if either Ref or Dev have all NaN values:
     ref_is_all_nan = np.isnan(ref.values).all()
@@ -279,7 +280,7 @@ def print_totals(
 
     # Special handling for totals
     if "_TOTAL" in diagnostic_name.upper():
-        print("-"*90, file=f)
+        print("-" * TABLE_WIDTH, file=f)
 
     # ==================================================================
     # Sum the Ref array (or set to NaN if missing)
@@ -337,20 +338,8 @@ def print_totals(
     # ==================================================================
     ref_fmt = format_number_for_table(total_ref)
     dev_fmt = format_number_for_table(total_dev)
-    diff_fmt = format_number_for_table(
-        diff,
-        max_thresh=1.0e4,
-        min_thresh=1.0e-4,
-        f_fmt="12.3f",
-        e_fmt="12.4e"
-    )
-    pctdiff_fmt = format_number_for_table(
-        pctdiff,
-        max_thresh=1.0e3,
-        min_thresh=1.0e-3,
-        f_fmt="8.3f",
-        e_fmt="8.1e"
-    )
+    diff_fmt = format_number_for_table(diff)
+    pctdiff_fmt = format_number_for_table(pctdiff)
 
     print(f"{display_name[0:19].ljust(19)}: {ref_fmt}  {dev_fmt}  {diff_fmt}  {pctdiff_fmt}  {diff_str}", file=f)
 
@@ -593,12 +582,8 @@ def add_missing_variables(
     # ==================================================================
     # Initialize
     # ==================================================================
-
-    # Make sure that refdata and devdata are both xarray Dataset objects
-    if not isinstance(refdata, xr.Dataset):
-        raise TypeError("The refdata object must be an xarray Dataset!")
-    if not isinstance(devdata, xr.Dataset):
-        raise TypeError("The refdata object must be an xarray Dataset!")
+    verify_variable_type(refdata, xr.Dataset)
+    verify_variable_type(devdata, xr.Dataset)
 
     # Find common variables as well as variables only in one or the other
     vardict = compare_varnames(refdata, devdata, quiet=True)
@@ -804,9 +789,7 @@ def slice_by_lev_and_time(
             DataArray of data variable sliced according to ilev and itime
     """
     # used in compare_single_level and compare_zonal_mean to get dataset slices
-    if not isinstance(ds, xr.Dataset):
-        msg="ds is not of type xarray.Dataset!"
-        raise TypeError(msg)
+    verify_variable_type(ds, xr.Dataset)
     if not varname in ds.data_vars.keys():
         msg="Could not find 'varname' in ds!"
         raise ValueError(msg)
@@ -881,6 +864,9 @@ def dict_diff(
         result: dict
             Key-by-key difference of dict1 - dict0
     """
+    verify_variable_type(dict0, dict)
+    verify_variable_type(dict1, dict)
+
     result = {}
     for key, _ in dict0.items():
         result[key] = dict1[key] - dict0[key]
@@ -936,6 +922,9 @@ def compare_varnames(
             devonly          List of 2D or 3D variables that are only
                              present in devdata
     """
+    verify_variable_type(refdata, xr.Dataset)
+    verify_variable_type(devdata, xr.Dataset)
+
     refvars = [k for k in refdata.data_vars.keys()]
     devvars = [k for k in devdata.data_vars.keys()]
     commonvars = sorted(list(set(refvars).intersection(set(devvars))))
@@ -1485,12 +1474,8 @@ def divide_dataset_by_dataarray(
     # -----------------------------
     # Check arguments
     # -----------------------------
-    if not isinstance(ds, xr.Dataset):
-        raise TypeError("The ds argument must be of type xarray.Dataset!")
-
-    if not isinstance(dr, xr.DataArray):
-        raise TypeError("The dr argument must be of type xarray.DataArray!")
-
+    verify_variable_type(ds, xr.Dataset)
+    verify_variable_type(dr, xr.DataArray)
     if varlist is None:
         varlist = ds.data_vars.keys()
 
@@ -1545,7 +1530,6 @@ def get_shape_of_data(
             (['time', 'lev', 'lat', 'lon'] for GEOS-Chem "Classic",
              or ['time', 'lev', 'nf', 'Ydim', 'Xdim'] for GCHP.
     """
-
     # Validate the data argument
     if isinstance(data, (xr.Dataset, xr.DataArray)):
         sizelist = data.sizes
@@ -1590,6 +1574,7 @@ def get_area_from_dataset(
         area_m2: xarray DataArray
             The surface area in m2, as found in ds.
     """
+    verify_variable_type(ds, xr.Dataset)
 
     if "Met_AREAM2" in ds.data_vars.keys():
         return ds["Met_AREAM2"]
@@ -1626,6 +1611,7 @@ def get_variables_from_dataset(
     Use this routine if you absolutely need all of the requested
     variables to be returned.  Otherwise
     """
+    verify_variable_type(ds, xr.Dataset)
 
     ds_subset = xr.Dataset()
     for v in varlist:
@@ -1753,6 +1739,7 @@ def check_for_area(
         ds: xarray Dataset
             The modified Dataset object
     """
+    verify_variable_type(ds, xr.Dataset)
 
     found_gcc = gcc_area_name in ds.data_vars.keys()
     found_gchp = gchp_area_name in ds.data_vars.keys()

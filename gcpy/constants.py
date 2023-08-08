@@ -48,3 +48,11 @@ skip_these_vars = [
     "contacts",
     "cubed_sphere"
 ]
+
+
+# ======================================================================
+# Table and column widths for emissions & mass tables
+# ======================================================================
+TABLE_WIDTH = 105
+COL_WIDTH = 20
+
