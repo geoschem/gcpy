@@ -61,8 +61,8 @@ from gcpy.util import get_filepath, get_filepaths
 import gcpy.ste_flux as ste
 import gcpy.oh_metrics as oh
 import gcpy.budget_ox as ox
-from gcpy import benchmark as bmk
-import modules.benchmark_models_vs_obs as mvo
+from gcpy import benchmark_funcs as bmk
+import gcpy.benchmark.modules.benchmark_models_vs_obs as mvo
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -388,7 +388,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_conc_plots(
+            bmkf.make_benchmark_conc_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,

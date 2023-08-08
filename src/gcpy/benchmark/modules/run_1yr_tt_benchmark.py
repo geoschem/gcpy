@@ -57,7 +57,7 @@ from calendar import monthrange
 import numpy as np
 from joblib import Parallel, delayed
 from gcpy.util import get_filepath, get_filepaths
-from gcpy import benchmark as bmk
+from gcpy import benchmark_funcs as bmk
 import gcpy.budget_tt as ttbdg
 import gcpy.ste_flux as ste
 

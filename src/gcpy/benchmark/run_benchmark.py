@@ -46,12 +46,14 @@ import warnings
 from datetime import datetime
 import numpy as np
 from gcpy.util import get_filepath, read_config_file
-import gcpy.ste_flux as ste
-import gcpy.oh_metrics as oh
-import gcpy.benchmark as bmk
+from gcpy import ste_flux as ste
+from gcpy import oh_metrics as oh
+from gcpy import benchmark_funcs as bmk
 from gcpy.date_time import add_months, is_full_year
-from modules.run_1yr_fullchem_benchmark import run_benchmark as run_1yr_benchmark
-from modules.run_1yr_tt_benchmark import run_benchmark as run_1yr_tt_benchmark
+from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
+    import run_benchmark as run_1yr_benchmark
+from gcpy.benchmark.modules.run_1yr_tt_benchmark \
+    import run_benchmark as run_1yr_tt_benchmark
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
