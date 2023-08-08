@@ -338,8 +338,8 @@ def print_totals(
     # ==================================================================
     ref_fmt = format_number_for_table(total_ref)
     dev_fmt = format_number_for_table(total_dev)
-    diff_fmt = format_number_for_table(total_dev)
-    pctdiff_fmt = format_number_for_table(total_dev)
+    diff_fmt = format_number_for_table(diff)
+    pctdiff_fmt = format_number_for_table(pctdiff)
 
     print(f"{display_name[0:19].ljust(19)}: {ref_fmt}  {dev_fmt}  {diff_fmt}  {pctdiff_fmt}  {diff_str}", file=f)
 
