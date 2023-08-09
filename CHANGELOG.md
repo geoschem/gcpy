@@ -46,6 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Folder `gcpy/benchmark` is now `gcpy/gcpy/benchmark`
 - Folder `benchmark/modules` is now `gcpy/gcpy/benchmark/modules`
 - Folder `gcpy/examples` is now `gcpy/gcpy/examples`
+- Pass `sys.argv` to the `main()` routine of `run_benchmark.py`,` compare_diags.py`
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`

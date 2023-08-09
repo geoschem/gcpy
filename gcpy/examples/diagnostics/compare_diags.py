@@ -314,15 +314,15 @@ def compare_data(config, data):
         )
 
 
-def main():
+def main(argv):
     """
     Main program, reads data and calls compare_data to make plots.
     """
 
     # Take the config file as the 2nd argument (or use a default)
     # NOTE: sys.argv[0] is always the program name!
-    if len(sys.argv) == 2:
-        config_file = sys.argv[1]
+    if len(argv) == 2:
+        config_file = argv[1]
     else:
         config_file = "compare_diags.yml"
 
@@ -338,4 +338,4 @@ def main():
 
 # Only execute when we run as a standalone script
 if __name__ == "__main__":
-    main()
+    main(sys.argv)
