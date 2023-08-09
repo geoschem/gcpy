@@ -1579,15 +1579,15 @@ def run_benchmark_default(config):
     print("\n%%%% All requested benchmark plots/tables created! %%%%")
 
 
-def main():
+def main(argv):
     """
     Driver program. Determines which benchmark script script to call
     for 1-hour, 1-day, 1-month, or 1-year benchmarks.
     """
-    config_filename = sys.argv[1] if len(sys.argv) == 2 else "1mo_benchmark.yml"
+    config_filename = argv[1] if len(argv) == 2 else "1mo_benchmark.yml"
     config = read_config_file(config_filename)
     choose_benchmark_type(config)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)
