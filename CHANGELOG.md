@@ -25,7 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new routine `verify_variable_type` function in `gcpy/util.py`
 - Added new routine `format_number_for_table` in `util.py`
 - Added BrSALA and BrSALC to `emission_species.yml`
-- Added `__init__.py` files in subfolders of `gcpy/src/gcpy`
+- Added `__init__.py` files in subfolders of `gcpy/gcpy`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -43,9 +43,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `docs/environment_files/environment.yml` to install `pyproj==3.6.0` via pip
 - Folder `gcpy/gcpy` is now  `gcpy/src/gcpy`, for adherence to Python packaging standards
 - Script `benchmark.py` to `benchmark_funcs.py` to remove a name collision
-- Folder `gcpy/benchmark` is now `gcpy/src/gcpy/benchmark`
-- Folder `benchmark/modules` is now `gcpy/src/gcpy/benchmark/modules`
-- Folder `gcpy/examples` is now `gcpy/src/gcpy/examples`
+- Folder `gcpy/benchmark` is now `gcpy/gcpy/benchmark`
+- Folder `benchmark/modules` is now `gcpy/gcpy/benchmark/modules`
+- Folder `gcpy/examples` is now `gcpy/gcpy/examples`
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`

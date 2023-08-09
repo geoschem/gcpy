@@ -32,15 +32,16 @@ yantosca@seas.harvard.edu
 '''
 
 # Imports
-import gcpy.constants as gcon
 import os
+import warnings
 import numpy as np
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 import xarray as xr
-import warnings
+from gcpy import constants
+
 
 # Tell matplotlib not to look for an X-window, as we are plotting to
 # a file and not to the screen.  This will avoid some warning messages.
@@ -70,7 +71,7 @@ def find_files_in_dir(path, substrs):
             List of files in the directory (specified by path)
             that match all substrings (specified in substrs).
     '''
-    
+
     # Initialize
     file_list = []
 
@@ -130,9 +131,9 @@ def read_geoschem_data(path, collections):
             files may be found.
 
         collections: list of str
-            List of GEOS-Chem collections.  Files for these 
+            List of GEOS-Chem collections.  Files for these
             collections will be read into the xarray Dataset.
-            
+
     Returns:
     --------
         ds : xarray Dataset
@@ -145,15 +146,15 @@ def read_geoschem_data(path, collections):
     # These are mostly variables introduced into GCHP with the MAPL v1.0.0
     # update.  These variables contain either repeated or non-standard
     # dimensions that can cause problems in xarray when combining datasets.
-    skip_vars = gcon.skip_these_vars
-    
-    # Find all files in the given 
-    file_list = find_files_in_dir(path, collections) 
+    skip_vars = constants.skip_these_vars
+
+    # Find all files in the given
+    file_list = find_files_in_dir(path, collections)
 
     # Return a single xarray Dataset containing data from all files
     # NOTE: Need to add combine="nested" for xarray 0.15 and higher
     v = xr.__version__.split(".")
-    if int(v[0]) == 0 and int(v[1]) >= 15: 
+    if int(v[0]) == 0 and int(v[1]) >= 15:
         return xr.open_mfdataset(file_list,
                                  drop_variables=skip_vars,
                                  combine="nested",
@@ -329,7 +330,7 @@ def main():
     # Get a list of files in the ConcAboveSfc and SpeciesConc collections
     # (YOU CAN EDIT THIS FOR YOUR OWN PARTICULAR APPLICATION!)
     collections = ['ConcAboveSfc', 'SpeciesConc']
-    
+
     # Read GEOS-Chem data into an xarray Dataset
     ds = read_geoschem_data(path_to_data, collections)
 

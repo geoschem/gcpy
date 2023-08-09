@@ -10,10 +10,10 @@ Calling sequence:
 add_blank_var.py varname infile outfile
 """
 
-from sys import argv
 import numpy as np
 import xarray as xr
 from gcpy.util import create_blank_dataarray
+from gcpy.constants import skip_these_vars
 
 
 def add_blank_var_to_ncfile(
@@ -42,33 +42,36 @@ def add_blank_var_to_ncfile(
     """
     with xr.set_options(keep_attrs=True):
 
-        ds = xr.open_dataset(infile)
+        dset = xr.open_dataset(
+            infile,
+            drop_variables=skip_these_vars
+        )
 
         if varattrs is None:
-            varattrs = ds.attrs
+            varattrs = dset.attrs
 
-        da = create_blank_dataarray(
+        darr = create_blank_dataarray(
             varname,
-            ds.sizes,
-            ds.coords,
+            dset.sizes,
+            dset.coords,
             varattrs,
             fill_value=0.0,
             fill_type=np.float32
         )
 
-        ds = xr.merge([ds, da])
+        dset = xr.merge([dset, darr])
 
-        ds.to_netcdf(outfile)
+        dset.to_netcdf(outfile)
 
 
 if __name__ == '__main__':
 
     # Name of the blank varible to add (EDIT AS NEEDED)
     # NOTE: For GCHP, the prefix must be "SPC_" instead of "SpeciesRst_"
-    varname = "SpeciesRst_PRO2"
+    VAR_NAME = "SpeciesRst_PRO2"
 
     # Variable attributes (EDIT AS NEEDED)
-    varattrs = {
+    VAR_ATTRS = {
         "MW_g"            : "146.98",
         "long_name"       : "Dummy species to track production rate of RO2",
         "units"           : "mol mol-1 dry",
@@ -79,8 +82,8 @@ if __name__ == '__main__':
 
     # Add blank variable to restart file (EDIT FILENAMES AS NEEDED)
     add_blank_var_to_ncfile(
-        varname,
+        VAR_NAME,
         'GEOSChem.Restart.20190701_0000z.nc4',
         'new.GEOSChem.Restart.20190701_0000z.nc4',
-        varattrs=varattrs
+        varattrs=VAR_ATTRS
     )
