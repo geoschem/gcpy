@@ -1,6 +1,5 @@
 """
-GCPy initialization script: gcpy/src/examples
+GCPy import script
 """
-
-from . import *
-
+from .plot_single_panel import *
+from .plot_comparisons import *

@@ -1,6 +1,7 @@
 """
-GCPy initialization script: gcpy/src/examples
+GCPy import script
 """
 
-from . import *
+from .bpch2nc import *
+from .bpch_tagco_prodloss_to_nc import *
 

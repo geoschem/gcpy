@@ -1,6 +1,6 @@
 """
-GCPy initialization script: gcpy/src/examples
+GCPy import script
 """
-
-from . import *
+from .mda8_o3_timeseries import *
+from .plot_timeseries import *
 

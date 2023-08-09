@@ -1,6 +1,6 @@
 """
-GCPy initialization script: gcpy/src/examples
+GCPy import script
 """
 
-from . import *
+from .compare_diags import *
 
