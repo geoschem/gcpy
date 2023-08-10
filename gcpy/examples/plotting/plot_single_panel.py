@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from gcpy import plot
 
 
-def example_plot_single_panel():
+def main():
     """
     Example routine to create single panel plots.
     """
@@ -110,4 +110,4 @@ def example_plot_single_panel():
 
 # Only execute when we run as a standalone script
 if __name__ == '__main__':
-    example_plot_single_panel()
+    main()

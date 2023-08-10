@@ -64,14 +64,17 @@ def add_blank_var_to_ncfile(
         dset.to_netcdf(outfile)
 
 
-if __name__ == '__main__':
 
+def main():
+    """
+    Main program
+    """
     # Name of the blank varible to add (EDIT AS NEEDED)
     # NOTE: For GCHP, the prefix must be "SPC_" instead of "SpeciesRst_"
-    VAR_NAME = "SpeciesRst_PRO2"
+    var_name = "SpeciesRst_PRO2"
 
     # Variable attributes (EDIT AS NEEDED)
-    VAR_ATTRS = {
+    var_attrs = {
         "MW_g"            : "146.98",
         "long_name"       : "Dummy species to track production rate of RO2",
         "units"           : "mol mol-1 dry",
@@ -82,8 +85,12 @@ if __name__ == '__main__':
 
     # Add blank variable to restart file (EDIT FILENAMES AS NEEDED)
     add_blank_var_to_ncfile(
-        VAR_NAME,
+        var_name,
         'GEOSChem.Restart.20190701_0000z.nc4',
         'new.GEOSChem.Restart.20190701_0000z.nc4',
-        varattrs=VAR_ATTRS
+        varattrs=var_attrs
     )
+
+# Only execute when we run as a standalone script
+if __name__ == '__main__':
+    main()

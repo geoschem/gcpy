@@ -10,7 +10,7 @@ import xarray as xr
 import sparselt.esmf
 import sparselt.xr
 
-def example_regrid_restart_ll_to_cs():
+def main():
 
     # Path to regridding weights (EDIT AS NEEDED)
     weights_dir="/path/to/regridding/weights/"
@@ -93,4 +93,4 @@ def example_regrid_restart_ll_to_cs():
 
 # Only execute when we run as a standalone script
 if __name__ == '__main__':
-    example_regrid_restart_ll_to_cs()
+    main()

@@ -160,5 +160,7 @@ def main():
     # Write concatenated data to a netCDF file
     dset.to_netcdf(outfile)
 
+
+# Only execute when running as a standalone script
 if __name__ == "__main__":
     main()

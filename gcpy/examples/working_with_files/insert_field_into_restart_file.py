@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 warnings.filterwarnings("ignore", category=SerializationWarning)
 
-def example_insert_field_into_restart_file():
+def main():
     """
     Appends extra species to restart files.
     """
@@ -85,4 +85,4 @@ def example_insert_field_into_restart_file():
 
 # Only execute when we run as a standalone script
 if __name__ == "__main__":
-    example_insert_field_into_restart_file()
+    main()

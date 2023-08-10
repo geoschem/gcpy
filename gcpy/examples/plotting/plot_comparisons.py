@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from gcpy import plot
 from gcpy.constants import skip_these_vars
 
-def example_plot_comparisons():
+def main():
     """
     Example function to create six-panel comparison plots.
     """
@@ -104,4 +104,4 @@ def example_plot_comparisons():
 
 # Only execute when we run as a standalone script
 if __name__ == '__main__':
-    example_plot_comparisons()
+    main()

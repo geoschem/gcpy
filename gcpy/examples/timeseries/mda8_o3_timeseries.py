@@ -22,12 +22,12 @@ import xarray as xr
 plt.style.use(['seaborn-talk', 'seaborn-ticks'])
 
 
-def example_mda8_o3_timeseries():
+def main():
     """
     MDA8 O3 timeseries example
     """
 
-    # Read hourly data
+    # Read hourly data ### EDIT THIS IF NECESSARY
     InFile = 'GEOSChem.Hourly_SfcO3.2017.nc'
     ds = xr.open_dataset(InFile)
     o3_data = ds['SpeciesConc_O3']
@@ -81,4 +81,4 @@ def example_mda8_o3_timeseries():
 
 # Only execute when running as a standalone script
 if __name__ == '__main__':
-    example_mda8_o3_imeseries()
+    main()
