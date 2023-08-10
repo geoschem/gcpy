@@ -9,4 +9,3 @@ from .plotting import *
 from .timeseries import *
 from .working_with_files import *
 from .xarray_examples import *
-from .yaml_examples import *
