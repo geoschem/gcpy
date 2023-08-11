@@ -132,10 +132,6 @@ three stage process:
 Python environment for gridspec and sparselt
 --------------------------------------------
 
-**NOTE: Starting with GCPy 1.4.0 (currently under development),**
-:code:`gridspec` **and** :code:`sparselt` **are included in the
-standard environment file.**
-
 Until GCPy contains a complete regridding implementation that works
 for all GEOS-Chem grid formats, we recommend that you create a small
 `mamba <https://docs.conda.io/en/latest/>`_ environment in which to
