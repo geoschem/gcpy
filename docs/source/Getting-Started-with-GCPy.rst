@@ -30,255 +30,172 @@ receive an error message if you attempt to use GCPy on Windows.
    computer.
 
 The only essential software you need before installing GCPy is a
-distribution of the :program:`Conda` package manager. This is used to
-create a Python environment for GCPy containing all of its software
-dependences, including what version of Python you use. You must
-using GCPy with Python version 3.9.
+distribution of the :program:`Mamba` package manager. :program:`Mamba`
+is a drop-in replacement for the widely-used :program:`Conda`
+package manager.  You will use :program:`Mamba` to create a Python
+environment for GCPy, which contains a Python version (currently
+3.9.6) plus specific versions of various dependent packages.
 
-You can check if you already have Conda installed by running the
-following command:
+Check if you already have :program:`Mamba` by using this command:
 
 .. code-block:: console
 
-   $ conda --version
+   $ mamba --version
 
-.. attention::
+If :program:`Mamba` has already been installed on your system, **skip
+ahead to the** :ref:`gcpy_install` **section**.
 
-   You must use Conda 4.12.0 or earlier to install GCPy and its
-   dependencies.  Newer versions of Conda than this will install
-   Python package versions that are incompatible with GCPy. See
-   :ref:`Installing Conda 4.12.0 with Miniconda <conda412_install>`
-   below.
+.. _mamba_install:
 
-   In the future we hope to be able to resolve this installation issue
-   so that you can use the latest Conda version.
+==============================
+Installing Mamba as MicroMamba
+==============================
 
-If Conda is not already installed, you must use :program:`Miniconda`
-to install Conda 4.12.0.  Miniconda is a minimal installer for Conda
-that generally includes many fewer packages in the base environment
-than are available for download. This provides a lightweight Conda
-installation from which you can create custom Python environments with
-whatever Python packages you wish to use, including an environment
-with GCPy dependencies.
+:program:`MicroMamba` is a minimal :program:`Mamba` version that is
+easier to install than the full :program:`MambaForge` distribution.
+Follow the installation steps listed below:
 
-.. _conda412_install:
+#. Download and run the :program:`MicroMamba` executable.
 
-============================================
-Steps to install Conda 4.12.0 with Miniconda
-============================================
-
-If you already have a Conda version prior to 4.12.0 installed on your
-system, you may skip this step and proceed to the section entitled
-:ref:`gcpy_install`.
-
-If you need to install Conda 4.12.0, follow these steps:
-
-#. Download the Miniconda installer script for your operating system
-   as shown below. The script will install Conda version 4.12.0 using
-   Python 3.9.
-
-   **Linux (x86_64 CPUs)**
+   Execute the command listed below that is relevant to your operating
+   system.  (You can cut-and-paste the command into a terminal window.)
 
    .. code-block:: console
 
-      $ wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-Linux-x86_64.sh
+      # Linux Intel (x86_64), including Windows Subsystem for Linux
+      $ curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
 
-   **MacOS (M1 CPUs)**
+      # MacOS Intel (x86_64):
+      $ curl -Ls https://micro.mamba.pm/api/micromamba/osx-64/latest | tar -xvj bin/micromamba
 
-   .. code-block:: console
+      # MacOS Silicon/M1, Silicon/M2 (ARM64):
+      $ curl -Ls https://micro.mamba.pm/api/micromamba/osx-arm64/latest | tar -xvj bin/micromamba
 
-      $ wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-MacOSX-arm64.sh
-
-   **MacOS (x86_64 CPUs)**
-
-   .. code-block:: console
-
-      $ wget https://repo.anaconda.com/miniconda/Miniconda3-py39_4.12.0-MacOSX-x86_64.sh
-
-   .. tip::
-
-      If you do not have :program:`wget` installed on MacOS, you can
-      download it with the :program:`Homebrew` package manager:
-
-      .. code-block::
-
-	 $ brew install wget
-
-   In the steps that follow, we will walk through installation using
-   the Linux installer script.  The steps are the same for MacOS; just
-   substitute the appropriate MacOS script name for the Linux script
-   name in steps 2 and 3 below. |br|
+   This will download the :program:`MicroMamba` executable file into
+   following path: :file:`$HOME/bin/micromamba`.  If you do not
+   already have a :file:`$HOME/bin` folder, it will be created for
+   you. |br|
    |br|
 
+#. Tell your shell where it can find the :program:`MicroMamba` executable.
 
-#. Change the permission of the Miniconda installer script so that it
-   is executable:
+   If you have not done so already, add the following
+   line to your :file:`$HOME/.bashrc` startup script:
+
+   .. code-block:: bash
+
+      export PATH="$HOME/bin:$PATH"
+
+   .. note::
+
+      On some computer systems, it is preferred that users place
+      modifications not into the :file:`$HOME/.bashrc` file, but
+      instead to a different script (e.g. :file:`$HOME/.bash_aliases`)
+      that is executed by :file:`$HOME/.bashrc`.  Ask your system
+      administrator for more information pertaining to your particular
+      setup.
+
+   Apply the change with this command:
 
    .. code-block:: console
 
-      $ chmod 755 Miniconda3-py39_4.12.0-Linux-x86_64.sh
+      $ source $HOME/.bashrc
 
+   This will tell your shell to look for executable files in your
+   :file:`$HOME/bin` folder before it looks through the rest of your
+   search path.  |br|
    |br|
 
-#. Run the Miniconda installer script.
+#. Define the :literal:`mamba` convenience alias.
+
+   Add the following lines to your :file:`$HOME/.bashrc` file
+
+   .. code-block:: bash
+
+      # Invoke micromamba as "mamba"
+      alias mamba="micromamba"
+
+   Apply the change with this command:
 
    .. code-block:: console
 
-      $ ./Miniconda3-py39_4.12.0-Linux-x86_64.sh
+      $ source ~/.bashrc
 
+   This will allow you to invoke :program:`MicroMamba` by typing
+   :literal:`mamba`. |br|
    |br|
 
-#. Accept the license agreement.
+#. Specify where :program:`Mamba` will install packages and environments.
 
-   When the installer script starts, you will be prompted to accept
-   the Miniconda license agreement:
+   The default installation paths are:
 
-   .. code-block:: console
+   .. code-block:: bash
 
-     Welcome to Miniconda3 py39_4.12.0
+      $HOME/micromamba/envs   # Where environments will be created
+      $HOME/micromamba/pkgs   # Where packages will be downloaded.
 
-     In order to continue the installation process, please review the license
-     agreement.
-     Please, press ENTER to continue
-     >>>
+   For most use cases, this should be sufficient.  If you do not wish
+   to change these default installation paths, **skip ahead to the
+   next step**.
 
-   When you press :literal:`ENTER`, you will see the license agreement
-   in all of its gory legalese detail.  Press the space bar repeatedly
-   to scroll down ot the end. You will then see this prompt:
+   However, you may need to install Python packages and environments
+   in a different location than your home directory.  To change the
+   default installation paths, add these environment variables to your
+   :file:`~/.bashrc` file:
 
-   .. code-block:: console
+   .. code-block:: bash
 
-      Do you accept the license terms? [yes|no]
-      [no] >>>
+      export MAMBA_PREFIX=/path/to/preferred/installation/folder
+      export MAMBA_PKGS_DIRS=${MAMBA_PREFIX}/pkgs
+      export MAMBA_ENVS_PATH=${MAMBA_PREFIX}/envs
 
-   Type :literal:`yes` and hit :literal:`ENTER` to accept. |br|
-   |br|
-
-
-#. Specify the installation path.
-
-   You will then be prompted to provide a directory path for the
-   installation:
+   Then appply the changes with this command.
 
    .. code-block:: console
 
-      Miniconda3 will now be installed into this location:
-      /home/YOUR-USERNAME/miniconda3
-
-      - Press ENTER to confirm the location
-      - Press CTRL-C to abort the installation
-      - Or specify a different location below
-
-      [/home/YOUR-USERNAME/miniconda3] >>>
-
-   Press :literal:`ENTER` to continue, or specify a new path and then
-   press :literal:`ENTER`.
-
-   .. tip::
-
-      If a previous Conda installation is already installed to the
-      default path, you may choose to delete the previous installation
-      folder, or install Conda 4.12.0 to a different path.
-
-   The script will then start installing the Conda 4.12.0 package
-   manager. |br|
-   |br|
-
-
-#. Specify post-installation options.
-
-   You will see this text at the bottom of the screen printout upon
-   successful installation:
-
-   .. code-block:: console
-
-      Preparing transaction: done
-      Executing transaction: done
-      installation finished.
-      Do you wish the installer to initialize Miniconda3
-      by running conda init? [yes|no]
-      [no] >>>
-
-   Type :literal:`yes` and press :literal:`ENTER`.  You will see
-   output similar to this:
-
-   .. code-block:: console
-
-      no change     /home/bob/miniconda3/condabin/conda
-      no change     /home/bob/miniconda3/bin/conda
-      no change     /home/bob/miniconda3/bin/conda-env
-      no change     /home/bob/miniconda3/bin/activate
-      no change     /home/bob/miniconda3/bin/deactivate
-      no change     /home/bob/miniconda3/etc/profile.d/conda.sh
-      no change     /home/bob/miniconda3/etc/fish/conf.d/conda.fish
-      no change     /home/bob/miniconda3/shell/condabin/Conda.psm1
-      no change     /home/bob/miniconda3/shell/condabin/conda-hook.ps1
-      no change     /home/bob/miniconda3/lib/python3.9/site-packages/xontrib/conda.xsh
-      no change     /home/bob/miniconda3/etc/profile.d/conda.csh
-      no change     /home/bob/.bashrc
-      No action taken.
-      If you'd prefer that conda's base environment not be activated on startup,
-         set the auto_activate_base parameter to false:
-
-      conda config --set auto_activate_base false
-
-      Thank you for installing Miniconda3!
+      $ source ~/.bashrc
 
    |br|
 
-#. Disable the base Conda environment from being activated at startup
+#. Run first-time :program:`Mamba` initialization.
 
-   Close the terminal window that you used to install Conda 4.12.0 and
-   open a new terminal window.  You will see this prompt:
-
-   .. code-block:: console
-
-      (base) $
-
-   By default, Conda will open the :literal:`base` environment each
-   time that you open a new terminal window.  to disable this
-   behavior, type:
+   Before installing any Python package, you must initialize
+   :program:`MicroMamba` with this command:
 
    .. code-block:: console
 
-      (base) $ conda config --set auto_activate_base false
+      $ mamba shell init --shell=bash
 
-   The next time you open a terminal window, you will just see the
-   regular prompt, such as;
+   This will add some code into your :file:`.bashrc` startup script.
+   To apply the changes, use:
 
    .. code-block:: console
 
-      $
+      $ source ~/.bashrc
 
-   (or whatever you have defined your prompt to be in your startup scripts).
-
-Now that you have installed Conda 4.12.0, you may proceed to creating
-a new Conda environment for GCPy, as shown below.
+   :program:`Mamba` should now be ready for use!
 
 .. _gcpy_install:
 
-==========================================
-Steps to install GCPy and its dependencies
-==========================================
+=================================
+Install GCPy and its dependencies
+=================================
 
-#. Install Conda if it is not already installed.
-
-   If Conda 4.12.0 or prior is already installed on your system, you
-   may skip this step.  Otherwise, please follow the instructions
-   listed in :ref:`conda412_install`. |br|
-   |br|
+Once :program:`Mamba` has been installed, you may proceed use it to
+create a Python environment for GCPy.  (Please return to
+:ref:`mamba_install` if you have not yet installed :program:`Mamba`.)
 
 #. Download the GCPy source code.
 
    Create and go to the directory in which you would like to store GCPy. In
-   this example we will store GCPy in a :file:`python/packages`
-   subdirectory in your home directory, but you can store it wherever
-   you wish. You can also name the GCPy download whatever you want. In
-   this example the GCPy directory is called :file:`GCPy`.
+   this example we will store GCPy in your :file:`$HOME/python/`
+   path, but you can store it wherever you wish.  You can also name
+   the GCPy download whatever you want. In this example the GCPy
+   directory is called :file:`GCPy`.
 
    .. code-block:: console
 
-      $ cd $HOME/python/packages
+      $ cd $HOME/python
       $ git clone https://github.com/geoschem/gcpy.git GCPy
       $ cd GCPy
 
@@ -292,12 +209,12 @@ Steps to install GCPy and its dependencies
    maintain a set of package dependencies compatible with GCPy without
    interfering with Python packages you use for other work. You can
    create a Python virtual environment from anywhere on your
-   system. It will be stored in your Conda installation rather than
-   the directory from which you create it.
+   system. It will be stored in your :program:`Mamba` installation
+   rather than the directory from which you create it.
 
    You can create a Python virtual environment using a file that lists
    all packages and their versions to be included in the environment.
-   GCPy includes such as file, environment.yml, located in the
+   GCPy includes such as file, :file:`environment.yml`, located in the
    top-level directory of the package.
 
    Run the following command at the command prompt to create a virtual
@@ -306,20 +223,25 @@ Steps to install GCPy and its dependencies
 
    .. code-block:: console
 
-      $ conda env create -n gcpy_env --file=environment.yml
+      $ mamba env create -n gcpy_env --file=environment.yml
 
-   Once successfully created you can load the environment by running the
-   following command, specifying the name of your environment.
+   A list of packages to be downloaded will be displayed.  A
+   confirmation message will ask you if you really wish to install all
+   of the listed packages.  Type :command:`Y` to proceed or
+   :command:`n` to abort.
+
+   Once successfully created you can activate the environment with
+   this command:
 
    .. code-block:: console
 
-      $ conda activate gcpy_env
+      $ mamba activate gcpy_env
 
-   To exit the environment do the following:
+   To exit the environment, use this command:
 
    .. code-block:: console
 
-      $ conda deactivate
+      $ mamba deactivate
 
    |br|
 
@@ -328,18 +250,24 @@ Steps to install GCPy and its dependencies
    The environment variable :envvar:`PYTHONPATH` specifies the
    locations of Python libraries on your system that are not included
    in your conda environment. If GCPy is included in
-   :envvar:`PYTHONPATH` then Python will recognize its existence
-   when you try to use. Add the following line to your startup script,
-   e.g. :file:`.bashrc`, and edit the path to where you are storing
-   GCPy.
+   :envvar:`PYTHONPATH` then Python will recognize its existence.
+
+   Add the path to your GCPy source code folder  :file:`~/.bashrc` file:
 
    .. code-block:: bash
 
-      export PYTHONPATH=$PYTHONPATH:$HOME/python/packages/GCPy
+      export PYTHONPATH=$PYTHONPATH:$HOME/python/GCPy
 
+   and then use
+
+   .. code-block:: console
+
+      $ source ~/.bashrc
+
+   to apply the change. |br|
    |br|
 
-#. Perform a simple test.
+#. Perform a simple test:
 
    Run the following commands in your terminal to check if the
    installation was succcesful.
@@ -348,8 +276,8 @@ Steps to install GCPy and its dependencies
 
       $ source $HOME/.bashrc     # Alternatively close and reopen your terminal
       $ echo $PYTHONPATH         # Check it contains path to your GCPy clone
-      $ conda activate gcpy_env
-      $ conda list               # Check it contains contents of gcpy env file
+      $ mamba activate gcpy_env
+      $ mamba list               # Check it contains contents of gcpy env file
       $ python
       >>> import gcpy
 
@@ -371,7 +299,7 @@ latest available.
 
 .. code-block:: console
 
-   $ cd $HOME/python/packages/GCPy
+   $ cd $HOME/python/GCPy
    $ git fetch -p
    $ git checkout main
    $ git pull
@@ -380,7 +308,7 @@ You can also checkout an older version by doing the following:
 
 .. code-block:: console
 
-   $ cd $HOME/python/packages/GCPy
+   $ cd $HOME/python/GCPy
    $ git fetch -p
    $ git tag
    $ git checkout tags/version_you_want
@@ -390,6 +318,6 @@ commands to then update your virtual environment:
 
 .. code-block:: console
 
-   $ source activate gcpy_env
-   $ cd $HOME/python/packages/GCPy
-   $ conda env update --file environment.yml --prune
+   $ mamba activate gcpy_env
+   $ cd $HOME/python/GCPy
+   $ mamba env update --file environment.yml --prune
