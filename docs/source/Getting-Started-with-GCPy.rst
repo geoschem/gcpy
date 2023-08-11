@@ -55,26 +55,61 @@ Installing Mamba as MicroMamba
 easier to install than the full :program:`MambaForge` distribution.
 Follow the installation steps listed below:
 
-#. Download and run the :program:`MicroMamba` executable.
+#. Download and initialize :program:`MicroMamba`.
 
-   Execute the command listed below that is relevant to your operating
-   system.  (You can cut-and-paste the command into a terminal window.)
+   Execute this command:
 
    .. code-block:: console
 
-      # Linux Intel (x86_64), including Windows Subsystem for Linux
-      $ curl -Ls https://micro.mamba.pm/api/micromamba/linux-64/latest | tar -xvj bin/micromamba
+      $ "${SHELL}" <(curl -L micro.mamba.pm/install.sh)
 
-      # MacOS Intel (x86_64):
-      $ curl -Ls https://micro.mamba.pm/api/micromamba/osx-64/latest | tar -xvj bin/micromamba
+   This will download the :program:`MicroMamba` via the
+   :program:`curl` utility.  You will be then asked several questions:
 
-      # MacOS Silicon/M1, Silicon/M2 (ARM64):
-      $ curl -Ls https://micro.mamba.pm/api/micromamba/osx-arm64/latest | tar -xvj bin/micromamba
+   .. code-block:: console
 
-   This will download the :program:`MicroMamba` executable file into
-   following path: :file:`$HOME/bin/micromamba`.  If you do not
-   already have a :file:`$HOME/bin` folder, it will be created for
-   you. |br|
+      Micromamba binary folder? [~/.local/bin]
+
+   This prompt is asking where you prefer to install the
+   :program:`MicroMamba` executable. Press :command:`ENTER` to accept
+   the default or type a new location, then press :command:`ENTER`.    
+
+   .. code-block::   
+      
+      Prefix location? [~/micromamba]
+
+   This prompt is asking where the Python packages and environments
+   created with Micromamba should be installed.  The default location
+   is your :file:`$HOME/micromamba` folder.  Press :command:`ENTER` to
+   accept the default or specify a new location and then press
+   :command:`ENTER`.
+
+   .. code-block::
+   
+      Init shell? [Y/n]
+
+   This prompt is asking if you would like :program:`MicroMamba` to
+   add some code into your :file:`$HOME/.bashrc` startup script.
+   Press :command:`Y` and then :command:`ENTER`.
+
+   .. code-block:: 
+
+      Configure conda-forge? [Y/n]
+
+   This prompt is asking if you would like :program:`MicroMamba` to
+   have access to the :literal:`conda-forge` repository. Press
+   :command:`Y` then :command:`ENTER`. 
+
+   Then :program:`MicroMamba` installer will print out the following
+   information to the screen:
+   
+   .. code-block:: console
+
+      Modifying RC file "/path/to/.bashrc"
+      Generating config for root prefix "/path/to/root/prefix"
+      Setting mamba executable to: "/path/to/mamba/executable-dir/micromamba
+      Adding (or replacing) the following in your "/path/to/.bashrc" file
+
    |br|
 
 #. Tell your shell where it can find the :program:`MicroMamba` executable.
@@ -84,11 +119,14 @@ Follow the installation steps listed below:
 
    .. code-block:: bash
 
-      export PATH="$HOME/bin:$PATH"
+      export PATH="/path/to/mamba/executable-dir:$PATH"
 
+   where :file:`/path/to/mamba/executable-dir` is the same text as
+   displayed in the previous step.
+      
    .. note::
 
-      On some computer systems, it is preferred that users place
+      Some shared computer systems prefer that users place
       modifications not into the :file:`$HOME/.bashrc` file, but
       instead to a different script (e.g. :file:`$HOME/.bash_aliases`)
       that is executed by :file:`$HOME/.bashrc`.  Ask your system
@@ -125,55 +163,8 @@ Follow the installation steps listed below:
    :literal:`mamba`. |br|
    |br|
 
-#. Specify where :program:`Mamba` will install packages and environments.
-
-   The default installation paths are:
-
-   .. code-block:: bash
-
-      $HOME/micromamba/envs   # Where environments will be created
-      $HOME/micromamba/pkgs   # Where packages will be downloaded.
-
-   For most use cases, this should be sufficient.  If you do not wish
-   to change these default installation paths, **skip ahead to the
-   next step**.
-
-   However, you may need to install Python packages and environments
-   in a different location than your home directory.  To change the
-   default installation paths, add these environment variables to your
-   :file:`~/.bashrc` file:
-
-   .. code-block:: bash
-
-      export MAMBA_PREFIX=/path/to/preferred/installation/folder
-      export MAMBA_PKGS_DIRS=${MAMBA_PREFIX}/pkgs
-      export MAMBA_ENVS_PATH=${MAMBA_PREFIX}/envs
-
-   Then appply the changes with this command.
-
-   .. code-block:: console
-
-      $ source ~/.bashrc
-
-   |br|
-
-#. Run first-time :program:`Mamba` initialization.
-
-   Before installing any Python package, you must initialize
-   :program:`MicroMamba` with this command:
-
-   .. code-block:: console
-
-      $ mamba shell init --shell=bash
-
-   This will add some code into your :file:`.bashrc` startup script.
-   To apply the changes, use:
-
-   .. code-block:: console
-
-      $ source ~/.bashrc
-
-   :program:`Mamba` should now be ready for use!
+   You are now ready to use :program:`Mamba` (installed as
+   :program:`MicroMamba`)!
 
 .. _gcpy_install:
 
