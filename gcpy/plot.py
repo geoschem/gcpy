@@ -2710,7 +2710,7 @@ def single_panel(
 
     # Create empty lists for keyword arguments
     if norm is None:
-        sigdiff_list = []
+        norm = []
     if vert_params is None:
         vert_params = [[], []]
 
@@ -2718,8 +2718,7 @@ def single_panel(
     plot_vals = plot_vals.squeeze()
     data_is_xr = isinstance(plot_vals, xr.DataArray)
     if xtick_positions is None:
-        # if plot_type == "single_level":
-        #    xtick_positions = np.arange(extent[0], extent[1], (extent[1]-extent[0])/12)
+        xtick_positions = []
         if plot_type == "zonal_mean":
             xtick_positions = np.arange(-90, 90, 30)
 
@@ -2729,13 +2728,13 @@ def single_panel(
     if unit == "" and data_is_xr:
         try:
             unit = plot_vals.units.strip()
-        except BaseException:
+        except BaseException as exc:
             pass
 
     if title == "fill" and data_is_xr:
         try:
             title = plot_vals.name
-        except BaseException:
+        except BaseException as exc:
             pass
     # Generate grid if not passed
     if grid is None:
@@ -2750,7 +2749,12 @@ def single_panel(
 
         if plot_type == 'single_level':
             grid_extent = get_grid_extents(plot_vals)
-            [grid, _] = call_make_grid(res, gridtype, in_extent=grid_extent, sg_params=sg_params)
+            [grid, _] = call_make_grid(
+                res,
+                gridtype,
+                in_extent=grid_extent,
+                sg_params=sg_params
+            )
 
         else:  # zonal mean
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
