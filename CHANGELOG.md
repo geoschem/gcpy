@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new routine `format_number_for_table` in `util.py`
 - Added BrSALA and BrSALC to `emission_species.yml`
 - Added `__init__.py` files in subfolders of `gcpy/gcpy`
+- `gcpy/benchmark/modules/*.py` scripts are now chmod 644
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
