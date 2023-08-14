@@ -10,7 +10,7 @@ from textwrap import wrap
 from yaml import safe_load as yaml_safe_load
 import numpy as np
 import xarray as xr
-from pypdf import PdfFileWriter, PdfFileReader
+from pypdf import PdfWriter, PdfReader
 from gcpy.constants import TABLE_WIDTH
 
 # ======================================================================
@@ -428,16 +428,16 @@ def add_bookmarks_to_pdf(
 
     # Setup
     pdfobj = open(pdfname, "rb")
-    input_pdf = PdfFileReader(pdfobj) #, overwriteWarnings=False)
-    output_pdf = PdfFileWriter()
+    input_pdf = PdfReader(pdfobj) #, overwriteWarnings=False)
+    output_pdf = PdfWriter()
 
     for i, varname in enumerate(varlist):
         bookmarkname = varname.replace(remove_prefix, "")
         if verbose:
             print(f"Adding bookmark for {varname} with name {bookmarkname}")
-        output_pdf.addPage(input_pdf.getPage(i))
-        output_pdf.addBookmark(bookmarkname, i)
-        output_pdf.setPageMode("/UseOutlines")
+        output_pdf.add_page(input_pdf.pages[i])
+        output_pdf.add_outline_item(bookmarkname, i)
+        output_pdf.page_mode = "/UseOutlines"
 
     # Write to temp file
     pdfname_tmp = pdfname + "_with_bookmarks.pdf"
@@ -487,8 +487,8 @@ def add_nested_bookmarks_to_pdf(
     # Setup
     # ==================================================================
     pdfobj = open(pdfname, "rb")
-    input_pdf = PdfFileReader(pdfobj, overwriteWarnings=False)
-    output_pdf = PdfFileWriter()
+    input_pdf = PdfReader(pdfobj)
+    output_pdf = PdfWriter()
     warninglist = [k.replace(remove_prefix, "") for k in warninglist]
 
     # ==================================================================
@@ -512,9 +512,9 @@ def add_nested_bookmarks_to_pdf(
 
         # There are non-zero variables to plot in this subcategory
         i = i + 1
-        output_pdf.addPage(input_pdf.getPage(i))
-        parent = output_pdf.addBookmark(subcat, i)
-        output_pdf.setPageMode("/UseOutlines")
+        output_pdf.add_page(input_pdf.pages[i])
+        parent = output_pdf.add_outline_item(subcat, i)
+        output_pdf.page_mode = "/UseOutlines"
         first = True
 
         # Loop over variables in this subcategory; make children bookmarks
@@ -523,13 +523,13 @@ def add_nested_bookmarks_to_pdf(
                 print(f"Warning: skipping {varname}")
                 continue
             if first:
-                output_pdf.addBookmark(varname, i, parent)
+                output_pdf.add_outline_item(varname, i, parent)
                 first = False
             else:
                 i = i + 1
-                output_pdf.addPage(input_pdf.getPage(i))
-                output_pdf.addBookmark(varname, i, parent)
-                output_pdf.setPageMode("/UseOutlines")
+                output_pdf.add_page(input_pdf.pages[i])
+                output_pdf.add_outline_item(varname, i, parent)
+                output_pdf.page_mode = "/UseOutlines"
 
     # ==================================================================
     # Write to temp file
