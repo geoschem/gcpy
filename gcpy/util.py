@@ -10,7 +10,7 @@ from textwrap import wrap
 from yaml import safe_load as yaml_safe_load
 import numpy as np
 import xarray as xr
-from PyPDF2 import PdfFileWriter, PdfFileReader
+from pypdf import PdfFileWriter, PdfFileReader
 from gcpy.constants import TABLE_WIDTH
 
 # ======================================================================
@@ -428,7 +428,7 @@ def add_bookmarks_to_pdf(
 
     # Setup
     pdfobj = open(pdfname, "rb")
-    input_pdf = PdfFileReader(pdfobj, overwriteWarnings=False)
+    input_pdf = PdfFileReader(pdfobj) #, overwriteWarnings=False)
     output_pdf = PdfFileWriter()
 
     for i, varname in enumerate(varlist):

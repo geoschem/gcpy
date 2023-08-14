@@ -15,7 +15,7 @@ import xarray as xr
 import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
 from joblib import Parallel, delayed
-from PyPDF2 import PdfFileMerger
+from pypdf import PdfFileMerger
 from .grid import get_vert_grid, get_pressure_indices, \
     pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, \
     get_input_res

@@ -15,8 +15,6 @@ dependencies:
     - awscli                          # Utilities for AWS cloud
     - cartopy                         # Geospatial data processing
     - cf_xarray                       # CF conventions for xarray
-    - esmf                            # Earth system modeling framework
-    - esmpy                           # Python wrapper for ESMF
     - dask                            # Parallel library; backend for xarray
     - ipython                         # Interactive Python (used by Jupyter)
     - joblib                          # Parallelize python code
@@ -30,14 +28,21 @@ dependencies:
     - pylint                          # Python linter
     - pyproj                          # Python map projections library
     - python<3.10                     # Any python version prior to 3.10
-    - pypdf2                          # PDF utilities (bookmarks, etc.)
+    - pypdf                           # PDF utilities (bookmarks, etc.)
     - recommonmark                    # Dependency for Sphinx
-    - requests                        # HTTP library
+    - requests
     - scipy                           # Scientific python package
     - sparselt>=0.1.3                 # Regridding earth system model data
     - tabulate                        # Pretty-printing for column data
     - xarray                          # Read data from netCDF etc files
-    - xesmf                           # Universal regridder
+    #
+    # NOTE: These packages need to be pegged at specific versions
+    # in order to avoid an ImportError.
+    #  -- Bob Yantosca (14 Aug 2023)
+    #
+    - esmf==8.1.1                     # Earth system modeling framework
+    - esmpy==8.1.1                    # Python wrapper for ESMF
+    - xesmf==0.5.1                    # Universal regridder
     # 
     # NOTE: These packages need to be pegged at specific versions
     # or else the ReadTheDocs output won't render properly.
