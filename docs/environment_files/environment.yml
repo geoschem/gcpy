@@ -1,45 +1,52 @@
-#
+# ======================================================================
 # GCPy environment file
-# Verified installation with mamba 1.1.0 and conda 22.11.1
 #
+# Recommended installation: with Mambaforge
+# $ mamba env create -n gcpy_env --file=/path/to/gcpy/environment.yml
+#
+# Some package versions are not the most recent, but these
+# have been proven to work together. (Bob Yantosca, 14 Aug 2023)
+# ======================================================================
 name: gcpy_env
 channels:
     - conda-forge
-    - defaults
+    - nodefaults    
 dependencies:
-    - cartopy=0.19.0.post1            # Geospatial data processing
-    - esmf==8.1.1                     # Earth system modeling framework
-    - esmpy==8.1.1                    # Python wrapper for ESMF
-    - netcdf4==1.6.0                  # Python wrapper for netCDF
-    - netcdf-fortran==4.5.4           # Python wrapper for netCDF-Fortran
-    - python<3.10                     # Python version
-    - pip                             # Install packages from PyPi
-    - sparselt>=0.1.3                 # Regridding earth system model data
-    - xesmf==0.5.1                    # Universal regridder
-    - awscli>=1.22.83                 # Utilities for AWS cloud
+    - awscli                          # Utilities for AWS cloud
+    - cartopy                         # Geospatial data processing
     - cf_xarray                       # CF conventions for xarray
+    - esmf                            # Earth system modeling framework
+    - esmpy                           # Python wrapper for ESMF
     - dask                            # Parallel library; backend for xarray
-    - docutils==0.16                  # Convert text to other formats
-    - h5netcdf==0.11.0                # Python interface to netCDF4/HDF5
-    - h5py==3.3.0                     # Python interface to HDF5
-    - matplotlib                      # Creates plots and visualizations
     - ipython                         # Interactive Python (used by Jupyter)
-    - jinja2==3.0.3                   # Dependency for Sphinx
-    - joblib==1.0.1                   # Parallelize python code
-    - jupyter==1.0.0                  # Jupyter Notebook
+    - joblib                          # Parallelize python code
+    - jupyter                         # Jupyter Notebook
+    - matplotlib                      # Creates plots and visualizations
+    - netcdf4                         # Python wrapper for netCDF
+    - netcdf-fortran                  # Python wrapper for netCDF-Fortran
     - numpy                           # Optimized mathematical functions
     - pandas                          # Tables/timeseries manipulation
-    - pycodestyle                     # Python style checker (formerly PEP8)
-    - pyproj==3.6.0                   # Python map projections library
+    - pip                             # Install packages from PyPi
     - pylint                          # Python linter
-    - pypdf2==1.26.0                  # PDF utilities (bookmarks, etc.)
-    - recommonmark==0.7.1             # Dependency for Sphinx
-    - requests==2.26.0                # HTTP library
+    - pyproj                          # Python map projections library
+    - python<3.10                     # Any python version prior to 3.10
+    - pypdf2                          # PDF utilities (bookmarks, etc.)
+    - recommonmark                    # Dependency for Sphinx
+    - requests                        # HTTP library
     - scipy                           # Scientific python package
+    - sparselt>=0.1.3                 # Regridding earth system model data
+    - tabulate                        # Pretty-printing for column data
+    - xarray                          # Read data from netCDF etc files
+    - xesmf                           # Universal regridder
+    # 
+    # NOTE: These packages need to be pegged at specific versions
+    # or else the ReadTheDocs output won't render properly.
+    #  -- Bob Yantosca (14 Aug 2023)
+    #
+    - docutils==0.16                  # Convert text to other formats
+    - jinja2==3.0.3                   # Dependency for Sphinx
     - sphinx==3.5.4                   # Generate ReadTheDocs output
     - sphinx-autoapi==1.9.0           # Sphinx autodoc style documentation
     - sphinx-autobuild==2021.3.14     # Build ReadTheDos live in browser
     - sphinxcontrib-bibtex==2.2.0     # ReadTheDocs bibliography style
     - sphinx_rtd_theme==0.5.2         # ReadTheDocs HTML theme files
-    - tabulate                        # Pretty-printing for column data
-    - xarray                          # Read data from netCDF etc files
