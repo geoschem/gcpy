@@ -1082,9 +1082,7 @@ def compare_single_level(
         else:
             absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
         # Test if the abs. diff. is zero everywhere or NaN everywhere
-        absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(
-            absdiff.values
-        )
+        absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(absdiff)
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/
         # questions/46527456/preventing-spurious-horizontal-lines-for-
