@@ -347,7 +347,7 @@ def compare_single_level(
         verbose=False,
         log_color_scale=False,
         extra_title_txt=None,
-        extent=[-1000, -1000, -1000, -1000],
+        extent=None,
         n_job=-1,
         sigdiff_list=None,
         second_ref=None,
@@ -490,14 +490,13 @@ def compare_single_level(
     verify_variable_type(devdata, xr.Dataset)
 
     # Create empty lists for keyword arguments7
+    if extent is None:
+        extent = [-1000, -1000, -1000, -1000]
     if sigdiff_list is None:
         sigdiff_list = []
 
     # Determine if doing diff-of-diffs
-    if second_ref is not None and second_dev is not None:
-        diff_of_diffs = True
-    else:
-        diff_of_diffs = False
+    diff_of_diffs = second_ref is not None and second_dev is not None
 
     # Prepare diff-of-diffs datasets if needed
     if diff_of_diffs:
@@ -592,8 +591,10 @@ def compare_single_level(
              np.min([refmaxlat, devmaxlat])]
 
     # Set plot bounds for non cubed-sphere regridding and plotting
-    ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
-    dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
+    # Pylint says ref_extent and dev_extent are not used
+    #  -- Bob Yantosca (15 Aug 2023)
+    #ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
+    #dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
     cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
     # ==============================================================
     # Loop over all variables
@@ -1024,8 +1025,20 @@ def compare_single_level(
                 where(ds_new[lat_var] >= minlat, drop=True).\
                 where(ds_new[lat_var] <= maxlat, drop=True)
 
-        ds_ref_reg = get_extent_for_colors(ds_ref, min_max_minlon, min_max_maxlon, min_max_minlat, min_max_maxlat)
-        ds_dev_reg = get_extent_for_colors(ds_dev, min_max_minlon, min_max_maxlon, min_max_minlat, min_max_maxlat)
+        ds_ref_reg = get_extent_for_colors(
+            ds_ref,
+            min_max_minlon,
+            min_max_maxlon,
+            min_max_minlat,
+            min_max_maxlat
+        )
+        ds_dev_reg = get_extent_for_colors(
+            ds_dev,
+            min_max_minlon,
+            min_max_maxlon,
+            min_max_minlat,
+            min_max_maxlat
+        )
 
         # Ref
         vmin_ref = float(np.nanmin(ds_ref_reg.data))
@@ -1035,12 +1048,14 @@ def compare_single_level(
         vmin_dev = float(np.nanmin(ds_dev_reg.data))
         vmax_dev = float(np.nanmax(ds_dev_reg.data))
 
-        # Comparison
-        if cmpgridtype == "cs":
-            vmin_ref_cmp = float(np.nanmin(ds_ref_cmp))
-            vmax_ref_cmp = float(np.nanmax(ds_ref_cmp))
-            vmin_dev_cmp = float(np.nanmin(ds_dev_cmp))
-            vmax_dev_cmp = float(np.nanmax(ds_dev_cmp))
+# Pylint says that these are unused variables, so comment out
+#  -- Bob Yantosca (15 Aug 2023)
+#        # Comparison
+#        if cmpgridtype == "cs":
+#            vmin_ref_cmp = float(np.nanmin(ds_ref_cmp))
+#            vmax_ref_cmp = float(np.nanmax(ds_ref_cmp))
+#            vmin_dev_cmp = float(np.nanmin(ds_dev_cmp))
+#            vmax_dev_cmp = float(np.nanmax(ds_dev_cmp))
 #            vmin_cmp = np.nanmin([vmin_ref_cmp, vmin_dev_cmp])
 #            vmax_cmp = np.nanmax([vmax_ref_cmp, vmax_dev_cmp])
 #        else:
@@ -1067,7 +1082,9 @@ def compare_single_level(
         else:
             absdiff = ds_dev_cmp_reshaped - ds_ref_cmp_reshaped
         # Test if the abs. diff. is zero everywhere or NaN everywhere
-        absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(absdiff)
+        absdiff_is_all_zero, absdiff_is_all_nan = all_zero_or_nan(
+            absdiff.values
+        )
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/
         # questions/46527456/preventing-spurious-horizontal-lines-for-
@@ -1182,8 +1199,8 @@ def compare_single_level(
 
         # Colormaps for 1st row (Ref and Dev)
         if use_cmap_RdBu:
-            cmap_toprow_nongray = copy.copy(mpl.cm.RdBu_r)
-            cmap_toprow_gray = copy.copy(mpl.cm.RdBu_r)
+            cmap_toprow_nongray = copy.copy(mpl.colormaps["RdBu_r"])
+            cmap_toprow_gray = copy.copy(mpl.colormaps["RdBu_r"])
         else:
             cmap_toprow_nongray = copy.copy(WhGrYlRd)
             cmap_toprow_gray = copy.copy(WhGrYlRd)
@@ -1201,8 +1218,8 @@ def compare_single_level(
                 dev_cmap = cmap_toprow_nongray
 
         # Colormaps for 2nd row (Abs. Diff.) and 3rd row (Frac. Diff,)
-        cmap_nongray = copy.copy(mpl.cm.RdBu_r)
-        cmap_gray = copy.copy(mpl.cm.RdBu_r)
+        cmap_nongray = copy.copy(mpl.colormaps["RdBu_r"])
+        cmap_gray = copy.copy(mpl.colormaps["RdBu_r"])
         cmap_gray.set_bad(color="gray")
 
         # ==============================================================
@@ -1470,7 +1487,7 @@ def compare_zonal_mean(
         pdfname="",
         cmpres=None,
         match_cbar=True,
-        pres_range=[0, 2000],
+        pres_range=None,
         normalize_by_area=False,
         enforce_units=True,
         convert_to_ugm3=False,
@@ -1539,7 +1556,7 @@ def compare_zonal_mean(
             Pressure range of levels to plot [hPa]. The vertical axis
             will span the outer pressure edges of levels that contain
             pres_range endpoints.
-            Default value: [0,2000]
+            Default value: [0, 2000]
         normalize_by_area: bool
             Set this flag to True to to normalize raw data in both
             Ref and Dev datasets by grid area. Input ref and dev
@@ -1632,12 +1649,11 @@ def compare_zonal_mean(
         ref_vert_params = [[], []]
     if dev_vert_params is None:
         dev_vert_params = [[], []]
+    if pres_range is None:
+        pres_range = [0, 2000]
 
     # Determine if doing diff-of-diffs
-    if second_ref is not None and second_dev is not None:
-        diff_of_diffs = True
-    else:
-        diff_of_diffs = False
+    diff_of_diffs = second_ref is not None and second_dev is not None
 
     # Prepare diff-of-diffs datasets if needed
     if diff_of_diffs:
@@ -2243,12 +2259,12 @@ def compare_zonal_mean(
         # ==============================================================
 
         if use_cmap_RdBu:
-            cmap1 = copy.copy(mpl.cm.RdBu_r)
+            cmap1 = copy.copy(mpl.colormaps["RdBu_r"])
         else:
             cmap1 = copy.copy(WhGrYlRd)
         cmap1.set_bad("gray")
 
-        cmap_plot = copy.copy(mpl.cm.RdBu_r)
+        cmap_plot = copy.copy(mpl.colormaps["RdBu_r"])
         cmap_plot.set_bad(color="gray")
 
         # ==============================================================
@@ -2463,7 +2479,7 @@ def compare_zonal_mean(
             # update sig diffs after parallel calls
             if current_process().name == "MainProcess":
                 for varname in results:
-                    if type(varname) is str:
+                    if isinstance(varname, str):
                         sigdiff_list.append(varname)
 
             # ==================================================================
@@ -2574,7 +2590,7 @@ def single_panel(
         use_cmap_RdBu=False,
         log_color_scale=False,
         add_cb=True,
-        pres_range=[0, 2000],
+        pres_range=None,
         pedge=np.full((1, 1), -1),
         pedge_ind=np.full((1, 1), -1),
         log_yaxis=False,
@@ -2709,8 +2725,8 @@ def single_panel(
     verify_variable_type(plot_vals, (xr.DataArray, np.ndarray))
 
     # Create empty lists for keyword arguments
-    if norm is None:
-        norm = []
+    if pres_range is None:
+        pres_range = [0, 2000]
     if vert_params is None:
         vert_params = [[], []]
 
@@ -2728,13 +2744,13 @@ def single_panel(
     if unit == "" and data_is_xr:
         try:
             unit = plot_vals.units.strip()
-        except BaseException as exc:
+        except BaseException:
             pass
 
     if title == "fill" and data_is_xr:
         try:
             title = plot_vals.name
-        except BaseException as exc:
+        except BaseException:
             pass
     # Generate grid if not passed
     if grid is None:
@@ -2811,20 +2827,20 @@ def single_panel(
             plot_vals = plot_vals.mean(axis=lon_ind)
     if gridtype == "":
         _, gridtype = get_input_res(plot_vals)
-    if extent is None:
+    if extent is None or extent == (None, None, None, None):
         extent = get_grid_extents(grid)
         # convert to -180 to 180 grid if needed (necessary if going
         # cross-dateline later)
         if extent[0] > 180 or extent[1] > 180:
             #extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
             extent = [extent[0] - 180, extent[1] - 180, extent[2], extent[3]]
-        '''
-        if extent[0] < -180 and 'x' in res:
-            lon_res = float(res.split('x')[1])
-            extent = [180,
-        if extent[1] > 180 and 'x' in res:
-            extent[1] = 180
-        '''
+        #'''
+        #if extent[0] < -180 and 'x' in res:
+        #    lon_res = float(res.split('x')[1])
+        #    extent = [180,
+        #if extent[1] > 180 and 'x' in res:
+        #    extent[1] = 180
+        #'''
     # Account for cross-dateline extent
     if extent[0] > extent[1]:
         if gridtype == "ll":
@@ -2908,7 +2924,7 @@ def single_panel(
         if log_yaxis:
             ax.set_yscale("log")
             ax.yaxis.set_major_formatter(
-                mticker.FuncFormatter(lambda y, _: "{:g}".format(y))
+                mticker.FuncFormatter(lambda y, _: f"{y:g}")
             )
         ax.invert_yaxis()
         ax.set_xticks(xtick_positions)
@@ -2935,16 +2951,17 @@ def single_panel(
                         # is already > max grid value
                         return grid_vals[(np.abs(grid_vals - val)).argmin()]
                     return grid_vals[i]
-                else:
-                    diff[diff > 0] = -np.inf
-                    i = diff.argmax()
-                    if diff[i] == -np.inf:
-                        # expand extent to value beyond grid limits if extent is already < min grid value
-                        # plot will be distorted if full global to avoid
-                        # cartopy issues
-                        return grid_vals[(
-                            np.abs(grid_vals - val)).argmin()] - spacing
-                    return max(grid_vals[i], -180)
+                # if direction is not "greater":
+                diff[diff > 0] = -np.inf
+                i = diff.argmax()
+                if diff[i] == -np.inf:
+                    # expand extent to value beyond grid limits if
+                    # extent is already < min grid value
+                    # plot will be distorted if full global to avoid
+                    # cartopy issues
+                    return grid_vals[(
+                        np.abs(grid_vals - val)).argmin()] - spacing
+                return max(grid_vals[i], -180)
             closest_minlon = get_nearest_extent(
                 minlon, grid['lon_b'], 'less', dlon)
             closest_maxlon = get_nearest_extent(
