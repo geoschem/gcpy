@@ -317,14 +317,14 @@ def compute_vmin_vmax_for_plot(
         # Ref subplot
         if subplot in "ref":
             [vmin, vmax] = [vmins[0], vmaxs[0]]
-            if match_cbar and (not other_all_nan):
+            if match_cbar and not other_all_nan:
                 [vmin, vmax] = [vmins[2], vmaxs[2]]
             verbose_print(verbose, rowcol, vmin, vmax)
             return vmin, vmax
 
         # Dev subplot
         [vmin, vmax] = [vmins[1], vmaxs[1]]
-        if match_cbar and (not other_all_nan):
+        if match_cbar and not other_all_nan:
             [vmin, vmax] = [vmins[2], vmaxs[2]]
         verbose_print(verbose, rowcol, vmin, vmax)
         return vmin, vmax
@@ -451,6 +451,7 @@ def colorbar_ticks_and_format(
     # ==================================================================
     if all_zero or all_nan:
 
+        # Data is all zero or all NaN: Place the tick
         value = [0.0]
         if subplot in ("ref", "dev"):
             if not use_cmap_RdBu:
@@ -481,7 +482,7 @@ def colorbar_ticks_and_format(
     #-------------------------------------------------------------------
     if subplot in ("dyn_ratio", "res_ratio"):
 
-        # When Ref == Dev
+        # When Ref == Dev == 1 in ratio plots
         if np.all(np.isin(plot_val, [1])):
             cbar.set_ticklabels(["Ref and Dev equal throughout domain"])
             return
@@ -519,9 +520,15 @@ def colorbar_ticks_and_format(
     # (2) Absdiff (dynamic range)
     # (3) Absdiff (restricted range)
     #-------------------------------------------------------------------
-    vrange = vmax - vmin
+
+    # When Ref == Dev == 0 in absdiff plots
+    if subplot in ("dyn_absdiff", "res_absdiff"):
+        if np.all(np.isin(plot_val, [0])):
+            cbar.set_ticklabels(["Ref and Dev equal throughout domain"])
+            return
 
     # For data ranges between 0.1 and 100:
+    vrange = vmax - vmin
     if vrange > 0.1 and vrange < 100.0:
 
         # If using a difference colormap (e.g. for absdiff),
