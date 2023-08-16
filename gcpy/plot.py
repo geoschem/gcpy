@@ -87,7 +87,7 @@ def six_plot(
         all_nan: bool
             Set this flag to True if the data to be plotted consist
             only of NaNs
-        plot_val: xarray DataArray
+        plot_val: xarray DataArray or numpy.ndarray
             Single variable GEOS-Chem output values to plot
         grid: dict
             Dictionary mapping plot_val to plottable coordinates
@@ -166,87 +166,39 @@ def six_plot(
             plotting functions to be used in calls to pcolormesh() (CS)
             or imshow() (Lat/Lon).
     """
-    # Set min and max of the data range
-    if subplot in ("ref", "dev"):
-        if all_zero or all_nan:
-            if subplot == "ref":
-                [vmin, vmax] = [vmins[0], vmaxs[0]]
-            else:
-                [vmin, vmax] = [vmins[1], vmaxs[1]]
-        elif use_cmap_RdBu:
-            if subplot == "ref":
-                if match_cbar and (not other_all_nan):
-                    absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
-                else:
-                    absmax = max([np.abs(vmins[0]), np.abs(vmaxs[0])])
-            else:
-                if match_cbar and (not other_all_nan):
-                    absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
-                else:
-                    absmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if subplot == "ref":
-                if match_cbar and (not other_all_nan):
-                    [vmin, vmax] = [vmins[2], vmaxs[2]]
-                else:
-                    [vmin, vmax] = [vmins[0], vmaxs[0]]
-            else:
-                if match_cbar and (not other_all_nan):
-                    [vmin, vmax] = [vmins[2], vmaxs[2]]
-                else:
-                    [vmin, vmax] = [vmins[1], vmaxs[1]]
-    else:
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_nan:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            if subplot == "dyn_abs_diff":
-                # Min and max of abs. diff, excluding NaNs
-                diffabsmax = max(
-                    [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
-                )
-                [vmin, vmax] = [-diffabsmax, diffabsmax]
-            elif subplot == "res_abs_diff":
-                [pct5, pct95] = [
-                    np.percentile(plot_val, 5),
-                    np.percentile(plot_val, 95),
-                ]
-                abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
-                [vmin, vmax] = [-abspctmax, abspctmax]
-            elif subplot == "dyn_frac_diff":
-                fracdiffabsmax = np.max(
-                    [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
-                )
-                [vmin, vmax] = [1 / fracdiffabsmax, fracdiffabsmax]
-                # if vmin > 0.5:
-                #    vmin = 0.5
-                # if vmax < 2:
-                #    vmax = 2
-            else:
-                [vmin, vmax] = [0.5, 2]
-    if verbose:
-        print(f"Subplot ({rowcol}) vmin, vmax: {vmin}, {vmax}")
+    # TODO: Abstract six_plot and related routines out of plot.py
+    verify_variable_type(plot_val, (np.ndarray, xr.DataArray))
 
-    # Normalize colors (put into range [0..1] for matplotlib methods)
-    if subplot in ("ref", "dev"):
-        norm = normalize_colors(
-            vmin, vmax, is_difference=use_cmap_RdBu,
-            log_color_scale=log_color_scale, ratio_log=ratio_log
-        )
-    elif subplot in ("dyn_abs_diff", "res_abs_diff"):
-        norm = normalize_colors(vmin, vmax, is_difference=True)
-    else:
-        # remove NaNs for compatibility with color normalization
-        plot_val = get_nan_mask(plot_val)
-        norm = normalize_colors(
-            vmin,
-            vmax,
-            is_difference=True,
-            log_color_scale=True,
-            ratio_log=ratio_log)
-    # Create plot
+    # Compute the min & max values
+    vmin, vmax = compute_vmin_vmax_for_plot(
+        plot_val,
+        vmins,
+        vmaxs,
+        subplot,
+        rowcol,
+        all_zero,
+        all_nan,
+        other_all_nan,
+        match_cbar,
+        use_cmap_RdBu,
+        verbose,
+    )
+
+    # Compute the norm object (i.e. put the colorscale on a
+    # range of 0..1, which are matplotlib color coordinates)
+    # (also remove NaNs in data for ratio plots)
+    plot_val, norm = compute_norm_for_plot(
+        plot_val,
+        vmin,
+        vmax,
+        subplot,
+        use_cmap_RdBu,
+        log_color_scale,
+        ratio_log,
+        verbose
+    )
+
+    # Create one of the 6 subplots
     plot = single_panel(
         plot_val,
         ax,
@@ -272,56 +224,346 @@ def six_plot(
         **extra_plot_args)
 
     # Define the colorbar for the plot
-    cb = plt.colorbar(
+    cbar = plt.colorbar(
         plot,
         ax=ax,
         orientation="horizontal",
         norm=norm,
-        pad=0.10)
-    cb.mappable.set_norm(norm)
+        pad=0.10
+    )
+    cbar.mappable.set_norm(norm)
+    colorbar_ticks_and_format(
+        plot_val,
+        cbar,
+        vmin,
+        vmax,
+        subplot,
+        all_zero,
+        all_nan,
+        use_cmap_RdBu,
+        log_color_scale,
+    )
+    cbar.minorticks_off()
+    cbar.set_label(unit)
+    cbar.update_ticks()
+
+
+def compute_vmin_vmax_for_plot(
+        plot_val,
+        vmins,
+        vmaxs,
+        subplot,
+        rowcol,
+        all_zero,
+        all_nan,
+        other_all_nan,
+        match_cbar,
+        use_cmap_RdBu,
+        verbose
+):
+    """
+    Computes the min & max values for each of the 6-panel subplots.
+
+    This is an internal routine called by routine "six_plot".
+    See "six_plot" for descriptions of input arguments.
+    """
+    def verbose_print(verbose, rowcol, vmin, vmax):
+        """
+        Internal routine to print the vmin & vmax values
+        for each subplot.
+        """
+        if verbose:
+            print(f"Subplot ({rowcol}) vmin, vmax: {vmin}, {vmax}")
+
+    # ==================================================================
+    # Ref or Dev subplots
+    # ==================================================================
+    if subplot in ("ref", "dev"):
+
+        #---------------------------------------------------------------
+        # Data is all zero or Nan
+        #---------------------------------------------------------------
+        if all_zero or all_nan:
+            [vmin, vmax] = [vmins[1], vmaxs[1]]
+            if subplot == "ref":
+                [vmin, vmax] = [vmins[0], vmaxs[0]]
+            verbose_print(verbose, rowcol, vmin, vmax)
+            return vmin, vmax
+
+        #---------------------------------------------------------------
+        # We are using a difference colormap (diff of diffs)
+        #---------------------------------------------------------------
+        if use_cmap_RdBu:
+
+            # Ref supblot, diff-of-diffs
+            if subplot in "ref":
+                vmax = max([np.abs(vmins[0]), np.abs(vmaxs[0])])
+                if match_cbar and not other_all_nan:
+                    vmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
+                verbose_print(verbose, rowcol, -vmax, vmax)
+                return -vmax, vmax
+
+            # Dev subplot, diff-of-diffs
+            vmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
+            if match_cbar and not other_all_nan:
+                vmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
+            verbose_print(verbose, rowcol, -vmax, vmax)
+            return -vmax, vmax
+
+        #---------------------------------------------------------------
+        # We are using a gradient colormap
+        #---------------------------------------------------------------
+
+        # Ref subplot
+        if subplot in "ref":
+            [vmin, vmax] = [vmins[0], vmaxs[0]]
+            if match_cbar and (not other_all_nan):
+                [vmin, vmax] = [vmins[2], vmaxs[2]]
+            verbose_print(verbose, rowcol, vmin, vmax)
+            return vmin, vmax
+
+        # Dev subplot
+        [vmin, vmax] = [vmins[1], vmaxs[1]]
+        if match_cbar and (not other_all_nan):
+            [vmin, vmax] = [vmins[2], vmaxs[2]]
+        verbose_print(verbose, rowcol, vmin, vmax)
+        return vmin, vmax
+
+    # ==================================================================
+    # Absdiff and Ratio subplots
+    # ==================================================================
+
+    # All data is zero or NaN
+    if all_zero:
+        verbose_print(verbose, rowcol, 0, 0)
+        return 0, 0
+    if all_nan:
+        verbose_print(verbose, rowcol, np.nan, np.nan)
+        return np.nan, np.nan
+
+    # Absdiff (dynamic range) subplot
+    if subplot in "dyn_absdiff":
+        # Min and max of abs. diff, excluding NaNs
+        vmax = max(
+            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+        )
+        verbose_print(verbose, rowcol, -vmax, vmax)
+        return -vmax, vmax
+
+    # Absdiff (restricted range) subplot
+    if subplot in "res_absdiff":
+        [pct5, pct95] = [
+            np.percentile(plot_val, 5),
+            np.percentile(plot_val, 95),
+        ]
+        vmax = np.max([np.abs(pct5), np.abs(pct95)])
+        verbose_print(verbose, rowcol, -vmax, vmax)
+        return -vmax, vmax
+
+    # Ratio (dynamic range) subplot)
+    if subplot in "dyn_ratio":
+        vmax = np.max(
+            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+        )
+        vmin = 1.0 / vmax
+        verbose_print(verbose, rowcol, vmin, vmax)
+        return vmin, vmax
+
+    # Ratio (restricted range) subplot
+    verbose_print(verbose, rowcol, 0.5, 2.0)
+    return 0.5, 2.0
+
+
+def compute_norm_for_plot(
+        plot_val,
+        vmin,
+        vmax,
+        subplot,
+        use_cmap_RdBu,
+        log_color_scale,
+        ratio_log,
+        verbose
+):
+    """
+    Normalize colors (put into range [0..1] for matplotlib methods).
+
+    This is an internal routine called by routine "six_plot".
+    See "six_plot" for descriptions of input arguments.
+    """
+    # TODO: Abstract six_plot and related routines out of plot.py
+    # ==================================================================
+    # Ref and Dev subplots
+    # ==================================================================
+    if subplot in ("ref", "dev"):
+        return plot_val, normalize_colors(
+            vmin,
+            vmax,
+            is_difference=use_cmap_RdBu,
+            log_color_scale=log_color_scale,
+            ratio_log=ratio_log
+        )
+
+    # ==================================================================
+    # Absdiff (dynamic & restricted range) subplots
+    # ==================================================================
+    if subplot in ("dyn_absdiff", "res_absdiff"):
+        return plot_val, normalize_colors(
+            vmin,
+            vmax,
+            is_difference=True
+        )
+
+    # ==================================================================
+    # Ratio (dynamic & restricted range) subplots
+    # Remove NaNs for compatibility with color normalization
+    # ==================================================================
+    plot_val = get_nan_mask(plot_val)
+    return plot_val, normalize_colors(
+        vmin,
+        vmax,
+        is_difference=True,
+        log_color_scale=True,
+        ratio_log=ratio_log
+    )
+
+
+def colorbar_ticks_and_format(
+        plot_val,
+        cbar,
+        vmin,
+        vmax,
+        subplot,
+        all_zero,
+        all_nan,
+        use_cmap_RdBu,
+        log_color_scale,
+):
+    """
+    Defines the colorbar tick placement and label formatting style.
+
+    This is an internal routine called by routine "six_plot".
+    See "six_plot" for descriptions of input arguments.
+    """
+    # ==================================================================
+    # Data is all zero or NaN:
+    # Place a single tick in the middle of the colorbar
+    # For RdBu colortables this goes at 0.0; otherwise at 0.5
+    # ==================================================================
     if all_zero or all_nan:
+
+        value = [0.0]
         if subplot in ("ref", "dev"):
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
-            else:
-                cb.set_ticks([0.5])
-        else:
-            cb.set_ticks([0.0])
+            if not use_cmap_RdBu:
+                value = [0.5]
+        cbar.set_ticks(value)
+
+        # Data is all zero or NaN: Define the label
+        value = ["Zero throughout domain"]
         if all_nan:
-            cb.set_ticklabels(["Undefined throughout domain"])
-        else:
-            cb.set_ticklabels(["Zero throughout domain"])
-    else:
-        if subplot in ("ref", "dev") and log_color_scale:
-            cb.formatter = mticker.LogFormatter(base=10)
-        elif subplot in ("dyn_frac_diff", "res_frac_diff") and np.all(np.isin(plot_val, [1])):
-            cb.set_ticklabels(["Ref and Dev equal throughout domain"])
-        elif subplot in ("dyn_frac_diff", "res_frac_diff"):
-            if subplot == "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
-                if vmin > 0.1 and vmax < 10:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-                    cb.formatter = mticker.ScalarFormatter()
-                else:
-                    cb.formatter = mticker.LogFormatter(base=10)
-                    cb.locator = mticker.LogLocator(base=10, subs='all')
-                cb.update_ticks()
-            else:
-                cb.formatter = mticker.ScalarFormatter()
-                cb.set_ticks([0.5, 0.75, 1, 1.5, 2.0])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
+            value = ["Undefined throughout domain"]
+        cbar.set_ticklabels(value)
+        return
 
-    try:
-        cb.formatter.set_useOffset(False)
-    except BaseException:
-        # not all automatically chosen colorbar formatters properly handle the
-        # above method
-        pass
+    # ==================================================================
+    # Data is plottable: Pick the locations and format of tick
+    # labels depending the subplot and the colormap that is used.
+    # ==================================================================
 
-    cb.minorticks_off()
-    cb.update_ticks()
-    cb.set_label(unit)
+    #-------------------------------------------------------------------
+    # Ref and Dev subplots, log scale
+    #-------------------------------------------------------------------
+    if subplot in ("ref", "dev") and log_color_scale:
+        cbar.formatter = mticker.LogFormatter(base=10)
+        return
+
+    #-------------------------------------------------------------------
+    # Ratio (dynamic and restricted range) subplots):
+    #-------------------------------------------------------------------
+    if subplot in ("dyn_ratio", "res_ratio"):
+
+        # When Ref == Dev
+        if np.all(np.isin(plot_val, [1])):
+            cbar.set_ticklabels(["Ref and Dev equal throughout domain"])
+            return
+
+        # Dynamic range ratio subplot
+        if subplot in "dyn_ratio":
+
+            # Set ticks manually and use ScalarFormatter
+            # for data range of 1 order of magnitude or less
+            if vmin > 0.1 and vmax < 10.0:
+                cbar.set_ticks([vmin, vmin*2.0, 1.0, vmax/2.0, vmax])
+                cbar.formatter = mticker.ScalarFormatter()
+                cbar.formatter.set_useOffset(False)
+                return
+
+            # Use LogLocator and LogFormatter for larger data ranges
+            cbar.locator = mticker.LogLocator(base=10, subs='all')
+            cbar.formatter = mticker.LogFormatter(base=10)
+            return
+
+        # Restricted range ratio subplot
+        # Use fixed ticks and ScalarFormatter
+        if subplot in "res_ratio":
+            cbar.set_ticks([0.5, 0.75, 1.0, 1.5, 2.0])
+            cbar.formatter = mticker.ScalarFormatter()
+            return
+
+    #-------------------------------------------------------------------
+    # For the following subplots:
+    # (1) Ref & Dev, with non-log color scales
+    # (2) Absdiff (dynamic range)
+    # (3) Absdiff (restricted range)
+    #-------------------------------------------------------------------
+    vrange = vmax - vmin
+
+    # For data ranges between 0.1 and 100:
+    if vrange > 0.1 and vrange < 100.0:
+
+        # If using a difference colormap (e.g. for absdiff),
+        # then place ticks symmetrically around zero.
+        if use_cmap_RdBu or "absdiff" in subplot:
+            cbar.set_ticks([vmin, vmin/2.0, 0.0, vmax/2.0, vmax])
+            cbar.formatter = mticker.ScalarFormatter()
+            cbar.formatter.set_useOffset(False)
+            return
+
+        # Otherwise place ticks symmetrically along the data range
+        cbar.set_ticks([vmin, vrange*0.25, vrange*0.5, vrange*0.75, vmax])
+        cbar.formatter = mticker.ScalarFormatter()
+        cbar.formatter.set_useOffset(False)
+        return
+
+    # For larger data ranges, automatically find good tick locations
+    # (but not too many that the labels smush together)
+    cbar.locator = mticker.MaxNLocator(nbins=4)
+
+
+def six_panel_subplot_names(diff_of_diffs):
+    """
+    Returns the names of the subplots for the 6-panel plots.
+
+    Args:
+    -----
+    diff_of_diffs : bool
+        Indicates if this is a diff-of-diffs benchmark (True)
+        or not (False),  Ratio plots are only included if
+        diff_of_diffs is False.
+
+    Returns:
+    --------
+    subplots : list of str
+        List of names of each of the subplots in the 6-panel plot.
+    """
+    if diff_of_diffs:
+        return ["ref", "dev",
+                "dyn_absdiff", "res_absdiff",
+                "dyn_absdiff", "res_absdiff"]
+
+    return ["ref", "dev",
+            "dyn_absdiff", "res_absdiff",
+            "dyn_ratio", "res_ratio",
+    ]
 
 
 def compare_single_level(
@@ -489,7 +731,7 @@ def compare_single_level(
     verify_variable_type(refdata, xr.Dataset)
     verify_variable_type(devdata, xr.Dataset)
 
-    # Create empty lists for keyword arguments7
+    # Create empty lists for keyword arguments
     if extent is None:
         extent = [-1000, -1000, -1000, -1000]
     if sigdiff_list is None:
@@ -503,8 +745,9 @@ def compare_single_level(
         refdata, devdata = refdata.load(), devdata.load()
         second_ref, second_dev = second_ref.load(), second_dev.load()
 
-#        # If needed, use fake time dim in case dates are different in datasets.
-#        # This needs more work for case of single versus multiple times.
+#        # If needed, use fake time dim in case dates are different
+#        # in datasets.  This needs more work for case of single versus
+#        # multiple times.
 #        aligned_time = [np.datetime64('2000-01-01')] * refdata.dims['time']
 #        refdata = refdata.assign_coords({'time': aligned_time})
 #        devdata = devdata.assign_coords({'time': aligned_time})
@@ -1268,15 +1511,7 @@ def compare_single_level(
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        subplots = [
-            "ref", "dev",
-            "dyn_abs_diff", "res_abs_diff",
-            "dyn_frac_diff", "res_frac_diff",
-        ]
-        if diff_of_diffs:
-            subplots = ["ref", "dev",
-                        "dyn_abs_diff", "res_abs_diff",
-                        "dyn_abs_diff", "res_abs_diff"]
+        subplots = six_panel_subplot_names(diff_of_diffs)
 
         all_zeros = [
             ref_is_all_zero,
@@ -1438,23 +1673,31 @@ def compare_single_level(
 
     else:
         with TemporaryDirectory() as temp_dir:
-            results = Parallel(n_jobs=n_job)(
-                delayed(createfig)(i, temp_dir)
-                for i in range(n_var)
-            )
+            # ---------------------------------------
+            # Turn off parallelization if n_job=1
+            if n_job != 1:
+                results = Parallel(n_jobs=n_job)(
+                    delayed(createfig)(i, temp_dir)
+                    for i in range(n_var)
+                )
+            else:
+                for i in range(n_var):
+                    results = createfig(i, temp_dir)
+            # ---------------------------------------
+
             # update sig diffs after parallel calls
             if current_process().name == "MainProcess":
                 for varname in results:
                     if isinstance(varname, str):
                         sigdiff_list.append(varname)
 
-            # ==================================================================
+            # ==========================================================
             # Finish
-            # ==================================================================
+            # ==========================================================
             if verbose:
                 print("Closed PDF")
             merge = PdfMerger()
-            #print("Creating {} for {} variables".format(pdfname, n_var))
+            #print(f"Creating {pdfname} for {n_var} variables")
             pdf = PdfPages(pdfname)
             pdf.close()
             for i in range(n_var):
@@ -2100,7 +2343,7 @@ def compare_zonal_mean(
             frac_ds_dev_cmps[i] = frac_ds_dev
     # Universal plot setup
     xtick_positions = np.arange(-90, 91, 30)
-    xticklabels = [r"{}$\degree$".format(x) for x in xtick_positions]
+    xticklabels = [rf"{x}$\degree$" for x in xtick_positions]
 
     # ==================================================================
     # Define function to create a single page figure to be called
@@ -2314,15 +2557,7 @@ def compare_zonal_mean(
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        subplots = [
-            "ref", "dev",
-            "dyn_abs_diff", "res_abs_diff",
-            "dyn_frac_diff", "res_frac_diff",
-        ]
-        if diff_of_diffs:
-            subplots = ["ref", "dev",
-                        "dyn_abs_diff", "res_abs_diff",
-                        "dyn_abs_diff", "res_abs_diff"]
+        subplots = six_panel_subplot_names(diff_of_diffs)
 
         all_zeros = [
             ref_is_all_zero,
@@ -2457,8 +2692,11 @@ def compare_zonal_mean(
 
     # ==================================================================
     # Call figure generation function in a parallel loop over variables
+    #
     # ==================================================================
-    # do not attempt nested thread parallelization due to issues with matplotlib
+
+    # Disable parallelization if this routine is already being
+    # called in parallel.  This is due to issues with matplotlib.
     if current_process().name != "MainProcess":
         n_job = 1
 
@@ -2469,10 +2707,17 @@ def compare_zonal_mean(
 
     else:
         with TemporaryDirectory() as temp_dir:
-            results = Parallel(n_jobs=n_job)(
-                delayed(createfig)(i, temp_dir)
-                for i in range(n_var)
-            )
+            # ---------------------------------------
+            # Turn off parallelization if n_job=1
+            if n_job != 1:
+                results = Parallel(n_jobs=n_job)(
+                    delayed(createfig)(i, temp_dir)
+                    for i in range(n_var)
+                )
+            else:
+                for i in range(n_var):
+                    results = createfig(i, temp_dir)
+            # ---------------------------------------
 
             # update sig diffs after parallel calls
             if current_process().name == "MainProcess":
@@ -2480,9 +2725,9 @@ def compare_zonal_mean(
                     if isinstance(varname, str):
                         sigdiff_list.append(varname)
 
-            # ==================================================================
+            # ==========================================================
             # Finish
-            # ==================================================================
+            # ==========================================================
             if verbose:
                 print("Closed PDF")
             merge = PdfMerger()
@@ -2504,8 +2749,13 @@ def compare_zonal_mean(
             warnings.showwarning = _warning_format
 
 
-def normalize_colors(vmin, vmax, is_difference=False,
-                     log_color_scale=False, ratio_log=False):
+def normalize_colors(
+        vmin,
+        vmax,
+        is_difference=False,
+        log_color_scale=False,
+        ratio_log=False
+):
     """
     Normalizes a data range to the colormap range used by matplotlib
     functions. For log-color scales, special handling is done to prevent
@@ -2542,19 +2792,40 @@ def normalize_colors(vmin, vmax, is_difference=False,
         """
         Class for logarithmic non-symmetric color scheme
         """
-        def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-            mcolors.LogNorm.__init__(self, vmin=vmin, vmax=vmax, clip=clip)
+        def __init__(
+                self,
+                vmin=None,
+                vmax=None,
+                midpoint=None,
+                clip=False):
+            mcolors.LogNorm.__init__(
+                self,
+                vmin=vmin,
+                vmax=vmax,
+                clip=clip
+            )
             self.midpoint = midpoint
 
         def __call__(self, value, clip=None):
             result, _ = self.process_value(value)
-            x = [np.log(self.vmin), np.log(self.midpoint), np.log(self.vmax)]
-            y = [0, 0.5, 1]
-            return np.ma.array(np.interp(np.log(value), x, y),
-                               mask=result.mask, copy=False)
+            x_val = [
+                np.log(self.vmin),
+                np.log(self.midpoint),
+                np.log(self.vmax)
+            ]
+            y_val = [0, 0.5, 1]
+            return np.ma.array(
+                np.interp(np.log(value), x_val, y_val),
+                mask=result.mask,
+                copy=False
+            )
 
-    if (abs(vmin) == 0 and abs(vmax) == 0) or (
-            np.isnan(vmin) and np.isnan(vmax)):
+    # Absolute value of v
+    abs_vmin = abs(vmin)
+    abs_vmax = abs(vmax)
+    max_abs = max(abs_vmin, abs_vmax)
+
+    if (abs_vmin == 0 and abs_vmax == 0) or (np.isnan(vmin) and np.isnan(vmax)):
         # If the data is zero everywhere (vmin=vmax=0) or undefined
         # everywhere (vmin=vmax=NaN), then normalize the data range
         # so that the color corresponding to zero (white) will be
@@ -2570,6 +2841,8 @@ def normalize_colors(vmin, vmax, is_difference=False,
         return mcolors.LogNorm(vmin=vmax / 1e3, vmax=vmax)
     if log_color_scale:
         return MidpointLogNorm(vmin=vmin, vmax=vmax, midpoint=1)
+
+    # For linear color scales: Normalize between min & max
     return mcolors.Normalize(vmin=vmin, vmax=vmax)
 
 
@@ -2737,7 +3010,7 @@ def single_panel(
             xtick_positions = np.arange(-90, 90, 30)
 
     if xticklabels is None:
-        xticklabels = [r"{}$\degree$".format(x) for x in xtick_positions]
+        xticklabels = [rf"{x}$\degree$" for x in xtick_positions]
 
     if unit == "" and data_is_xr:
         try:
@@ -3088,36 +3361,36 @@ def single_panel(
         ax.set_xticklabels(xticklabels)
 
     if add_cb:
-        cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
+        cbar = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
+        cbar.mappable.set_norm(norm)
         if data_is_xr:
             all_zero, all_nan = all_zero_or_nan(plot_vals.values)
         else:
             all_zero, all_nan = all_zero_or_nan(plot_vals)
         if all_zero or all_nan:
             if use_cmap_RdBu:
-                cb.set_ticks([0.0])
+                cbar.set_ticks([0.0])
             else:
-                cb.set_ticks([0.5])
+                cbar.set_ticks([0.5])
             if all_nan:
-                cb.set_ticklabels(["Undefined throughout domain"])
+                cbar.set_ticklabels(["Undefined throughout domain"])
             else:
-                cb.set_ticklabels(["Zero throughout domain"])
+                cbar.set_ticklabels(["Zero throughout domain"])
         else:
             if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
+                cbar.formatter = mticker.LogFormatter(base=10)
             else:
                 if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
+                    cbar.locator = mticker.MaxNLocator(nbins=4)
 
         try:
-            cb.formatter.set_useOffset(False)
+            cbar.formatter.set_useOffset(False)
         except BaseException:
             # not all automatically chosen colorbar formatters properly handle
             # the above method
             pass
-        cb.update_ticks()
-        cb.set_label(unit)
+        cbar.update_ticks()
+        cbar.set_label(unit)
 
     if pdfname != "":
         pdf = PdfPages(pdfname)
