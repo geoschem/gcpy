@@ -42,6 +42,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `docs/environment_files/environment.yml` for MambaForge (also added `gridspec`)
 - Now use `pypdf` instead of `PyPDF2` in `plot.py` and `util.py`
 - Added coding suggestions made by `pylint` where possible
+- Abstracted and never-nested code from `six_plot` into functions (in `plot.py`)
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
