@@ -489,10 +489,14 @@ def colorbar_ticks_and_format(
         # Dynamic range ratio subplot
         if subplot in "dyn_ratio":
 
-            # Set ticks manually and use ScalarFormatter
-            # for data range of 1 order of magnitude or less
+            # Set ticks manually and use ScalarFormatter for
+            # data in the range of 0.1 .. 10.0.  Use avg(vmax,1)
+            # and avg(vmin,1) for the 2nd & 4th tick locations.
+            # Maybe find a better method later on.
             if vmin > 0.1 and vmax < 10.0:
-                cbar.set_ticks([vmin, vmin*2.0, 1.0, vmax/2.0, vmax])
+                cbar.set_ticks(
+                    [vmin, (vmin+1.0)/2.0, 1.0, (vmax+1.0)/2.0, vmax]
+                )
                 cbar.formatter = mticker.ScalarFormatter()
                 cbar.formatter.set_useOffset(False)
                 return
