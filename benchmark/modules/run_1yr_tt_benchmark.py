@@ -532,11 +532,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     spcdb_dir=spcdb_dir,
                 )
 
-            # Run in parallel
-            results = Parallel(n_jobs=-1)(
-                delayed(gcc_vs_gcc_mass_table)(mon) \
-                for mon in range(bmk_n_months)
-            )
+            # Create tables in parallel
+            # Turn off parallelization if n_jobs==1
+            if n_jobs != 1:
+                results = Parallel(n_jobs=config["options"]["n_cores"])(
+                    delayed(gcc_vs_gcc_mass_table)(mon) \
+                    for mon in range(bmk_n_months)
+                )
+            else:
+                for mon in range(bmk_n_months):
+                    results = gcc_vs_gcc_mass_table(mon)
 
         # ==================================================================
         # GCC vs GCC operations budgets tables
@@ -823,6 +828,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
                         "is_pre_14.0"]
                 )
+
+            # Create tables in parallel
+            # Turn off parallelization if n_jobs==1
+            if n_jobs != 1:
+                results = Parallel(n_jobs=config["options"]["n_cores"])(
+                    delayed(gchp_vs_gcc_mass_table)(mon) \
+                    for mon in range(bmk_n_months)
+                )
+            else:
+                for mon in range(bmk_n_months):
+                    results = gchp_vs_gcc_mass_table(mon)
 
         # ==================================================================
         # GCHP vs GCC operations budgets tables
@@ -1125,11 +1141,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dev_met_extra=devareapath
                 )
 
-            # Run in parallel
-            results = Parallel(n_jobs=-1)(
-                delayed(gchp_vs_gchp_mass_table)(mon) \
-                for mon in range(bmk_n_months)
-            )
+            # Create tables in parallel
+            # Turn off parallelization if n_jobs==1
+            if n_jobs != 1:
+                results = Parallel(n_jobs=config["options"]["n_cores"])(
+                    delayed(gchp_vs_gchp_mass_table)(mon) \
+                    for mon in range(bmk_n_months)
+                )
+            else:
+                for mon in range(bmk_n_months):
+                    results = gchp_vs_gchp_mass_table(mon)
 
         # ==================================================================
         # GCHP vs GCHP operations budgets tables

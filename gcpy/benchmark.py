@@ -1498,13 +1498,18 @@ def make_benchmark_conc_plots(
             )
         return {filecat: cat_diff_dict}
 
+    # --------------------------------------------
     # Create the plots in parallel
-    results = Parallel(n_jobs=n_job)(
-        delayed(createplots)(filecat) for _, filecat in enumerate(catdict)
-    )
-#     # Do not create plots in parallel
-#    for _, filecat in enumerate(catdict):
-#        createplots(filecat)
+    # Turn off parallelization if n_job=1
+    if n_job != 1:
+        results = Parallel(n_jobs=n_job)(
+            delayed(createplots)(filecat)
+            for _, filecat in enumerate(catdict)
+        )
+    else:
+        for _, filecat in enumerate(catdict):
+            results = createplots(filecat)
+    # --------------------------------------------
 
     dict_sfc = {list(result.keys())[0]: result[list(
         result.keys())[0]]['sfc'] for result in results}
@@ -1858,8 +1863,18 @@ def make_benchmark_emis_plots(
             diff_dict[c] = diff_emis
             return diff_dict
 
-        results = Parallel(n_jobs=n_job)(delayed(createfile_hco_cat)(c)
-                                         for c in emis_cats)
+        # ---------------------------------------
+        # Create plots in parallel
+        # Turn off parallelization if n_job=1
+        if n_job != 1:
+            results = Parallel(n_jobs=n_job)(
+                delayed(createfile_hco_cat)(c)
+                for c in emis_cats
+            )
+        else:
+            for c in emis_cats:
+                results = createfile_hco_cat(c)
+        # ---------------------------------------
 
         dict_emis = {list(result.keys())[0]: result[list(result.keys())[0]]
                      for result in results}
@@ -1960,10 +1975,19 @@ def make_benchmark_emis_plots(
             util.add_nested_bookmarks_to_pdf(
                 pdfname, filecat, emisdict, warninglist)
             return catspc
-        results = Parallel(n_jobs=n_job)(
-            delayed(createfile_bench_cat)(filecat)
-            for i, filecat in enumerate(catdict)
-        )
+
+        #------------------------------------------------
+        # Create plots in parallel
+        # Turn of parallalization if n_job=1
+        if n_job != 1:
+            results = Parallel(n_jobs=n_job)(
+                delayed(createfile_bench_cat)(filecat)
+                for _, filecat in enumerate(catdict)
+            )
+        else:
+            for _, filecat in enumerate(catdict):
+                results = createfile_bench_cat(filecat)
+        #------------------------------------------------
 
         allcatspc = [spc for result in results for spc in result]
         # Give warning if emissions species is not assigned a benchmark
