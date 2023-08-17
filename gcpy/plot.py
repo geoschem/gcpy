@@ -15,14 +15,15 @@ import xarray as xr
 import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
 from joblib import Parallel, delayed
-from PyPDF2 import PdfFileMerger
+from pypdf import PdfMerger
 from .grid import get_vert_grid, get_pressure_indices, \
     pad_pressure_edges, convert_lev_to_pres, get_grid_extents, call_make_grid, \
     get_input_res
 from .regrid import regrid_comparison_data, create_regridders, gen_xmat, \
     regrid_vertical
 from .util import reshape_MAPL_CS, get_diff_of_diffs, get_nan_mask, \
-    all_zero_or_nan, slice_by_lev_and_time, compare_varnames, read_config_file
+    all_zero_or_nan, slice_by_lev_and_time, compare_varnames, \
+    read_config_file, verify_variable_type
 from .units import check_units, data_unit_is_mol_per_mol
 from .constants import MW_AIR_g
 
@@ -40,36 +41,36 @@ WhGrYlRd = mcolors.ListedColormap(_rgb_WhGrYlRd / 255.0)
 
 
 def six_plot(
-    subplot,
-    all_zero,
-    all_nan,
-    plot_val,
-    grid,
-    ax,
-    rowcol,
-    title,
-    comap,
-    unit,
-    extent,
-    masked_data,
-    other_all_nan,
-    gridtype,
-    vmins,
-    vmaxs,
-    use_cmap_RdBu,
-    match_cbar,
-    verbose,
-    log_color_scale,
-    pedge=np.full((1, 1), -1),
-    pedge_ind=np.full((1, 1), -1),
-    log_yaxis=False,
-    xtick_positions=[],
-    xticklabels=[],
-    plot_type="single_level",
-    ratio_log=False,
-    proj=ccrs.PlateCarree(),
-    ll_plot_func='imshow',
-    **extra_plot_args
+        subplot,
+        all_zero,
+        all_nan,
+        plot_val,
+        grid,
+        ax,
+        rowcol,
+        title,
+        comap,
+        unit,
+        extent,
+        masked_data,
+        other_all_nan,
+        gridtype,
+        vmins,
+        vmaxs,
+        use_cmap_RdBu,
+        match_cbar,
+        verbose,
+        log_color_scale,
+        pedge=np.full((1, 1), -1),
+        pedge_ind=np.full((1, 1), -1),
+        log_yaxis=False,
+        xtick_positions=None,
+        xticklabels=None,
+        plot_type="single_level",
+        ratio_log=False,
+        proj=ccrs.PlateCarree(),
+        ll_plot_func='imshow',
+        **extra_plot_args
 ):
     """
     Plotting function to be called from compare_single_level or
@@ -81,10 +82,12 @@ def six_plot(
             Type of plot to create (ref, dev, absolute difference or
             fractional difference)
         all_zero: bool
-            Set this flag to True if the data to be plotted consist only of zeros
+            Set this flag to True if the data to be plotted consist
+            only of zeros
         all_nan: bool
-            Set this flag to True if the data to be plotted consist only of NaNs
-        plot_val: xarray DataArray
+            Set this flag to True if the data to be plotted consist
+            only of NaNs
+        plot_val: xarray DataArray or numpy.ndarray
             Single variable GEOS-Chem output values to plot
         grid: dict
             Dictionary mapping plot_val to plottable coordinates
@@ -100,23 +103,26 @@ def six_plot(
         unit: str
             Units of plotted data
         extent: tuple (minlon, maxlon, minlat, maxlat)
-            Describes minimum and maximum latitude and longitude of input data
+            Describes minimum and maximum latitude and longitude of
+            input data
         masked_data: numpy array
             Masked area for cubed-sphere plotting
         other_all_nan: bool
-            Set this flag to True if plotting ref/dev and the other of ref/dev
-            is all nan
+            Set this flag to True if plotting ref/dev and the other
+            of ref/dev is all nan
         gridtype: str
             "ll" for lat/lon or "cs" for cubed-sphere
         vmins: list of float
-            list of length 3 of minimum ref value, dev value, and absdiff value
+            list of length 3 of minimum ref value, dev value,
+            and absdiff value
         vmaxs: list of float
-            list of length 3 of maximum ref value, dev value, and absdiff value
+            list of length 3 of maximum ref value, dev value,
+            and absdiff value
         use_cmap_RdBu: bool
             Set this flag to True to use a blue-white-red colormap
         match_cbar: bool
-            Set this flag to True if you are plotting with the same colorbar
-            for ref and dev
+            Set this flag to True if you are plotting with the
+            same colorbar for ref and dev
         verbose: bool
             Set this flag to True to enable informative printout.
         log_color_scale: bool
@@ -127,18 +133,19 @@ def six_plot(
             Edge pressures of grid cells in data to be plotted
             Default value: np.full((1,1), -1)
         pedge_ind: numpy array
-            Indices where edge pressure values are within a given pressure range
+            Indices where edge pressure values are within a given
+            pressure range.
             Default value: np.full((1,1), -1)
         log_yaxis: bool
-            Set this flag to True to enable log scaling of pressure in zonal
-            mean plots
+            Set this flag to True to enable log scaling of pressure
+            in zonal mean plots
             Default value: False
         xtick_positions: list of float
             Locations of lat/lon or lon ticks on plot
-            Default value: []
+            Default value: None
         xticklabels: list of str
             Labels for lat/lon ticks
-            Default value: []
+            Default value: None
         plot_type: str
             Type of plot, either "single_level" or "zonal"mean"
             Default value: "single_level"
@@ -149,95 +156,49 @@ def six_plot(
             Projection for plotting data
             Default value: ccrs.PlateCarree()
         ll_plot_func: str
-            Function to use for lat/lon single level plotting with possible values
-            'imshow' and 'pcolormesh'. imshow is much faster but is slightly
-            displaced when plotting from dateline to dateline and/or pole to pole.
+            Function to use for lat/lon single level plotting with
+            possible values 'imshow' and 'pcolormesh'. imshow is much
+            faster but is slightly displaced when plotting from dateline
+            to dateline and/or pole to pole.
             Default value: 'imshow'
         extra_plot_args: various
-            Any extra keyword arguments are passed through the plotting functions to
-            be used in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
+            Any extra keyword arguments are passed through the
+            plotting functions to be used in calls to pcolormesh() (CS)
+            or imshow() (Lat/Lon).
     """
-    # Set min and max of the data range
-    if subplot in ("ref", "dev"):
-        if all_zero or all_nan:
-            if subplot == "ref":
-                [vmin, vmax] = [vmins[0], vmaxs[0]]
-            else:
-                [vmin, vmax] = [vmins[1], vmaxs[1]]
-        elif use_cmap_RdBu:
-            if subplot == "ref":
-                if match_cbar and (not other_all_nan):
-                    absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
-                else:
-                    absmax = max([np.abs(vmins[0]), np.abs(vmaxs[0])])
-            else:
-                if match_cbar and (not other_all_nan):
-                    absmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
-                else:
-                    absmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
-            [vmin, vmax] = [-absmax, absmax]
-        else:
-            if subplot == "ref":
-                if match_cbar and (not other_all_nan):
-                    [vmin, vmax] = [vmins[2], vmaxs[2]]
-                else:
-                    [vmin, vmax] = [vmins[0], vmaxs[0]]
-            else:
-                if match_cbar and (not other_all_nan):
-                    [vmin, vmax] = [vmins[2], vmaxs[2]]
-                else:
-                    [vmin, vmax] = [vmins[1], vmaxs[1]]
-    else:
-        if all_zero:
-            [vmin, vmax] = [0, 0]
-        elif all_nan:
-            [vmin, vmax] = [np.nan, np.nan]
-        else:
-            if subplot == "dyn_abs_diff":
-                # Min and max of abs. diff, excluding NaNs
-                diffabsmax = max(
-                    [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
-                )
-                [vmin, vmax] = [-diffabsmax, diffabsmax]
-            elif subplot == "res_abs_diff":
-                [pct5, pct95] = [
-                    np.percentile(plot_val, 5),
-                    np.percentile(plot_val, 95),
-                ]
-                abspctmax = np.max([np.abs(pct5), np.abs(pct95)])
-                [vmin, vmax] = [-abspctmax, abspctmax]
-            elif subplot == "dyn_frac_diff":
-                fracdiffabsmax = np.max(
-                    [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
-                )
-                [vmin, vmax] = [1 / fracdiffabsmax, fracdiffabsmax]
-                # if vmin > 0.5:
-                #    vmin = 0.5
-                # if vmax < 2:
-                #    vmax = 2
-            else:
-                [vmin, vmax] = [0.5, 2]
-    if verbose:
-        print(f"Subplot ({rowcol}) vmin, vmax: {vmin}, {vmax}")
+    # TODO: Abstract six_plot and related routines out of plot.py
+    verify_variable_type(plot_val, (np.ndarray, xr.DataArray))
 
-    # Normalize colors (put into range [0..1] for matplotlib methods)
-    if subplot in ("ref", "dev"):
-        norm = normalize_colors(
-            vmin, vmax, is_difference=use_cmap_RdBu,
-            log_color_scale=log_color_scale, ratio_log=ratio_log
-        )
-    elif subplot in ("dyn_abs_diff", "res_abs_diff"):
-        norm = normalize_colors(vmin, vmax, is_difference=True)
-    else:
-        # remove NaNs for compatibility with color normalization
-        plot_val = get_nan_mask(plot_val)
-        norm = normalize_colors(
-            vmin,
-            vmax,
-            is_difference=True,
-            log_color_scale=True,
-            ratio_log=ratio_log)
-    # Create plot
+    # Compute the min & max values
+    vmin, vmax = compute_vmin_vmax_for_plot(
+        plot_val,
+        vmins,
+        vmaxs,
+        subplot,
+        rowcol,
+        all_zero,
+        all_nan,
+        other_all_nan,
+        match_cbar,
+        use_cmap_RdBu,
+        verbose,
+    )
+
+    # Compute the norm object (i.e. put the colorscale on a
+    # range of 0..1, which are matplotlib color coordinates)
+    # (also remove NaNs in data for ratio plots)
+    plot_val, norm = compute_norm_for_plot(
+        plot_val,
+        vmin,
+        vmax,
+        subplot,
+        use_cmap_RdBu,
+        log_color_scale,
+        ratio_log,
+        verbose
+    )
+
+    # Create one of the 6 subplots
     plot = single_panel(
         plot_val,
         ax,
@@ -263,91 +224,406 @@ def six_plot(
         **extra_plot_args)
 
     # Define the colorbar for the plot
-    cb = plt.colorbar(
+    cbar = plt.colorbar(
         plot,
         ax=ax,
         orientation="horizontal",
         norm=norm,
-        pad=0.10)
-    cb.mappable.set_norm(norm)
+        pad=0.10
+    )
+    cbar.mappable.set_norm(norm)
+    cbar = colorbar_ticks_and_format(
+        plot_val,
+        cbar,
+        vmin,
+        vmax,
+        subplot,
+        all_zero,
+        all_nan,
+        use_cmap_RdBu,
+        log_color_scale,
+    )
+    cbar.set_label(unit)
+
+def compute_vmin_vmax_for_plot(
+        plot_val,
+        vmins,
+        vmaxs,
+        subplot,
+        rowcol,
+        all_zero,
+        all_nan,
+        other_all_nan,
+        match_cbar,
+        use_cmap_RdBu,
+        verbose
+):
+    """
+    Computes the min & max values for each of the 6-panel subplots.
+
+    This is an internal routine called by routine "six_plot".
+    See "six_plot" for descriptions of input arguments.
+    """
+    def verbose_print(verbose, rowcol, vmin, vmax):
+        """
+        Internal routine to print the vmin & vmax values
+        for each subplot.
+        """
+        if verbose:
+            print(f"Subplot ({rowcol}) vmin, vmax: {vmin}, {vmax}")
+
+    # ==================================================================
+    # Ref or Dev subplots
+    # ==================================================================
+    if subplot in ("ref", "dev"):
+
+        #---------------------------------------------------------------
+        # Data is all zero or Nan
+        #---------------------------------------------------------------
+        if all_zero or all_nan:
+            [vmin, vmax] = [vmins[1], vmaxs[1]]
+            if subplot == "ref":
+                [vmin, vmax] = [vmins[0], vmaxs[0]]
+            verbose_print(verbose, rowcol, vmin, vmax)
+            return vmin, vmax
+
+        #---------------------------------------------------------------
+        # We are using a difference colormap (diff of diffs)
+        #---------------------------------------------------------------
+        if use_cmap_RdBu:
+
+            # Ref supblot, diff-of-diffs
+            if subplot in "ref":
+                vmax = max([np.abs(vmins[0]), np.abs(vmaxs[0])])
+                if match_cbar and not other_all_nan:
+                    vmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
+                verbose_print(verbose, rowcol, -vmax, vmax)
+                return -vmax, vmax
+
+            # Dev subplot, diff-of-diffs
+            vmax = max([np.abs(vmins[1]), np.abs(vmaxs[1])])
+            if match_cbar and not other_all_nan:
+                vmax = max([np.abs(vmins[2]), np.abs(vmaxs[2])])
+            verbose_print(verbose, rowcol, -vmax, vmax)
+            return -vmax, vmax
+
+        #---------------------------------------------------------------
+        # We are using a gradient colormap
+        #---------------------------------------------------------------
+
+        # Ref subplot
+        if subplot in "ref":
+            [vmin, vmax] = [vmins[0], vmaxs[0]]
+            if match_cbar and not other_all_nan:
+                [vmin, vmax] = [vmins[2], vmaxs[2]]
+            verbose_print(verbose, rowcol, vmin, vmax)
+            return vmin, vmax
+
+        # Dev subplot
+        [vmin, vmax] = [vmins[1], vmaxs[1]]
+        if match_cbar and not other_all_nan:
+            [vmin, vmax] = [vmins[2], vmaxs[2]]
+        verbose_print(verbose, rowcol, vmin, vmax)
+        return vmin, vmax
+
+    # ==================================================================
+    # Absdiff and Ratio subplots
+    # ==================================================================
+
+    # All data is zero or NaN
+    if all_zero:
+        verbose_print(verbose, rowcol, 0, 0)
+        return 0, 0
+    if all_nan:
+        verbose_print(verbose, rowcol, np.nan, np.nan)
+        return np.nan, np.nan
+
+    # Absdiff (dynamic range) subplot
+    if subplot in "dyn_absdiff":
+        # Min and max of abs. diff, excluding NaNs
+        vmax = max(
+            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+        )
+        verbose_print(verbose, rowcol, -vmax, vmax)
+        return -vmax, vmax
+
+    # Absdiff (restricted range) subplot
+    if subplot in "res_absdiff":
+        [pct5, pct95] = [
+            np.percentile(plot_val, 5),
+            np.percentile(plot_val, 95),
+        ]
+        vmax = np.max([np.abs(pct5), np.abs(pct95)])
+        verbose_print(verbose, rowcol, -vmax, vmax)
+        return -vmax, vmax
+
+    # Ratio (dynamic range) subplot)
+    if subplot in "dyn_ratio":
+        vmax = np.max(
+            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+        )
+        vmin = 1.0 / vmax
+        verbose_print(verbose, rowcol, vmin, vmax)
+        return vmin, vmax
+
+    # Ratio (restricted range) subplot
+    verbose_print(verbose, rowcol, 0.5, 2.0)
+    return 0.5, 2.0
+
+
+def compute_norm_for_plot(
+        plot_val,
+        vmin,
+        vmax,
+        subplot,
+        use_cmap_RdBu,
+        log_color_scale,
+        ratio_log,
+        verbose
+):
+    """
+    Normalize colors (put into range [0..1] for matplotlib methods).
+
+    This is an internal routine called by routine "six_plot".
+    See "six_plot" for descriptions of input arguments.
+    """
+    # TODO: Abstract six_plot and related routines out of plot.py
+    # ==================================================================
+    # Ref and Dev subplots
+    # ==================================================================
+    if subplot in ("ref", "dev"):
+        return plot_val, normalize_colors(
+            vmin,
+            vmax,
+            is_difference=use_cmap_RdBu,
+            log_color_scale=log_color_scale,
+            ratio_log=ratio_log
+        )
+
+    # ==================================================================
+    # Absdiff (dynamic & restricted range) subplots
+    # ==================================================================
+    if subplot in ("dyn_absdiff", "res_absdiff"):
+        return plot_val, normalize_colors(
+            vmin,
+            vmax,
+            is_difference=True
+        )
+
+    # ==================================================================
+    # Ratio (dynamic & restricted range) subplots
+    # Remove NaNs for compatibility with color normalization
+    # ==================================================================
+    plot_val = get_nan_mask(plot_val)
+    return plot_val, normalize_colors(
+        vmin,
+        vmax,
+        is_difference=True,
+        log_color_scale=True,
+        ratio_log=ratio_log
+    )
+
+
+def colorbar_ticks_and_format(
+        plot_val,
+        cbar,
+        vmin,
+        vmax,
+        subplot,
+        all_zero,
+        all_nan,
+        use_cmap_RdBu,
+        log_color_scale,
+):
+    """
+    Defines the colorbar tick placement and label formatting style.
+    Returns the updated colorbar object.
+
+    This is an internal routine called by routine "six_plot".
+    See "six_plot" for descriptions of input arguments.
+    """
+    # ==================================================================
+    # Data is all zero or NaN:
+    # Place a single tick with an appropriate label in the middle.
+    # For RdBu colortables this goes at 0.0; otherwise at 0.5.
+    # ==================================================================
     if all_zero or all_nan:
+        pos = [0.0]
         if subplot in ("ref", "dev"):
-            if use_cmap_RdBu:
-                cb.set_ticks([0.0])
-            else:
-                cb.set_ticks([0.5])
-        else:
-            cb.set_ticks([0.0])
+            if not use_cmap_RdBu:
+                pos = [0.5]
+        labels = ["Zero throughout domain"]
         if all_nan:
-            cb.set_ticklabels(["Undefined throughout domain"])
-        else:
-            cb.set_ticklabels(["Zero throughout domain"])
-    else:
-        if subplot in ("ref", "dev") and log_color_scale:
-            cb.formatter = mticker.LogFormatter(base=10)
-        elif subplot in ("dyn_frac_diff", "res_frac_diff") and np.all(np.isin(plot_val, [1])):
-            cb.set_ticklabels(["Ref and Dev equal throughout domain"])
-        elif subplot in ("dyn_frac_diff", "res_frac_diff"):
-            if subplot == "dyn_frac_diff" and vmin != 0.5 and vmax != 2.0:
-                if vmin > 0.1 and vmax < 10:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
-                    cb.formatter = mticker.ScalarFormatter()
-                else:
-                    cb.formatter = mticker.LogFormatter(base=10)
-                    cb.locator = mticker.LogLocator(base=10, subs='all')
-                cb.update_ticks()
-            else:
-                cb.formatter = mticker.ScalarFormatter()
-                cb.set_ticks([0.5, 0.75, 1, 1.5, 2.0])
-        else:
-            if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                cb.locator = mticker.MaxNLocator(nbins=4)
+            labels = ["Undefined throughout domain"]
+        cbar.set_ticks(pos, labels=labels)
+        cbar.minorticks_off()
+        return cbar
 
-    try:
-        cb.formatter.set_useOffset(False)
-    except BaseException:
-        # not all automatically chosen colorbar formatters properly handle the
-        # above method
-        pass
+    # ==================================================================
+    # Data is plottable: Pick the locations and format of tick
+    # labels depending the subplot and the colormap that is used.
+    # ==================================================================
 
-    cb.minorticks_off()
-    cb.update_ticks()
-    cb.set_label(unit)
+    #-------------------------------------------------------------------
+    # Ref and Dev subplots, log scale
+    #-------------------------------------------------------------------
+    if subplot in ("ref", "dev") and log_color_scale:
+        cbar.formatter = mticker.LogFormatter(base=10)
+        cbar.minorticks_off()
+        return cbar
+
+    #-------------------------------------------------------------------
+    # Ratio (dynamic and restricted range) subplots):
+    #-------------------------------------------------------------------
+    if subplot in ("dyn_ratio", "res_ratio"):
+
+        def ref_equals_dev(array):
+            """
+            Internal routine to check that returns true if all elements
+            of Ref/Dev are equal to 1 or NaN (aka missing value).
+            This is needed to be able to add a ticklabel stating
+            that Ref & Dev are equal throughout the domain.
+            """
+            uniq = np.unique(array)
+            if len(uniq) == 2:
+                return np.any(np.isin(uniq, [1.0])) and np.any(np.isnan(uniq))
+            return np.all(np.isin(uniq, [1.0]))
+
+        # When Ref == Dev
+        if ref_equals_dev(plot_val):
+            pos = [1.0]
+            cbar.set_ticks(
+                pos,
+                labels=["Ref and Dev equal throughout domain"]
+            )
+            cbar.minorticks_off()
+            return cbar
+
+        # Dynamic range ratio subplot
+        if subplot in "dyn_ratio":
+
+            # Set ticks manually and use ScalarFormatter for
+            # data in the range of 0.1 .. 10.0.  Use avg(vmax,1)
+            # and avg(vmin,1) for the 2nd & 4th tick locations.
+            # Maybe find a better method later on.
+            if vmin > 0.1 and vmax < 10.0:
+                pos = [vmin, (vmin+1.0)/2.0, 1.0, (vmax+1.0)/2.0, vmax]
+                cbar.set_ticks(pos)
+                cbar.formatter = mticker.ScalarFormatter()
+                cbar.formatter.set_useOffset(False)
+                cbar.minorticks_off()
+                return cbar
+
+            # Use LogLocator and LogFormatter for larger data ranges
+            cbar.locator = mticker.LogLocator(base=10, subs='all')
+            cbar.formatter = mticker.LogFormatter(base=10)
+            cbar.minorticks_off()
+            return cbar
+
+        # Restricted range ratio subplot
+        # Use fixed ticks and ScalarFormatter
+        pos = [0.5, 0.75, 1.0, 1.5, 2.0]
+        cbar.set_ticks(pos)
+        cbar.formatter = mticker.ScalarFormatter()
+        cbar.minorticks_off()
+        return cbar
+
+    #-------------------------------------------------------------------
+    # For the following subplots:
+    # (1) Ref & Dev, with non-log color scales
+    # (2) Absdiff (dynamic range)
+    # (3) Absdiff (restricted range)
+    #-------------------------------------------------------------------
+
+    # For data ranges between 0.1 and 100:
+    vrange = vmax - vmin
+    if vrange > 0.1 and vrange < 100.0:
+
+        # If using a difference colormap (e.g. for absdiff),
+        # then place ticks symmetrically around zero.
+        if use_cmap_RdBu or "absdiff" in subplot:
+            pos = [vmin, vmin/2.0, 0.0, vmax/2.0, vmax]
+            cbar.set_ticks(pos)
+            cbar.formatter = mticker.ScalarFormatter()
+            cbar.formatter.set_useOffset(False)
+            cbar.minorticks_off()
+            return cbar
+
+        # Otherwise place ticks symmetrically along the data range
+        pos = [vmin, vrange*0.25, vrange*0.5, vrange*0.75, vmax]
+        cbar.set_ticks(pos)
+        cbar.formatter = mticker.ScalarFormatter()
+        cbar.formatter.set_useOffset(False)
+        cbar.minorticks_off()
+        return cbar
+
+    # For larger data ranges, automatically find good tick locations
+    # (but not too many that the labels smush together)
+    cbar.locator = mticker.MaxNLocator(nbins=4)
+    cbar.minorticks_off()
+    return cbar
+
+
+def six_panel_subplot_names(diff_of_diffs):
+    """
+    Returns the names of the subplots for the 6-panel plots.
+
+    Args:
+    -----
+    diff_of_diffs : bool
+        Indicates if this is a diff-of-diffs benchmark (True)
+        or not (False),  Ratio plots are only included if
+        diff_of_diffs is False.
+
+    Returns:
+    --------
+    subplots : list of str
+        List of names of each of the subplots in the 6-panel plot.
+    """
+    if diff_of_diffs:
+        return ["ref", "dev",
+                "dyn_absdiff", "res_absdiff",
+                "dyn_absdiff", "res_absdiff"]
+
+    return ["ref", "dev",
+            "dyn_absdiff", "res_absdiff",
+            "dyn_ratio", "res_ratio",
+    ]
 
 
 def compare_single_level(
-    refdata,
-    refstr,
-    devdata,
-    devstr,
-    varlist=None,
-    ilev=0,
-    itime=0,
-    refmet=None,
-    devmet=None,
-    weightsdir='.',
-    pdfname="",
-    cmpres=None,
-    match_cbar=True,
-    normalize_by_area=False,
-    enforce_units=True,
-    convert_to_ugm3=False,
-    flip_ref=False,
-    flip_dev=False,
-    use_cmap_RdBu=False,
-    verbose=False,
-    log_color_scale=False,
-    extra_title_txt=None,
-    extent=[-1000, -1000, -1000, -1000],
-    n_job=-1,
-    sigdiff_list=[],
-    second_ref=None,
-    second_dev=None,
-    spcdb_dir=os.path.dirname(__file__),
-    sg_ref_path='',
-    sg_dev_path='',
-    ll_plot_func='imshow',
-    **extra_plot_args
+        refdata,
+        refstr,
+        devdata,
+        devstr,
+        varlist=None,
+        ilev=0,
+        itime=0,
+        refmet=None,
+        devmet=None,
+        weightsdir='.',
+        pdfname="",
+        cmpres=None,
+        match_cbar=True,
+        normalize_by_area=False,
+        enforce_units=True,
+        convert_to_ugm3=False,
+        flip_ref=False,
+        flip_dev=False,
+        use_cmap_RdBu=False,
+        verbose=False,
+        log_color_scale=False,
+        extra_title_txt=None,
+        extent=None,
+        n_job=-1,
+        sigdiff_list=None,
+        second_ref=None,
+        second_dev=None,
+        spcdb_dir=os.path.dirname(__file__),
+        sg_ref_path='',
+        sg_dev_path='',
+        ll_plot_func='imshow',
+        **extra_plot_args
 ):
     """
     Create single-level 3x2 comparison map plots for variables common
@@ -397,9 +673,9 @@ def compare_single_level(
             bounds for the Ref and Dev plots.
             Default value: True
         normalize_by_area: bool
-            Set this flag to True if you wish to normalize the Ref and Dev
-            raw data by grid area. Input ref and dev datasets must include
-            AREA variable in m2 if normalizing by area.
+            Set this flag to True if you wish to normalize the Ref
+            and Dev raw data by grid area. Input ref and dev datasets
+            must include AREA variable in m2 if normalizing by area.
             Default value: False
         enforce_units: bool
             Set this flag to True to force an error if Ref and Dev
@@ -437,14 +713,14 @@ def compare_single_level(
             Default value plots extent of input grids.
             Default value: [-1000, -1000, -1000, -1000]
         n_job: int
-            Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting.
+            Defines the number of simultaneous workers for parallel
+            plotting.  Set to 1 to disable parallel plotting.
             Value of -1 allows the application to decide.
             Default value: -1
         sigdiff_list: list of str
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
-            Default value: []
+            Default value: None
         second_ref: xarray Dataset
             A dataset of the same model type / grid as refdata,
             to be used in diff-of-diffs plotting.
@@ -465,35 +741,38 @@ def compare_single_level(
             (in attributes) for the dev dataset
             Default value: '' (will not be read in)
         ll_plot_func: str
-            Function to use for lat/lon single level plotting with possible values
-            'imshow' and 'pcolormesh'. imshow is much faster but is slightly displaced
-            when plotting from dateline to dateline and/or pole to pole.
+            Function to use for lat/lon single level plotting with
+            possible values 'imshow' and 'pcolormesh'. imshow is much
+            faster but is slightly displaced when plotting from
+            dateline to dateline and/or pole to pole.
             Default value: 'imshow'
         extra_plot_args: various
-            Any extra keyword arguments are passed through the plotting functions to be used
-            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
+            Any extra keyword arguments are passed through the
+            plotting functions to be used in calls to pcolormesh() (CS)
+            or imshow() (Lat/Lon).
     """
     warnings.showwarning = _warning_format
     # Error check arguments
-    if not isinstance(refdata, xr.Dataset):
-        raise TypeError("The refdata argument must be an xarray Dataset!")
+    verify_variable_type(refdata, xr.Dataset)
+    verify_variable_type(devdata, xr.Dataset)
 
-    if not isinstance(devdata, xr.Dataset):
-        raise TypeError("The devdata argument must be an xarray Dataset!")
+    # Create empty lists for keyword arguments
+    if extent is None:
+        extent = [-1000, -1000, -1000, -1000]
+    if sigdiff_list is None:
+        sigdiff_list = []
 
     # Determine if doing diff-of-diffs
-    if second_ref is not None and second_dev is not None:
-        diff_of_diffs = True
-    else:
-        diff_of_diffs = False
+    diff_of_diffs = second_ref is not None and second_dev is not None
 
     # Prepare diff-of-diffs datasets if needed
     if diff_of_diffs:
         refdata, devdata = refdata.load(), devdata.load()
         second_ref, second_dev = second_ref.load(), second_dev.load()
 
-#        # If needed, use fake time dim in case dates are different in datasets.
-#        # This needs more work for case of single versus multiple times.
+#        # If needed, use fake time dim in case dates are different
+#        # in datasets.  This needs more work for case of single versus
+#        # multiple times.
 #        aligned_time = [np.datetime64('2000-01-01')] * refdata.dims['time']
 #        refdata = refdata.assign_coords({'time': aligned_time})
 #        devdata = devdata.assign_coords({'time': aligned_time})
@@ -580,8 +859,10 @@ def compare_single_level(
              np.min([refmaxlat, devmaxlat])]
 
     # Set plot bounds for non cubed-sphere regridding and plotting
-    ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
-    dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
+    # Pylint says ref_extent and dev_extent are not used
+    #  -- Bob Yantosca (15 Aug 2023)
+    #ref_extent = (refminlon, refmaxlon, refminlat, refmaxlat)
+    #dev_extent = (devminlon, devmaxlon, devminlat, devmaxlat)
     cmp_extent = (cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat)
     # ==============================================================
     # Loop over all variables
@@ -1012,8 +1293,20 @@ def compare_single_level(
                 where(ds_new[lat_var] >= minlat, drop=True).\
                 where(ds_new[lat_var] <= maxlat, drop=True)
 
-        ds_ref_reg = get_extent_for_colors(ds_ref, min_max_minlon, min_max_maxlon, min_max_minlat, min_max_maxlat)
-        ds_dev_reg = get_extent_for_colors(ds_dev, min_max_minlon, min_max_maxlon, min_max_minlat, min_max_maxlat)
+        ds_ref_reg = get_extent_for_colors(
+            ds_ref,
+            min_max_minlon,
+            min_max_maxlon,
+            min_max_minlat,
+            min_max_maxlat
+        )
+        ds_dev_reg = get_extent_for_colors(
+            ds_dev,
+            min_max_minlon,
+            min_max_maxlon,
+            min_max_minlat,
+            min_max_maxlat
+        )
 
         # Ref
         vmin_ref = float(np.nanmin(ds_ref_reg.data))
@@ -1023,12 +1316,14 @@ def compare_single_level(
         vmin_dev = float(np.nanmin(ds_dev_reg.data))
         vmax_dev = float(np.nanmax(ds_dev_reg.data))
 
-        # Comparison
-        if cmpgridtype == "cs":
-            vmin_ref_cmp = float(np.nanmin(ds_ref_cmp))
-            vmax_ref_cmp = float(np.nanmax(ds_ref_cmp))
-            vmin_dev_cmp = float(np.nanmin(ds_dev_cmp))
-            vmax_dev_cmp = float(np.nanmax(ds_dev_cmp))
+# Pylint says that these are unused variables, so comment out
+#  -- Bob Yantosca (15 Aug 2023)
+#        # Comparison
+#        if cmpgridtype == "cs":
+#            vmin_ref_cmp = float(np.nanmin(ds_ref_cmp))
+#            vmax_ref_cmp = float(np.nanmax(ds_ref_cmp))
+#            vmin_dev_cmp = float(np.nanmin(ds_dev_cmp))
+#            vmax_dev_cmp = float(np.nanmax(ds_dev_cmp))
 #            vmin_cmp = np.nanmin([vmin_ref_cmp, vmin_dev_cmp])
 #            vmax_cmp = np.nanmax([vmax_ref_cmp, vmax_dev_cmp])
 #        else:
@@ -1170,8 +1465,8 @@ def compare_single_level(
 
         # Colormaps for 1st row (Ref and Dev)
         if use_cmap_RdBu:
-            cmap_toprow_nongray = copy.copy(mpl.cm.RdBu_r)
-            cmap_toprow_gray = copy.copy(mpl.cm.RdBu_r)
+            cmap_toprow_nongray = copy.copy(mpl.colormaps["RdBu_r"])
+            cmap_toprow_gray = copy.copy(mpl.colormaps["RdBu_r"])
         else:
             cmap_toprow_nongray = copy.copy(WhGrYlRd)
             cmap_toprow_gray = copy.copy(WhGrYlRd)
@@ -1189,8 +1484,8 @@ def compare_single_level(
                 dev_cmap = cmap_toprow_nongray
 
         # Colormaps for 2nd row (Abs. Diff.) and 3rd row (Frac. Diff,)
-        cmap_nongray = copy.copy(mpl.cm.RdBu_r)
-        cmap_gray = copy.copy(mpl.cm.RdBu_r)
+        cmap_nongray = copy.copy(mpl.colormaps["RdBu_r"])
+        cmap_gray = copy.copy(mpl.colormaps["RdBu_r"])
         cmap_gray.set_bad(color="gray")
 
         # ==============================================================
@@ -1241,15 +1536,7 @@ def compare_single_level(
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        subplots = [
-            "ref", "dev",
-            "dyn_abs_diff", "res_abs_diff",
-            "dyn_frac_diff", "res_frac_diff",
-        ]
-        if diff_of_diffs:
-            subplots = ["ref", "dev",
-                        "dyn_abs_diff", "res_abs_diff",
-                        "dyn_abs_diff", "res_abs_diff"]
+        subplots = six_panel_subplot_names(diff_of_diffs)
 
         all_zeros = [
             ref_is_all_zero,
@@ -1411,21 +1698,31 @@ def compare_single_level(
 
     else:
         with TemporaryDirectory() as temp_dir:
-            results = Parallel(n_jobs=n_job)(delayed(createfig)(i, temp_dir)
-                                             for i in range(n_var))
+            # ---------------------------------------
+            # Turn off parallelization if n_job=1
+            if n_job != 1:
+                results = Parallel(n_jobs=n_job)(
+                    delayed(createfig)(i, temp_dir)
+                    for i in range(n_var)
+                )
+            else:
+                for i in range(n_var):
+                    results = createfig(i, temp_dir)
+            # ---------------------------------------
+
             # update sig diffs after parallel calls
             if current_process().name == "MainProcess":
                 for varname in results:
                     if isinstance(varname, str):
                         sigdiff_list.append(varname)
 
-            # ==================================================================
+            # ==========================================================
             # Finish
-            # ==================================================================
+            # ==========================================================
             if verbose:
                 print("Closed PDF")
-            merge = PdfFileMerger()
-            #print("Creating {} for {} variables".format(pdfname, n_var))
+            merge = PdfMerger()
+            #print(f"Creating {pdfname} for {n_var} variables")
             pdf = PdfPages(pdfname)
             pdf.close()
             for i in range(n_var):
@@ -1444,39 +1741,39 @@ def compare_single_level(
 
 
 def compare_zonal_mean(
-    refdata,
-    refstr,
-    devdata,
-    devstr,
-    varlist=None,
-    itime=0,
-    refmet=None,
-    devmet=None,
-    weightsdir='.',
-    pdfname="",
-    cmpres=None,
-    match_cbar=True,
-    pres_range=[0, 2000],
-    normalize_by_area=False,
-    enforce_units=True,
-    convert_to_ugm3=False,
-    flip_ref=False,
-    flip_dev=False,
-    use_cmap_RdBu=False,
-    verbose=False,
-    log_color_scale=False,
-    log_yaxis=False,
-    extra_title_txt=None,
-    n_job=-1,
-    sigdiff_list=[],
-    second_ref=None,
-    second_dev=None,
-    spcdb_dir=os.path.dirname(__file__),
-    sg_ref_path='',
-    sg_dev_path='',
-    ref_vert_params=[[], []],
-    dev_vert_params=[[], []],
-    **extra_plot_args
+        refdata,
+        refstr,
+        devdata,
+        devstr,
+        varlist=None,
+        itime=0,
+        refmet=None,
+        devmet=None,
+        weightsdir='.',
+        pdfname="",
+        cmpres=None,
+        match_cbar=True,
+        pres_range=None,
+        normalize_by_area=False,
+        enforce_units=True,
+        convert_to_ugm3=False,
+        flip_ref=False,
+        flip_dev=False,
+        use_cmap_RdBu=False,
+        verbose=False,
+        log_color_scale=False,
+        log_yaxis=False,
+        extra_title_txt=None,
+        n_job=-1,
+        sigdiff_list=None,
+        second_ref=None,
+        second_dev=None,
+        spcdb_dir=os.path.dirname(__file__),
+        sg_ref_path='',
+        sg_dev_path='',
+        ref_vert_params=None,
+        dev_vert_params=None,
+        **extra_plot_args
 ):
     """
     Create single-level 3x2 comparison zonal-mean plots for variables
@@ -1522,14 +1819,15 @@ def compare_zonal_mean(
             for both Ref and Dev plots.
             Default value: True
         pres_range: list of two integers
-            Pressure range of levels to plot [hPa]. The vertical axis will
-            span the outer pressure edges of levels that contain pres_range
-            endpoints.
-            Default value: [0,2000]
+            Pressure range of levels to plot [hPa]. The vertical axis
+            will span the outer pressure edges of levels that contain
+            pres_range endpoints.
+            Default value: [0, 2000]
         normalize_by_area: bool
             Set this flag to True to to normalize raw data in both
-            Ref and Dev datasets by grid area. Input ref and dev datasets
-            must include AREA variable in m2 if normalizing by area.
+            Ref and Dev datasets by grid area. Input ref and dev
+            datasets must include AREA variable in m2 if normalizing
+            by area.
             Default value: False
         enforce_units: bool
             Set this flag to True force an error if the variables in
@@ -1566,14 +1864,14 @@ def compare_zonal_mean(
             for the top-of-plot title.
             Default value: None
         n_job: int
-            Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting.
+            Defines the number of simultaneous workers for parallel
+            plotting.  Set to 1 to disable parallel plotting.
             Value of -1 allows the application to decide.
             Default value: -1
         sigdiff_list: list of str
             Returns a list of all quantities having significant
             differences (where |max(fractional difference)| > 0.1).
-            Default value: []
+            Default value: None
         second_ref: xarray Dataset
             A dataset of the same model type / grid as refdata,
             to be used in diff-of-diffs plotting.
@@ -1596,27 +1894,32 @@ def compare_zonal_mean(
         ref_vert_params: list(AP, BP) of list-like types
             Hybrid grid parameter A in hPa and B (unitless).
             Needed if ref grid is not 47 or 72 levels.
-            Default value: [[], []]
+            Default value: None
         dev_vert_params: list(AP, BP) of list-like types
             Hybrid grid parameter A in hPa and B (unitless).
             Needed if dev grid is not 47 or 72 levels.
-            Default value: [[], []]
+            Default value: None
         extra_plot_args: various
-            Any extra keyword arguments are passed through the plotting functions to be used
-            in calls to pcolormesh() (CS) or imshow() (Lat/Lon).
+            Any extra keyword arguments are passed through the
+            plotting functions to be used in calls to pcolormesh()
+            (CS) or imshow() (Lat/Lon).
     """
     warnings.showwarning = _warning_format
-    if not isinstance(refdata, xr.Dataset):
-        raise TypeError("The refdata argument must be an xarray Dataset!")
+    verify_variable_type(refdata, xr.Dataset)
+    verify_variable_type(devdata, xr.Dataset)
 
-    if not isinstance(devdata, xr.Dataset):
-        raise TypeError("The devdata argument must be an xarray Dataset!")
+    # Create empty lists for keyword arguments
+    if sigdiff_list is None:
+        sigdiff_list = []
+    if ref_vert_params is None:
+        ref_vert_params = [[], []]
+    if dev_vert_params is None:
+        dev_vert_params = [[], []]
+    if pres_range is None:
+        pres_range = [0, 2000]
 
     # Determine if doing diff-of-diffs
-    if second_ref is not None and second_dev is not None:
-        diff_of_diffs = True
-    else:
-        diff_of_diffs = False
+    diff_of_diffs = second_ref is not None and second_dev is not None
 
     # Prepare diff-of-diffs datasets if needed
     if diff_of_diffs:
@@ -2065,7 +2368,7 @@ def compare_zonal_mean(
             frac_ds_dev_cmps[i] = frac_ds_dev
     # Universal plot setup
     xtick_positions = np.arange(-90, 91, 30)
-    xticklabels = [r"{}$\degree$".format(x) for x in xtick_positions]
+    xticklabels = [rf"{x}$\degree$" for x in xtick_positions]
 
     # ==================================================================
     # Define function to create a single page figure to be called
@@ -2222,12 +2525,12 @@ def compare_zonal_mean(
         # ==============================================================
 
         if use_cmap_RdBu:
-            cmap1 = copy.copy(mpl.cm.RdBu_r)
+            cmap1 = copy.copy(mpl.colormaps["RdBu_r"])
         else:
             cmap1 = copy.copy(WhGrYlRd)
         cmap1.set_bad("gray")
 
-        cmap_plot = copy.copy(mpl.cm.RdBu_r)
+        cmap_plot = copy.copy(mpl.colormaps["RdBu_r"])
         cmap_plot.set_bad(color="gray")
 
         # ==============================================================
@@ -2279,15 +2582,7 @@ def compare_zonal_mean(
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        subplots = [
-            "ref", "dev",
-            "dyn_abs_diff", "res_abs_diff",
-            "dyn_frac_diff", "res_frac_diff",
-        ]
-        if diff_of_diffs:
-            subplots = ["ref", "dev",
-                        "dyn_abs_diff", "res_abs_diff",
-                        "dyn_abs_diff", "res_abs_diff"]
+        subplots = six_panel_subplot_names(diff_of_diffs)
 
         all_zeros = [
             ref_is_all_zero,
@@ -2422,8 +2717,11 @@ def compare_zonal_mean(
 
     # ==================================================================
     # Call figure generation function in a parallel loop over variables
+    #
     # ==================================================================
-    # do not attempt nested thread parallelization due to issues with matplotlib
+
+    # Disable parallelization if this routine is already being
+    # called in parallel.  This is due to issues with matplotlib.
     if current_process().name != "MainProcess":
         n_job = 1
 
@@ -2434,20 +2732,30 @@ def compare_zonal_mean(
 
     else:
         with TemporaryDirectory() as temp_dir:
-            results = Parallel(n_jobs=n_job)(delayed(createfig)(i, temp_dir)
-                                             for i in range(n_var))
+            # ---------------------------------------
+            # Turn off parallelization if n_job=1
+            if n_job != 1:
+                results = Parallel(n_jobs=n_job)(
+                    delayed(createfig)(i, temp_dir)
+                    for i in range(n_var)
+                )
+            else:
+                for i in range(n_var):
+                    results = createfig(i, temp_dir)
+            # ---------------------------------------
+
             # update sig diffs after parallel calls
             if current_process().name == "MainProcess":
                 for varname in results:
-                    if type(varname) is str:
+                    if isinstance(varname, str):
                         sigdiff_list.append(varname)
 
-            # ==================================================================
+            # ==========================================================
             # Finish
-            # ==================================================================
+            # ==========================================================
             if verbose:
                 print("Closed PDF")
-            merge = PdfFileMerger()
+            merge = PdfMerger()
             #print("Creating {} for {} variables".format(pdfname, n_var))
             pdf = PdfPages(pdfname)
             pdf.close()
@@ -2466,8 +2774,13 @@ def compare_zonal_mean(
             warnings.showwarning = _warning_format
 
 
-def normalize_colors(vmin, vmax, is_difference=False,
-                     log_color_scale=False, ratio_log=False):
+def normalize_colors(
+        vmin,
+        vmax,
+        is_difference=False,
+        log_color_scale=False,
+        ratio_log=False
+):
     """
     Normalizes a data range to the colormap range used by matplotlib
     functions. For log-color scales, special handling is done to prevent
@@ -2504,19 +2817,42 @@ def normalize_colors(vmin, vmax, is_difference=False,
         """
         Class for logarithmic non-symmetric color scheme
         """
-        def __init__(self, vmin=None, vmax=None, midpoint=None, clip=False):
-            mcolors.LogNorm.__init__(self, vmin=vmin, vmax=vmax, clip=clip)
+        def __init__(
+                self,
+                vmin=None,
+                vmax=None,
+                midpoint=None,
+                clip=False):
+            mcolors.LogNorm.__init__(
+                self,
+                vmin=vmin,
+                vmax=vmax,
+                clip=clip
+            )
             self.midpoint = midpoint
 
         def __call__(self, value, clip=None):
             result, _ = self.process_value(value)
-            x = [np.log(self.vmin), np.log(self.midpoint), np.log(self.vmax)]
-            y = [0, 0.5, 1]
-            return np.ma.array(np.interp(np.log(value), x, y),
-                               mask=result.mask, copy=False)
+            x_val = [
+                np.log(self.vmin),
+                np.log(self.midpoint),
+                np.log(self.vmax)
+            ]
+            y_val = [0, 0.5, 1]
+            return np.ma.array(
+                np.interp(np.log(value), x_val, y_val),
+                mask=result.mask,
+                copy=False
+            )
 
-    if (abs(vmin) == 0 and abs(vmax) == 0) or (
-            np.isnan(vmin) and np.isnan(vmax)):
+    # Absolute value of v
+    abs_vmin = abs(vmin)
+    abs_vmax = abs(vmax)
+    # Pylint says that this is unused, so comment it out
+    # -- Bob Yantosca (17 Aug 2023)
+    #max_abs = max(abs_vmin, abs_vmax)
+
+    if (abs_vmin == 0 and abs_vmax == 0) or (np.isnan(vmin) and np.isnan(vmax)):
         # If the data is zero everywhere (vmin=vmax=0) or undefined
         # everywhere (vmin=vmax=NaN), then normalize the data range
         # so that the color corresponding to zero (white) will be
@@ -2532,40 +2868,43 @@ def normalize_colors(vmin, vmax, is_difference=False,
         return mcolors.LogNorm(vmin=vmax / 1e3, vmax=vmax)
     if log_color_scale:
         return MidpointLogNorm(vmin=vmin, vmax=vmax, midpoint=1)
+
+    # For linear color scales: Normalize between min & max
     return mcolors.Normalize(vmin=vmin, vmax=vmax)
 
 
-def single_panel(plot_vals,
-                 ax=None,
-                 plot_type="single_level",
-                 grid={},
-                 gridtype="",
-                 title="fill",
-                 comap=WhGrYlRd,
-                 norm=[],
-                 unit="",
-                 extent=(None, None, None, None),
-                 masked_data=None,
-                 use_cmap_RdBu=False,
-                 log_color_scale=False,
-                 add_cb=True,
-                 pres_range=[0, 2000],
-                 pedge=np.full((1, 1), -1),
-                 pedge_ind=np.full((1, 1), -1),
-                 log_yaxis=False,
-                 xtick_positions=[],
-                 xticklabels=[],
-                 proj=ccrs.PlateCarree(),
-                 sg_path='',
-                 ll_plot_func="imshow",
-                 vert_params=[[], []],
-                 pdfname="",
-                 weightsdir='.',
-                 vmin=None,
-                 vmax=None,
-                 return_list_of_plots=False,
-                 **extra_plot_args
-                 ):
+def single_panel(
+        plot_vals,
+        ax=None,
+        plot_type="single_level",
+        grid=None,
+        gridtype="",
+        title="fill",
+        comap=WhGrYlRd,
+        norm=None,
+        unit="",
+        extent=None,
+        masked_data=None,
+        use_cmap_RdBu=False,
+        log_color_scale=False,
+        add_cb=True,
+        pres_range=None,
+        pedge=np.full((1, 1), -1),
+        pedge_ind=np.full((1, 1), -1),
+        log_yaxis=False,
+        xtick_positions=None,
+        xticklabels=None,
+        proj=ccrs.PlateCarree(),
+        sg_path='',
+        ll_plot_func="imshow",
+        vert_params=None,
+        pdfname="",
+        weightsdir='.',
+        vmin=None,
+        vmax=None,
+        return_list_of_plots=False,
+        **extra_plot_args
+):
     """
     Core plotting routine -- creates a single plot panel.
 
@@ -2588,23 +2927,26 @@ def single_panel(plot_vals,
             Default value: "" (will automatically determine from grid)
         title: str
             Title to put at top of plot
-            Default value: "fill" (will use name attribute of plot_vals if available)
+            Default value: "fill" (will use name attribute of plot_vals
+            if available)
         comap: matplotlib Colormap
             Colormap for plotting data values
             Default value: WhGrYlRd
         norm: list
-            List with range [0..1] normalizing color range for matplotlib methods
-            Default value: [] (will determine from plot_vals)
+            List with range [0..1] normalizing color range for matplotlib
+            methods. Default value: None (will determine from plot_vals)
         unit: str
             Units of plotted data
-            Default value: "" (will use units attribute of plot_vals if available)
+            Default value: "" (will use units attribute of plot_vals
+            if available)
         extent: tuple (minlon, maxlon, minlat, maxlat)
-            Describes minimum and maximum latitude and longitude of input data
-            Default value: (None, None, None, None) (Will use full extent of plot_vals
-            if plot is single level.
+            Describes minimum and maximum latitude and longitude of input
+            data.  Default value: None (Will use full extent of plot_vals
+            if plot is single level).
         masked_data: numpy array
-            Masked area for avoiding near-dateline cubed-sphere plotting issues
-            Default value: None (will attempt to determine from plot_vals)
+            Masked area for avoiding near-dateline cubed-sphere plotting
+            issues  Default value: None (will attempt to determine from
+            plot_vals)
         use_cmap_RdBu: bool
             Set this flag to True to use a blue-white-red colormap
             Default value: False
@@ -2615,46 +2957,51 @@ def single_panel(plot_vals,
             Set this flag to True to add a colorbar to the plot
             Default value: True
         pres_range: list(int)
-            Range from minimum to maximum pressure for zonal mean plotting
-            Default value: [0, 2000] (will plot entire atmosphere)
+            Range from minimum to maximum pressure for zonal mean
+            plotting. Default value: [0, 2000] (will plot entire
+            atmosphere)
         pedge: numpy array
             Edge pressures of vertical grid cells in plot_vals
-            for zonal mean plotting
-            Default value: np.full((1, 1), -1) (will determine automatically)
+            for zonal mean plotting.  Default value: np.full((1, 1), -1)
+            (will determine automatically)
         pedge_ind: numpy array
-            Index of edge pressure values within pressure range in plot_vals
-            for zonal mean plotting
-            Default value: np.full((1, 1), -1) (will determine automatically)
+            Index of edge pressure values within pressure range in
+            plot_vals for zonal mean plotting.
+            Default value: np.full((1, 1), -1) (will determine
+            automatically)
         log_yaxis: bool
-            Set this flag to True to enable log scaling of pressure in zonal mean plots
-            Default value: False
+            Set this flag to True to enable log scaling of pressure in
+            zonal mean plots.  Default value: False
         xtick_positions: list(float)
             Locations of lat/lon or lon ticks on plot
-            Default value: [] (will place automatically for zonal mean plots)
+            Default value: None (will place automatically for
+            zonal mean plots)
         xticklabels: list(str)
             Labels for lat/lon ticks
-            Default value: [] (will determine automatically from xtick_positions)
+            Default value: None (will determine automatically from
+            xtick_positions)
         proj: cartopy projection
             Projection for plotting data
             Default value: ccrs.PlateCarree()
         sg_path: str
-            Path to NetCDF file containing stretched-grid info (in attributes) for plot_vals
+            Path to NetCDF file containing stretched-grid info
+            (in attributes) for plot_vals.
             Default value: '' (will not be read in)
         ll_plot_func: str
-            Function to use for lat/lon single level plotting with possible values
-            'imshow' and 'pcolormesh'. imshow is much faster but is slightly displaced
-            when plotting from dateline to dateline and/or pole to pole.
-            Default value: 'imshow'
+            Function to use for lat/lon single level plotting with
+            possible values 'imshow' and 'pcolormesh'. imshow is much
+            faster but is slightly displaced when plotting from dateline
+            to dateline and/or pole to pole.  Default value: 'imshow'
         vert_params: list(AP, BP) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless). Needed if grid is not 47 or 72 levels.
-            Default value: [[], []]
+            Hybrid grid parameter A in hPa and B (unitless). Needed if
+            grid is not 47 or 72 levels.  Default value: None
         pdfname: str
             File path to save plots as PDF
             Default value: "" (will not create PDF)
         weightsdir: str
             Directory path for storing regridding weights
-            Default value: "." (will store regridding files in current directory)
-            Default value: "" (will not create PDF)
+            Default value: "." (will store regridding files in
+            current directory)
         vmin: float
             minimum for colorbars
             Default value: None (will use plot value minimum)
@@ -2662,28 +3009,35 @@ def single_panel(plot_vals,
             maximum for colorbars
             Default value: None (will use plot value maximum)
         return_list_of_plots: bool
-            Return plots as a list. This is helpful if you are using a cubedsphere grid
-            and would like access to all 6 plots
+            Return plots as a list. This is helpful if you are using
+            a cubedsphere grid and would like access to all 6 plots
             Default value: False
         extra_plot_args: various
-            Any extra keyword arguments are passed to calls to pcolormesh() (CS) or imshow() (Lat/Lon).
+            Any extra keyword arguments are passed to calls to
+            pcolormesh() (CS) or imshow() (Lat/Lon).
 
     Returns:
         plot: matplotlib plot
             Plot object created from input
     """
+    verify_variable_type(plot_vals, (xr.DataArray, np.ndarray))
+
+    # Create empty lists for keyword arguments
+    if pres_range is None:
+        pres_range = [0, 2000]
+    if vert_params is None:
+        vert_params = [[], []]
 
     # Eliminate 1D level or time dimensions
     plot_vals = plot_vals.squeeze()
     data_is_xr = isinstance(plot_vals, xr.DataArray)
-    if xtick_positions == []:
-        # if plot_type == "single_level":
-        #    xtick_positions = np.arange(extent[0], extent[1], (extent[1]-extent[0])/12)
+    if xtick_positions is None:
+        xtick_positions = []
         if plot_type == "zonal_mean":
             xtick_positions = np.arange(-90, 90, 30)
 
-    if xticklabels == []:
-        xticklabels = [r"{}$\degree$".format(x) for x in xtick_positions]
+    if xticklabels is None:
+        xticklabels = [rf"{x}$\degree$" for x in xtick_positions]
 
     if unit == "" and data_is_xr:
         try:
@@ -2697,7 +3051,7 @@ def single_panel(plot_vals,
         except BaseException:
             pass
     # Generate grid if not passed
-    if grid == {}:
+    if grid is None:
         res, gridtype = get_input_res(plot_vals)
         sg_params = [1, 170, -90]
         if sg_path != '':
@@ -2709,7 +3063,12 @@ def single_panel(plot_vals,
 
         if plot_type == 'single_level':
             grid_extent = get_grid_extents(plot_vals)
-            [grid, _] = call_make_grid(res, gridtype, in_extent=grid_extent, sg_params=sg_params)
+            [grid, _] = call_make_grid(
+                res,
+                gridtype,
+                in_extent=grid_extent,
+                sg_params=sg_params
+            )
 
         else:  # zonal mean
             if np.all(pedge_ind == -1) or np.all(pedge == -1):
@@ -2766,20 +3125,20 @@ def single_panel(plot_vals,
             plot_vals = plot_vals.mean(axis=lon_ind)
     if gridtype == "":
         _, gridtype = get_input_res(plot_vals)
-    if extent == (None, None, None, None) or extent is None:
+    if extent is None or extent == (None, None, None, None):
         extent = get_grid_extents(grid)
         # convert to -180 to 180 grid if needed (necessary if going
         # cross-dateline later)
         if extent[0] > 180 or extent[1] > 180:
             #extent = [((extent[0]+180)%360)-180, ((extent[1]+180)%360)-180, extent[2], extent[3]]
             extent = [extent[0] - 180, extent[1] - 180, extent[2], extent[3]]
-        '''
-        if extent[0] < -180 and 'x' in res:
-            lon_res = float(res.split('x')[1])
-            extent = [180,
-        if extent[1] > 180 and 'x' in res:
-            extent[1] = 180
-        '''
+        #'''
+        #if extent[0] < -180 and 'x' in res:
+        #    lon_res = float(res.split('x')[1])
+        #    extent = [180,
+        #if extent[1] > 180 and 'x' in res:
+        #    extent[1] = 180
+        #'''
     # Account for cross-dateline extent
     if extent[0] > extent[1]:
         if gridtype == "ll":
@@ -2834,7 +3193,7 @@ def single_panel(plot_vals,
     fig = plt.gcf()
     data_is_xr = isinstance(plot_vals, xr.DataArray)
     # Normalize colors (put into range [0..1] for matplotlib methods)
-    if norm == []:
+    if norm is None:
         if data_is_xr:
             vmin = plot_vals.data.min() if vmin is None else vmin
             vmax = plot_vals.data.max() if vmax is None else vmax
@@ -2863,7 +3222,7 @@ def single_panel(plot_vals,
         if log_yaxis:
             ax.set_yscale("log")
             ax.yaxis.set_major_formatter(
-                mticker.FuncFormatter(lambda y, _: "{:g}".format(y))
+                mticker.FuncFormatter(lambda y, _: f"{y:g}")
             )
         ax.invert_yaxis()
         ax.set_xticks(xtick_positions)
@@ -2890,16 +3249,17 @@ def single_panel(plot_vals,
                         # is already > max grid value
                         return grid_vals[(np.abs(grid_vals - val)).argmin()]
                     return grid_vals[i]
-                else:
-                    diff[diff > 0] = -np.inf
-                    i = diff.argmax()
-                    if diff[i] == -np.inf:
-                        # expand extent to value beyond grid limits if extent is already < min grid value
-                        # plot will be distorted if full global to avoid
-                        # cartopy issues
-                        return grid_vals[(
-                            np.abs(grid_vals - val)).argmin()] - spacing
-                    return max(grid_vals[i], -180)
+                # if direction is not "greater":
+                diff[diff > 0] = -np.inf
+                i = diff.argmax()
+                if diff[i] == -np.inf:
+                    # expand extent to value beyond grid limits if
+                    # extent is already < min grid value
+                    # plot will be distorted if full global to avoid
+                    # cartopy issues
+                    return grid_vals[(
+                        np.abs(grid_vals - val)).argmin()] - spacing
+                return max(grid_vals[i], -180)
             closest_minlon = get_nearest_extent(
                 minlon, grid['lon_b'], 'less', dlon)
             closest_maxlon = get_nearest_extent(
@@ -3028,36 +3388,36 @@ def single_panel(plot_vals,
         ax.set_xticklabels(xticklabels)
 
     if add_cb:
-        cb = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
-        cb.mappable.set_norm(norm)
+        cbar = plt.colorbar(plot, ax=ax, orientation="horizontal", pad=0.10)
+        cbar.mappable.set_norm(norm)
         if data_is_xr:
             all_zero, all_nan = all_zero_or_nan(plot_vals.values)
         else:
             all_zero, all_nan = all_zero_or_nan(plot_vals)
         if all_zero or all_nan:
             if use_cmap_RdBu:
-                cb.set_ticks([0.0])
+                cbar.set_ticks([0.0])
             else:
-                cb.set_ticks([0.5])
+                cbar.set_ticks([0.5])
             if all_nan:
-                cb.set_ticklabels(["Undefined throughout domain"])
+                cbar.set_ticklabels(["Undefined throughout domain"])
             else:
-                cb.set_ticklabels(["Zero throughout domain"])
+                cbar.set_ticklabels(["Zero throughout domain"])
         else:
             if log_color_scale:
-                cb.formatter = mticker.LogFormatter(base=10)
+                cbar.formatter = mticker.LogFormatter(base=10)
             else:
                 if (vmax - vmin) < 0.1 or (vmax - vmin) > 100:
-                    cb.locator = mticker.MaxNLocator(nbins=4)
+                    cbar.locator = mticker.MaxNLocator(nbins=4)
 
         try:
-            cb.formatter.set_useOffset(False)
+            cbar.formatter.set_useOffset(False)
         except BaseException:
             # not all automatically chosen colorbar formatters properly handle
             # the above method
             pass
-        cb.update_ticks()
-        cb.set_label(unit)
+        cbar.update_ticks()
+        cbar.set_label(unit)
 
     if pdfname != "":
         pdf = PdfPages(pdfname)
