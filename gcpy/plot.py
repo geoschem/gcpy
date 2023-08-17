@@ -477,8 +477,20 @@ def colorbar_ticks_and_format(
     #-------------------------------------------------------------------
     if subplot in ("dyn_ratio", "res_ratio"):
 
-        # When Ref == Dev == 1 in ratio plots
-        if np.all(np.isin(plot_val, [1.0])):
+        def ref_equals_dev(array):
+            """
+            Internal routine to check that returns true if all elements
+            of Ref/Dev are equal to 1 or NaN (aka missing value).
+            This is needed to be able to add a ticklabel stating
+            that Ref & Dev are equal throughout the domain.
+            """
+            uniq = np.unique(array)
+            if len(uniq) == 2:
+                return np.any(np.isin(uniq, [1.0])) and np.any(np.isnan(uniq))
+            return np.all(np.isin(uniq, [1.0]))
+
+        # When Ref == Dev
+        if ref_equals_dev(plot_val):
             pos = [1.0]
             cbar.set_ticks(
                 pos,
@@ -510,12 +522,11 @@ def colorbar_ticks_and_format(
 
         # Restricted range ratio subplot
         # Use fixed ticks and ScalarFormatter
-        if subplot in "res_ratio":
-            pos = [0.5, 0.75, 1.0, 1.5, 2.0]
-            cbar.set_ticks(pos)
-            cbar.formatter = mticker.ScalarFormatter()
-            cbar.minorticks_off()
-            return cbar
+        pos = [0.5, 0.75, 1.0, 1.5, 2.0]
+        cbar.set_ticks(pos)
+        cbar.formatter = mticker.ScalarFormatter()
+        cbar.minorticks_off()
+        return cbar
 
     #-------------------------------------------------------------------
     # For the following subplots:
