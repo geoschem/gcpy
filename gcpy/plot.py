@@ -232,7 +232,7 @@ def six_plot(
         pad=0.10
     )
     cbar.mappable.set_norm(norm)
-    colorbar_ticks_and_format(
+    cbar = colorbar_ticks_and_format(
         plot_val,
         cbar,
         vmin,
@@ -243,10 +243,7 @@ def six_plot(
         use_cmap_RdBu,
         log_color_scale,
     )
-    cbar.minorticks_off()
     cbar.set_label(unit)
-    cbar.update_ticks()
-
 
 def compute_vmin_vmax_for_plot(
         plot_val,
@@ -440,30 +437,27 @@ def colorbar_ticks_and_format(
 ):
     """
     Defines the colorbar tick placement and label formatting style.
+    Returns the updated colorbar object.
 
     This is an internal routine called by routine "six_plot".
     See "six_plot" for descriptions of input arguments.
     """
     # ==================================================================
     # Data is all zero or NaN:
-    # Place a single tick in the middle of the colorbar
-    # For RdBu colortables this goes at 0.0; otherwise at 0.5
+    # Place a single tick with an appropriate label in the middle.
+    # For RdBu colortables this goes at 0.0; otherwise at 0.5.
     # ==================================================================
     if all_zero or all_nan:
-
-        # Data is all zero or all NaN: Place the tick
-        value = [0.0]
+        pos = [0.0]
         if subplot in ("ref", "dev"):
             if not use_cmap_RdBu:
-                value = [0.5]
-        cbar.set_ticks(value)
-
-        # Data is all zero or NaN: Define the label
-        value = ["Zero throughout domain"]
+                pos = [0.5]
+        labels = ["Zero throughout domain"]
         if all_nan:
-            value = ["Undefined throughout domain"]
-        cbar.set_ticklabels(value)
-        return
+            labels = ["Undefined throughout domain"]
+        cbar.set_ticks(pos, labels=labels)
+        cbar.minorticks_off()
+        return cbar
 
     # ==================================================================
     # Data is plottable: Pick the locations and format of tick
@@ -475,7 +469,8 @@ def colorbar_ticks_and_format(
     #-------------------------------------------------------------------
     if subplot in ("ref", "dev") and log_color_scale:
         cbar.formatter = mticker.LogFormatter(base=10)
-        return
+        cbar.minorticks_off()
+        return cbar
 
     #-------------------------------------------------------------------
     # Ratio (dynamic and restricted range) subplots):
@@ -483,9 +478,14 @@ def colorbar_ticks_and_format(
     if subplot in ("dyn_ratio", "res_ratio"):
 
         # When Ref == Dev == 1 in ratio plots
-        if np.all(np.isin(plot_val, [1])):
-            cbar.set_ticklabels(["Ref and Dev equal throughout domain"])
-            return
+        if np.all(np.isin(plot_val, [1.0])):
+            pos = [1.0]
+            cbar.set_ticks(
+                pos,
+                labels=["Ref and Dev equal throughout domain"]
+            )
+            cbar.minorticks_off()
+            return cbar
 
         # Dynamic range ratio subplot
         if subplot in "dyn_ratio":
@@ -495,24 +495,27 @@ def colorbar_ticks_and_format(
             # and avg(vmin,1) for the 2nd & 4th tick locations.
             # Maybe find a better method later on.
             if vmin > 0.1 and vmax < 10.0:
-                cbar.set_ticks(
-                    [vmin, (vmin+1.0)/2.0, 1.0, (vmax+1.0)/2.0, vmax]
-                )
+                pos = [vmin, (vmin+1.0)/2.0, 1.0, (vmax+1.0)/2.0, vmax]
+                cbar.set_ticks(pos)
                 cbar.formatter = mticker.ScalarFormatter()
                 cbar.formatter.set_useOffset(False)
-                return
+                cbar.minorticks_off()
+                return cbar
 
             # Use LogLocator and LogFormatter for larger data ranges
             cbar.locator = mticker.LogLocator(base=10, subs='all')
             cbar.formatter = mticker.LogFormatter(base=10)
-            return
+            cbar.minorticks_off()
+            return cbar
 
         # Restricted range ratio subplot
         # Use fixed ticks and ScalarFormatter
         if subplot in "res_ratio":
-            cbar.set_ticks([0.5, 0.75, 1.0, 1.5, 2.0])
+            pos = [0.5, 0.75, 1.0, 1.5, 2.0]
+            cbar.set_ticks(pos)
             cbar.formatter = mticker.ScalarFormatter()
-            return
+            cbar.minorticks_off()
+            return cbar
 
     #-------------------------------------------------------------------
     # For the following subplots:
@@ -521,12 +524,6 @@ def colorbar_ticks_and_format(
     # (3) Absdiff (restricted range)
     #-------------------------------------------------------------------
 
-    # When Ref == Dev == 0 in absdiff plots
-    if subplot in ("dyn_absdiff", "res_absdiff"):
-        if np.all(np.isin(plot_val, [0])):
-            cbar.set_ticklabels(["Ref and Dev equal throughout domain"])
-            return
-
     # For data ranges between 0.1 and 100:
     vrange = vmax - vmin
     if vrange > 0.1 and vrange < 100.0:
@@ -534,20 +531,26 @@ def colorbar_ticks_and_format(
         # If using a difference colormap (e.g. for absdiff),
         # then place ticks symmetrically around zero.
         if use_cmap_RdBu or "absdiff" in subplot:
-            cbar.set_ticks([vmin, vmin/2.0, 0.0, vmax/2.0, vmax])
+            pos = [vmin, vmin/2.0, 0.0, vmax/2.0, vmax]
+            cbar.set_ticks(pos)
             cbar.formatter = mticker.ScalarFormatter()
             cbar.formatter.set_useOffset(False)
-            return
+            cbar.minorticks_off()
+            return cbar
 
         # Otherwise place ticks symmetrically along the data range
-        cbar.set_ticks([vmin, vrange*0.25, vrange*0.5, vrange*0.75, vmax])
+        pos = [vmin, vrange*0.25, vrange*0.5, vrange*0.75, vmax]
+        cbar.set_ticks(pos)
         cbar.formatter = mticker.ScalarFormatter()
         cbar.formatter.set_useOffset(False)
-        return
+        cbar.minorticks_off()
+        return cbar
 
     # For larger data ranges, automatically find good tick locations
     # (but not too many that the labels smush together)
     cbar.locator = mticker.MaxNLocator(nbins=4)
+    cbar.minorticks_off()
+    return cbar
 
 
 def six_panel_subplot_names(diff_of_diffs):
@@ -2834,7 +2837,9 @@ def normalize_colors(
     # Absolute value of v
     abs_vmin = abs(vmin)
     abs_vmax = abs(vmax)
-    max_abs = max(abs_vmin, abs_vmax)
+    # Pylint says that this is unused, so comment it out
+    # -- Bob Yantosca (17 Aug 2023)
+    #max_abs = max(abs_vmin, abs_vmax)
 
     if (abs_vmin == 0 and abs_vmax == 0) or (np.isnan(vmin) and np.isnan(vmax)):
         # If the data is zero everywhere (vmin=vmax=0) or undefined
