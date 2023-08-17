@@ -25,11 +25,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new routine `verify_variable_type` function in `gcpy/util.py`
 - Added new routine `format_number_for_table` in `util.py`
 - Added BrSALA and BrSALC to `emission_species.yml`
+- Added `ENCODING = "UTF-8"` to `gcpy/constants.py`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
 - The GitHub PR template is now named `./github/PULL_REQUEST_TEMPLATE.md`
-- Now specify package `requests-2.31.0` in `environment.py` (fixes a security issue)
 - Updated badge links in `README.md`
 - Construct ops budget table filename without using the `label` argument
 - Updated species_database.yml for consistency with GEOS-Chem 14.2.0
@@ -39,7 +39,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Routine `print_totals` now prints small and/or large numbers in scientific notation
 - Truncate names in benchmark & emissions tables to improve readability
 - Add TransportTracers species names to `gcpy/emissions_*.yml` files
-- Updated `docs/environment_files/environment.yml` to install `pyproj==3.6.0` via pip
+- Updated `docs/environment_files/environment.yml` for MambaForge (also added `gridspec`)
+- Now use `pypdf` instead of `PyPDF2` in `plot.py` and `util.py`
+- Added coding suggestions made by `pylint` where possible
+- Abstracted and never-nested code from `six_plot` into functions (in `plot.py`)
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
@@ -52,6 +55,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed `benchmark_emission_totals.ipynb`, this is obsolete
 - Replaced `gcpy/benchmark/README` with `README.md`
 - Removed `gcpy_test_dir` option from `examples/diagnostics/compare_diags.*`
+- Removed `docs/environment_files/gchp_regridding.yml` environment file
 
 ## [1.3.3] -- 2023-03-09
 ### Added
