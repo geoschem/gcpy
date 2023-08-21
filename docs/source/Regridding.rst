@@ -155,12 +155,12 @@ command line call (separated by line for readability) for regridding a
 
 .. code-block::
 
-   python -m gcpy.file_regrid                     \
-         --filein initial_GEOSChem_rst.2x2.5.nc   \
-         --dim_format_in classic                  \
-         --fileout GEOSChem_rst.4x5.nc            \
-         --ll_res_out 4x5                         \
-         --dim_format_out classic
+   $ python -m gcpy.file_regrid                               \
+            --filein GEOSChem.Restart.20190701_0000z.nc4      \
+            --dim_format_in classic                           \
+            --fileout GEOSChem.Restart.20190701_0000z.c24.nc4 \
+            --cs_res_out 24                                   \
+	    --dim_format_out checkpoint
 
 .. _regrid-gchp:
 
