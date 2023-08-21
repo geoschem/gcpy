@@ -23,7 +23,7 @@
 3. Obtain GEOS-Chem's horizontal and vertical grid information.
 4. Implement [GCHP](https://gchp.readthedocs.io)-specific regridding functionalities (e.g. cubed-sphere to lat-lon regridding)
 5. Provide example scripts for creating specific types of plots or  analysis from GEOS-Chem output.
-6. Provide user-submitted scripts for specific applications related to GEOS-Chem and [HEMCO](https://hemco.readthedocs.io].
+6. Provide user-submitted scripts for specific applications related to GEOS-Chem and [HEMCO](https://hemco.readthedocs.io).
 
 ## What GCPy was not intended to do:
 
