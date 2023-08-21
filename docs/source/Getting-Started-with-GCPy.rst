@@ -14,157 +14,210 @@ Installing GCPy
 Requirements
 ============
 
-:program:`GCPy` is currently supported for Linux and MacOS operating
-systems. Due to a reliance on several packages without Windows
-support, **GCPy is not currently supported for Windows**. You will
-receive an error message if you attempt to use GCPy on Windows.
+:program:`GCPy` is currently supported on the following platforms:
 
-.. tip::
+#. Linux (x86_64)
+#. Windows Subsystem for Linux (running in Microsoft Windows 11)
+#. MacOS
 
-   Windows 11 (and some later builds of Windows 10) support the
-   `Windows Subsystem for Linux (WSL)
-   <https://learn.microsoft.com/en-us/windows/wsl/install>`_. If your
-   Windows version is WSL-compatible, you can install GCPy into a
-   Linux instance (such as Ubuntu 22.04) running under Windows.  At
-   present, this is the only way to use GCPy locally on a Windows
-   computer.
+To install GCPy, you will need a distribution of the :program:`Mamba`
+package manager. :program:`Mamba` is a drop-in replacement for the
+widely-used :program:`Conda` package manager.  You will use
+:program:`Mamba` to create a Python environment for GCPy, which
+contains the Python interpreter plus other Python packages that GCPY
+uses.
 
-The only essential software you need before installing GCPy is a
-distribution of the :program:`Mamba` package manager. :program:`Mamba`
-is a drop-in replacement for the widely-used :program:`Conda`
-package manager.  You will use :program:`Mamba` to create a Python
-environment for GCPy, which contains a Python version (currently
-3.9.6) plus specific versions of various dependent packages.
-
-Check if you already have :program:`Mamba` by using this command:
+Check if you already have :program:`Mamba` on your system:
 
 .. code-block:: console
 
    $ mamba --version
 
-If :program:`Mamba` has already been installed on your system, **skip
-ahead to the** :ref:`gcpy_install` **section**.
+If :program:`Mamba` has been installed, you will see output similar to this:
+
+.. code-block::
+
+   mamba version X.Y.Z
+   conda version A.B.C
+
+If you see this output, you may skip ahead to the :ref:`gcpy_install`
+section. Otherwise, read further for instructions on how to install
+:program:`Mamba` on your system.
 
 .. _mamba_install:
 
-==============================
-Installing Mamba as MicroMamba
-==============================
+==================
+Install MambaForge
+==================
 
-:program:`MicroMamba` is a minimal :program:`Mamba` version that is
-easier to install than the full :program:`MambaForge` distribution.
-Follow the installation steps listed below:
+We recommend installing the :program:`MambaForge`, distribution, which
+is a full implementation of :program:`Mamba` (as opposed to the
+minimal :program:`MicroMamba` distribution).
 
-#. Download and initialize :program:`MicroMamba`.
+Follow the instructions below to install :program:`MambaForge`:
 
-   Execute this command:
+MacOS
+-----
 
-   .. code-block:: console
-
-      $ "${SHELL}" <(curl -L micro.mamba.pm/install.sh)
-
-   This will download the :program:`MicroMamba` via the
-   :program:`curl` utility.  You will be then asked several questions:
+#. Install :program:`MambaForge` with `Homebrew <https://brew.sh/>`_:
 
    .. code-block:: console
 
-      Micromamba binary folder? [~/.local/bin]
-
-   This prompt is asking where you prefer to install the
-   :program:`MicroMamba` executable. Press :command:`ENTER` to accept
-   the default or type a new location, then press :command:`ENTER`.    
-
-   .. code-block::   
-      
-      Prefix location? [~/micromamba]
-
-   This prompt is asking where the Python packages and environments
-   created with Micromamba should be installed.  The default location
-   is your :file:`$HOME/micromamba` folder.  Press :command:`ENTER` to
-   accept the default or specify a new location and then press
-   :command:`ENTER`.
-
-   .. code-block::
-   
-      Init shell? [Y/n]
-
-   This prompt is asking if you would like :program:`MicroMamba` to
-   add some code into your :file:`$HOME/.bashrc` startup script.
-   Press :command:`Y` and then :command:`ENTER`.
-
-   .. code-block:: 
-
-      Configure conda-forge? [Y/n]
-
-   This prompt is asking if you would like :program:`MicroMamba` to
-   have access to the :literal:`conda-forge` repository. Press
-   :command:`Y` then :command:`ENTER`. 
-
-   Then :program:`MicroMamba` installer will print out the following
-   information to the screen:
-   
-   .. code-block:: console
-
-      Modifying RC file "/path/to/.bashrc"
-      Generating config for root prefix "/path/to/root/prefix"
-      Setting mamba executable to: "/path/to/mamba/executable-dir/micromamba
-      Adding (or replacing) the following in your "/path/to/.bashrc" file
+      $ brew install mambaforge
 
    |br|
 
-#. Tell your shell where it can find the :program:`MicroMamba` executable.
+#. Initialize :program:`Mamba` for your shell.  Type one of the
+   following commands:
 
-   If you have not done so already, add the following
-   line to your :file:`$HOME/.bashrc` startup script:
+   .. code-block:: console
 
-   .. code-block:: bash
+      $ mamba init bash    # If you use the bash shell (recommended!)
+      $ mamba init zsh     # If you use the zsh shell
+      $ mamba init fish    # If you use the fish shell
 
-      export PATH="/path/to/mamba/executable-dir:$PATH"
+   :program:`Mamba` will add some code to your :file:`~/.bash_profile`
+   startup script that will tell your shell where to look for
+   Python environments.
 
-   where :file:`/path/to/mamba/executable-dir` is the same text as
-   displayed in the previous step.
-      
+   |br|
+
+#. Exit your current terminal session and open a new terminal
+   session.  This will apply the changes.
+
+You may now skip ahead  to the :ref:`gcpy_install` section.
+
+
+Linux and Windows Subsystem for Linux
+--------------------------------------
+
+#. Download the :program:`MambaForge` installer script from the
+   `conda-forge GitHub releases page
+   <https://github.com/conda-forge/miniforge/releases>`_:
+
+   .. code-block:: console
+
+      $ wget https://github.com/conda-forge/miniforge/releases/download/23.3.1-0/Mambaforge-23.3.1-0-Linux-x86_64.sh
+
+   This will download the :program:`MambaForge` installer script
+   :file:`Mambaforge-23.3.1-0-Linux-x86_64.sh` to your computer.
+
    .. note::
 
-      Some shared computer systems prefer that users place
-      modifications not into the :file:`$HOME/.bashrc` file, but
-      instead to a different script (e.g. :file:`$HOME/.bash_aliases`)
-      that is executed by :file:`$HOME/.bashrc`.  Ask your system
-      administrator for more information pertaining to your particular
-      setup.
+      As of this writing (August 2023), the latest
+      :program:`MambaForge` version is :literal:`23.1.0-0`.  If you
+      find that the version has since been updated, simply replace the
+      version number :literal:`23.3.1-0` in the above command with the
+      most recent version number.
 
-   Apply the change with this command:
+   |br|
+
+#. Change the permission of the :program:`MambaForge` installer script
+   so that it is executable.
 
    .. code-block:: console
 
-      $ source $HOME/.bashrc
+      $ chmod 755 Mambaforge-23.3.1-0-Linux-x86_64.sh
 
-   This will tell your shell to look for executable files in your
-   :file:`$HOME/bin` folder before it looks through the rest of your
-   search path.  |br|
    |br|
 
-#. Define the :literal:`mamba` convenience alias.
+#. Execute the :program:`Mambaforge` installer script.
 
-   Add the following lines to your :file:`$HOME/.bashrc` file
+   .. code-block::
 
-   .. code-block:: bash
+      $ ./Mambaforge-23.3.1-0-Linux-x86_64.sh
 
-      # Invoke micromamba as "mamba"
-      alias mamba="micromamba"
+   To update an older version of :program:`Mamba`,  add the
+   :literal:`-u` option to the above command.  |br|
+   |br|
 
-   Apply the change with this command:
+#. Review and accept the license agreement.
 
    .. code-block:: console
 
-      $ source ~/.bashrc
+      In order to continue the installation process, please review the license
+      agreement.
+      Please, press ENTER to continue
+      >>>
 
-   This will allow you to invoke :program:`MicroMamba` by typing
-   :literal:`mamba`. |br|
+   Press :literal:`ENTER` and then :literal:`SPACE` until you reach
+   the end of the license agreement.  Then you will be asked:
+
+   .. code-block:: console
+
+      Do you accept the license terms? [yes|no]
+      [no] >>>
+
+   Type :literal:`yes` and hit :literal:`ENTER`. |br|
    |br|
 
-   You are now ready to use :program:`Mamba` (installed as
-   :program:`MicroMamba`)!
+
+#. Specify the root installation path for :program:`MambaForge`.
+
+   .. code-block::
+
+      Mambaforge will now be installed into this location:
+     /home/YOUR-USER-NAME/mambaforge
+
+     - Press ENTER to confirm the location
+     - Press CTRL-C to abort the installation
+     - Or specify a different location below
+     [/home/bob/mambaforge] >>>
+
+   In most cases, it should be OK to accept the default installation
+   location.  But on some systems, users may be encouraged to install
+   software into a different location (e.g. if there is a faster
+   filesystem available than the home directory filesystem).
+   Consult your sysadmin or IT staff if you are unsure where to
+   install :program:`MambaForge`.
+
+   Press the :literal:`ENTER` key to accept the default installation
+   path or type a new path and then press :literal:`ENTER`.
+
+   .. code-block:: console
+
+      :program:`MambaForge` will downlad and install Python software
+      packages into the  :file:`pkgs` subfolder of the root
+      installation path.  Similarly, when you :ref:`create Python
+      environments <gcpy_install>`, these will be installed to the
+      :file:`envs` subfolder of the root installation path.
+
+   |br|
+
+#. You may see this warning:
+
+   .. code-block:: console
+
+      WARNING:
+       You currently have a PYTHONPATH environment variable set. This may cause
+       unexpected behavior when running the Python interpreter in Mambaforge.
+       For best results, please verify that your PYTHONPATH only points to
+       directories of packages that are compatible with the Python interpreter
+       in Mambaforge: /home/YOUR-USER-NAMEb/mambaforge
+
+   As long as your :envvar:`PYTHONPATH` environment variable only
+   contains the path to the root-level GCPy folder, you may safely
+   ignore this.  (More on :envvar:`PYTHONPATH` in the :ref:`next
+   section <gcpy_install>`.) |br|
+   |br|
+
+#. Tell the installer to initialize :program:`MambaForge`.
+
+   .. code-block:: console
+
+      Do you wish the installer to initialize Mambaforge
+      by running conda init? [yes|no]
+      [no] >>>
+
+   Type :literal:`yes` and then :literal:`ENTER`.  The installer
+   script will add some code to your :file:`~/.bashrc` system startup
+   file that will tell your shell where to find Python
+   environments. |br|
+   |br|
+
+
+#. Exit your current terminal session.  Start a new terminal session
+   to apply the updates.  You are now ready to install GCPy.
 
 .. _gcpy_install:
 
@@ -172,11 +225,11 @@ Follow the installation steps listed below:
 Install GCPy and its dependencies
 =================================
 
-Once :program:`Mamba` has been installed, you may proceed use it to
-create a Python environment for GCPy.  (Please return to
-:ref:`mamba_install` if you have not yet installed :program:`Mamba`.)
+Once :program:`Mamba` has been installed, use it to ccreate a Python
+environment for GCPy.  (Please return to :ref:`mamba_install` if you
+have not yet installed :program:`Mamba`.)
 
-#. Download the GCPy source code.
+#. **Download the GCPy source code.**
 
    Create and go to the directory in which you would like to store GCPy. In
    this example we will store GCPy in your :file:`$HOME/python/`
@@ -192,7 +245,7 @@ create a Python environment for GCPy.  (Please return to
 
    |br|
 
-#. Create a new Python virtual environment for GCPy.
+#. **Create a new Python virtual environment for GCPy.**
 
    A Python virtual environment is a named set of Python installs,
    e.g. packages, that are independent of other virtual
@@ -236,12 +289,11 @@ create a Python environment for GCPy.  (Please return to
 
    |br|
 
-#. Add GCPy to Python path.
+#. **Add GCPy to** :envvar:`PYTHONPATH`
 
    The environment variable :envvar:`PYTHONPATH` specifies the
-   locations of Python libraries on your system that are not included
-   in your conda environment. If GCPy is included in
-   :envvar:`PYTHONPATH` then Python will recognize its existence.
+   locations of Python libraries on your system that were not
+   installed by :program:`Mamba`.
 
    Add the path to your GCPy source code folder  :file:`~/.bashrc` file:
 
@@ -258,7 +310,7 @@ create a Python environment for GCPy.  (Please return to
    to apply the change. |br|
    |br|
 
-#. Perform a simple test:
+#. **Perform a simple test:**
 
    Run the following commands in your terminal to check if the
    installation was succcesful.
