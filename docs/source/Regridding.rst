@@ -286,7 +286,7 @@ GCHP c24 restart file.
 
    .. code-block:: console
 
-      $ gridspec-create gcs 23
+      $ gridspec-create gcs 24
 
    Again, this will produce 7 files - :file:`c24_gridspec` and
    :file:`c24.tile[1-6].nc` |br|
