@@ -1,3 +1,7 @@
+"""
+GCPy regridding utility: Regrids data between lat/lon, cubed-sphere,
+and cubed-sphere stretched grids.
+"""
 import argparse
 import os
 import numpy as np
@@ -8,7 +12,7 @@ try:
     if LooseVersion(xe.__version__) < LooseVersion("0.2.1"):
         raise ImportError(
             "file_regrid.py requires xESMF version 0.2.1 or higher.")
-except ImportError as e:
+except ImportError as exc:
     print('file_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation ' + \
           'instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
 import pandas as pd
@@ -16,12 +20,19 @@ import pandas as pd
 from gcpy.grid import get_input_res, get_vert_grid, get_grid_extents
 from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, \
     make_regridder_C2L, make_regridder_L2L
-from gcpy.util import reshape_MAPL_CS
+from gcpy.util import reshape_MAPL_CS, verify_variable_type
 
 def file_regrid(
-        fin, fout, dim_format_in, dim_format_out, cs_res_out=0,
-        ll_res_out='0x0', sg_params_in=[1.0, 170.0, -90.0],
-        sg_params_out=[1.0, 170.0, -90.0], vert_params_out=[[], []]):
+        fin,
+        fout,
+        dim_format_in,
+        dim_format_out,
+        cs_res_out=0,
+        ll_res_out='0x0',
+        sg_params_in=None,
+        sg_params_out=None,
+        vert_params_out=None
+):
     """
     Regrids an input file to a new horizontal grid specification and saves it
     as a new file.
@@ -32,8 +43,8 @@ def file_regrid(
         fout: str
             The output filename (file will be overwritten if it already exists)
         dim_format_in: str
-            Format of the input file's dimensions (choose from: classic, 
-            checkpoint, diagnostic), where classic denotes lat/lon and 
+            Format of the input file's dimensions (choose from: classic,
+            checkpoint, diagnostic), where classic denotes lat/lon and
             checkpoint / diagnostic are cubed-sphere formats
         dim_format_out: str
             Format of the output file's dimensions (choose from: classic,
@@ -42,20 +53,20 @@ def file_regrid(
 
     Keyword Args (optional):
         cs_res_out: int
-            The cubed-sphere resolution of the output dataset. 
+            The cubed-sphere resolution of the output dataset.
             Not used if dim_format_out is classic
             Default value: 0
         ll_res_out: str
-            The lat/lon resolution of the output dataset. 
+            The lat/lon resolution of the output dataset.
             Not used if dim_format_out is not classic
             Default value: '0x0'
         sg_params_in: list[float, float, float]
-            Input grid stretching parameters 
+            Input grid stretching parameters
             [stretch-factor, target longitude, target latitude].
             Not used if dim_format_in is classic
             Default value: [1.0, 170.0, -90.0] (No stretching)
         sg_params_out: list[float, float, float]
-            Output grid stretching parameters 
+            Output grid stretching parameters
             [stretch-factor, target longitude, target latitude].
             Not used if dim_format_out is classic
             Default value: [1.0, 170.0, -90.0] (No stretching)
@@ -65,6 +76,18 @@ def file_regrid(
             Default value: [[], []]
 
     """
+    verify_variable_type(fin, str)
+    verify_variable_type(fout, str)
+    verify_variable_type(dim_format_in, str)
+    verify_variable_type(dim_format_out, str)
+
+    # Assign default values for optional keywords
+    if sg_params_in is None:
+        sg_params_in = [1.0, 170.0, -90.0]
+    if sg_params_out is None:
+        sg_params_out = [1.0, 170.0, -90.0]
+    if vert_params_out is None:
+        vert_params_out = [[], []]
 
     # Load dataset
     ds_in = xr.open_dataset(fin, decode_cf=False)
@@ -111,11 +134,11 @@ def file_regrid(
             tlat_in=sg_params_in[2],
             sf_out=sg_params_out[0],
             tlon_out=sg_params_out[1],
-            tlat_out=sg_params_out[2])
+            tlat_out=sg_params_out[2]
+        )
         # Save temporary output face files to minimize RAM usage
         oface_files = [os.path.join('.',fout+str(x)) for x in range(6)]
         # For each output face, sum regridded input faces
-        oface_datasets = []
         for oface in range(6):
             oface_regridded = []
             for iface, regridder in regridders[oface].items():
@@ -132,7 +155,12 @@ def file_regrid(
                 oface_files[oface],
                 format='NETCDF4_CLASSIC'
             )
-        ds_out=xr.open_mfdataset(oface_files, combine='by_coords', concat_dim='F',engine='netcdf4')
+        ds_out=xr.open_mfdataset(
+            oface_files,
+            combine='by_coords',
+            concat_dim='F',
+            engine='netcdf4'
+        )
         # Put regridded dataset back into a familiar format
         ds_out = ds_out.rename({
             'y': 'Y',
@@ -161,11 +189,11 @@ def file_regrid(
         if dim_format_out == 'checkpoint':
             # convert to checkpoint format
             ds_out = reshape_MAPL_CS(ds_out)
-            mi = pd.MultiIndex.from_product([
+            mindex = pd.MultiIndex.from_product([
                 np.linspace(1, 6, 6),
                 np.linspace(1, cs_res_out, cs_res_out)
             ])
-            ds_out = ds_out.assign_coords({'lat': mi})
+            ds_out = ds_out.assign_coords({'lat': mindex})
             ds_out = ds_out.unstack('lat')
 
             ds_out = ds_out.stack(lat=['lat_level_0', 'lat_level_1'])
@@ -268,15 +296,16 @@ def file_regrid(
     # Print the resulting dataset
     print(ds_out)
     # Remove any temporary files
-    for f in oface_files: os.remove(f)
+    for oface in oface_files:
+        os.remove(oface)
 
 
-def rename_restart_variables(ds, towards_gchp=True):
+def rename_restart_variables(dset, towards_gchp=True):
     """
     Renames restart variables according to GEOS-Chem Classic and GCHP conventions.
 
     Args:
-        ds: xarray.Dataset
+        dset: xarray.Dataset
             The input dataset
 
     Keyword Args (optional):
@@ -295,12 +324,12 @@ def rename_restart_variables(ds, towards_gchp=True):
     else:
         old_str = 'SPC'
         new_str = 'SpeciesRst'
-    return ds.rename({name: name.replace(old_str, new_str, 1)
-                      for name in list(ds.data_vars)
+    return dset.rename({name: name.replace(old_str, new_str, 1)
+                      for name in list(dset.data_vars)
                       if name.startswith(old_str)})
 
 
-def drop_and_rename_classic_vars(ds, towards_gchp=True):
+def drop_and_rename_classic_vars(dset, towards_gchp=True):
     """
     Renames and drops certain restart variables according to GEOS-Chem Classic
     and GCHP conventions.
@@ -320,75 +349,133 @@ def drop_and_rename_classic_vars(ds, towards_gchp=True):
     """
 
     if towards_gchp:
-        ds = ds.rename(
+        dset = dset.rename(
             {name: name.replace('Met_', '', 1).replace('Chem_', '', 1)
-             for name in list(ds.data_vars)
+             for name in list(dset.data_vars)
              if name.startswith('Met_') or name.startswith('Chem_')})
-        if 'DELPDRY' in list(ds.data_vars): ds = ds.rename({'DELPDRY': 'DELP_DRY'})
-        ds = ds.drop_vars(['P0',
-                           'hyam',
-                           'hybm',
-                           'hyai',
-                           'hybi',
-                           'AREA',
-                           'ilev',
-                           'PS1DRY',
-                           'PS1WET',
-                           'TMPU1',
-                           'SPHU1',
-                           'StatePSC'],
-                          errors='ignore')
+        if 'DELPDRY' in list(dset.data_vars):
+            dset = dset.rename({'DELPDRY': 'DELP_DRY'})
+        dset = dset.drop_vars(
+            ['P0',
+             'hyam',
+             'hybm',
+             'hyai',
+             'hybi',
+             'AREA',
+             'ilev',
+             'PS1DRY',
+             'PS1WET',
+             'TMPU1',
+             'SPHU1',
+             'StatePSC'],
+            errors='ignore'
+        )
     else:
-        renames = {'DELP_DRY': 'Met_DELPDRY',
-                   'BXHEIGHT': 'Met_BXHEIGHT',
-                   'TropLev': 'Met_TropLev',
-                   'DryDepNitrogen': 'Chem_DryDepNitrogen',
-                   'WetDepNitrogen': 'Chem_WetDepNitrogen',
-                   'H2O2AfterChem': 'Chem_H2O2AfterChem',
-                   'SO2AfterChem': 'Chem_SO2AfterChem',
-                   'KPPHvalue': 'Chem_KPPHvalue'}
-        data_vars = list(ds.data_vars)
+        renames = {
+            'DELP_DRY': 'Met_DELPDRY',
+            'BXHEIGHT': 'Met_BXHEIGHT',
+            'TropLev': 'Met_TropLev',
+            'DryDepNitrogen': 'Chem_DryDepNitrogen',
+            'WetDepNitrogen': 'Chem_WetDepNitrogen',
+            'H2O2AfterChem': 'Chem_H2O2AfterChem',
+            'SO2AfterChem': 'Chem_SO2AfterChem',
+            'KPPHvalue': 'Chem_KPPHvalue'
+        }
+        data_vars = list(dset.data_vars)
         new_renames = renames.copy()
         for key in renames.keys():
             if key not in data_vars:
                 del(new_renames[key])
-        ds = ds.rename(new_renames)
+        dset = dset.rename(new_renames)
 
-    return rename_restart_variables(ds, towards_gchp=towards_gchp)
+    return rename_restart_variables(dset, towards_gchp=towards_gchp)
 
 
-if __name__ == '__main__':
+def main():
+    """
+    Main program for file_regrid.  Parses command-line arguments and
+    calls the file_regrid routine.
+
+    Command-line arguments:
+    -----------------------
+    -i, --filein
+        Input file, contains original data.
+
+    -o --fileout
+        Output file, contains regridded data.
+
+    --sg-params-in
+        Input grid stretching parameters (GCHP only).
+
+    --sg-params-out
+        Output grid stretching parameters (GCHP only).
+
+    --dim-format-in
+        Format of the input file's dimensions:
+        ("checkpoint", "diagnostics". "classic")
+
+    --dim-format-out
+        Format of the output file's dimensions:
+        ("checkpoint", "diagnostics", "classic")
+
+    --cs_res_out
+        Cubed-sphere resolution for the output file (e.g 24, 48, 360)
+
+    --ll_res_out
+        Resolution for the output file in 'latxlon` format
+
+    --vert_params_out
+        Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format
+    """
+
+    # Parse arguments from the command line
     parser = argparse.ArgumentParser(
-        description='General cubed-sphere to cubed-sphere regridder.')
-    parser.add_argument('-i', '--filein',
-                        metavar='FIN',
-                        type=str,
-                        required=True,
-                        help='input NetCDF file')
-    parser.add_argument('-o', '--fileout',
-                        metavar='FOUT',
-                        type=str,
-                        required=True,
-                        help='name of output file')
+        description='General cubed-sphere to cubed-sphere regridder.'
+    )
     parser.add_argument(
-        '--sg_params_in', metavar='P', type=float, nargs=3,
-        default=[1.0, 170.0, -90.0],
-        help='input grid stretching parameters (stretch-factor, target longitude, target latitude)')
+        '-i', '--filein',
+        metavar='FIN',
+        type=str,
+        required=True,
+        help='input NetCDF file'
+    )
     parser.add_argument(
-        '--sg_params_out', metavar='P', type=float, nargs=3,
+        '-o', '--fileout',
+        metavar='FOUT',
+        type=str,
+        required=True,
+        help='name of output file'
+    )
+    parser.add_argument(
+        '--sg_params_in',
+        metavar='P',
+        type=float,
+        nargs=3,
         default=[1.0, 170.0, -90.0],
-        help='output grid stretching parameters (stretch-factor, target longitude, target latitude)')
-    parser.add_argument('--cs_res_out',
-                        metavar='RES',
-                        type=int,
-                        required=False,
-                        help='output grid\'s cubed-sphere resolution')
+        help='input grid stretching parameters (stretch-factor, target longitude, target latitude)'
+    )
+    parser.add_argument(
+        '--sg_params_out',
+        metavar='P',
+        type=float,
+        nargs=3,
+        default=[1.0, 170.0, -90.0],
+        help='output grid stretching parameters (stretch-factor, target longitude, target latitude)'
+    )
+    parser.add_argument(
+        '--cs_res_out',
+        metavar='RES',
+        type=int,
+        required=False,
+        help='output grid\'s cubed-sphere resolution'
+    )
     parser.add_argument(
         '--ll_res_out',
         metavar='RES',
         type=str,
         required=False,
-        help='output grid\'s lat/lon resolution in \'latxlon\' format')
+        help='output grid\'s lat/lon resolution in \'latxlon\' format'
+    )
     parser.add_argument(
         '--dim_format_in',
         metavar='WHICH',
@@ -398,7 +485,8 @@ if __name__ == '__main__':
             'diagnostic',
             'classic'],
         required=True,
-        help='format of the input file\'s dimensions (choose from: checkpoint, diagnostic)')
+        help='format of the input file\'s dimensions (choose from: checkpoint, diagnostic)'
+    )
     parser.add_argument(
         '--dim_format_out',
         metavar='WHICH',
@@ -408,15 +496,18 @@ if __name__ == '__main__':
             'diagnostic',
             'classic'],
         required=True,
-        help='format of the output file\'s dimensions (choose from: checkpoint, diagnostic)')
+        help='format of the output file\'s dimensions (choose from: checkpoint, diagnostic)'
+    )
     parser.add_argument(
         '--vert_params_out',
         metavar='VERT',
         type=list,
         required=False,
-        help='Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format')
-
+        help='Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format'
+    )
     args = parser.parse_args()
+
+    # Regrid the file
     file_regrid(
         args.filein,
         args.fileout,
@@ -427,3 +518,8 @@ if __name__ == '__main__':
         args.sg_params_in,
         args.sg_params_out,
         args.vert_params_out)
+
+
+# Only call when run as standalone
+if __name__ == '__main__':
+    main()

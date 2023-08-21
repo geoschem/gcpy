@@ -43,6 +43,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Now use `pypdf` instead of `PyPDF2` in `plot.py` and `util.py`
 - Added coding suggestions made by `pylint` where possible
 - Abstracted and never-nested code from `six_plot` into functions (in `plot.py`)
+- Added `main()` routine to `gcpy/file_regrid.py`; Also added updates suggested by Pylint
+
+### Removed
+- Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines
+- Removed `is_pre_13_1` tags from `*_benchmark.yml` config files
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`

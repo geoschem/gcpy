@@ -13,38 +13,55 @@
 
 **GCPy** is a Python-based toolkit containing useful functions for working specifically with the GEOS-Chem model of atmospheric chemistry and composition.
 
-GCPy aims to build on the well-established scientific Python technical stack, leveraging tools like cartopy and xarray to simplify the task of working with model output and performing atmospheric chemistry analyses.
+**GCPy** aims to build on the well-established scientific Python technical stack, leveraging tools like **cartopy**, **numpy**, and **xarray** to simplify the task of working with GEOS-Chem model output and performing atmospheric chemistry analyses.
 
 
 ## What GCPy was intended to do:
 
-1. Produce plots and tables from GEOS-Chem output using simple function calls.
-2. Generate the standard evaluation plots and tables from GEOS-Chem benchmark output.
-3. Obtain GEOS-Chem's horizontal/vertical grid information.
-4. Implement GCHP-specific regridding functionalities (e.g. cubed-sphere to lat-lon regridding)
-5. Provide example scripts for creating specific types of plots or analysis from GEOS-Chem output.
+1. Produce plots and tables from [GEOS-Chem](https://geos-chem.readthedocs.io) output using simple function calls.
+2. Generate the standard evaluation plots and tables for GEOS-Chem benchmark simulations.
+3. Obtain GEOS-Chem's horizontal and vertical grid information.
+4. Implement [GCHP](https://gchp.readthedocs.io)-specific regridding functionalities (e.g. cubed-sphere to lat-lon regridding)
+5. Provide example scripts for creating specific types of plots or  analysis from GEOS-Chem output.
+6. Provide user-submitted scripts for specific applications related to GEOS-Chem and [HEMCO](https://hemco.readthedocs.io).
 
-## What GCPY was not intended to do:
+## What GCPy was not intended to do:
 
 1. General NetCDF file modification: (crop a domain, extract some variables):
-    * Use [xarray](http://xarray.pydata.org) instead.
-    * Also see [our *Working with netCDF data files* wiki page](http://wiki.geos-chem.org/Working_with_netCDF_data_files).
-2. Statistical analysis:
-    * Use [scipy](http://www.scipy.org)/[scikit-learn](https://scikit-learn.org) tools instead
-3. Machine Learning:
-    * Use the standard machine learning utilities ([pytorch](https://pytorch.org), [tensorflow](https://www.tensorflow.org), [julia](https://julialang.org), etc.)
+    * Instead, use netCDF tools such as:
+	  * [xarray](http://xarray.pydata.org)
+	  * [netCDF operators (NCO)](https://nco.sourceforge.net)
+	  * [Climate Data Operators](https://mpimet.mpg.de/cdo) instead.
+    * Also see our [*Work with netCDF files* guide](https://geos-chem.readthedocs.io/en/latest/geos-chem-shared-docs/supplemental-guides/netcdf-guide.html) at [geos-chem.readthedocs.io](https://geos-chem.readthedocs.io)
 
+2. Statistical analysis:
+    * Instead, use statistical tools such as:
+	  * Use [scipy](http://www.scipy.org)
+	  * [scikit-learn](https://scikit-learn.org)
+	  * [R](https://r-project.org)
+	  * etc
+
+3. Machine Learning:
+    * Instead, use machine learning tools such as:
+	  * [pytorch](https://pytorch.org),
+	  * [tensorflow](https://www.tensorflow.org)
+	  * [julia](https://julialang.org)
+	  * etc.
 
 ## Documentation:
 
 For more information on installing and using GCPy, visit the official documentation at [gcpy.readthedocs.io](https://gcpy.readthedocs.io/).
 
-
 ## License
 
-GCPy is distributed under the MIT license.  Please read the license documents LICENSE.txt and AUTHORS.txt, which are located in the root folder.
+GCPy is distributed under the MIT license.  Please see the [GCPy license agreement](https://github.com/geoschem/gcpy/blob/dev/LICENSE.txt) and [List of GCPy developers](https://github.com/geoschem/gcpy/blob/dev/AUTHORS.txt) for more information.
 
+## Requesting support
 
-## Contact
+To report a bug or suggest a new feature, please see our [Support
+Guidelines](https://github.com/geoschem/gcpy/blob/dev/SUPPORT.md).
 
-To contact us, please [open a new issue on the issue tracker connected to this repository](https://github.com/geoschem/gcpy/issues/new/choose). You can ask a question, report a bug, or request a new feature.
+## Submitting new features
+
+If you are interested in submitting code to GCPy, please see our
+[Contributing Guidelines](https://github.com/geoschem/gcpy/blob/dev/CONTRIBUTING.md).
