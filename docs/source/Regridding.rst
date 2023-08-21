@@ -8,13 +8,23 @@
 Regridding
 ##########
 
-This page describes the regridding capabilities of
-:program:`GCPy`. GCPy currently supports regridding of data from
-GEOS-Chem restarts and output NetCDF files. Regridding is supported
-across any horizontal resolution and any grid type available in
-GEOS-Chem, including lat/lon (global or non-global), global standard
-cubed-sphere, and global stretched-grid. GCPy also supports arbitrary
-vertical regridding across different vertical resolutions.
+:program:`GCPy` currently supports regridding of data from:
+
+#. GEOS-Chem Classic restart files
+#. GEOS-Chem Classic diagnostic files
+#. GCHP restart files
+#. GCHP diagnostic files
+#. HEMCO restart files
+#. HEMCO diagnostic files
+#. As well as any netCDF file adhering to `COARDS
+   <https://ferret.pmel.noaa.gov/Ferret/documentation/coards-netcdf-conventions>`_
+   or `CF <https://cfconventions.org/>`_  conventions.
+
+Regridding is supported across any horizontal resolution and any grid
+type available in GEOS-Chem, including lat/lon (global or non-global),
+global standard cubed-sphere, and global stretched-grid. GCPy also
+supports arbitrary vertical regridding across different vertical
+resolutions.
 
 Regridding with GCPy is currently undergoing an overhaul. As of the
 current release, regridding is split into two different
@@ -26,7 +36,7 @@ categories:
    computed as a preprocessing step.
 
 The latter method may be used for creating GCHP standard grid
-and stretched grid restart files from either GCHP or GC-Classic
+and stretched grid restart files from either GCHP or GEOS-Chem Classic
 restart files.
 
 .. _regrid-classic:
@@ -35,20 +45,32 @@ restart files.
 Using Online Regridding Weights
 ===============================
 
-You can regrid existing GEOS-Chem Classic restart or output diagnostic files
-between lat/lon resolutions using GCPy function :code:`gcpy.file_regrid`.
-:code:`gcpy.file_regrid` can either be called directly from the command line
-using :code:`python -m gcpy.file_regrid` or as a function
-(:code:`gcpy.file_regrid.file_regrid()`) from a Python script or interpreter.
+You can regrid existing GEOS-Chem restart or diagnostic files using
+GCPy function :code:`gcpy.file_regrid`. This function can called
+directly from the command line (:ref:`see the example below
+<regrid-classic-example>`) function
+(:code:`gcpy.file_regrid.file_regrid())`) from a Python script or
+interpreter.
+
 The syntax of :code:`file_regrid` is as follows:
 
 .. code-block:: python
 
-   def file_regrid(fin, fout, dim_format_in, dim_format_out, ll_res_out='0x0'):
-   """
-   Regrids an input file to a new horizontal grid specification and saves it
-   as a new file.
-   """
+   def file_regrid(
+           fin,
+           fout,
+           dim_format_in,
+           dim_format_out,
+           cs_res_out=0,
+           ll_res_out='0x0',
+           sg_params_in=[1.0, 170.0, -90.0],
+           sg_params_out=[1.0, 170.0, -90.0],
+           vert_params_out=[[], []]
+   ):
+       """
+       Regrids an input file to a new horizontal grid specification and saves it
+       as a new file.
+       """
 
 gcpy.file_regrid required arguments:
 ------------------------------------
@@ -63,35 +85,71 @@ gcpy.file_regrid required arguments:
 
 .. option:: dim_format_in : str
 
-      Format of the input file's dimensions (set this to 'classic' - denoting
-      a GEOS-Chem Classic file with a lat/lon grid)
+      Format of the input file's dimensions.  Accepted values are:
+
+      - :literal:`classic`: For GEOS-Chem Classic restart & diagnostic files
+      - :literal:`checkpoint` : For GCHP checkpoint & restart files
+      - :literal:`diagnostic`: For GCHP diagnostic files
 
 .. option:: dim_format_out : str
 
-      Format of the output file's dimensions (set this to 'classic' - denoting
-      a GEOS-Chem Classic file with a lat/lon grid)
+      Format of the output file's dimensions.  Accepted values are:
+
+      - :literal:`classic`: For GEOS-Chem Classic restart & diagnostic files
+      - :literal:`checkpoint` : For GCHP checkpoint & restart files
+      - :literal:`diagnostic`: For GCHP diagnostic files
 
 gcpy.file_regrid optional arguments:
 ------------------------------------
 
+.. option:: sg_params_in : list of float
+
+      Stretching parameters (:literal:`stretch-factor`,
+      :literal:`target-longitude`, :literal:`target-latitude`) for the
+      input grid.  Only needed when the data contained in file
+      :option:`fin` is on a GCHP stretched grid.
+
+      Default value: :literal:`[1.0, 170.0, -90.0]`
+
+.. option:: sg_params_out : list of float
+
+      Stretching parameters (:literal:`stretch-factor`,
+      :literal:`target-longitude`, :literal:`target-latitude`) for the
+      output  grid.  Only needed when the data to be contained in file
+      :option:`fout` is to be placed on a GCHP stretched grid.
+
+      Default value: :literal:`[1.0, 170.0, -90.0]`
+
+.. option:: cs_res_out : int
+
+      Cubed-sphere resolution of the output dataset.  Only needed when
+      the data in file :option:`fin` is on a GCHP cubed-sphere grid.
+
+      Default value: :code:`0`
+
 .. option:: ll_res_out : str
 
-      The lat/lon resolution of the output dataset.
+      The lat/lon resolution of the output dataset.  Only needed when
+      the data to be contained in file :option:`fout` is to be placed
+      on a GEOS-Chem Classic lat-lon grid.
 
-      Default value: '0x0'
+      Default value: :code:`"0x0"`.
+
+.. option:: vert_params_out : list of float
+
+      Hybrid grid parameter :math:`A` (in :literal:`hPa` and :math:`B`
+      (:literal:`unitless`), returned in list format: :code:`[A, B]`
+
+      Default value: :code:`None`
+
+.. _regrid-classic-example:
 
 Example:
 --------
 
-There is now only one grid format supported for regridding files using
-the :code:`gcpy.file_regrid` method: :literal:`classic`. You must
-specify :literal:`classic` as the value of both :code:`dim_format_in`
-and :code:`dim_format_out`, as well as specifying a resolution as the
-value of :code:`ll_res_out`.
-
 As stated previously, you can either call
-:code:`file_regrid.file_regrid()` directly or call it from the command
-line using :code:`python -m gcpy.file_regrid ARGS`. An example
+:code:`gcpy.file_regrid.file_regrid()` directly or call it from the
+command line using :code:`python -m gcpy.file_regrid ARGS`. An example
 command line call (separated by line for readability) for regridding a
 2x2.5 lat/lon restart file to a 4x5 lat/lon grid looks like:
 
@@ -127,47 +185,13 @@ three stage process:
 #. Run the regridding operation using the :code:`regrid_restart_file`
    submodule of GCPy
 
-.. _regrid-gchp-firsttime:
+.. note::
 
-Python environment for gridspec and sparselt
---------------------------------------------
-
-Until GCPy contains a complete regridding implementation that works
-for all GEOS-Chem grid formats, we recommend that you create a small
-`mamba <https://docs.conda.io/en/latest/>`_ environment in which to
-generate regridding weights.
-
-The following `environment file
-<https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html#creating-an-environment-from-an-environment-yml-file>`_
-will get you set up with an environment for regridding with
-:literal:`gridspec` and :literal:`sparselt`:
-
-.. code-block:: yaml
-
-   name: gchp_regridding
-   channels:
-     - conda-forge
-   dependencies:
-     - python=3.9
-     - esmf
-     - gridspec
-     - numpy
-     - requests
-     - sparselt
-     - xarray
-     - xesmf
-
-.. tip::
-
-   A copy of the above environment file is maintained at the path
-   :file:`docs/environment/gchp_regridding.yml`. You can create the
-   environment using command    :code:`mamba env create -f
-   /path/to/gchp_regridding.yml`.
-
-After installing and switching to this new environment, you
-should have the :literal:`gridspec` commands available to you at the
-command line.
-
+   As of GCPy 1.4.0, the :ref:`default GCPy environment
+   <gcpy_install>` (aka :literal:`gcpy_env`) now contains
+   :literal:`gridspec` and :literal:`sparselt` packages.  You no
+   longer need to use the separate :literal:`gchp_regridding`
+   environment as in prior versions.
 
 gcpy.regrid_restart_file required arguments:
 --------------------------------------------
@@ -239,7 +263,12 @@ Example 1: Standard Lat-Lon to Cubed-Sphere Regridding
 This example will show regridding a GC-Classic 4x5 restart file to a
 GCHP c24 restart file.
 
-#. Load the :literal:`gchp_regridding` python environment. |br|
+#. Activate your GCPy environment.
+
+   .. code-block:: console
+
+      $ mamba activate gcpy_env  # Or whatever your environment's name is
+
    |br|
 
 #. Create a lat-lon source grid specification using
@@ -278,9 +307,6 @@ GCHP c24 restart file.
    regridding weights, :file:`46x72_to_c24_weights.nc` |br|
    |br|
 
-#. Switch to your GCPy python environment. |br|
-   |br|
-
 #. Use the grid weights produced in previous steps to complete the
    regridding.  The first file listed in the command contains the data
    you wish to regrid and so is a GC-Classic restart file. The second
@@ -297,7 +323,14 @@ GCHP c24 restart file.
 
    This will produce a single file, :file:`new_restart_file.nc`,
    regridded from 4x5 to c24, that you can rename and use as you
-   please.
+   please. |br|
+   |br|
+
+#. Deactivate your GCPy environment when you have finished.
+
+   .. code-block:: console
+
+      $ mamba deactivate
 
 Example 2: Standard Cubed-Sphere to Cubed-Sphere Regridding
 -----------------------------------------------------------
@@ -306,7 +339,12 @@ We will use the example of regridding the out-of-the-box
 :file:`GEOSChem.Restart.20190701_0000z.c48.nc4` restart file from
 C48 to C60 to demonstrate the standard cubed-sphere regridding process:
 
-#. Load the :literal:`gchp_regridding` python environment. |br|
+#. Activate your GCPy environment.
+
+   .. code-block:: console
+
+      $ mamba activate gcpy_env  # Or whatever your environment's name is
+
    |br|
 
 #. Create a source grid specification using :code:`gridspec-create`.
@@ -344,9 +382,6 @@ C48 to C60 to demonstrate the standard cubed-sphere regridding process:
    and our regridding weights, :file:`c48_to_c60_weights.nc` |br|
    |br|
 
-#. Switch to your GCPy python environment. |br|
-   |br|
-
 #. Use the grid weights produced in earlier steps to complete the regridding.
 
    .. code-block:: console
@@ -358,7 +393,14 @@ C48 to C60 to demonstrate the standard cubed-sphere regridding process:
 
    This will produce a single file, :file:`new_restart_file.nc`,
    regridded from C48 to C60, that you can rename and use as you
-   please.
+   please. |br|
+   |br|
+
+#. Deactivate your GCPy environment when you have finished.
+
+   .. code-block:: console
+
+      $ mamba deactivate
 
 Example 3: Standard to Stretched Cubed-Sphere Regridding
 --------------------------------------------------------
@@ -370,7 +412,12 @@ the same at c48. The regridded file will have a stretch factor of 4.0
 over Bermuda which means a regional grid resolution of c196 (4
 times 48) in that area.
 
-#. Load the :literal:`gchp_regridding` python environment. |br|
+#. Activate your GCPy environment:
+
+   .. code-block:: console
+
+      $ mamba activate gcpy_env  # Or whatever your environment's name is
+
    |br|
 
 #. Create a source grid specification using :code:`gridspec-create`.
@@ -403,7 +450,7 @@ times 48) in that area.
 #. Create the regridding weights for the regridding transformation
    using :code:`ESMF_RegridWeightGen`, replacing
    :file:`c48_..._gridspec.nc` with the actual name of the file
-    created in the previous step. An example is shown below.
+   created in the previous step. An example is shown below.
 
    .. code-block:: console
 
@@ -415,9 +462,6 @@ times 48) in that area.
 
    This will produce a log file, :file:`PET0.RegridWeightGen.Log`, and our
    regridding weights, :file:`c48_to_c48_stretched_weights.nc` |br|
-   |br|
-
-#. Switch to your GCPy python environment. |br|
    |br|
 
 #. Use the grid weights produced in earlier steps to complete the
@@ -452,6 +496,12 @@ times 48) in that area.
       same parameters in both  the file's global attributes and GCHP
       configuration file :file:`setCommonRunSettings.sh`.
 
+#. Deactivate your GCPy environment when you have finished.
+
+   .. code-block:: console
+
+      $ mamba deactivate
+
 .. _regrid-plot:
 
 ===============================
@@ -461,7 +511,7 @@ Regridding for Plotting in GCPy
 When plotting in GCPy (e.g. through :code:`compare_single_level()` or
 :code:`compare_zonal_mean()`), the vast majority of regridding is
 handled internally. You can optionally request a specific
-horizontal comparison resolution in :code:`compare_single_level()``
+horizontal comparison resolution in :code:`compare_single_level()`
 and :code:`compare_zonal_mean()`.  Note that all regridding in these
 plotting functions only applies to the comparison panels (not the top
 two panels which show data directly from each dataset). There are only
