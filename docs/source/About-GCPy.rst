@@ -45,7 +45,7 @@ What GCPy was not intended to do
 
 #. General NetCDF file modification: (crop a domain, extract some variables):
 
-   -  Use standard netCDF tools instead, such as:
+   -  Instead, use netCDF tools such as:
 
       - `xarray <http://xarray.pydata.org>`_
       - `netCDF Operators (NCO) <https://nco.sourceforge.net/>`_
@@ -58,7 +58,7 @@ What GCPy was not intended to do
 
 #. Statistical analysis:
 
-   -  Use standard statistical tools, such as:
+   -  Instead, use statistical tools such as:
 
       - `scipy <http://www.scipy.org>`_
       - `scikit-learn <https://scikit-learn.org>`_
@@ -67,7 +67,7 @@ What GCPy was not intended to do
 
 #. Machine Learning:
 
-   -  Use standard machine learning tools, such as
+   -  Instead, use machine learning tools such as:
 
       - `pytorch <https://pytorch.org>`_
       - `tensorflow <https://www.tensorflow.org>`_

@@ -28,21 +28,21 @@
 ## What GCPy was not intended to do:
 
 1. General NetCDF file modification: (crop a domain, extract some variables):
-    * Use standard netCDF tools, such as:
+    * Instead, use netCDF tools such as:
 	  * [xarray](http://xarray.pydata.org)
 	  * [netCDF operators (NCO)](https://nco.sourceforge.net)
 	  * [Climate Data Operators](https://mpimet.mpg.de/cdo) instead.
     * Also see our [*Work with netCDF files* guide](https://geos-chem.readthedocs.io/en/latest/geos-chem-shared-docs/supplemental-guides/netcdf-guide.html) at [geos-chem.readthedocs.io](https://geos-chem.readthedocs.io)
 
 2. Statistical analysis:
-    * Use standard statistical tools, such as:
+    * Instead, use statistical tools such as:
 	  * Use [scipy](http://www.scipy.org)
 	  * [scikit-learn](https://scikit-learn.org)
 	  * [R](https://r-project.org)
 	  * etc
 
 3. Machine Learning:
-    * Use the standard machine learning utilities:
+    * Instead, use machine learning tools such as:
 	  * [pytorch](https://pytorch.org),
 	  * [tensorflow](https://www.tensorflow.org)
 	  * [julia](https://julialang.org)
