@@ -24,6 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Construct ops budget table filename without using the `label` argument
 - Updated species_database.yml for consistency with GEOS-Chem 14.2.0
 - Renamed TransportTracers species in `benchmark_categories.yml` and in documentation
+- Added `main()` routine to `gcpy/file_regrid.py`; Also added updates suggested by Pylint
 
 ### Removed
 - Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines
