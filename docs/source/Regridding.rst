@@ -47,10 +47,9 @@ Using Online Regridding Weights
 
 You can regrid existing GEOS-Chem restart or diagnostic files using
 GCPy function :code:`gcpy.file_regrid`. This function can called
-directly from the command line (:ref:`see the example below
-<regrid-classic-example>`) function
-(:code:`gcpy.file_regrid.file_regrid())`) from a Python script or
-interpreter.
+directly from the command line (:ref:`see the examples below
+<regrid-classic-example>`) or from a Python script or
+interpreter (:code:`gcpy.file_regrid.file_regrid()`)
 
 The syntax of :code:`file_regrid` is as follows:
 
@@ -63,15 +62,15 @@ The syntax of :code:`file_regrid` is as follows:
            dim_format_out,
            cs_res_out=0,
            ll_res_out='0x0',
-           sg_params_in=[1.0, 170.0, -90.0],
-           sg_params_out=[1.0, 170.0, -90.0],
-           vert_params_out=[[], []]
+           sg_params_in=None,
+           sg_params_out=None,
+           vert_params_out=None,
    ):
        """
-       Regrids an input file to a new horizontal grid specification and saves it
-       as a new file.
+       Regrids an input file to a new horizontal grid specification
+       and saves it as a new file.
        """
-
+s
 gcpy.file_regrid required arguments:
 ------------------------------------
 
@@ -144,23 +143,72 @@ gcpy.file_regrid optional arguments:
 
 .. _regrid-classic-example:
 
-Example:
+Examples
 --------
 
-As stated previously, you can either call
-:code:`gcpy.file_regrid.file_regrid()` directly or call it from the
-command line using :code:`python -m gcpy.file_regrid ARGS`. An example
-command line call (separated by line for readability) for regridding a
-2x2.5 lat/lon restart file to a 4x5 lat/lon grid looks like:
+As stated previously, you can call
+:code:`gcpy.file_regrid.file_regrid()` from a Python script, or from
+the command line.  Here we shall focus on command-line examples.
 
-.. code-block::
+#. Regrid a 4x5 GEOS-Chem Classic restart or diagnostic file to a
+   GEOS-Chem Classic 2x2.5 file:
 
-   $ python -m gcpy.file_regrid                               \
-            --filein GEOSChem.Restart.20190701_0000z.nc4      \
-            --dim_format_in classic                           \
-            --fileout GEOSChem.Restart.20190701_0000z.c24.nc4 \
-            --cs_res_out 24                                   \
-	    --dim_format_out checkpoint
+   .. code-block::
+
+      $ python -m gcpy.file_regrid              \
+        --filein         /path/to/file_4x5.nc4  \
+        --dim_format_in  classic                \
+        --fileout        /path/to/file_2x25.nc4 \
+        --ll_res_out     2x2.5                  \
+        --dim_format_out classic
+
+   |br|
+
+#. Regrid a 4x5 GEOS-Chem Classic restart or diagnostic file to a
+   GCHP C24 restart file:
+
+   .. code-block::
+
+      $ python -m gcpy.file_regrid              \
+        --filein         /path/to/file_4x5.nc4  \
+        --dim_format_in  classic                \
+        --fileout        /path/to/file_c24.nc4  \
+        --cs_res_out     24                     \
+        --dim_format_out checkpoint
+
+   |br|
+
+#. Regrid a GCHP C48 restart file to a GCHP stretched grid C48 restart
+   file.  The stretch parameters are:
+
+   - stretch-factor: 5
+   - target-longitude: -72
+   - target-latitude: 41
+
+   .. code-block::
+
+      $ python -m gcpy.file_regrid                 \
+        --filein         /path/to/file_c48.nc4     \
+        --dim_format_in  checkpoint                \
+        --fileout        /path/to/file_c48_sg.nc4  \
+        --cs_res_out     48                        \
+        --dim_format_out checkpoint                \
+	--sg_params_out  5 -72 41
+
+   |br|
+
+#. Regrid the GCHP stretched grid C48 restart file from Example 3
+   above to a GCHP C24 diagnostic file.
+
+   .. code-block::
+
+      $ python -m gcpy.file_regrid                 \
+        --filein         /path/to/file_c48_sg.nc4  \
+	--sg_params_in   5 -72 41                  \
+        --dim_format_in  checkpoint                \
+        --fileout        /path/to/file_c24.nc4     \
+        --cs_res_out     24                        \
+        --dim_format_out diagnostic
 
 .. _regrid-gchp:
 
@@ -175,15 +223,11 @@ packages `gridspec <https://github.com/liambindle/gridspec>`_ and
 three stage process:
 
 #. Create grid specifications for the source and target grids using
-   :literal:`gridspec` |br|
-   |br|
-
+   :literal:`gridspec`.
 #. Create regridding weights for the transformation using
-   :literal:`ESMF_RegridWeightGen` |br|
-   |br|
-
+   :literal:`ESMF_RegridWeightGen`.
 #. Run the regridding operation using the :code:`regrid_restart_file`
-   submodule of GCPy
+   submodule of GCPy.
 
 .. note::
 
@@ -193,6 +237,8 @@ three stage process:
    longer need to use the separate :literal:`gchp_regridding`
    environment as in prior versions.
 
+.. _regrid-gchp-args:
+
 gcpy.regrid_restart_file required arguments:
 --------------------------------------------
 
@@ -201,7 +247,7 @@ There are three arguments required by the GCPy function
 
 .. option:: file_to_regrid : str
 
-      The GCHP restart file to be regridded
+      The GEOS-Chem Classic or GCHP data file to be regridded.
 
 .. option:: regridding_weights_file : str
 
@@ -212,8 +258,7 @@ There are three arguments required by the GCPy function
 
       The GC-Classic or GCHP restart file to use as a template for the
       regridded restart file. Attributes, dimensions, and variables
-      for the output file will be  taken from this template. This may
-      be the same file as the file you are regridding!
+      for the output file will be taken from this template.
 
 gcpy.regrid_restart_file optional arguments:
 --------------------------------------------
@@ -255,7 +300,7 @@ stretched cubed-sphere grid.
       value you plan to use in GCHP configuration file
       :file:`setCommonRunSettings.sh`.
 
-.. _regrid-gchp-procedure:
+.. _regrid-gchp-example-1:
 
 Example 1: Standard Lat-Lon to Cubed-Sphere Regridding
 ------------------------------------------------------
@@ -276,61 +321,70 @@ GCHP c24 restart file.
 
    .. code-block:: console
 
-      $ gridspec-create latlon 46x72
+      $ gridspec-create latlon --pole-centered --half-polar 46 72
 
-   This will produce 1 file -
-   :file:`regular_lat_lon_46x72.nc`. |br|
+   This will produce 1 file: :file:`regular_lat_lon_46x72.nc`. |br|
    |br|
 
 #. Create a target grid specification using :code:`gridspec-create`.
 
    .. code-block:: console
 
-      $ gridspec-create gcs 23
+      $ gridspec-create gcs 24
 
-   Again, this will produce 7 files - :file:`c24_gridspec` and
+   This will produce 7 files: :file:`c24_gridspec.nc` and
    :file:`c24.tile[1-6].nc` |br|
    |br|
 
-#. Create the regridding weights for the regridding transformation using
-   :code:`ESMF_RegridWeightGen`.
+#. Create the regridding weights for the regridding transformation
+   (46x72 to C24) using :code:`ESMF_RegridWeightGen`.
 
    .. code-block:: console
 
-      $ ESMF_RegridWeightGen            \
-          --source regular_lat_lon_46x72.nc      \
-          --destination c24_gridspec.nc \
-          --method conserve             \
-          --weight 46x72_to_c24_weights.nc
+      $ ESMF_RegridWeightGen                   \
+        --source      regular_lat_lon_46x72.nc \
+        --destination c24_gridspec.nc          \
+        --method      conserve                 \
+        --weight      46x72_to_c24_weights.nc
 
    This will produce a log file, :file:`PET0.RegridWeightGen.Log`, and our
    regridding weights, :file:`46x72_to_c24_weights.nc` |br|
    |br|
 
 #. Use the grid weights produced in previous steps to complete the
-   regridding.  The first file listed in the command contains the data
-   you wish to regrid and so is a GC-Classic restart file. The second
-   file is a template file for the regridded file, containing all
-   attributes, dimensions, and variables that you would like to have
-   in the GCHP restart file.
+   regridding.
 
    .. code-block:: console
 
-      $ python -m gcpy.regrid_restart_file        \
-          GEOSChem.fullchem.Restart.20190701_0000z.nc \
-          46x72_to_c24_weights.nc                   \
-          GEOSChem.fullchem.Restart.20190701_0000z.c24.old_version.nc4
+      $ python -m gcpy.regrid_restart_file          \
+        GEOSChem.Restart.20190701_0000z.nc4         \
+        46x72_to_c24_weights.nc                     \
+        GEOSChem.Restart.20190701_0000z.c24_old.nc4
 
-   This will produce a single file, :file:`new_restart_file.nc`,
-   regridded from 4x5 to c24, that you can rename and use as you
-   please. |br|
+   The arguments to :code:`gcpy.regrid_restart_file`
+   :ref:`are described above <regrid-gchp-args>`.  In this example
+   (lat-lon to cubed-sphere) we need to use a GEOS-Chem Classic
+   restart file as the file to be regridded and a GCHP restart file as
+   the template file.
+
+   .. note::
+
+      The resolution of the template file does not matter as long as it
+      contains all of the variables and attributes that you wish to
+      include in the regridded restart file.
+
+   After running :code:`gcpy.regrid_restart_file`, a single restart file
+   named :file:`new_restart_file.nc` will be created.  You can rename
+   this file and use it to initialize your GCHP C24 simulation. |br|
    |br|
 
-#. Deactivate your GCPy environment when you have finished.
+#. Deactivate your GCPy environment when finished.
 
    .. code-block:: console
 
       $ mamba deactivate
+
+.. _regrid-gchp-example-2:
 
 Example 2: Standard Cubed-Sphere to Cubed-Sphere Regridding
 -----------------------------------------------------------
@@ -353,7 +407,7 @@ C48 to C60 to demonstrate the standard cubed-sphere regridding process:
 
       $ gridspec-create gcs 48
 
-   This will produce 7 files - :literal:`c48_gridspec.nc` and
+   This will produce 7 files: :literal:`c48_gridspec.nc` and
    :literal:`c48.tile[1-6].nc` |br|
    |br|
 
@@ -363,20 +417,20 @@ C48 to C60 to demonstrate the standard cubed-sphere regridding process:
 
       $ gridspec-create gcs 60
 
-   Again, this will produce 7 files - :literal:`c60_gridspec` and
+   Again, this will produce 7 files: :literal:`c60_gridspec.nc` and
    :literal:`c60.tile[1-6].nc` |br|
    |br|
 
 #. Create the regridding weights for the regridding transformation
-   using :code:`ESMF_RegridWeightGen`.
+   (C48 to C60) using :code:`ESMF_RegridWeightGen`.
 
    .. code-block:: console
 
-      $ ESMF_RegridWeightGen            \
-          --source c48_gridspec.nc      \
-          --destination c60_gridspec.nc \
-          --method conserve             \
-          --weight c48_to_c60_weights.nc
+      $ ESMF_RegridWeightGen               \
+        --source      c48_gridspec.nc      \
+        --destination c60_gridspec.nc      \
+        --method      conserve             \
+        --weight      c48_to_c60_weights.nc
 
    This will produce a log file, :file:`PET0.RegridWeightGen.Log`,
    and our regridding weights, :file:`c48_to_c60_weights.nc` |br|
@@ -386,14 +440,20 @@ C48 to C60 to demonstrate the standard cubed-sphere regridding process:
 
    .. code-block:: console
 
-      $ python -m gcpy.regrid_restart_file        \
-          GEOSChem.Restart.20190701_0000z.c48.nc4 \
-          c48_to_c60_weights.nc                   \
-          GEOSChem.Restart.20190701_0000z.c48.nc4
+      $ python -m gcpy.regrid_restart_file      \
+        GEOSChem.Restart.20190701_0000z.c48.nc4 \
+        c48_to_c60_weights.nc                   \
+        GEOSChem.Restart.20190701_0000z.c48.nc4
 
-   This will produce a single file, :file:`new_restart_file.nc`,
-   regridded from C48 to C60, that you can rename and use as you
-   please. |br|
+   The arguments to :code:`gcpy.regrid_restart_file`
+   :ref:`are described above <regrid-gchp-args>`.  Because we are
+   regridding from one cubed-sphere grid to another cubed-sphere grid,
+   we can use the file to be regridded as the template file.
+
+   After running :code:`gcpy.regrid_restart_file`, a single restart
+   file named :file:`new_restart_file.nc` will be created.  You can
+   rename this file as you wish and use it for your GCHP C60
+   simulation. |br|
    |br|
 
 #. Deactivate your GCPy environment when you have finished.
@@ -426,7 +486,7 @@ times 48) in that area.
 
       $ gridspec-create gcs 48
 
-   This will produce 7 files - :file:`c48_gridspec.nc` and
+   This will produce 7 files: :file:`c48_gridspec.nc` and
    :file:`c48.tile[1-6].nc` |br|
    |br|
 
@@ -441,24 +501,24 @@ times 48) in that area.
    :code:`-t` option denotes the latitude / longitude of the centre
    point of the grid stretch.
 
-   Again, this will produce 7 files - :file:`c48_..._gridspec.nc` and
+   Again, this will produce 7 files: :file:`c48_..._gridspec.nc` and
    :file:`c48_..._tile[1-6].nc`, where :file:`...` denotes randomly
    generated characters. Be sure to look for these since you will need
    them in the next step. |br|
    |br|
 
 #. Create the regridding weights for the regridding transformation
-   using :code:`ESMF_RegridWeightGen`, replacing
-   :file:`c48_..._gridspec.nc` with the actual name of the file
-   created in the previous step. An example is shown below.
+   (C48 to C48-stretched) using :code:`ESMF_RegridWeightGen`,
+   replacing  :file:`c48_..._gridspec.nc` with the actual name of the
+   file created in the previous step. An example is shown below.
 
    .. code-block:: console
 
-      $ ESMF_RegridWeightGen                 \
-          --source c48_gridspec.nc           \
-          --destination c48_t9g3t5pq2hg3t_gridspec.nc \
-          --method conserve                  \
-          --weight c48_to_c48_stretched_weights.nc
+      $ ESMF_RegridWeightGen                              \
+        --source      c48_gridspec.nc                     \
+        --destination c48_s4d00_tdtdqp9ktebm5_gridspec.nc \
+        --method      conserve                            \
+        --weight      c48_to_c48_stretched_weights.nc
 
    This will produce a log file, :file:`PET0.RegridWeightGen.Log`, and our
    regridding weights, :file:`c48_to_c48_stretched_weights.nc` |br|
@@ -469,32 +529,41 @@ times 48) in that area.
 
    .. code-block:: console
 
-      $ python -m gcpy.regrid_restart_file        \
-          --stretched-grid                        \
-          --stretch-factor 4.0                    \
-          --target-latitude 32.0                  \
-          --target-longitude -64.0                \
-          GEOSChem.Restart.20190701_0000z.c48.nc4 \
-          c48_to_c48_stretched_weights.nc        \
-          GEOSChem.Restart.20190701_0000z.c48.nc4
+      $ python -m gcpy.regrid_restart_file       \
+         --stretched-grid                        \
+         --stretch-factor 4.0                    \
+         --target-latitude 32.0                  \
+         --target-longitude -64.0                \
+         GEOSChem.Restart.20190701_0000z.c48.nc4 \
+         c48_to_c48_stretched_weights.nc         \
+         GEOSChem.Restart.20190701_0000z.c48.nc4
+
+   The arguments to :code:`gcpy.regrid_restart_file`
+   :ref:`are described above <regrid-gchp-args>`.  Because we are
+   regridding from one cubed-sphere grid to another cubed-sphere grid,
+   we can use the file to be regridded as the template file.
 
    This will produce a single file, :literal:`new_restart_file.nc`,
    regridded from C48 standard to C48 stretched with a stretch factor
    of 4.0 over 32.0N, -64.0E, that you can rename and use as you
-   please. It is generally a good idea to rename the file to include
-   the grid resolution, stretch factor, and target lat/lon for easy
-   reference. You can copy it somewhere to keep long-term and link to
-   it from the GCHP Restarts subdirectory in the run directory.
+   please.
 
-   .. code-block:: console
+   .. tip::
 
-      $ mv new_restart_file.nc GEOSChem.Restart.20190701_0000z.c120.s4_32N_64E.nc
+      It is generally a good idea to rename the file to include
+      the grid  resolution, stretch factor, and target lat/lon for easy
+      reference. You can copy it somewhere to keep long-term and link to
+      it from the GCHP Restarts subdirectory in the run directory.
 
-      You can also easily reference the file's stretch parameters by
-      looking at the global attributes in the file. When using the
-      file as a restart file in GCHP make sure that you use the exact
-      same parameters in both  the file's global attributes and GCHP
-      configuration file :file:`setCommonRunSettings.sh`.
+      .. code-block:: console
+
+         $ mv new_restart_file.nc GEOSChem.Restart.20190701_0000z.c120.s4_32N_64E.nc
+
+   You can also easily reference the file's stretch parameters by
+   looking at the global attributes in the file. When using the
+   file as a restart file in GCHP make sure that you use the exact
+   same parameters in both  the file's global attributes and GCHP
+   configuration file :file:`setCommonRunSettings.sh`.
 
 #. Deactivate your GCPy environment when you have finished.
 
@@ -508,31 +577,32 @@ times 48) in that area.
 Regridding for Plotting in GCPy
 ===============================
 
-When plotting in GCPy (e.g. through :code:`compare_single_level()` or
-:code:`compare_zonal_mean()`), the vast majority of regridding is
-handled internally. You can optionally request a specific
-horizontal comparison resolution in :code:`compare_single_level()`
-and :code:`compare_zonal_mean()`.  Note that all regridding in these
-plotting functions only applies to the comparison panels (not the top
-two panels which show data directly from each dataset). There are only
-two scenarios where you will need to pass extra information to GCPy to
-help it determine grids and to regrid when plotting.
+When plotting in GCPy (e.g. through
+:code:`gcpy.compare_single_level()` or
+:code:`gcpy.compare_zonal_mean()`), the vast majority of regridding is
+handled internally. You can optionally request a specific horizontal
+comparison resolution in :code:`compare_single_level()` and
+:code:`compare_zonal_mean()`.  Note that all regridding in these
+plotting functions only applies to the comparison panels (not
+the top two panels which show data directly from each dataset). There
+are only two scenarios where you will need to pass extra information
+to GCPy to help it determine grids and to regrid when plotting.
 
 Pass stretched-grid file paths
 ------------------------------
 
 Stretched-grid parameters cannot currently be automatically determined
 from grid coordinates. If you are plotting stretched-grid data in
-:code:`compare_single_level()` or :code:`compare_zonal_mean()` (even
-if regridding to another format), you need to use the
-:code:`sg_ref_path` or :code:`sg_dev_path` arguments to pass the path
-of your original stretched-grid restart file to GCPy.
-If using :code:`single_panel()`, pass the file path using
-:code:`sg_path`. Stretched-grid restart files created using GCPy
-contain the specified stretch factor, target longitude, and
-target latitude in their metadata.  Currently, output files from
-stretched-grid runs of GCHP do not contain any metadata that specifies
-the stretched-grid used.
+:code:`gcpy.compare_single_level()` or
+:code:`gcpy.compare_zonal_mean()` (even if regridding to another
+format), you need to use the :code:`sg_ref_path` or
+:code:`sg_dev_path` arguments to pass the path of your original
+stretched-grid restart file to GCPy. If using :code:`single_panel()`,
+pass the file path using :code:`sg_path`. Stretched-grid restart files
+created using GCPy contain the specified stretch factor, target
+longitude, and target latitude in their metadata.  Currently, output
+files from stretched-grid runs of GCHP do not contain any metadata
+that specifies the stretched-grid used.
 
 Pass vertical grid parameters for non-72/47-level grids
 -------------------------------------------------------
@@ -550,7 +620,7 @@ Automatic regridding decision process
 -------------------------------------
 
 When you do not specify a horizontal comparison resolution using the
-:code:`cmpres` argument in :code:`compare_single_level()` and
+:code:`cmpres` argument in :code:`gcpy.compare_single_level()` and
 :code:`compare_zonal_mean()`, GCPy follows several steps to determine
 what comparison resolution it should use:
 
