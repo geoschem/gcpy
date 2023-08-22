@@ -4,6 +4,7 @@ and cubed-sphere stretched grids.
 """
 import argparse
 import os
+import warnings
 import numpy as np
 import xarray as xr
 try:
@@ -15,12 +16,15 @@ try:
 except ImportError as exc:
     print('file_regrid.py requires xESMF version 0.2.1 or higher!\n\nSee the installation ' + \
           'instructions here: https://xesmf.readthedocs.io/en/latest/installation.html\n')
-import pandas as pd
 
 from gcpy.grid import get_input_res, get_vert_grid, get_grid_extents
-from gcpy.regrid import make_regridder_S2S, reformat_dims, make_regridder_L2S, \
-    make_regridder_C2L, make_regridder_L2L
-from gcpy.util import reshape_MAPL_CS, verify_variable_type
+from gcpy.regrid import make_regridder_S2S, reformat_dims, \
+    make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
+from gcpy.util import verify_variable_type
+
+# Ignore any FutureWarnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 
 def file_regrid(
         fin,
@@ -34,8 +38,8 @@ def file_regrid(
         vert_params_out=None
 ):
     """
-    Regrids an input file to a new horizontal grid specification and saves it
-    as a new file.
+    Regrids an input file to a new horizontal grid specification
+    and saves it as a new file.
 
     Args:
         fin: str
@@ -90,41 +94,188 @@ def file_regrid(
         vert_params_out = [[], []]
 
     # Load dataset
-    ds_in = xr.open_dataset(fin, decode_cf=False)
-    ds_in = ds_in.load()
-    time = ds_in.time
+    ds_in = xr.open_dataset(
+        fin,
+        decode_cf=False,
+        engine='netcdf4'
+    ).load()
     cs_res_in = 0
-    if dim_format_in != 'classic':
-        # Reformat dimensions to T, Z, F, Y, X
-        ds_in = reformat_dims(ds_in, format=dim_format_in, towards_common=True)
 
-        # Drop variables that don't look like fields
-        non_fields = [
-            v for v in ds_in.variables.keys()
-            if len(set(ds_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0 or
-            len(ds_in[v].dims) == 0]
-        ds_in = ds_in.drop(non_fields)
+    # Make sure all xarray.Dataset global & variable attributes are kept
+    with xr.set_options(keep_attrs=True):
 
-        # Transpose to T, Z, F, Y, X
-        ds_in = ds_in.transpose('T', 'Z', 'F', 'Y', 'X')
+        # ==============================================================
+        # Regrid data
+        # ==============================================================
 
-        assert ds_in.dims['X'] == ds_in.dims['Y']
-        cs_res_in = ds_in.dims['X']
+        # save type of data for later restoration
+        original_dtype = np.dtype(ds_in[list(ds_in.data_vars)[0]])
 
-    elif dim_format_in == 'classic' and dim_format_out != 'classic':
-        ds_in = drop_and_rename_classic_vars(ds_in)
+        oface_files=[]
+        if cs_res_in == cs_res_out and all(
+                [v1 == v2 for v1, v2 in zip(sg_params_in, sg_params_out)]):
 
-    # save type of data for later restoration
-    original_dtype = np.dtype(ds_in[list(ds_in.data_vars)[0]])
+            # ----------------------------------------------------------
+            # Input CS/SG grid == Output CS/SG grid
+            # ----------------------------------------------------------
+            print('Skipping regridding since grid parameters are identical')
+            ds_out = ds_in
 
-    oface_files=[]
-    if cs_res_in == cs_res_out and all(
-            [v1 == v2 for v1, v2 in zip(sg_params_in, sg_params_out)]):
-        print('Skipping regridding since grid parameters are identical')
-        ds_out = ds_in
+        elif dim_format_in != 'classic' and dim_format_out != 'classic':
 
-    elif dim_format_in != 'classic' and dim_format_out != 'classic':
-        # CS/SG to CS/SG
+            # ----------------------------------------------------------
+            # Input grid is CS/SG; Output grid is CS/SG
+            # ----------------------------------------------------------
+            ds_out = regrid_cssg_to_cssg(
+                fout,
+                ds_in,
+                dim_format_in,
+                sg_params_in,
+                cs_res_out,
+                dim_format_out,
+                sg_params_out
+            )
+
+        elif dim_format_in == 'classic' and dim_format_out != 'classic':
+
+            # ----------------------------------------------------------
+            # Input grid is LL; Output grid is CS/SG
+            # ----------------------------------------------------------
+            ds_out = regrid_ll_to_cssg(
+                ds_in,
+                cs_res_out,
+                dim_format_out,
+                sg_params_out
+            )
+
+        elif dim_format_in != 'classic' and dim_format_out == 'classic':
+
+            # ----------------------------------------------------------
+            # Input grid is CS/SG; Output grid is LL
+            # ----------------------------------------------------------
+            ds_out = regrid_cssg_to_ll(
+                ds_in,
+                cs_res_in,
+                dim_format_in,
+                sg_params_in,
+                ll_res_out,
+                vert_params_out=vert_params_out
+            )
+
+        elif dim_format_in == 'classic' and dim_format_out == 'classic':
+
+            # ----------------------------------------------------------
+            # Input grid is LL; Output grid is LL
+            # ----------------------------------------------------------
+            ds_out = regrid_ll_to_ll(
+                ds_in,
+                ll_res_out
+            )
+
+        # ==============================================================
+        # Post-regridding stuff
+        # ==============================================================
+
+        # Correct precision changes (accidental 32-bit to 64-bit)
+        ds_out = ds_out.astype(original_dtype)
+
+        # Write dataset to file
+        ds_out.to_netcdf(
+            fout,
+            format='NETCDF4'
+        )
+
+        # Print the resulting dataset
+        print(ds_out)
+
+
+def prepare_cssg_input_grid(
+        ds_in,
+        dim_format_in
+):
+    """
+    Reformats cubed-sphere/stretched grid data to the universal
+    format and drops non-regriddable fields.
+
+    Args:
+    -----
+    ds_in : xr.Dataset
+        Input grid (cubed-sphere or stretched grid)
+    dim_format_in : str
+        Either "checkpoint" (for restart files)
+        or "diagnostic" (for History diagnostic files)
+
+    Returns:
+    --------
+    ds_out : xr.Dataset
+        Data with reformatted dimensions and dropped fields
+    cs_res_in : int
+        Cubed-sphere/stretched grid resolution
+    """
+    # Reformat dimensions to "common dimensions (T, Z, F, Y, X)
+    ds_in = reformat_dims(
+        ds_in,
+        dim_format_in,
+        towards_common=True
+    )
+
+    # Drop variables that don't look like fields
+    non_fields = [
+        v for v in ds_in.variables.keys()
+        if len(set(ds_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0
+        or len(ds_in[v].dims) == 0]
+    ds_in = ds_in.drop(non_fields)
+
+    # Transpose to T, Z, F, Y, X
+    ds_in = ds_in.transpose('T', 'Z', 'F', 'Y', 'X')
+
+    assert ds_in.dims['X'] == ds_in.dims['Y']
+    cs_res_in = ds_in.dims['X']
+
+    return ds_in, cs_res_in
+
+
+def regrid_cssg_to_cssg(
+        fout,
+        ds_in,
+        dim_format_in,
+        sg_params_in,
+        cs_res_out,
+        dim_format_out,
+        sg_params_out,
+):
+    """
+    Regrids from the cubed-sphere/stretched grid to a different
+    cubed-sphere/stretched grid resolution.
+
+    Args:
+    -----
+    fout : str
+        File name template
+    ds_in : xarray.Dataset
+        Data on a cubed-sphere/stretched grid
+    dim_format_in, dim_format_out : str
+        Input & output grid format ("checkpoint", "diagnostic")
+    cs_res_out : int
+        Cubed-sphere grid resolution
+    sg_params_in, sg_params_out: list[float, float, float]
+        Input & output grid stretching parameters
+        [stretch-factor, target longitude, target latitude].
+
+    Returns:
+    --------
+    ds_out : xarray.Dataset
+        Data regridded to the output lat-lon grid
+    """
+    with xr.set_options(keep_attrs=True):
+
+        # Change CS/SG dimensions to universal format
+        # and drop non-regriddable variables
+        ds_in, cs_res_in = prepare_cssg_input_grid(
+            ds_in,
+            dim_format_in
+        )
+
         # Make regridders
         regridders = make_regridder_S2S(
             cs_res_in,
@@ -136,173 +287,326 @@ def file_regrid(
             tlon_out=sg_params_out[1],
             tlat_out=sg_params_out[2]
         )
+
         # Save temporary output face files to minimize RAM usage
         oface_files = [os.path.join('.',fout+str(x)) for x in range(6)]
+
         # For each output face, sum regridded input faces
         for oface in range(6):
             oface_regridded = []
-            for iface, regridder in regridders[oface].items():
+            for (iface, regridder) in regridders[oface].items():
                 ds_iface = ds_in.isel(F=iface)
                 if 'F' in ds_iface.coords:
                     ds_iface = ds_iface.drop('F')
-                oface_regridded.append(regridder(ds_iface, keep_attrs=True))
+                oface_regridded.append(
+                    regridder(
+                        ds_iface,
+                        keep_attrs=True
+                    )
+                )
             oface_regridded = xr.concat(
                 oface_regridded,
-                dim='intersecting_ifaces').sum(
+                dim='intersecting_ifaces'
+            ).sum(
                 'intersecting_ifaces',
                 keep_attrs=True).expand_dims({'F':[oface]})
             oface_regridded.to_netcdf(
                 oface_files[oface],
-                format='NETCDF4_CLASSIC'
+                format='NETCDF4'
             )
+
+        # Combine face files
         ds_out=xr.open_mfdataset(
             oface_files,
-            combine='by_coords',
+            combine='nested',
             concat_dim='F',
             engine='netcdf4'
         )
+
+        # lat, lon are from xESMF which we don't want
+        ds_out = drop_lon_and_lat(ds_out)
+
         # Put regridded dataset back into a familiar format
         ds_out = ds_out.rename({
             'y': 'Y',
             'x': 'X',
         })
-        # lat, lon are from xESMF which we don't want
-        ds_out = ds_out.drop(['lat', 'lon'])
 
-    elif dim_format_in == 'classic' and dim_format_out != 'classic':
-        # LL to SG/CS
-        llres_in = get_input_res(ds_in)[0]
-        # make regridders
-        regridders = make_regridder_L2S(
-            llres_in, cs_res_out, sg_params=sg_params_out)
-        ds_out = xr.concat([regridders[face](ds_in, keep_attrs=True)
-                            for face in range(6)], dim='nf')
-        # flip vertical
-        ds_out = ds_out.reindex(lev=ds_out.lev[::-1])
-        ds_out = ds_out.rename({
-            'y': 'Ydim',
-            'x': 'Xdim',
-        })
-        # lat, lon are from xESMF which we don't want
-        ds_out = ds_out.drop(['lat', 'lon'])
+        # Reformat dimensions from "common dimension format"
+        # to CS/GG "checkpoint" or "diagnostics" format
+        ds_out = reformat_dims(
+            ds_out,
+            dim_format_out,
+            towards_common=False
+        )
 
-        if dim_format_out == 'checkpoint':
-            # convert to checkpoint format
-            ds_out = reshape_MAPL_CS(ds_out)
-            mindex = pd.MultiIndex.from_product([
-                np.linspace(1, 6, 6),
-                np.linspace(1, cs_res_out, cs_res_out)
-            ])
-            ds_out = ds_out.assign_coords({'lat': mindex})
-            ds_out = ds_out.unstack('lat')
+        # Save stretched-grid metadata
+        ds_out = save_cssg_metadata(
+            ds_out,
+            cs_res_out,
+            sg_params_out
+        )
 
-            ds_out = ds_out.stack(lat=['lat_level_0', 'lat_level_1'])
-            ds_out = ds_out.assign_coords({
-                'lat': np.linspace(1, 6 * cs_res_out, 6 * cs_res_out),
-                'lon': np.linspace(1, ds_out.lon.size, ds_out.lon.size),
-                'lev': np.linspace(ds_out.lev.size, 1, ds_out.lev.size)
-            })
-            ds_out = ds_out.transpose('time', 'lev', 'lat', 'lon')
-        else:
-            # convert to diagnostic format
-            ds_out = ds_out.transpose('time', 'lev', 'nf', 'Ydim', 'Xdim')
-            ds_out = ds_out.assign_coords({
-                'nf': np.linspace(1, 6, 6),
-                'lev': np.linspace(1, 72, 72)})
-            print(
-                'WARNING: xarray coordinates are not fully implemented for diagnostic format')
+        # Remove any temporary files
+        for oface in oface_files:
+            os.remove(oface)
 
-    elif dim_format_in != 'classic' and dim_format_out == 'classic':
-        # SG/CS to LL
+    return ds_out
+
+
+def regrid_cssg_to_ll(
+        ds_in,
+        cs_res_in,
+        dim_format_in,
+        sg_params_in,
+        ll_res_out,
+        vert_params_out=None,
+):
+    """
+    Regrids from the cubed-sphere/stretched grid to the lat-lon grid.
+
+    Args:
+    -----
+    ds_in : xarray.Dataset
+        Data on a cubed-sphere/stretched grid
+    cs_res_in : int
+        Cubed-sphere grid resolution
+    sg_params_in: list[float, float, float]
+        Input grid stretching parameters
+        [stretch-factor, target longitude, target latitude].
+    ll_res_out : str
+        Output grid lat/lon resolution (e.g. "4x5")
+
+    Returns:
+    --------
+    ds_out : xarray.Dataset
+        Data regridded to the output lat-lon grid
+    """
+    if vert_params_out is None:
+        vert_params_out = [[], []]
+
+    with xr.set_options(keep_attrs=True):
+
+        # Change CS/SG dimensions to universal format
+        # and drop non-regriddable variables
+        ds_in, cs_res_in = prepare_cssg_input_grid(
+            ds_in,
+            dim_format_in
+        )
+
+        # Regrid data
         regridders = make_regridder_C2L(
-            cs_res_in, ll_res_out, sg_params=sg_params_in)
+            cs_res_in,
+            ll_res_out,
+            sg_params=sg_params_in
+        )
         ds_out = xr.concat(
-            [regridders[face](ds_in.isel(F=face),
-                              keep_attrs=True) for face in range(6)],
-            dim='F').sum(
-            'F', keep_attrs=True)
-        ds_out = ds_out.rename({
-            'T': 'time',
-            'Z': 'lev'})
+            [regridders[face](ds_in.isel(F=face), keep_attrs=True)
+             for face in range(6)],
+            dim='F'
+        ).sum('F', keep_attrs=True)
+
+        # Update dimensions and attributes on the lat-lon grid
+        ds_out = ds_out.rename({'T': 'time', 'Z': 'lev'})
         ds_out = drop_and_rename_classic_vars(ds_out, towards_gchp=False)
         ds_out = ds_out.reindex(lev=ds_out.lev[::-1])
-        _, lev_coords, _ = get_vert_grid(ds_out, *vert_params_out)
+        _, lev_coords, _ = get_vert_grid(ds_out, vert_params_out)
         ds_out = ds_out.assign_coords({'lev': lev_coords})
-        ds_out['lat'].attrs = {'long_name': 'Latitude',
-                               'units': 'degrees_north',
-                               'axis': 'Y'}
-        ds_out['lon'].attrs = {'long_name': 'Longitude',
-                               'units': 'degrees_east',
-                               'axis': 'X'}
-    elif dim_format_in == 'classic' and dim_format_out == 'classic':
-        # ll to ll
+        ds_out['lat'].attrs = {
+            'long_name': 'Latitude',
+            'units': 'degrees_north',
+            'axis': 'Y'
+        }
+        ds_out['lon'].attrs = {
+            'long_name': 'Longitude',
+            'units': 'degrees_east',
+            'axis': 'X'
+        }
+
+    return ds_out
+
+
+def regrid_ll_to_cssg(
+        ds_in,
+        cs_res_out,
+        dim_format_out,
+        sg_params_out,
+):
+    """
+    Regrids from the lat-lon grid to the cubed-sphere/stretched grid.
+
+    Args:
+    -----
+    ds_in : xarray.Dataset
+        Data on a lat/lon grid
+    cs_res_in : int
+        Cubed-sphere grid resolution
+    dim_format_out : str
+        Either "checkpoint" (for restart files) or
+        "diagnostic" (for History diagnostic files).
+    sg_params_out: list[float, float, float]
+        Output grid stretching parameters
+        [stretch-factor, target longitude, target latitude].
+
+    Returns:
+    --------
+    ds_out : xarray.Dataset
+        Data regridded to the output cubed-sphere/stretched-grid
+    """
+    with xr.set_options(keep_attrs=True):
+
+        # Drop non-regriddable variables when going from ll -> cs
+        ds_in = drop_and_rename_classic_vars(ds_in)
+
+        # Input lat/lon grid resolution
+        llres_in = get_input_res(ds_in)[0]
+
+        # Regrid data to CS/SG
+        regridders = make_regridder_L2S(
+            llres_in,
+            cs_res_out,
+            sg_params=sg_params_out
+        )
+        ds_out = xr.concat(
+            [regridders[face](ds_in, keep_attrs=True) for face in range(6)],
+            dim='nf'
+        )
+
+        # Flip vertical levels
+        ds_out = ds_out.reindex(lev=ds_out.lev[::-1])
+
+        # Drop lon & lat, which are from xESMF
+        ds_out = drop_lon_and_lat(ds_out)
+
+        # Rename dimensions to the "common dimension format"
+        ds_out = ds_out.rename({
+            'time': 'T',
+            'lev': 'Z',
+            'nf': 'F',
+            'y': 'Y',
+            'x': 'X',
+        })
+
+        # Reformat dimensions from "common dimension format"
+        # to CS/GG "checkpoint" or "diagnostics" format
+        ds_out = reformat_dims(
+            ds_out,
+            dim_format_out,
+            towards_common=False
+        )
+
+        # Save stretched-grid metadata
+        ds_out = save_cssg_metadata(
+            ds_out,
+            cs_res_out,
+            sg_params_out
+        )
+
+    return ds_out
+
+
+def regrid_ll_to_ll(
+        ds_in,
+        ll_res_out
+):
+    """
+    Regrid from the lat/lon grid to the cubed-sphere/stretched grid.
+
+    Args:
+    -----
+    ds_in : xarray.Dataset
+        Data on a lat/lon grid
+    ll_res_out : str
+        Output grid lat-lon grid resolution (e.g. "4x5")
+
+    Returns:
+    --------
+    ds_out : xarray.Dataset
+        Data regridded to the output lat-lon grid.
+    """
+    # Keep all xarray global & variable attributes
+    with xr.set_options(keep_attrs=True):
+
+        # Get the input & output extents
         in_extent = get_grid_extents(ds_in)
         out_extent = in_extent
         ll_res_in = get_input_res(ds_in)[0]
         [lat_in, lon_in] = list(map(float, ll_res_in.split('x')))
         [lat_out, lon_out] = list(map(float, ll_res_out.split('x')))
 
+        # Return if the output & input grids are the same
         if lat_in == lat_out and lon_in == lon_out:
-            print('Skipping regridding since grid parameters are identical')
             ds_out = ds_in
-        else:
-            lon_attrs = ds_in.lon.attrs
-            lat_attrs = ds_in.lat.attrs
-            # drop non-regriddable variables
-            non_fields = [v for v in ds_in.variables.keys(
-            ) if 'lat' not in ds_in[v].dims and 'lon' not in ds_in[v].dims]
-            non_fields_ds = ds_in[non_fields]
-            ds_in = ds_in.drop(non_fields)
+            return ds_out
 
-            regridder = make_regridder_L2L(
-                ll_res_in,
-                ll_res_out,
-                reuse_weights=True,
-                in_extent=in_extent,
-                out_extent=out_extent)
-            ds_out = regridder(ds_in, keep_attrs=True)
-            ds_out = ds_out.merge(non_fields_ds)
-            ds_out['lon'].attrs = lon_attrs
-            ds_out['lat'].attrs = lat_attrs
-            ds_out = ds_out.transpose('time', 'lev', 'ilev', 'lat', 'lon')
+        # Drop non-regriddable variables
+        non_fields = [
+            var for var in ds_in.variables.keys() \
+            if 'lat' not in ds_in[var].dims       \
+                and 'lon' not in ds_in[var].dims
+            ]
+        ds_in = ds_in.drop(["lat_bnds", "lon_bnds"])
+        non_fields_ds = ds_in[non_fields]
+        ds_in = ds_in.drop(non_fields)
 
-    if dim_format_in != 'classic' and dim_format_out != 'classic':
-        # Reformat dimensions to desired output format
-        ds_out = reformat_dims(
-            ds_out,
-            format=dim_format_out,
-            towards_common=False)
-    if dim_format_out != 'classic':
-        # Store stretched-grid parameters as metadata
-        ds_out.attrs['stretch_factor'] = sg_params_out[0]
-        ds_out.attrs['target_longitude'] = sg_params_out[1]
-        ds_out.attrs['target_latitude'] = sg_params_out[2]
-        ds_out.attrs['cs_res'] = cs_res_out
+        # Create the regridder
+        regridder = make_regridder_L2L(
+        ll_res_in,
+            ll_res_out,
+            reuse_weights=True,
+            in_extent=in_extent,
+            out_extent=out_extent
+        )
+        ds_out = regridder(ds_in, keep_attrs=True, verbose=False)
 
-    ds_out = ds_out.assign_coords({'time': time})
-    # correct precision changes (accidental 32-bit to 64-bit)
-    # save attributes (no longer needed in xarray >=0.16.1)
-    attrs = ds_out.attrs
-    data_attrs = {var : ds_out[str(var)].attrs for var in list(ds_out.variables)}
-    ds_out = ds_out.astype(original_dtype)
-    for var in list(ds_out.variables):
-        ds_out[str(var)].attrs = data_attrs[var]
-    ds_out.attrs = attrs
-    # Write dataset
-    ds_out.to_netcdf(
-        fout,
-        format='NETCDF4_CLASSIC'
-    )
-    # Print the resulting dataset
-    print(ds_out)
-    # Remove any temporary files
-    for oface in oface_files:
-        os.remove(oface)
+        # Add the non-regriddable fields back
+        ds_out = ds_out.merge(non_fields_ds)
+
+        # Change order of dimensions
+        ds_out = ds_out.transpose(
+            'time', 'lev', 'ilev', 'lat', 'lon', ...
+        )
+
+    return ds_out
+
+
+def save_cssg_metadata(
+        dset,
+        cs_res_out,
+        sg_params_out
+):
+    """
+    Saves the stretched-grid metadata to an xarray.Dataset object
+    containing cubed-sphere/stretched grid data
+
+    Args:
+    -----
+    dset : xarray.Dataset
+        Data on the stretched grid.
+    cs_res_out : int
+        Cubed-sphere grid resolution.
+    sg_params_out: list[float, float, float]
+        Output grid stretching parameters
+        [stretch-factor, target longitude, target latitude]
+
+    Returns:
+    --------
+    dset_out : xarray.Dataset
+        The original data, plus stretched grid metadata.
+    """
+    with xr.set_options(keep_attrs=True):
+        dset.attrs['stretch_factor'] = sg_params_out[0]
+        dset.attrs['target_longitude'] = sg_params_out[1]
+        dset.attrs['target_latitude'] = sg_params_out[2]
+        dset.attrs['cs_res'] = cs_res_out
+
+    return dset
 
 
 def rename_restart_variables(dset, towards_gchp=True):
     """
-    Renames restart variables according to GEOS-Chem Classic and GCHP conventions.
+    Renames restart variables according to GEOS-Chem Classic
+    and GCHP conventions.
 
     Args:
         dset: xarray.Dataset
@@ -329,6 +633,30 @@ def rename_restart_variables(dset, towards_gchp=True):
                       if name.startswith(old_str)})
 
 
+def drop_lon_and_lat(dset):
+    """
+    Drops lon and lat variables, which are added by xESMF.
+    These are not needed for GCHP data files.
+
+    Args:
+        dset: xarray.Dataset
+            The input data.
+
+    Returns:
+        dset: xarray.Dataset
+            The input data minus "lat" and "lon" variables.
+    """
+    verify_variable_type(dset, xr.Dataset)
+
+    with xr.set_options(keep_attrs=True):
+        if "lat" in dset.variables.keys():
+            dset = dset.drop("lat")
+        if "lon" in dset.variables.keys():
+            dset = dset.drop("lon")
+
+    return dset
+
+
 def drop_and_rename_classic_vars(dset, towards_gchp=True):
     """
     Renames and drops certain restart variables according to GEOS-Chem Classic
@@ -347,48 +675,51 @@ def drop_and_rename_classic_vars(dset, towards_gchp=True):
         xarray.Dataset
             Input dataset with variables renamed and dropped
     """
+    with xr.set_options(keep_attrs=True):
+        if towards_gchp:
+            dset = dset.rename(
+                {name: name.replace('Met_', '', 1).replace('Chem_', '', 1)
+                 for name in list(dset.data_vars)
+                 if name.startswith('Met_') or name.startswith('Chem_')})
+            if 'DELPDRY' in list(dset.data_vars):
+                dset = dset.rename({'DELPDRY': 'DELP_DRY'})
+            dset = dset.drop_vars(
+                ['P0',
+                 'hyam',
+                 'hybm',
+                 'hyai',
+                 'hybi',
+                 'AREA',
+                 'ilev',
+                 'PS1DRY',
+                 'PS1WET',
+                 'TMPU1',
+                 'SPHU1',
+                 'StatePSC',
+                 'lon_bnds',
+                 'lat_bnds'
+                 ],
+                errors='ignore'
+            )
+        else:
+            renames = {
+                'DELP_DRY': 'Met_DELPDRY',
+                'BXHEIGHT': 'Met_BXHEIGHT',
+                'TropLev': 'Met_TropLev',
+                'DryDepNitrogen': 'Chem_DryDepNitrogen',
+                'WetDepNitrogen': 'Chem_WetDepNitrogen',
+                'H2O2AfterChem': 'Chem_H2O2AfterChem',
+                'SO2AfterChem': 'Chem_SO2AfterChem',
+                'KPPHvalue': 'Chem_KPPHvalue'
+            }
+            data_vars = list(dset.data_vars)
+            new_renames = renames.copy()
+            for items in renames.items():
+                if items[0] not in data_vars:
+                    del(new_renames[items[0]])
+            dset = dset.rename(new_renames)
 
-    if towards_gchp:
-        dset = dset.rename(
-            {name: name.replace('Met_', '', 1).replace('Chem_', '', 1)
-             for name in list(dset.data_vars)
-             if name.startswith('Met_') or name.startswith('Chem_')})
-        if 'DELPDRY' in list(dset.data_vars):
-            dset = dset.rename({'DELPDRY': 'DELP_DRY'})
-        dset = dset.drop_vars(
-            ['P0',
-             'hyam',
-             'hybm',
-             'hyai',
-             'hybi',
-             'AREA',
-             'ilev',
-             'PS1DRY',
-             'PS1WET',
-             'TMPU1',
-             'SPHU1',
-             'StatePSC'],
-            errors='ignore'
-        )
-    else:
-        renames = {
-            'DELP_DRY': 'Met_DELPDRY',
-            'BXHEIGHT': 'Met_BXHEIGHT',
-            'TropLev': 'Met_TropLev',
-            'DryDepNitrogen': 'Chem_DryDepNitrogen',
-            'WetDepNitrogen': 'Chem_WetDepNitrogen',
-            'H2O2AfterChem': 'Chem_H2O2AfterChem',
-            'SO2AfterChem': 'Chem_SO2AfterChem',
-            'KPPHvalue': 'Chem_KPPHvalue'
-        }
-        data_vars = list(dset.data_vars)
-        new_renames = renames.copy()
-        for key in renames.keys():
-            if key not in data_vars:
-                del(new_renames[key])
-        dset = dset.rename(new_renames)
-
-    return rename_restart_variables(dset, towards_gchp=towards_gchp)
+        return rename_restart_variables(dset, towards_gchp=towards_gchp)
 
 
 def main():
