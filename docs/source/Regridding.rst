@@ -70,7 +70,7 @@ The syntax of :code:`file_regrid` is as follows:
        Regrids an input file to a new horizontal grid specification
        and saves it as a new file.
        """
-s
+
 gcpy.file_regrid required arguments:
 ------------------------------------
 
