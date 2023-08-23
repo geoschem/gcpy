@@ -2,11 +2,12 @@
 Contains functions to make sure that data files to be read by
 HEMCO adhere to the COARDS netCDF conventions.
 """
+from os.path import join
+from copy import deepcopy as dc
 import xarray as xr
 import numpy as np
 import pandas as pd
-from copy import deepcopy as dc
-from os.path import join
+from gcpy.util import verify_variable_type
 
 
 def format_hemco_dimensions(
@@ -60,8 +61,7 @@ def format_hemco_dimensions(
             set to be coards/HEMCO compliant.
     """
     # Require that dset is an xarray Dataset object
-    if not isinstance(dset, xr.Dataset):
-        raise TypeError("The dset argument must be an xarray Dataset.")
+    verify_variable_type(dset, xr.Dataset)
 
     # Check that latitude and longitude are found in the dataset
     ## First force all dimension names to be lowercase:
@@ -104,6 +104,8 @@ def _update_variable_attributes(
         var_attrs : dict
            Modified dictionary of variable attributes
     """
+    verify_variable_type(var_attrs, dict)
+    verify_variable_type(coards_attrs, dict)
 
     # Test if each COARDS-conforming attribute is
     # present in the list of variable attributes.
@@ -201,9 +203,9 @@ def _format_time(
         # consistent with GCHP requirements
         new_start_time = pd.to_datetime(dset["time"][0].values)
         new_start_time = new_start_time.strftime("%Y-%m-%d %H:%M:%S")
-        print(f"Updating the reference start time from")
+        print("Updating the reference start time from")
         print(f"{start_time} to {new_start_time}")
-        print(f"so that time(0) = 0, consistent with GCHP requirements.")
+        print("so that time(0) = 0, consistent with GCHP requirements.")
         start_time = new_start_time
 
     # Now check that time is a monotonically increasing dimension
@@ -225,7 +227,13 @@ def _format_time(
     return dset
 
 
-def _format_lev(dset, lev_long_name, lev_units, lev_formula_terms, gchp):
+def _format_lev(
+        dset,
+        lev_long_name,
+        lev_units,
+        lev_formula_terms,
+        gchp
+):
     '''
     Formats the level dimension for COARDS compliance.
     See define_HEMCO_dimensions for argument listings.
@@ -240,11 +248,13 @@ def _format_lev(dset, lev_long_name, lev_units, lev_formula_terms, gchp):
     # formula are included.
     if lev_formula_terms is not None:
         terms = lev_formula_terms.split(": ")
-        terms = [t for i, t in enumerate(terms) if i % 2 == 1]
-        for t in terms:
-            if t not in dset.data_vars.keys():
-                raise ValueError(f"{t} is in lev_formula_terms and could \
-                                    not be found.")
+        terms = [term for i, term in enumerate(terms) if i % 2 == 1]
+        for term in terms:
+            if term not in dset.data_vars.keys():
+                raise ValueError(
+                    f"{term} is in lev_formula_terms and could \
+                    not be found."
+                )
 
     # If unit is level, require that the levels are integers
     if lev_units == "level" and \
@@ -271,9 +281,9 @@ def _format_lev(dset, lev_long_name, lev_units, lev_formula_terms, gchp):
         }
     )
     if lev_formula_terms is not None:
-         dset["lev"].attrs.update({
-             "formula_terms" : lev_formula_terms
-         })
+        dset["lev"].attrs.update({
+            "formula_terms" : lev_formula_terms
+        })
 
     return dset
 
@@ -329,7 +339,7 @@ def format_hemco_variable(
             A required HEMCO attribute giving the units of var. See
             https://hemco.readthedocs.io/en/stable/hco-ref-guide/input-file-format.html
             for more information.
-        kwargs: dictionary
+        **kwargs : dict
             Any other attributes wanted for the variable.
 
     Returns:
@@ -337,8 +347,25 @@ def format_hemco_variable(
             An updated version of dset with variable attributes
             set to be COARDS/HEMCO compliant.
     """
-    dset[var].attrs = {"long_name" : long_name, "units" : units,
-                       **kwargs}
+    verify_variable_type(dset, xr.Dataset)
+    verify_variable_type(var, str)
+    verify_variable_type(long_name, str)
+    verify_variable_type(units, str)
+
+    # Add extra attributes if passed via **kwargs
+    if len(kwargs) != 0:
+        for (_, att_dict) in kwargs.items():
+            dset[var].attrs.update(att_dict)
+
+    # Update variable attributes to be COARDS-conforming
+    # without clobbering any pre-existing attributes
+    dset[var].attrs = _update_variable_attributes(
+        dset[var].attrs,
+        coards_attrs={
+            "long_name" : long_name,
+            "units" : units
+        }
+    )
     return dset
 
 
@@ -368,6 +395,10 @@ def save_hemco_netcdf(
             Any other attributes to be passed to the xarray
             to_netcdf function.
     """
+    verify_variable_type(dset, xr.Dataset)
+    verify_variable_type(save_dir, str)
+    verify_variable_type(save_name, str)
+
     # Check that the save_name endset in .nc
     if save_name.split(".")[-1][:2] != "nc":
         save_name = f"{save_name}.nc"
@@ -388,8 +419,12 @@ def save_hemco_netcdf(
     var.update(coord)
 
     # Save out
-    dset.to_netcdf(join(save_dir, save_name), encoding=var,
-                 unlimited_dims=["time"], **kwargs)
+    dset.to_netcdf(
+        join(save_dir, save_name),
+        encoding=var,
+        unlimited_dims=["time"],
+        **kwargs
+    )
 
     print("-"*70)
     print("Saved to", join(save_dir, save_name))
