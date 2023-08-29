@@ -349,7 +349,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCC vs. GCC concentration plots %%%")
 
             # Only plot concentration categories for TransportTracers
-            restrict_cats = ["RnPbBeTracers", "PassiveTracers"]
+            restrict_cats = ["RnPbBeTracers", "TransportTracers"]
 
             # --------------------------------------------------------------
             # GCC vs GCC species concentration plots: Annual mean
@@ -629,7 +629,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCC concentration plots %%%")
 
             # Only plot concentration categories for TransportTracers
-            restrict_cats = ["RnPbBeTracers", "PassiveTracers"]
+            restrict_cats = ["RnPbBeTracers", "TransportTracers"]
 
             # --------------------------------------------------------------
             # GCHP vs GCC species concentration plots: Annual Mean
@@ -889,7 +889,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCHP concentration plots %%%")
 
             # Only plot concentration categories for TransportTracers
-            restrict_cats = ["RnPbBeTracers", "PassiveTracers"]
+            restrict_cats = ["RnPbBeTracers", "TransportTracers"]
 
             # --------------------------------------------------------------
             # GCHP vs GCHP species concentration plots: Annual Mean

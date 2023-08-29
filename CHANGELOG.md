@@ -33,7 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated badge links in `README.md`
 - Construct ops budget table filename without using the `label` argument
 - Updated species_database.yml for consistency with GEOS-Chem 14.2.0
-- Renamed TransportTracers species in `benchmark_categories.yml` and in documentation
+- Renamed TransportTracers species in `benchmark_categories.yml`, `run_1yr_tt_benchmark.py`, and in documentation
 - YAML files in `benchmark/` have been moved to `benchmark/config`
 - Models vs. O3 obs plots are now arranged by site latitude from north to south
 - Routine `print_totals` now prints small and/or large numbers in scientific notation
