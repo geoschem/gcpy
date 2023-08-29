@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new routine `format_number_for_table` in `util.py`
 - Added BrSALA and BrSALC to `emission_species.yml`
 - Added `ENCODING = "UTF-8"` to `gcpy/constants.py`
+- Added statement `from dask.array import Array as DaskArray` in `gcpy plot.py`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -46,6 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `main()` routine to `gcpy/file_regrid.py`; Also added updates suggested by Pylint
 - Fixed broken regridding code in `gcpy/file_regrid.py`; also refactored for clarity
 - Rewrote `Regridding.rst` page; Confirmed that regridding examples work properly
+- Now allow `plot_val` to be of type `dask.array.Array` in `plot.py` routines `six_plot` and `single_panel`
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
