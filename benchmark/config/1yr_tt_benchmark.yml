@@ -112,9 +112,10 @@ options:
     ste_table: True
     cons_table: True
   #
-  # n_cores: Specify the number of cores to use:
-  # -1: Use all available cores
-  # -N: Use N cores
+  # n_cores: Specify the number of cores to use.
+  # -1: Use $OMP_NUM_THREADS         cores
+  # -2: Use $OMP_NUM_THREADS - 1     cores
+  # -N: Use $OMP_NUM_THREADS - (N-1) cores
   #  1: Disable parallelization (use a single core)
   #
   n_cores: -1
