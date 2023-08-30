@@ -8,10 +8,10 @@ Calling sequence:
 """
 
 # Imports
-import gcpy.constants as gcon
+import warnings
 import xarray as xr
 from xarray.coding.variables import SerializationWarning
-import warnings
+from gcpy import constants
 
 # Suppress harmless run-time warnings (mostly about underflow or NaNs)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -24,7 +24,7 @@ def main():
     """
 
     # Data vars to skip
-    skip_vars = gcon.skip_these_vars
+    skip_vars = constants.skip_these_vars
 
     # List of dates (EDIT accordingly)
     file_list = [
@@ -48,39 +48,41 @@ def main():
     with xr.set_options(keep_attrs=True):
 
         # Loop over dates
-        for f in file_list:
+        for file_name in file_list:
 
             # Input and output files
-            infile = '../' + f
-            outfile = f
+            infile = '../' + file_name
+            outfile = file_name
 
             print("Creating " + outfile)
 
             # Open input file
-            ds = xr.open_dataset(infile, drop_variables=skip_vars)
+            dset = xr.open_dataset(infile, drop_variables=skip_vars)
 
             # Create a new DataArray from a given species (EDIT ACCORDINGLY)
             if "GCHP" in infile:
-                dr = ds["SPC_ETO"]
-                dr.name = "SPC_ETOO"
+                darr = dset["SPC_ETO"]
+                darr.name = "SPC_ETOO"
             else:
-                dr = ds["SpeciesRst_ETO"]
-                dr.name = "SpeciesRst_ETOO"
+                darr = dset["SpeciesRst_ETO"]
+                darr.name = "SpeciesRst_ETOO"
 
             # Update attributes (EDIT ACCORDINGLY)
-            dr.attrs["FullName"] = "peroxy radical from ethene"
-            dr.attrs["Is_Gas"] = "true"
-            dr.attrs["long_name"] = "Dry mixing ratio of species ETOO"
-            dr.attrs["MW_g"] = 77.06
+            darr.attrs["FullName"] = "peroxy radical from ethene"
+            darr.attrs["Is_Gas"] = "true"
+            darr.attrs["long_name"] = "Dry mixing ratio of species ETOO"
+            darr.attrs["MW_g"] = 77.06
 
             # Merge the new DataArray into the Dataset
-            ds = xr.merge([ds, dr], compat="override")
+            dset = xr.merge([dset, darr], compat="override")
 
             # Create a new file
-            ds.to_netcdf(outfile)
+            dset.to_netcdf(outfile)
 
-            # Free memory by setting ds to a null dataset
-            ds = xr.Dataset()
+            # Free memory by setting dset to a null dataset
+            dset = xr.Dataset()
 
+
+# Only execute when we run as a standalone script
 if __name__ == "__main__":
     main()

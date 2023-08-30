@@ -17,12 +17,12 @@ Remarks:
 '''
 
 # Imports
-import gcpy.constants as gcon
 import os
+import warnings
 import numpy as np
 import xarray as xr
 from xarray.coding.variables import SerializationWarning
-import warnings
+from gcpy import constants
 
 # Suppress harmless run-time warnings (mostly about underflow or NaNs)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -55,25 +55,25 @@ def find_files_in_dir(path, substrs):
 
     # Walk through the given data directory.  Then for each file found,
     # add it to file_list if it matches text in search_list.
-    for root, directory, files in os.walk(path):
-        for f in files:
-            for s in substrs:
-                if s in f:
-                    file_list.append(os.path.join(root, f))
+    for root, _, files in os.walk(path):
+        for file_name in files:
+            for sub_str in substrs:
+                if sub_str in file_name:
+                    file_list.append(os.path.join(root, file_name))
 
     # Return an alphabetically sorted list of files
     file_list.sort()
     return file_list
 
 
-def replace_nans_with_zeroes(ds, verbose=True):
+def replace_nans_with_zeroes(dset, verbose=True):
     '''
     Replaces NaN values with zeroes for each variable
     within an an xarray Dataset.
 
     Args:
     ----
-        ds : xarray Dataset
+        dset : xarray Dataset
             The input dataset, containing one or more data variables.
 
     Keyword Args (optional):
@@ -88,7 +88,7 @@ def replace_nans_with_zeroes(ds, verbose=True):
     with xr.set_options(keep_attrs=True):
 
         # Loop over all variables in the Dataset
-        for v in ds.data_vars.keys():
+        for var in dset.data_vars.keys():
 
             # OPTIONAL STEP:
             # Xarray will try convert missing values to NaN's,
@@ -99,18 +99,21 @@ def replace_nans_with_zeroes(ds, verbose=True):
             # replace these with zeros, so that NaNs won't
             # get read into atmospheric models, etc.
             #
-            # NOTE: ds[v].values converts to a numpy ndarray,
+            # NOTE: dset[v].values converts to a numpy ndarray,
             # so that you can use numpy functions.
-            ds[v].where(np.isnan(ds[v].values), other=0.0, drop=False)
+            dset[var].where(
+                np.isnan(dset[var].values),
+                other=0.0,
+                drop=False
+            )
 
             # OPTIONAL: Print min & max for each variable
             # Comment out if you wish
             if verbose:
-                print('{} : {} {}'.format(
-                    v, np.min(ds[v].values), np.max(ds[v].values)))
+                print(f"{var} : {np.min(dset[var].values)} {np.max(dset[var].values)}")
 
     # Return the modified Datast
-    return ds
+    return dset
 
 
 def main():
@@ -130,24 +133,24 @@ def main():
     # These are mostly variables introduced into GCHP with the MAPL v1.0.0
     # update.  These variables contain either repeated or non-standard
     # dimensions that can cause problems in xarray when combining datasets.
-    skip_vars = gcon.skip_these_vars
-    
+    skip_vars = constants.skip_these_vars
+
     # Look for all the netCDF files in the path
     file_list = find_files_in_dir(path_to_dir, substrs)
 
     # Return a single xarray Dataset containing data from all files
     # NOTE: Need to add combine="nested" for xarray 0.15 and higher
-    v = xr.__version__.split(".")
-    if int(v[0]) == 0 and int(v[1]) >= 15: 
-        ds = xr.open_mfdataset(file_list,
+    var = xr.__version__.split(".")
+    if int(var[0]) == 0 and int(var[1]) >= 15:
+        dset = xr.open_mfdataset(file_list,
                                  drop_variables=skip_vars,
                                  combine="nested")
     else:
-        ds = xr.open_mfdataset(file_list,
+        dset = xr.open_mfdataset(file_list,
                                  drop_variables=skip_vars)
 
     # Replace NaN values with zeroes
-    ds = replace_nans_with_zeroes(ds, verbose=True)
+    dset = replace_nans_with_zeroes(dset, verbose=True)
 
     # Specify the path and filename for the concatenated data
     # (YOU CAN EDIT THIS)
@@ -155,7 +158,9 @@ def main():
     outfile = os.path.join(outdir, 'my_concatenated_output_file.nc')
 
     # Write concatenated data to a netCDF file
-    ds.to_netcdf(outfile)
+    dset.to_netcdf(outfile)
 
+
+# Only execute when running as a standalone script
 if __name__ == "__main__":
     main()

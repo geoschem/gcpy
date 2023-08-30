@@ -11,10 +11,9 @@ import sys
 import warnings
 import numpy as np
 import xarray as xr
-from yaml import load as yaml_load_file
-import gcpy.benchmark as bmk
-import gcpy.constants as constants
-import gcpy.util as util
+from gcpy import plot
+from gcpy import util
+from gcpy.constants import skip_these_vars
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -84,21 +83,21 @@ def read_data(config):
     try:
         refdata = xr.open_dataset(
             ref_file,
-            drop_variables=constants.skip_these_vars
+            drop_variables=skip_these_vars
         )
-    except Exception:
+    except Exception as exc:
         msg = "Error reading " + ref_file
-        raise Exception(msg)
+        raise Exception(msg) from exc
 
     # Read Dev data
     try:
         devdata = xr.open_dataset(
             dev_file,
-            drop_variables=constants.skip_these_vars
+            drop_variables=skip_these_vars
         )
-    except Exception:
+    except Exception as exc:
         msg = "Error reading " + dev_file
-        raise Exception(msg)
+        raise Exception(msg) from exc
 
     # Define dictionary for return
     data = {
@@ -135,7 +134,7 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
     if any(x in config["options"]["totals_and_diffs"]["diff_type"] \
            for x in ["percent", "pctdiff", "%"]):
         do_percent_diff = True
-        
+
     # Determine if we will print to a file
     do_file = len(filename) > 0
     if not do_file and not do_screen:
@@ -148,7 +147,7 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
             config["paths"]["plots_dir"],
             filename
         )
-        f = open(pathname, 'w')
+        ofile = open(pathname, 'w', encoding="UTF-8")
 
 
     # Percent threshold for reporting differences
@@ -162,7 +161,7 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
             diff_label = f"|percent difference| > {threshold} %"
         line = f"... Only showing variables with {diff_label}"
         if do_file:
-            print(line, file=f)
+            print(line, file=ofile)
         else:
             print(line)
 
@@ -177,20 +176,20 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
         diff_label
     )
     if do_file:
-        print(line, file=f)
+        print(line, file=ofile)
     if do_screen:
         print(line)
 
     # Always print nonzero differences, but only print zero differences
     # if the configuration option "skip_zero_diffs" is False.
-    for v in varlist:
+    for var in varlist:
 
         # Absolute difference
-        refsum = np.sum(refdata[v].values)
-        devsum = np.sum(devdata[v].values)
+        refsum = np.sum(refdata[var].values)
+        devsum = np.sum(devdata[var].values)
 
         # Absolute difference
-        absdiff = np.sum(devdata[v].values - refdata[v].values)
+        absdiff = np.sum(devdata[var].values - refdata[var].values)
 
         # Compute percent difference if needed
         # otherwise we'll use the absolute difference for plotting
@@ -202,7 +201,7 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
 
         # Line to be printed
         line = "{} : {} | {} | {} ".format(
-            v.ljust(20),
+            var.ljust(20),
             str(refsum).ljust(22),
             str(devsum).ljust(22),
             diff
@@ -211,7 +210,7 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
         # Skip small values
         if np.abs(diff) > threshold:
             if do_file:
-                print(line, file=f)
+                print(line, file=ofile)
             if do_screen:
                 print(line)
 
@@ -219,13 +218,13 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
         else:
             if not config["options"]["totals_and_diffs"]["skip_small_diffs"]:
                 if do_file:
-                    print(line, file=f)
+                    print(line, file=ofile)
                 if do_screen:
                     print(line)
 
     # Close file
     if do_file:
-        f.close()
+        ofile.close()
 
 
 def compare_data(config, data):
@@ -269,7 +268,7 @@ def compare_data(config, data):
             config["paths"]["plots_dir"],
             config["options"]["level_plot"]["pdfname"]
         )
-        bmk.compare_single_level(
+        plot.compare_single_level(
             refdata,
             config["data"]["ref"]["label"],
             devdata,
@@ -290,7 +289,7 @@ def compare_data(config, data):
             config["paths"]["plots_dir"],
             config["options"]["zonal_mean"]["pdfname"]
         )
-        bmk.compare_zonal_mean(
+        plot.compare_zonal_mean(
             refdata,
             config["data"]["ref"]["label"],
             devdata,
@@ -315,15 +314,15 @@ def compare_data(config, data):
         )
 
 
-def main():
+def main(argv):
     """
     Main program, reads data and calls compare_data to make plots.
     """
 
     # Take the config file as the 2nd argument (or use a default)
     # NOTE: sys.argv[0] is always the program name!
-    if len(sys.argv) == 2:
-        config_file = sys.argv[1]
+    if len(argv) == 2:
+        config_file = argv[1]
     else:
         config_file = "compare_diags.yml"
 
@@ -337,7 +336,6 @@ def main():
     compare_data(config, read_data(config))
 
 
+# Only execute when we run as a standalone script
 if __name__ == "__main__":
-    main()
-
-    
+    main(sys.argv)

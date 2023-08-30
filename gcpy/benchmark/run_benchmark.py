@@ -46,12 +46,14 @@ import warnings
 from datetime import datetime
 import numpy as np
 from gcpy.util import get_filepath, read_config_file
-import gcpy.ste_flux as ste
-import gcpy.oh_metrics as oh
-import gcpy.benchmark as bmk
+from gcpy import ste_flux as ste
+from gcpy import oh_metrics as oh
+from gcpy import benchmark_funcs as bmk
 from gcpy.date_time import add_months, is_full_year
-from modules.run_1yr_fullchem_benchmark import run_benchmark as run_1yr_benchmark
-from modules.run_1yr_tt_benchmark import run_benchmark as run_1yr_tt_benchmark
+from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
+    import run_benchmark as run_1yr_benchmark
+from gcpy.benchmark.modules.run_1yr_tt_benchmark \
+    import run_benchmark as run_1yr_tt_benchmark
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -1591,15 +1593,15 @@ def run_benchmark_default(config):
     print("\n%%%% All requested benchmark plots/tables created! %%%%")
 
 
-def main():
+def main(argv):
     """
     Driver program. Determines which benchmark script script to call
     for 1-hour, 1-day, 1-month, or 1-year benchmarks.
     """
-    config_filename = sys.argv[1] if len(sys.argv) == 2 else "1mo_benchmark.yml"
+    config_filename = argv[1] if len(argv) == 2 else "1mo_benchmark.yml"
     config = read_config_file(config_filename)
     choose_benchmark_type(config)
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv)

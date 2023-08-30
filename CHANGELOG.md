@@ -26,6 +26,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new routine `format_number_for_table` in `util.py`
 - Added BrSALA and BrSALC to `emission_species.yml`
 - Added `options:n_cores` to all benchmark YAML config files
+- Added `__init__.py` files in subfolders of `gcpy/gcpy`
+- `gcpy/benchmark/modules/*.py` scripts are now chmod 644
 - Added `ENCODING = "UTF-8"` to `gcpy/constants.py`
 - Added statement `from dask.array import Array as DaskArray` in `gcpy plot.py`
 
@@ -42,6 +44,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Truncate names in benchmark & emissions tables to improve readability
 - Add TransportTracers species names to `gcpy/emissions_*.yml` files
 - Now pass `n_job=config["options"]["n_cores"]` to benchmark plotting routines
+- Script `benchmark.py` to `benchmark_funcs.py` to remove a name collision
+- Folder `gcpy/benchmark` is now `gcpy/gcpy/benchmark`
+- Folder `benchmark/modules` is now `gcpy/gcpy/benchmark/modules`
+- Folder `gcpy/examples` is now `gcpy/gcpy/examples`
+- Pass `sys.argv` to the `main()` routine of `run_benchmark.py`,` compare_diags.py`
 - Updated `docs/environment_files/environment.yml` for MambaForge (also added `gridspec`)
 - Now use `pypdf` instead of `PyPDF2` in `plot.py` and `util.py`
 - Added coding suggestions made by `pylint` where possible
