@@ -388,7 +388,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmkf.make_benchmark_conc_plots(
+            bmk.make_benchmark_conc_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
