@@ -88,7 +88,7 @@ def six_plot(
         all_nan: bool
             Set this flag to True if the data to be plotted consist
             only of NaNs
-        plot_vals: xarray.DataArray, numpy.ndarray, or dask.array.Array
+        plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
             Single data variable GEOS-Chem output to plot
         grid: dict
             Dictionary mapping plot_val to plottable coordinates
