@@ -402,6 +402,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -427,6 +428,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -469,6 +471,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -494,6 +497,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -526,6 +530,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dev_interval=sec_per_month_dev,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -563,6 +568,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -583,6 +589,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -620,6 +627,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -640,6 +648,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -678,11 +687,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     spcdb_dir=spcdb_dir,
                 )
 
-            # Run in parallel
-            results = Parallel(n_jobs=-1)(
-                delayed(gcc_vs_gcc_mass_table)(mon) \
-                for mon in range(bmk_n_months)
-            )
+            # Create tables in parallel
+            # Turn off parallelization if n_jobs==1
+            if n_jobs != 1:
+                results = Parallel(n_jobs=config["options"]["n_cores"])(
+                    delayed(gcc_vs_gcc_mass_table)(mon)
+                    for mon in range(bmk_n_months)
+                )
+            else:
+                for mon in range(bmk_n_months):
+                    results = gcc_vs_gcc_mass_table(mon)
 
         # ==================================================================
         # GCC vs GCC operations budgets tables
@@ -720,11 +734,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dst=gcc_vs_gcc_tablesdir,
                 )
 
-            # Run in parallel
-            results = Parallel(n_jobs=-1)(
-                delayed(gcc_vs_gcc_ops_budg)(mon) \
-                for mon in range(bmk_n_months)
-            )
+            # Create tables in parallel
+            # Turn off parallelization if n_jobs==1
+            if n_jobs != 1:
+                results = Parallel(n_jobs=config["options"]["n_cores"])(
+                    delayed(gcc_vs_gcc_ops_budg)(mon) \
+                    for mon in range(bmk_n_months)
+                )
+            else:
+                for mon in range(bmk_n_months):
+                    results = gcc_vs_gcc_ops_budg(mon)
 
         # ==================================================================
         # GCC vs GCC aerosols budgets/burdens tables
@@ -923,6 +942,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -948,6 +968,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==============================================================
@@ -991,6 +1012,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1016,6 +1038,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1088,6 +1111,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1108,6 +1132,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1146,6 +1171,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1166,6 +1192,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1221,10 +1248,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dev_met_extra=devareapath
                 )
 
-            results = Parallel(n_jobs=-1)(
-                delayed(gchp_vs_gcc_mass_table)(mon) \
-                for mon in range(bmk_n_months)
-            )
+            # Create tables in parallel
+            # Turn off parallelization if n_jobs==1
+            if n_jobs != 1:
+                results = Parallel(n_jobs=config["options"]["n_cores"])(
+                    delayed(gchp_vs_gcc_mass_table)(mon) \
+                    for mon in range(bmk_n_months)
+                )
+            else:
+                for mon in range(bmk_n_months):
+                    results = gchp_vs_gcc_mass_table(mon)
 
         # ==================================================================
         # GCHP vs GCC operations budgets tables
@@ -1271,10 +1304,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dst=gchp_vs_gcc_tablesdir,
                 )
 
-            results = Parallel(n_jobs=-1)(
-                delayed(gchp_vs_gcc_ops_budg)(mon) \
-                for mon in range(bmk_n_months)
-            )
+            # Create tables in parallel
+            # Turn off parallelization if n_jobs==1
+            if n_jobs != 1:
+                results = Parallel(n_jobs=config["options"]["n_cores"])(
+                    delayed(gchp_vs_gcc_ops_budg)(mon) \
+                    for mon in range(bmk_n_months)
+                )
+            else:
+                for mon in range(bmk_n_months):
+                    results = gchp_vs_gcc_ops_budg(mon)
 
         # ==================================================================
         # GCHP vs GCC aerosol budgets and burdens tables
@@ -1483,6 +1522,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "plot_options"]["by_spc_cat"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1509,6 +1549,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1554,6 +1595,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1580,6 +1622,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1656,6 +1699,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1677,6 +1721,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1717,6 +1762,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -1738,6 +1784,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
         # ==================================================================
@@ -1809,11 +1856,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dev_met_extra=devareapath
                 )
 
-            # Run in parallel
-            results = Parallel(n_jobs=-1)(
-                delayed(gchp_vs_gchp_mass_table)(mon) \
-                for mon in range(bmk_n_months)
-            )
+            # Create tables in parallel
+            # Turn off parallelization if n_jobs==1
+            if n_jobs != 1:
+                results = Parallel(n_jobs=config["options"]["n_cores"])(
+                    delayed(gchp_vs_gchp_mass_table)(mon) \
+                    for mon in range(bmk_n_months)
+                )
+            else:
+                for mon in range(bmk_n_months):
+                    results = gchp_vs_gchp_mass_table(mon)
 
         # ==================================================================
         # GCHP vs GCHP operations budgets tables
@@ -1862,11 +1914,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     dst=gchp_vs_gchp_tablesdir,
                 )
 
-            # Run in parallel
-            results = Parallel(n_jobs=-1)(
-                delayed(gchp_vs_gchp_ops_budg)(mon) \
-                for mon in range(bmk_n_months)
-            )
+            # Create tables in parallel
+            # Turn off parallelization if n_jobs==1
+            if n_jobs != 1:
+                results = Parallel(n_jobs=config["options"]["n_cores"])(
+                    delayed(gchp_vs_gchp_ops_budg)(mon) \
+                    for mon in range(bmk_n_months)
+                )
+            else:
+                for mon in range(bmk_n_months):
+                    results = gchp_vs_gchp_ops_budg(mon)
 
         # ==================================================================
         # GCHP vs GCHP aerosol budgets and burdens tables
@@ -2050,6 +2107,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 second_dev=gchp_dev,
                 cats_in_ugm3=None,
                 spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
             )
 
             # --------------------------------------------------------------
@@ -2077,6 +2135,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     second_dev=gchp_dev[mon_ind],
                     cats_in_ugm3=None,
                     spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
                 )
 
     # ==================================================================
