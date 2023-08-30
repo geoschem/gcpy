@@ -11,6 +11,7 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
 import numpy as np
+from dask.array import Array as DaskArray
 import xarray as xr
 import cartopy.crs as ccrs
 from matplotlib.backends.backend_pdf import PdfPages
@@ -87,8 +88,8 @@ def six_plot(
         all_nan: bool
             Set this flag to True if the data to be plotted consist
             only of NaNs
-        plot_val: xarray DataArray or numpy.ndarray
-            Single variable GEOS-Chem output values to plot
+        plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
+            Single data variable GEOS-Chem output to plot
         grid: dict
             Dictionary mapping plot_val to plottable coordinates
         ax: matplotlib axes
@@ -167,7 +168,7 @@ def six_plot(
             or imshow() (Lat/Lon).
     """
     # TODO: Abstract six_plot and related routines out of plot.py
-    verify_variable_type(plot_val, (np.ndarray, xr.DataArray))
+    verify_variable_type(plot_val, (np.ndarray, xr.DataArray, DaskArray))
 
     # Compute the min & max values
     vmin, vmax = compute_vmin_vmax_for_plot(
@@ -1288,10 +1289,15 @@ def compare_single_level(
                 temp = minlon
                 minlon = maxlon
                 maxlon = temp
-            return ds_new.where(ds_new[lon_var] >= minlon, drop=True).\
-                where(ds_new[lon_var] <= maxlon, drop=True).\
-                where(ds_new[lat_var] >= minlat, drop=True).\
-                where(ds_new[lat_var] <= maxlat, drop=True)
+
+            # Add .compute() to force evaluation of ds_new[lon_var]
+            # See https://github.com/geoschem/gcpy/issues/254
+            # Also note: This may return as a dask.array.Array object
+            return ds_new.where(\
+                ds_new[lon_var].compute() >= minlon, drop=True).\
+                where(ds_new[lon_var].compute() <= maxlon, drop=True).\
+                where(ds_new[lat_var].compute() >= minlat, drop=True).\
+                where(ds_new[lat_var].compute() <= maxlat, drop=True)
 
         ds_ref_reg = get_extent_for_colors(
             ds_ref,
@@ -1624,6 +1630,7 @@ def compare_single_level(
         maxs = [vmax_ref, vmax_dev, vmax_abs]
 
         ratio_logs = [False, False, False, False, True, True]
+
         # Plot
         for i in range(6):
             six_plot(
@@ -2909,7 +2916,7 @@ def single_panel(
     Core plotting routine -- creates a single plot panel.
 
     Args:
-        plot_vals: xarray DataArray or numpy array
+        plot_vals: xarray.DataArray, numpy.ndarray, or dask.array.Array
             Single data variable GEOS-Chem output to plot
 
     Keyword Args (Optional):
@@ -3020,7 +3027,7 @@ def single_panel(
         plot: matplotlib plot
             Plot object created from input
     """
-    verify_variable_type(plot_vals, (xr.DataArray, np.ndarray))
+    verify_variable_type(plot_vals, (xr.DataArray, np.ndarray, DaskArray))
 
     # Create empty lists for keyword arguments
     if pres_range is None:
