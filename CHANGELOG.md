@@ -30,6 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `gcpy/benchmark/modules/*.py` scripts are now chmod 644
 - Added `ENCODING = "UTF-8"` to `gcpy/constants.py`
 - Added statement `from dask.array import Array as DaskArray` in `gcpy plot.py`
+- Added SLURM run script `gcpy/benchmark/benchmark_slurm.sh`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -71,6 +72,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Replaced `gcpy/benchmark/README` with `README.md`
 - Removed `gcpy_test_dir` option from `examples/diagnostics/compare_diags.*`
 - Removed `docs/environment_files/gchp_regridding.yml` environment file
+- Removed `gcpy/gcpy/benchmark/plot_driver.sh`
 
 ## [1.3.3] -- 2023-03-09
 ### Added
