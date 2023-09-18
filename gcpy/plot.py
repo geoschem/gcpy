@@ -374,6 +374,8 @@ def compute_vmin_vmax_for_plot(
             [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
         )
         vmin = 1.0 / vmax
+        if vmin > vmax:
+            vmin, vmax = vmax, vmin
         verbose_print(verbose, rowcol, vmin, vmax)
         return vmin, vmax
 
@@ -513,10 +515,21 @@ def colorbar_ticks_and_format(
         # Dynamic range ratio subplot
         if subplot in "dyn_ratio":
 
-            # Set ticks manually and use ScalarFormatter for
-            # data in the range of 0.1 .. 10.0.  Use avg(vmax,1)
-            # and avg(vmin,1) for the 2nd & 4th tick locations.
-            # Maybe find a better method later on.
+            # If the ratio is in the range 0.999 and 1.001, then
+            # place tickmarks at [vmin, 1, vmax].  This should help
+            # to avoid the tick labels from running together.
+            if vmin > 0.999 and vmax < 1.001:
+                pos = [vmin, 1.0, vmax]
+                cbar.set_ticks(pos)
+                cbar.formatter = mticker.ScalarFormatter()
+                cbar.formatter.set_useOffset(False)
+                cbar.minorticks_off()
+                return cbar
+
+            # If the ratio is in the range 0.1 .. 10.0, then place
+            # tickmarks [vmin, avg(vmin,1), 1, avg(vmax,1), vmax].
+            # This should be good enough for most cases.  Perhaps
+            # think about implementing a better method later on.
             if vmin > 0.1 and vmax < 10.0:
                 pos = [vmin, (vmin+1.0)/2.0, 1.0, (vmax+1.0)/2.0, vmax]
                 cbar.set_ticks(pos)

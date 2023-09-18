@@ -31,6 +31,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `ENCODING = "UTF-8"` to `gcpy/constants.py`
 - Added statement `from dask.array import Array as DaskArray` in `gcpy plot.py`
 - Added SLURM run script `gcpy/benchmark/benchmark_slurm.sh`
+- Added `gcpy/gcpy_plot_style` style sheet for title and label default settings
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -59,11 +60,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Rewrote `Regridding.rst` page; Confirmed that regridding examples work properly
 - Now allow `plot_val` to be of type `dask.array.Array` in `plot.py` routines `six_plot` and `single_panel`
 - Now add `if` statements to turn of `Parallel()` commands when `n_jobs==1`.
+- Do not hardwire fontsize in `gcpy/plot.py`; get defaults from `gcpy_plot_style`
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
 - Fixed bug in transport tracer benchmark mass conservation table file write
 - Routine `create_display_name` now splits on only the first `_` in species & diag names
+- Prevent plot panels from overlapping in six-panel plots
+- Prevent colorbar tick labels from overlapping in dynamic-range ratio plots
 
 ### Removed
 - Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines
