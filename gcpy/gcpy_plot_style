@@ -1,0 +1,15 @@
+# ======================================================================
+# Customizable style sheet to set plot parameters such as
+# font sizes of axes labels, tick marks, etc.
+#
+# Default values will be applied for settings not explicitly listed
+# below. For more information, see the Matplotlib documentation at:
+# https://matplotlib.org/stable/users/explain/customizing.html
+# ======================================================================
+
+figure.titlesize   : 25         # Top-of-plot title fontsize
+figure.autolayout  : false      # Don't use tight_layout()
+axes.titlesize     : medium     # Subplot title size
+axes.titlelocation : center     # Subplot title location
+axes.titleweight   : medium     # Subplot title weight
+axes.labelsize     : small      # Subplot X and Y label size
