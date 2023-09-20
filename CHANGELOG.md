@@ -61,6 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Now allow `plot_val` to be of type `dask.array.Array` in `plot.py` routines `six_plot` and `single_panel`
 - Now add `if` statements to turn of `Parallel()` commands when `n_jobs==1`.
 - Do not hardwire fontsize in `gcpy/plot.py`; get defaults from `gcpy_plot_style`
+- `plot.py` has been split up into smaller modules in the `gcpy/plot` folder
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
