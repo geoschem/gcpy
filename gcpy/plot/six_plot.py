@@ -1,5 +1,6 @@
 """
 Creates a six-panel comparison plot.
+
 Row 1: Model output (Ref version, Dev version)
 Row 2: Abs difference (dynamic range and restricted range)
 Row 3: Ratio (dynamic range and restricted range)
@@ -7,8 +8,8 @@ Row 3: Ratio (dynamic range and restricted range)
 NOTE: For diff-of-diffs comparisons, Row 3 (Ratio) is replaced
 by Fractional Difference (dynamic range and restricted range).
 
-Also contains several helper routines that are used by other
-
+Also contains several helper routines that were split off
+from the gcpy/plot.py.
 """
 from matplotlib import ticker
 import matplotlib.pyplot as plt
@@ -68,58 +69,58 @@ def six_plot(
     -----
     subplot: str
         Type of plot to create (ref, dev, absolute difference or
-        fractional difference)
+        fractional difference).
     all_zero: bool
         Set this flag to True if the data to be plotted consist
-        only of zeros
+        only of zeros.
     all_nan: bool
         Set this flag to True if the data to be plotted consist
-        only of NaNs
+        only of NaNs.
     plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
-        Single data variable GEOS-Chem output to plot
+        Single data variable to plot.
     grid: dict
         Dictionary mapping plot_val to plottable coordinates
     axes: matplotlib.axes
         Axes object to plot information. Will create a new axes
         if none is passed.
     rowcol: tuple
-        Subplot position in overall Figure
+        Subplot position in overall Figure.
     title: str
         Title to print on axes
     comap: matplotlib Colormap
-        Colormap for plotting data values
+        Colormap for plotting data values.
     unit: str
-        Units of plotted data
+        Units of plotted data.
     extent: tuple (minlon, maxlon, minlat, maxlat)
         Describes minimum and maximum latitude and longitude of
-        input data
+        input data.
     masked_data: numpy array
-        Masked area for cubed-sphere plotting
+        Masked area for cubed-sphere plotting.
     other_all_nan: bool
         Set this flag to True if plotting ref/dev and the other
-        of ref/dev is all nan
+        of ref/dev is all nan.
     gridtype: str
-        "ll" for lat/lon or "cs" for cubed-sphere
+        "ll" for lat/lon or "cs" for cubed-sphere.
     vmins: list of float
         list of length 3 of minimum ref value, dev value,
-        and absdiff value
+        and absdiff value.
     vmaxs: list of float
         list of length 3 of maximum ref value, dev value,
-        and absdiff value
+        and absdiff value.
     use_cmap_RdBu: bool
         Set this flag to True to use a blue-white-red colormap
     match_cbar: bool
         Set this flag to True if you are plotting with the
-        same colorbar for ref and dev
+        same colorbar for ref and dev.
     verbose: bool
         Set this flag to True to enable informative printout.
     log_color_scale: bool
-        Set this flag to True to enable log-scale colormapping
+        Set this flag to True to enable log-scale colormapping.
 
     Keyword Args (optional):
     ------------------------
     pedge: numpy array
-        Edge pressures of grid cells in data to be plotted
+        Edge pressures of grid cells in data to be plotted.
         Default value: np.full((1,1), -1)
     pedge_ind: numpy array
         Indices where edge pressure values are within a given
@@ -127,22 +128,22 @@ def six_plot(
         Default value: np.full((1,1), -1)
     log_yaxis: bool
         Set this flag to True to enable log scaling of pressure
-        in zonal mean plots
+        in zonal mean plots.
         Default value: False
      xtick_positions: list of float
-         Locations of lat/lon or lon ticks on plot
+         Locations of lat/lon or lon ticks on plot.
          Default value: None
      xticklabels: list of str
-         Labels for lat/lon ticks
+         Labels for lat/lon ticks.
          Default value: None
      plot_type: str
-         Type of plot, either "single_level" or "zonal"mean"
+         Type of plot, either "single_level" or "zonal"mean".
          Default value: "single_level"
      ratio_log: bool
          Set this flag to True to enable log scaling for ratio plots
          Default value: False
      proj: cartopy projection
-         Projection for plotting data
+         Projection for plotting data.
          Default value: ccrs.PlateCarree()
      ll_plot_func: str
          Function to use for lat/lon single level plotting with
@@ -245,11 +246,11 @@ def verbose_print(verbose, rowcol, vmin, vmax):
     Args:
     -----
     verbose : bool
-       Toggles informative prrintout on (True) or off (False)
+       Toggles informative prrintout on (True) or off (False).
     rowcol : int
-       Subplot index
+       Subplot index.
     vmin, vmax : float
-       Minimum and maximum of data range
+       Minimum and maximum of data range.
     """
     if verbose:
         print(f"Subplot ({rowcol}) vmin, vmax: {vmin}, {vmax}")
@@ -274,7 +275,7 @@ def compute_vmin_vmax_for_plot(
     Args:
     -----
     plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
-        Single data variable GEOS-Chem output to plot
+        Single data variable to plot.
     subplot: str
         Subplot name (see routine six_panel_subplot_names)
     vmins: list of float
@@ -307,10 +308,10 @@ def compute_vmin_vmax_for_plot(
         Min and max values for this subplot of a 6-panel plot
     """
     # ==================================================================
-    # Ref or Dev subplots
+    # Get min and max values for Ref or Dev subplots
     # ==================================================================
     if subplot in ("ref", "dev"):
-        return vmin_vmax_for_ref_or_dev(
+        return vmin_vmax_for_ref_dev_plots(
             subplot,
             rowcol,
             vmins,
@@ -324,10 +325,10 @@ def compute_vmin_vmax_for_plot(
         )
 
     # ==================================================================
-    # Absdiff and Ratio subplots
+    # Get min and max values for Absdiff and Ratio subplots
     # ==================================================================
 
-    # All data is zero or NaN
+    # First check if all data is zero or NaN
     if all_zero:
         verbose_print(verbose, rowcol, 0, 0)
         return 0, 0
@@ -335,42 +336,30 @@ def compute_vmin_vmax_for_plot(
         verbose_print(verbose, rowcol, np.nan, np.nan)
         return np.nan, np.nan
 
-    # Absdiff (dynamic range) subplot
-    if subplot in "dyn_absdiff":
-        # Min and max of abs. diff, excluding NaNs
-        vmax = max(
-            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+    # Absdiff
+    if subplot in ("dyn_absdiff", "res_absdiff"):
+        return vmin_vmax_for_absdiff_plots(
+            plot_val,
+            subplot,
+            rowcol,
+            verbose=verbose
         )
-        verbose_print(verbose, rowcol, -vmax, vmax)
-        return -vmax, vmax
 
-    # Absdiff (restricted range) subplot
-    if subplot in "res_absdiff":
-        [pct5, pct95] = [
-            np.percentile(plot_val, 5),
-            np.percentile(plot_val, 95),
-        ]
-        vmax = np.max([np.abs(pct5), np.abs(pct95)])
-        verbose_print(verbose, rowcol, -vmax, vmax)
-        return -vmax, vmax
-
-    # Ratio (dynamic range) subplot)
-    if subplot in "dyn_ratio":
-        vmax = np.max(
-            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+    # Ratio
+    if subplot in ("dyn_ratio", "res_ratio"):
+        return vmin_vmax_for_ratio_plots(
+            plot_val,
+            subplot,
+            rowcol,
+            verbose=verbose
         )
-        vmin = 1.0 / vmax
-        if vmin > vmax:
-            vmin, vmax = vmax, vmin
-        verbose_print(verbose, rowcol, vmin, vmax)
-        return vmin, vmax
 
-    # Ratio (restricted range) subplot
-    verbose_print(verbose, rowcol, 0.5, 2.0)
-    return 0.5, 2.0
+    # Make sure the function returns a value.  This will avoid
+    # an "inconsistent-return-statements" warning from Pylint.
+    return None
 
 
-def vmin_vmax_for_ref_or_dev(
+def vmin_vmax_for_ref_dev_plots(
         subplot,
         rowcol,
         vmins,
@@ -383,15 +372,15 @@ def vmin_vmax_for_ref_or_dev(
         verbose=False,
 ):
     """
-    Returns the vmin and vmax values for the "ref" or "dev" subplot
-    of a six-panel plot.
+    Returns the vmin and vmax values for the "Ref" or "Dev"
+    subplots of a six-panel plot.
 
     Args:
     -----
     subplot: str
-        Subplot name (see routine six_panel_subplot_names)
+        Subplot name (see routine six_panel_subplot_names).
     rowcol : int
-        Subplot index
+        Subplot index.
     vmins: list of float
         [minimum ref value, minimum dev value, absdiff value]
     vmaxs: list of float
@@ -401,10 +390,10 @@ def vmin_vmax_for_ref_or_dev(
     -----------------------------
     all_zero: bool
         Indicates if the data consists of all zeros (True)
-        or not (False)
+        or not (False).
     all_nan: bool
         Indicates if the data consists of all NaN values (True)
-        or not (False)
+        or not (False).
     other_all_nan: bool
         Indicates if plotting ref/dev and the other of ref/dev contains
         all NaN values (True) or not (False).
@@ -419,7 +408,7 @@ def vmin_vmax_for_ref_or_dev(
     Returns:
     --------
     vmin, vmax : float
-        Min and max values for the "ref" or "dev" subplot.
+        Min and max values to plot.
     """
     #---------------------------------------------------------------
     # Data is all zero or Nan
@@ -469,6 +458,104 @@ def vmin_vmax_for_ref_or_dev(
         [vmin, vmax] = [vmins[2], vmaxs[2]]
     verbose_print(verbose, rowcol, vmin, vmax)
     return vmin, vmax
+
+
+def vmin_vmax_for_absdiff_plots(
+        plot_val,
+        subplot,
+        rowcol,
+        verbose=False,
+):
+    """
+    Returns the vmin and vmax values for the "Absolute Difference
+    (dynamic range)" or "Absolute Difference (restricted range)"
+    subplots of a of a six-panel plot.
+
+    Args:
+    -----
+    plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
+        Single data variable of GEOS-Chem output to plot.
+    subplot: str
+        Subplot name (see routine six_panel_subplot_names).
+    rowcol : int
+        Subplot index.
+
+    Keyword Arguments (optional):
+    -----------------------------
+    verbose: bool
+        Toggles informative printout on (True) or off (False).
+
+    Returns:
+    --------
+    vmin, vmax : float
+        Min and max values to plot.
+    """
+    # Absdiff (dynamic range) subplot: min & max (excluding NaNs)
+    if subplot in "dyn_absdiff":
+        vmax = max(
+            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+        )
+        verbose_print(verbose, rowcol, -vmax, vmax)
+        return -vmax, vmax
+
+    # Absdiff (restricted range) subplot
+    if subplot in "res_absdiff":
+        [pct5, pct95] = [
+            np.percentile(plot_val, 5),
+            np.percentile(plot_val, 95),
+        ]
+        vmax = np.max([np.abs(pct5), np.abs(pct95)])
+        verbose_print(verbose, rowcol, -vmax, vmax)
+        return -vmax, vmax
+
+    # Make sure the function returns a value.  This will avoid
+    # an "inconsistent-return-statements" warning from Pylint.
+    return None
+
+
+def vmin_vmax_for_ratio_plots(
+        plot_val,
+        subplot,
+        rowcol,
+        verbose=False,
+):
+    """
+    Returns the vmin and vmax values for the "Ratio (dynamic range)"
+    or "Ratio (restricted range) subplot of a six-panel plot.
+
+    Args:
+    -----
+    plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
+        Single data variable to plot.
+    subplot: str
+        Subplot name (see routine six_panel_subplot_names).
+    rowcol : int
+        Subplot index.
+
+    Keyword Arguments (optional):
+    -----------------------------
+    verbose: bool
+        Toggles informative printout on (True) or off (False).
+
+    Returns:
+    --------
+    vmin, vmax : float
+        Min and max values to plot.
+    """
+    # Ratio (dynamic range) subplot)
+    if subplot in "dyn_ratio":
+        vmax = np.max(
+            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
+        )
+        vmin = 1.0 / vmax
+        if vmin > vmax:
+            vmin, vmax = vmax, vmin
+        verbose_print(verbose, rowcol, vmin, vmax)
+        return vmin, vmax
+
+    # Ratio (restricted range) subplot
+    verbose_print(verbose, rowcol, 0.5, 2.0)
+    return 0.5, 2.0
 
 
 def compute_norm_for_plot(
@@ -562,22 +649,22 @@ def colorbar_ticks_and_format(
     Args:
     -----
     plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
-        Single data variable GEOS-Chem output to plot
+        Single data variable to plot.
     cbar : matplotlib.colorbar.Colorbar
-        The input colorbar
+        The input colorbar.
     vmin, vmax : float
-        Min and max of the data range to plot
+        Min and max of the data range to plot.
     subplot: str
-        Subplot name (see routine six_panel_subplot_names)
+        Subplot name (see routine six_panel_subplot_names).
 
     Keyword Arguments (optional):
     -----------------------------
     all_zero: bool
         Indicates if the data consists of all zeros (True)
-        or not (False)
+        or not (False).
     all_nan: bool
         Indicates if the data consists of all NaN values (True)
-        or not (False)
+        or not (False).
     use_cmap_RdBu: bool
         Toggles a blue-white-red colormap on (True) or off (False).
     log_color_scale : bool
@@ -586,7 +673,7 @@ def colorbar_ticks_and_format(
     Returns:
     --------
     cbar : matplotlib.colorbar.Colorbar
-        The modified colorbar
+        The modified colorbar.
     """
     # ==================================================================
     # Data is all zero or NaN:
@@ -678,9 +765,9 @@ def colorbar_for_all_zero_or_nan(
     Args:
     -----
     cbar : matplotlib.colorbar.Colorbar
-        The input colorbar
+        The input colorbar.
     subplot : str
-        Name of this subplot of a 6-panel plot
+        Name of this subplot of a 6-panel plot.
 
     Keyword Args (optional):
     ------------------------
@@ -716,12 +803,12 @@ def colorbar_for_ref_equals_dev(cbar):
     Args:
     -----
     cbar : matplotlib.colorbar.Colorbar
-        The input colorbar
+        The input colorbar.
 
     Returns:
     --------
     cbar : matplotlib.colorbar.Colorbar
-        The modified colorbar
+        The modified colorbar.
     """
     pos = [1.0]
     cbar.set_ticks(
@@ -744,14 +831,14 @@ def colorbar_for_dyn_ratio_plots(
     Args:
     -----
     cbar : matplotlib.colorbar.Colorbar
-        The input colorbar
+        The input colorbar.
     vmin, vmax : float
-        Min and max of the data range
+        Min and max of the data range.
 
     Returns:
     --------
     cbar : matplotlib.colorbar.Colorbar
-        The modified colorbar
+        The modified colorbar.
     """
     # If the ratio is in the range 0.999 and 1.001, then
     # place tickmarks at [vmin, 1, vmax].  This should help
@@ -791,12 +878,12 @@ def colorbar_for_res_ratio_plots(cbar):
     Args:
     -----
     cbar : matplotlib.colorbar.Colorbar
-        The input colorbar
+        The input colorbar.
 
     Returns:
     --------
     cbar : matplotlib.colorbar.Colorbar
-        The modified colorbar
+        The modified colorbar.
     """
     # Use fixed ticks and ScalarFormatter
     pos = [0.5, 0.75, 1.0, 1.5, 2.0]
@@ -819,9 +906,9 @@ def colorbar_for_small_data_range(
     Args:
     -----
     cbar : matplotlib.colorbar.Colorbar
-        The input colorbar
+        The input colorbar.
     vmin, vmax : float
-        Min and max of the data range
+        Min and max of the data range.
     diff_cmap : bool
         Indicates that we are using a diverging colortable (True)
         or not (False).
@@ -829,7 +916,7 @@ def colorbar_for_small_data_range(
     Returns:
     --------
     cbar : matplotlib.colorbar.Colorbar
-        The modified colorbar
+        The modified colorbar.
     """
     # If using a difference colormap (e.g. for absdiff),
     # then place ticks symmetrically around zero.
