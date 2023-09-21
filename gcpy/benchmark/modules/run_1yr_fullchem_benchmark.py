@@ -530,7 +530,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dev_interval=sec_per_month_dev,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
