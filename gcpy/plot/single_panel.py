@@ -14,7 +14,7 @@ from gcpy.grid import get_vert_grid, get_pressure_indices, \
     call_make_grid, get_input_res
 from gcpy.regrid import regrid_comparison_data, create_regridders
 from gcpy.util import reshape_MAPL_CS, all_zero_or_nan, verify_variable_type
-from gcpy.plot.core  import gcpy_style, WhGrYlRd
+from gcpy.plot.core  import gcpy_style, normalize_colors, WhGrYlRd
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -350,7 +350,7 @@ def single_panel(
         elif isinstance(plot_vals, np.ndarray):
             vmin = np.min(plot_vals) if vmin is None else vmin
             vmax = np.max(plot_vals) if vmax is None else vmax
-        norm = core.normalize_colors(
+        norm = normalize_colors(
             vmin,
             vmax,
             is_difference=use_cmap_RdBu,
@@ -580,7 +580,3 @@ def single_panel(
     if return_list_of_plots:
         return plots if 'plots' in locals() else [plot]
     return plot
-
-
-if __name__ == '__main__':
-    pass

@@ -341,8 +341,11 @@ def compare_zonal_mean(
         sg_dev_params=sg_dev_params
     )
 
-    # use smaller vertical grid as target for vertical regridding
-    target_index = np.array([len(ref_pedge), len(dev_pedge)]).argmin()
+    # Use smaller vertical grid as target for vertical regridding
+    # NOTE: Convert target_index from numpy.int64 to int to conform
+    # to the Python style guide (as per Pylint).
+    #  -- Bob Yantosca (21 Sep 2023)
+    target_index = int(np.array([len(ref_pedge), len(dev_pedge)]).argmin())
     pedge = [ref_pedge, dev_pedge][target_index]
     pedge_ind = [ref_pedge_ind, dev_pedge_ind][target_index]
 
@@ -856,9 +859,11 @@ def compare_zonal_mean(
                 f"Difference ({cmpres})\nDev - Ref, Restricted Range [5%,95%]"
             if diff_of_diffs:
                 fracdiff_dynam_title = \
-                    f"Difference ({cmpres}), Dynamic Range\n{frac_devstr} - {frac_refstr}"
+                    f"Difference ({cmpres}), " + \
+                    f"Dynamic Range\n{frac_devstr} - {frac_refstr}"
                 fracdiff_fixed_title = \
-                    f"Difference ({cmpres}), Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
+                    f"Difference ({cmpres}), " + \
+                    f"Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
             else:
                 fracdiff_dynam_title = \
                     f"Ratio ({cmpres})\nDev/Ref, Dynamic Range"
@@ -870,9 +875,10 @@ def compare_zonal_mean(
                 "Difference\nDev - Ref, Restricted Range [5%,95%]"
             if diff_of_diffs:
                 fracdiff_dynam_title = \
-                    f"Difference, Dynamic Range\n{frac_devstr} - {frac_refstr}".\
+                    f"Difference, Dynamic Range\n{frac_devstr} - {frac_refstr}"
                 fracdiff_fixed_title = \
-                    f"Difference, Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
+                    "Difference, Restricted Range " + \
+                    f"[5%,95%]\n{frac_devstr} - {frac_refstr}"
             else:
                 fracdiff_dynam_title = "Ratio \nDev/Ref, Dynamic Range"
                 fracdiff_fixed_title = "Ratio \nDev/Ref, Fixed Range"
@@ -884,7 +890,7 @@ def compare_zonal_mean(
         # 4 = Dynamic frac diff   5 = Restricted frac diff
         # ==============================================================
 
-        subplots = core.six_panel_subplot_names(diff_of_diffs)
+        subplots = six_panel_subplot_names(diff_of_diffs)
 
         all_zeros = [
             ref_is_all_zero,
@@ -1074,7 +1080,3 @@ def compare_zonal_mean(
             merge.write(pdfname)
             merge.close()
             warnings.showwarning = _warning_format
-
-
-if __name__ == '__main__':
-    pass

@@ -10,9 +10,6 @@ by Fractional Difference (dynamic range and restricted range).
 Also contains several helper routines that are used by other
 
 """
-import os
-import warnings
-from matplotlib import colors
 from matplotlib import ticker
 import matplotlib.pyplot as plt
 import numpy as np
@@ -174,8 +171,7 @@ def six_plot(
         use_cmap_RdBu=use_cmap_RdBu,
         verbose=verbose,
     )
-    print(f"vmin {vmin}: vmax: {vmax}")
-    
+
     # Compute the norm object (i.e. put the colorscale on a
     # range of 0..1, which are matplotlib color coordinates)
     # (also remove NaNs in data for ratio plots)
@@ -330,7 +326,7 @@ def compute_vmin_vmax_for_plot(
     # ==================================================================
     # Absdiff and Ratio subplots
     # ==================================================================
-    
+
     # All data is zero or NaN
     if all_zero:
         verbose_print(verbose, rowcol, 0, 0)
@@ -370,7 +366,6 @@ def compute_vmin_vmax_for_plot(
         return vmin, vmax
 
     # Ratio (restricted range) subplot
-    print("here")
     verbose_print(verbose, rowcol, 0.5, 2.0)
     return 0.5, 2.0
 

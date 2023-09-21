@@ -199,7 +199,7 @@ def compare_single_level(
     # Error check arguments
     verify_variable_type(refdata, xr.Dataset)
     verify_variable_type(devdata, xr.Dataset)
-    
+
     # Create empty lists for keyword arguments
     if extent is None:
         extent = [-1000, -1000, -1000, -1000]
@@ -951,9 +951,11 @@ def compare_single_level(
                 f"Difference ({cmpres})\nDev - Ref, Restricted Range [5%,95%]"
             if diff_of_diffs:
                 fracdiff_dynam_title = \
-                    f"Difference ({cmpres}), Dynamic Range\n{frac_devstr} - {frac_refstr}"
+                    f"Difference ({cmpres}), " + \
+                    f"Dynamic Range\n{frac_devstr} - {frac_refstr}"
                 fracdiff_fixed_title = \
-                    f"Difference ({cmpres}), Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
+                    f"Difference ({cmpres}), " + \
+                    f"Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
             else:
                 fracdiff_dynam_title = \
                     f"Ratio ({cmpres})\nDev/Ref, Dynamic Range"
@@ -967,7 +969,8 @@ def compare_single_level(
                 fracdiff_dynam_title = \
                     f"Difference, Dynamic Range\n{frac_devstr} - {frac_refstr}"
                 fracdiff_fixed_title = \
-                    "Difference, Restricted Range [5%,95%]\n{frac_devstr} - {frac_refstr}"
+                    "Difference, Restricted Range " + \
+                    f"[5%,95%]\n{frac_devstr} - {frac_refstr}"
             else:
                 fracdiff_dynam_title = "Ratio \nDev/Ref, Dynamic Range"
                 fracdiff_fixed_title = "Ratio \nDev/Ref, Fixed Range"
@@ -1070,9 +1073,6 @@ def compare_single_level(
 
         # Plot
         for i in range(6):
-            print(subplots[i])
-            print(mins[i])
-            print(maxs[i])
             six_plot(
                 subplots[i],
                 all_zeros[i],

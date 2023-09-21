@@ -4,7 +4,6 @@ Common variables and functions used by modules in gcpy.plot.
 from os import path
 import warnings
 from matplotlib import colors
-from matplotlib import pyplot as plt
 import numpy as np
 
 # Save warnings format to undo overwriting built into pypdf
@@ -105,12 +104,7 @@ def normalize_colors(
                 midpoint=None,
                 clip=False
         ):
-            super().__init__(
-                self,
-                vmin=vmin,
-                vmax=vmax,
-                clip=clip
-            )
+            super().__init__(vmin, vmax, clip)
             self.midpoint = midpoint
 
         def __call__(self, value, clip=None):
@@ -151,7 +145,3 @@ def normalize_colors(
 
     # For linear color scales: Normalize between min & max
     return colors.Normalize(vmin=vmin, vmax=vmax)
-
-
-if __name__ == '__main__':
-    pass
