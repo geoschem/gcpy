@@ -15,7 +15,7 @@ at https://gcpy.readthedocs.io.
 """
 import xarray as xr
 import matplotlib.pyplot as plt
-from gcpy import plot
+from gcpy.plot.single_panel import single_panel
 
 
 def main():
@@ -62,21 +62,21 @@ def main():
     # includes a colorbar with units read from the DataArray, an
     # automatic title (the data variable name in the DataArray), and
     # an extent equivalent to the full lat/lon extent of the DataArray
-    plot.single_panel(slice_500)
+    single_panel(slice_500)
     plt.show()
 
     #You can specify a specific area of the globe you would like plotted
     # using the 'extent' argument, which uses the format [min_longitude,
     # max_longitude, min_latitude, max_latitude] with bounds
     # [-180, 180, -90, 90]
-    plot.single_panel(slice_500, extent=[50, -90, -10, 60])
+    single_panel(slice_500, extent=[50, -90, -10, 60])
     plt.show()
 
     # Other commonly used arguments include specifying a title and a
     # colormap (defaulting to a White-Green-Yellow-Red colormap)
     #You can find more colormaps at
     # https://matplotlib.org/tutorials/colors/colormaps.html
-    plot.single_panel(
+    single_panel(
         slice_500,
         title='500mb Ozone over the North Pacific',
         comap=plt.get_cmap("viridis"),
@@ -89,8 +89,8 @@ def main():
     # Zonal Mean Plotting
     # ===================
 
-    #Use the plot_type argument to specify zonal_mean plotting
-    plot.single_panel(
+    # Use the plot_type argument to specify zonal_mean plotting
+    single_panel(
         darr,
         plot_type="zonal_mean"
     )
@@ -98,7 +98,7 @@ def main():
 
     #You can specify pressure ranges in hPa for zonal mean plot
     # (by default every vertical level is plotted)
-    plot.single_panel(
+    single_panel(
         darr,
         pres_range=[0, 100],
         log_yaxis=True,

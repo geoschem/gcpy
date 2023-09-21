@@ -19,7 +19,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas as pd
 import xarray as xr
-plt.style.use(['seaborn-talk', 'seaborn-ticks'])
+plt.style.use(['seaborn-v0_8-talk', 'seaborn-v0_8-ticks'])
 
 
 def main():
