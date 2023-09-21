@@ -25,7 +25,7 @@ export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export OMP_STACKSIZE=500m
 
 # Turn on Python environment (edit for your setup)
-mamba activate gcpy_140_env
+mamba activate gcpy_env
 
 # Specify a YAML file with benchmark options
 # Uncomment the file that you wish:
