@@ -480,7 +480,7 @@ Function-specific keyword arguments:
    functions to be used in calls to :code:`pcolormesh()`.
 
 ============
-Single_panel
+single_panel
 ============
 
 .. code-block:: python
