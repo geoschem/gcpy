@@ -20,12 +20,29 @@ Requirements
 #. Windows Subsystem for Linux (running in Microsoft Windows 11)
 #. MacOS
 
-To install GCPy, you will need a distribution of the :program:`Mamba`
-package manager. :program:`Mamba` is a drop-in replacement for the
-widely-used :program:`Conda` package manager.  You will use
-:program:`Mamba` to create a Python environment for GCPy, which
-contains the Python interpreter plus other Python packages that GCPY
-uses.
+To install GCPy, you will need:
+
+- **EITHER** a distribution of the :program:`Mamba` package manager
+- **OR** a distribution of the :program:`Conda` package manager.
+
+:program:`Mamba` is a fast drop-in replacement for the
+widely-used :program:`Conda` package manager.  We recommend using
+:program:`Mamba` to create a Python environment for GCPy.  This
+environment will contain a version of the Python interpreter
+(in this case, Python 3.9) plus packages upon which GCPy depends.
+
+.. note::
+
+   If your system has an existing :program:`Conda` installation, and/or
+   you do not wish to upgrade from :program:`Conda` to
+   :program:`Mamba`, you may create the Python environment for GCPy
+   with :program:`Conda`.  See the following sections for detailed
+   instructions.
+
+.. _requirements-mamba:
+
+Check if Mamba is installed
+---------------------------
 
 Check if you already have :program:`Mamba` on your system:
 
@@ -35,16 +52,63 @@ Check if you already have :program:`Mamba` on your system:
 
 If :program:`Mamba` has been installed, you will see output similar to this:
 
-.. code-block::
+.. code-block:: console
 
    mamba version X.Y.Z
    conda version A.B.C
 
-If you see this output, you may skip ahead to the :ref:`gcpy_install`
-section. Otherwise, read further for instructions on how to install
-:program:`Mamba` on your system.
+If you see this output, you may skip ahead to the :ref:`gcpy-install`
+section.
 
-.. _mamba_install:
+.. _requirements-conda:
+
+Check if Conda is installed
+---------------------------
+
+If your system does not have :program:`Mamba` installed, check if
+:program:`Conda` is already present on your system:
+
+.. code-block:: console
+
+   $ conda --version
+
+If a :program:`Conda` version exists, you will see its version number
+printed to the screen:
+
+.. code-block:: console
+
+   conda version A.B.C
+
+If neither :program:`Conda` or :program:`Mamba` are installed, we
+recommend installing the :program:`Mamba` package manager yourself.
+Please proceed to the :ref:`mamba-install` section for instructions.
+
+.. _requirements-conda-older:
+
+Additional setup for older Conda versions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If your :program:`Conda` version is earlier than 23.7, you will need
+to do the following additional steps.
+
+.. code-block:: console
+
+   $ conda install -n base conda-libmamba-solver
+   $ conda config --set solver libmamba
+
+This will install the fast :program:`Mamba` environment solver into
+your :program:`Conda` base environment.  Using the :program:`Mamba`
+solver within :program:`Conda` will speed up the Python environment
+creation considerably.
+
+.. note::
+
+   The :program:`Mamba` environment solver is used by default in
+   :program:`Conda` 23.7 and later.
+
+You may now skip ahead to the :ref:`gcpy-install` section.
+
+.. _mamba-install:
 
 ==================
 Install MambaForge
@@ -85,7 +149,7 @@ MacOS
 #. Exit your current terminal session and open a new terminal
    session.  This will apply the changes.
 
-You may now skip ahead  to the :ref:`gcpy_install` section.
+You may now skip ahead  to the :ref:`gcpy-install` section.
 
 
 Linux and Windows Subsystem for Linux
@@ -179,7 +243,7 @@ Linux and Windows Subsystem for Linux
       :program:`MambaForge` will downlad and install Python software
       packages into the  :file:`pkgs` subfolder of the root
       installation path.  Similarly, when you :ref:`create Python
-      environments <gcpy_install>`, these will be installed to the
+      environments <gcpy-install>`, these will be installed to the
       :file:`envs` subfolder of the root installation path.
 
    |br|
@@ -198,7 +262,7 @@ Linux and Windows Subsystem for Linux
    As long as your :envvar:`PYTHONPATH` environment variable only
    contains the path to the root-level GCPy folder, you may safely
    ignore this.  (More on :envvar:`PYTHONPATH` in the :ref:`next
-   section <gcpy_install>`.) |br|
+   section <gcpy-install>`.) |br|
    |br|
 
 #. Tell the installer to initialize :program:`MambaForge`.
@@ -219,15 +283,15 @@ Linux and Windows Subsystem for Linux
 #. Exit your current terminal session.  Start a new terminal session
    to apply the updates.  You are now ready to install GCPy.
 
-.. _gcpy_install:
+.. _gcpy-install:
 
 =================================
 Install GCPy and its dependencies
 =================================
 
-Once :program:`Mamba` has been installed, use it to ccreate a Python
-environment for GCPy.  (Please return to :ref:`mamba_install` if you
-have not yet installed :program:`Mamba`.)
+Once you have made sure that :program:`Mamba` (or :program:`Conda`) is
+present on your system, you may create a Python environment for GCPy.
+Follow these steps:
 
 #. **Download the GCPy source code.**
 
@@ -253,21 +317,24 @@ have not yet installed :program:`Mamba`.)
    maintain a set of package dependencies compatible with GCPy without
    interfering with Python packages you use for other work. You can
    create a Python virtual environment from anywhere on your
-   system. It will be stored in your :program:`Mamba` installation
-   rather than the directory from which you create it.
+   system. It will be stored in your :program:`Mamba` (or
+   :program:`Conda` installation rather than the directory from which
+   you create it).
 
    You can create a Python virtual environment using a file that lists
    all packages and their versions to be included in the environment.
    GCPy includes such as file, :file:`environment.yml`, located in the
    top-level directory of the package.
 
-   Run the following command at the command prompt to create a virtual
+   Run one of the following commands at the command prompt to create a virtual
    environment for use with GCPy. You can name environment whatever you
    wish. This example names it :file:`gcpy_env`.
 
    .. code-block:: console
 
-      $ mamba env create -n gcpy_env --file=environment.yml
+      $ mamba env create -n gcpy_env --file=environment.yml   # If using Mamba
+
+      $ conda env create -n gcpy_env --file=environment.yml   # If using Conda
 
    A list of packages to be downloaded will be displayed.  A
    confirmation message will ask you if you really wish to install all
@@ -275,17 +342,21 @@ have not yet installed :program:`Mamba`.)
    :command:`n` to abort.
 
    Once successfully created you can activate the environment with
-   this command:
+   one of these commands:
 
    .. code-block:: console
 
-      $ mamba activate gcpy_env
+      $ mamba activate gcpy_env   # If using Mamba
 
-   To exit the environment, use this command:
+      $ conda activate gcpy_env   # If using Conda
+
+   To exit the environment, use one of these commands:
 
    .. code-block:: console
 
-      $ mamba deactivate
+      $ mamba deactivate   # If using Mamba
+
+      $ conda deactivate   # If using Conda
 
    |br|
 
