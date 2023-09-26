@@ -10,7 +10,7 @@ function documentation.
 .. _capabilities-spatial:
 
 ================
-Spatial Plotting
+Spatial plotting
 ================
 
 One hallmark of GCPy is easy-to-use spatial plotting of GEOS-Chem
@@ -22,7 +22,7 @@ mean for all layers of the atmosphere.
 
 .. _capabilities-spatial-single:
 
-Single Panel Plots
+Single panel plots
 ------------------
 
 Single panel plots are generated through the :file:`single_panel()`
@@ -69,14 +69,15 @@ mean data.
    :align: center
 
 :ref:`Click here <single-panel>` for an example single panel plotting script.
-:ref:`Click here <plot>` for detailed documentation for :code:`single_panel()`.
+:ref:`Click here <plot-single-panel>` for detailed documentation for
+:code:`single_panel()`.
 
 .. _capabilities-spatial-sixpanel:
 
-Six Panel Comparison Plots
+Six-panel comparison plots
 --------------------------
 
-Six panel plots are used to compare results across two different model
+Six-panel plots are used to compare results across two different model
 runs. Single level and zonal mean plotting options are both available.
 The two model runs do not need to be the same resolution or even the
 same grid type (GEOS-Chem Classic and GCHP output can be mixed at will).
@@ -110,6 +111,7 @@ same grid type (GEOS-Chem Classic and GCHP output can be mixed at will).
 
 .. image:: _static/images/six\_panel\_single\_level.png
    :align: center
+   :width: 80%
 
 .. code:: python
 
@@ -124,14 +126,16 @@ same grid type (GEOS-Chem Classic and GCHP output can be mixed at will).
     plt.show()
 
 .. image:: _static/images/six\_panel\_zonal\_mean.png
+   :align: center
+   :width: 80%
 
 :ref:`Click here <six-panel>` for an example six panel plotting
-script. :ref:`Click here <plot>` for complete documentation for
-:code`compare_single_level()` and :code:`compare_zonal_mean()`.
+script. :ref:`Click here <plot-six-panel>` for complete documentation
+for :code:`compare_single_level()` and :code:`compare_zonal_mean()`.
 
 .. _capabilities-spatial-benchmark:
 
-Comprehensive Benchmark Plotting
+Comprehensive benchmark plotting
 --------------------------------
 
 The GEOS-Chem Support Team uses comprehensive plotting functions from
@@ -149,7 +153,7 @@ produce plots and tables for official model benchmarks.
 .. _capabilities-table:
 
 ==============
-Table Creation
+Table creation
 ==============
 
 GCPy has several dedicated functions for tabling GEOS-Chem output data
@@ -158,7 +162,7 @@ used for model benchmarking purposes.
 
 .. _capabilities-table-budget:
 
-Budget Tables
+Budget tables
 -------------
 
 Currently, budget tables can be created for "operations" (table shows
@@ -175,7 +179,7 @@ Operations budget tables are created using the
 
 .. _capabilities-tables-mass:
 
-Mass Tables
+Mass tables
 -----------
 
 The :ref:`gcpy.benchmark_funcs.make_benchmark_mass_tables()
@@ -189,7 +193,7 @@ troposphere). An example table is shown below:
 
 .. _capabilities-tables-emissions:
 
-Emissions Tables
+Emissions tables
 ----------------
 
 The :ref:`gcpy.benchmark_funcs.make_benchmark_emis_tables()
@@ -211,7 +215,7 @@ Regridding
 
 .. _capabilities-regridding-rules:
 
-General Regridding Rules
+General eegridding rules
 ------------------------
 
 GCPy supports regridding between all horizontal GEOS-Chem grid types,
