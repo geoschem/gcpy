@@ -37,15 +37,10 @@ try:
     import pyproj
     import shapely.ops
     import shapely.geometry
-# HOTFIX: Don't raise an ImportError until we can add pyproj to
-# the AWS cloud container.  This is causing errors that prevent
-# benchmark plotting jobs from finishing. -- Bob Y. (01 Aug 2023)
-#except ImportError as exc:
-#    raise ImportError(
-#        "gcpy.cstools needs packages 'pyproj' and 'shapely'!"
-#    ) from exc
-except:
-    print("pyproj is not available")
+except ImportError as exc:
+    raise ImportError(
+        "gcpy.cstools needs packages 'pyproj' and 'shapely'!"
+    ) from exc
 
 # Constants
 RAD_TO_DEG = 180.0 / np.pi
@@ -74,8 +69,8 @@ def extract_grid(
     if not is_cubed_sphere(data):
         return None
 
-    n_cs = data["Xdim"].shape[-1]
-    return gen_grid(n_cs)
+    cs_res = get_cubed_sphere_res(data)
+    return gen_grid(cs_res)
 
 
 def read_gridspec(gs_obj):
@@ -111,21 +106,23 @@ def read_gridspec(gs_obj):
         area[i,...] = tile.area[...]
 
     data = xr.Dataset(
-        data_vars=dict(
-            area=(['nf','Ydim','Xdim'],area),
-            lon=(['nf','Ydim','Xdim'],lon),
-            lat=(['nf','Ydim','Xdim'],lat),
-            lon_b=(['nf','Ydim_b','Xdim_b'],lon_b),
-            lat_b=(['nf','Ydim_b','Xdim_b'],lat_b),
-        ),
-        coords=dict(
-            nf=(['nf'],list(range(6))),
-            Ydim=(['Ydim'],list(range(n_cs))),
-            Xdim=(['Xdim'],list(range(n_cs))),
-            Ydim_b=(['Ydim_b'],list(range(n_cs+1))),
-            Xdim_b=(['Xdim_b'],list(range(n_cs+1))),
-        ),
-        attrs=dict(description=f'c{n_cs:d} grid data'),
+        data_vars={
+            "area": (['nf','Ydim','Xdim'], area),
+            "lon": (['nf','Ydim','Xdim'], lon),
+            "lat": (['nf','Ydim','Xdim'], lat),
+            "lon_b": (['nf','Ydim_b','Xdim_b'], lon_b),
+            "lat_b": (['nf','Ydim_b','Xdim_b'], lat_b),
+        },
+        coords={
+            "nf": (['nf'], list(range(6))),
+            "Ydim": (['Ydim'], list(range(n_cs))),
+            "Xdim": (['Xdim'], list(range(n_cs))),
+            "Ydim_b": (['Ydim_b'], list(range(n_cs+1))),
+            "Xdim_b": (['Xdim_b'], list(range(n_cs+1))),
+        },
+        attrs={
+            "description": f"c{n_cs:d} grid data"
+        },
     )
     return data
 
@@ -348,7 +345,7 @@ def gen_grid(
         where each value has an extra face dimension of length 6.
     """
     if stretch_factor is not None:
-        cs_temp, ignore = gcpy.make_grid_SG(
+        cs_temp, _ = gcpy.make_grid_SG(
             n_cs,
             stretch_factor,
             target_lon,
@@ -692,10 +689,84 @@ def is_cubed_sphere(
     is_gchp : bool
         Returns True if data is placed on a cubed-sphere grid,
         and False otherwise.
+
+    Remarks:
+    --------
+    A cubed-sphere data file has one of the following attributes
+    (1) A dimension named "nf" (GCHP/GEOS diagnostic files)
+    (2) The lat/lon ratio is exactly 6 (GCHP/GEOS checkpoints)
     """
     gcpy.util.verify_variable_type(data, (xr.DataArray, xr.Dataset))
 
-    if "nf" in data.dims:   # nf = number of cubed-sphere faces
+    if is_cubed_sphere_diag_grid(data):
         return True
-
+    if is_cubed_sphere_rst_grid(data):
+        return True
     return False
+
+
+def is_cubed_sphere_diag_grid(data):
+    """
+    Determines if a cubed-sphere grid has History file dimensions.
+    (i.e. a dimension named "nf", ak number of grid faces).
+
+    Args:
+    -----
+    data : xarray.DataArray or xarray.Dataset
+        The input data.
+
+    Returns:
+    --------
+    True if the grid has restart dimensions, False otherwise.
+    """
+    if "nf" in data.dims:
+        return True
+    return False
+
+
+def is_cubed_sphere_rst_grid(data):
+    """
+    Determines if a cubed-sphere grid has restart file dimensions.
+    (i.e. lat and lon, with lat = lon*6).
+
+    Args:
+    -----
+    data : xarray.DataArray or xarray.Dataset
+        The input data.
+
+    Returns:
+    --------
+    True if the grid has restart dimensions, False otherwise.
+    """
+    gcpy.util.verify_variable_type(data, (xr.DataArray, xr.Dataset))
+
+    if data.dims["lat"] ==  data.dims["lon"] * 6:
+        return True
+    if "SPC_" in data.data_vars.keys():
+        return True
+    return False
+
+
+def get_cubed_sphere_res(data):
+    """
+    Given a Dataset or DataArray object, returns the number of
+    grid cells on each cubed-sphere grid face.
+
+    Args:
+    -----
+    data : xarray.DataArray or xarray.Dataset
+        The input data.
+
+    Returns:
+    --------
+    cs_res : int
+        The cubed-sphere resolution.  Will return 0 if the data
+        is not placed on a cubed-sphere grid.
+    """
+    gcpy.util.verify_variable_type(data, (xr.DataArray, xr.Dataset))
+
+    if not is_cubed_sphere(data):
+        return 0
+    if is_cubed_sphere_rst_grid(data):
+        return data.dims["lon"]
+    return data["Xdim"]

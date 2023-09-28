@@ -32,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added statement `from dask.array import Array as DaskArray` in `gcpy plot.py`
 - Added SLURM run script `gcpy/benchmark/benchmark_slurm.sh`
 - Added `gcpy/gcpy_plot_style` style sheet for title and label default settings
+- Added new cubed-sphere grid inquiry functions to `gcpy/cstools.py`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
