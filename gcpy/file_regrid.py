@@ -1,6 +1,7 @@
 """
 GCPy regridding utility: Regrids data between lat/lon, cubed-sphere,
-and cubed-sphere stretched grids.
+and cubed-sphere stretched grids (both the History format and the
+restart/checkpoint format).
 """
 import argparse
 import os
@@ -21,6 +22,7 @@ from gcpy.grid import get_input_res, get_vert_grid, get_grid_extents
 from gcpy.regrid import make_regridder_S2S, reformat_dims, \
     make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
 from gcpy.util import verify_variable_type
+from gcpy.cstools import get_cubed_sphere_res, is_cubed_sphere_diag_grid
 
 # Ignore any FutureWarnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
@@ -35,7 +37,9 @@ def file_regrid(
         ll_res_out='0x0',
         sg_params_in=None,
         sg_params_out=None,
-        vert_params_out=None
+        vert_params_out=None,
+        verbose=False,
+        weightsdir="."
 ):
     """
     Regrids an input file to a new horizontal grid specification
@@ -67,7 +71,7 @@ def file_regrid(
         sg_params_in: list[float, float, float]
             Input grid stretching parameters
             [stretch-factor, target longitude, target latitude].
-            Not used if dim_format_in is classic
+            Not used if dim_format_in is classic.
             Default value: [1.0, 170.0, -90.0] (No stretching)
         sg_params_out: list[float, float, float]
             Output grid stretching parameters
@@ -75,10 +79,14 @@ def file_regrid(
             Not used if dim_format_out is classic
             Default value: [1.0, 170.0, -90.0] (No stretching)
         vert_params_out: list(list, list) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
-            Needed for lat/lon output if not using full 72-level or 47-level grid
-            Default value: [[], []]
-
+            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP]
+            format.  Needed for lat/lon output if not using full 72-level or
+            47-level grid.
+        verbose : bool
+            Toggles verbose output on (True) or off (False).
+        weightsdir : str
+            Path to the directory containing regridding weights (or
+            where weights will be created).  Default value: "."
     """
     verify_variable_type(fin, str)
     verify_variable_type(fout, str)
@@ -99,7 +107,11 @@ def file_regrid(
         decode_cf=False,
         engine='netcdf4'
     ).load()
-    cs_res_in = 0
+    cs_res_in = get_cubed_sphere_res(ds_in)
+
+    if verbose:
+        print(f"file_regrid.py: cs_res_in:  {cs_res_in}")
+        print(f"file_regrid.py: cs_res_out: {cs_res_out}")
 
     # Make sure all xarray.Dataset global & variable attributes are kept
     with xr.set_options(keep_attrs=True):
@@ -111,9 +123,9 @@ def file_regrid(
         # save type of data for later restoration
         original_dtype = np.dtype(ds_in[list(ds_in.data_vars)[0]])
 
-        oface_files=[]
         if cs_res_in == cs_res_out and all(
-                [v1 == v2 for v1, v2 in zip(sg_params_in, sg_params_out)]):
+            [v1 == v2 for v1, v2 in zip(sg_params_in, sg_params_out)]
+        ):
 
             # ----------------------------------------------------------
             # Input CS/SG grid == Output CS/SG grid
@@ -133,7 +145,9 @@ def file_regrid(
                 sg_params_in,
                 cs_res_out,
                 dim_format_out,
-                sg_params_out
+                sg_params_out,
+                verbose=verbose,
+                weightsdir=weightsdir
             )
 
         elif dim_format_in == 'classic' and dim_format_out != 'classic':
@@ -145,7 +159,9 @@ def file_regrid(
                 ds_in,
                 cs_res_out,
                 dim_format_out,
-                sg_params_out
+                sg_params_out,
+                verbose=verbose,
+                weightsdir=weightsdir
             )
 
         elif dim_format_in != 'classic' and dim_format_out == 'classic':
@@ -159,7 +175,9 @@ def file_regrid(
                 dim_format_in,
                 sg_params_in,
                 ll_res_out,
-                vert_params_out=vert_params_out
+                vert_params_out=vert_params_out,
+                verbose=verbose,
+                weightsdir=weightsdir
             )
 
         elif dim_format_in == 'classic' and dim_format_out == 'classic':
@@ -169,7 +187,9 @@ def file_regrid(
             # ----------------------------------------------------------
             ds_out = regrid_ll_to_ll(
                 ds_in,
-                ll_res_out
+                ll_res_out,
+                verbose=verbose,
+                weightsdir=weightsdir
             )
 
         # ==============================================================
@@ -182,11 +202,13 @@ def file_regrid(
         # Write dataset to file
         ds_out.to_netcdf(
             fout,
-            format='NETCDF4'
+            format='NETCDF4',
+            mode="w"
         )
 
         # Print the resulting dataset
-        print(ds_out)
+        if verbose:
+            print(ds_out)
 
 
 def prepare_cssg_input_grid(
@@ -243,6 +265,8 @@ def regrid_cssg_to_cssg(
         cs_res_out,
         dim_format_out,
         sg_params_out,
+        verbose=False,
+        weightsdir="."
 ):
     """
     Regrids from the cubed-sphere/stretched grid to a different
@@ -262,11 +286,22 @@ def regrid_cssg_to_cssg(
         Input & output grid stretching parameters
         [stretch-factor, target longitude, target latitude].
 
+    Keyword Args (optional):
+    ------------------------
+    verbose : bool
+        Toggles verbose output on (True) or off (False).
+    weightsdir : str
+        Path to the directory containing regridding weights (or
+        where weights will be created).  Default value: "."
+
     Returns:
     --------
     ds_out : xarray.Dataset
         Data regridded to the output lat-lon grid
     """
+    if verbose:
+        print("file_regrid.py: Regridding from CS/SG to CS/SG")
+
     with xr.set_options(keep_attrs=True):
 
         # Change CS/SG dimensions to universal format
@@ -285,7 +320,8 @@ def regrid_cssg_to_cssg(
             tlat_in=sg_params_in[2],
             sf_out=sg_params_out[0],
             tlon_out=sg_params_out[1],
-            tlat_out=sg_params_out[2]
+            tlat_out=sg_params_out[2],
+            weightsdir=weightsdir
         )
 
         # Save temporary output face files to minimize RAM usage
@@ -312,7 +348,8 @@ def regrid_cssg_to_cssg(
                 keep_attrs=True).expand_dims({'F':[oface]})
             oface_regridded.to_netcdf(
                 oface_files[oface],
-                format='NETCDF4'
+                format='NETCDF4',
+                mode="w"
             )
 
         # Combine face files
@@ -324,7 +361,8 @@ def regrid_cssg_to_cssg(
         )
 
         # lat, lon are from xESMF which we don't want
-        ds_out = drop_lon_and_lat(ds_out)
+        if "diagnostic" in dim_format_out:
+            ds_out = drop_lon_and_lat(ds_out)
 
         # Put regridded dataset back into a familiar format
         ds_out = ds_out.rename({
@@ -340,11 +378,14 @@ def regrid_cssg_to_cssg(
             towards_common=False
         )
 
-        # Save stretched-grid metadata
+        # Save stretched-grid metadata and make sure
+        # that the lev:positive attribute is correct
         ds_out = save_cssg_metadata(
             ds_out,
             cs_res_out,
-            sg_params_out
+            sg_params_out,
+            dim_format_out,
+            verbose=verbose
         )
 
         # Remove any temporary files
@@ -361,6 +402,8 @@ def regrid_cssg_to_ll(
         sg_params_in,
         ll_res_out,
         vert_params_out=None,
+        verbose=False,
+        weightsdir="."
 ):
     """
     Regrids from the cubed-sphere/stretched grid to the lat-lon grid.
@@ -377,11 +420,26 @@ def regrid_cssg_to_ll(
     ll_res_out : str
         Output grid lat/lon resolution (e.g. "4x5")
 
+    Keyword Args (optional):
+    ------------------------
+    vert_params_out : list
+        Specifies the [AP, BP] parameters for the output grid.
+        This is only required if the grid does not have 47 or 72
+        vertical levels.
+    verbose: bool
+        Toggles verbose printout on (True) or off (False)
+    weightsdir : str
+        Path to the directory containing regridding weights (or
+        where weights will be created).  Default value: "."
+
     Returns:
     --------
     ds_out : xarray.Dataset
         Data regridded to the output lat-lon grid
     """
+    if verbose:
+        print("file_regrid.py: Regridding from CS/SG to LL")
+
     if vert_params_out is None:
         vert_params_out = [[], []]
 
@@ -398,7 +456,8 @@ def regrid_cssg_to_ll(
         regridders = make_regridder_C2L(
             cs_res_in,
             ll_res_out,
-            sg_params=sg_params_in
+            sg_params=sg_params_in,
+            weightsdir=weightsdir
         )
         ds_out = xr.concat(
             [regridders[face](ds_in.isel(F=face), keep_attrs=True)
@@ -412,32 +471,34 @@ def regrid_cssg_to_ll(
         ds_out = ds_out.reindex(lev=ds_out.lev[::-1])
         _, lev_coords, _ = get_vert_grid(ds_out, vert_params_out)
         ds_out = ds_out.assign_coords({'lev': lev_coords})
-        ds_out['lat'].attrs = {
-            'long_name': 'Latitude',
-            'units': 'degrees_north',
-            'axis': 'Y'
-        }
-        ds_out['lon'].attrs = {
-            'long_name': 'Longitude',
-            'units': 'degrees_east',
-            'axis': 'X'
-        }
+
+        # Make sure the lev:positive attribute is correct
+        ds_out = save_ll_metadata(
+            ds_out,
+            verbose=verbose
+        )
+
+    if verbose:
+        print("file_regrid.py: Coordinates")
+        print(ds_out.coords)
 
     return ds_out
 
 
 def regrid_ll_to_cssg(
-        ds_in,
+        dset_in,
         cs_res_out,
         dim_format_out,
         sg_params_out,
+        verbose=False,
+        weightsdir="."
 ):
     """
     Regrids from the lat-lon grid to the cubed-sphere/stretched grid.
 
     Args:
     -----
-    ds_in : xarray.Dataset
+    dset_in : xarray.Dataset
         Data on a lat/lon grid
     cs_res_in : int
         Cubed-sphere grid resolution
@@ -448,58 +509,81 @@ def regrid_ll_to_cssg(
         Output grid stretching parameters
         [stretch-factor, target longitude, target latitude].
 
+    Keyword Args (optional):
+    ------------------------
+    verbose : bool
+        Toggles verbose output on (True) or off (False).
+    weightsdir : str
+        Path to the directory containing regridding weights (or
+        where weights will be created).  Default value: "."
+
     Returns:
     --------
-    ds_out : xarray.Dataset
+    dset_out : xarray.Dataset
         Data regridded to the output cubed-sphere/stretched-grid
     """
+    if verbose:
+        print("file_regrid.py: Regridding from LL to CS/SG")
+
     with xr.set_options(keep_attrs=True):
 
         # Drop non-regriddable variables when going from ll -> cs
-        ds_in = drop_and_rename_classic_vars(ds_in)
+        dset_in = drop_and_rename_classic_vars(dset_in)
 
         # Input lat/lon grid resolution
-        llres_in = get_input_res(ds_in)[0]
+        llres_in = get_input_res(dset_in)[0]
 
         # Regrid data to CS/SG
         regridders = make_regridder_L2S(
             llres_in,
             cs_res_out,
-            sg_params=sg_params_out
+            sg_params=sg_params_out,
+            weightsdir=weightsdir
         )
-        ds_out = xr.concat(
-            [regridders[face](ds_in, keep_attrs=True) for face in range(6)],
+        dset_out = xr.concat(
+            [regridders[face](dset_in, keep_attrs=True) for face in range(6)],
             dim='nf'
         )
 
         # Flip vertical levels
-        ds_out = ds_out.reindex(lev=ds_out.lev[::-1])
-
-        # Drop lon & lat, which are from xESMF
-        ds_out = drop_lon_and_lat(ds_out)
+        dset_out = dset_out.reindex(lev=dset_out.lev[::-1])
 
         # Rename dimensions to the "common dimension format"
-        ds_out = ds_out.rename({
+        dset_out = dset_out.rename({
             'time': 'T',
             'lev': 'Z',
             'nf': 'F',
             'y': 'Y',
             'x': 'X',
+            'lat': 'Y',
+            'lon': 'X'
         })
 
-        # Reformat dimensions from "common dimension format"
-        # to CS/GG "checkpoint" or "diagnostics" format
-        ds_out = reformat_dims(
-            ds_out,
-            dim_format_out,
+        # Reformat dims from "common dimension format" to "diagnostic"
+        # (we will convert to "checkpoint" later)
+        dset_out = reformat_dims(
+            dset_out,
+            "diagnostic",
             towards_common=False
         )
 
-        # Save stretched-grid metadata
-        ds_out = save_cssg_metadata(
-            ds_out,
+        # Fix names and attributes of of coordinate variables depending
+        # on the format of the ouptut grid (checkpoint or diagnostic).
+        # Also convert the "diagnostic" grid to the "checkpoint" grid
+        # if "checkpoint" output are requested.
+        dset_out = adjust_cssg_grid_and_coords(
+            dset_out,
+            dim_format_out
+        )
+
+        # Save stretched-grid metadata and make sure
+        # that the lev:positive attribute is correct
+        dset_out = save_cssg_metadata(
+            dset_out,
             cs_res_out,
-            sg_params_out
+            sg_params_out,
+            dim_format_out,
+            verbose=verbose
         )
 
     return ds_out
@@ -507,7 +591,9 @@ def regrid_ll_to_cssg(
 
 def regrid_ll_to_ll(
         ds_in,
-        ll_res_out
+        ll_res_out,
+        verbose=False,
+        weightsdir="."
 ):
     """
     Regrid from the lat/lon grid to the cubed-sphere/stretched grid.
@@ -519,12 +605,22 @@ def regrid_ll_to_ll(
     ll_res_out : str
         Output grid lat-lon grid resolution (e.g. "4x5")
 
+    Keyword Args (optional):
+    ------------------------
+    verbose : bool
+        Toggles verbose output on (True) or off (False).
+    weightsdir : str
+        Path to the directory containing regridding weights (or
+        where weights will be created).  Default value: "."
+
     Returns:
     --------
     ds_out : xarray.Dataset
         Data regridded to the output lat-lon grid.
     """
-    # Keep all xarray global & variable attributes
+    if verbose:
+        print("file_regrid.py: Regridding from LL to LL")
+
     with xr.set_options(keep_attrs=True):
 
         # Get the input & output extents
@@ -537,6 +633,7 @@ def regrid_ll_to_ll(
         # Return if the output & input grids are the same
         if lat_in == lat_out and lon_in == lon_out:
             ds_out = ds_in
+            print("Skipping regridding since grid parameters are identical")
             return ds_out
 
         # Drop non-regriddable variables
@@ -555,7 +652,8 @@ def regrid_ll_to_ll(
             ll_res_out,
             reuse_weights=True,
             in_extent=in_extent,
-            out_extent=out_extent
+            out_extent=out_extent,
+            weightsdir=weightsdir
         )
         ds_out = regridder(ds_in, keep_attrs=True, verbose=False)
 
@@ -567,17 +665,104 @@ def regrid_ll_to_ll(
             'time', 'lev', 'ilev', 'lat', 'lon', ...
         )
 
+        # Make sure the lev:positive attribute is correct
+        ds_out = save_ll_metadata(
+            ds_out,
+            verbose=verbose
+        )
+
     return ds_out
+
+
+def save_ll_metadata(
+        dset,
+        verbose=False,
+):
+    """
+    Updates the lat-lon coordinate metadata in an xarray.Dataset object.
+
+    Args:
+    -----
+    dset : xarray.Dataset
+        The input data (on lat-lon grid).
+
+    Keyword Arguments:
+    ------------------
+    verbose : bool
+        Toggles verbose printout on (True) or off (False)
+
+    Returns:
+    --------
+    dset : xarray.Dataset
+        Original data plus updated coordinate metadata.
+    """
+    with xr.set_options(keep_attrs=True):
+
+        dset.time.attrs = {
+            "axis": "T"
+        }
+
+        dset.lat.attrs = {
+            'long_name': 'Latitude',
+            'units': 'degrees_north',
+            'axis': 'Y'
+        }
+
+        dset.lon.attrs = {
+            'long_name': 'Longitude',
+            'units': 'degrees_east',
+            'axis': 'X'
+        }
+
+        if "ilev" in dset.coords.keys():
+            max_lev = np.max(dset.ilev)
+            if 0 < max_lev < 2000:
+                units = "hPa"
+            elif 0 < max_lev < 200000:
+                units = "Pa"
+            else:
+                units = "level"
+
+            dset.ilev.attrs = {
+                'long_name': "hybrid level at interfaces ((A/P0)+B)",
+                'units': units,
+                'axis': "Z",
+                "positive": "up"
+            }
+
+        if "lev" in dset.coords.keys():
+            max_lev = np.max(dset.lev)
+            if 0 < max_lev < 2000:
+                units = "hPa"
+            elif 0 < max_lev < 200000:
+                units = "Pa"
+            else:
+                units = "level"
+
+            dset.lev.attrs = {
+                'long_name': "hybrid level at midpoints ((A/P0)+B)",
+                'units': units,
+                'axis': "Z",
+                "positive": "up"
+            }
+
+    if verbose:
+        print("file_regrid.py: In routine save_ll_metadata:")
+        print(dset.coords)
+
+    return dset
 
 
 def save_cssg_metadata(
         dset,
         cs_res_out,
-        sg_params_out
+        sg_params_out,
+        dim_format_out,
+        verbose=False
 ):
     """
     Saves the stretched-grid metadata to an xarray.Dataset object
-    containing cubed-sphere/stretched grid data
+    containing cubed-sphere/stretched grid data.
 
     Args:
     -----
@@ -587,11 +772,13 @@ def save_cssg_metadata(
         Cubed-sphere grid resolution.
     sg_params_out: list[float, float, float]
         Output grid stretching parameters
-        [stretch-factor, target longitude, target latitude]
+        [stretch-factor, target longitude, target latitude].
+    verbose : bool
+        Toggles verbose printout on (True) or off (False).
 
     Returns:
     --------
-    dset_out : xarray.Dataset
+    dset : xarray.Dataset
         The original data, plus stretched grid metadata.
     """
     with xr.set_options(keep_attrs=True):
@@ -599,6 +786,14 @@ def save_cssg_metadata(
         dset.attrs['target_longitude'] = sg_params_out[1]
         dset.attrs['target_latitude'] = sg_params_out[2]
         dset.attrs['cs_res'] = cs_res_out
+
+        # Cubed-sphere restart/checkpoint files are always indexed
+        # from the top-of-atmopshere downward towards the surface.
+        if "checkpoint" in dim_format_out:
+            dset['lev'].attrs['positive'] = "down"
+
+    if verbose:
+        print("file_regrid.py: Saving CS/SG coordinate metadata")
 
     return dset
 
@@ -628,9 +823,93 @@ def rename_restart_variables(dset, towards_gchp=True):
     else:
         old_str = 'SPC'
         new_str = 'SpeciesRst'
-    return dset.rename({name: name.replace(old_str, new_str, 1)
-                      for name in list(dset.data_vars)
-                      if name.startswith(old_str)})
+    return dset.rename({
+        name: name.replace(old_str, new_str, 1)
+        for name in list(dset.data_vars)
+        if name.startswith(old_str)
+    })
+
+
+def adjust_cssg_grid_and_coords(
+        dset,
+        dim_format_out,
+):
+    """
+    Adjusts cubed-sphere/stretched-grid coordinate names and attributes.
+
+    Args:
+    -----
+    dset : xarray.Dataset
+        The input data
+    dim_format_out : str
+        Either "checkpoint" (for checkpoint/restart files) or
+        "diagnostic" (for History diagnostic files).
+
+    Returns:
+    --------
+    dset : xarray.Dataset
+       The input data with updated coordinate names & attributes.
+
+    Remarks:
+    --------
+    "diagnostic" dimension format: (time, lev, nf, Ydim, Xdim)
+    "checkpoint" dimension format: (time, lev, lat, lon); lat = 6*lon
+    """
+    # Keep all xarray attributes intact
+    with xr.set_options(keep_attrs=True):
+
+        # ==============================================================
+        # "Xdim" and "Ydim" coordinates (returned by ESMF) correspond
+        # to the "lons" and "lats" coordinates as saved out by MAPL.
+        # ==============================================================
+        dset = dset.rename_vars({
+            "Xdim": "lons",
+            "Ydim": "lats"
+        })
+        dset.lons.attrs = {
+            "long_name": "longitude",
+            "units": "degrees_east"
+        }
+        dset.lats.attrs = {
+            "long_name": "latitude",
+            "units": "degrees_north"
+        }
+
+        # ==================================================================
+        # For "diagnostic" dimension format only:
+        #
+        # Add "fake" Xdim and Ydim coordinates as done by MAPL,
+        # which is needed for the GMAO GrADS visualization software.
+        # ==================================================================
+        if "diagnostic" in dim_format_out:
+            dset = dset.assign_coords({
+                "Xdim": dset.lons.isel(nf=0, Ydim=0),
+                "Ydim": dset.lats.isel(nf=0, Xdim=0)
+            })
+            dset.Xdim.attrs = {
+                "long_name": "Fake Longitude for GrADS Compatibility",
+                "units": "degrees_east"
+            }
+            dset.Ydim.attrs = {
+                "long_name": "Fake Latitude for GrADS Compatibility",
+                "units": "degrees_north"
+            }
+
+        # ==================================================================
+        # For "checkpoint" dimension format only:
+        #
+        # Reshape the grid from (time, lev, nf, Xdim, Ydim) dimensions
+        # to (time, lev, lat, lon) dimensions (where lat/lon = 6)
+        # ==================================================================
+        if "checkpoint" in dim_format_out:
+
+            # Reshape all data variables
+            dset = cssg_reshape_diag_to_chkpt(dset)
+
+            # Drop unneeded dimensions and coordinates
+            dset = dset.drop_vars(["lons", "lats"])
+
+    return dset
 
 
 def drop_lon_and_lat(dset):
@@ -649,9 +928,9 @@ def drop_lon_and_lat(dset):
     verify_variable_type(dset, xr.Dataset)
 
     with xr.set_options(keep_attrs=True):
-        if "lat" in dset.variables.keys():
+        if "lat" in dset.coords.keys():
             dset = dset.drop("lat")
-        if "lon" in dset.variables.keys():
+        if "lon" in dset.coords.keys():
             dset = dset.drop("lon")
 
     return dset
@@ -716,10 +995,92 @@ def drop_and_rename_classic_vars(dset, towards_gchp=True):
             new_renames = renames.copy()
             for items in renames.items():
                 if items[0] not in data_vars:
-                    del(new_renames[items[0]])
+                    del new_renames[items[0]]
             dset = dset.rename(new_renames)
 
         return rename_restart_variables(dset, towards_gchp=towards_gchp)
+
+
+def cssg_reshape_diag_to_chkpt(
+        dset,
+        verbose=False
+):
+    """
+    Reshapes a dataset from diagnostic to checkpoint dimension format.
+
+    Args:
+    -----
+    dset : xarray.Dataset
+        Dataset with dimensions (time, lev, nf, Xdim, Ydim).
+
+    Keyword Args (optional)
+    -----------------------
+    verbose : bool
+        Toggles verbose output on (True) or off (False).
+
+    Returns:
+    --------
+    dset : xarray.Dataset
+        Dataset wtih dimensions (time, lev, lat, lon), where lat/lon=6.
+    """
+    verify_variable_type(dset, xr.Dataset)
+
+    # ==================================================================
+    # Reshape diagnostic grid to checkpoint grid.
+    # Otherwise, fall through and return the original dataset.
+    # ==================================================================
+    if is_cubed_sphere_diag_grid(dset):
+
+        # Keep xarray attributes unchanged
+        with xr.set_options(keep_attrs=True):
+
+            # ----------------------------------------------------------
+            # Make sure Xdim and Ydim are in the dataset
+            # ----------------------------------------------------------
+            nf = dset.dims["nf"]
+            if "Xdim" in dset.dims and "Ydim" in dset.dims:
+                xdim = dset.dims["Xdim"]
+                ydim = dset.dims["Ydim"]
+            else:
+                msg = "Dimensions 'Xdim' and 'Ydim' not found in Dataset!"
+                raise ValueError(msg)
+
+            # ----------------------------------------------------------
+            # Rename Xdim to lon, and create a corresponding coordinate
+            # of double-precision values from 1..xdim.
+            # ----------------------------------------------------------
+            dset = dset.rename_dims({"Xdim": "lon"})
+            dset = dset.assign_coords({
+                "lon": np.linspace(1, xdim, xdim, dtype=np.float64)
+            })
+
+            # ----------------------------------------------------------
+            # The dset,stack operation combines the nf and Ydim
+            # dimensions into a MultiIndex (i.e. a list of tuples,
+            # where each tuple is (face number, cell number).
+            # We then have to unpack that into a linear list that
+            # ranges from 1..nf*ydim.
+            # ----------------------------------------------------------
+            dset = dset.stack(lat=("nf", "Ydim"))
+            multi_index_list = dset.lat.values
+            lats = np.zeros(nf * ydim)
+            for i, tpl in enumerate(multi_index_list):
+                lats[i] = (tpl[1] + (tpl[0] * ydim)) + 1
+            dset = dset.assign_coords({"lat": lats})
+
+            # ----------------------------------------------------------
+            # Transpose dimensions
+            # ----------------------------------------------------------
+            if "lev" in dset.dims and "time" in dset.dims:
+                dset = dset.transpose("time", "lev", "lat", "lon")
+            elif "lev" in darr.dims:
+                dset = dset.transpose("lev", "lat", "lon")
+            elif "time" in darr.dims:
+                dset = dset.transpose("time", "lat", "lon")
+            else:
+                dset = dset.transpose("lat", "lon")
+
+    return dset
 
 
 def main():
@@ -757,84 +1118,106 @@ def main():
 
     --vert_params_out
         Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format
+
+    --verbose
+        Toggles verbose printout on (True) or off (False).
+
+    -w --weightsdir
+        Directory where regridding weights are stored (or will be created)
     """
 
-    # Parse arguments from the command line
+    # Tell parser which arguments to expect
     parser = argparse.ArgumentParser(
-        description='General cubed-sphere to cubed-sphere regridder.'
+        description="General cubed-sphere to cubed-sphere regridder."
     )
     parser.add_argument(
-        '-i', '--filein',
-        metavar='FIN',
+        "-i", "--filein",
+        metavar="FIN",
         type=str,
         required=True,
-        help='input NetCDF file'
+        help="input NetCDF file"
     )
     parser.add_argument(
-        '-o', '--fileout',
-        metavar='FOUT',
+        "-o", "--fileout",
+        metavar="FOUT",
         type=str,
         required=True,
-        help='name of output file'
+        help="name of output file"
     )
     parser.add_argument(
-        '--sg_params_in',
-        metavar='P',
+        "--sg_params_in",
+        metavar="P",
         type=float,
         nargs=3,
         default=[1.0, 170.0, -90.0],
-        help='input grid stretching parameters (stretch-factor, target longitude, target latitude)'
+        help="input grid stretching parameters (stretch-factor, target longitude, target latitude)"
     )
     parser.add_argument(
-        '--sg_params_out',
-        metavar='P',
+        "--sg_params_out",
+        metavar="P",
         type=float,
         nargs=3,
         default=[1.0, 170.0, -90.0],
-        help='output grid stretching parameters (stretch-factor, target longitude, target latitude)'
+        help="output grid stretching parameters (stretch-factor, target longitude, target latitude)"
     )
     parser.add_argument(
-        '--cs_res_out',
-        metavar='RES',
+        "--cs_res_out",
+        metavar="RES",
         type=int,
         required=False,
-        help='output grid\'s cubed-sphere resolution'
+        help="output grid\"s cubed-sphere resolution"
     )
     parser.add_argument(
-        '--ll_res_out',
-        metavar='RES',
+        "--ll_res_out",
+        metavar="RES",
         type=str,
         required=False,
-        help='output grid\'s lat/lon resolution in \'latxlon\' format'
+        help="output grid\"s lat/lon resolution in \"latxlon\" format"
     )
     parser.add_argument(
-        '--dim_format_in',
-        metavar='WHICH',
+        "--dim_format_in",
+        metavar="WHICH",
         type=str,
         choices=[
-            'checkpoint',
-            'diagnostic',
-            'classic'],
+            "checkpoint",
+            "diagnostic",
+            "classic"],
         required=True,
-        help='format of the input file\'s dimensions (choose from: checkpoint, diagnostic)'
+        help="format of the input file's dimensions (choose from: checkpoint, diagnostic)"
     )
     parser.add_argument(
-        '--dim_format_out',
-        metavar='WHICH',
+        "--dim_format_out",
+        metavar="WHICH",
         type=str,
         choices=[
-            'checkpoint',
-            'diagnostic',
-            'classic'],
+            "checkpoint",
+            "diagnostic",
+            "classic"],
         required=True,
-        help='format of the output file\'s dimensions (choose from: checkpoint, diagnostic)'
+        help="format of the output file's dimensions (choose from: checkpoint, diagnostic)"
     )
     parser.add_argument(
-        '--vert_params_out',
-        metavar='VERT',
+        "--vert_params_out",
+        metavar="VERT",
         type=list,
         required=False,
-        help='Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format'
+        help="Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format"
+    )
+    parser.add_argument(
+        "--verbose",
+        metavar="VERB",
+        type=bool,
+        nargs=1,
+        default=False,
+        help="Toggles verbose output on (True) or off (False)"
+    )
+    parser.add_argument(
+        "-w", "--weightsdir",
+        metavar="WGT",
+        type=str,
+        nargs=1,
+        default=False,
+        help="Directory where regridding weights are found (or will be created)"
     )
     args = parser.parse_args()
 
@@ -848,9 +1231,12 @@ def main():
         args.ll_res_out,
         args.sg_params_in,
         args.sg_params_out,
-        args.vert_params_out)
+        args.vert_params_out,
+        args.verbose,
+        args.weightsdir
+    )
 
 
 # Only call when run as standalone
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
