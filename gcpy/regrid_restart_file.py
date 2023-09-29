@@ -277,12 +277,14 @@ def rename_variables(dataset, to_gchp=True):
     return dataset.rename(rename_dict)
 
 
-def reverse_lev(dataset):
+def reverse_lev(dataset, to_gchp):
     """
-    Reverse the level index of the passed dataset.
+    Reverse the level index of the passed dataset and adjusts the
+    "lev:positive" attribute index accordingly.
 
     Args:
         dataset (xarray.Dataset): The dataset to have its level index reversed.
+        to_gchp (bool): True if we are saving out a GCHP restart file.
 
     Returns:
         xarray.Dataset: The input dataset with a reversed level index.
@@ -290,6 +292,14 @@ def reverse_lev(dataset):
     logging.info("Reversing coordinate 'lev'")
     dataset = dataset.reindex(lev=dataset.lev[::-1])
     dataset = dataset.assign_coords(lev=dataset.lev.values[::-1])
+
+    # GCHP restart files are indexed from top-of-atm downward.
+    # GCClassic restart files are indexed from surface upward.
+    if to_gchp:
+        dataset["lev"].attrs["positive"] = "down"
+    else:
+        dataset["lev"].attrs["positive"] = "up"
+
     return dataset
 
 
@@ -503,7 +513,7 @@ def regrid_restart_file(
     if is_conversion:
         to_gchp = output_is_gchp
         dataset = rename_variables(dataset, to_gchp)
-        dataset = reverse_lev(dataset)
+        dataset = reverse_lev(dataset, to_gchp)
 
     dataset, output_template = drop_variables(dataset, output_template)
     dataset = regrid(dataset, output_template, weights_file=regrid_weights)
@@ -519,6 +529,8 @@ def regrid_restart_file(
             raise Exception(
                 "Error when processing your stretched-grid parameters - are they correct?"
             ) from exception
+
+    dataset = check_lev_attribute(output_is_gchp)
 
     dataset.to_netcdf("new_restart_file.nc")
 
