@@ -62,6 +62,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Now allow `plot_val` to be of type `dask.array.Array` in `plot.py` routines `six_plot` and `single_panel`
 - Now add `if` statements to turn of `Parallel()` commands when `n_jobs==1`.
 - Do not hardwire fontsize in `gcpy/plot.py`; get defaults from `gcpy_plot_style`
+- Updated and cleaned up code in `gcpy/regrid.py`
+- Example scripts`plot_single_level` and `plot_comparisons` can now accept command-line arguments
+- Example scripts `plot_single_level.py`, `plot_comparisons.py`, `compare_diags.py` now handle GCHP restart files properly
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
@@ -366,16 +369,3 @@ This is the first labeled version of GCPy. The primary functionality of GCPy is 
 - Support for plotting benchmark output for both GEOS-Chem Classic (lat/lon data) and GCHP (cubed-sphere data).
 
 The first official release version of GCPy, v1.0.0, will correspond with the release of GEOS-Chem 13.0.0.
-
-
-## [Unreleased]
-
-### Added
-
-### Changed
-
-### Deprecated
-
-### Fixed
-
-### Removed
