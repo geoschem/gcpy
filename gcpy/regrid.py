@@ -731,7 +731,7 @@ def reformat_dims(
         ds: xarray Dataset
              Original dataset with reformatted dimensions
     """
-    def unravel_checkpoint(ds_in):
+    def unravel_checkpoint_lat(ds_in):
         if isinstance(ds_in, xr.Dataset):
             cs_res = ds_in.dims['lon']
             assert cs_res == ds_in.dims['lat'] // 6
@@ -742,32 +742,27 @@ def reformat_dims(
             np.linspace(1, 6, 6),
             np.linspace(1, cs_res, cs_res)
         ])
-        ds_in = ds_in.assign_coords({"lat": mi, "lon": mi})
+        ds_in = ds_in.assign_coords({"lat": mi})
         ds_in = ds_in.unstack('lat')
-        ds_in = ds_in.unstack('lon')
         return ds_in
 
-    def ravel_checkpoint(ds_out):
-        print(ds_out.dims)
-        print(ds_out.coords)
+    def ravel_checkpoint_lat(ds_out):
         if isinstance(ds, xr.Dataset):
             cs_res = ds_out.dims['lon']
         else:
             cs_res = ds_out['lon'].size
         ds_out = ds_out.stack(lat=['lat_level_0', 'lat_level_1'])
-        ds_out = ds_out.stack(lon=['lon_level_0', 'lon_level_1'])
         ds_out = ds_out.assign_coords({
             'lat': np.linspace(1, 6 * cs_res, 6 * cs_res),
-            'lon': np.linspace(1, cs_res, cs_res)
         })
         return ds_out
 
     dim_formats = {
         'checkpoint': {
-            'unravel': [unravel_checkpoint],
-            'ravel': [ravel_checkpoint],
+            'unravel': [unravel_checkpoint_lat],
+            'ravel': [ravel_checkpoint_lat],
             'rename': {
-                'lon_level_1': 'X',
+                'lon': 'X',
                 'lat_level_0': 'F',
                 'lat_level_1': 'Y',
                 'time': 'T',
