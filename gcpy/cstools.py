@@ -740,8 +740,9 @@ def is_cubed_sphere_rst_grid(data):
     """
     gcpy.util.verify_variable_type(data, (xr.DataArray, xr.Dataset))
 
-    if data.dims["lat"] ==  data.dims["lon"] * 6:
-        return True
+    if "lat" in data.dims:
+        if data.dims["lat"] == data.dims["lon"] * 6:
+            return True
     if "SPC_" in data.data_vars.keys():
         return True
     return False
@@ -769,4 +770,4 @@ def get_cubed_sphere_res(data):
         return 0
     if is_cubed_sphere_rst_grid(data):
         return data.dims["lon"]
-    return data["Xdim"]
+    return data.dims["Xdim"]
