@@ -95,12 +95,12 @@ def file_regrid(
         sg_params_out = [1.0, 170.0, -90.0]
 
     # Load dataset
-    dset_in = xr.open_dataset(
+    dset = xr.open_dataset(
         fin,
         decode_cf=False,
         engine='netcdf4'
     ).load()
-    cs_res_in = get_cubed_sphere_res(dset_in)
+    cs_res_in = get_cubed_sphere_res(dset)
 
     if verbose:
         print(f"file_regrid.py: cs_res_in:  {cs_res_in}")
@@ -113,27 +113,26 @@ def file_regrid(
         # Regrid data
         # ==============================================================
 
-        # save type of data for later restoration
-        original_dtype = np.dtype(dset_in[list(dset_in.data_vars)[0]])
+        # Save type of data for later restoration
+        original_dtype = np.dtype(dset[list(dset.data_vars)[0]])
 
-        if cs_res_in == cs_res_out and all(
-            [v1 == v2 for v1, v2 in zip(sg_params_in, sg_params_out)]
-        ):
+        # Determine which function to call for the regridding
+        if cs_res_in == cs_res_out and \
+           np.array_equal(sg_params_in, sg_params_out):
 
             # ----------------------------------------------------------
             # Input CS/SG grid == Output CS/SG grid
             # ----------------------------------------------------------
             print('Skipping regridding since grid parameters are identical')
-            dset_out = dset_in
 
         elif dim_format_in != 'classic' and dim_format_out != 'classic':
 
             # ----------------------------------------------------------
             # Input grid is CS/SG; Output grid is CS/SG
             # ----------------------------------------------------------
-            dset_out = regrid_cssg_to_cssg(
+            dset = regrid_cssg_to_cssg(
                 fout,
-                dset_in,
+                dset,
                 dim_format_in,
                 sg_params_in,
                 cs_res_out,
@@ -148,8 +147,8 @@ def file_regrid(
             # ----------------------------------------------------------
             # Input grid is LL; Output grid is CS/SG
             # ----------------------------------------------------------
-            dset_out = regrid_ll_to_cssg(
-                dset_in,
+            dset = regrid_ll_to_cssg(
+                dset,
                 cs_res_out,
                 dim_format_out,
                 sg_params_out,
@@ -162,8 +161,8 @@ def file_regrid(
             # ----------------------------------------------------------
             # Input grid is CS/SG; Output grid is LL
             # ----------------------------------------------------------
-            dset_out = regrid_cssg_to_ll(
-                dset_in,
+            dset = regrid_cssg_to_ll(
+                dset,
                 cs_res_in,
                 dim_format_in,
                 sg_params_in,
@@ -177,8 +176,8 @@ def file_regrid(
             # ----------------------------------------------------------
             # Input grid is LL; Output grid is LL
             # ----------------------------------------------------------
-            dset_out = regrid_ll_to_ll(
-                dset_in,
+            dset = regrid_ll_to_ll(
+                dset,
                 ll_res_out,
                 verbose=verbose,
                 weightsdir=weightsdir
@@ -189,10 +188,10 @@ def file_regrid(
         # ==============================================================
 
         # Correct precision changes (accidental 32-bit to 64-bit)
-        dset_out = dset_out.astype(original_dtype)
+        dset = dset.astype(original_dtype)
 
         # Write dataset to file
-        dset_out.to_netcdf(
+        dset.to_netcdf(
             fout,
             format='NETCDF4',
             mode="w"
@@ -200,11 +199,11 @@ def file_regrid(
 
         # Print the resulting dataset
         if verbose:
-            print(dset_out)
+            print(dset)
 
 
 def prepare_cssg_input_grid(
-        dset_in,
+        dset,
         dim_format_in
 ):
     """
@@ -213,7 +212,7 @@ def prepare_cssg_input_grid(
 
     Args:
     -----
-    dset_in : xr.Dataset
+    dset : xr.Dataset
         Input grid (cubed-sphere or stretched grid)
     dim_format_in : str
         Either "checkpoint" (for restart files)
@@ -221,32 +220,32 @@ def prepare_cssg_input_grid(
 
     Returns:
     --------
-    dset_out : xr.Dataset
+    dset : xr.Dataset
         Data with reformatted dimensions and dropped fields
     cs_res_in : int
         Cubed-sphere/stretched grid resolution
     """
     # Reformat dimensions to "common dimensions (T, Z, F, Y, X)
-    dset_in = reformat_dims(
-        dset_in,
+    dset = reformat_dims(
+        dset,
         dim_format_in,
         towards_common=True
     )
 
     # Drop variables that don't look like fields
     non_fields = [
-        v for v in dset_in.variables.keys()
-        if len(set(dset_in[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0
-        or len(dset_in[v].dims) == 0]
-    dset_in = dset_in.drop(non_fields)
+        v for v in dset.variables.keys()
+        if len(set(dset[v].dims) - {'T', 'Z', 'F', 'Y', 'X'}) > 0
+        or len(dset[v].dims) == 0]
+    dset_in = dset.drop(non_fields)
 
     # Transpose to T, Z, F, Y, X
-    dset_in = dset_in.transpose('T', 'Z', 'F', 'Y', 'X')
+    dset = dset_in.transpose('T', 'Z', 'F', 'Y', 'X')
 
-    assert dset_in.dims['X'] == dset_in.dims['Y']
-    cs_res_in = dset_in.dims['X']
+    assert dset.dims['X'] == dset.dims['Y']
+    cs_res_in = dset.dims['X']
 
-    return dset_in, cs_res_in
+    return dset, cs_res_in
 
 
 def regrid_cssg_to_cssg(
@@ -825,7 +824,7 @@ def save_ll_metadata(
     if verbose:
         print("file_regrid.py: In routine save_ll_metadata:")
         print(dset.coords)
-            
+
     return dset
 
 
@@ -856,7 +855,7 @@ def save_cssg_metadata(
     dset : xarray.Dataset
         The original data, plus stretched grid metadata.
     """
-    if verbose:       
+    if verbose:
         print("file_regrid.py: Saving CS/SG coordinate metadata")
 
     with xr.set_options(keep_attrs=True):
