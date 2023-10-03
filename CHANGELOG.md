@@ -74,7 +74,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Prevent plot panels from overlapping in six-panel plots
 - Prevent colorbar tick labels from overlapping in dynamic-range ratio plots
 - Updated `seaborn` plot style names to conform to the latest matplotlib
-- Set `lev:positive="down"` in `regrid_restart_file.py` when regridding to GCHP restart files
+- Set `lev:positive` and/or `ilev:positive` properly in `regrid_restart_file.py` and `file_regrid.py`
+- Prevent overwriting of `lev` coord in `file_regrid.py` at netCDF write time
 
 ### Removed
 - Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines

@@ -7,7 +7,8 @@ import os
 import warnings
 import numpy as np
 import xarray as xr
-from gcpy.grid import get_input_res, get_grid_extents
+from gcpy.grid import get_input_res, get_grid_extents, \
+    get_ilev_coord, get_lev_coord
 from gcpy.regrid import make_regridder_S2S, reformat_dims, \
     make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
 from gcpy.util import verify_variable_type
@@ -114,7 +115,10 @@ def file_regrid(
         # ==============================================================
 
         # Save type of data for later restoration
-        original_dtype = np.dtype(dset[list(dset.data_vars)[0]])
+        # Avoid using the dtype of GCHP cubed-sphere grid variables
+        dset_tmp = dset
+        dtype_orig = np.dtype(dset[list(dset_tmp.data_vars.keys())[-1]])
+        dset_tmp = xr.Dataset()
 
         # Determine which function to call for the regridding
         if cs_res_in == cs_res_out and \
@@ -188,14 +192,26 @@ def file_regrid(
         # ==============================================================
 
         # Correct precision changes (accidental 32-bit to 64-bit)
-        dset = dset.astype(original_dtype)
+        # NOTE: Add a workaround to prevent the xr.DataArray.astype
+        # function from overwriting the "lev" dimension.
+        dset_tmp = dset.astype(
+            dtype=dtype_orig,
+            casting="same_kind",
+            copy=False
+        )
+        dset = dset_tmp.assign_coords(lev=dset.lev)
 
         # Write dataset to file
         dset.to_netcdf(
             fout,
-            format='NETCDF4',
-            mode="w"
+            mode="w",
+            format="NETCDF4",
+            engine="netcdf4",
+            unlimited_dims=["time"],
         )
+
+        # Free memory of the temporary dataset
+        dset_tmp = xr.Dataset()
 
         # Print the resulting dataset
         if verbose:
@@ -476,6 +492,12 @@ def regrid_cssg_to_ll(
             verbose=verbose
         )
 
+        # Drop cubed-sphere variables
+        if "lons" in dset.data_vars:
+            dset = dset.drop_vars(["lons"])
+        if "lats" in dset.data_vars:
+            dset = dset.drop_vars(["lats"])
+
     return dset
 
 
@@ -690,10 +712,10 @@ def flip_lev_coord_if_necessary(
         dim_format_out
 ):
     """
-    Determines whether it is necessary to flip the lev coord of
-    an xarray.Dataset in the vertical depending on the values of
-    dim_format_in and dim_format_out.  Also sets the attribute
-    "lev:positive" accordingly.
+    Determines whether it is necessary to flip the :lev" and "ilev"
+    coords of an xarray.Dataset in the vertical depending on the
+    values ofdim_format_in and dim_format_out.  Also sets the
+    attributes "lev:positive" and "ilev:positive" accordingly.
 
     Args:
     -----
@@ -722,30 +744,63 @@ def flip_lev_coord_if_necessary(
     verify_variable_type(dim_format_in, str)
     verify_variable_type(dim_format_out, str)
 
-    # checkpoint/diagnostic to classic: lev in ascending order
+    # ==================================================================
+    # checkpoint/diagnostic to classic: lev, ilev in ascending order
+    # ==================================================================
     if dim_format_in != "classic" and dim_format_out == "classic":
-        dset = dset.sortby('lev', ascending=False)
-        dset.lev.attrs["positive"] = "up"
+
+        # Flip lev and set to eta values at midpoints (if necessary)
+        if "ilev" in dset.coords:
+            dset = dset.reindex(ilev=dset.ilev[::-1])
+            if any(var > 1.0 for var in dset.ilev):
+                coord = get_ilev_coord(n_lev=dset.dims["ilev"])
+                dset = dset.assign_coords({"ilev": coord})
+                dset = dset.swap_dims({"dim_0": "ilev"})
+            dset.ilev.attrs["positive"] = "up"
+
+        # Flip lev and set to eta values at midpoints (if necessary)
+        if "lev" in dset.coords:
+            dset = dset.reindex(lev=dset.lev[::-1])
+            if any(var > 1.0 for var in dset.lev):
+                coord = get_lev_coord(n_lev=dset.dims["lev"])
+                dset = dset.assign_coords({"lev": coord})
+                dset = dset.swap_dims({"dim_0": "lev"})
+            dset.lev.attrs["positive"] = "up"
+
         return dset
 
+    # ==================================================================
     # classic/diagnostic to checkpoint: lev in descending order
+    # ==================================================================
     if dim_format_in != "checkpoint" and dim_format_out == "checkpoint":
-        dset = dset.sortby('lev', ascending=True)
-        dset.lev.attrs["positive"] = "down"
+
+        if "lev" in dset.coords:
+            dset = dset.reindex(lev=dset.lev[::-1])
+            dset.lev.attrs["positive"] = "down"
         return dset
 
+    # ==================================================================
     # classic/diagnostic to classic/diagnostic:
-    # No flipping needed, but add lev:positive="up".
+    # No flipping, but add lev:positive="up" and ilev:positive="up"
     # TODO: Check for Emissions diagnostic (not a common use case)
+    # ==================================================================
     if dim_format_in == "classic" and dim_format_out == "diagnostic" or \
        dim_format_out == "diagnostic" and dim_format_in == "classic":
-        dset.lev.attrs["positive"] = "up"
+
+        if "ilev" in dset.coords:
+            dset.ilev.attrs["positive"] = "up"
+        if "lev" in dset.coords:
+            dset.lev.attrs["positive"] = "up"
         return dset
 
+    # ==================================================================
     # checkpoint to checkpoint:
     # No flipping needed, but add lev:positive="down"
+    # ==================================================================
     if dim_format_in =="checkpoint" and dim_format_out == "checkpoint":
-        dset.lev.attrs["positive"] = "down"
+
+        if "lev" in dset.coords:
+            dset.lev.attrs["positive"] = "down"
         return dset
 
     return dset
@@ -791,35 +846,19 @@ def save_ll_metadata(
             'axis': 'X'
         }
 
-        if "ilev" in dset.coords.keys():
-            max_lev = np.max(dset.ilev)
-            if 0 < max_lev < 2000:
-                units = "hPa"
-            elif 0 < max_lev < 200000:
-                units = "Pa"
-            else:
-                units = "level"
+        # ilev:positive is set by flip_lev_coord_if_necessary
+        if "ilev" in dset.coords:
+            dset.ilev.attrs["long_name"] = \
+                "hybrid level at interfaces ((A/P0)+B)"
+            dset.ilev.attrs["units"] = "level"
+            dset.ilev.attrs["axis"] = "Z"
 
-            dset.ilev.attrs = {
-                'long_name': "hybrid level at interfaces ((A/P0)+B)",
-                'units': units,
-                'axis': "Z",
-            }
-
-        if "lev" in dset.coords.keys():
-            max_lev = np.max(dset.lev)
-            if 0 < max_lev < 2000:
-                units = "hPa"
-            elif 0 < max_lev < 200000:
-                units = "Pa"
-            else:
-                units = "level"
-
-            dset.lev.attrs = {
-                'long_name': "hybrid level at midpoints ((A/P0)+B)",
-                'units': units,
-                'axis': "Z",
-            }
+        # lev:positive is set by flip_lev_coord_if_necessary
+        if "lev" in dset.coords:
+            dset.lev.attrs["long_name"] = \
+                "hybrid level at midpoints ((A/P0)+B)"
+            dset.lev.attrs["units"] = "level"
+            dset.lev.attrs["axis"] = "Z"
 
     if verbose:
         print("file_regrid.py: In routine save_ll_metadata:")
