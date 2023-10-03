@@ -1,5 +1,6 @@
-''' Functions for creating xesmf regridder objects '''
-
+"""
+Module containing functions for creating xESMF regridder objects.
+"""
 import os
 import warnings
 import hashlib
@@ -778,7 +779,7 @@ def reformat_dims(
                 'Ydim': 'Y',
                 'time': 'T',
             },
-            'transpose': ('time', 'lev', 'nf', 'Ydim', 'Xdim')
+            'transpose': ('time', 'lev', 'nf', 'Xdim', 'Ydim')
         }
     }
 
