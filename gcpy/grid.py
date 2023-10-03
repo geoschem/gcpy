@@ -314,10 +314,13 @@ def get_ilev_coord(
         Hybrid grid parameter B (unitless), with values placed on level
         edges.  If not specified, values from the _GEOS_72L_BP array in
         this module will be used.
+    top_down : bool
+        Set this to true if the eta coordinate will be arranged from
+        top-of-atm downward (True) or from the surface upward (False).
 
     Returns:
     --------
-    ilev : xr.DataArray
+    ilev : numpy.ndarray
         List of eta values at vertical grid edges
     """
     if n_lev is None:
@@ -331,19 +334,17 @@ def get_ilev_coord(
     if BP_edge is None and n_lev == 47:
         BP_edge = _GEOS_47L_BP
 
-    return xr.DataArray(
-        np.array((AP_edge/1000.0) + BP_edge, np.float64),
-        attrs={
-            "long_name": "hybrid level at interfaces ((A/P0)+B)",
-            "units": "level"
-            }
-        )
-
+    # Get eta values at vertical level edges
+    ilev = np.array((AP_edge/1000.0) + BP_edge, dtype=np.float64)
+    if top_down:
+        ilev = ilev[::-1]
+    return ilev
 
 def get_lev_coord(
         n_lev=72,
         AP_edge=None,
-        BP_edge=None
+        BP_edge=None,
+        top_down=True
 ):
     """
     Returns the eta values (defined as (A/P0) + B) at vertical
@@ -362,10 +363,13 @@ def get_lev_coord(
         Hybrid grid parameter B (unitless), with values placed on level
         edges.  If not specified, values from the _GEOS_72L_BP array in
         this module will be used.
+    top_down : bool
+        Set this to true if the eta coordinate will be arranged from
+        top-of-atm downward (True) or from the surface upward (False).
 
     Returns:
     --------
-    lev : xr.DataArray
+    lev : numpy.ndarray
         List of eta values at vertical grid midpoints
     """
     if n_lev is None:
@@ -383,18 +387,13 @@ def get_lev_coord(
     # Convert inputs to numpy.ndarray for fast computation
     AP_edge = np.array(AP_edge)
     BP_edge = np.array(BP_edge)
-
-    # Midpoints
     AP_mid = (AP_edge[0:n_lev:1] + AP_edge[1:n_lev+1:1]) * 0.5
     BP_mid = (BP_edge[0:n_lev:1] + BP_edge[1:n_lev+1:1]) * 0.5
+    lev = np.array((AP_mid / 1000.0) + BP_mid, dtype=np.float64)
+    if top_down:
+        lev = lev[::-1]
+    return lev
 
-    return xr.DataArray(
-        np.array((AP_mid/1000.0) + BP_mid, np.float64),
-        attrs={
-            "long_name": "hybrid level at midpoints ((A/P0)+B)",
-            "units": "level"
-            }
-        )
 
 def get_pressure_indices(pedge, pres_range):
     """
