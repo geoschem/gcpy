@@ -771,3 +771,31 @@ def get_cubed_sphere_res(data):
     if is_cubed_sphere_rst_grid(data):
         return data.dims["lon"]
     return data.dims["Xdim"]
+
+
+def is_gchp_lev_positive_down(data):
+    """
+    Determines if GCHP data is arranged vertically from the top of the
+    atmosphere downwards or from the surface upwards, according to:
+
+    (1) Checkpoint files:     lev:positive="down
+    (2) Emissions collection: lev:positive="down"
+    (3) Other collections     lev:positive="up"
+
+    Args:
+    -----
+    data : xarray.DataArray or xarray.Dataset
+       The input data
+
+    Returns:
+    --------
+    True if the data is arranged from top-of-atm downwards.
+    False if the data is arranged from the surface upwards.
+    """
+    gcpy.util.verify_variable_type(data, (xr.DataArray, xr.Dataset))
+    
+    if is_cubed_sphere_rst_grid(data):
+        return True
+    if is_cubed_sphere_diag_grid(data) and "Emis" in data.data_vars:
+        return True
+    return False
