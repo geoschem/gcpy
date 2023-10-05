@@ -302,12 +302,7 @@ def regrid_cssg_to_cssg(
     if verbose:
         print("file_regrid.py: Regridding from CS/SG to CS/SG")
 
-    # Error check
-    #if "checkpoint" in dim_format_in and "diagnostic" in dim_format_out:
-    #    msg = "Regridding from checkpoint to diagnostic cubed-sphere "
-    #    msg+= "is currently not supported."
-    #    raise ValueError(msg)
-
+    # Keep all xarray attributes
     with xr.set_options(keep_attrs=True):
 
         # Change CS/SG dimensions to universal format
@@ -410,6 +405,7 @@ def regrid_cssg_to_cssg(
         # on the format of the ouptut grid (checkpoint or diagnostic).
         dset = adjust_cssg_grid_and_coords(
             dset,
+            dim_format_in,
             dim_format_out
         )
 
@@ -630,6 +626,7 @@ def regrid_ll_to_cssg(
         # if "checkpoint" output are requested.
         dset = adjust_cssg_grid_and_coords(
             dset,
+            dim_format_in,
             dim_format_out
         )
 
@@ -1044,6 +1041,7 @@ def rename_restart_variables(dset, towards_gchp=True):
 
 def adjust_cssg_grid_and_coords(
         dset,
+        dim_format_in,
         dim_format_out,
 ):
     """
@@ -1071,19 +1069,28 @@ def adjust_cssg_grid_and_coords(
     with xr.set_options(keep_attrs=True):
 
         # ==============================================================
-        # "Xdim" and "Ydim" coordinates (returned by ESMF) correspond
-        # to the "lons" and "lats" coordinates as saved out by MAPL.
+        # Rename coordinates returned by the xESMF regridding to
+        # the "lons" and "lats" coordinates as saved out by MAPL.
         # ==============================================================
-        if "Xdim" in dset.variables:
-            dset = dset.rename_vars({"Xdim": "lons"})
-        if "Ydim" in dset.variables:
-            dset = dset.rename_vars({"Ydim": "lats"})
+        if "diagnostic" in dim_format_in:
+            if "Xdim" in dset.variables:
+                dset = dset.rename_vars({"Xdim": "lons"})
+            if "Ydim" in dset.variables:
+                dset = dset.rename_vars({"Ydim": "lats"})
+
+        if "checkpoint" in dim_format_in:
+            if "lon" in dset.variables:
+                dset = dset.rename_vars({"lon": "lons"})
+            if "lat" in dset.variables:
+                dset = dset.rename_vars({"lat": "lats"})
+
         if "lons" in dset.variables:
             dset.lons.attrs = {
                 "standard_name": "longitude",
                 "long_name": "Longitude",
                 "units": "degrees_east"
             }
+
         if "lats" in dset.variables:
             dset.lats.attrs = {
                 "standard_name": "latitude",
