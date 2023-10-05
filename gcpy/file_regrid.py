@@ -12,7 +12,7 @@ from gcpy.grid import get_input_res, get_grid_extents, \
 from gcpy.regrid import make_regridder_S2S, reformat_dims, \
     make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
 from gcpy.util import verify_variable_type
-from gcpy.cstools import get_cubed_sphere_res
+from gcpy.cstools import get_cubed_sphere_res, is_gchp_lev_positive_down
 
 # Ignore any FutureWarnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -436,6 +436,7 @@ def regrid_cssg_to_ll(
         sg_params_in,
         ll_res_out,
         verbose=False,
+
         weightsdir="."
 ):
     """
@@ -809,7 +810,8 @@ def flip_lev_coord_if_necessary(
     if dim_format_in != "checkpoint" and dim_format_out == "checkpoint":
 
         if "lev" in dset.coords:
-            dset = dset.reindex(lev=dset.lev[::-1])
+            if not is_gchp_lev_positive_down(dset):
+                dset = dset.reindex(lev=dset.lev[::-1])
             if any(var > 1.0 for var in dset.lev):
                 coord = get_lev_coord(
                     n_lev=dset.dims["lev"],
@@ -826,7 +828,7 @@ def flip_lev_coord_if_necessary(
     # TODO: Check for Emissions diagnostic (not a common use case)
     # ==================================================================
     if dim_format_in == "classic" and dim_format_out == "diagnostic" or \
-       dim_format_out == "diagnostic" and dim_format_in == "classic":
+       dim_format_in == "diagnostic" and dim_format_out == "classic":
 
         if "ilev" in dset.coords:
             dset.ilev.attrs["positive"] = "up"
