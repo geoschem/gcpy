@@ -12,7 +12,7 @@ from gcpy.grid import get_input_res, get_grid_extents, \
 from gcpy.regrid import make_regridder_S2S, reformat_dims, \
     make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
 from gcpy.util import verify_variable_type
-from gcpy.cstools import get_cubed_sphere_res, is_cubed_sphere_diag_grid
+from gcpy.cstools import get_cubed_sphere_res
 
 # Ignore any FutureWarnings
 warnings.simplefilter(action="ignore", category=FutureWarning)
@@ -302,6 +302,12 @@ def regrid_cssg_to_cssg(
     if verbose:
         print("file_regrid.py: Regridding from CS/SG to CS/SG")
 
+    # Error check
+    #if "checkpoint" in dim_format_in and "diagnostic" in dim_format_out:
+    #    msg = "Regridding from checkpoint to diagnostic cubed-sphere "
+    #    msg+= "is currently not supported."
+    #    raise ValueError(msg)
+
     with xr.set_options(keep_attrs=True):
 
         # Change CS/SG dimensions to universal format
@@ -316,59 +322,9 @@ def regrid_cssg_to_cssg(
         # (i.e. same resolution & stretched-grid parameters)
         # ==============================================================
         if cs_res_in == cs_res_out and \
-           np.array_equal(sg_params_in, sg_params_out):
+           np.array_equal(sg_params_in, sg_params_out) and \
+           dim_format_in == dim_format_out:
             print("Skipping regridding since grid parameters are identical")
-
-        else:
-
-            # Make regridders
-            regridders = make_regridder_S2S(
-                cs_res_in,
-                cs_res_out,
-                sf_in=sg_params_in[0],
-                tlon_in=sg_params_in[1],
-                tlat_in=sg_params_in[2],
-                sf_out=sg_params_out[0],
-                tlon_out=sg_params_out[1],
-                tlat_out=sg_params_out[2],
-                weightsdir=weightsdir
-            )
-
-            # Save temporary output face files to minimize RAM usage
-            oface_files = [os.path.join(".",fout+str(x)) for x in range(6)]
-
-            # For each output face, sum regridded input faces
-            for oface in range(6):
-                oface_regridded = []
-                for (iface, regridder) in regridders[oface].items():
-                    dset_iface = dset.isel(F=iface)
-                    if "F" in dset_iface.coords:
-                        dset_iface = dset_iface.drop("F")
-                    oface_regridded.append(
-                        regridder(
-                            dset_iface,
-                            keep_attrs=True
-                        )
-                    )
-                oface_regridded = xr.concat(
-                    oface_regridded,
-                    dim="intersecting_ifaces"
-                ).sum(
-                    "intersecting_ifaces",
-                    keep_attrs=True).expand_dims({"F":[oface]})
-                oface_regridded.to_netcdf(
-                    oface_files[oface],
-                    format="NETCDF4",
-                    mode="w"
-                )
-
-            # Combine face files
-            dset = xr.open_mfdataset(
-                oface_files,
-                combine="nested",
-                concat_dim="F",
-                engine="netcdf4"
-            )
 
             # Put regridded dataset back into a familiar format
             dset = dset.rename({
@@ -376,13 +332,71 @@ def regrid_cssg_to_cssg(
                 "x": "X",
             })
 
-            # Remove any temporary files
-            for oface in oface_files:
-                os.remove(oface)
+            return dset
+
+        # Make regridders
+        regridders = make_regridder_S2S(
+            cs_res_in,
+            cs_res_out,
+            sf_in=sg_params_in[0],
+            tlon_in=sg_params_in[1],
+            tlat_in=sg_params_in[2],
+            sf_out=sg_params_out[0],
+            tlon_out=sg_params_out[1],
+            tlat_out=sg_params_out[2],
+            weightsdir=weightsdir
+        )
+
+        # Save temporary output face files to minimize RAM usage
+        oface_files = [os.path.join(".",fout+str(x)) for x in range(6)]
+
+        # For each output face, sum regridded input faces
+        for oface in range(6):
+            oface_regridded = []
+            for (iface, regridder) in regridders[oface].items():
+                dset_iface = dset.isel(F=iface)
+                if "F" in dset_iface.coords:
+                    dset_iface = dset_iface.drop("F")
+                oface_regridded.append(
+                    regridder(
+                        dset_iface,
+                        keep_attrs=True
+                    )
+                )
+            oface_regridded = xr.concat(
+                oface_regridded,
+                dim="intersecting_ifaces"
+            ).sum(
+                "intersecting_ifaces",
+                keep_attrs=True).expand_dims({"F":[oface]})
+            oface_regridded.to_netcdf(
+                oface_files[oface],
+                format="NETCDF4",
+                engine="netcdf4",
+                mode="w"
+            )
+
+        # Combine face files
+        dset = xr.open_mfdataset(
+            oface_files,
+            combine="nested",
+            concat_dim="F",
+            engine="netcdf4"
+        )
+
+        # Remove any temporary files
+        for oface in oface_files:
+            os.remove(oface)
 
         # ==============================================================
         # Reshape the data if necessary
         # ==============================================================
+
+        # Put regridded dataset back into a familiar format
+        dset = dset.rename({
+            "y": "Y",
+            "x": "X",
+        })
 
         # Reformat dimensions from "common dimension format"
         # to CS/GG "checkpoint" or "diagnostics" format
@@ -392,14 +406,12 @@ def regrid_cssg_to_cssg(
             towards_common=False
         )
 
-        # Workaround: If saving to checkpoint format, then set lon
-        # to a linearly-increasing list from 1..cs_res_out.  The
-        # handling for "lon" is confounded due to the fake "Xdim"
-        # dimension that is added for GrADS compatibility.
-        if "checkpoint" in dim_format_out:
-            dset = dset.assign_coords({
-                "lon": np.linspace(1, dset.dims["lon"], dset.dims["lon"])
-                })
+        # Fix names and attributes of of coordinate variables depending
+        # on the format of the ouptut grid (checkpoint or diagnostic).
+        dset = adjust_cssg_grid_and_coords(
+            dset,
+            dim_format_out
+        )
 
         # Flip vertical levels (if necessary) and
         # set the lev:positive attribute accordingly
@@ -413,23 +425,10 @@ def regrid_cssg_to_cssg(
         dset = save_cssg_metadata(
             dset,
             cs_res_out,
+            dim_format_out,
             sg_params_out,
             verbose=verbose
         )
-
-        # Checkpoint files do not have "lons" & "lats" coords
-        if "checkpoint" in dim_format_out:
-            if "lons" in dset.data_vars:
-                dset = dset.drop_vars("lons")
-            if "lats" in dset.data_vars:
-                dset = dset.drop_vars("lats")
-
-        # Diagnostic files do not have "lon" & "lat" coords
-        if "diagnostic" in dim_format_out:
-            if "lon" in dset.data_vars:
-                dset = dset.drop_vars("lon")
-            if "lat" in dset.data_vars:
-                dset = dset.drop_vars("lat")
 
     return dset
 
@@ -638,6 +637,7 @@ def regrid_ll_to_cssg(
         dset = save_cssg_metadata(
             dset,
             cs_res_out,
+            dim_format_out,
             sg_params_out,
             verbose=verbose
         )
@@ -710,7 +710,10 @@ def regrid_ll_to_ll(
             out_extent=out_extent,
             weightsdir=weightsdir
         )
-        dset = regridder(dset, keep_attrs=True, verbose=False)
+        dset = regridder(
+            dset,
+            keep_attrs=True
+        )
 
         # Add the non-regriddable fields back
         dset = dset.merge(non_fields)
@@ -838,10 +841,27 @@ def flip_lev_coord_if_necessary(
     # checkpoint to checkpoint:
     # No flipping needed, but add lev:positive="down"
     # ==================================================================
-    if dim_format_in =="checkpoint" and dim_format_out == "checkpoint":
+    if dim_format_in == "checkpoint" and dim_format_out == "checkpoint":
 
         if "lev" in dset.coords:
             dset.lev.attrs["positive"] = "down"
+        return dset
+
+    # ==================================================================
+    # checkpoint to diagnostic: lev in ascending order
+    # ==================================================================
+    if dim_format_in == "checkpoint" and dim_format_out == "diagnostic":
+
+        if "lev" in dset.coords:
+            dset = dset.reindex(lev=dset.lev[::-1])
+            if any(var > 1.0 for var in dset.lev):
+                coord = get_lev_coord(
+                    n_lev=dset.dims["lev"],
+                    top_down=False
+                )
+                dset = dset.assign_coords({"lev": coord})
+            dset.lev.attrs["positive"] = "up"
+
         return dset
 
     return dset
@@ -911,6 +931,7 @@ def save_ll_metadata(
 def save_cssg_metadata(
         dset,
         cs_res_out,
+        dim_format_out,
         sg_params_out,
         verbose=False
 ):
@@ -924,6 +945,9 @@ def save_cssg_metadata(
         Data on the stretched grid.
     cs_res_out : int
         Cubed-sphere grid resolution.
+    dim_format_out : str
+        Either "checkpoint" (for restart files) or
+        "diagnostic" (for History diagnostic files).
     sg_params_out: list[float, float, float]
         Output grid stretching parameters
         [stretch-factor, target longitude, target latitude].
@@ -939,10 +963,46 @@ def save_cssg_metadata(
         print("file_regrid.py: Saving CS/SG coordinate metadata")
 
     with xr.set_options(keep_attrs=True):
+
+        # Stretched-grid global attrs
         dset.attrs["stretch_factor"] = sg_params_out[0]
         dset.attrs["target_longitude"] = sg_params_out[1]
         dset.attrs["target_latitude"] = sg_params_out[2]
         dset.attrs["cs_res"] = cs_res_out
+
+        # Special handling for "checkpoint" format
+        if "checkpoint" in dim_format_out:
+            if "lon" in dset.dims:
+                dset.lon.attrs = {
+                    "standard_name": "longitude",
+                    "long_name": "Longitude",
+                    "units": "degrees_east",
+                    "axis": "X"
+                }
+            if "lat" in dset.dims:
+                dset.lat.attrs = {
+                    "standard_name": "latitude",
+                    "long_name": "Latitude",
+                    "units": "degrees_north",
+                    "axis": "Y"
+                }
+
+        # Special handling for "checkpoint" format
+        if "diagnostic" in dim_format_out:
+            if "lons" in dset.dims:
+                dset.lons.attrs = {
+                    "standard_name": "longitude",
+                    "long_name": "Longitude",
+                    "units": "degrees_east",
+                    "axis": "X"
+                }
+            if "lats" in dset.dims:
+                dset.lats.attrs = {
+                    "standard_name": "latitude",
+                    "long_name": "Latitude",
+                    "units": "degrees_north",
+                    "axis": "Y"
+                }
 
     return dset
 
@@ -993,7 +1053,7 @@ def adjust_cssg_grid_and_coords(
     -----
     dset : xarray.Dataset
         The input data
-    dim_format_out : str
+    dim_format_in, dim_format_out: str
         Either "checkpoint" (for checkpoint/restart files) or
         "diagnostic" (for History diagnostic files).
 
@@ -1014,30 +1074,42 @@ def adjust_cssg_grid_and_coords(
         # "Xdim" and "Ydim" coordinates (returned by ESMF) correspond
         # to the "lons" and "lats" coordinates as saved out by MAPL.
         # ==============================================================
-        dset = dset.rename_vars({
-            "Xdim": "lons",
-            "Ydim": "lats"
-        })
-        dset.lons.attrs = {
-            "long_name": "longitude",
-            "units": "degrees_east"
-        }
-        dset.lats.attrs = {
-            "long_name": "latitude",
-            "units": "degrees_north"
-        }
+        if "Xdim" in dset.variables:
+            dset = dset.rename_vars({"Xdim": "lons"})
+        if "Ydim" in dset.variables:
+            dset = dset.rename_vars({"Ydim": "lats"})
+        if "lons" in dset.variables:
+            dset.lons.attrs = {
+                "standard_name": "longitude",
+                "long_name": "Longitude",
+                "units": "degrees_east"
+            }
+        if "lats" in dset.variables:
+            dset.lats.attrs = {
+                "standard_name": "latitude",
+                "long_name": "latitude",
+                "units": "degrees_north"
+            }
 
         # ==================================================================
-        # For "diagnostic" dimension format only:
-        #
-        # Add "fake" Xdim and Ydim coordinates as done by MAPL,
-        # which is needed for the GMAO GrADS visualization software.
+        # For "diagnostic" dimension format only
         # ==================================================================
         if "diagnostic" in dim_format_out:
-            dset = dset.assign_coords({
-                "Xdim": dset.lons.isel(nf=0, Ydim=0),
-                "Ydim": dset.lats.isel(nf=0, Xdim=0)
-            })
+
+            # Add "fake" Xdim and Ydim coordinates as done by MAPL,
+            # which is needed for the GMAO GrADS visualization software.
+            # NOTE: Use .values to convert to numpy.ndarray type in
+            # order to avoid xarray from trying to redefine dim "nf".
+            if "lons" in dset.coords and "lats" in dset.coords:
+                dset = dset.assign_coords({
+                    "Xdim": dset.lons.isel(nf=0, Ydim=0).values,
+                    "Ydim": dset.lats.isel(nf=0, Xdim=0).values
+                })
+            elif "lon" in dset.variables and "lat" in dset.variables:
+                dset = dset.assign_coords({
+                    "Xdim": dset.lon.isel(nf=0, Ydim=0).values,
+                    "Ydim": dset.lat.isel(nf=0, Xdim=0).values
+                })
             dset.Xdim.attrs = {
                 "long_name": "Fake Longitude for GrADS Compatibility",
                 "units": "degrees_east"
@@ -1047,19 +1119,25 @@ def adjust_cssg_grid_and_coords(
                 "units": "degrees_north"
             }
 
+            # Drop dimensions that may be left over from regridding
+            if "lon" in dset.variables:
+                dset = dset.drop_vars("lon")
+            if "lat" in dset.variables:
+                dset = dset.drop_vars("lat")
+
         # ==================================================================
-        # For "checkpoint" dimension format only:
-        #
-        # Reshape the grid from (time, lev, nf, Xdim, Ydim) dimensions
-        # to (time, lev, lat, lon) dimensions (where lat/lon = 6)
+        # For "checkpoint" dimension format only
         # ==================================================================
         if "checkpoint" in dim_format_out:
 
-            # Reshape all data variables
+            # Reshape the grid from (time, lev, nf, Xdim, Ydim) dimensions
+            # to (time, lev, lat, lon) dimensions (where lat/lon = 6)
+            # Also drop any unnecessary variables
             dset = reshape_cssg_diag_to_chkpt(dset)
-
-            # Drop unneeded dimensions and coordinates
-            dset = dset.drop_vars(["lons", "lats"])
+            if "lons" in dset.variables:
+                dset = dset.drop_vars("lons")
+            if "lats" in dset.variables:
+                dset = dset.drop_vars("lats")
 
     return dset
 
@@ -1135,6 +1213,36 @@ def drop_and_rename_classic_vars(dset, towards_gchp=True):
         )
 
 
+def order_dims_time_lev_lat_lon(dset):
+    """
+    Transposes dims of an Dataset to be in (time, lev, lat, lon) order.
+    This corresponds to Fortran column-major ordering.
+
+
+    Args:
+    -----
+    dset : xarray.Dataset
+        The input dataset.
+
+    Returns:
+    --------
+    dset : xarray.Dataset
+        The modified dataset.
+    """
+    verify_variable_type(dset, xr.Dataset)
+
+    if "lev" in dset.dims and "time" in dset.dims:
+        dset = dset.transpose("time", "lev", "lat", "lon")
+    elif "lev" in dset.dims:
+        dset = dset.transpose("lev", "lat", "lon")
+    elif "time" in dset.dims:
+        dset = dset.transpose("time", "lat", "lon")
+    else:
+        dset = dset.transpose("lat", "lon")
+
+    return dset
+
+
 def reshape_cssg_diag_to_chkpt(
         dset,
         verbose=False
@@ -1162,62 +1270,62 @@ def reshape_cssg_diag_to_chkpt(
     if verbose:
         print("file_regrid.py: reshyaping diagnostic to checkpoint")
 
-    # ==================================================================
-    # Reshape diagnostic grid to checkpoint grid.
-    # Otherwise, fall through and return the original dataset.
-    # ==================================================================
-    if is_cubed_sphere_diag_grid(dset):
+    # Keep xarray attributes unchanged
+    with xr.set_options(keep_attrs=True):
 
-        # Keep xarray attributes unchanged
-        with xr.set_options(keep_attrs=True):
+        # ==============================================================
+        # Get the size of the Xdim/YDim or lons/lats coords
+        # ==============================================================
+        if "Xdim" in dset.dims and "Ydim" in dset.dims:
+            xdim = dset.dims["Xdim"]
+            ydim = dset.dims["Ydim"]
+        elif "lon" in dset.dims and "lat" in dset.dims:
+            xdim = dset.dims["lon"]
+            ydim = dset.dims["lat"]
+        else:
+            msg = "Dimensions (Xdim, Ydim) or (lon,lat)' not found!"
+            raise ValueError(msg)
 
-            # ----------------------------------------------------------
-            # Make sure Xdim and Ydim are in the dataset
-            # ----------------------------------------------------------
-            nf = dset.dims["nf"]
-            if "Xdim" in dset.dims and "Ydim" in dset.dims:
-                xdim = dset.dims["Xdim"]
-                ydim = dset.dims["Ydim"]
-            else:
-                msg = "Dimensions 'Xdim' and Ydim' not found in Dataset!"
-                raise ValueError(msg)
-
-            # ----------------------------------------------------------
-            # Rename Xdim to lon, and create a corresponding coordinate
-            # of double-precision values from 1..xdim.
-            # ----------------------------------------------------------
+        # ==============================================================
+        # Create the "lon" coord as a 1-D vector of values
+        # ==============================================================
+        if "Xdim" in dset.dims:
             dset = dset.rename_dims({"Xdim": "lon"})
-            dset = dset.assign_coords({
-                "lon": np.linspace(1, xdim, xdim, dtype=np.float64)
-            })
+        elif "lon" in dset.coords:
+            dset = dset.drop_vars("lon")
+        dset = dset.assign_coords({
+            "lon": np.linspace(1, xdim, xdim, dtype=np.float64)
+        })
 
-            # ----------------------------------------------------------
-            # The dset,stack operation combines the nf and Ydim
-            # dimensions into a MultiIndex (i.e. a list of tuples,
-            # where each tuple is (face number, cell number).
-            # We then have to unpack that into a linear list that
-            # ranges from 1..nf*ydim.
-            # ----------------------------------------------------------
+        # ==============================================================
+        # The dset,stack operation combines the nf and Ydim
+        # dimensions into a MultiIndex (i.e. a list of tuples,
+        # where each tuple is (face number, cell number).
+        # We then have to unpack that into a linear list that
+        # ranges from 1..nf*ydim.
+        # ==============================================================
+        if "nf" in dset.dims and "Ydim" in dset.dims:
             dset = dset.stack(lat=("nf", "Ydim"))
             multi_index_list = dset.lat.values
-            lats = np.zeros(nf * ydim)
+            lats = np.zeros(6 * ydim)             # 6 cubed-sphere faces
             for i, tpl in enumerate(multi_index_list):
                 lats[i] = (tpl[1] + (tpl[0] * ydim)) + 1
             dset = dset.assign_coords({"lat": lats})
 
-            # ----------------------------------------------------------
-            # Transpose dimensions
-            # ----------------------------------------------------------
-            if "lev" in dset.dims and "time" in dset.dims:
-                dset = dset.transpose("time", "lev", "lat", "lon")
-            elif "lev" in dset.dims:
-                dset = dset.transpose("lev", "lat", "lon")
-            elif "time" in dset.dims:
-                dset = dset.transpose("time", "lat", "lon")
-            else:
-                dset = dset.transpose("lat", "lon")
+        # ==============================================================
+        # Transpose dimensions
+        # ==============================================================
+        dset = order_dims_time_lev_lat_lon(dset)
 
-    return dset
+        # ==============================================================
+        # Drop coordinates not needed in checkpoint format files
+        # ==============================================================
+        if "lons" in dset.variables:
+            dset = dset.drop_vars("lons")
+        if "lats" in dset.variables:
+            dset = dset.drop_vars("lats")
+
+        return dset
 
 
 def main():

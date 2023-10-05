@@ -295,7 +295,8 @@ def get_vert_grid(dataset, AP=[], BP=[]):
 def get_ilev_coord(
         n_lev=72,
         AP_edge=None,
-        BP_edge=None
+        BP_edge=None,
+        top_down=False
 ):
     """
     Returns the eta values (defined as (A/P0) + B) at vertical
@@ -344,7 +345,7 @@ def get_lev_coord(
         n_lev=72,
         AP_edge=None,
         BP_edge=None,
-        top_down=True
+        top_down=False
 ):
     """
     Returns the eta values (defined as (A/P0) + B) at vertical
