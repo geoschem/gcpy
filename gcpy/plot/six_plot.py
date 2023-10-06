@@ -930,7 +930,7 @@ def colorbar_for_small_data_range(
 
     # Otherwise place ticks symmetrically along the data range
     vrange = vmax - vmin
-    pos = [vmin, vrange*0.25, vrange*0.5, vrange*0.75, vmax]
+    pos = [vmin, vmin+vrange*0.25, vmin+vrange*0.5, vmin+vrange*0.75, vmax]
     cbar.set_ticks(pos)
     cbar.formatter = ticker.ScalarFormatter()
     cbar.formatter.set_useOffset(False)
