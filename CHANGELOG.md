@@ -78,6 +78,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed `gcpy_test_dir` option from `examples/diagnostics/compare_diags.*`
 - Removed `docs/environment_files/gchp_regridding.yml` environment file
 - Removed `gcpy/gcpy/benchmark/plot_driver.sh`
+- Made benchmark configuration files consistent
 
 ## [1.3.3] -- 2023-03-09
 ### Added

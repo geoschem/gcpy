@@ -4,18 +4,18 @@
 # customize in the following manner:
 #
 # (1) Edit the path variables so that they point to folders
-#     containing model data.
-# (2) Edit the version strings for each benchmark simulation.
-# (3) Edit the switches that turn on/off creating of plots and tables,
-#     as well as other plotting options.
-# (4) If necessary, edit labels for the dev and ref versions.
+#     containing model data
+# (2) Edit the version strings for each benchmark simulation
+# (3) Edit the switches that turn on/off creating of plots and
+#     tables as well as other plotting options
+# (4) If necessary, edit labels for the dev and ref versions
 #
 # Note: When doing GCHP vs GCC comparisions gchp_dev will be compared
 # to gcc_dev (not gcc_ref!). This ensures consistency in version names
-# when doing GCHP vs GCC diff-of-diffs (mps, 6/27/19)
+# when doing GCHP vs GCC diff-of-diffs.
 # =====================================================================
 #
-# Configuration for 1yr CH4Benchmark
+# Configuration for 1-year CH4Benchmark
 #
 # paths:
 #   main_dir:    High-level directory containing ref & dev rundirs
@@ -56,11 +56,11 @@ data:
       restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
-      is_pre_14.0: False               # for gcpy_test_data, edit if needed
-      resolution: c24                  # for gcpy_test_data, edit if needed
+      is_pre_14.0: False
+      resolution: c24
   dev:
     gcc:
-      version: GCC_dev
+      version: GCC_dev 
       dir: GCC_dev
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
@@ -73,37 +73,37 @@ data:
       restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
-      is_pre_14.0: False              # for gcpy_test_data, edit if needed
-      resolution: c24                 # for gcpy_test_data, edit if needed   
+      is_pre_14.0: False
+      resolution: c24
 #
-# options: Customize the benchmark plot output.
-# 
+# options: Customizes the benchmark plot output
+#
 options:
   #
-  # bmk_type: Specifies the type of benchmark.
+  # bmk_type: Specifies the type of benchmark
   #
   bmk_type: CH4Benchmark
   #
   # comparisons: Specifies the comparisons to perform.
   #
   comparisons:
-    gcc_vs_gcc: 
-      run: True # True to run this comparison
+    gcc_vs_gcc:
+      run: True
       dir: GCC_version_comparison
       tables_subdir: Tables
-    gchp_vs_gcc: 
-      run: False
-      dir: GCHP_GCC_comparison 
+    gchp_vs_gcc:
+      run: True
+      dir: GCHP_GCC_comparison
       tables_subdir: Tables
-    gchp_vs_gchp: 
-      run: False
+    gchp_vs_gchp:
+      run: True
       dir: GCHP_version_comparison
       tables_subdir: Tables
     gchp_vs_gcc_diff_of_diffs:
       run: False
       dir: GCHP_GCC_diff_of_diffs
   #
-  # outputs: Specifies the plots and tables to generate.
+  # outputs: Specifies the plots and tables to generate
   #
   outputs:
     plot_conc: True
