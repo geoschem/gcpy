@@ -1,4 +1,4 @@
-&---
+---
 # =====================================================================
 # Benchmark configuration file (**EDIT AS NEEDED**)
 # customize in the following manner:
@@ -27,8 +27,8 @@
 #   obs_data_dir: Path to observational data (for models vs obs plots)
 #
 paths:
-  main_dir: /path/to/benchmark/main/dir    # EDIT AS NEEDED
-  results_dir: /path/to/BenchmarkResults   # EDIT AS NEEDED
+  main_dir: /path/to/benchmark/main/dir
+  results_dir: /path/to/BenchmarkResults
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
   spcdb_dir: default
   obs_data_dir: /path/to/observational/data

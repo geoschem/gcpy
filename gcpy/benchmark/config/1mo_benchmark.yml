@@ -1,4 +1,4 @@
-&---
+---
 # =====================================================================
 # Benchmark configuration file (**EDIT AS NEEDED**)
 # customize in the following manner:
@@ -26,8 +26,8 @@
 #                species_database.yml in one of the Dev rundirs.
 #
 paths:
-  main_dir: /path/to/benchmark/main/dir    # EDIT AS NEEDED
-  results_dir: /path/to/BenchmarkResults   # EDIT AS NEEDED
+  main_dir: /path/to/benchmark/main/dir
+  results_dir: /path/to/BenchmarkResults
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
   spcdb_dir: default
 #
@@ -47,7 +47,7 @@ data:
       dir: GCC_ref
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00" 
+      bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
     gchp:
       version: GCHP_ref
@@ -64,14 +64,14 @@ data:
       dir: GCC_dev
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00" 
+      bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      bmk_start: "2019-07-01T00:00:00" 
+      bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
       is_pre_14.0: False
       resolution: c24
