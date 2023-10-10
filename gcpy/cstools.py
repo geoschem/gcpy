@@ -677,7 +677,7 @@ def is_cubed_sphere(
 ):
     """
     Given an xarray Dataset or DataArray object, determines if the
-    data is placed on a cubed-sphere grid
+    data is placed on a cubed-sphere grid.
 
     Args:
     -----
@@ -708,7 +708,7 @@ def is_cubed_sphere(
 def is_cubed_sphere_diag_grid(data):
     """
     Determines if a cubed-sphere grid has History file dimensions.
-    (i.e. a dimension named "nf", ak number of grid faces).
+    (i.e. a dimension named "nf", aka number of grid faces).
 
     Args:
     -----
@@ -717,7 +717,8 @@ def is_cubed_sphere_diag_grid(data):
 
     Returns:
     --------
-    True if the grid has restart dimensions, False otherwise.
+    True if the grid has History diagnostic dimensions,
+    False otherwise.
     """
     if "nf" in data.dims:
         return True
@@ -751,7 +752,9 @@ def is_cubed_sphere_rst_grid(data):
 def get_cubed_sphere_res(data):
     """
     Given a Dataset or DataArray object, returns the number of
-    grid cells on each cubed-sphere grid face.
+    grid cells along one side of the cubed-sphere grid face
+    (e.g. 24 for grid resolution C24, which has 24x25 grid cells
+    per face).
 
     Args:
     -----
@@ -793,9 +796,11 @@ def is_gchp_lev_positive_down(data):
     False if the data is arranged from the surface upwards.
     """
     gcpy.util.verify_variable_type(data, (xr.DataArray, xr.Dataset))
-    
+
     if is_cubed_sphere_rst_grid(data):
         return True
-    if is_cubed_sphere_diag_grid(data) and "Emis" in data.data_vars:
-        return True
+    if is_cubed_sphere_diag_grid(data):
+        emis_vars = [var for var in data.data_vars if var.startswith("Emis")]
+        if len(emis_vars) > 0:
+            return True
     return False
