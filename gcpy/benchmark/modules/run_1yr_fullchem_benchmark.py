@@ -530,7 +530,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dev_interval=sec_per_month_dev,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -689,7 +688,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create tables in parallel
             # Turn off parallelization if n_jobs==1
-            if n_jobs != 1:
+            if config["options"]["n_cores"] != 1:
                 results = Parallel(n_jobs=config["options"]["n_cores"])(
                     delayed(gcc_vs_gcc_mass_table)(mon)
                     for mon in range(bmk_n_months)
@@ -736,7 +735,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create tables in parallel
             # Turn off parallelization if n_jobs==1
-            if n_jobs != 1:
+            if config["options"]["n_cores"] != 1:
                 results = Parallel(n_jobs=config["options"]["n_cores"])(
                     delayed(gcc_vs_gcc_ops_budg)(mon) \
                     for mon in range(bmk_n_months)
@@ -1250,7 +1249,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create tables in parallel
             # Turn off parallelization if n_jobs==1
-            if n_jobs != 1:
+            if config["options"]["n_cores"] != 1:
                 results = Parallel(n_jobs=config["options"]["n_cores"])(
                     delayed(gchp_vs_gcc_mass_table)(mon) \
                     for mon in range(bmk_n_months)
@@ -1306,7 +1305,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create tables in parallel
             # Turn off parallelization if n_jobs==1
-            if n_jobs != 1:
+            if config["options"]["n_cores"] != 1:
                 results = Parallel(n_jobs=config["options"]["n_cores"])(
                     delayed(gchp_vs_gcc_ops_budg)(mon) \
                     for mon in range(bmk_n_months)
@@ -1858,7 +1857,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create tables in parallel
             # Turn off parallelization if n_jobs==1
-            if n_jobs != 1:
+            if config["options"]["n_cores"] != 1:
                 results = Parallel(n_jobs=config["options"]["n_cores"])(
                     delayed(gchp_vs_gchp_mass_table)(mon) \
                     for mon in range(bmk_n_months)
@@ -1916,7 +1915,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create tables in parallel
             # Turn off parallelization if n_jobs==1
-            if n_jobs != 1:
+            if config["options"]["n_cores"] != 1:
                 results = Parallel(n_jobs=config["options"]["n_cores"])(
                     delayed(gchp_vs_gchp_ops_budg)(mon) \
                     for mon in range(bmk_n_months)

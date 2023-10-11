@@ -847,7 +847,6 @@ def run_benchmark_default(config):
                 overwrite=True,
                 devmet=devmet,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]                
             )
 
         # ==================================================================

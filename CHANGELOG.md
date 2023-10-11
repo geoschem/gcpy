@@ -32,6 +32,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added statement `from dask.array import Array as DaskArray` in `gcpy plot.py`
 - Added SLURM run script `gcpy/benchmark/benchmark_slurm.sh`
 - Added `gcpy/plot/gcpy_plot_style` style sheet for title and label default settings
+- Added `gcpy/gcpy_plot_style` style sheet for title and label default settings
+- Added new cubed-sphere grid inquiry functions to `gcpy/cstools.py`
+- Added functions `get_ilev_coord` and `get_lev_coord` to `gcpy/grid.py`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -62,6 +65,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Now add `if` statements to turn of `Parallel()` commands when `n_jobs==1`.
 - Do not hardwire fontsize in `gcpy/plot.py`; get defaults from `gcpy_plot_style`
 - `gcpy/plot.py` has been split up into smaller modules in the `gcpy/plot` folder
+- Updated and cleaned up code in `gcpy/regrid.py`
+- Example scripts`plot_single_level` and `plot_comparisons` can now accept command-line arguments
+- Example scripts `plot_single_level.py`, `plot_comparisons.py`, `compare_diags.py` now handle GCHP restart files properly
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
@@ -69,6 +75,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Routine `create_display_name` now splits on only the first `_` in species & diag names
 - Prevent plot panels from overlapping in six-panel plots
 - Prevent colorbar tick labels from overlapping in dynamic-range ratio plots
+- Updated `seaborn` plot style names to conform to the latest matplotlib
+- Set `lev:positive` and/or `ilev:positive` properly in `regrid_restart_file.py` and `file_regrid.py`
+- Prevent overwriting of `lev` coord in `file_regrid.py` at netCDF write time
 
 ### Removed
 - Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines
@@ -78,6 +87,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed `gcpy_test_dir` option from `examples/diagnostics/compare_diags.*`
 - Removed `docs/environment_files/gchp_regridding.yml` environment file
 - Removed `gcpy/gcpy/benchmark/plot_driver.sh`
+- Made benchmark configuration files consistent
 
 ## [1.3.3] -- 2023-03-09
 ### Added
@@ -365,16 +375,3 @@ This is the first labeled version of GCPy. The primary functionality of GCPy is 
 - Support for plotting benchmark output for both GEOS-Chem Classic (lat/lon data) and GCHP (cubed-sphere data).
 
 The first official release version of GCPy, v1.0.0, will correspond with the release of GEOS-Chem 13.0.0.
-
-
-## [Unreleased]
-
-### Added
-
-### Changed
-
-### Deprecated
-
-### Fixed
-
-### Removed
