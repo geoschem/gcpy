@@ -1012,7 +1012,6 @@ def regrid_vertical(src_data_3D, xmat_regrid, target_levs=[]):
             new_coords['lons'] = (
                 ('lat', 'lon'), src_data_3D.coords['lons'].data)
         out_data = xr.DataArray(out_data,
-#                                dims=tuple([dim for dim in src_data_3D.dims]),
                                 dims=tuple(list(src_data_3D.dims)),
                                 coords=new_coords,
                                 attrs=src_data_3D.attrs)

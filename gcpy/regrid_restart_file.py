@@ -295,6 +295,9 @@ def reverse_lev(dataset, to_gchp):
 
     # GCHP restart files are indexed from top-of-atm downward.
     # GCClassic restart files are indexed from surface upward.
+    #
+    # TODO: Make this more robust, to prevent a situation where
+    # the already down data is flipped to up, but labeled as down.
     if to_gchp:
         dataset["lev"].attrs["positive"] = "down"
     else:

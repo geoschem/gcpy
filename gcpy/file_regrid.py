@@ -80,6 +80,9 @@ def file_regrid(
     verify_variable_type(dim_format_in, str)
     verify_variable_type(dim_format_out, str)
 
+    # TODO: Consider renaming checkpoint, classic, diagnostic,
+    # which may be confusing to users.
+
     # Error check arguments
     valid_formats = ["checkpoint", "classic", "diagnostic"]
     if dim_format_in not in valid_formats:
@@ -743,10 +746,10 @@ def flip_lev_coord_if_necessary(
         dim_format_out
 ):
     """
-    Determines whether it is necessary to flip the "lev" and "ilev"
-    coords of an xarray.Dataset in the vertical depending on the
-    values ofdim_format_in and dim_format_out.  Also sets the
-    attributes "lev:positive" and "ilev:positive" accordingly.
+    Flips the "lev" and "ilev" coords of an xarray.Dataset in the
+    vertical depending on the values of dim_format_in and
+    dim_format_out.  Also sets the attributes "lev:positive" and
+    "ilev:positive" accordingly.
 
     Args:
     -----
@@ -770,19 +773,25 @@ def flip_lev_coord_if_necessary(
 
     *Except for the Emissions collection, which has lev arranged
      in descending order.
+
+    TODO: Make ths function more robust for all cases, since GCHP
+    diagnostics may or may not have lev:positive="up".
     """
     verify_variable_type(dset, xr.Dataset)
     verify_variable_type(dim_format_in, str)
     verify_variable_type(dim_format_out, str)
 
     # ==================================================================
-    # checkpoint/diagnostic to classic: lev, ilev in ascending order
+    # Case 1: checkpoint/diagnostic to classic
+    # lev, ilev need to be in ascending order
     # ==================================================================
+    print(f"in {dim_format_in} out {dim_format_out}")
     if dim_format_in != "classic" and dim_format_out == "classic":
 
         # Flip lev and set to eta values at midpoints (if necessary)
         if "ilev" in dset.coords:
-            dset = dset.reindex(ilev=dset.ilev[::-1])
+            if is_gchp_lev_positive_down(dset):
+                dset = dset.reindex(ilev=dset.ilev[::-1])
             if any(var > 1.0 for var in dset.ilev):
                 coord = get_ilev_coord(
                     n_lev=dset.dims["ilev"],
@@ -793,7 +802,8 @@ def flip_lev_coord_if_necessary(
 
         # Flip lev and set to eta values at midpoints (if necessary)
         if "lev" in dset.coords:
-            dset = dset.reindex(lev=dset.lev[::-1])
+            if is_gchp_lev_positive_down(dset):
+                dset = dset.reindex(lev=dset.lev[::-1])
             if any(var > 1.0 for var in dset.lev):
                 coord = get_lev_coord(
                     n_lev=dset.dims["lev"],
@@ -805,7 +815,10 @@ def flip_lev_coord_if_necessary(
         return dset
 
     # ==================================================================
-    # classic/diagnostic to checkpoint: lev in descending order
+    # Case 2: classic/diagnostic to checkpoint
+    # lev needs to be in descending order
+    #
+    # TODO: Check for Emissions diagnostic (not a common use case)
     # ==================================================================
     if dim_format_in != "checkpoint" and dim_format_out == "checkpoint":
 
@@ -823,8 +836,9 @@ def flip_lev_coord_if_necessary(
         return dset
 
     # ==================================================================
-    # classic/diagnostic to classic/diagnostic:
+    # Case 3: classic/diagnostic to classic/diagnostic:
     # No flipping, but add lev:positive="up" and ilev:positive="up"
+    #
     # TODO: Check for Emissions diagnostic (not a common use case)
     # ==================================================================
     if dim_format_in == "classic" and dim_format_out == "diagnostic" or \
@@ -837,7 +851,7 @@ def flip_lev_coord_if_necessary(
         return dset
 
     # ==================================================================
-    # checkpoint to checkpoint:
+    # Case 4: checkpoint to checkpoint
     # No flipping needed, but add lev:positive="down"
     # ==================================================================
     if dim_format_in == "checkpoint" and dim_format_out == "checkpoint":
@@ -847,7 +861,8 @@ def flip_lev_coord_if_necessary(
         return dset
 
     # ==================================================================
-    # checkpoint to diagnostic: lev in ascending order
+    # Case 5: checkpoint to diagnostic:
+    # lev needs to be in ascending order
     # ==================================================================
     if dim_format_in == "checkpoint" and dim_format_out == "diagnostic":
 

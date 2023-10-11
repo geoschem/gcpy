@@ -741,6 +741,11 @@ def is_cubed_sphere_rst_grid(data):
     """
     gcpy.util.verify_variable_type(data, (xr.DataArray, xr.Dataset))
 
+    # TODO: Rethink this if we ever end up changing the GC-Classic
+    # restart variables to start with SPC, or if we ever rename the
+    # internal state variables in GCHP. A more robust back-up check
+    # could be to see if all the lats and lons are integer, since
+    # that will be the case with the GCHP restart file format.
     if "lat" in data.dims:
         if data.dims["lat"] == data.dims["lon"] * 6:
             return True
