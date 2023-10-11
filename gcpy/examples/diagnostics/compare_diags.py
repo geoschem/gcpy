@@ -4,8 +4,6 @@ Example script that can compare diagnostics from two different netCDF
 collections.  Similar to compute_diagnostics.ipynb, but can be used
 without having to open a Jupyter notebook.
 """
-
-# Imports
 import os
 import sys
 import warnings
@@ -98,6 +96,10 @@ def read_data(config):
     except Exception as exc:
         msg = "Error reading " + dev_file
         raise Exception(msg) from exc
+
+    # Special handling for GCHP restart files
+    refdata = util.rename_and_flip_gchp_rst_vars(refdata)
+    devdata = util.rename_and_flip_gchp_rst_vars(devdata)
 
     # Define dictionary for return
     data = {
@@ -303,8 +305,7 @@ def compare_data(config, data):
     # ==================================================================
     # Print totals for each quantity
     # ==================================================================
-    if config["options"]["totals_and_diffs"]["create_table"] or \
-       config["options"]["totals_and_diffs"]["print_to_screen"]:
+    if config["options"]["totals_and_diffs"]["create_table"]:
         print('... Printing totals and differences')
         print_totals_and_diffs(
             config,

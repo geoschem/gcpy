@@ -2,7 +2,6 @@
 Internal utilities for helping to manage xarray and numpy
 objects used throughout GCPy
 """
-
 import os
 import warnings
 import shutil
@@ -637,26 +636,24 @@ def add_missing_variables(
     return refdata, devdata
 
 
-def reshape_MAPL_CS(
-        darr,
-        multi_index_lat=True
-):
+def reshape_MAPL_CS(darr):
     """
     Reshapes data if contains dimensions indicate MAPL v1.0.0+ output
-    Args:
-        darr: xarray DataArray
-            Data array variable
+    (i.e. reshapes from "diagnostic" to "checkpoint" dimension format.)
 
-    Keyword Args (Optional):
-        multi_index_lat : bool
-            Determines if the returned "lat" index of the DataArray
-            object will be a MultiIndex (true) or a simple list of
-            latitude values (False).
-            Default value: True
+    Args:
+    -----
+    darr: xarray DataArray
+        The input data array.
 
     Returns:
-        data: xarray DataArray
-            Data with dimensions renamed and transposed to match old MAPL format
+    --------
+    darr: xarray DataArray
+        The modified data array (w/ dimensions renamed & transposed).
+
+    Remarks:
+    --------
+    Currently only used for GCPy plotting code.
     """
     # Suppress annoying future warnings for now
     warnings.filterwarnings("ignore", category=FutureWarning)
@@ -665,21 +662,10 @@ def reshape_MAPL_CS(
     # (otherwise just fall through and return the original argument as-is)
     if isinstance(darr, xr.DataArray):
         with xr.set_options(keep_attrs=True):
-            if "nf" in darr.dims and "Xdim" in darr.dims and "Ydim" in darr.dims:
+            if "nf" in darr.dims and \
+               "Xdim" in darr.dims and "Ydim" in darr.dims:
                 darr = darr.stack(lat=("nf", "Ydim"))
                 darr = darr.rename({"Xdim": "lon"})
-                # NOTE: The darr.stack operation will return the darr.lat
-                # dimension as a MultiIndex.  In other words, each
-                # element of da.lat is a tuple (face number, latitude
-                # in degrees).  To disable this behavior, set keyword
-                # argument multi_index_lat=False.  This will return
-                # da.lat as an array of latitude values, which is
-                # needed for backwards compatibility.
-                #  -- Bob Yantosca (07 Jul 2023)
-                if not multi_index_lat:
-                    darr = darr.assign_coords(
-                        {"lat": [list(tpl)[1] for tpl in darr.lat.values]}
-                    )
             if "lev" in darr.dims and "time" in darr.dims:
                 darr = darr.transpose("time", "lev", "lat", "lon")
             elif "lev" in darr.dims:
