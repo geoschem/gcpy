@@ -19,8 +19,8 @@ warnings.simplefilter(action="ignore", category=FutureWarning)
 
 
 def file_regrid(
-        fin,
-        fout,
+        filein,
+        fileout,
         dim_format_in,
         dim_format_out,
         cs_res_out=0,
@@ -36,9 +36,9 @@ def file_regrid(
 
     Args:
     -----
-    fin: str
+    filein: str
         The input filename
-    fout: str
+    fileout: str
         The output filename (file will be overwritten if it already exists)
     dim_format_in: str
         Format of the input file's dimensions (choose from: classic,
@@ -75,8 +75,8 @@ def file_regrid(
         Path to the directory containing regridding weights (or
         where weights will be created).  Default value: "."
     """
-    verify_variable_type(fin, str)
-    verify_variable_type(fout, str)
+    verify_variable_type(filein, str)
+    verify_variable_type(fileout, str)
     verify_variable_type(dim_format_in, str)
     verify_variable_type(dim_format_out, str)
 
@@ -100,15 +100,28 @@ def file_regrid(
 
     # Load dataset
     dset = xr.open_dataset(
-        fin,
+        filein,
         decode_cf=False,
         engine="netcdf4"
     ).load()
     cs_res_in = get_cubed_sphere_res(dset)
 
+    # Verbose printout of inputs
     if verbose:
-        print(f"file_regrid.py: cs_res_in:  {cs_res_in}")
-        print(f"file_regrid.py: cs_res_out: {cs_res_out}")
+        print("Inputs to file_regrid.py")
+        print(f"filein         :  {filein}")
+        print(f"dim_format_in  :  {dim_format_in}")
+        if "classic" not in dim_format_in:
+            print(f"sg_params_in   :  {sg_params_in}")
+        print(f"fileout        :  {fileout}")
+        print(f"dim_format_out :  {dim_format_out}"),
+        if "classic" in dim_format_out:
+            print(f"ll_res_out     :  {ll_res_out}")
+        else:
+            print(f"cs_res_out     :  {cs_res_out}")
+            print(f"sg_params_out  :  {sg_params_out}")
+        print(f"verbose        :  {verbose}")
+        print(f"weightsdir     :  {weightsdir}")
 
     # Make sure all xarray.Dataset global & variable attributes are kept
     with xr.set_options(keep_attrs=True):
@@ -129,7 +142,7 @@ def file_regrid(
             # Input grid is CS/SG; Output grid is CS/SG
             # ----------------------------------------------------------
             dset = regrid_cssg_to_cssg(
-                fout,
+                fileout,
                 dset,
                 dim_format_in,
                 sg_params_in,
@@ -197,7 +210,7 @@ def file_regrid(
 
         # Write dataset to file
         dset.to_netcdf(
-            fout,
+            fileout,
             mode="w",
             format="NETCDF4",
             engine="netcdf4",
@@ -261,7 +274,7 @@ def prepare_cssg_input_grid(
 
 
 def regrid_cssg_to_cssg(
-        fout,
+        fileout,
         dset,
         dim_format_in,
         sg_params_in,
@@ -277,7 +290,7 @@ def regrid_cssg_to_cssg(
 
     Args:
     -----
-    fout : str
+    fileout : str
         File name template
     dset : xarray.Dataset
         Data on a cubed-sphere/stretched grid
@@ -346,7 +359,7 @@ def regrid_cssg_to_cssg(
         )
 
         # Save temporary output face files to minimize RAM usage
-        oface_files = [os.path.join(".",fout+str(x)) for x in range(6)]
+        oface_files = [os.path.join(".",fileout+str(x)) for x in range(6)]
 
         # For each output face, sum regridded input faces
         for oface in range(6):
@@ -630,8 +643,8 @@ def regrid_ll_to_cssg(
         # if "checkpoint" output are requested.
         dset = adjust_cssg_grid_and_coords(
             dset,
-            dim_format_in,
-            dim_format_out
+            dim_format_in="diagnostic",
+            dim_format_out=dim_format_out
         )
 
         # Save stretched-grid metadata as global attrs
@@ -785,7 +798,6 @@ def flip_lev_coord_if_necessary(
     # Case 1: checkpoint/diagnostic to classic
     # lev, ilev need to be in ascending order
     # ==================================================================
-    print(f"in {dim_format_in} out {dim_format_out}")
     if dim_format_in != "classic" and dim_format_out == "classic":
 
         # Flip lev and set to eta values at midpoints (if necessary)
@@ -816,7 +828,7 @@ def flip_lev_coord_if_necessary(
 
     # ==================================================================
     # Case 2: classic/diagnostic to checkpoint
-    # lev needs to be in descending order
+    # lev needs to be in descending order (with ascending indices)
     #
     # TODO: Check for Emissions diagnostic (not a common use case)
     # ==================================================================
@@ -825,12 +837,11 @@ def flip_lev_coord_if_necessary(
         if "lev" in dset.coords:
             if not is_gchp_lev_positive_down(dset):
                 dset = dset.reindex(lev=dset.lev[::-1])
-            if any(var > 1.0 for var in dset.lev):
-                coord = get_lev_coord(
-                    n_lev=dset.dims["lev"],
-                    top_down=True
-                )
-                dset = dset.assign_coords({"lev": coord})
+            coord = get_lev_coord(
+                n_lev=dset.dims["lev"],
+                top_down=True
+            )
+            dset = dset.assign_coords({"lev": coord})
             dset.lev.attrs["positive"] = "down"
 
         return dset
@@ -1123,7 +1134,7 @@ def adjust_cssg_grid_and_coords(
             # Add "fake" Xdim and Ydim coordinates as done by MAPL,
             # which is needed for the GMAO GrADS visualization software.
             # NOTE: Use .values to convert to numpy.ndarray type in
-            # order to avoid xarray from trying to redefine dim "nf".
+            # order to avoid xarray from trying to redefileine dim "nf".
             if "lons" in dset.coords and "lats" in dset.coords:
                 dset = dset.assign_coords({
                     "Xdim": dset.lons.isel(nf=0, Ydim=0).values,
@@ -1328,6 +1339,11 @@ def reshape_cssg_diag_to_chkpt(
         # We then have to unpack that into a linear list that
         # ranges from 1..nf*ydim.
         # ==============================================================
+        print(dset.dims)
+        print(dset.dims["nf"])
+        print(dset.dims["Ydim"])
+        print(dset.Ydim)
+        print(ydim)
         if "nf" in dset.dims and "Ydim" in dset.dims:
             dset = dset.stack(lat=("nf", "Ydim"))
             multi_index_list = dset.lat.values
@@ -1398,14 +1414,14 @@ def main():
     )
     parser.add_argument(
         "-i", "--filein",
-        metavar="FIN",
+        metavar="FILEIN",
         type=str,
         required=True,
         help="input NetCDF file"
     )
     parser.add_argument(
         "-o", "--fileout",
-        metavar="FOUT",
+        metavar="FILEOUT",
         type=str,
         required=True,
         help="name of output file"
@@ -1466,7 +1482,6 @@ def main():
         "--verbose",
         metavar="VERB",
         type=bool,
-        nargs=1,
         default=False,
         help="Toggles verbose output on (True) or off (False)"
     )
@@ -1474,7 +1489,6 @@ def main():
         "-w", "--weightsdir",
         metavar="WGT",
         type=str,
-        nargs=1,
         default=False,
         help="Directory where regridding weights are found (or will be created)"
     )
