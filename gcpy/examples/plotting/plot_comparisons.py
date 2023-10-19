@@ -15,13 +15,11 @@ code works equally well for cubed-sphere (GCHP) data.
 import argparse
 import xarray as xr
 from matplotlib import use as mpl_use
+mpl_use("TkAgg")                          # X11 backend for plt.show()
 import matplotlib.pyplot as plt
 from gcpy import plot
 from gcpy.constants import skip_these_vars
 from gcpy.util import rename_and_flip_gchp_rst_vars
-
-# X11 backend needed for plt.show()
-mpl_use("tkagg")
 
 
 def plot_comparisons(
