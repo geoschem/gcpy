@@ -629,14 +629,6 @@ def regrid_ll_to_cssg(
             towards_common=False
         )
 
-        # Flip vertical levels (if necessary) and
-        # set the lev:positive attribute accordingly
-        dset = flip_lev_coord_if_necessary(
-            dset,
-            dim_format_in="classic",
-            dim_format_out=dim_format_out
-        )
-
         # Fix names and attributes of of coordinate variables depending
         # on the format of the ouptut grid (checkpoint or diagnostic).
         # Also convert the "diagnostic" grid to the "checkpoint" grid

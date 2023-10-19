@@ -533,8 +533,6 @@ def regrid_restart_file(
                 "Error when processing your stretched-grid parameters - are they correct?"
             ) from exception
 
-    dataset = check_lev_attribute(output_is_gchp)
-
     dataset.to_netcdf("new_restart_file.nc")
 
     info_message = "Wrote 'new_restart_file.nc' with %d variables"
