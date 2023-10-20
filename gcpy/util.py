@@ -11,6 +11,7 @@ import numpy as np
 import xarray as xr
 from pypdf import PdfWriter, PdfReader
 from gcpy.constants import ENCODING, TABLE_WIDTH
+from gcpy.cstools import is_cubed_sphere_rst_grid
 
 # ======================================================================
 # %%%%% METHODS %%%%%
@@ -807,32 +808,48 @@ def rename_and_flip_gchp_rst_vars(
         dset
 ):
     '''
-    Transforms a GCHP restart dataset to match GCC names and level convention
+    Transforms a GCHP restart dataset to match GCClassic names
+    and level conventions.
 
     Args:
         dset: xarray Dataset
-            Dataset containing GCHP restart file data, such as variables
-            SPC_{species}, BXHEIGHT, DELP_DRY, and TropLev, with level
-            convention down (level 0 is top-of-atmosphere).
+            The input dataset.
 
     Returns:
         dset: xarray Dataset
-            Dataset containing GCHP restart file data with names and level
-            convention matching GCC restart. Variables include
-            SpeciesRst_{species}, Met_BXHEIGHT, Met_DELPDRY, and Met_TropLev,
-            with level convention up (level 0 is surface).
+            If the input dataset is from a GCHP restart file, then
+            dset will contain the original data with variables renamed
+            to match the GEOS-Chem Classic naming conventions, and
+            with levels indexed as lev:positive="up".  Otherwise, the
+            original data will be returned.
     '''
+    verify_variable_type(dset, xr.Dataset)
+
+    # Return if this dataset is not from a GCHP checkpoint/restart file
+    if not is_cubed_sphere_rst_grid(dset):
+        return dset
+
+    # Create dictionary of variable name replacements
     for var in dset.data_vars.keys():
-        if var.startswith('SPC_'):
+        # TODO: Think of better algorithm in case we ever change
+        # the internal state to start with something else than "SPC_".
+        if var.startswith("SPC_"):
             spc = var.replace('SPC_', '')
-            dset = dset.rename({var: 'SpeciesRst_' + spc})
-        elif var == 'DELP_DRY':
-            dset = dset.rename({"DELP_DRY": "Met_DELPDRY"})
-        elif var == 'BXHEIGHT':
-            dset = dset.rename({"BXHEIGHT": "Met_BXHEIGHT"})
-        elif var == 'TropLev':
-            dset = dset.rename({"TropLev": "Met_TropLev"})
+            old_to_new[var] = 'SpeciesRst_' + spc
+        if var == "DELP_DRY":
+            old_to_new["DELP_DRY"] = "Met_DELPDRY"
+        if var == "BXHEIGHT":
+            old_to_new["BXHEIGHT"] = "Met_BXHEIGHT"
+        if var == "TropLev":
+            old_to_new["TropLev"] = "Met_TropLev"
+
+    # Replace variable names in one operation
+    dset = dset.rename(old_to_new)
+
+    # Flip levels
     dset = dset.sortby('lev', ascending=False)
+    dset.lev.attrs["positive"] = "up"
+
     return dset
 
 

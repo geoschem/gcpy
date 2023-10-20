@@ -3016,13 +3016,11 @@ def make_benchmark_mass_tables(
     # Update GCHP restart dataset (if any)
     # ==================================================================
 
-    # Ref
-    if any(v.startswith("SPC_") for v in refds.data_vars.keys()):
-        refds = util.rename_and_flip_gchp_rst_vars(refds)
-
-    # Dev
-    if any(v.startswith("SPC_") for v in devds.data_vars.keys()):
-        devds = util.rename_and_flip_gchp_rst_vars(devds)
+    # If the data is from a GCHP restart file, rename variables and
+    # flip levels to match the GEOS-Chem Classic naming and level
+    # conventions.  Otherwise no changes will be made.
+    refds = util.rename_and_flip_gchp_rst_vars(refds)
+    devds = util.rename_and_flip_gchp_rst_vars(devds)
 
     # ==================================================================
     # Make sure that all necessary meteorological variables are found
@@ -3288,17 +3286,13 @@ def make_benchmark_mass_accumulation_tables(
     # Update GCHP restart dataset if needed
     # ==================================================================
 
-    # Ref
-    if any(v.startswith("SPC_") for v in refSds.data_vars.keys()):
-        refSds = util.rename_and_flip_gchp_rst_vars(refSds)
-    if any(v.startswith("SPC_") for v in refEds.data_vars.keys()):
-        refEds = util.rename_and_flip_gchp_rst_vars(refEds)
-
-    # Dev
-    if any(v.startswith("SPC_") for v in devSds.data_vars.keys()):
-        devSds = util.rename_and_flip_gchp_rst_vars(devSds)
-    if any(v.startswith("SPC_") for v in devEds.data_vars.keys()):
-        devEds = util.rename_and_flip_gchp_rst_vars(devEds)
+    # If the data is from a GCHP restart file, rename variables and
+    # flip levels to match the GEOS-Chem Classic naming and level
+    # conventions.  Otherwise no changes will be made.
+    refSds = util.rename_and_flip_gchp_rst_vars(refSds)
+    refEds = util.rename_and_flip_gchp_rst_vars(refEds)
+    devSds = util.rename_and_flip_gchp_rst_vars(devSds)
+    devEds = util.rename_and_flip_gchp_rst_vars(devEds)
 
     # Add area to start restart dataset if area in end but not start
     # Need to consider area variable names used in both GC-Classic and GCHP
