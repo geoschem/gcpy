@@ -830,6 +830,7 @@ def rename_and_flip_gchp_rst_vars(
         return dset
 
     # Create dictionary of variable name replacements
+    old_to_new = {}
     for var in dset.data_vars.keys():
         # TODO: Think of better algorithm in case we ever change
         # the internal state to start with something else than "SPC_".
