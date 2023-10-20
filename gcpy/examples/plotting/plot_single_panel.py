@@ -16,7 +16,7 @@ at https://gcpy.readthedocs.io.
 import argparse
 import xarray as xr
 from matplotlib import use as mpl_use
-mpl_use("TkAgg")                        # X11 backend for plt.show()
+#mpl_use("TkAgg")                        # X11 backend for plt.show()
 import matplotlib.pyplot as plt
 from gcpy import plot
 from gcpy.util import rename_and_flip_gchp_rst_vars
