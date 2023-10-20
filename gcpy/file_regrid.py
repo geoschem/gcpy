@@ -1331,11 +1331,6 @@ def reshape_cssg_diag_to_chkpt(
         # We then have to unpack that into a linear list that
         # ranges from 1..nf*ydim.
         # ==============================================================
-        print(dset.dims)
-        print(dset.dims["nf"])
-        print(dset.dims["Ydim"])
-        print(dset.Ydim)
-        print(ydim)
         if "nf" in dset.dims and "Ydim" in dset.dims:
             dset = dset.stack(lat=("nf", "Ydim"))
             multi_index_list = dset.lat.values
