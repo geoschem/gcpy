@@ -35,6 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `gcpy/gcpy_plot_style` style sheet for title and label default settings
 - Added new cubed-sphere grid inquiry functions to `gcpy/cstools.py`
 - Added functions `get_ilev_coord` and `get_lev_coord` to `gcpy/grid.py`
+- Add `tk` package to `docs/environment_files/environment.yml`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
