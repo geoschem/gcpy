@@ -37,8 +37,11 @@ def plot_single_panel(infile, varname, level):
     # xarray allows us to read in any NetCDF file
     dset = xr.open_dataset(infile)
 
-    # Special handling if the file is a GCHP restart file
-    dset = rename_and_flip_gchp_rst_vars(dset)
+    # If the data is from a GCHP restart file, rename variables and
+    # flip levels to match the GEOS-Chem Classic naming and level
+    # conventions.  Otherwise no changes will be made.
+    ref_ds = rename_and_flip_gchp_rst_vars(ref_ds)
+    dev_ds = rename_and_flip_gchp_rst_vars(dev_ds)
 
     # You can easily view the variables available for plotting
     # using xarray.  Each of these variables has its own xarray

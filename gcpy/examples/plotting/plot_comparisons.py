@@ -52,7 +52,9 @@ def plot_comparisons(
         drop_variables=skip_these_vars
     )
 
-    # Special handling is needed for GCHP restart files
+    # If the data is from a GCHP restart file, rename variables and
+    # flip levels to match the GEOS-Chem Classic naming and level
+    # conventions.  Otherwise no changes will be made.
     ref_ds = rename_and_flip_gchp_rst_vars(ref_ds)
     dev_ds = rename_and_flip_gchp_rst_vars(dev_ds)
 

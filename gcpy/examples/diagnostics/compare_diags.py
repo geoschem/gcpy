@@ -97,7 +97,9 @@ def read_data(config):
         msg = "Error reading " + dev_file
         raise Exception(msg) from exc
 
-    # Special handling for GCHP restart files
+    # If the data is from a GCHP restart file, rename variables and
+    # flip levels to match the GEOS-Chem Classic naming and level
+    # conventions.  Otherwise no changes will be made.
     refdata = util.rename_and_flip_gchp_rst_vars(refdata)
     devdata = util.rename_and_flip_gchp_rst_vars(devdata)
 
@@ -261,6 +263,14 @@ def compare_data(config, data):
         varlist_level = [v for v in varlist_level if v in restrict_vars]
         varlist_zonal = [v for v in varlist_zonal if v in restrict_vars]
 
+    # Determine if we need to flip levels in the vertical
+    flip_ref = False
+    flip_dev = False
+    if "flip_levels" in config["data"]["ref"]:
+        flip_ref = config["data"]["ref"]["flip_levels"]
+    if "flip_levels" in config["data"]["dev"]:
+        flip_dev = config["data"]["dev"]["flip_levels"]        
+        
     # ==================================================================
     # Generate the single level comparison plot
     # ==================================================================
@@ -275,6 +285,8 @@ def compare_data(config, data):
             config["data"]["ref"]["label"],
             devdata,
             config["data"]["dev"]["label"],
+            flip_ref=flip_ref,
+            flip_dev=flip_dev,
             ilev=config["options"]["level_plot"]["level_to_plot"],
             varlist=varlist_level,
             pdfname=pdfname,
@@ -296,6 +308,8 @@ def compare_data(config, data):
             config["data"]["ref"]["label"],
             devdata,
             config["data"]["dev"]["label"],
+            flip_ref=flip_ref,
+            flip_dev=flip_dev,
             varlist=varlist_zonal,
             pdfname=pdfname,
             weightsdir=config["paths"]["weights_dir"],
