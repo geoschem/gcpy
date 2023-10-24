@@ -80,7 +80,7 @@ def read_data(config):
         config["data"]["dev"]["file"]
     )
 
-    # Function to read thed data
+    # Function to read the data
     reader = dataset_reader(
         multi_files=False,
         verbose=False
