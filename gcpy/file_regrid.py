@@ -98,6 +98,19 @@ def file_regrid(
     if sg_params_out is None:
         sg_params_out = [1.0, 170.0, -90.0]
 
+    # ------------------------------------------------------------------
+    # There still seem to be a few issues with regridding to cubed-
+    # sphere stretched grids.  For time time being, stop with error
+    # if sg_params_in or sg_params_out do not equal the defaults.
+    #  -- Bob Yantosca & Lizzie Lundgren (24 Oct 2023)
+    if not np.array_equal(sg_params_in, [1.0, 170.0, -90.0]) or \
+       not np.array_equal(sg_params_out, [1.0, 170.0, -90.0]):
+       msg = "Regridding to or from cubed-sphere stretched grids is\n" + \
+           "currently not supported.  Please use the offline regridding\n" + \
+           "method described in the Regridding section of gcpy.readthedocs.io."
+       raise RuntimeError(msg)
+    # ------------------------------------------------------------------
+
     # Load dataset
     dset = xr.open_dataset(
         filein,
@@ -317,7 +330,7 @@ def regrid_cssg_to_cssg(
     """
     if verbose:
         print("file_regrid.py: Regridding from CS/SG to CS/SG")
-
+        
     # Keep all xarray attributes
     with xr.set_options(keep_attrs=True):
 
