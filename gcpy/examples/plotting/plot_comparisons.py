@@ -15,7 +15,7 @@ code works equally well for cubed-sphere (GCHP) data.
 import argparse
 import xarray as xr
 from matplotlib import use as mpl_use
-#mpl_use("TkAgg")                          # X11 backend for plt.show()
+mpl_use("tkagg")                          # X11 backend for plt.show()
 import matplotlib.pyplot as plt
 from gcpy.constants import skip_these_vars
 from gcpy.plot.compare_single_level import compare_single_level
