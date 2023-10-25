@@ -18,7 +18,7 @@ import xarray as xr
 from matplotlib import use as mpl_use
 #mpl_use("TkAgg")                        # X11 backend for plt.show()
 import matplotlib.pyplot as plt
-from gcpy import plot
+from gcpy.plot.single_panel import single_panel
 from gcpy.util import rename_and_flip_gchp_rst_vars
 
 
@@ -73,7 +73,7 @@ def plot_single_panel(infile, varname, level):
     # includes a colorbar with units read from the DataArray, an
     # automatic title (the data variable name in the DataArray), and
     # an extent equivalent to the full lat/lon extent of the DataArray
-    plot.single_panel(
+    single_panel(
         darr_single_level,
         title=f"{varname} at level {level}"
     )
@@ -83,7 +83,7 @@ def plot_single_panel(infile, varname, level):
     # using the 'extent' argument, which uses the format [min_longitude,
     # max_longitude, min_latitude, max_latitude] with bounds
     # [-180, 180, -90, 90]
-    plot.single_panel(
+    single_panel(
         darr_single_level,
         extent=[50, -90, -10, 60],
         title=f"{varname} at level {level} over N. Pacific"
@@ -94,7 +94,7 @@ def plot_single_panel(infile, varname, level):
     # colormap (defaulting to a White-Green-Yellow-Red colormap)
     #You can find more colormaps at
     # https://matplotlib.org/tutorials/colors/colormaps.html
-    plot.single_panel(
+    single_panel(
         darr_single_level,
         title=f"{varname} at level {level} over N. Pacific, viridis colormap",
         comap=plt.get_cmap("viridis"),
@@ -108,7 +108,7 @@ def plot_single_panel(infile, varname, level):
     # ===================
 
     # Use the plot_type argument to specify zonal_mean plotting
-    plot.single_panel(
+    single_panel(
         darr,
         plot_type="zonal_mean",
         title=f"Zonal mean plot for {varname}, full atmosphere"
@@ -117,7 +117,7 @@ def plot_single_panel(infile, varname, level):
 
     # You can specify pressure ranges in hPa for zonal mean plot
     # (by default every vertical level is plotted)
-    plot.single_panel(
+    single_panel(
         darr,
         pres_range=[0, 100],
         log_yaxis=True,

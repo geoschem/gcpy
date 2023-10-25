@@ -1,7 +1,6 @@
 """
 Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 """
-
 import os
 import warnings
 import itertools
@@ -15,15 +14,12 @@ import sparselt.xr
 from joblib import Parallel, delayed
 from tabulate import tabulate
 from gcpy import util
-from gcpy.plot import compare_single_level, compare_zonal_mean
 from gcpy.regrid import create_regridders
 from gcpy.grid import get_troposphere_mask
 from gcpy.units import convert_units
-import gcpy.constants as gcon
-from gcpy.constants import TABLE_WIDTH, COL_WIDTH
-
-# Save warnings format to undo overwriting built into PyPDF2
-warning_format = warnings.showwarning
+from gcpy.constants import COL_WIDTH, MW_AIR_g, skip_these_vars, TABLE_WIDTH
+from gcpy.plot.compare_single_level import compare_single_level
+from gcpy.plot.compare_zonal_mean import compare_zonal_mean
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -1030,8 +1026,8 @@ def make_benchmark_conc_plots(
     reader = util.dataset_reader(time_mean, verbose=verbose)
 
     # Open datasets
-    refds = reader(ref, drop_variables=gcon.skip_these_vars).load()
-    devds = reader(dev, drop_variables=gcon.skip_these_vars).load()
+    refds = reader(ref, drop_variables=skip_these_vars).load()
+    devds = reader(dev, drop_variables=skip_these_vars).load()
 
     # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
     # naming introduced in GEOS-Chem 14.1.0
@@ -1062,9 +1058,9 @@ def make_benchmark_conc_plots(
     refmetds = None
     devmetds = None
     if refmet:
-        refmetds = reader(refmet, drop_variables=gcon.skip_these_vars).load()
+        refmetds = reader(refmet, drop_variables=skip_these_vars).load()
     if devmet:
-        devmetds = reader(devmet, drop_variables=gcon.skip_these_vars).load()
+        devmetds = reader(devmet, drop_variables=skip_these_vars).load()
 
     # Determine if doing diff-of-diffs
     diff_of_diffs = False
@@ -1075,8 +1071,8 @@ def make_benchmark_conc_plots(
     # Open second datasets if passed as arguments (used for diff of diffs)
     # Regrid to same horz grid resolution if two refs or two devs do not match.
     if diff_of_diffs:
-        second_refds = reader(second_ref, drop_variables=gcon.skip_these_vars).load()
-        second_devds = reader(second_dev, drop_variables=gcon.skip_these_vars).load()
+        second_refds = reader(second_ref, drop_variables=skip_these_vars).load()
+        second_devds = reader(second_dev, drop_variables=skip_these_vars).load()
 
         print('\nPrinting second_refds (dev of ref for diff-of-diffs)\n')
         print(second_refds)
@@ -1710,13 +1706,13 @@ def make_benchmark_emis_plots(
 
     # Ref dataset
     try:
-        refds = reader(ref, drop_variables=gcon.skip_these_vars)
+        refds = reader(ref, drop_variables=skip_these_vars)
     except (OSError, IOError, FileNotFoundError) as e:
         raise e(f"Could not find Ref file: {ref}") from e
 
     # Dev dataset
     try:
-        devds = reader(dev, drop_variables=gcon.skip_these_vars)
+        devds = reader(dev, drop_variables=skip_these_vars)
     except (OSError, IOError, FileNotFoundError) as e:
         raise e(f"Could not find Ref file: {dev}") from e
 
@@ -2102,27 +2098,27 @@ def make_benchmark_emis_tables(
     devmetds = None
 
     if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):
-        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
-        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
+        refds = xr.open_mfdataset(reflist, drop_variables=skip_these_vars)
+        devds = xr.open_mfdataset(devlist, drop_variables=skip_these_vars)
         if refmet is not None:
             refmetds = xr.open_mfdataset(
-                refmet, drop_variables=gcon.skip_these_vars)
+                refmet, drop_variables=skip_these_vars)
         if devmet is not None:
             devmetds = xr.open_mfdataset(
-                devmet, drop_variables=gcon.skip_these_vars)
+                devmet, drop_variables=skip_these_vars)
     else:
         # , combine="nested", concat_dim="time")
-        refds = xr.open_mfdataset(reflist, drop_variables=gcon.skip_these_vars)
+        refds = xr.open_mfdataset(reflist, drop_variables=skip_these_vars)
         # , combine="nested", concat_dim="time")
-        devds = xr.open_mfdataset(devlist, drop_variables=gcon.skip_these_vars)
+        devds = xr.open_mfdataset(devlist, drop_variables=skip_these_vars)
         if refmet is not None:
             # , combine="nested", concat_dim="time")
             refmetds = xr.open_mfdataset(
-                refmet, drop_variables=gcon.skip_these_vars)
+                refmet, drop_variables=skip_these_vars)
         if devmet is not None:
             # , combine="nested", concat_dim="time")
             devmetds = xr.open_mfdataset(
-                devmet, drop_variables=gcon.skip_these_vars)
+                devmet, drop_variables=skip_these_vars)
 
     # ==================================================================
     # Create table of emissions
@@ -2331,13 +2327,13 @@ def make_benchmark_jvalue_plots(
 
     # Ref dataset
     try:
-        refds = reader(ref, drop_variables=gcon.skip_these_vars)
+        refds = reader(ref, drop_variables=skip_these_vars)
     except (OSError, IOError, FileNotFoundError) as e:
         raise e(f"Could not find Ref file: {ref}") from e
 
     # Dev dataset
     try:
-        devds = reader(dev, drop_variables=gcon.skip_these_vars)
+        devds = reader(dev, drop_variables=skip_these_vars)
     except (OSError, IOError, FileNotFoundError) as e:
         raise e(f"Could not find Ref file: {dev}") from e
 
@@ -2710,13 +2706,13 @@ def make_benchmark_aod_plots(
 
     # Read the Ref dataset
     try:
-        refds = reader(ref, drop_variables=gcon.skip_these_vars)
+        refds = reader(ref, drop_variables=skip_these_vars)
     except (OSError, IOError, FileNotFoundError) as e:
         raise e(f"Could not find Ref file: {ref}") from e
 
     # Read the Dev dataset
     try:
-        devds = reader(dev, drop_variables=gcon.skip_these_vars)
+        devds = reader(dev, drop_variables=skip_these_vars)
     except (OSError, IOError, FileNotFoundError) as e:
         raise e(f"Could not find Ref file: {dev}") from e
 
@@ -3009,8 +3005,8 @@ def make_benchmark_mass_tables(
     # Read data
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=xr.SerializationWarning)
-        refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
-        devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
+        refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
+        devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
 
     # ==================================================================
     # Update GCHP restart dataset (if any)
@@ -3035,7 +3031,7 @@ def make_benchmark_mass_tables(
             ref_area = util.get_area_from_dataset(
                 xr.open_dataset(
                     ref_met_extra,
-                    drop_variables=gcon.skip_these_vars
+                    drop_variables=skip_these_vars
                 )
             )
 
@@ -3046,7 +3042,7 @@ def make_benchmark_mass_tables(
             dev_area = util.get_area_from_dataset(
                 xr.open_dataset(
                     dev_met_extra,
-                    drop_variables=gcon.skip_these_vars
+                    drop_variables=skip_these_vars
                 )
             )
 
@@ -3277,10 +3273,10 @@ def make_benchmark_mass_accumulation_tables(
     # Read data
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", category=xr.SerializationWarning)
-        refSds = xr.open_dataset(ref_start, drop_variables=gcon.skip_these_vars)
-        refEds = xr.open_dataset(ref_end, drop_variables=gcon.skip_these_vars)
-        devSds = xr.open_dataset(dev_start, drop_variables=gcon.skip_these_vars)
-        devEds = xr.open_dataset(dev_end, drop_variables=gcon.skip_these_vars)
+        refSds = xr.open_dataset(ref_start, drop_variables=skip_these_vars)
+        refEds = xr.open_dataset(ref_end, drop_variables=skip_these_vars)
+        devSds = xr.open_dataset(dev_start, drop_variables=skip_these_vars)
+        devEds = xr.open_dataset(dev_end, drop_variables=skip_these_vars)
 
     # ==================================================================
     # Update GCHP restart dataset if needed
@@ -3521,10 +3517,10 @@ def make_benchmark_oh_metrics(
     # Read data from netCDF into Dataset objects
     # ==================================================================
 
-    refds = xr.open_dataset(ref, drop_variables=gcon.skip_these_vars)
-    devds = xr.open_dataset(dev, drop_variables=gcon.skip_these_vars)
-    refmetds = xr.open_dataset(refmet, drop_variables=gcon.skip_these_vars)
-    devmetds = xr.open_dataset(devmet, drop_variables=gcon.skip_these_vars)
+    refds = xr.open_dataset(ref, drop_variables=skip_these_vars)
+    devds = xr.open_dataset(dev, drop_variables=skip_these_vars)
+    refmetds = xr.open_dataset(refmet, drop_variables=skip_these_vars)
+    devmetds = xr.open_dataset(devmet, drop_variables=skip_these_vars)
 
     # ==================================================================
     # Get tropopause mask
@@ -3803,16 +3799,16 @@ def make_benchmark_wetdep_plots(
     reader = util.dataset_reader(time_mean, verbose=verbose)
 
     # Open datasets
-    refds = reader(ref, drop_variables=gcon.skip_these_vars)
-    devds = reader(dev, drop_variables=gcon.skip_these_vars)
+    refds = reader(ref, drop_variables=skip_these_vars)
+    devds = reader(dev, drop_variables=skip_these_vars)
 
     # Open met datasets if passed as arguments
     refmetds = None
     devmetds = None
     if refmet is not None:
-        refmetds = reader(refmet, drop_variables=gcon.skip_these_vars)
+        refmetds = reader(refmet, drop_variables=skip_these_vars)
     if devmet is not None:
-        devmetds = reader(devmet, drop_variables=gcon.skip_these_vars)
+        devmetds = reader(devmet, drop_variables=skip_these_vars)
 
     # Compute mean of data over the time dimension (if time_mean=True)
     if time_mean:
@@ -4035,7 +4031,7 @@ def make_benchmark_aerosol_tables(
     mw = {}
     for v in species_list:
         mw[v] = spcdb[v]["MW_g"]
-    mw["Air"] = gcon.MW_AIR_g
+    mw["Air"] = MW_AIR_g
 
     # Get the list of relevant AOD diagnostics from a YAML file
     aod = util.read_config_file(
@@ -4067,9 +4063,9 @@ def make_benchmark_aerosol_tables(
             compat='override',
             coords='all')
         ds_spc = xr.open_mfdataset(
-            devlist_spc, drop_variables=gcon.skip_these_vars)
+            devlist_spc, drop_variables=skip_these_vars)
         ds_met = xr.open_mfdataset(
-            devlist_met, drop_variables=gcon.skip_these_vars)
+            devlist_met, drop_variables=skip_these_vars)
     else:
         ds_aer = xr.open_mfdataset(
             devlist_aero,
@@ -4078,10 +4074,10 @@ def make_benchmark_aerosol_tables(
             coords='all')  # ,
         # combine="nested", concat_dim="time")
         ds_spc = xr.open_mfdataset(devlist_spc,
-                                   drop_variables=gcon.skip_these_vars)  # ,
+                                   drop_variables=skip_these_vars)  # ,
         # combine="nested", concat_dim="time")
         ds_met = xr.open_mfdataset(devlist_met,
-                                   drop_variables=gcon.skip_these_vars)  # ,
+                                   drop_variables=skip_these_vars)  # ,
         # combine="nested", concat_dim="time")
 
     # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
@@ -4414,7 +4410,7 @@ def make_benchmark_operations_budget(
 
     # Read data from disk (either one month or 12 months)
     print('Opening ref and dev data')
-    skip_vars = gcon.skip_these_vars
+    skip_vars = skip_these_vars
     if annual:
         if LooseVersion(xr.__version__) < LooseVersion("0.15.0"):
             ref_ds = xr.open_mfdataset(reffiles, drop_variables=skip_vars)
@@ -4991,7 +4987,7 @@ def make_benchmark_mass_conservation_table(
     # Calculate global mass for the tracer at all restart dates
     # ==================================================================
     for f in datafiles:
-        ds = xr.open_dataset(f, drop_variables=gcon.skip_these_vars)
+        ds = xr.open_dataset(f, drop_variables=skip_these_vars)
 
         # Save date in desired format
         #datestr = str(pd.to_datetime(ds.time.values[0]))
@@ -5004,7 +5000,7 @@ def make_benchmark_mass_conservation_table(
             area = util.get_area_from_dataset(
                 xr.open_dataset(
                     areapath,
-                    drop_variables=gcon.skip_these_vars
+                    drop_variables=skip_these_vars
                 )
             )
 
@@ -5231,7 +5227,7 @@ def create_benchmark_summary_table(
     # ==================================================================
 
     # Variables to skip
-    skip_vars = gcon.skip_these_vars
+    skip_vars = skip_these_vars
     skip_vars.append("AREA")
 
     # Pick the proper function to read the data

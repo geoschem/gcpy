@@ -17,8 +17,9 @@ import xarray as xr
 from matplotlib import use as mpl_use
 #mpl_use("TkAgg")                          # X11 backend for plt.show()
 import matplotlib.pyplot as plt
-from gcpy import plot
 from gcpy.constants import skip_these_vars
+from gcpy.plot.compare_single_level import compare_single_level
+from gcpy.plot.compare_zonal_mean import compare_zonal_mean
 from gcpy.util import rename_and_flip_gchp_rst_vars
 
 
@@ -83,7 +84,7 @@ def plot_comparisons(
     # your second xarray Dataset, and the name of your second dataset.
     # Here we will also pass a specific level and the names of the
     # variables you want to plot.
-    plot.compare_single_level(
+    compare_single_level(
         ref_ds,
         'Ref version',
         dev_ds,
@@ -95,7 +96,7 @@ def plot_comparisons(
 
     # Using plt.show(), you can view the plots interactively.
     # You can also save out the plots to a PDF.
-    plot.compare_single_level(
+    compare_single_level(
         ref_ds,
         'Ref version',
         dev_ds,
@@ -114,7 +115,7 @@ def plot_comparisons(
     # many of the same arguments as compare_single_level.  You can
     # specify pressure ranges in hPa for zonal mean plotting (by
     # default every vertical level is plotted)
-    plot.compare_zonal_mean(
+    compare_zonal_mean(
         ref_ds,
         'Ref version',
         dev_ds,

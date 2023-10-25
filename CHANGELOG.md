@@ -31,9 +31,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `ENCODING = "UTF-8"` to `gcpy/constants.py`
 - Added statement `from dask.array import Array as DaskArray` in `gcpy plot.py`
 - Added SLURM run script `gcpy/benchmark/benchmark_slurm.sh`
+- Added `gcpy/plot/gcpy_plot_style` style sheet for title and label default settings
 - Added `gcpy/gcpy_plot_style` style sheet for title and label default settings
 - Added new cubed-sphere grid inquiry functions to `gcpy/cstools.py`
 - Added functions `get_ilev_coord` and `get_lev_coord` to `gcpy/grid.py`
+- Add `tk` package to `docs/environment_files/environment.yml`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -63,6 +65,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Now allow `plot_val` to be of type `dask.array.Array` in `plot.py` routines `six_plot` and `single_panel`
 - Now add `if` statements to turn of `Parallel()` commands when `n_jobs==1`.
 - Do not hardwire fontsize in `gcpy/plot.py`; get defaults from `gcpy_plot_style`
+- `gcpy/plot.py` has been split up into smaller modules in the `gcpy/plot` folder
 - Updated and cleaned up code in `gcpy/regrid.py`
 - Example scripts`plot_single_level` and `plot_comparisons` can now accept command-line arguments
 - Example scripts `plot_single_level.py`, `plot_comparisons.py`, `compare_diags.py` now handle GCHP restart files properly
