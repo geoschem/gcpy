@@ -384,11 +384,9 @@ def compare_single_level(
         if ds_devs[i].units.strip() == "UNITLESS":
             ds_devs[i].attrs["units"] = "1"
 
-        # Check that units are the same in ref and dev. Will exit with
-        # an error if do not match and enforce_units is true (default).
-        if not check_units(ds_refs[i], ds_devs[i]) and enforce_units:
-            raise ValueError(
-                'Units in ref and dev must match when enforce_units is True')
+        # Compare units of ref and dev. The check_units function will throw an
+        # error if units do not match and enforce_units is True.
+        check_units(ds_refs[i], ds_devs[i], enforce_units)
 
         # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
         if convert_to_ugm3:
