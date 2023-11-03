@@ -746,11 +746,21 @@ def is_cubed_sphere_rst_grid(data):
     # internal state variables in GCHP. A more robust back-up check
     # could be to see if all the lats and lons are integer, since
     # that will be the case with the GCHP restart file format.
-    if "lat" in data.dims:
-        if data.dims["lat"] == data.dims["lon"] * 6:
+
+    # NOTE: in DataArray objects, dims is a tuple but not a dict!
+    # Comparing the len of the lat & lon coords will work for both.
+    if "lat" in data.coords:
+        if len(data.coords["lat"]) == len(data.coords["lon"]) * 6:
             return True
-    if "SPC_" in data.data_vars.keys():
-        return True
+
+    # Dataset: search data.data_vars for "SPC_"
+    # DataArray: search data.name for "SPC_"
+    if isinstance(data, xr.Dataset):
+        if "SPC_" in data.data_vars.keys():
+            return True
+        if "SPC_" in data.name:
+            return True
+
     return False
 
 
@@ -776,9 +786,13 @@ def get_cubed_sphere_res(data):
 
     if not is_cubed_sphere(data):
         return 0
+
+    # NOTE: In Dataset objects "dims" is a dict, but in DataArray
+    # objects "dims" is a tuple.  Returning the length of the
+    # corresponding coords array should work in both cases.
     if is_cubed_sphere_rst_grid(data):
-        return data.dims["lon"]
-    return data.dims["Xdim"]
+        return len(data.coords["lon"])
+    return len(data.coords["Xdim"])
 
 
 def is_gchp_lev_positive_down(data):
