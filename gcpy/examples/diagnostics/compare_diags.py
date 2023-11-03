@@ -2,18 +2,19 @@
 """
 Example script that can compare diagnostics from two different netCDF
 collections.  Similar to compute_diagnostics.ipynb, but can be used
-without having to open a Jupyter notebook.
+without having to open a Jupyter notebook.  The parameters for the
+configuration are specified in a YAML file whose name is passed
+as an argument.
 """
-
-# Imports
 import os
 import sys
 import warnings
 import numpy as np
-import xarray as xr
-from gcpy import plot
-from gcpy import util
+from gcpy.util import add_missing_variables, compare_varnames, \
+    dataset_reader, read_config_file
 from gcpy.constants import skip_these_vars
+from gcpy.plot.compare_single_level import compare_single_level
+from gcpy.plot.compare_zonal_mean import compare_zonal_mean
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -79,25 +80,37 @@ def read_data(config):
         config["data"]["dev"]["file"]
     )
 
+    # Function to read the data
+    reader = dataset_reader(
+        multi_files=False,
+        verbose=False
+    )
+
     # Read Ref data
     try:
-        refdata = xr.open_dataset(
+        refdata = reader(
             ref_file,
             drop_variables=skip_these_vars
-        )
-    except Exception as exc:
+        ).load()
+    except FileNotFoundError as exc:
         msg = "Error reading " + ref_file
-        raise Exception(msg) from exc
+        raise FileNotFoundError(msg) from exc
 
     # Read Dev data
     try:
-        devdata = xr.open_dataset(
+        devdata = reader(
             dev_file,
             drop_variables=skip_these_vars
-        )
-    except Exception as exc:
+        ).load()
+    except FileNotFoundError as exc:
         msg = "Error reading " + dev_file
-        raise Exception(msg) from exc
+        raise FileNotFoundError(msg) from exc
+
+    # If the data is from a GCHP restart file, rename variables and
+    # flip levels to match the GEOS-Chem Classic naming and level
+    # conventions.  Otherwise no changes will be made.
+    refdata = util.rename_and_flip_gchp_rst_vars(refdata)
+    devdata = util.rename_and_flip_gchp_rst_vars(devdata)
 
     # Define dictionary for return
     data = {
@@ -244,12 +257,12 @@ def compare_data(config, data):
     # array of NaN values to refdata. Ditto for devdata.  This will
     # allow us to show that the variable is missing in either
     # refdata or devdata.
-    [refdata, devdata] = util.add_missing_variables(refdata, devdata)
+    [refdata, devdata] = add_missing_variables(refdata, devdata)
 
     # Get the list of common variable names
     verbose = config["options"]["verbose"]
     quiet = not verbose
-    vardict = util.compare_varnames(refdata, devdata, quiet=quiet)
+    vardict = compare_varnames(refdata, devdata, quiet=quiet)
     varlist_level = vardict["commonvars2D"] + vardict["commonvars3D"]
     varlist_zonal = vardict["commonvars3D"]
 
@@ -259,6 +272,14 @@ def compare_data(config, data):
         varlist_level = [v for v in varlist_level if v in restrict_vars]
         varlist_zonal = [v for v in varlist_zonal if v in restrict_vars]
 
+    # Determine if we need to flip levels in the vertical
+    flip_ref = False
+    flip_dev = False
+    if "flip_levels" in config["data"]["ref"]:
+        flip_ref = config["data"]["ref"]["flip_levels"]
+    if "flip_levels" in config["data"]["dev"]:
+        flip_dev = config["data"]["dev"]["flip_levels"]        
+        
     # ==================================================================
     # Generate the single level comparison plot
     # ==================================================================
@@ -268,15 +289,18 @@ def compare_data(config, data):
             config["paths"]["plots_dir"],
             config["options"]["level_plot"]["pdfname"]
         )
-        plot.compare_single_level(
+        compare_single_level(
             refdata,
             config["data"]["ref"]["label"],
             devdata,
             config["data"]["dev"]["label"],
+            flip_ref=flip_ref,
+            flip_dev=flip_dev,
             ilev=config["options"]["level_plot"]["level_to_plot"],
             varlist=varlist_level,
             pdfname=pdfname,
             weightsdir=config["paths"]["weights_dir"],
+            n_job=config["options"]["n_cores"],
             verbose=verbose
         )
 
@@ -289,22 +313,24 @@ def compare_data(config, data):
             config["paths"]["plots_dir"],
             config["options"]["zonal_mean"]["pdfname"]
         )
-        plot.compare_zonal_mean(
+        compare_zonal_mean(
             refdata,
             config["data"]["ref"]["label"],
             devdata,
             config["data"]["dev"]["label"],
+            flip_ref=flip_ref,
+            flip_dev=flip_dev,
             varlist=varlist_zonal,
             pdfname=pdfname,
             weightsdir=config["paths"]["weights_dir"],
+            n_job=config["options"]["n_cores"],
             verbose=verbose
         )
 
     # ==================================================================
     # Print totals for each quantity
     # ==================================================================
-    if config["options"]["totals_and_diffs"]["create_table"] or \
-       config["options"]["totals_and_diffs"]["print_to_screen"]:
+    if config["options"]["totals_and_diffs"]["create_table"]:
         print('... Printing totals and differences')
         print_totals_and_diffs(
             config,
@@ -327,7 +353,7 @@ def main(argv):
         config_file = "compare_diags.yml"
 
     # Get paths and options from the configuration file
-    config = util.read_config_file(config_file)
+    config = read_config_file(config_file)
 
     # Create dirs for plots & weights (if necessary)
     create_dirs(config)
