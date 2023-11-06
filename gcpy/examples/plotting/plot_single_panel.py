@@ -40,8 +40,7 @@ def plot_single_panel(infile, varname, level):
     # If the data is from a GCHP restart file, rename variables and
     # flip levels to match the GEOS-Chem Classic naming and level
     # conventions.  Otherwise no changes will be made.
-    ref_ds = rename_and_flip_gchp_rst_vars(ref_ds)
-    dev_ds = rename_and_flip_gchp_rst_vars(dev_ds)
+    dset = rename_and_flip_gchp_rst_vars(dset)
 
     # You can easily view the variables available for plotting
     # using xarray.  Each of these variables has its own xarray
@@ -123,7 +122,7 @@ def plot_single_panel(infile, varname, level):
         log_yaxis=True,
         log_color_scale=True,
         plot_type="zonal_mean",
-        title=f"Zonal mean plot for {varname}, stratopshere-only"
+        title=f"Zonal mean plot for {varname}, stratosphere-only"
     )
     plt.show()
 
