@@ -720,9 +720,7 @@ def is_cubed_sphere_diag_grid(data):
     True if the grid has History diagnostic dimensions,
     False otherwise.
     """
-    if "nf" in data.dims:
-        return True
-    return False
+    return "nf" in data.dims
 
 
 def is_cubed_sphere_rst_grid(data):
@@ -750,18 +748,13 @@ def is_cubed_sphere_rst_grid(data):
     # NOTE: in DataArray objects, dims is a tuple but not a dict!
     # Comparing the len of the lat & lon coords will work for both.
     if "lat" in data.coords:
-        if len(data.coords["lat"]) == len(data.coords["lon"]) * 6:
-            return True
+         return len(data.coords["lat"]) == len(data.coords["lon"]) * 6
 
     # Dataset: search data.data_vars for "SPC_"
     # DataArray: search data.name for "SPC_"
     if isinstance(data, xr.Dataset):
-        if "SPC_" in data.data_vars.keys():
-            return True
-        if "SPC_" in data.name:
-            return True
-
-    return False
+        return "SPC_" in data.data_vars.keys()
+    return "SPC_" in data.name
 
 
 def get_cubed_sphere_res(data):
