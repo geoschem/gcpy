@@ -69,6 +69,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated and cleaned up code in `gcpy/regrid.py`
 - Example scripts`plot_single_level` and `plot_comparisons` can now accept command-line arguments
 - Example scripts `plot_single_level.py`, `plot_comparisons.py`, `compare_diags.py` now handle GCHP restart files properly
+- Now specify the X11 backend with by setting the `MPLBACKEND` environment variable
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`

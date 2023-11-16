@@ -12,11 +12,21 @@ works equally well for cubed-sphere (GCHP) data.
 For full documentation on the plotting capabilities of GCPy
 (including full argument lists), please see the GCPy documentation
 at https://gcpy.readthedocs.io.
+
+NOTE: If you are using GCPy from a Mac, set the environment variable:
+
+   export MPLBACKEND="MacOSX"
+
+Otherwise set:
+
+   export MPLBACKEND="tkagg"
+
+This will set the proper X11 backend (which is needed to open a plot
+window on the screen.  There is some incompatibility with the Tck/Tk
+backend "tkagg" in MacOS X operating systems.
 """
 import argparse
 import xarray as xr
-from matplotlib import use as mpl_use
-mpl_use("tkagg")                        # X11 backend for plt.show()
 import matplotlib.pyplot as plt
 from gcpy.plot.single_panel import single_panel
 from gcpy.util import rename_and_flip_gchp_rst_vars
@@ -40,8 +50,7 @@ def plot_single_panel(infile, varname, level):
     # If the data is from a GCHP restart file, rename variables and
     # flip levels to match the GEOS-Chem Classic naming and level
     # conventions.  Otherwise no changes will be made.
-    ref_ds = rename_and_flip_gchp_rst_vars(ref_ds)
-    dev_ds = rename_and_flip_gchp_rst_vars(dev_ds)
+    dset = rename_and_flip_gchp_rst_vars(dset)
 
     # You can easily view the variables available for plotting
     # using xarray.  Each of these variables has its own xarray

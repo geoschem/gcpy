@@ -11,11 +11,21 @@ points in one run that are stored in separate xarray datasets.
 
 The example data described here is in lat/lon format, but the same
 code works equally well for cubed-sphere (GCHP) data.
+
+NOTE: If you are using GCPy from a Mac, set the environment variable:
+
+   export MPLBACKEND="MacOSX"
+
+Otherwise set:
+
+   export MPLBACKEND="tkagg"
+
+This will set the proper X11 backend (which is needed to open a plot
+window on the screen.  There is some incompatibility with the Tck/Tk
+backend "tkagg" in MacOS X operating systems.
 """
 import argparse
 import xarray as xr
-from matplotlib import use as mpl_use
-mpl_use("tkagg")                          # X11 backend for plt.show()
 import matplotlib.pyplot as plt
 from gcpy.constants import skip_these_vars
 from gcpy.plot.compare_single_level import compare_single_level
