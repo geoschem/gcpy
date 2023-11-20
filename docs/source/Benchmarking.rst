@@ -1174,13 +1174,94 @@ inventory) from the output of GEOS-Chem benchmark simulations.
 
        """
 
+.. _bmk-funcs-table-mass:
+
+make_benchmark_mass_tables
+--------------------------
+
+This function creates tables of total mass for species in two
+different GEOS-Chem benchmark simulations.
+
+.. code-block:: python
+
+   def make_benchmark_mass_tables(
+           ref,
+           refstr,
+           dev,
+           devstr,
+           varlist=None,
+           dst="./benchmark",
+           subdst=None,
+           overwrite=False,
+           verbose=False,
+           label="at end of simulation",
+           spcdb_dir=os.path.dirname(__file__),
+           ref_met_extra=None,
+           dev_met_extra=None
+   ):
+       """
+       Creates a text file containing global mass totals by species and
+       category for benchmarking purposes.
+
+       Args:
+           reflist: str
+               Pathname that will constitute
+               the "Ref" (aka "Reference") data set.
+           refstr: str
+               A string to describe ref (e.g. version number)
+           dev: list of str
+               Pathname that will constitute
+               the "Dev" (aka "Development") data set.  The "Dev"
+               data set will be compared against the "Ref" data set.
+           devstr: str
+               A string to describe dev (e.g. version number)
+
+       Keyword Args (optional):
+           varlist: list of str
+               List of variables to include in the list of totals.
+               If omitted, then all variables that are found in either
+               "Ref" or "Dev" will be included.  The varlist argument
+               can be a useful way of reducing the number of
+               variables during debugging and testing.
+               Default value: None
+           dst: str
+               A string denoting the destination folder where the file
+               containing emissions totals will be written.
+               Default value: ./benchmark
+           subdst: str
+               A string denoting the sub-directory of dst where PDF
+               files containing plots will be written.  In practice,
+               subdst is only needed for the 1-year benchmark output,
+               and denotes a date string (such as "Jan2016") that
+               corresponds to the month that is being plotted.
+               Default value: None
+           overwrite: bool
+               Set this flag to True to overwrite files in the
+               destination folder (specified by the dst argument).
+               Default value: False
+           verbose: bool
+               Set this flag to True to print extra informational output.
+               Default value: False.
+           spcdb_dir: str
+               Directory of species_datbase.yml file
+               Default value: Directory of GCPy code repository
+           ref_met_extra: str
+               Path to ref Met file containing area data for use with restart files
+               which do not contain the Area variable.
+               Default value: ''
+           dev_met_extra: str
+               Path to dev Met file containing area data for use with restart files
+               which do not contain the Area variable.
+               Default value: ''
+       """
+
 .. _bmk-funcs-table-accum:
 
 make_benchmark_mass_accumulation_tables
 ---------------------------------------
 
-This function creates tables of total mass for species in two
-different data set from GEOS-Chem benchmark simulation output.
+This function creates tables of mass accumulation over time for species in two
+different GEOS-Chem benchmark simulations.
 
 .. code-block:: python
 
@@ -1259,6 +1340,7 @@ different data set from GEOS-Chem benchmark simulation output.
            Species properties (such as molecular weights) are read from a
            YAML file called "species_database.yml".
        """
+
 
 .. _bmk-funcs-table-cons:
 

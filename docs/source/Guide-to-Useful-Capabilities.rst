@@ -215,7 +215,7 @@ Regridding
 
 .. _capabilities-regridding-rules:
 
-General eegridding rules
+General regridding rules
 ------------------------
 
 GCPy supports regridding between all horizontal GEOS-Chem grid types,

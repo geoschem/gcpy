@@ -226,7 +226,7 @@ Linux and Windows Subsystem for Linux
      - Press ENTER to confirm the location
      - Press CTRL-C to abort the installation
      - Or specify a different location below
-     [/home/bob/mambaforge] >>>
+     [/home/YOUR-USER-NAME/mambaforge] >>>
 
    In most cases, it should be OK to accept the default installation
    location.  But on some systems, users may be encouraged to install
@@ -366,13 +366,35 @@ Follow these steps:
    locations of Python libraries on your system that were not
    installed by :program:`Mamba`.
 
-   Add the path to your GCPy source code folder  :file:`~/.bashrc` file:
+   Add the path to your GCPy source code folder :file:`~/.bashrc` file:
 
    .. code-block:: bash
 
       export PYTHONPATH=$PYTHONPATH:$HOME/python/GCPy
 
    and then use
+
+   .. code-block:: console
+
+      $ source ~/.bashrc
+
+   to apply the change. |br|
+   |br|
+
+#. **Set the** :envvar:`MPLBACKEND` **environment variable**
+
+   The environment variable :envvar:`MPLBACKEND` specifies the X11
+   backend that the Matplotlib package will use to render plots to the
+   screen.
+
+   Add this line to your :file:`~/.bashrc` file on your local PC/Mac
+   and on any remote computer systems where you will use GCPy:
+
+   .. code-block:: bash
+
+      export MPLBACKEND=tkagg
+
+   And then use:
 
    .. code-block:: console
 

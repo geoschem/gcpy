@@ -51,6 +51,12 @@ directly from the command line (:ref:`see the examples below
 <regrid-classic-example>`) or from a Python script or
 interpreter (:code:`gcpy.file_regrid.file_regrid()`)
 
+.. note::
+
+   For regridding to or from GCHP stretched-grid restart files, we
+   recommend using the :ref:`offline regridding weights method
+   <regrid-gchp>`.
+
 The syntax of :code:`file_regrid` is as follows:
 
 .. code-block:: python
