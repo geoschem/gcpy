@@ -4,7 +4,7 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased 1.4.0]
+## [1.4.0] - 2023-11-20
 ### Added
 - Added C2H2 and C2H4 to `emission_species.yml`
 - Updated `species_database.yml` for consistency with GEOS-Chem 14.2.0
@@ -69,6 +69,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated and cleaned up code in `gcpy/regrid.py`
 - Example scripts`plot_single_level` and `plot_comparisons` can now accept command-line arguments
 - Example scripts `plot_single_level.py`, `plot_comparisons.py`, `compare_diags.py` now handle GCHP restart files properly
+- Now specify the X11 backend with by setting the `MPLBACKEND` environment variable
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
