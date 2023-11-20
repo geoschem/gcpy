@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: GCPy user manual
+    url: https://gcpy.readthedocs.io/en/stable
+    about: Click this link to read the GCPy user manual.

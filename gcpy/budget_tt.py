@@ -462,7 +462,10 @@ def annual_average(globvars, ds, collection, conv_factor):
     for spc in globvars.species_list:
 
         # Whole-atmosphere quanity [g] or [g d-1]
-        varname = collection.strip() + "_" + spc
+        if "SpeciesConc" in collection:
+            varname = collection.strip() + "VV_" + spc
+        else:
+            varname = collection.strip() + "_" + spc
         q[spc + "_f"] = ds[varname].values * conv_factor[spc]
 
         # Shape of the data
@@ -626,7 +629,7 @@ def trop_residence_time(globvars):
         result[spc + "_t"] = 0.0
 
         # Concentration [g]
-        var = "SpeciesConc_" + spc
+        var = "SpeciesConcVV_" + spc
         q_cnc = globvars.ds_cnc[var].values * globvars.vv_to_g[spc]
         q_cnc = np.ma.masked_array(q_cnc, globvars.tropmask)
 

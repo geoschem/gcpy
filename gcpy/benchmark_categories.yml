@@ -197,6 +197,7 @@ FullChemBenchmark:
     Nitrates:
       - ISOPN
     Other:
+      - FURA
       - GLYC
       - GLYX
       - HCOOH
@@ -220,22 +221,26 @@ TransportTracersBenchmark:
     RnPbBeTracers:
       - Rn222
       - Pb210
-      - Pb210Strat
+      - Pb210s
       - Be7
-      - Be7Strat
+      - Be7s
       - Be10
-      - Be10Strat
-  PassiveTracers:
-    PassiveTracers:
+      - Be10s
+  TransportTracers:
+    TransportTracers:
       - PassiveTracer
-      - SF6Tracer
-      - CH3ITracer
-      - COAnthroEmis25dayTracer
-      - COAnthroEmis50dayTracer
-      - COUniformEmis25dayTracer
-      - GlobEmis90dayTracer
-      - NHEmis90dayTracer
-      - SHEmis90dayTracer
+      - SF6
+      - CH3I
+      - aoa
+      - aoa_bl
+      - aoa_nh
+      - CO_25
+      - CO_50
+      - e90
+      - e90_n
+      - e90_s
+      - st80_25
+      - stOX
   WetLossConv:
     WetLossConv:
       - Pb210

@@ -5,6 +5,10 @@ FullChemBenchmark:
   BCPI: Tg
   BCPO: Tg
   BENZ: Tg
+  BrSALA: Tg
+  BrSALC: Tg
+  C2H2: Tg
+  C2H4: Tg
   C2H6: Tg
   C3H8: Tg
   CH2Br2: Tg
@@ -18,6 +22,7 @@ FullChemBenchmark:
   DST4: Tg
   EOH: Tg
   ETNO3: Tg
+  FURA: Tg
   GLYC: Tg
   GLYX: Tg
   HAC: Tg
@@ -50,3 +55,22 @@ FullChemBenchmark:
   pFe: Tg
 CH4Benchmark:
   CH4: Tg
+TransportTracersBenchmark:
+#  Rn222: kg
+#  Pb210: kg
+#  Pb210s: kg
+  Be7: kg
+  Be7s: kg
+  Be10: kg
+  Be10s: kg
+  CH3I: Tg
+#  CO_25: Tg
+#  CO_50: Tg
+#  e90: Tg
+#  e90_n: Tg
+#  e90_s: Tg
+#  nh_5: Tg
+#  nh_50: Tg
+  SF6:  Tg
+#  st80_25: Tg
+#  stOX: Tg

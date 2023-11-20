@@ -1,11 +1,14 @@
-import numpy as np
-import xarray as xr
-from numpy import asarray
-import scipy.sparse
+"""
+Module containing variables and functions that define and
+manipulate GEOS-Chem horizontal and vertical grids
+"""
 from itertools import product
-from .util import get_shape_of_data
+import xarray as xr
+import numpy as np
+import scipy.sparse
+from gcpy.util import get_shape_of_data, verify_variable_type
 from .grid_stretching_transforms import scs_transform
-from .constants import R_EARTH_m
+from gcpy.constants import R_EARTH_m
 
 
 def get_troposphere_mask(ds):
@@ -166,7 +169,7 @@ def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
 
     Returns:
         [grid, grid_list]: list(dict, list(dict))
-            Returns the created grid. 
+            Returns the created grid.
             grid_list is a list of grids if gridtype is 'cs', else it is None
     """
 
@@ -287,6 +290,126 @@ def get_vert_grid(dataset, AP=[], BP=[]):
     else:
         new_grid = vert_grid(AP, BP)
         return new_grid.p_edge(), new_grid.p_mid(), np.size(AP)
+
+
+def get_ilev_coord(
+        n_lev=72,
+        AP_edge=None,
+        BP_edge=None,
+        top_down=False,
+        gchp_indices=False
+):
+    """
+    Returns the eta values (defined as (A/P0) + B) at vertical
+    level edges. These are used to define the "ilev" netCDF
+    coordinate variable.
+
+    Keyword Args (optional):
+    ------------------------
+    n_lev : int
+        Number of levels in the grid.  Default = 72
+    AP_edge : list-like
+        Hybrid grid parameter A (hPa), with values placed on level
+        edges.  If not specified, values from the _GEOS_72L_AP array
+        in this module will be used.
+    AP_edge : list-like
+        Hybrid grid parameter B (unitless), with values placed on level
+        edges.  If not specified, values from the _GEOS_72L_BP array in
+        this module will be used.
+    top_down : bool
+        Set this to True if the eta coordinate will be arranged from
+        top-of-atm downward (True) or from the surface upward (False).
+    gchp_indices : bool
+        Set this to True to return an array of indices (as is used
+        in GCHP files).
+
+    Returns:
+    --------
+    ilev : numpy.ndarray
+        List of eta values at vertical grid edges
+    """
+    if n_lev is None:
+        n_lev = 72
+
+    # Return GCHP-style indices for the level dimension
+    if gchp_indices:
+        return np.linspace(1, n_lev+1, n_lev+1, dtype=np.float64)
+
+    # Get eta values at vertical level edges
+    if AP_edge is None and n_lev == 72:
+        AP_edge = _GEOS_72L_AP
+    if AP_edge is None and n_lev == 47:
+        AP_edge = _GEOS_47L_AP
+    if BP_edge is None and n_lev == 72:
+        BP_edge = _GEOS_72L_BP
+    if BP_edge is None and n_lev == 47:
+        BP_edge = _GEOS_47L_BP
+    ilev = np.array((AP_edge/1000.0) + BP_edge, dtype=np.float64)
+    if top_down:
+        ilev = ilev[::-1]
+    return ilev
+
+def get_lev_coord(
+        n_lev=72,
+        AP_edge=None,
+        BP_edge=None,
+        top_down=False,
+        gchp_indices=False
+):
+    """
+    Returns the eta values (defined as (A/P0) + B) at vertical
+    level midpoints.  These are used to define the "lev"
+    netCDF coordinate variable.
+
+    Keyword Args (optional):
+    ------------------------
+    n_lev : int
+        Number of levels in the grid.  Default = 72
+    AP_edge : list-like
+        Hybrid grid parameter A (hPa), with values placed on level
+        edges.  If not specified, values from the _GEOS_72L_AP array
+        in this module will be used.
+    AP_edge : list-like
+        Hybrid grid parameter B (unitless), with values placed on level
+        edges.  If not specified, values from the _GEOS_72L_BP array in
+        this module will be used.
+    top_down : bool
+        Set this to true if the eta coordinate will be arranged from
+        top-of-atm downward (True) or from the surface upward (False).
+    gchp_indices : bool
+        Set this to True to return an array of indices (as is used
+        in GCHP files).
+
+    Returns:
+    --------
+    lev : numpy.ndarray
+        List of eta values at vertical grid midpoints
+    """
+    if n_lev is None:
+        n_lev = 72
+
+    # Return GCHP-style indices for the level dimension
+    if gchp_indices:
+        return np.linspace(1, n_lev, n_lev, dtype=np.float64)
+
+    # Compute AP, BP at midpoints.
+    # Convert inputs to numpy.ndarray for fast computation
+    if AP_edge is None and n_lev == 72:
+        AP_edge = _GEOS_72L_AP
+    if AP_edge is None and n_lev == 47:
+        AP_edge = _GEOS_47L_AP
+    if BP_edge is None and n_lev == 72:
+        BP_edge = _GEOS_72L_BP
+    if BP_edge is None and n_lev == 47:
+        BP_edge = _GEOS_47L_BP
+    AP_edge = np.array(AP_edge)
+    BP_edge = np.array(BP_edge)
+    AP_mid = (AP_edge[0:n_lev:1] + AP_edge[1:n_lev+1:1]) * 0.5
+    BP_mid = (BP_edge[0:n_lev:1] + BP_edge[1:n_lev+1:1]) * 0.5
+    lev = np.array((AP_mid / 1000.0) + BP_mid, dtype=np.float64)
+    if top_down:
+        lev = lev[::-1]
+    return lev
 
 
 def get_pressure_indices(pedge, pres_range):
@@ -922,8 +1045,8 @@ def calc_rectilinear_grid_area(lon_edge, lat_edge):
     # Convert from km to m
     _radius_earth_m = R_EARTH_m
 
-    lon_edge = asarray(lon_edge, dtype=float)
-    lat_edge = asarray(lat_edge, dtype=float)
+    lon_edge = np.asarray(lon_edge, dtype=float)
+    lat_edge = np.asarray(lat_edge, dtype=float)
 
     n_lon = (lon_edge.size) - 1
     n_lat = (lat_edge.size) - 1
@@ -967,7 +1090,7 @@ def calc_delta_lon(lon_edge):
 
     n_lon = (lon_edge.size) - 1
 
-    lon_edge = asarray(lon_edge)
+    lon_edge = np.asarray(lon_edge)
 
     # Set up output array
     lon_delta = np.zeros((n_lon))
@@ -1122,7 +1245,7 @@ class CSGrid(object):
             pp[:, i, j] = latlon_to_cartesian(
                 lambda_rad[i, j], theta_rad[i, j])
 
-        # Map the edges on the sphere back to the cube. 
+        # Map the edges on the sphere back to the cube.
         #Note that all intersections are at x = -rsq3
         # print("EDGES")
         for ij in range(1, c + 1):

@@ -25,26 +25,24 @@ For documentation on setting up and running GEOS-Chem please see our
 .. toctree::
    :maxdepth: 4
    :caption: Usage Details:
-   
+
    Plotting
-   Tabling
    Regridding
+   Benchmarking
 
 .. toctree::
    :maxdepth: 1
    :caption: Example Scripts:
-   
+
    Six_panel
    Single_panel
-   benchmark_plotting
    plot_timeseries
-   bpch_to_nc
 
 .. toctree::
    :maxdepth: 1
    :caption: Help & Reference:
-   
-   Report_Request
-   Contributing
+
+   reference/CONTRIBUTING.md
+   reference/SUPPORT.md
    editing_these_docs
    Release_guide

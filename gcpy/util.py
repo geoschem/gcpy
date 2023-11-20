@@ -2,20 +2,25 @@
 Internal utilities for helping to manage xarray and numpy
 objects used throughout GCPy
 """
-
 import os
 import warnings
 import shutil
 from textwrap import wrap
-from yaml import safe_load as yaml_safe_load
+from yaml import safe_load
 import numpy as np
 import xarray as xr
-from PyPDF2 import PdfFileWriter, PdfFileReader
+from pypdf import PdfWriter, PdfReader
+from gcpy.constants import ENCODING, TABLE_WIDTH
+from gcpy.cstools import is_cubed_sphere_rst_grid
+
+# ======================================================================
+# %%%%% METHODS %%%%%
+# ======================================================================
 
 def convert_lon(
         data,
         dim='lon',
-        format='atlantic',
+        fmt='atlantic',
         neg_dateline=True
 ):
     """
@@ -42,6 +47,7 @@ def convert_lon(
     Returns:
         data, with dimension 'dim' altered according to conversion rule
     """
+    verify_variable_type(data, (xr.DataArray, xr.Dataset))
 
     data_copy = data.copy()
 
@@ -51,12 +57,13 @@ def convert_lon(
     # Tweak offset for rolling the longitudes later
     offset = 0 if neg_dateline else 1
 
-    if format not in ['atlantic', 'pacific']:
-        msg = f"Cannot convert longitudes for format '{format}'; please choose one of 'atlantic' or 'pacific'"
+    if fmt not in ['atlantic', 'pacific']:
+        msg = f"Cannot convert longitudes for format '{fmt}'; "
+        msg += "please choose one of 'atlantic' or 'pacific'"
         raise ValueError(msg)
 
     # Create a mask to decide how to mutate the longitude values
-    if format == 'atlantic':
+    if fmt == 'atlantic':
         mask = lon >= 180 if neg_dateline else lon > 180
 
         new_lon[mask] = -(360. - lon[mask])
@@ -64,7 +71,7 @@ def convert_lon(
 
         roll_len = len(data[dim]) // 2 - offset
 
-    elif format == 'pacific':
+    elif fmt == 'pacific':
         mask = lon < 0.
 
         new_lon[mask] = lon[mask] + 360.
@@ -141,27 +148,75 @@ def create_display_name(
     # Initialize
     display_name = diagnostic_name
 
+    # For restart files, just split at the first underscore and return
+    # the text followiong the underscore.  This will preserve certain
+    # species names, such as the TransportTracers species CO_25, etc.
     if "SpeciesRst" in display_name:
-        display_name = display_name.split("_")[1]
+        return display_name.split("_", 1)[1]
 
     # Special handling for Inventory totals
     if "INV" in display_name.upper():
         display_name = display_name.replace("_", " ")
 
     # Replace text
-    for v in ["Emis", "EMIS", "emis", "Inv", "INV", "inv"]:
-        display_name = display_name.replace(v, "")
+    for var in ["Emis", "EMIS", "emis", "Inv", "INV", "inv"]:
+        display_name = display_name.replace(var, "")
 
-    # Replace underscores
-    display_name = display_name.replace("_", " ")
+    # Replace only the first underscore with a space
+    display_name = display_name.replace("_", " ", 1)
 
     return display_name
+
+
+def format_number_for_table(
+        number,
+        max_thresh=1.0e8,
+        min_thresh=1.0e-6,
+        f_fmt="18.6f",
+        e_fmt="18.8e"
+):
+    """
+    Returns a format string for use in the "print_totals" routine.
+    If the number is greater than a maximum threshold or smaller
+    than a minimum threshold, then use scientific notation format.
+    Otherwise use floating-piont format.
+
+    Special case: do not convert 0.0 to exponential notation.
+
+    Args:
+    -----
+    number : float
+        Number to be printed
+
+    max_thresh, min_thresh: float
+        If |number| > max_thresh, use scientific notation.
+        If |number| < min_thresh, use scientific notation
+
+    f_fmt, e_fmt : str
+        The default floating point string and default scientific
+        notation string.
+        Default values: 18.6f, 18.6e
+
+    Returns:
+    --------
+    fmt_str : str
+        Formatted string that can be inserted into the print
+        statement in print_totals.
+    """
+    abs_number = np.abs(number)
+
+    if not abs_number > 1e-60:
+        return f"{number:{f_fmt}}"
+
+    if abs_number > max_thresh or abs_number < min_thresh:
+        return f"{number:{e_fmt}}"
+    return f"{number:{f_fmt}}"
 
 
 def print_totals(
         ref,
         dev,
-        f,
+        ofile,
         diff_list,
         masks=None,
 ):
@@ -174,7 +229,7 @@ def print_totals(
             The first DataArray to be compared (aka "Reference")
         dev: xarray DataArray
             The second DataArray to be compared (aka "Development")
-        f: file
+        ofile: file
             File object denoting a text file where output will be directed.
 
     Keyword Args (optional):
@@ -193,14 +248,9 @@ def print_totals(
     # ==================================================================
     # Initialization and error checks
     # ==================================================================
-
-    # Make sure that both Ref and Dev are xarray DataArray objects
-    if not isinstance(ref, xr.DataArray):
-        raise TypeError("The 'ref' argument must be an xarray DataArray!")
-    if not isinstance(dev, xr.DataArray):
-        raise TypeError("The 'dev' argument must be an xarray DataArray!")
-    if not isinstance(diff_list, list):
-        raise TypeError("The 'diff_list' argument must be a list!")
+    verify_variable_type(ref, xr.DataArray)
+    verify_variable_type(dev, xr.DataArray)
+    verify_variable_type(diff_list, list)
 
     # Determine if either Ref or Dev have all NaN values:
     ref_is_all_nan = np.isnan(ref.values).all()
@@ -208,7 +258,7 @@ def print_totals(
 
     # If Ref and Dev do not contain all NaNs, then make sure
     # that Ref and Dev have the same units before proceeding.
-    if (not ref_is_all_nan) and (not dev_is_all_nan):
+    if not ref_is_all_nan and not dev_is_all_nan:
         if ref.units != dev.units:
             msg = f"Ref has units {ref.units}, but Dev has units {dev.units}!"
             raise ValueError(msg)
@@ -216,23 +266,22 @@ def print_totals(
     # ==================================================================
     # Get the diagnostic name and units
     # ==================================================================
+    diagnostic_name = dev.name
     if dev_is_all_nan:
         diagnostic_name = ref.name
-    else:
-        diagnostic_name = dev.name
 
-    # Create the display name by editing the diagnostic name
+    # Create the display name for the table
     display_name = create_display_name(diagnostic_name)
 
     # Get the species name from the display name
     species_name = display_name
-    c = species_name.find(" ")
-    if c > 0:
-        species_name = display_name[0:c]
+    cidx = species_name.find(" ")
+    if cidx > 0:
+        species_name = display_name[0:cidx]
 
     # Special handling for totals
     if "_TOTAL" in diagnostic_name.upper():
-        print("-"*90, file=f)
+        print("-" * TABLE_WIDTH, file=ofile)
 
     # ==================================================================
     # Sum the Ref array (or set to NaN if missing)
@@ -282,13 +331,18 @@ def print_totals(
         pctdiff = np.nan
     else:
         pctdiff = ((total_dev - total_ref) / total_ref) * 100.0
-        if total_ref < 1.0e-15:
+        if np.abs(total_ref) < 1.0e-15:
             pctdiff = np.nan
 
     # ==================================================================
     # Write output to file and return
     # ==================================================================
-    print(f"{display_name.ljust(19)}: {total_ref:18.6f}  {total_dev:18.6f}  {diff:12.6f}  {pctdiff:8.3f}  {diff_str}", file=f)
+    ref_fmt = format_number_for_table(total_ref)
+    dev_fmt = format_number_for_table(total_dev)
+    diff_fmt = format_number_for_table(diff)
+    pctdiff_fmt = format_number_for_table(pctdiff)
+
+    print(f"{display_name[0:19].ljust(19)}: {ref_fmt}  {dev_fmt}  {diff_fmt}  {pctdiff_fmt}  {diff_str}", file=ofile)
 
     return diff_list
 
@@ -374,27 +428,28 @@ def add_bookmarks_to_pdf(
     """
 
     # Setup
-    pdfobj = open(pdfname, "rb")
-    input_pdf = PdfFileReader(pdfobj, overwriteWarnings=False)
-    output_pdf = PdfFileWriter()
+    with open(pdfname, "rb") as pdfobj:
+        input_pdf = PdfReader(pdfobj) #, overwriteWarnings=False)
+        output_pdf = PdfWriter()
 
-    for i, varname in enumerate(varlist):
-        bookmarkname = varname.replace(remove_prefix, "")
-        if verbose:
-            print(f"Adding bookmark for {varname} with name {bookmarkname}")
-        output_pdf.addPage(input_pdf.getPage(i))
-        output_pdf.addBookmark(bookmarkname, i)
-        output_pdf.setPageMode("/UseOutlines")
+        for i, varname in enumerate(varlist):
+            bookmarkname = varname.replace(remove_prefix, "")
+            if verbose:
+                print(f"Adding bookmark for {varname} with name {bookmarkname}")
+            output_pdf.add_page(input_pdf.pages[i])
+            output_pdf.add_outline_item(bookmarkname, i)
+            output_pdf.page_mode = "/UseOutlines"
 
-    # Write to temp file
-    pdfname_tmp = pdfname + "_with_bookmarks.pdf"
-    outputstream = open(pdfname_tmp, "wb")
-    output_pdf.write(outputstream)
-    outputstream.close()
+        # Write to temp file
+        pdfname_tmp = pdfname + "_with_bookmarks.pdf"
 
-    # Rename temp file with the target name
-    os.rename(pdfname_tmp, pdfname)
-    pdfobj.close()
+        with open(pdfname_tmp, "wb") as output_stream:
+            output_pdf.write(output_stream)
+            output_stream.close()
+
+        # Rename temp file with the target name
+        os.rename(pdfname_tmp, pdfname)
+        pdfobj.close()
 
 
 def add_nested_bookmarks_to_pdf(
@@ -433,62 +488,62 @@ def add_nested_bookmarks_to_pdf(
     # ==================================================================
     # Setup
     # ==================================================================
-    pdfobj = open(pdfname, "rb")
-    input_pdf = PdfFileReader(pdfobj, overwriteWarnings=False)
-    output_pdf = PdfFileWriter()
-    warninglist = [k.replace(remove_prefix, "") for k in warninglist]
+    with open(pdfname, "rb") as pdfobj:
+        input_pdf = PdfReader(pdfobj)
+        output_pdf = PdfWriter()
+        warninglist = [k.replace(remove_prefix, "") for k in warninglist]
 
-    # ==================================================================
-    # Loop over the subcategories in this category; make parent bookmark
-    # ==================================================================
-    i = -1
-    for subcat in catdict[category]:
+        # ===============================================================
+        # Loop over the subcats in this category; make parent bookmark
+        # ===============================================================
+        i = -1
+        for subcat in catdict[category]:
 
-        # First check that there are actual variables for
-        # this subcategory; otherwise skip
-        numvars = 0
-        if catdict[category][subcat]:
+            # First check that there are actual variables for
+            # this subcategory; otherwise skip
+            numvars = 0
+            if catdict[category][subcat]:
+                for varname in catdict[category][subcat]:
+                    if varname in warninglist:
+                        continue
+                    numvars += 1
+            else:
+                continue
+            if numvars == 0:
+                continue
+
+            # There are non-zero variables to plot in this subcategory
+            i = i + 1
+            output_pdf.add_page(input_pdf.pages[i])
+            parent = output_pdf.add_outline_item(subcat, i)
+            output_pdf.page_mode = "/UseOutlines"
+            first = True
+
+            # Loop over variables in this subcategory; make children bookmarks
             for varname in catdict[category][subcat]:
                 if varname in warninglist:
+                    print(f"Warning: skipping {varname}")
                     continue
-                numvars += 1
-        else:
-            continue
-        if numvars == 0:
-            continue
+                if first:
+                    output_pdf.add_outline_item(varname, i, parent)
+                    first = False
+                else:
+                    i = i + 1
+                    output_pdf.add_page(input_pdf.pages[i])
+                    output_pdf.add_outline_item(varname, i, parent)
+                    output_pdf.page_mode = "/UseOutlines"
 
-        # There are non-zero variables to plot in this subcategory
-        i = i + 1
-        output_pdf.addPage(input_pdf.getPage(i))
-        parent = output_pdf.addBookmark(subcat, i)
-        output_pdf.setPageMode("/UseOutlines")
-        first = True
+        # ==============================================================
+        # Write to temp file
+        # ==============================================================
+        pdfname_tmp = pdfname + "_with_bookmarks.pdf"
+        with open(pdfname_tmp, "wb") as output_stream:
+            output_pdf.write(output_stream)
+            output_stream.close()
 
-        # Loop over variables in this subcategory; make children bookmarks
-        for varname in catdict[category][subcat]:
-            if varname in warninglist:
-                print(f"Warning: skipping {varname}")
-                continue
-            if first:
-                output_pdf.addBookmark(varname, i, parent)
-                first = False
-            else:
-                i = i + 1
-                output_pdf.addPage(input_pdf.getPage(i))
-                output_pdf.addBookmark(varname, i, parent)
-                output_pdf.setPageMode("/UseOutlines")
-
-    # ==================================================================
-    # Write to temp file
-    # ==================================================================
-    pdfname_tmp = pdfname + "_with_bookmarks.pdf"
-    outputstream = open(pdfname_tmp, "wb")
-    output_pdf.write(outputstream)
-    outputstream.close()
-
-    # Rename temp file with the target name
-    os.rename(pdfname_tmp, pdfname)
-    pdfobj.close()
+        # Rename temp file with the target name
+        os.rename(pdfname_tmp, pdfname)
+        pdfobj.close()
 
 
 def add_missing_variables(
@@ -529,12 +584,8 @@ def add_missing_variables(
     # ==================================================================
     # Initialize
     # ==================================================================
-
-    # Make sure that refdata and devdata are both xarray Dataset objects
-    if not isinstance(refdata, xr.Dataset):
-        raise TypeError("The refdata object must be an xarray Dataset!")
-    if not isinstance(devdata, xr.Dataset):
-        raise TypeError("The refdata object must be an xarray Dataset!")
+    verify_variable_type(refdata, xr.Dataset)
+    verify_variable_type(devdata, xr.Dataset)
 
     # Find common variables as well as variables only in one or the other
     vardict = compare_varnames(refdata, devdata, quiet=True)
@@ -550,17 +601,17 @@ def add_missing_variables(
         # variables as missing values # when we plot against refdata.
         # ==============================================================
         devlist = [devdata]
-        for v in refonly:
+        for var in refonly:
             if verbose:
-                print(f"Creating array of NaN in devdata for: {v}")
-            dr = create_blank_dataarray(
-                name=refdata[v].name,
+                print(f"Creating array of NaN in devdata for: {var}")
+            darr = create_blank_dataarray(
+                name=refdata[var].name,
                 sizes=devdata.sizes,
                 coords=devdata.coords,
-                attrs=refdata[v].attrs,
+                attrs=refdata[var].attrs,
                 **kwargs
             )
-            devlist.append(dr)
+            devlist.append(darr)
         devdata = xr.merge(devlist)
 
         # ==============================================================
@@ -570,55 +621,61 @@ def add_missing_variables(
         # variables as missing values # when we plot against devdata.
         # ==================================================================
         reflist = [refdata]
-        for v in devonly:
+        for var in devonly:
             if verbose:
-                print(f"Creating array of NaN in refdata for: {v}")
-            dr = create_blank_dataarray(
-                name=devdata[v].name,
+                print(f"Creating array of NaN in refdata for: {var}")
+            darr = create_blank_dataarray(
+                name=devdata[var].name,
                 sizes=refdata.sizes,
                 coords=refdata.coords,
-                attrs=devdata[v].attrs,
+                attrs=devdata[var].attrs,
                 **kwargs
             )
-            reflist.append(dr)
+            reflist.append(darr)
         refdata = xr.merge(reflist)
 
     return refdata, devdata
 
 
-def reshape_MAPL_CS(
-        da
-):
+def reshape_MAPL_CS(darr):
     """
     Reshapes data if contains dimensions indicate MAPL v1.0.0+ output
+    (i.e. reshapes from "diagnostic" to "checkpoint" dimension format.)
+
     Args:
-        da: xarray DataArray
-            Data array variable
+    -----
+    darr: xarray DataArray
+        The input data array.
 
     Returns:
-        data: xarray DataArray
-            Data with dimensions renamed and transposed to match old MAPL format
-    """
+    --------
+    darr: xarray DataArray
+        The modified data array (w/ dimensions renamed & transposed).
 
+    Remarks:
+    --------
+    Currently only used for GCPy plotting code.
+    """
     # Suppress annoying future warnings for now
     warnings.filterwarnings("ignore", category=FutureWarning)
 
-    #if type(da) != np.ndarray:
-    if not isinstance(da, np.ndarray):
-        vdims = da.dims
-        if "nf" in vdims and "Xdim" in vdims and "Ydim" in vdims:
-            da = da.stack(lat=("nf", "Ydim"))
-            da = da.rename({"Xdim": "lon"})
-
-        if "lev" in da.dims and "time" in da.dims:
-            da = da.transpose("time", "lev", "lat", "lon")
-        elif "lev" in da.dims:
-            da = da.transpose("lev", "lat", "lon")
-        elif "time" in da.dims:
-            da = da.transpose("time", "lat", "lon")
-        else:
-            da = da.transpose("lat", "lon")
-    return da
+    # Only do the following for DataArray objects
+    # (otherwise just fall through and return the original argument as-is)
+    if isinstance(darr, xr.DataArray):
+        with xr.set_options(keep_attrs=True):
+            if "nf" in darr.dims and \
+               "Xdim" in darr.dims and "Ydim" in darr.dims:
+                darr = darr.stack(lat=("nf", "Ydim"))
+                darr = darr.rename({"Xdim": "lon"})
+            if "lev" in darr.dims and "time" in darr.dims:
+                darr = darr.transpose("time", "lev", "lat", "lon")
+            elif "lev" in darr.dims:
+                darr = darr.transpose("lev", "lat", "lon")
+            elif "time" in darr.dims:
+                darr = darr.transpose("time", "lat", "lon")
+            else:
+                darr = darr.transpose("lat", "lon")
+    return darr
 
 
 def get_diff_of_diffs(
@@ -653,39 +710,39 @@ def get_diff_of_diffs(
         # if the coords do not align then set time dimensions equal
         try:
             xr.align(dev, ref, join='exact')
-        except:
+        except BaseException:
             ref.coords["time"] = dev.coords["time"]
         with xr.set_options(keep_attrs=True):
             absdiffs = dev - ref
             fracdiffs = dev / ref
-            for v in dev.data_vars.keys():
+            for var in dev.data_vars.keys():
                 # Ensure the diffs Dataset includes attributes
-                absdiffs[v].attrs = dev[v].attrs
-                fracdiffs[v].attrs = dev[v].attrs
+                absdiffs[var].attrs = dev[var].attrs
+                fracdiffs[var].attrs = dev[var].attrs
     elif 'nf' in ref.dims and 'nf' in dev.dims:
 
         # Include special handling if cubed sphere grid dimension names are different
         # since they changed in MAPL v1.0.0.
         if "lat" in ref.dims and "Xdim" in dev.dims:
             ref_newdimnames = dev.copy()
-            for v in dev.data_vars.keys():
-                if "Xdim" in dev[v].dims:
-                    ref_newdimnames[v].values = ref[v].values.reshape(
-                        dev[v].values.shape)
+            for var in dev.data_vars.keys():
+                if "Xdim" in dev[var].dims:
+                    ref_newdimnames[var].values = ref[var].values.reshape(
+                        dev[var].values.shape)
                 # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose(
                 # "time","lev","lat","Xdim").values
 
         with xr.set_options(keep_attrs=True):
             absdiffs = dev.copy()
             fracdiffs = dev.copy()
-            for v in dev.data_vars.keys():
-                if "Xdim" in dev[v].dims or "lat" in dev[v].dims:
-                    absdiffs[v].values = dev[v].values - ref[v].values
-                    fracdiffs[v].values = dev[v].values / ref[v].values
+            for var in dev.data_vars.keys():
+                if "Xdim" in dev[var].dims or "lat" in dev[var].dims:
+                    absdiffs[var].values = dev[var].values - ref[var].values
+                    fracdiffs[var].values = dev[var].values / ref[var].values
                     # NOTE: The diffs Datasets are created without variable
                     # attributes; we have to reattach them
-                    absdiffs[v].attrs = dev[v].attrs
-                    fracdiffs[v].attrs = dev[v].attrs
+                    absdiffs[var].attrs = dev[var].attrs
+                    fracdiffs[var].attrs = dev[var].attrs
     else:
         print('Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere)' + \
               ' within each dataset pair')
@@ -695,7 +752,7 @@ def get_diff_of_diffs(
 
 
 def slice_by_lev_and_time(
-        ds,
+        dset,
         varname,
         itime,
         ilev,
@@ -705,7 +762,7 @@ def slice_by_lev_and_time(
     Given a Dataset, returns a DataArray sliced by desired time and level.
 
     Args:
-        ds: xarray Dataset
+        dset: xarray Dataset
             Dataset containing GEOS-Chem data.
         varname: str
             Variable name for data variable to be sliced
@@ -717,69 +774,84 @@ def slice_by_lev_and_time(
             Whether to flip ilev to be indexed from ground or top of atmosphere
 
     Returns:
-        dr: xarray DataArray
+        darr: xarray DataArray
             DataArray of data variable sliced according to ilev and itime
     """
     # used in compare_single_level and compare_zonal_mean to get dataset slices
-    if not isinstance(ds, xr.Dataset):
-        msg="ds is not of type xarray.Dataset!"
-        raise TypeError(msg)
-    if not varname in ds.data_vars.keys():
+    verify_variable_type(dset, xr.Dataset)
+    if not varname in dset.data_vars.keys():
         msg="Could not find 'varname' in ds!"
         raise ValueError(msg)
 
     # NOTE: isel no longer seems to work on a Dataset, so
     # first createthe DataArray object, then use isel on it.
     #  -- Bob Yantosca (19 Jan 2023)
-    dr = ds[varname]
-    vdims = dr.dims
-    if ("time" in vdims and dr.time.size > 0) and "lev" in vdims:
+    darr = dset[varname]
+    vdims = darr.dims
+    if ("time" in vdims and darr.time.size > 0) and "lev" in vdims:
         if flip:
-            fliplev=len(dr['lev']) - 1 - ilev
-            return dr.isel(time=itime, lev=fliplev)
-        return dr.isel(time=itime, lev=ilev)
+            fliplev=len(darr['lev']) - 1 - ilev
+            return darr.isel(time=itime, lev=fliplev)
+        return darr.isel(time=itime, lev=ilev)
     if ("time" not in vdims or itime == -1) and "lev" in vdims:
         if flip:
-            fliplev= len(dr['lev']) - 1 - ilev
-            return dr.isel(lev=fliplev)
-        return dr.isel(lev=ilev)
-    if ("time" in vdims and dr.time.size > 0 and itime != -1) and \
+            fliplev= len(darr['lev']) - 1 - ilev
+            return darr.isel(lev=fliplev)
+        return darr.isel(lev=ilev)
+    if ("time" in vdims and darr.time.size > 0 and itime != -1) and \
        "lev" not in vdims:
-        return dr.isel(time=itime)
-    return dr
+        return darr.isel(time=itime)
+    return darr
 
 
 def rename_and_flip_gchp_rst_vars(
-        ds
+        dset
 ):
     '''
-    Transforms a GCHP restart dataset to match GCC names and level convention
+    Transforms a GCHP restart dataset to match GCClassic names
+    and level conventions.
 
     Args:
-        ds: xarray Dataset
-            Dataset containing GCHP restart file data, such as variables
-            SPC_{species}, BXHEIGHT, DELP_DRY, and TropLev, with level
-            convention down (level 0 is top-of-atmosphere).
+        dset: xarray Dataset
+            The input dataset.
 
     Returns:
-        ds: xarray Dataset
-            Dataset containing GCHP restart file data with names and level
-            convention matching GCC restart. Variables include
-            SpeciesRst_{species}, Met_BXHEIGHT, Met_DELPDRY, and Met_TropLev,
-            with level convention up (level 0 is surface).
+        dset: xarray Dataset
+            If the input dataset is from a GCHP restart file, then
+            dset will contain the original data with variables renamed
+            to match the GEOS-Chem Classic naming conventions, and
+            with levels indexed as lev:positive="up".  Otherwise, the
+            original data will be returned.
     '''
-    for v in ds.data_vars.keys():
-        if v.startswith('SPC_'):
-            spc = v.replace('SPC_', '')
-            ds = ds.rename({v: 'SpeciesRst_' + spc})
-        elif v == 'DELP_DRY':
-            ds = ds.rename({"DELP_DRY": "Met_DELPDRY"})
-        elif v == 'BXHEIGHT':
-            ds = ds.rename({"BXHEIGHT": "Met_BXHEIGHT"})
-        elif v == 'TropLev':
-            ds = ds.rename({"TropLev": "Met_TropLev"})
-    ds = ds.sortby('lev', ascending=False)
-    return ds
+    verify_variable_type(dset, xr.Dataset)
+
+    # Return if this dataset is not from a GCHP checkpoint/restart file
+    if not is_cubed_sphere_rst_grid(dset):
+        return dset
+
+    # Create dictionary of variable name replacements
+    old_to_new = {}
+    for var in dset.data_vars.keys():
+        # TODO: Think of better algorithm in case we ever change
+        # the internal state to start with something else than "SPC_".
+        if var.startswith("SPC_"):
+            spc = var.replace('SPC_', '')
+            old_to_new[var] = 'SpeciesRst_' + spc
+        if var == "DELP_DRY":
+            old_to_new["DELP_DRY"] = "Met_DELPDRY"
+        if var == "BXHEIGHT":
+            old_to_new["BXHEIGHT"] = "Met_BXHEIGHT"
+        if var == "TropLev":
+            old_to_new["TropLev"] = "Met_TropLev"
+
+    # Replace variable names in one operation
+    dset = dset.rename(old_to_new)
+
+    # Flip levels
+    dset = dset.sortby('lev', ascending=False)
+    dset.lev.attrs["positive"] = "up"
+
+    return dset
 
 
 def dict_diff(
@@ -798,6 +870,9 @@ def dict_diff(
         result: dict
             Key-by-key difference of dict1 - dict0
     """
+    verify_variable_type(dict0, dict)
+    verify_variable_type(dict1, dict)
+
     result = {}
     for key, _ in dict0.items():
         result[key] = dict1[key] - dict0[key]
@@ -853,35 +928,38 @@ def compare_varnames(
             devonly          List of 2D or 3D variables that are only
                              present in devdata
     """
-    refvars = [k for k in refdata.data_vars.keys()]
-    devvars = [k for k in devdata.data_vars.keys()]
+    verify_variable_type(refdata, xr.Dataset)
+    verify_variable_type(devdata, xr.Dataset)
+
+    refvars = list(refdata.data_vars.keys())
+    devvars = list(devdata.data_vars.keys())
     commonvars = sorted(list(set(refvars).intersection(set(devvars))))
-    refonly = [v for v in refvars if v not in devvars]
-    devonly = [v for v in devvars if v not in refvars]
+    refonly = [var for var in refvars if var not in devvars]
+    devonly = [var for var in devvars if var not in refvars]
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
     # Assume plottable data has lon and lat
     # This is OK for purposes of benchmarking
     #  -- Bob Yantosca (09 Feb 2023)
-    commonvarsData = [
-        v for v in commonvars if (
-            ("lat" in refdata[v].dims or "Ydim" in refdata[v].dims)
+    commonvars_data = [
+        var for var in commonvars if (
+            ("lat" in refdata[var].dims or "Ydim" in refdata[var].dims)
             and
-            ("lon" in refdata[v].dims or "Xdim" in refdata[v].dims)
-        )
-    ]        
-    commonvarsOther = [
-        v for v in commonvars if (
-           v not in commonvarsData
-        )    
-    ]
-    commonvars2D = [
-        v for v in commonvars if (
-            (v in commonvarsData) and ("lev" not in refdata[v].dims)
+            ("lon" in refdata[var].dims or "Xdim" in refdata[var].dims)
         )
     ]
-    commonvars3D = [
-        v for v in commonvars if (
-            (v in commonvarsData) and ("lev" in refdata[v].dims)
+    commonvars_other = [
+        var for var in commonvars if (
+           var not in commonvars_data
+        )
+    ]
+    commonvars_2d = [
+        var for var in commonvars if (
+            (var in commonvars_data) and ("lev" not in refdata[var].dims)
+        )
+    ]
+    commonvars_3d = [
+        var for var in commonvars if (
+            (var in commonvars_data) and ("lev" in refdata[var].dims)
         )
     ]
 
@@ -909,16 +987,16 @@ def compare_varnames(
     # For safety's sake, remove the 0-D and 1-D variables from
     # commonvarsData, refonly, and devonly.  This will ensure that
     # these lists will only contain variables that can be plotted.
-    commonvarsData = [v for v in commonvars if v not in commonvarsOther]
-    refonly = [v for v in refonly if v not in commonvarsOther]
-    devonly = [v for v in devonly if v not in commonvarsOther]
+    commonvars_data = [var for var in commonvars if var not in commonvars_other]
+    refonly = [var for var in refonly if var not in commonvars_other]
+    devonly = [var for var in devonly if var not in commonvars_other]
 
     return {
         "commonvars": commonvars,
-        "commonvars2D": commonvars2D,
-        "commonvars3D": commonvars3D,
-        "commonvarsData": commonvarsData,
-        "commonvarsOther": commonvarsOther,
+        "commonvars2D": commonvars_2d,
+        "commonvars3D": commonvars_3d,
+        "commonvarsData": commonvars_data,
+        "commonvarsOther": commonvars_other,
         "refonly": refonly,
         "devonly": devonly
     }
@@ -969,7 +1047,7 @@ def compare_stats(refdata, refstr, devdata, devstr, varname):
 
 
 def convert_bpch_names_to_netcdf_names(
-        ds,
+        dset,
         verbose=False
 ):
     """
@@ -1044,7 +1122,7 @@ def convert_bpch_names_to_netcdf_names(
     old_to_new = {}
 
     # Loop over all variable names in the data set
-    for variable_name in ds.data_vars.keys():
+    for variable_name in dset.data_vars.keys():
 
         # Save the original variable name, since this is the name
         # that we actually need to replace in the dataset.
@@ -1151,7 +1229,7 @@ def convert_bpch_names_to_netcdf_names(
 
             # Overwrite certain variable names
             if newvar in special_vars:
-                newvar = special_vars[newvar]
+                newvar = special_vars.get(newvar)
 
             # Update the dictionary of names with this pair
             old_to_new.update({original_variable_name: newvar})
@@ -1166,10 +1244,10 @@ def convert_bpch_names_to_netcdf_names(
     if verbose:
         print("\nRenaming variables in the data...")
     with xr.set_options(keep_attrs=True):
-        ds = ds.rename(name_dict=old_to_new)
+        dset = dset.rename(name_dict=old_to_new)
 
     # Return the dataset
-    return ds
+    return dset
 
 
 def get_lumped_species_definitions():
@@ -1210,7 +1288,7 @@ def archive_lumped_species_definitions(
 
 
 def add_lumped_species_to_dataset(
-        ds,
+        dset,
         lspc_dict=None,
         lspc_yaml="",
         verbose=False,
@@ -1226,7 +1304,7 @@ def add_lumped_species_to_dataset(
     collection output.
 
     Args:
-        ds: xarray Dataset
+        dset: xarray Dataset
             An xarray Dataset object prior to adding lumped species.
 
     Keyword Args (optional):
@@ -1254,7 +1332,7 @@ def add_lumped_species_to_dataset(
             Default value: "SpeciesConcVV_"
 
     Returns:
-        ds: xarray Dataset
+        dset: xarray Dataset
             A new xarray Dataset object containing all of the original
             species plus new lumped species.
     """
@@ -1275,9 +1353,9 @@ def add_lumped_species_to_dataset(
 
         # Get a dummy DataArray to use for initialization
         dummy_darr = None
-        for var in ds.data_vars:
+        for var in dset.data_vars:
             if prefix in var or prefix.replace("VV", "") in var:
-                dummy_darr = ds[var]
+                dummy_darr = dset[var]
                 dummy_type = dummy_darr.dtype
                 dummy_shape = dummy_darr.shape
                 break
@@ -1288,23 +1366,23 @@ def add_lumped_species_to_dataset(
         # Create a list with a copy of the dummy DataArray object
         n_lumped_spc = len(lspc_dict)
         lumped_spc = [None] * n_lumped_spc
-        for v, spcname in enumerate(lspc_dict):
-            lumped_spc[v] = dummy_darr.copy(deep=False)
-            lumped_spc[v].name = prefix + spcname
-            lumped_spc[v].values = np.full(dummy_shape, 0.0, dtype=dummy_type)
+        for var, spcname in enumerate(lspc_dict):
+            lumped_spc[var] = dummy_darr.copy(deep=False)
+            lumped_spc[var].name = prefix + spcname
+            lumped_spc[var].values = np.full(dummy_shape, 0.0, dtype=dummy_type)
 
         # Loop over lumped species list
-        for v, lspc in enumerate(lumped_spc):
+        for var, lspc in enumerate(lumped_spc):
 
             # Search key for lspc_dict is lspc.name minus the prefix
-            c = lspc.name.find("_")
-            key = lspc.name[c+1:]
+            cidx = lspc.name.find("_")
+            key = lspc.name[cidx+1:]
 
             # Check if overlap with existing species
-            if lspc.name in ds.data_vars and overwrite:
-                ds.drop(lspc.name)
+            if lspc.name in dset.data_vars and overwrite:
+                dset.drop(lspc.name)
             else:
-                assert(lspc.name not in ds.data_vars), \
+                assert(lspc.name not in dset.data_vars), \
                     f"{lspc.name} already in dataset. To overwrite pass overwrite=True."
 
             # Verbose prints
@@ -1315,13 +1393,13 @@ def add_lumped_species_to_dataset(
             num_spc = 0
             for _, spcname in enumerate(lspc_dict[key]):
                 varname = prefix + spcname
-                if varname not in ds.data_vars:
+                if varname not in dset.data_vars:
                     if verbose:
                         print(f"Warning: {varname} needed for {lspc_dict[key][spcname]} not in dataset")
                     continue
                 if verbose:
                     print(f" -> adding {varname} with scale {lspc_dict[key][spcname]}")
-                lspc.values += ds[varname].values * lspc_dict[key][spcname]
+                lspc.values += dset[varname].values * lspc_dict[key][spcname]
                 num_spc += 1
 
             # Replace values with NaN if no species found in dataset
@@ -1332,10 +1410,10 @@ def add_lumped_species_to_dataset(
 
         # Insert the DataSet into the list of DataArrays
         # so that we can only do the merge operation once
-        lumped_spc.insert(0, ds)
-        ds = xr.merge(lumped_spc)
+        lumped_spc.insert(0, dset)
+        dset = xr.merge(lumped_spc)
 
-    return ds
+    return dset
 
 
 def filter_names(
@@ -1360,16 +1438,13 @@ def filter_names(
     """
 
     if text != "":
-        filtered_names = [k for k in names if text in k]
-    else:
-        filtered_names = [k for k in names if k]
-
-    return filtered_names
+        return [var for var in names if text in var]
+    return [var for var in names if var]
 
 
 def divide_dataset_by_dataarray(
-        ds,
-        dr,
+        dset,
+        darr,
         varlist=None
 ):
     """
@@ -1382,9 +1457,9 @@ def divide_dataset_by_dataarray(
     fraction of time it was local noon in each grid box, etc.
 
     Args:
-        ds: xarray Dataset
+        dset: xarray Dataset
             The Dataset object containing variables to be divided.
-        dr: xarray DataArray
+        darr: xarray DataArray
             The DataArray object that will be used to divide the
             variables of ds.
 
@@ -1395,21 +1470,18 @@ def divide_dataset_by_dataarray(
             of ds will be divided by dr.
             Default value: None
     Returns:
-        ds_new: xarray Dataset
-            A new xarray Dataset object with its variables divided by dr.
+        dset_new: xarray Dataset
+            A new xarray Dataset object with its variables divided
+            by darr.
     """
 
     # -----------------------------
     # Check arguments
     # -----------------------------
-    if not isinstance(ds, xr.Dataset):
-        raise TypeError("The ds argument must be of type xarray.Dataset!")
-
-    if not isinstance(dr, xr.DataArray):
-        raise TypeError("The dr argument must be of type xarray.DataArray!")
-
+    verify_variable_type(dset, xr.Dataset)
+    verify_variable_type(darr, xr.DataArray)
     if varlist is None:
-        varlist = ds.data_vars.keys()
+        varlist = dset.data_vars.keys()
 
     # -----------------------------
     # Do the division
@@ -1419,12 +1491,12 @@ def divide_dataset_by_dataarray(
     with xr.set_options(keep_attrs=True):
 
         # Loop over variables
-        for v in varlist:
+        for var in varlist:
 
             # Divide each variable of ds by dr
-            ds[v] = ds[v] / dr
+            dset[var] = dset[var] / darr
 
-    return ds
+    return dset
 
 
 def get_shape_of_data(
@@ -1462,7 +1534,6 @@ def get_shape_of_data(
             (['time', 'lev', 'lat', 'lon'] for GEOS-Chem "Classic",
              or ['time', 'lev', 'nf', 'Ydim', 'Xdim'] for GCHP.
     """
-
     # Validate the data argument
     if isinstance(data, (xr.Dataset, xr.DataArray)):
         sizelist = data.sizes
@@ -1482,10 +1553,10 @@ def get_shape_of_data(
 
     # Return a tuple with the shape of each dimension (and also a
     # list of each dimension if return_dims is True).
-    for d in dimlist:
-        if d in sizelist:
-            shape += (sizelist[d],)
-            dims.append(d)
+    for dim in dimlist:
+        if dim in sizelist:
+            shape += (sizelist[dim],)
+            dims.append(dim)
 
     if return_dims:
         return shape, dims
@@ -1493,7 +1564,7 @@ def get_shape_of_data(
 
 
 def get_area_from_dataset(
-        ds
+        dset
 ):
     """
     Convenience routine to return the area variable (which is
@@ -1501,17 +1572,18 @@ def get_area_from_dataset(
     for GCHP) from an xarray Dataset object.
 
     Args:
-        ds: xarray Dataset
+        dset: xarray Dataset
             The input dataset.
     Returns:
         area_m2: xarray DataArray
             The surface area in m2, as found in ds.
     """
+    verify_variable_type(dset, xr.Dataset)
 
-    if "Met_AREAM2" in ds.data_vars.keys():
-        return ds["Met_AREAM2"]
-    if "AREA" in ds.data_vars.keys():
-        return ds["AREA"]
+    if "Met_AREAM2" in dset.data_vars.keys():
+        return dset["Met_AREAM2"]
+    if "AREA" in dset.data_vars.keys():
+        return dset["AREA"]
     msg = (
         'An area variable ("AREA" or "Met_AREAM2" is missing'
         + " from this dataset!"
@@ -1520,7 +1592,7 @@ def get_area_from_dataset(
 
 
 def get_variables_from_dataset(
-        ds,
+        dset,
         varlist
 ):
     """
@@ -1529,13 +1601,13 @@ def get_variables_from_dataset(
     found in the Dataset, or else an error will be raised.
 
     Args:
-        ds: xarray Dataset
+        dset: xarray Dataset
             The input dataset.
         varlist: list of str
             List of DataArray variables to extract from ds.
 
     Returns:
-        ds_subset: xarray Dataset
+        dset_subset: xarray Dataset
             A new data set containing only the variables
             that were requested.
 
@@ -1543,16 +1615,17 @@ def get_variables_from_dataset(
     Use this routine if you absolutely need all of the requested
     variables to be returned.  Otherwise
     """
+    verify_variable_type(dset, xr.Dataset)
 
-    ds_subset = xr.Dataset()
-    for v in varlist:
-        if v in ds.data_vars.keys():
-            ds_subset = xr.merge([ds_subset, ds[v]])
+    dset_subset = xr.Dataset()
+    for var in varlist:
+        if var in dset.data_vars.keys():
+            dset_subset = xr.merge([dset_subset, dset[var]])
         else:
-            msg = f"{v} was not found in this dataset!"
+            msg = f"{var} was not found in this dataset!"
             raise ValueError(msg)
 
-    return ds_subset
+    return dset_subset
 
 
 def create_blank_dataarray(
@@ -1640,7 +1713,7 @@ def create_blank_dataarray(
 
 
 def check_for_area(
-        ds,
+        dset,
         gcc_area_name="AREA",
         gchp_area_name="Met_AREAM2"
 ):
@@ -1654,7 +1727,7 @@ def check_for_area(
     GEOS-Chem "Classic" area name if it is present.
 
     Args:
-        ds: xarray Dataset
+        dset: xarray Dataset
             The Dataset object that will be checked.
 
     Keyword Args (optional):
@@ -1670,18 +1743,20 @@ def check_for_area(
         ds: xarray Dataset
             The modified Dataset object
     """
+    verify_variable_type(dset, xr.Dataset)
 
-    found_gcc = gcc_area_name in ds.data_vars.keys()
-    found_gchp = gchp_area_name in ds.data_vars.keys()
+    found_gcc = gcc_area_name in dset.data_vars.keys()
+    found_gchp = gchp_area_name in dset.data_vars.keys()
 
-    if (not found_gcc) and (not found_gchp):
-        msg = f"Could not find {gcc_area_name} or {gchp_area_name} in the dataset!"
+    if not found_gcc and not found_gchp:
+        msg = f"Could not find {gcc_area_name} or {gchp_area_name} "
+        msg += "in the dataset!"
         raise ValueError(msg)
 
     if found_gchp:
-        ds[gcc_area_name] = ds[gchp_area_name]
+        dset[gcc_area_name] = dset[gchp_area_name]
 
-    return ds
+    return dset
 
 
 def get_filepath(
@@ -1690,7 +1765,6 @@ def get_filepath(
         date,
         is_gchp=False,
         gchp_res="c00",
-        gchp_is_pre_13_1=False,
         gchp_is_pre_14_0=False
 ):
     """
@@ -1715,10 +1789,6 @@ def get_filepath(
             Cubed-sphere resolution of GCHP data grid.
             Only needed for restart files.
             Default value: "c00".
-
-        gchp_is_pre_13_1: bool
-            Set this switch to True to obtain GCHP file pathnames used in
-            versions before 13.1. Only needed for diagnostic files.
 
         gchp_is_pre_14_0: bool
             Set this switch to True to obtain GCHP file pathnames used in
@@ -1749,10 +1819,7 @@ def get_filepath(
                     "GEOSChem.Restart."
                 )
         else:
-            if gchp_is_pre_13_1:
-                file_tmpl = os.path.join(datadir, f"GCHP.{col}.")
-            else:
-                file_tmpl = os.path.join(datadir, f"GEOSChem.{col}.")
+            file_tmpl = os.path.join(datadir, f"GEOSChem.{col}.")
     else:
         if "Emissions" in col:
             file_tmpl = os.path.join(datadir, "HEMCO_diagnostics.")
@@ -1771,7 +1838,8 @@ def get_filepath(
     # Set file path. Include grid resolution if GCHP restart file.
     path = file_tmpl + date_str + extension
     if is_gchp and "Restart" in col and not gchp_is_pre_14_0:
-        path = file_tmpl + date_str[:len(date_str)-2] + "z." + gchp_res + extension
+        path = file_tmpl + date_str[:len(date_str)-2] + \
+            "z." + gchp_res + extension
 
     return path
 
@@ -1782,7 +1850,6 @@ def get_filepaths(
         dates,
         is_gchp=False,
         gchp_res="c00",
-        gchp_is_pre_13_1=False,
         gchp_is_pre_14_0=False
 ):
     """
@@ -1807,10 +1874,6 @@ def get_filepaths(
             Cubed-sphere resolution of GCHP data grid.
             Only needed for restart files.
             Default value: "c00".
-
-        gchp_is_pre_13_1: bool
-            Set this switch to True to obtain GCHP file pathnames used in
-            versions before 13.1. Only needed for diagnostic files.
 
         gchp_is_pre_14_0: bool
             Set this switch to True to obtain GCHP file pathnames used in
@@ -1838,7 +1901,7 @@ def get_filepaths(
     # ==================================================================
     # Create the file list
     # ==================================================================
-    for c, collection in enumerate(collections):
+    for c_idx, collection in enumerate(collections):
 
         separator = "_"
         extension = "z.nc4"
@@ -1859,16 +1922,10 @@ def get_filepaths(
                         "GEOSChem.Restart."
                     )
             else:
-                if gchp_is_pre_13_1:
-                    file_tmpl = os.path.join(
-                        datadir,
-                        f"GCHP.{collection}."
-                    )
-                else:
-                    file_tmpl = os.path.join(
-                        datadir,
-                        f"GEOSChem.{collection}."
-                    )
+                file_tmpl = os.path.join(
+                    datadir,
+                    f"GEOSChem.{collection}."
+                )
         else:
             # ---------------------------------------
             # Get the file path template for GCC
@@ -1895,7 +1952,7 @@ def get_filepaths(
         # --------------------------------------------
         # Create a list of files for each date/time
         # --------------------------------------------
-        for d, date in enumerate(dates):
+        for d_idx, date in enumerate(dates):
             if is_gchp and "Restart" in collection:
                 date_time = str(np.datetime_as_string(date, unit="s"))
             else:
@@ -1905,9 +1962,11 @@ def get_filepaths(
             date_time = date_time.replace(":", "")
 
             # Set file path. Include grid resolution if GCHP restart file.
-            paths[c][d] = file_tmpl + date_time + extension
+            paths[c_idx][d_idx] = file_tmpl + date_time + extension
             if is_gchp and "Restart" in collection and not gchp_is_pre_14_0:
-                paths[c][d] = file_tmpl + date_time[:len(date_time)-2] + "z." + gchp_res + extension
+                paths[c_idx][d_idx] = file_tmpl + \
+                    date_time[:len(date_time)-2] + \
+                    "z." + gchp_res + extension
 
     return paths
 
@@ -1941,11 +2000,11 @@ def extract_pathnames_from_log(
     data_list = set()  # only keep unique files
 
     # Open file
-    with open(filename, "r") as f:
+    with open(filename, "r", encoding=ENCODING) as ifile:
 
         # Read data from the file line by line.
         # Add file paths to the data_list set.
-        line = f.readline()
+        line = ifile.readline()
         while line:
             upcaseline = line.upper()
             if (": OPENING" in upcaseline) or (": READING" in upcaseline):
@@ -1956,10 +2015,10 @@ def extract_pathnames_from_log(
                     data_list.add(trimmed_path)
 
             # Read next line
-            line = f.readline()
+            line = ifile.readline()
 
         # Close file and return
-        f.close()
+        ifile.close()
 
     data_list = sorted(list(data_list))
     return data_list
@@ -2055,13 +2114,13 @@ def get_nan_mask(
 
 
 def all_zero_or_nan(
-        ds
+        dset
 ):
     """
     Return whether ds is all zeros, or all nans
 
     Args:
-        ds: numpy array
+        dset: numpy array
             Input GEOS-Chem data
     Returns:
         all_zero, all_nan: bool, bool
@@ -2069,11 +2128,11 @@ def all_zero_or_nan(
             all_nan  is whether ds is all NaNs
     """
 
-    return not np.any(ds), np.isnan(ds).all()
+    return not np.any(dset), np.isnan(dset).all()
 
 
 def dataset_mean(
-        ds,
+        dset,
         dim="time",
         skipna=True
 ):
@@ -2081,7 +2140,7 @@ def dataset_mean(
     Convenience wrapper for taking the mean of an xarray Dataset.
 
     Args:
-       ds : xarray Dataset
+       dset : xarray Dataset
            Input data
 
     Keyword Args:
@@ -2097,14 +2156,13 @@ def dataset_mean(
            Dataset containing mean values
            Will return None if ds is not defined
     """
-    if ds is None:
-        return ds
+    verify_variable_type(dset, (xr.Dataset, type(None)))
 
-    if not isinstance(ds, xr.Dataset):
-        raise ValueError("Argument ds must be None or xarray.Dataset!")
+    if dset is None:
+        return dset
 
     with xr.set_options(keep_attrs=True):
-        return ds.mean(dim=dim, skipna=skipna)
+        return dset.mean(dim=dim, skipna=skipna)
 
 
 def dataset_reader(
@@ -2143,13 +2201,11 @@ def read_config_file(config_file, quiet=False):
     try:
         if not quiet:
             print(f"Using configuration file {config_file}")
-        config = yaml_safe_load(open(config_file))
+        with open(config_file, encoding=ENCODING) as stream:
+            return safe_load(stream)
     except Exception as err:
         msg = f"Error reading configuration in {config_file}: {err}"
         raise Exception(msg) from err
-
-    return config
-
 
 def unique_values(
         this_list,
@@ -2171,17 +2227,15 @@ def unique_values(
     unique: list
         List of unique values from this_list
     """
-    if not isinstance(this_list, list):
-        raise ValueError("Argument 'this_list' must be a list object!")
-    if not isinstance(drop, list):
-        raise ValueError("Argument 'drop' must be a list object!")
+    verify_variable_type(this_list, list)
+    verify_variable_type(drop, list)
 
     unique = list(set(this_list))
 
     if drop is not None:
-        for d in drop:
-            if d in unique:
-                unique.remove(d)
+        for var in drop:
+            if var in unique:
+                unique.remove(var)
 
     unique.sort()
 
@@ -2242,13 +2296,9 @@ def insert_text_into_file(
     width: int
         Will "word-wrap" the text in 'replace_text' to this width
     """
-    if not isinstance(search_text, str):
-        raise ValueError("Argument 'search_text' needs to be a string!")
-    if not isinstance(replace_text, str) and \
-       not isinstance(replace_text, list):
-        raise ValueError(
-            "Argument 'replace_text' needs to be a list or a string"
-        )
+    verify_variable_type(filename, str)
+    verify_variable_type(search_text, str)
+    verify_variable_type(replace_text, (str, list))
 
     # Word-wrap the replacement text
     # (does list -> str conversion if necessary)
@@ -2257,18 +2307,18 @@ def insert_text_into_file(
         width=width
     )
 
-    with open(filename, "r") as f:
-        filedata = f.read()
-        f.close()
+    with open(filename, "r", encoding=ENCODING) as ifile:
+        filedata = ifile.read()
+        ifile.close()
 
     filedata = filedata.replace(
         search_text,
         replace_text
     )
 
-    with open(filename, "w") as f:
-        f.write(filedata)
-        f.close()
+    with open(filename, "w", encoding=ENCODING) as ofile:
+        ofile.write(filedata)
+        ofile.close()
 
 
 def array_equals(
@@ -2331,6 +2381,8 @@ def make_directory(
         Set to True if you wish to overwrite prior contents in
         the directory 'dir_name'
     """
+    verify_variable_type(dir_name, str)
+    verify_variable_type(overwrite, bool)
 
     if os.path.isdir(dir_name) and not overwrite:
         msg = f"Directory {dir_name} exists!\n"
@@ -2348,16 +2400,37 @@ def trim_cloud_benchmark_label(
     Removes the first part of the cloud benchmark label string
     (e.g. "gchp-c24-1Hr", "gcc-4x5-1Mon", etc) to avoid clutter.
     """
-    if not isinstance(label, str):
-        raise ValueError("Argument 'label' must be a string!")
+    verify_variable_type(label, str)
 
-    for v in [
+    for var in [
         "gcc-4x5-1Hr",
         "gchp-c24-1Hr",
         "gcc-4x5-1Mon",
         "gchp-c24-1Mon",
     ]:
-        if v in label:
-            label.replace(v, "")
-            
+        if var in label:
+            label.replace(var, "")
+
     return label
+
+
+def verify_variable_type(
+        var,
+        var_type
+):
+    """
+    Convenience routine that will raise a TypeError if a variable's
+    type does not match a list of expected types.
+
+    Args:
+    -----
+    var : variable of any type
+        The variable to check.
+
+    var_type : type or tuple of types
+        A single type definition (list, str, pandas.Series, etc.)
+        or a tuple of type definitions.
+    """
+    if isinstance(var, var_type):
+        return
+    raise TypeError( f"{var} is not of type: {var_type}!")

@@ -29,8 +29,8 @@ CLASSIFIERS = [
 ]
 
 MAJOR = 1
-MINOR = 3
-MICRO = 2
+MINOR = 4
+MICRO = 0
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
 VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, EXTRA)
@@ -105,8 +105,9 @@ setup(
         "netcdf-fortran==4.5.4",
         "numpy==1.21.1",
         "pypdf2==1.26.0",
+        "pyproj==3.6.0",
         "recommonmark==0.7.1",
-        "requests==2.26.0",
+        "requests==2.31.0",
         "scipy==1.7.0",
         "sparselt>=0.1.3",
         "sphinx==3.5.4",

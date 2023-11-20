@@ -1,0 +1,38 @@
+# .readthedocs.yaml
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+#
+# NOTE: This is now needed in order to prevent builds from failing due
+# to Python package issues at the ReadTheDocs site. For more info, see:
+# https://github.com/readthedocs/readthedocs.org/issues/10290
+#   -- Bob Yantosca (10 May 2023)
+
+# Required
+version: 2
+
+## Set the version of Python and other tools you might need
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.7"
+    nodejs: "14"
+    rust:   "1.55"
+    golang: "1.17"
+
+# Build documentation in the docs/ directory with Sphinx
+sphinx:
+  builder: html
+  configuration: docs/source/conf.py
+
+# If using Sphinx, optionally build your docs in additional formats such as PDF
+formats: all
+
+# Optionally declare the Python requirements required to build your docs
+python:
+  install:
+  - requirements: docs/requirements.txt
+
+# Tell RTD to clone all submodules
+submodules:
+  include: all
+  recursive: true

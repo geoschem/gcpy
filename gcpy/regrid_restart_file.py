@@ -190,17 +190,23 @@ def is_gchp_restart_file(dataset):
     """
     Checks whether or not an xarray dataset represents a GCHP restart file.
 
+    Args:
+        dataset: xarray Dataset
+
     Returns:
         bool: True if `dataset` represents a GCHP restart file.
     """
-    is_gchp_restart = "SPC_O3" in dataset.data_vars
-    is_gcclassic = "SpeciesRst_O3" in dataset.data_vars
-    if not any((is_gchp_restart, is_gcclassic)):
-        raise ValueError(
-            "Couldn't determine if the provided file is a GC-Classic or GCHP "
-            "restart file."
-        )
-    return is_gchp_restart
+    if not isinstance(dataset, xr.Dataset):
+        msg = "Input argument dataset is not an xarray Dataset object!"
+        raise ValueError(msg)
+
+    for v in dataset.data_vars.keys():
+        if "SPC_" in v:
+            return True
+        if "SpeciesRst_" in v:
+            return False
+    msg = "Input file is not a GCHP or GCClassic restart file!"
+    raise ValueError(msg)
 
 
 def open_dataset(file_or_url, chunk_size=8192):
@@ -271,12 +277,14 @@ def rename_variables(dataset, to_gchp=True):
     return dataset.rename(rename_dict)
 
 
-def reverse_lev(dataset):
+def reverse_lev(dataset, to_gchp):
     """
-    Reverse the level index of the passed dataset.
+    Reverse the level index of the passed dataset and adjusts the
+    "lev:positive" attribute index accordingly.
 
     Args:
         dataset (xarray.Dataset): The dataset to have its level index reversed.
+        to_gchp (bool): True if we are saving out a GCHP restart file.
 
     Returns:
         xarray.Dataset: The input dataset with a reversed level index.
@@ -284,6 +292,17 @@ def reverse_lev(dataset):
     logging.info("Reversing coordinate 'lev'")
     dataset = dataset.reindex(lev=dataset.lev[::-1])
     dataset = dataset.assign_coords(lev=dataset.lev.values[::-1])
+
+    # GCHP restart files are indexed from top-of-atm downward.
+    # GCClassic restart files are indexed from surface upward.
+    #
+    # TODO: Make this more robust, to prevent a situation where
+    # the already down data is flipped to up, but labeled as down.
+    if to_gchp:
+        dataset["lev"].attrs["positive"] = "down"
+    else:
+        dataset["lev"].attrs["positive"] = "up"
+
     return dataset
 
 
@@ -497,7 +516,7 @@ def regrid_restart_file(
     if is_conversion:
         to_gchp = output_is_gchp
         dataset = rename_variables(dataset, to_gchp)
-        dataset = reverse_lev(dataset)
+        dataset = reverse_lev(dataset, to_gchp)
 
     dataset, output_template = drop_variables(dataset, output_template)
     dataset = regrid(dataset, output_template, weights_file=regrid_weights)

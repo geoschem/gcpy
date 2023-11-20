@@ -1,0 +1,130 @@
+---
+# =====================================================================
+# Benchmark configuration file (**EDIT AS NEEDED**)
+# customize in the following manner:
+#
+# (1) Edit the path variables so that they point to folders
+#     containing model data
+# (2) Edit the version strings for each benchmark simulation
+# (3) Edit the switches that turn on/off creating of plots and
+#     tables as well as other plotting options
+# (4) If necessary, edit labels for the dev and ref versions
+#
+# Note: When doing GCHP vs GCC comparisions gchp_dev will be compared
+# to gcc_dev (not gcc_ref!). This ensures consistency in version names
+# when doing GCHP vs GCC diff-of-diffs.
+# =====================================================================
+#
+# Configuration for 1-hour FullChemBenchmark
+#
+# paths:
+#   main_dir:    High-level directory containing ref & dev rundirs
+#   results_dir: Directory where plots/tables will be created
+#   weights_dir: Path to regridding weights
+#   spcdb_dir:   Folder in which the species_database.yml file is
+#                located.  If set to "default", then will look for
+#                species_database.yml in one of the Dev rundirs.
+#
+paths:
+  main_dir: ${GEOSCHEM_BENCHMARK_WORKING_DIR}
+  results_dir: BenchmarkResults
+  weights_dir: ${GEOSCHEM_BENCHMARK_WORKING_DIR}/weights
+  spcdb_dir: default
+#
+# data: Contains configurations for ref and dev runs
+#   version:         Version string (must not contain spaces)
+#   dir:             Path to run directory
+#   outputs_subdir:  Subdirectory w/ GEOS-Chem diagnostic files
+#   restarts_subdir: Subdirectory w/ GEOS-Chem restarts
+#   bmk_start:       Simulation start date (YYYY-MM-DDThh:mm:ss)
+#   bmk_end:         Simulation end date (YYYY-MM-DDThh:mm:ss)
+#   resolution:      GCHP resolution string
+#
+data:
+  ref:
+    gcc:
+      version: ${GEOSCHEM_BENCHMARK_REF_PRIMARY_KEY}
+      dir: ref-gcc/run-directory
+      outputs_subdir: OutputDir
+      restarts_subdir: Restarts
+      bmk_start: "2019-07-01T00:00:00"
+      bmk_end: "2019-07-01T01:00:00"
+    gchp:
+      version: ${GEOSCHEM_BENCHMARK_REF_PRIMARY_KEY}
+      dir: ref-gchp/run-directory
+      outputs_subdir: OutputDir
+      restarts_subdir: Restarts
+      bmk_start: "2019-07-01T00:00:00"
+      bmk_end: "2019-07-01T01:00:00"
+      is_pre_14.0: False
+      resolution: c24
+  dev:
+    gcc:
+      version: ${GEOSCHEM_BENCHMARK_DEV_PRIMARY_KEY}
+      dir: dev-gcc/run-directory
+      outputs_subdir: OutputDir
+      restarts_subdir: Restarts
+      bmk_start: "2019-07-01T00:00:00"
+      bmk_end: "2019-07-01T01:00:00"
+    gchp:
+      version: ${GEOSCHEM_BENCHMARK_DEV_PRIMARY_KEY}
+      dir: dev-gchp/run-directory
+      outputs_subdir: OutputDir
+      restarts_subdir: Restarts
+      bmk_start: "2019-07-01T00:00:00"
+      bmk_end: "2019-07-01T01:00:00"
+      is_pre_14.0: False
+      resolution: c24
+#
+# options: Customizes the benchmark plot output
+#
+options:
+  #
+  # bmk_type: Specifies the type of benchmark
+  #
+  bmk_type: FullChemBenchmark
+  #
+  # comparisons: Specifies the comparisons to perform.
+  #
+  comparisons:
+    gcc_vs_gcc:
+      run: False
+      dir: GCC_version_comparison
+      tables_subdir: Tables
+    gchp_vs_gcc:
+      run: False
+      dir: GCHP_GCC_comparison
+      tables_subdir: Tables
+    gchp_vs_gchp:
+      run: False
+      dir: GCHP_version_comparison
+      tables_subdir: Tables
+    gchp_vs_gcc_diff_of_diffs:
+      run: False
+      dir: GCHP_GCC_diff_of_diffs
+  #
+  # outputs: Specifies the plots and tables to generate
+  #
+  outputs:
+    plot_conc: False
+    plot_emis: False
+    emis_table: True
+    plot_jvalues: False
+    plot_aod: False
+    mass_table: True
+    mass_accum_table: False
+    ops_budget_table: False
+    OH_metrics: True
+    ste_table: True # GCC only
+    summary_table: True
+    plot_options:
+      by_spc_cat: True
+      by_hco_cat: True
+  #
+  # n_cores: Specify the number of cores to use.
+  # -1: Use $OMP_NUM_THREADS         cores
+  # -2: Use $OMP_NUM_THREADS - 1     cores
+  # -N: Use $OMP_NUM_THREADS - (N-1) cores
+  #  1: Disable parallelization (use a single core)
+  #
+  n_cores: -1
