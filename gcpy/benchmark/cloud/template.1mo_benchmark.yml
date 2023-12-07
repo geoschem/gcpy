@@ -111,6 +111,7 @@ options:
     emis_table: True
     plot_jvalues: True
     plot_aod: True
+    plot_drydep: True
     mass_table: True
     mass_accum_table: False
     ops_budget_table: False
