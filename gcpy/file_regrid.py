@@ -1540,7 +1540,7 @@ def main():
         "-w", "--weightsdir",
         metavar="WGT",
         type=str,
-        default="",
+        default=".",
         help="Directory where regridding weights are found (or will be created)"
     )
     args = parser.parse_args()
