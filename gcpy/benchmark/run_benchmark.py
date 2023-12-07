@@ -54,6 +54,8 @@ from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
     import run_benchmark as run_1yr_benchmark
 from gcpy.benchmark.modules.run_1yr_tt_benchmark \
     import run_benchmark as run_1yr_tt_benchmark
+from gcpy.benchmark.modules.benchmark_6panel_plots \
+    import make_benchmark_drydep_plots
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -340,6 +342,8 @@ def run_benchmark_default(config):
         print(" - J-values (photolysis rates) plots")
     if config["options"]["outputs"]["plot_aod"]:
         print(" - Aerosol optical depth plots")
+    if config["options"]["outputs"]["plot_drydep"]:
+        print(" - Drydep velocity plots")
     if config["options"]["outputs"]["ops_budget_table"]:
         print(" - Operations budget tables")
     if config["options"]["outputs"]["emis_table"]:
@@ -533,6 +537,32 @@ def run_benchmark_default(config):
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
+
+        # ==================================================================
+        # GCC vs GCC column drydep plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_drydep"]:
+            print("\n%%% Creating GCC vs. GCC column drydep plots %%%")
+
+            # Filepaths
+            ref = get_filepath(gcc_vs_gcc_refdir, "DryDep", gcc_ref_date)
+            dev = get_filepath(gcc_vs_gcc_devdir, "DryDep", gcc_dev_date)
+
+            # Create plots
+            make_benchmark_6panel_plots(
+                ref,
+                gcc_vs_gcc_refstr,
+                dev,
+                gcc_vs_gcc_devstr,
+                dst=gcc_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                sigdiff_files=gcc_vs_gcc_sigdiff,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"],
+                var_prefix="DryDepVel"
+            )
+
 
         # ==================================================================
         # GCC vs GCC global mass tables
