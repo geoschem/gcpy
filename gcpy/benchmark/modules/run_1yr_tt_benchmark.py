@@ -60,6 +60,7 @@ from gcpy.util import get_filepath, get_filepaths
 from gcpy import benchmark_funcs as bmk
 import gcpy.budget_tt as ttbdg
 import gcpy.ste_flux as ste
+import gcpy.benchmark.modules.benchmark_utils as bmk_util
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -298,30 +299,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         sec_per_yr_dev += days_in_mon * 86400.0
 
     # =======================================================================
-    # Print the list of plots & tables to the screen
+    # Print the list of plots & tables being generated
     # =======================================================================
-    print("The following plots and tables will be created for {}:".format(bmk_type))
-    if config["options"]["outputs"]["plot_conc"]:
-        print(" - Concentration plots")
-    if config["options"]["outputs"]["plot_wetdep"]:
-        print(" - Convective and large-scale wet deposition plots")
-    if config["options"]["outputs"]["rnpbbe_budget"]:
-        print(" - Radionuclides budget table")
-    if config["options"]["outputs"]["operations_budget"]:
-        print(" - Operations budget table")
-    if config["options"]["outputs"]["ste_table"]:
-        print(" - Table of strat-trop exchange")
-    if config["options"]["outputs"]["mass_table"]:
-        print(" - Table of species mass")
-    if config["options"]["outputs"]["cons_table"]:
-        print(" - Table of mass conservation")
-    print("Comparisons will be made for the following combinations:")
-    if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
-        print(" - GCC vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
-        print(" - GCHP vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
-        print(" - GCHP vs GCHP")
+    bmk_util.print_benchmark_info(config)
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCC vs GCC benchmark plots and tables

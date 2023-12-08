@@ -54,7 +54,8 @@ from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
     import run_benchmark as run_1yr_benchmark
 from gcpy.benchmark.modules.run_1yr_tt_benchmark \
     import run_benchmark as run_1yr_tt_benchmark
-from gcpy.benchmark.modules.benchmark_6panel_plots \
+import gcpy.benchmark.modules.benchmark_utils as bmk_util
+from gcpy.benchmark.modules.benchmark_drydep \
     import make_benchmark_drydep_plots
 
 # Tell matplotlib not to look for an X-window
@@ -330,41 +331,7 @@ def run_benchmark_default(config):
     # ======================================================================
     # Print the list of plots & tables to the screen
     # ======================================================================
-    tmpstr = config["options"]["bmk_type"]
-    print(
-        f"The following plots and tables will be created for {tmpstr}"
-    )
-    if config["options"]["outputs"]["plot_conc"]:
-        print(" - Concentration plots")
-    if config["options"]["outputs"]["plot_emis"]:
-        print(" - Emissions plots")
-    if config["options"]["outputs"]["plot_jvalues"]:
-        print(" - J-values (photolysis rates) plots")
-    if config["options"]["outputs"]["plot_aod"]:
-        print(" - Aerosol optical depth plots")
-    if config["options"]["outputs"]["plot_drydep"]:
-        print(" - Drydep velocity plots")
-    if config["options"]["outputs"]["ops_budget_table"]:
-        print(" - Operations budget tables")
-    if config["options"]["outputs"]["emis_table"]:
-        print(" - Table of emissions totals by spc and inventory")
-    if config["options"]["outputs"]["mass_table"]:
-        print(" - Table of species mass")
-    if config["options"]["outputs"]["mass_accum_table"]:
-        print(" - Table of species mass accumulation")
-    if config["options"]["outputs"]["OH_metrics"]:
-        print(" - Table of OH metrics")
-    if config["options"]["outputs"]["ste_table"]:
-        print(" - Table of strat-trop exchange")
-    print("Comparisons will be made for the following combinations:")
-    if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
-        print(" - GCC vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
-        print(" - GCHP vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
-        print(" - GCHP vs GCHP")
-    if config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"]:
-        print(" - GCHP vs GCC diff of diffs")
+    bmk_util.print_benchmark_info(config)
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCC vs GCC benchmark plots and tables
@@ -549,7 +516,7 @@ def run_benchmark_default(config):
             dev = get_filepath(gcc_vs_gcc_devdir, "DryDep", gcc_dev_date)
 
             # Create plots
-            make_benchmark_6panel_plots(
+            make_benchmark_drydep_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -560,7 +527,6 @@ def run_benchmark_default(config):
                 sigdiff_files=gcc_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
-                var_prefix="DryDepVel"
             )
 
 
@@ -692,17 +658,6 @@ def run_benchmark_default(config):
         # ==================================================================
         if config["options"]["outputs"]["summary_table"]:
             print("\n%%% Creating GCC vs. GCC summary table %%%")
-
-            # Diagnostic collections to check
-            collections = [
-                'AerosolMass',
-                'Aerosols',
-                'Emissions',
-                'JValues',
-                'Metrics',
-                'SpeciesConc',
-                'StateMet',
-            ]
 
             # Print summary of which collections are identical
             # between Ref & Dev, and which are not identical.

@@ -5,6 +5,11 @@ All notable changes to GCPy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased] - TBD
+### Added
+- Script `gcpy/benchmark/modules/benchmark_utils.py`, with common benchmark utility functions
+- Script `gcpy/benchmark/modules/benchmark_drydep.py`, with code to create drydep velocity plots
+- YAML tag `plot_drydep` in `gcpy/benchmark/config/*.yml` files
+
 ### Changed
 - YAML tag `operations_budget` is now `ops_budget_table` in `gcpy/benchmark/config/1yr_tt_benchmark.yml`
 
