@@ -143,8 +143,8 @@ def make_benchmark_drydep_plots(
     bmk_util.print_sigdiffs(
         sigdiff_files,
         sigdiff_list,
-        diff_type="sfc",
-        diff_title="DryDepVel"
+        sigdiff_type="sfc",
+        sigdiff_cat="DryDepVel"
     )
 
     # -------------------------------------------

@@ -33,7 +33,7 @@ def make_output_dir(
     """
     util.verify_variable_type(dst, str)
     util.verify_variable_type(collection, str)
-    util.verify_variable_type(subdst, (str, None))
+    util.verify_variable_type(subdst, (str, type(None)))
 
     # Create the destination folder (if it doesn't exist)
     util.make_directory(dst, overwrite)
@@ -131,11 +131,16 @@ def print_sigdiffs(
     Appends a list of species showing significant differences in a
     benchmark plotting category to a file.
 
-    sigdiff_files (list|None) :
-    sigdiff_list  (list     ) : List of significant differences.
+    sigdiff_files (list|None) : List of files for signficant diffs output
+    sigdiff_list  (list     ) : List of significant differences to print
+    sigdiff_type  (str      ) : e.g. "sfc", "500hPa", "zm"
     sigdiff_cat   (str      ) : e.g. "Oxidants", "Aerosols", "DryDep", etc.
-    sigdiff_file  (str      ) : Filename to which the list will be appended
     """
+    util.verify_variable_type(sigdiff_files, (list, type(None)))
+    util.verify_variable_type(sigdiff_list, list)
+    util.verify_variable_type(sigdiff_type, str)
+    util.verify_variable_type(sigdiff_cat, str)
+
     if sigdiff_files is not None:
         for ofile in sigdiff_files:
             if sigdiff_type in ofile:
@@ -156,7 +161,7 @@ def write_sigdiff(
     sigdiff_file (str  ) : Filename to which the list will be appended
     """
     util.verify_variable_type(sigdiff_list, list)
-    util.verify_variable_type(sigdiff_title, str)
+    util.verify_variable_type(sigdiff_cat, str)
     util.verify_variable_type(sigdiff_file, str)
 
     with open(sigdiff_file, "a+", encoding="UTF-8") as ofile:

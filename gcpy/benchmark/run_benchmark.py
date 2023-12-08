@@ -506,10 +506,10 @@ def run_benchmark_default(config):
             )
 
         # ==================================================================
-        # GCC vs GCC column drydep plots
+        # GCC vs GCC drydep plots
         # ==================================================================
         if config["options"]["outputs"]["plot_drydep"]:
-            print("\n%%% Creating GCC vs. GCC column drydep plots %%%")
+            print("\n%%% Creating GCC vs. GCC drydep plots %%%")
 
             # Filepaths
             ref = get_filepath(gcc_vs_gcc_refdir, "DryDep", gcc_ref_date)
@@ -528,7 +528,6 @@ def run_benchmark_default(config):
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
             )
-
 
         # ==================================================================
         # GCC vs GCC global mass tables
@@ -890,6 +889,35 @@ def run_benchmark_default(config):
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]                
+            )
+
+        # ==================================================================
+        # GCHP vs GCC drydep plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_drydep"]:
+            print("\n%%% Creating GCHP vs. GCC drydep plots %%%")
+
+            # Filepaths
+            ref = get_filepath(gcc_vs_gcc_refdir, "DryDep", gcc_ref_date)
+            dev = get_filepath(
+                gchp_vs_gcc_devdir,
+                "DryDep",
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_drydep_plots(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                dst=gchp_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                sigdiff_files=gchp_vs_gcc_sigdiff,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"],
             )
 
         # ==================================================================
@@ -1320,6 +1348,40 @@ def run_benchmark_default(config):
             )
 
         # ==================================================================
+        # GCHP vs GCHP drydep plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_drydep"]:
+            print("\n%%% Creating GCHP vs. GCHP drydep plots %%%")
+
+            # Filepaths
+            ref = get_filepath(
+                gchp_vs_gchp_refdir,
+                "DryDep",
+                gchp_ref_date,
+                is_gchp=True
+            )
+            dev = get_filepath(
+                gchp_vs_gchp_devdir,
+                "DryDep",
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_drydep_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                dst=gchp_vs_gchp_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                sigdiff_files=gchp_vs_gchp_sigdiff,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"],
+            )
+
+        # ==================================================================
         # GCHP vs GCHP global mass tables
         # ==================================================================
         if config["options"]["outputs"]["mass_table"]:
@@ -1491,7 +1553,7 @@ def run_benchmark_default(config):
 
         # ==================================================================
         # GCHP vs GCHP Strat-Trop Exchange
-        # --------------------------------------------------------------
+        # ==================================================================
         if config["options"]["outputs"]["ste_table"]:
             print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
 
