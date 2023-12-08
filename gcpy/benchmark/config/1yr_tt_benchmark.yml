@@ -111,7 +111,7 @@ options:
     plot_wetdep: True
     plot_drydep: True
     rnpbbe_budget: True
-    operations_budget: False
+    ops_budget_table: False
     mass_table: True
     ste_table: True
     cons_table: True

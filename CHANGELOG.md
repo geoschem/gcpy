@@ -4,6 +4,10 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+### Changed
+- YAML tag `operations_budget` is now `ops_budget_table` in `gcpy/benchmark/config/1yr_tt_benchmark.yml`
+
 ## [1.4.0] - 2023-11-20
 ### Added
 - Added C2H2 and C2H4 to `emission_species.yml`
