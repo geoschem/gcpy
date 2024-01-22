@@ -4,50 +4,72 @@ from copy import deepcopy as dc
 # ----------------------------------------------------------------- #
 # Preparing the file for the demonstration
 # ----------------------------------------------------------------- #
-# Load the demo data. 
-data = xr.open_dataset('./examples/hemco_formatting/HEMCO_demonstration_file.nc')
+
+# Load and print the demo data. This is a restart file, which we will
+# modify to violate HEMCO standards for the sake of the demo.
+# TO DO: Fix to absolute path
+data = xr.open_dataset('./examples/hemco_formatting/GEOSChem.Restart.20200101_0000z.nc4')
+
+# First, we will drop all but two of the restart, chem, and met
+# variables to make this a manageable example.
+species_labels = [label for label in data.data_vars.keys()
+                  if label[:10] == 'SpeciesRst' or
+                  label[:4] == 'Chem' or
+                  label[:3] == 'Met']
+species_labels = species_labels[:-1]
+data = data.drop(species_labels)
+
+# If we were to run ncdump on this file, we would get the output saved
+# in demo_original.txt. We will compare this file to equivalent output
+# for our final file.
+data_mod = dc(data)
 
 # We will now intentionally change the file to be HEMCO incompatible.
+
+# TO DO: Levels question: do we need the formula terms to be always a, b,
+# p0, and ps? Or is a, b, and ps adequate, as in the example shown
+# on the readdocs
 
 # First, remove one of the attributes from latitude and longitude.
 # These changes should all be handled with no manual edits from
 # the user.
-data['lat'].attrs.pop('units')
-data['lon'].attrs.pop('axis')
+data_mod['lat'].attrs.pop('units')
+data_mod['lon'].attrs.pop('axis')
 
 # We will also reverse latitude so that it's monotonically decreasing.
 # This should throw an error.
-data['lat'] = data['lat'][::-1]
+data_mod['lat'] = data_mod['lat'][::-1]
 
 # Second, remove the time variable. Often, files without an explicit
 # time dimension will exclude time from the netcdf. This is bad for
 # HEMCO, and we want to make sure that the functions can deal with it.
-data = data.drop('time').squeeze()
+data_mod = data_mod.drop('time').squeeze()
 
 # Third, mess with the level attributes. We'll add an extra formula
 # term that doesn't exist in the dataset. This change should throw an
 # error.
-data['lev'].attrs['formula_terms'] += ' xs: xx'
+data_mod['lev'].attrs['formula_terms'] += ' xs: xx'
 
 # We also change the positive direction. So long as gchp=False is
 # passed to the function, this should be handled by the functions.
-data['lev'].attrs['positive'] = 'down'
+data_mod['lev'].attrs['positive'] = 'down'
 
 # Finally, we'll change some things in the variable SpeciesRst_ACET.
 # We'll add a fourth attribute, which we hope won't be clobbered.
 # This should be the only difference between demo_original.txt 
 # and the updated demo_post_formatting.txt.
-data['SpeciesRst_ACET'].attrs['test'] = (
+data_mod['SpeciesRst_ACET'].attrs['test'] = (
     'Testing that additional attributes are not clobbered')
 
-# We also delete the units on data SpeciesRst_ACET
-del(data['SpeciesRst_ACET'].attrs['units'])
+# We also delete the units on data_mod SpeciesRst_ACET
+del(data_mod['SpeciesRst_ACET'].attrs['units'])
 
 # ----------------------------------------------------------------- #
 # Using format_hemco_data to save a HEMCO-compatible file
 # ----------------------------------------------------------------- #
+
 # Using format_hemco_data.py is easy and requires only four steps.
-data_fix = dc(data)
+data_fix = dc(data_mod)
 
 # 1. Import the module.
 from gcpy import format_hemco_data as hemco
