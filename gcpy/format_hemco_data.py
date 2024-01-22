@@ -4,6 +4,7 @@ HEMCO adhere to the COARDS netCDF conventions.
 """
 from os.path import join
 from copy import deepcopy as dc
+import warnings
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -74,13 +75,16 @@ def format_hemco_dimensions(
     dset = _format_time(dset, start_time)
 
     # If level is included in the dimensions, set its attributes
-    if "lev" in dset.coordset:
+    if "lev" in dset.coords or "level" in dset.coords:
         # Note: this is relatively untested (2023/08/21 HON)
         dset = _format_lev(dset, lev_long_name, lev_units,
-                         lev_formula_terms, gchp)
+                           lev_formula_terms, gchp)
 
     # Require data order to be time, lat, lon (optionally lev)
-    dset = dset.transpose("time", "lat", "lon", ...)
+    if "lev" in dset.coords:
+        dset = dset.transpose("time", "lev", "lat", "lon", ...)
+    else:
+        dset = dset.transpose("time", "lat", "lon", ...)
 
     # Return the dataset
     return dset
@@ -123,6 +127,10 @@ def _update_variable_attributes(
     # but do not clobber any other existing variable attrs.
     for (name, value) in coards_attrs.items():
         if found[name]:
+            if var_attrs[name] != value:
+                print(f"Updating attribute value for {name}:")
+                print(f"    Original value : {var_attrs[name]}")
+                print(f"    New value:     : {value}")
             var_attrs.update({name: value})
         else:
             var_attrs[name] = value
@@ -194,9 +202,10 @@ def _format_time(
     Formats the time dimension for COARDS compliance.
     See define_HEMCO_dimensions for argument listings.
     '''
-    if "time" not in dset.coordset:
-        # If time isn't already in the coordset, create a dummy variable
-        dset = dset.assign_coordset(time=pd.to_datetime(start_time))
+    if "time" not in dset.coords:
+        # If time isn't already in the coords, create a dummy variable
+        print(f"Assigning time coordinate from input start_time {start_time}.")
+        dset = dset.assign_coords(time=pd.to_datetime(start_time))
         dset = dset.expand_dims("time")
     else:
         # Otherwise, update start_time to match the first time in the file,
@@ -239,28 +248,46 @@ def _format_lev(
     See define_HEMCO_dimensions for argument listings.
     '''
     ## HON 2023/08/22: This is relatively untested
-
     # If there a dimension called level, rename it
     if "level" in dset.dims.keys():
         dset = dset.rename_dims({"level" : "lev"})
 
-    # If formula is provided, check that the components of the
-    # formula are included.
+    # Check whether both lev_formula_terms and lev["formula_terms"]
+    # are present--if so, raise an error.
+    if ((lev_formula_terms is not None) 
+        and ("formula_terms" in dset["lev"].attrs)):
+        raise ValueError(
+            "Both lev_formula_terms and lev['formula_terms'] are provided."
+            " Please only provide one."
+        )
+    elif ((lev_formula_terms is None)
+          and ("formula_terms" not in dset["lev"].attrs)):
+        warnings.warn(
+            "Neither lev_formula_terms nor lev['formula_terms] are provided."
+            " Please provide one of these two terms."
+        )
+    elif ("formula_terms" in dset["lev"].attrs):
+        lev_formula_terms = dset["lev"].attrs["formula_terms"]
+
+    # If lev_formula_terms is now defined:
     if lev_formula_terms is not None:
-        terms = lev_formula_terms.split(": ")
+        terms = lev_formula_terms.split(" ")
         terms = [term for i, term in enumerate(terms) if i % 2 == 1]
+        failed_terms = []
         for term in terms:
             if term not in dset.data_vars.keys():
-                raise ValueError(
-                    f"{term} is in lev_formula_terms and could \
-                    not be found."
-                )
+                failed_terms.append(term)
+        if len(failed_terms) > 0:
+            warnings.warn(
+                f"The following values are in lev_formula_terms and could"
+                f" not be found: {failed_terms}"
+            )
 
     # If unit is level, require that the levels are integers
-    if lev_units == "level" and \
-       (dset["lev"] != dset["lev"].astype(int)).any():
-        raise ValueError("lev has units of level but dimension values \
-                            are not integers.")
+    if lev_units not in ["level", "eta_level", "sigma_level"]:
+        raise ValueError(
+            f"lev has units of {lev_units}. Please set it to one "
+            "of level, eta_level, or sigma_level.")
 
     # Set attributes
     ## Set positive to match the GCHP/GEOS-Chem conventions
@@ -316,11 +343,37 @@ def _check_required_dim(
     return dset
 
 
+def check_hemco_variables(
+        dset
+):
+    verify_variable_type(dset, xr.Dataset)
+
+    # Iterate through the dataset variables and check that each one
+    # has the required units and long_name attributes.
+    print("Checking dataset variables for HEMCO compliance.")
+    required_attrs = ["units", "long_name"]
+    missing = False
+    for (name, _) in dset.items():
+        attr_names = [name for (name, _) in dset[name].attrs.items()]
+        missing_attrs = [name for name in required_attrs
+                         if name not in attr_names]
+        if len(missing_attrs) > 0:
+            missing = True
+            print(f"  {name} missing {missing_attrs}")
+    
+    if missing:
+        raise ValueError(
+            "Required units missing from dataset variables."
+        )
+    else:
+        print("Dataset variables are HEMCO compliant.")
+
+
 def format_hemco_variable(
         dset,
         var,
-        long_name,
-        units,
+        long_name=None,
+        units=None,
         **kwargs
 ):
     """
@@ -349,23 +402,30 @@ def format_hemco_variable(
     """
     verify_variable_type(dset, xr.Dataset)
     verify_variable_type(var, str)
-    verify_variable_type(long_name, str)
-    verify_variable_type(units, str)
+
+    # Check required variables
+    coards_attrs = {"long_name" : long_name,
+                    "units" : units}
+    for name, value in coards_attrs.items():
+        if value is not None:
+            verify_variable_type(value, str)
+        elif name in dset[var].attrs:
+            coards_attrs[name] = dset[var].attrs[name]
+        else:
+            raise ValueError(f"{name} is not defined for {var}")
+
+    # Update variable attributes to be COARDS-conforming
+    # without clobbering any pre-existing attributes
+    dset[var].attrs = _update_variable_attributes(
+        dset[var].attrs,
+        coards_attrs=coards_attrs
+    )
 
     # Add extra attributes if passed via **kwargs
     if len(kwargs) != 0:
         for (_, att_dict) in kwargs.items():
             dset[var].attrs.update(att_dict)
 
-    # Update variable attributes to be COARDS-conforming
-    # without clobbering any pre-existing attributes
-    dset[var].attrs = _update_variable_attributes(
-        dset[var].attrs,
-        coards_attrs={
-            "long_name" : long_name,
-            "units" : units
-        }
-    )
     return dset
 
 
@@ -399,7 +459,7 @@ def save_hemco_netcdf(
     verify_variable_type(save_dir, str)
     verify_variable_type(save_name, str)
 
-    # Check that the save_name endset in .nc
+    # Check that the save_name ends in .nc
     if save_name.split(".")[-1][:2] != "nc":
         save_name = f"{save_name}.nc"
 
@@ -410,7 +470,7 @@ def save_hemco_netcdf(
     # Set default encoding and dtype for all variables and coordinates
     encoding = {"_FillValue" : None, "dtype" : dtype}
     var = {k : dc(encoding) for k in dset.keys()}
-    coord = {k : dc(encoding) for k in dset.coordset}
+    coord = {k : dc(encoding) for k in dset.coords}
 
     # Manually update the time encoding, which is often overwritten
     # by xarray defaults
