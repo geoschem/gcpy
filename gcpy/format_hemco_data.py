@@ -256,15 +256,15 @@ def _format_lev(
     # are present--if so, raise an error.
     if ((lev_formula_terms is not None) 
         and ("formula_terms" in dset["lev"].attrs)):
-        raise ValueError(
+        warnings.warn(
             "Both lev_formula_terms and lev['formula_terms'] are provided."
-            " Please only provide one."
+            " The provided lev_formula_term is being used."
         )
     elif ((lev_formula_terms is None)
           and ("formula_terms" not in dset["lev"].attrs)):
         warnings.warn(
             "Neither lev_formula_terms nor lev['formula_terms] are provided."
-            " Please provide one of these two terms."
+            " Skipping lev_formula_terms formatting."
         )
     elif ("formula_terms" in dset["lev"].attrs):
         lev_formula_terms = dset["lev"].attrs["formula_terms"]
