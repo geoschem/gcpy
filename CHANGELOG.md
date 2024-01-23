@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - TBD
 ### Changed
 - Now require `matplotlib>=3.8` in `docs/environment_files/environment.yml`
+- Now run the `stale` GitHub action at 00:00 UTC on the 1st of each month
 
 ### Fixed
 - Import error in `gcpy/examples/diagnostics/compare_diags.py`
@@ -14,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Removed
 - Example script `gcpy/examples/plotting/mda8_o3_timeseries.py`
-
+- Removed `Pylint` GitHub action
 
 ## [1.4.1] - 2023-12-08
 ### Fixed
