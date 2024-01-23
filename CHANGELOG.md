@@ -5,9 +5,16 @@ All notable changes to GCPy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased] - TBD
+### Changed
+- Now require `matplotlib>=3.8` in `docs/environment_files/environment.yml`
+
 ### Fixed
 - Import error in `gcpy/examples/diagnostics/compare_diags.py`
 - Added missing `n_cores` to `gcpy/examples/diagnostics/compare_diags.yml`
+
+### Removed
+- Example script `gcpy/examples/plotting/mda8_o3_timeseries.py`
+
 
 ## [1.4.1] - 2023-12-08
 ### Fixed
