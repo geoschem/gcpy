@@ -20,7 +20,7 @@ dependencies:
     - ipython                         # Interactive Python (used by Jupyter)
     - joblib                          # Parallelize python code
     - jupyter                         # Jupyter Notebook
-    - matplotlib                      # Creates plots and visualizations
+    - matplotlib>=3.7                  # Creates plots and visualizations
     - netcdf4                         # Python wrapper for netCDF
     - netcdf-fortran                  # Python wrapper for netCDF-Fortran
     - numpy                           # Optimized mathematical functions
