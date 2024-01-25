@@ -7,7 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - TBD
 ### Added
 - Example script `create_test_plot.py`, which can be used to check that GCPy has been installed properly
-- GitHub action `build-gcpy-environment` which tests installation of the mamba environment specified in in `docs/source/environment.yml`
+- GitHub action `build-gcpy-environment` which tests installation of the mamba environment specified in in `docs/environment_files/environment.yml`
+- YAML file`docs/environment_files/testing.yml` for building an environment without pegged package versions (for testing)
+- GitHub action `build-test-environment` to test the environment specified in `testing.yml`
 
 ## [1.4.1] - 2023-12-08
 ### Fixed

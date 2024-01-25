@@ -1,9 +1,9 @@
 ---
 #
-# GitHub action to build the GCPy production environment with micromamba
+# GitHub action to build the GCPy test environment with micromamba
 # See: https://github.com/marketplace/actions/setup-micromamba
 #
-name: build-gcpy-environment
+name: build-test-environment
 
 on:
   push:
@@ -21,11 +21,11 @@ jobs:
     steps:
       - name: Checkout the GCPy repository
         uses: actions/checkout@v2
-      - name: Create "gcpy_env" environment
+      - name: Create "testing" environment
         uses: mamba-org/setup-micromamba@v1
         with:
           micromamba-version: 'latest'
-          environment-file: docs/environment_files/environment.yml
+          environment-file: docs/environment_files/testing.yml
           init-shell: bash
           cache-environment: true
           generate-run-shell: true
