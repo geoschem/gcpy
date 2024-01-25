@@ -1507,8 +1507,6 @@ def make_benchmark_conc_plots(
         for _, filecat in enumerate(catdict):
             results.append(createplots(filecat))
     # --------------------------------------------
-    print(results)
-    quit()
     
     dict_sfc = {list(result.keys())[0]: result[list(
         result.keys())[0]]['sfc'] for result in results}
