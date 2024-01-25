@@ -19,16 +19,21 @@ jobs:
       matrix:
         python-version: ["3.9"]
     steps:
-      - uses: mamba-org/setup-micromamba@v1
+      - name: Checkout the GCPy repository
+        uses: actions/checkout@v2
+      - name: Create the GCPy environment
+        uses: mamba-org/setup-micromamba@v1
         with:
           micromamba-version: 'latest'
-          environment-file: docs/source/environment.yml
+          environment-file: environment.yml
+          environment-name: gcpy-test-env
           init-shell: bash
           cache-environment: true
+          generate-run-shell: true
           post-cleanup: 'all'
-      - name: Import gcpy in micromamba environment (bash)
-        run: python -c "import numpy"
-        shell: bash -el {0}
-      - name: Run custom command in micromamba environment
+      - name: Test if "import gcpy" works
+        run: python -c "import gcpy"
+        shell: micromamba-shell {0}
+      - name: Test if we can create a plot
         run: python -m gcpy.examples.plotting.create_test_plot
         shell: micromamba-shell {0}
