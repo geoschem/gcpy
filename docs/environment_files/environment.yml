@@ -30,7 +30,7 @@ dependencies:
   - pylint==2.17.5                  # Python linter
   - pyproj==3.6.1                   # Python map projections library
   - python==3.9.18                  # Any python version prior to 3.10
-  - pypdf==3.16.1                   # PDF utilities (bookmarks, etc.)
+  - pypdf==3.17.0                   # PDF utilities (bookmarks, etc.)
   - recommonmark==0.7.1             # Dependency for Sphinx
   - requests==2.31.0                # HTTP library
   - scipy==1.11.2                   # Scientific python package
