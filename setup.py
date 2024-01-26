@@ -103,7 +103,7 @@ setup(
         "netcdf-fortran==4.5.4",
         "numpy==1.26.0",
         "pandas==2.1.1",
-        "pip==23.2.1",
+        "pip==23.3",
         "pylint==2.17.5",
         "pyproj==3.6.1",
         "python==3.9.18",
