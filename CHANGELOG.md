@@ -5,6 +5,10 @@ All notable changes to GCPy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased] - TBD
+### Added
+- Badge for `build-gcpy-environment` GitHub Action in `README.md`
+- Badges in `docs/source/index.rst`
+
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
 - Bump pypdf from 3.16.1 to 3.17.0 (dependabot suggested this)
