@@ -20,7 +20,7 @@ jobs:
         python-version: ["3.9"]
     steps:
       - name: Checkout the GCPy repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Create "testing" environment
         uses: mamba-org/setup-micromamba@v1
         with:
@@ -36,3 +36,8 @@ jobs:
       - name: Test if we can create a plot
         run: python -m gcpy.examples.plotting.create_test_plot
         shell: micromamba-shell {0}
+
+# Use Node.js version 20 to avoid deprecation warnings        
+runs:
+  using: 'node20'
+  main: 'main.js'

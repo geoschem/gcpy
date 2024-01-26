@@ -80,3 +80,8 @@ jobs:
       uses: github/codeql-action/analyze@v2
       with:
         category: "/language:${{matrix.language}}"
+
+# Use Node.js version 20 to avoid deprecation warnings
+runs:
+  using: 'node20'
+  main: 'main.js'

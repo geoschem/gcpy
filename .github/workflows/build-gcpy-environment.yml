@@ -36,3 +36,8 @@ jobs:
       - name: Test if we can create a plot
         run: python -m gcpy.examples.plotting.create_test_plot
         shell: micromamba-shell {0}
+
+# Use Node.js version 20 to avoid deprecation warnings
+runs:
+  using: 'node20'
+  main: 'main.js'
