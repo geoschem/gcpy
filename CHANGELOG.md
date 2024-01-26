@@ -11,6 +11,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - YAML file`docs/environment_files/testing.yml` for building an environment without pegged package versions (for testing)
 - GitHub action `build-test-environment` to test the environment specified in `testing.yml`
 
+### Changed
+- `build-gcpy-environment`
+
+
 ## [1.4.1] - 2023-12-08
 ### Fixed
 - Now use the proper default value for the `--weightsdir` argument to `gcpy/file_regrid.py`
@@ -164,7 +168,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Now use restarts_subdir tag from YAML file for paths to restart files (@yantosca)
   - GCPy now uses proper year for dev in 1-yr benchmarks (@laestrada)
   - Fixed date string issue in benchmarking scripts (@lizziel)
-  - Updates for new GCHP restart file format (@lizziel)  
+  - Updates for new GCHP restart file format (@lizziel)
 - Updated environment.yml with package versions that work together (@yantosca)
 - Updated the AUTHORS.txt and LICENSE.txt files (@yantosca)
 
