@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Badge for `build-gcpy-environment` GitHub Action in `README.md`
 - Badges in `docs/source/index.rst`
+- GitHub action to push GCPy releases to PyPi
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
