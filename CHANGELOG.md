@@ -4,6 +4,19 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2024-01-26
+### Added
+- Example script `create_test_plot.py`, which can be used to check that GCPy has been installed properly
+- GitHub action `build-gcpy-environment` which tests installation of the mamba environment specified in in `docs/environment_files/environment.yml`
+- YAML file`docs/environment_files/testing.yml` for building an environment without pegged package versions (for testing)
+- GitHub action `build-test-environment` to test the environment specified in `testing.yml`
+
+### Changed
+- `build-gcpy-environment` GitHub action now runs with several Python versions 
+
+### Fixed
+- Prevent overwriting of the `results` variable when parallel plotting is deactivated (`n_cores: 1`)
+
 ## [1.4.1] - 2023-12-08
 ### Fixed
 - Now use the proper default value for the `--weightsdir` argument to `gcpy/file_regrid.py`
@@ -157,7 +170,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Now use restarts_subdir tag from YAML file for paths to restart files (@yantosca)
   - GCPy now uses proper year for dev in 1-yr benchmarks (@laestrada)
   - Fixed date string issue in benchmarking scripts (@lizziel)
-  - Updates for new GCHP restart file format (@lizziel)  
+  - Updates for new GCHP restart file format (@lizziel)
 - Updated environment.yml with package versions that work together (@yantosca)
 - Updated the AUTHORS.txt and LICENSE.txt files (@yantosca)
 
