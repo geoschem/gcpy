@@ -1,0 +1,52 @@
+---
+# ======================================================================
+# GCPy testing environment file.
+# Intended to be used by the GCST for testing purposes.
+#
+# GCPy users should build the environment from "environment.yml",
+# as this will specify package versions that are known to work.
+# See: https://github.com/geoschem/gcpy/issues/284
+# ======================================================================
+name: testing
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - awscli                          # Utilities for AWS cloud
+  - cartopy                         # Geospatial data processing
+  - cf_xarray                       # CF conventions for xarray
+  - dask                            # Parallel library; backend for xarray
+  - gridspec                        # Define Earth System Model grids
+  - ipython                         # Interactive Python (used by Jupyter)
+  - joblib                          # Parallelize python code
+  - jupyter                         # Jupyter Notebook
+  - matplotlib>=3.8                 # Creates plots and visualizations
+  - netcdf4                         # Python wrapper for netCDF
+  - netcdf-fortran                  # Python wrapper for netCDF-Fortran
+  - numpy                           # Optimized mathematical functions
+  - pandas                          # Tables/timeseries manipulation
+  - pip                             # Install packages from PyPi
+  - pylint                          # Python linter
+  - pyproj                          # Python map projections library
+  - python                          # Any python version prior to 3.10
+  - pypdf                           # PDF utilities (bookmarks, etc.)
+  - recommonmark                    # Dependency for Sphinx
+  - requests                        # HTTP library
+  - scipy                           # Scientific python package
+  - sparselt                        # Regridding earth system model data
+  - tabulate                        # Pretty-printing for column data
+  - tk                              # Tcl/tk library
+  - xarray                          # Read data from netCDF etc files
+  #
+  # NOTE: These packages are known to work, so peg these versions
+  #
+  - esmf==8.1.1                     # Earth system modeling framework
+  - esmpy==8.1.1                    # Python wrapper for ESMF
+  - xesmf==0.5.1                    # Universal regridder
+  - docutils==0.16                  # Convert text to other formats
+  - jinja2==3.0.3                   # Dependency for Sphinx
+  - sphinx==3.5.4                   # Generate ReadTheDocs output
+  - sphinx-autoapi==1.9.0           # Sphinx autodoc style documentation
+  - sphinx-autobuild==2021.3.14     # Build ReadTheDos live in browser
+  - sphinxcontrib-bibtex==2.2.0     # ReadTheDocs bibliography style
+  - sphinx_rtd_theme==0.5.2         # ReadTheDocs HTML theme files
