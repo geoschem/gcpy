@@ -119,7 +119,7 @@ setup(
         "esmpy==8.1.1",
         "xesmf==0.5.1",
         "docutils==0.16",
-        "jinja2==3.0.3",
+        "jinja2==3.1.3",
         "sphinx==3.5.4",
         "sphinx-autoapi==1.9.0",
         "sphinx-autobuild==2021.3.14",
