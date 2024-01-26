@@ -1046,8 +1046,9 @@ def compare_zonal_mean(
                     for i in range(n_var)
                 )
             else:
+                results = []
                 for i in range(n_var):
-                    results = createfig(i, temp_dir)
+                    results.append(createfig(i, temp_dir))
             # ---------------------------------------
 
             # update sig diffs after parallel calls

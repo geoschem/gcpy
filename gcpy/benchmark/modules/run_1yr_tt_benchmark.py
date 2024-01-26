@@ -540,8 +540,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gcc_vs_gcc_mass_table(mon)
+                    results.append(gcc_vs_gcc_mass_table(mon))
 
         # ==================================================================
         # GCC vs GCC operations budgets tables
@@ -837,8 +838,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gchp_vs_gcc_mass_table(mon)
+                    results.append(gchp_vs_gcc_mass_table(mon))
 
         # ==================================================================
         # GCHP vs GCC operations budgets tables
@@ -1149,8 +1151,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gchp_vs_gchp_mass_table(mon)
+                    results.append(gchp_vs_gchp_mass_table(mon))
 
         # ==================================================================
         # GCHP vs GCHP operations budgets tables
