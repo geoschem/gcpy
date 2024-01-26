@@ -107,7 +107,7 @@ setup(
         "pylint==2.17.5",
         "pyproj==3.6.1",
         "python==3.9.18",
-        "pypdf==3.16.1",
+        "pypdf==3.17.0",
         "recommonmark==0.7.1",
         "requests==2.31.0",
         "scipy==1.11.2",
