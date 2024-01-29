@@ -974,7 +974,7 @@ def plot_models_vs_obs(
     dev_cs_grid = extract_grid(dev_dataarray)
 
     # Figure setup
-    plt.style.use('seaborn-darkgrid')
+    plt.style.use("seaborn-v0_8-darkgrid")
     rows_per_page = 3
     cols_per_page = 3
     plots_per_page = rows_per_page * cols_per_page
