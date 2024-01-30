@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Script `gcpy/benchmark/modules/benchmark_utils.py`, with common benchmark utility functions
 - Script `gcpy/benchmark/modules/benchmark_drydep.py`, with code to create drydep velocity plots
 - YAML tag `plot_drydep` in `gcpy/benchmark/config/*.yml` files
+- Badge for `build-gcpy-environment` GitHub Action in `README.md`
+- Badges in `docs/source/index.rst`
+- GitHub action to push GCPy releases to PyPi
+- Script `./release/changeVersionNumbers.sh`, used to update version numbers in various files before release
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
