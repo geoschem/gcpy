@@ -1227,20 +1227,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
         # ==================================================================
-        # GCC vs. GCC drydep plots
+        # GCHP vs. GCC drydep plots
         # ==================================================================
         if config["options"]["outputs"]["plot_drydep"]:
             print("\n%%% Creating GCHP vs. GCC drydep plots %%%")
 
             # --------------------------------------------------------------
-            # GCC vs GCC drydep plots: Annual mean
+            # GCHP vs GCC drydep plots: Annual mean
             # --------------------------------------------------------------
 
             # Filepaths
             ref = get_filepaths(
-                gcc_vs_gcc_refdir,
+                gchp_vs_gcc_refdir,
                 "DryDep",
-                all_months_ref
+                all_months_dev
             )[0]
             dev = get_filepaths(
                 gchp_vs_gcc_devdir,
@@ -1266,7 +1266,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )
 
             # --------------------------------------------------------------
-            # GCC vs GCC drydep plots: Seasonal
+            # GCHP vs GCC drydep plots: Seasonal
             # --------------------------------------------------------------
             for mon in range(bmk_n_months):
                 print(f"\nCreating plots for {bmk_mon_strs[mon]}")

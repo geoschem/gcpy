@@ -898,7 +898,7 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCHP vs. GCC drydep plots %%%")
 
             # Filepaths
-            ref = get_filepath(gcc_vs_gcc_refdir, "DryDep", gcc_ref_date)
+            ref = get_filepath(gchp_vs_gcc_refdir, "DryDep", gcc_ref_date)
             dev = get_filepath(
                 gchp_vs_gcc_devdir,
                 "DryDep",
