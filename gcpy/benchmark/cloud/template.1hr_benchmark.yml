@@ -110,6 +110,7 @@ options:
     plot_emis: False
     emis_table: True
     plot_jvalues: False
+    plot_drydep: False
     plot_aod: False
     mass_table: True
     mass_accum_table: False

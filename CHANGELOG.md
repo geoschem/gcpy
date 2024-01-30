@@ -5,9 +5,15 @@ All notable changes to GCPy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased] - TBD
+### Added
+- Script `gcpy/benchmark/modules/benchmark_utils.py`, with common benchmark utility functions
+- Script `gcpy/benchmark/modules/benchmark_drydep.py`, with code to create drydep velocity plots
+- YAML tag `plot_drydep` in `gcpy/benchmark/config/*.yml` files
+
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
 - Bump pypdf from 3.16.1 to 3.17.0 (dependabot suggested this)
+- YAML tag `operations_budget` is now `ops_budget_table` in `gcpy/benchmark/config/1yr_tt_benchmark.yml`
 
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
