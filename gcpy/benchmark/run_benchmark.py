@@ -56,7 +56,7 @@ from gcpy.benchmark.modules.run_1yr_tt_benchmark \
     import run_benchmark as run_1yr_tt_benchmark
 import gcpy.benchmark.modules.benchmark_utils as bmk_util
 from gcpy.benchmark.modules.benchmark_drydep \
-    import make_benchmark_drydep_plots
+    import drydepvel_species, make_benchmark_drydep_plots
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -527,6 +527,7 @@ def run_benchmark_default(config):
                 sigdiff_files=gcc_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()
             )
 
         # ==================================================================
@@ -918,6 +919,7 @@ def run_benchmark_default(config):
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species(),
             )
 
         # ==================================================================
@@ -1379,6 +1381,7 @@ def run_benchmark_default(config):
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()
             )
 
         # ==================================================================

@@ -28,6 +28,7 @@ def make_benchmark_drydep_plots(
         sigdiff_files=None,
         n_job=-1,
         time_mean=False,
+        varlist=None,
         spcdb_dir=os.path.join(os.path.dirname(__file__), "..", "..")
 ):
     """
@@ -83,6 +84,9 @@ def make_benchmark_drydep_plots(
         time_mean : bool
             Determines if we should average the datasets over time
             Default value: False
+        varlist: list of str
+            List of variables to plot.  If varlist is None, then
+            all common variables in Ref & Dev will be plotted.
     """
 
     # Create directory for plots (if it doesn't exist)
@@ -101,12 +105,13 @@ def make_benchmark_drydep_plots(
     )
 
     # Get common variables between Ref and Dev
-    varlist = bmk_util.get_common_varnames(
-        refdata,
-        devdata,
-        prefix="DryDepVel_",
-        verbose=verbose
-    )
+    if varlist is None:
+        varlist = bmk_util.get_common_varnames(
+            refdata,
+            devdata,
+            prefix="DryDepVel_",
+            verbose=verbose
+        )
 
     # Create surface plots
     sigdiff_list = []
@@ -153,3 +158,18 @@ def make_benchmark_drydep_plots(
     del refdata
     del devdata
     gc.collect()
+
+
+def drydepvel_species():
+    """
+    Returns a list of species for the dry deposition velocity
+    (DryDepVel) benchmark plots:
+
+    Returns:
+    --------
+    varnames (list of str): Variable names to plot
+    """
+    # These are key dry deposition species (as per Mat Evans)
+    return ["DryDepVel_ACET", "DryDepVel_HNO3", "DryDepVel_NH3",
+            "DryDepVel_NH4", "DryDepVel_NIT", "DryDepVel_NITs",
+            "DryDepVel_O3", "DryDepVel_SO4"]

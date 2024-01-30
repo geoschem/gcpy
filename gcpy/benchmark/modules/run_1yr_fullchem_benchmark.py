@@ -67,7 +67,7 @@ import gcpy.benchmark.modules.benchmark_utils as bmk_util
 #TODO: Peel out routines from benchmark_funcs.py into smaller
 # routines in the gcpy/benchmark/modules folder, such as these:
 from gcpy.benchmark.modules.benchmark_drydep \
-    import make_benchmark_drydep_plots
+    import drydepvel_species, make_benchmark_drydep_plots
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -310,6 +310,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     bmk_mons_gchp_dev = all_months_gchp_dev[bmk_mon_inds]
     bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
 
+    # List of species for dry deposition velocity plots
+        
+    # Get common variables between Ref 
+    
     # ======================================================================
     # Print the list of plots & tables being generated
     # ======================================================================
@@ -658,7 +662,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()
             )
 
             # --------------------------------------------------------------
@@ -679,7 +684,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    varlist=drydepvel_species()
                 )
 
         # ==================================================================
@@ -1262,7 +1268,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()                
             )
 
             # --------------------------------------------------------------
@@ -1283,7 +1290,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    varlist=drydepvel_species()
                 )
 
         # ==================================================================
@@ -1916,7 +1924,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()                
             )
 
             # --------------------------------------------------------------
@@ -1938,7 +1947,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    varlist=drydepvel_species()
                 )
 
         # ==================================================================
