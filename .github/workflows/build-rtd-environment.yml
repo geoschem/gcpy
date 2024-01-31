@@ -1,0 +1,37 @@
+---
+#
+# GitHub action to build the ReadTheDocs environment with micromamba
+# See: https://github.com/marketplace/actions/setup-micromamba
+#
+name: build-rtd-environment
+
+on:
+  push:
+    branches: [ "main", "dev", "dependabot/*" ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ "main", "dev" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - name: Checkout the GCPy repository
+        uses: actions/checkout@v4
+      - name: Create "rtd_env" environment
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          micromamba-version: 'latest'
+          environment-file: docs/environment_files/read_the_docs_environment.yml
+          init-shell: bash
+          cache-environment: true
+          generate-run-shell: true
+          post-cleanup: 'all'
+      - name: Get version numbers of packages
+        run: |
+          python --version
+          sphinx-autobuild --version
+        shell: micromamba-shell {0}

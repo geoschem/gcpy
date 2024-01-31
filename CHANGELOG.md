@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Badges in `docs/source/index.rst`
 - GitHub action to push GCPy releases to PyPi
 - Script `./release/changeVersionNumbers.sh`, used to update version numbers in various files before release
+- Mamba/Conda enviroment file `docs/environment_files/read_the_docs_environment.yml`, for building ReadTheDocs documentation
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
@@ -22,6 +23,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
 - Prevent an import error by using `seaborn-v0_8-darkgrid` in`gcpy/benchmark/modules/benchmark_models_vs_obs.py`
+
+### Removed
+- Python packages for RTD documenation builds from `docs/environment_files/environment.yml`
 
 ## [1.4.2] - 2024-01-26
 ### Added

@@ -7,6 +7,10 @@
 #
 # These package versions have been proven to work together.
 # See: https://github.com/geoschem/gcpy/issues/284
+#
+# NOTE: Use the YAML file read_the_docs_environment.yml to generate
+# a separate Mamba/Conda environment for generating the ReadTheDocs
+# documentation.
 # ======================================================================
 name: gcpy_env
 channels:
@@ -29,9 +33,8 @@ dependencies:
   - pip==23.3                       # Install packages from PyPi
   - pylint==2.17.5                  # Python linter
   - pyproj==3.6.1                   # Python map projections library
-  - python==3.9.18                  # Any python version prior to 3.10
+  - python==3.9.18                  # Python language
   - pypdf==3.17.0                   # PDF utilities (bookmarks, etc.)
-  - recommonmark==0.7.1             # Dependency for Sphinx
   - requests==2.31.0                # HTTP library
   - scipy==1.11.2                   # Scientific python package
   - sparselt==0.1.3                 # Regridding earth system model data
@@ -41,10 +44,3 @@ dependencies:
   - esmf==8.1.1                     # Earth system modeling framework
   - esmpy==8.1.1                    # Python wrapper for ESMF
   - xesmf==0.5.1                    # Universal regridder
-  - docutils==0.16                  # Convert text to other formats
-  - jinja2==3.0.3                   # Dependency for Sphinx
-  - sphinx==3.5.4                   # Generate ReadTheDocs output
-  - sphinx-autoapi==1.9.0           # Sphinx autodoc style documentation
-  - sphinx-autobuild==2021.3.14     # Build ReadTheDos live in browser
-  - sphinxcontrib-bibtex==2.2.0     # ReadTheDocs bibliography style
-  - sphinx_rtd_theme==0.5.2         # ReadTheDocs HTML theme files
