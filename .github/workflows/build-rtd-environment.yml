@@ -27,7 +27,7 @@ jobs:
           micromamba-version: 'latest'
           environment-file: docs/environment_files/read_the_docs_environment.yml
           init-shell: bash
-          cache-environment: true
+          cache-environment: false
           generate-run-shell: true
           post-cleanup: 'all'
       - name: Get version numbers of packages
