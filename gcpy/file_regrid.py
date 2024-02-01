@@ -1100,10 +1100,11 @@ def rename_restart_variables(
         # ==============================================================
         if towards_gchp:
             for var in dset.data_vars.keys():
-                if "Met_DELPDRY" in var:
-                    old_to_new[var] = "DELP_DRY"
                 if var.startswith("Met_"):
-                    old_to_new[var] = var.replace("Met_", "")
+                    if "DELPDRY" in var:
+                        old_to_new[var] = "DELP_DRY"
+                    else:
+                        old_to_new[var] = var.replace("Met_", "")
                 if var.startswith("Chem_"):
                     old_to_new[var] = var.replace("Chem_", "")
                 if var.startswith("SpeciesRst_"):
@@ -1117,7 +1118,7 @@ def rename_restart_variables(
         # checkpoint -> classic/diagnostic
         # ==============================================================
         for var in dset.data_vars.keys():
-            if var == "DELP_DRY":
+            if var == "DELP_DRY" or var == "DELPDRY":
                 old_to_new[var] = "Met_DELPDRY"
             if var == "BXHEIGHT":
                 old_to_new[var] = "Met_BXHEIGHT"
