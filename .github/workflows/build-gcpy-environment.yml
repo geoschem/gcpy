@@ -25,7 +25,7 @@ jobs:
         uses: mamba-org/setup-micromamba@v1
         with:
           micromamba-version: 'latest'
-          environment-file: docs/environment_files/environment.yml
+          environment-file: docs/environment_files/gcpy_environment.yml
           init-shell: bash
           cache-environment: false
           generate-run-shell: true
