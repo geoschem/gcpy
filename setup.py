@@ -29,11 +29,11 @@ CLASSIFIERS = [
 ]
 
 MAJOR = 1
-MINOR = 3
+MINOR = 4
 MICRO = 2
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
-VERSION = "{}.{}.{}{}".format(MAJOR, MINOR, MICRO, EXTRA)
+VERSION = f"{MAJOR}.{MINOR}.{MICRO}{EXTRA}"
 '''
 #DEV format (using git hash) is intriguing but incompatible with PEP 440
 #No hashes can be used in version field
@@ -90,33 +90,41 @@ setup(
     packages = find_packages(),
     include_package_data=True,
     install_requires=[
-        "cartopy==0.19.0.post1",
-        "dask==2021.7.1",          
-        "docutils==0.16",      
-        "esmf==8.1.1",
-        "esmpy==8.1.1",
-        "h5netcdf==0.11.0",
-        "h5py==3.3.0",
-        "jinja2==3.0.3",
-        "joblib==1.0.1",
-        "matplotlib==3.4.2",
-        "pandas==1.3.1",
+        "awscli==2.13.39",
+        "cartopy==0.22.0",
+        "cf_xarray==0.8.4",
+        "dask==2023.9.2",
+        "gridspec==0.1.0",
+        "ipython==8.15.0",
+        "joblib==1.3.2",
+        "jupyter==1.0.0",
+        "matplotlib==3.8.0",
         "netcdf4==1.6.0",
         "netcdf-fortran==4.5.4",
-        "numpy==1.21.1",
-        "pypdf2==1.26.0",
+        "numpy==1.26.0",
+        "pandas==2.1.1",
+        "pip==23.3",
+        "pylint==2.17.5",
+        "pyproj==3.6.1",
+        "python==3.9.18",
+        "pypdf==3.17.0",
         "recommonmark==0.7.1",
         "requests==2.31.0",
-        "scipy==1.7.0",
-        "sparselt>=0.1.3",
+        "scipy==1.11.2",
+        "sparselt==0.1.3",
+        "tabulate==0.9.0",
+        "tk==8.6.12",
+        "xarray==2023.8.0",
+        "esmf==8.1.1",
+        "esmpy==8.1.1",
+        "xesmf==0.5.1",
+        "docutils==0.16",
+        "jinja2==3.0.3",
         "sphinx==3.5.4",
         "sphinx-autoapi==1.9.0",
         "sphinx-autobuild==2021.3.14",
         "sphinxcontrib-bibtex==2.2.0",
         "sphinx_rtd_theme==0.5.2",
-        "tabulate==0.8.9",
-        "xarray==0.17.0",
-        "xesmf==0.5.1"
     ],
     classifiers = CLASSIFIERS
 )

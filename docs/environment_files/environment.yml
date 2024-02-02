@@ -1,58 +1,50 @@
+---
 # ======================================================================
 # GCPy environment file
 #
 # Recommended installation: with Mambaforge
 # $ mamba env create -n gcpy_env --file=/path/to/gcpy/environment.yml
 #
-# Some package versions are not the most recent, but these
-# have been proven to work together. (Bob Yantosca, 14 Aug 2023)
+# These package versions have been proven to work together.
+# See: https://github.com/geoschem/gcpy/issues/284
 # ======================================================================
 name: gcpy_env
 channels:
-    - conda-forge
-    - nodefaults    
+  - conda-forge
+  - nodefaults
 dependencies:
-    - awscli                          # Utilities for AWS cloud
-    - cartopy                         # Geospatial data processing
-    - cf_xarray                       # CF conventions for xarray
-    - dask                            # Parallel library; backend for xarray
-    - gridspec                        # Define Earth System Model grids
-    - ipython                         # Interactive Python (used by Jupyter)
-    - joblib                          # Parallelize python code
-    - jupyter                         # Jupyter Notebook
-    - matplotlib                      # Creates plots and visualizations
-    - netcdf4                         # Python wrapper for netCDF
-    - netcdf-fortran                  # Python wrapper for netCDF-Fortran
-    - numpy                           # Optimized mathematical functions
-    - pandas                          # Tables/timeseries manipulation
-    - pip                             # Install packages from PyPi
-    - pylint                          # Python linter
-    - pyproj                          # Python map projections library
-    - python<3.10                     # Any python version prior to 3.10
-    - pypdf                           # PDF utilities (bookmarks, etc.)
-    - recommonmark                    # Dependency for Sphinx
-    - requests                        # HTTP library
-    - scipy                           # Scientific python package
-    - sparselt>=0.1.3                 # Regridding earth system model data
-    - tabulate                        # Pretty-printing for column data
-    - xarray                          # Read data from netCDF etc files
-    #
-    # NOTE: These packages need to be pegged at specific versions
-    # in order to avoid an ImportError.
-    #  -- Bob Yantosca (14 Aug 2023)
-    #
-    - esmf==8.1.1                     # Earth system modeling framework
-    - esmpy==8.1.1                    # Python wrapper for ESMF
-    - xesmf==0.5.1                    # Universal regridder
-    # 
-    # NOTE: These packages need to be pegged at specific versions
-    # or else the ReadTheDocs output won't render properly.
-    #  -- Bob Yantosca (14 Aug 2023)
-    #
-    - docutils==0.16                  # Convert text to other formats
-    - jinja2==3.0.3                   # Dependency for Sphinx
-    - sphinx==3.5.4                   # Generate ReadTheDocs output
-    - sphinx-autoapi==1.9.0           # Sphinx autodoc style documentation
-    - sphinx-autobuild==2021.3.14     # Build ReadTheDos live in browser
-    - sphinxcontrib-bibtex==2.2.0     # ReadTheDocs bibliography style
-    - sphinx_rtd_theme==0.5.2         # ReadTheDocs HTML theme files
+  - awscli==2.13.39                 # Utilities for AWS cloud
+  - cartopy==0.22.0                 # Geospatial data processing
+  - cf_xarray==0.8.4                # CF conventions for xarray
+  - dask==2023.9.2                  # Parallel library; backend for xarray
+  - gridspec==0.1.0                 # Define Earth System Model grids
+  - ipython==8.15.0                 # Interactive Python (used by Jupyter)
+  - joblib==1.3.2                   # Parallelize python code
+  - jupyter==1.0.0                  # Jupyter Notebook
+  - matplotlib==3.8.0               # Creates plots and visualizations
+  - netcdf4==1.6.0                  # Python wrapper for netCDF
+  - netcdf-fortran==4.5.4           # Python wrapper for netCDF-Fortran
+  - numpy==1.26.0                   # Optimized mathematical functions
+  - pandas==2.1.1                   # Tables/timeseries manipulation
+  - pip==23.3                       # Install packages from PyPi
+  - pylint==2.17.5                  # Python linter
+  - pyproj==3.6.1                   # Python map projections library
+  - python==3.9.18                  # Any python version prior to 3.10
+  - pypdf==3.17.0                   # PDF utilities (bookmarks, etc.)
+  - recommonmark==0.7.1             # Dependency for Sphinx
+  - requests==2.31.0                # HTTP library
+  - scipy==1.11.2                   # Scientific python package
+  - sparselt==0.1.3                 # Regridding earth system model data
+  - tabulate==0.9.0                 # Pretty-printing for column data
+  - tk==8.6.12                      # Tcl/tk library
+  - xarray==2023.8.0                # Read data from netCDF etc files
+  - esmf==8.1.1                     # Earth system modeling framework
+  - esmpy==8.1.1                    # Python wrapper for ESMF
+  - xesmf==0.5.1                    # Universal regridder
+  - docutils==0.16                  # Convert text to other formats
+  - jinja2==3.0.3                   # Dependency for Sphinx
+  - sphinx==3.5.4                   # Generate ReadTheDocs output
+  - sphinx-autoapi==1.9.0           # Sphinx autodoc style documentation
+  - sphinx-autobuild==2021.3.14     # Build ReadTheDos live in browser
+  - sphinxcontrib-bibtex==2.2.0     # ReadTheDocs bibliography style
+  - sphinx_rtd_theme==0.5.2         # ReadTheDocs HTML theme files

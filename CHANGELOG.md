@@ -4,7 +4,46 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased 1.4.0]
+## [Unreleased] - TBD
+### Added
+- Script `gcpy/benchmark/modules/benchmark_utils.py`, with common benchmark utility functions
+- Script `gcpy/benchmark/modules/benchmark_drydep.py`, with code to create drydep velocity plots
+- YAML tag `plot_drydep` in `gcpy/benchmark/config/*.yml` files
+- Badge for `build-gcpy-environment` GitHub Action in `README.md`
+- Badges in `docs/source/index.rst`
+- GitHub action to push GCPy releases to PyPi
+- Script `./release/changeVersionNumbers.sh`, used to update version numbers in various files before release
+- Added `gcpy/format_hemco_data.py` from @hannahnesser
+
+### Changed
+- Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
+- Bump pypdf from 3.16.1 to 3.17.0 (dependabot suggested this)
+- YAML tag `operations_budget` is now `ops_budget_table` in `gcpy/benchmark/config/1yr_tt_benchmark.yml`
+
+### Fixed
+- CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
+- Prevent an import error by using `seaborn-v0_8-darkgrid` in`gcpy/benchmark/modules/benchmark_models_vs_obs.py`
+- `gcpy/file_regrid.py` now creates GCHP files with `DELP_DRY` instead of `DELPDRY`
+- Fixed bugs in GCHP vs GCHP sections of 1-yr benchmark run scripts to allow comparison of GCHP runs with different grid resolutions
+
+## [1.4.2] - 2024-01-26
+### Added
+- Example script `create_test_plot.py`, which can be used to check that GCPy has been installed properly
+- GitHub action `build-gcpy-environment` which tests installation of the mamba environment specified in in `docs/environment_files/environment.yml`
+- YAML file`docs/environment_files/testing.yml` for building an environment without pegged package versions (for testing)
+- GitHub action `build-test-environment` to test the environment specified in `testing.yml`
+
+### Changed
+- `build-gcpy-environment` GitHub action now runs with several Python versions 
+
+### Fixed
+- Prevent overwriting of the `results` variable when parallel plotting is deactivated (`n_cores: 1`)
+
+## [1.4.1] - 2023-12-08
+### Fixed
+- Now use the proper default value for the `--weightsdir` argument to `gcpy/file_regrid.py`
+
+## [1.4.0] - 2023-11-20
 ### Added
 - Added C2H2 and C2H4 to `emission_species.yml`
 - Updated `species_database.yml` for consistency with GEOS-Chem 14.2.0
@@ -25,8 +64,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new routine `verify_variable_type` function in `gcpy/util.py`
 - Added new routine `format_number_for_table` in `util.py`
 - Added BrSALA and BrSALC to `emission_species.yml`
+- Added `options:n_cores` to all benchmark YAML config files
+- Added `__init__.py` files in subfolders of `gcpy/gcpy`
+- `gcpy/benchmark/modules/*.py` scripts are now chmod 644
 - Added `ENCODING = "UTF-8"` to `gcpy/constants.py`
-- Added `gcpy/format_hemco_data.py` from @hannahnesser
+- Added statement `from dask.array import Array as DaskArray` in `gcpy plot.py`
+- Added SLURM run script `gcpy/benchmark/benchmark_slurm.sh`
+- Added `gcpy/plot/gcpy_plot_style` style sheet for title and label default settings
+- Added `gcpy/gcpy_plot_style` style sheet for title and label default settings
+- Added new cubed-sphere grid inquiry functions to `gcpy/cstools.py`
+- Added functions `get_ilev_coord` and `get_lev_coord` to `gcpy/grid.py`
+- Add `tk` package to `docs/environment_files/environment.yml`
 
 ### Changed
 - Simplified the Github issues templates into two options: `new-feature-or-discussion.md` and `question-issue.md`
@@ -34,12 +82,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated badge links in `README.md`
 - Construct ops budget table filename without using the `label` argument
 - Updated species_database.yml for consistency with GEOS-Chem 14.2.0
-- Renamed TransportTracers species in `benchmark_categories.yml` and in documentation
+- Renamed TransportTracers species in `benchmark_categories.yml`, `run_1yr_tt_benchmark.py`, and in documentation
 - YAML files in `benchmark/` have been moved to `benchmark/config`
 - Models vs. O3 obs plots are now arranged by site latitude from north to south
 - Routine `print_totals` now prints small and/or large numbers in scientific notation
 - Truncate names in benchmark & emissions tables to improve readability
 - Add TransportTracers species names to `gcpy/emissions_*.yml` files
+- Now pass `n_job=config["options"]["n_cores"]` to benchmark plotting routines
+- Script `benchmark.py` to `benchmark_funcs.py` to remove a name collision
+- Folder `gcpy/benchmark` is now `gcpy/gcpy/benchmark`
+- Folder `benchmark/modules` is now `gcpy/gcpy/benchmark/modules`
+- Folder `gcpy/examples` is now `gcpy/gcpy/examples`
+- Pass `sys.argv` to the `main()` routine of `run_benchmark.py`,` compare_diags.py`
 - Updated `docs/environment_files/environment.yml` for MambaForge (also added `gridspec`)
 - Now use `pypdf` instead of `PyPDF2` in `plot.py` and `util.py`
 - Added coding suggestions made by `pylint` where possible
@@ -47,11 +101,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `main()` routine to `gcpy/file_regrid.py`; Also added updates suggested by Pylint
 - Fixed broken regridding code in `gcpy/file_regrid.py`; also refactored for clarity
 - Rewrote `Regridding.rst` page; Confirmed that regridding examples work properly
+- Now allow `plot_val` to be of type `dask.array.Array` in `plot.py` routines `six_plot` and `single_panel`
+- Now add `if` statements to turn of `Parallel()` commands when `n_jobs==1`.
+- Do not hardwire fontsize in `gcpy/plot.py`; get defaults from `gcpy_plot_style`
+- `gcpy/plot.py` has been split up into smaller modules in the `gcpy/plot` folder
+- Updated and cleaned up code in `gcpy/regrid.py`
+- Example scripts`plot_single_level` and `plot_comparisons` can now accept command-line arguments
+- Example scripts `plot_single_level.py`, `plot_comparisons.py`, `compare_diags.py` now handle GCHP restart files properly
+- Now specify the X11 backend with by setting the `MPLBACKEND` environment variable
 
 ### Fixed
 - Generalized test for GCHP or GCClassic restart file in `regrid_restart_file.py`
 - Fixed bug in transport tracer benchmark mass conservation table file write
 - Routine `create_display_name` now splits on only the first `_` in species & diag names
+- Prevent plot panels from overlapping in six-panel plots
+- Prevent colorbar tick labels from overlapping in dynamic-range ratio plots
+- Updated `seaborn` plot style names to conform to the latest matplotlib
+- Set `lev:positive` and/or `ilev:positive` properly in `regrid_restart_file.py` and `file_regrid.py`
+- Prevent overwriting of `lev` coord in `file_regrid.py` at netCDF write time
+- Fixed bug in option to allow different units when making comparison plots
 
 ### Removed
 - Removed `gchp_is_pre_13_1` arguments & code from benchmarking routines
@@ -60,6 +128,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Replaced `gcpy/benchmark/README` with `README.md`
 - Removed `gcpy_test_dir` option from `examples/diagnostics/compare_diags.*`
 - Removed `docs/environment_files/gchp_regridding.yml` environment file
+- Removed `gcpy/gcpy/benchmark/plot_driver.sh`
+- Made benchmark configuration files consistent
 
 ## [1.3.3] -- 2023-03-09
 ### Added
@@ -122,7 +192,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Now use restarts_subdir tag from YAML file for paths to restart files (@yantosca)
   - GCPy now uses proper year for dev in 1-yr benchmarks (@laestrada)
   - Fixed date string issue in benchmarking scripts (@lizziel)
-  - Updates for new GCHP restart file format (@lizziel)  
+  - Updates for new GCHP restart file format (@lizziel)
 - Updated environment.yml with package versions that work together (@yantosca)
 - Updated the AUTHORS.txt and LICENSE.txt files (@yantosca)
 
@@ -347,16 +417,3 @@ This is the first labeled version of GCPy. The primary functionality of GCPy is 
 - Support for plotting benchmark output for both GEOS-Chem Classic (lat/lon data) and GCHP (cubed-sphere data).
 
 The first official release version of GCPy, v1.0.0, will correspond with the release of GEOS-Chem 13.0.0.
-
-
-## [Unreleased]
-
-### Added
-
-### Changed
-
-### Deprecated
-
-### Fixed
-
-### Removed

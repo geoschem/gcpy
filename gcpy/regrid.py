@@ -1,20 +1,25 @@
-''' Functions for creating xesmf regridder objects '''
-
+"""
+Module containing functions for creating xESMF regridder objects.
+"""
 import os
-import xesmf as xe
-from .grid import make_grid_LL, make_grid_CS, make_grid_SG, get_input_res, call_make_grid, \
-    get_grid_extents, get_vert_grid
+import warnings
 import hashlib
+import xesmf as xe
 import numpy as np
 import xarray as xr
 import pandas as pd
 import scipy.sparse
-import warnings
+from gcpy.grid import make_grid_LL, make_grid_CS, make_grid_SG, \
+    get_input_res, call_make_grid, get_grid_extents, get_vert_grid
 
 def make_regridder_L2L(
-        llres_in, llres_out, weightsdir='.', reuse_weights=False,
+        llres_in,
+        llres_out,
+        weightsdir='.',
+        reuse_weights=False,
         in_extent=[-180, 180, -90, 90],
-        out_extent=[-180, 180, -90, 90]):
+        out_extent=[-180, 180, -90, 90]
+):
     """
     Create an xESMF regridder between two lat/lon grids
 
@@ -64,11 +69,11 @@ def make_regridder_L2L(
         weightsfile = os.path.join(
             weightsdir, 'conservative_{}_{}_{}_{}.nc'.format(
                 llres_in, llres_out, in_extent_str, out_extent_str))
-        
+
     if not os.path.isfile(weightsfile) and reuse_weights:
         #prevent error with more recent versions of xesmf
         reuse_weights=False
-        
+
     try:
         regridder = xe.Regridder(
             llgrid_in,
@@ -86,8 +91,13 @@ def make_regridder_L2L(
     return regridder
 
 
-def make_regridder_C2L(csres_in, llres_out, weightsdir='.',
-                       reuse_weights=True, sg_params=[1, 170, -90]):
+def make_regridder_C2L(
+        csres_in,
+        llres_out,
+        weightsdir='.',
+        reuse_weights=True,
+        sg_params=[1, 170, -90]
+):
     """
     Create an xESMF regridder from a cubed-sphere to lat/lon grid
 
@@ -132,7 +142,7 @@ def make_regridder_C2L(csres_in, llres_out, weightsdir='.',
         else:
             weights_fname = f'conservative_sg{sg_hash(csres_in, sf_in, tlat_in, tlon_in)}_ll{llres_out}_F{i}.nc'
             weightsfile = os.path.join(weightsdir, weights_fname)
-            
+
         if not os.path.isfile(weightsfile) and reuse_weights:
             #prevent error with more recent versions of xesmf
             reuse_weights=False
@@ -239,8 +249,13 @@ def make_regridder_S2S(
     return regridder_list
 
 
-def make_regridder_L2S(llres_in, csres_out, weightsdir='.',
-                       reuse_weights=True, sg_params=[1, 170, -90]):
+def make_regridder_L2S(
+        llres_in,
+        csres_out,
+        weightsdir='.',
+        reuse_weights=True,
+        sg_params=[1, 170, -90]
+):
     """
     Create an xESMF regridder from a lat/lon to a cubed-sphere grid
 
@@ -309,9 +324,15 @@ def make_regridder_L2S(llres_in, csres_out, weightsdir='.',
 
 
 def create_regridders(
-        refds, devds, weightsdir='.', reuse_weights=True, cmpres=None,
-        zm=False, sg_ref_params=[1, 170, -90],
-        sg_dev_params=[1, 170, -90]):
+        refds,
+        devds,
+        weightsdir='.',
+        reuse_weights=True,
+        cmpres=None,
+        zm=False,
+        sg_ref_params=[1, 170, -90],
+        sg_dev_params=[1, 170, -90]
+):
     """
     Internal function used for creating regridders between two datasets.
     Follows decision logic needed for plotting functions.
@@ -328,19 +349,22 @@ def create_regridders(
             Directory in which to create xESMF regridder NetCDF files
             Default value: '.'
         reuse_weights: bool
-            Set this flag to True to reuse existing xESMF regridder NetCDF files
-            Default value: False
+            Set this flag to True to reuse existing xESMF regridder
+            NetCDF files.  Default value: False
         cmpres: int or str
-            Specific target resolution for comparison grid used in difference and ratio plots
-            Default value: None (will follow logic chain below)
+            Specific target resolution for comparison grid used in
+            difference and ratio plots.  Default value: None (will
+            follow logic chain below)
         zm: bool
-            Set this flag to True if regridders will be used in zonal mean plotting
-            Default value: False
-        sg_ref_params: list[float, float, float] (stretch_factor, target_longitude, target_latitude)
+            Set this flag to True if regridders will be used in zonal mean
+            plotting.  Default value: False
+        sg_ref_params: list[float, float, float]
+            (stretch_factor, target_longitude, target_latitude)
             Ref grid stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
             Default value: [1, 170, -90] (no stretching)
-        sg_dev_params: list[float, float, float] (stretch_factor, target_longitude, target_latitude)
+        sg_dev_params: list[float, float, float]
+            (stretch_factor, target_longitude, target_latitude)
             Dev grid stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
             Default value: [1, 170, -90] (no stretching)
@@ -359,8 +383,9 @@ def create_regridders(
                  Regridder object between refgrid or devgrid and cmpgrid
                  (will be None if input grid is not lat/lon)
             refregridder_list, devregridder_list: list[6 xESMF regridders]
-                 List of regridder objects for each face between refgrid or devgrid and cmpgrid
-                 (will be None if input grid is not cubed-sphere)
+                 List of regridder objects for each face between refgrid
+                 or devgrid and cmpgrid (will be None if input grid is
+                 not cubed-sphere)
     """
 
     # Take two lat/lon or cubed-sphere xarray datasets and regrid them if
@@ -682,13 +707,18 @@ def regrid_comparison_data(
             new_data = reformat_dims(
                 new_data, format=data_format, towards_common=False)
             return new_data
-    else:
-        return data
+
+    return data
 
 
-def reformat_dims(ds, format, towards_common):
+def reformat_dims(
+        ds,
+        format,
+        towards_common
+):
     """
-    Reformat dimensions of a cubed-sphere / stretched-grid grid between different GCHP formats
+    Reformat dimensions of a cubed-sphere / stretched-grid grid
+    between different GCHP formats
 
     Args:
         ds: xarray Dataset
@@ -713,7 +743,7 @@ def reformat_dims(ds, format, towards_common):
             np.linspace(1, 6, 6),
             np.linspace(1, cs_res, cs_res)
         ])
-        ds_in = ds_in.assign_coords({'lat': mi})
+        ds_in = ds_in.assign_coords({"lat": mi})
         ds_in = ds_in.unstack('lat')
         return ds_in
 
@@ -724,7 +754,7 @@ def reformat_dims(ds, format, towards_common):
             cs_res = ds_out['lon'].size
         ds_out = ds_out.stack(lat=['lat_level_0', 'lat_level_1'])
         ds_out = ds_out.assign_coords({
-            'lat': np.linspace(1, 6 * cs_res, 6 * cs_res)
+            'lat': np.linspace(1, 6 * cs_res, 6 * cs_res),
         })
         return ds_out
 
@@ -749,9 +779,11 @@ def reformat_dims(ds, format, towards_common):
                 'Ydim': 'Y',
                 'time': 'T',
             },
-            'transpose': ('time', 'lev', 'nf', 'Ydim', 'Xdim')
+            'transpose': ('time', 'lev', 'nf', 'Xdim', 'Ydim')
         }
     }
+
+    # %%%% Renaming toward the common format %%%%
     if towards_common:
         # Unravel dimensions
         for unravel_callback in dim_formats[format].get('unravel', []):
@@ -759,29 +791,30 @@ def reformat_dims(ds, format, towards_common):
 
         # Rename dimensions
         ds = ds.rename(dim_formats[format].get('rename', {}))
-
         return ds
-    else:
-        # Reverse rename
-        ds = ds.rename(
-            {v: k for k, v in dim_formats[format].get('rename', {}).items()})
 
-        # Ravel dimensions
-        for ravel_callback in dim_formats[format].get('ravel', []):
-            ds = ravel_callback(ds)
 
-        # Transpose
-        if len(ds.dims) == 5 or (len(ds.dims) == 4 and 'lev' in list(
-                ds.dims) and 'time' in list(ds.dims)):
-            # full dim dataset
-            ds = ds.transpose(*dim_formats[format].get('transpose', []))
-        elif len(ds.dims) == 4:
-            # single time
-            ds = ds.transpose(*dim_formats[format].get('transpose', [])[1:])
-        elif len(ds.dims) == 3:
-            # single level / time
-            ds = ds.transpose(*dim_formats[format].get('transpose', [])[2:])
-        return ds
+    # %%%% Renaming from the common format %%%%
+    # Reverse rename
+    ds = ds.rename(
+        {v: k for k, v in dim_formats[format].get('rename', {}).items()})
+
+    # Ravel dimensions
+    for ravel_callback in dim_formats[format].get('ravel', []):
+        ds = ravel_callback(ds)
+
+    # Transpose
+    if len(ds.dims) == 5 or (len(ds.dims) == 4 and 'lev' in list(
+            ds.dims) and 'time' in list(ds.dims)):
+        # full dim dataset
+        ds = ds.transpose(*dim_formats[format].get('transpose', []))
+    elif len(ds.dims) == 4:
+        # single time
+        ds = ds.transpose(*dim_formats[format].get('transpose', [])[1:])
+    elif len(ds.dims) == 3:
+        # single level / time
+        ds = ds.transpose(*dim_formats[format].get('transpose', [])[2:])
+    return ds
 
 
 def sg_hash(
@@ -797,13 +830,19 @@ def sg_hash(
             cs_res=cs_res).encode()).hexdigest()[
         :7]
 
-def regrid_vertical_datasets(ref, dev, target_grid_choice='ref', ref_vert_params=[[],[]],
-                             dev_vert_params=[[],[]], target_vert_params=[[],[]]):
+def regrid_vertical_datasets(
+        ref,
+        dev,
+        target_grid_choice='ref',
+        ref_vert_params=[[],[]],
+        dev_vert_params=[[],[]],
+        target_vert_params=[[],[]]
+):
     """
-    Perform complete vertical regridding of GEOS-Chem datasets to 
-    the vertical grid of one of the datasets or an entirely different 
+    Perform complete vertical regridding of GEOS-Chem datasets to
+    the vertical grid of one of the datasets or an entirely different
     vertical grid.
-    
+
     Args:
         ref: xarray.Dataset
             First dataset
@@ -814,15 +853,15 @@ def regrid_vertical_datasets(ref, dev, target_grid_choice='ref', ref_vert_params
             unless target_vert_params is provided
             Default value: 'ref'
         ref_vert_params (optional): list(list, list) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format. 
+            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
             Needed if ref grid is not 47 or 72 levels
             Default value: [[], []]
         dev_vert_params (optional): list(list, list) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format. 
+            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
             Needed if dev grid is not 47 or 72 levels
             Default value: [[], []]
         target_vert_params (optional): list(list, list) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format. 
+            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
             Will override target_grid_choice as target grid
             Default value: [[], []]
     Returns:
@@ -835,30 +874,40 @@ def regrid_vertical_datasets(ref, dev, target_grid_choice='ref', ref_vert_params
     # Get mid-point pressure and edge pressures for this grid
     ref_pedge, ref_pmid, _ = get_vert_grid(ref, *ref_vert_params)
     dev_pedge, dev_pmid, _ = get_vert_grid(dev, *dev_vert_params)
-    
+
     new_ref, new_dev = ref, dev
-    
+
     if len(ref_pedge) != len(dev_pedge) or target_vert_params != [[],[]]:
         if target_vert_params != [[],[]]:
             #use a specific target grid for regridding if passed
             target_grid = vert_grid(*target_vert_params)
-            target_pedge, target_pmid = target_grid.p_edge(), target_grid.p_mid()        
+            target_pedge = target_grid.p_edge()
+            target_pmid = target_grid.p_mid()
         elif target_grid_choice == 'ref':
-            target_pedge, target_pmid = ref_pedge, ref_pmid
+            target_pedge = ref_pedge
+            target_pmid = ref_pmid
         else:
-            target_pedge, target_pmid = dev_pedge, dev_pmid
-        
-        def regrid_one_vertical_dataset(ds, ds_pedge, target_pedge, target_pmid):
+            target_pedge = dev_pedge
+            target_pmid = dev_pmid
+
+        def regrid_one_vertical_dataset(
+                ds,
+                ds_pedge,
+                target_pedge,
+                target_pmid
+        ):
             new_ds = ds
             if len(ds_pedge) != len(target_pedge):
                 #regrid all 3D (plus possible time dimension) variables
                 xmat_ds = gen_xmat(ds_pedge, target_pedge)
-                regrid_variables = [v for v in ds.data_vars if (("lat" in ds[v].dims or "Xdim" in ds[v].dims)
-                                                                 and ("lon" in ds[v].dims or "Ydim" in ds[v].dims)
-                                                                 and ("lev" in ds[v].dims))]
+                regrid_variables = [v for v in ds.data_vars if (
+                    ("lat" in ds[v].dims or "Xdim" in ds[v].dims) and \
+                    ("lon" in ds[v].dims or "Ydim" in ds[v].dims) and \
+                    ("lev" in ds[v].dims)
+                )]
                 new_ds = xr.Dataset()
                 #currently drop data vars that have lev but don't also have x and y coordinates
-                for v in (set(ds.data_vars)-set(regrid_variables)): 
+                for v in (set(ds.data_vars)-set(regrid_variables)):
                     if 'lev' not in ds[v].dims:
                         new_ds[v] = ds[v]
                 new_ds.attrs = ds.attrs
@@ -866,15 +915,29 @@ def regrid_vertical_datasets(ref, dev, target_grid_choice='ref', ref_vert_params
                     if "time" in ds[v].dims:
                         new_ds_temp = []
                         for time in range(len(ds[v].time)):
-                            new_ds_v = regrid_vertical(ds[v].isel(time=time), xmat_ds, target_pmid)
+                            new_ds_v = regrid_vertical(
+                                ds[v].isel(time=time),
+                                xmat_ds,
+                                target_pmid
+                            )
                             new_ds_temp.append(new_ds_v.expand_dims("time"))
                         new_ds[v] = xr.concat(new_ds_temp, "time")
                     else:
                         new_ds[v] = regrid_vertical(ds[v], xmat, target_pmid)
             return new_ds
-        
-        new_ref = regrid_one_vertical_dataset(ref, ref_pedge, target_pedge, target_pmid)
-        new_dev = regrid_one_vertical_dataset(dev, dev_pedge, target_pedge, target_pmid)
+
+        new_ref = regrid_one_vertical_dataset(
+            ref,
+            ref_pedge,
+            target_pedge,
+            target_pmid
+        )
+        new_dev = regrid_one_vertical_dataset(
+            dev,
+            dev_pedge,
+            target_pedge,
+            target_pmid
+        )
 
     return new_ref, new_dev
 
@@ -949,7 +1012,7 @@ def regrid_vertical(src_data_3D, xmat_regrid, target_levs=[]):
             new_coords['lons'] = (
                 ('lat', 'lon'), src_data_3D.coords['lons'].data)
         out_data = xr.DataArray(out_data,
-                                dims=tuple([dim for dim in src_data_3D.dims]),
+                                dims=tuple(list(src_data_3D.dims)),
                                 coords=new_coords,
                                 attrs=src_data_3D.attrs)
 
@@ -997,7 +1060,6 @@ def gen_xmat(p_edge_from, p_edge_to):
         while p_edge_to[i_to + 1] > p_edge_from[0]:
             i_to += 1
 
-    frac_to_total = 0.0
 
     i_weight = 0
     for i_from in range(first_from, n_from):
@@ -1007,7 +1069,6 @@ def gen_xmat(p_edge_from, p_edge_to):
         # Climb the "to" pressures until you intersect with this box
         while i_to < n_to and p_base_from <= p_edge_to[i_to + 1]:
             i_to += 1
-            frac_to_total = 0.0
 
         # Now, loop over output layers as long as there is any overlap,
         # i.e. as long as the base of the "to" layer is below the
