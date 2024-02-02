@@ -1,7 +1,11 @@
 ---
 # ======================================================================
-# Environment for building ReadTheDocs documentation
-# This uses a newer Python version than the GCPy environment.
+# ReadTheDocs environment file
+#
+# If you wish to build a Mamba/Conda environment with the dependencies
+# needed for building the ReadTheDocs documentation, use:
+#
+# $ mamba env create -n rtd_env --file=read_the_docs_environment.yml
 # ======================================================================
 name: rtd_env
 channels:

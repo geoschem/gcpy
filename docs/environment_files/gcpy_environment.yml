@@ -2,22 +2,19 @@
 # ======================================================================
 # GCPy environment file
 #
-# Recommended installation: with Mambaforge
+# If you wish to build a Mamba/Conda environment with the dependencies
+# for GCPy, use this command:
+#
 # $ mamba env create -n gcpy_env --file=/path/to/gcpy/environment.yml
 #
 # These package versions have been proven to work together.
 # See: https://github.com/geoschem/gcpy/issues/284
-#
-# NOTE: Use the YAML file read_the_docs_environment.yml to generate
-# a separate Mamba/Conda environment for generating the ReadTheDocs
-# documentation.
-# ======================================================================
+# =====================================================================
 name: gcpy_env
 channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - awscli==2.13.39                 # Utilities for AWS cloud
   - cartopy==0.22.0                 # Geospatial data processing
   - cf_xarray==0.8.4                # CF conventions for xarray
   - dask==2023.9.2                  # Parallel library; backend for xarray
