@@ -1995,8 +1995,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "Restart",
                     bmk_end_ref,
                     is_gchp=True,
-                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
-                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
                         "is_pre_14.0"]
                 )
                 devareapath = get_filepath(
