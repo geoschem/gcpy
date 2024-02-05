@@ -128,8 +128,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     )
     gchp_vs_gcc_refrstdir = os.path.join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["restarts_subdir"]
+        config["data"]["ref"]["gcc"]["dir"],
+        config["data"]["ref"]["gcc"]["restarts_subdir"]
     )
     gchp_vs_gchp_refrstdir = os.path.join(
         config["paths"]["main_dir"],
