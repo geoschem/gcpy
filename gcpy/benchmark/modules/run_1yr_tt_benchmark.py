@@ -810,6 +810,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "is_pre_14.0"]
                 )
 
+                # Create tables
+                bmk.make_benchmark_mass_tables(
+                    refpath,
+                    gchp_vs_gcc_refstr,
+                    devpath,
+                    gchp_vs_gcc_devstr,
+                    dst=gchp_vs_gcc_tablesdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    dev_met_extra=devareapath
+                )
+
             # Create tables in parallel
             # Turn off parallelization if n_jobs==1
             if config["options"]["n_cores"] != 1:
