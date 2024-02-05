@@ -128,8 +128,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     )
     gchp_vs_gcc_refrstdir = os.path.join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["restarts_subdir"]
+        config["data"]["ref"]["gcc"]["dir"],
+        config["data"]["ref"]["gcc"]["restarts_subdir"]
     )
     gchp_vs_gchp_refrstdir = os.path.join(
         config["paths"]["main_dir"],
@@ -808,6 +808,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                     gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
                         "is_pre_14.0"]
+                )
+
+                # Create tables
+                bmk.make_benchmark_mass_tables(
+                    refpath,
+                    gchp_vs_gcc_refstr,
+                    devpath,
+                    gchp_vs_gcc_devstr,
+                    dst=gchp_vs_gcc_tablesdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    dev_met_extra=devareapath
                 )
 
             # Create tables in parallel
