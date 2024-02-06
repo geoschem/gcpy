@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Script `./release/changeVersionNumbers.sh`, used to update version numbers in various files before release
 - Mamba/Conda enviroment file `docs/environment_files/read_the_docs_environment.yml`, for building ReadTheDocs documentation
 - Environment files `docs/environment_files/gcpy_requirements.txt` and `docs/environment_files/read_the_docs_requirements.txt`
+- New benchmark script `gcpy/benchmark/modules/benchmark_models_vs_ozonesondes.py`
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
