@@ -9,7 +9,8 @@ import pandas as pd
 import xarray as xr
 from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
-from gcpy.grid import get_nearest_model_data
+from gcpy.grid import _GEOS_72L_AP, _GEOS_72L_BP, \
+    get_nearest_model_data, vert_grid
 from gcpy.util import verify_variable_type
 from gcpy.benchmark.modules.benchmark_utils import get_geoschem_level_metadata
 
@@ -27,7 +28,7 @@ def get_model_ozone_data(file_path):
     data (xr.DataArray) : Ozone data [ppbv]
     """
     verify_variable_type(file_path, str)
-    
+
     # Read data (if path has wildcard, will read multiple data files)
     data = xr.open_mfdataset(file_path)
 
@@ -44,6 +45,7 @@ def get_model_ozone_data(file_path):
 def get_ref_and_dev_model_data(
         ref_dir,
         dev_dir,
+        collection="SpeciesConc",
         year="2019"
 ):
     """
@@ -56,7 +58,8 @@ def get_ref_and_dev_model_data(
 
     Keyword Args (optional):
     ------------------------
-    year    (str) : Benchmark year (default: 2019)
+    collection (str) : Diagnostic collection (default: SpeciesConc)
+    year       (str) : Benchmark year (default: 2019)
 
     Returns:
     --------
@@ -64,13 +67,13 @@ def get_ref_and_dev_model_data(
     """
     verify_variable_type(ref_dir, str)
     verify_variable_type(dev_dir, str)
-    
+
     # Get the model data
     data_ref = get_model_ozone_data(
-        f"{ref_dir}/GEOSChem.SpeciesConc.{year}*.nc4"
+        f"{ref_dir}/GEOSChem.{collection}.{year}*.nc4"
     )
     data_dev = get_model_ozone_data(
-        f"{dev_dir}/GEOSChem.SpeciesConc.{year}*.nc4"
+        f"{dev_dir}/GEOSChem.{collection}.{year}*.nc4"
     )
 
     return data_ref, data_dev
@@ -83,7 +86,7 @@ def get_obs_ozone_data(file_path):
     Args:
     -----
     file_path (str) : Path to ozone sonde file
-    
+
     Returns:
     --------
     data (pd.DataFrame) : Ozonesonde observations at various sites (ppbv)
@@ -105,7 +108,7 @@ def get_seasonal_means(obs, ref, dev, months):
     verify_variable_type(ref, pd.DataFrame)
     verify_variable_type(dev, pd.DataFrame)
     verify_variable_type(months, list)
-    
+
     # Filter data for season
     seasonal_obs = obs[(obs['month'].isin(months))]
     seasonal_ref = ref[(ref["month"].isin(months))]
@@ -132,11 +135,15 @@ def get_nearest_model_data_to_obs(
     inserts the GEOS-Chem pressure levels into the dataset.
     """
     verify_variable_type(gc_data, (xr.Dataset, xr.DataArray))
-    verify_variable_type(gc_pressure, np.ndarray)
     verify_variable_type(gc_cs_grid, (xr.Dataset, type(None)))
-    
+
     # Nearest data to the observation (pd.DataFrame)
     data = get_nearest_model_data(gc_data, lon, lat, gc_cs_grid).reset_index()
+
+    # NOTE: This would more accurately represent the pressure coordinate.
+    # Need to get approx surface pressure at each site.
+    #pmid = vert_grid(_GEOS_72L_AP, _GEOS_72L_BP, p_sfc=X).p_mid()
+    #pmid = np.tile(pmid, 12)
 
     # Add "Pressure" and "month" columns
     data.insert(4, "pressure", gc_pressure)
@@ -164,7 +171,7 @@ def plot_one_site(
 ):
     """
     """
-                
+
     # Plotting observations with error bars
     axes_subplot.errorbar(
         mean_obs,
@@ -196,7 +203,6 @@ def plot_one_site(
         label=gc_dev_label,
     )
 
-
     # Inverting y-axis and setting y-axis to start from 1000 hPa
     axes_subplot.invert_yaxis()
     axes_subplot.set_ylim(1000, 50)
@@ -218,7 +224,7 @@ def plot_one_site(
     axes_subplot.set_xticklabels(xtick_labels)
 
     # Add a legend in the fourth column and first row
-    if season_idx == 1 and site_idx == 4:  
+    if season_idx == 1 and site_idx == 4:
         axes_subplot.legend(
             loc='lower right',
             fontsize='large'
@@ -233,12 +239,17 @@ def plot_one_site(
             transform=axes_subplot.transAxes,
             fontsize=20,
             verticalalignment='top',
-        )                    
+        )
 
 def page_adjustments(fig):
     """
+    Adjusts the page settings after all the subplots have been made.
+
+    Args:
+    -----
+    fig (mpl.Figure) : Figure object
     """
-        
+
     # Eliminating space between subplots completely
     plt.subplots_adjust(wspace=0, hspace=0)
 
@@ -264,7 +275,7 @@ def page_adjustments(fig):
 
     #plt.tight_layout()
 
-        
+
 def plot_the_data(
         obs_data,
         gc_ref_label,
@@ -276,7 +287,7 @@ def plot_the_data(
         gc_cs_grid_ref=None,
         gc_cs_grid_dev=None,
 ):
-    """ 
+    """
     Creates plots of model data vs. ozonesonde data
 
     Args:
@@ -287,9 +298,9 @@ def plot_the_data(
     gc_dev_label (str         ) : Label for Dev model data
     data_dev     (xr.DataArray) : Dev model data
     gc_pressure  (np.ndarray  ) : GC pressures (hPa), tiled x 12 months
-    pdf_path     (str         ) : Path to PDF file that will be created    
+    pdf_path     (str         ) : Path to PDF file that will be created
     """
-    
+
     # Define seasons
     seasons = {
         'DJF': [12, 1, 2],
@@ -307,7 +318,8 @@ def plot_the_data(
     # ==================================================================
     # Loop over pages (4 sites per page)
     # ==================================================================
-    for page_idx in range(1): # range(0, len(sorted_sites), 4):
+    for page_idx in range(1):
+    #for page_idx in range(0, len(sorted_sites), 4):
         fig, axs = plt.subplots(
             4, 4,
             figsize=(15, 15),
@@ -342,7 +354,7 @@ def plot_the_data(
                 gc_pressure,
                 gc_cs_grid=gc_cs_grid_dev
             )
-            
+
             # Adding site names at the top of each column
             axs[0, site_idx-1].set_title(f'{site} ({lat}°)', size=15)
 
@@ -361,7 +373,7 @@ def plot_the_data(
 
                 # Create a plot for a single site (all seasons)
                 plot_one_site(
-                    axes_subplot=axs[season_idx-1, site_idx-1], 
+                    axes_subplot=axs[season_idx-1, site_idx-1],
                     season=season,
                     season_idx=season_idx,
                     site_idx=site_idx,
@@ -379,7 +391,7 @@ def plot_the_data(
         page_adjustments(fig)
         pdf_pages.savefig()
         plt.close()
-    
+
     # ================================================================
     # Save the PDF
     # ================================================================
@@ -388,15 +400,17 @@ def plot_the_data(
 
 
 def main():
+    """
+    Main program (for testing)
+    """
 
     # Define the base directories for the two models (customized)
     gc_ref_label = '14.2.0-rc.2'
     gc_dev_label = '14.3.0-rc.0'
     model_root_dir = "/n/holyscratch01/jacob_lab/ryantosca/BM/1yr"
     obs_root_dir = "/n/jacob_lab/Lab/obs_data_for_bmk/atom_obs"
-    
+
     # figure saveout path
-#    pdf_file = '/n/holyscratch01/jacob_lab/ryantosca/BM/1yr/BenchmarkResults/GCC_version_comparison/ModelVsObs/ozonesondes.pdf'
     pdf_file = '/n/holyscratch01/jacob_lab/ryantosca/BM/1yr/ozonesondes.pdf'
 
     # Get the model data
