@@ -1503,10 +1503,11 @@ def make_benchmark_conc_plots(
             for _, filecat in enumerate(catdict)
         )
     else:
+        results = []
         for _, filecat in enumerate(catdict):
-            results = createplots(filecat)
+            results.append(createplots(filecat))
     # --------------------------------------------
-
+    
     dict_sfc = {list(result.keys())[0]: result[list(
         result.keys())[0]]['sfc'] for result in results}
     dict_500 = {list(result.keys())[0]: result[list(
@@ -1868,8 +1869,9 @@ def make_benchmark_emis_plots(
                 for c in emis_cats
             )
         else:
+            results = []
             for c in emis_cats:
-                results = createfile_hco_cat(c)
+                results.append(createfile_hco_cat(c))
         # ---------------------------------------
 
         dict_emis = {list(result.keys())[0]: result[list(result.keys())[0]]
@@ -1981,8 +1983,9 @@ def make_benchmark_emis_plots(
                 for _, filecat in enumerate(catdict)
             )
         else:
+            results = []
             for _, filecat in enumerate(catdict):
-                results = createfile_bench_cat(filecat)
+                results.append(createfile_bench_cat(filecat))
         #------------------------------------------------
 
         allcatspc = [spc for result in results for spc in result]

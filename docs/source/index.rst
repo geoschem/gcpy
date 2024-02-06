@@ -2,6 +2,19 @@
 GCPy: GEOS-Chem Python toolkit
 ##############################
 
+.. raw:: html
+
+   <p>
+   <a href="https://github.com/geoschem/gcpy/releases"><img src="https://img.shields.io/github/v/release/geoschem/gcpy?include_prereleases&label=Latest%20Pre-Release"></a>
+   <a href="https://github.com/geoschem/gcpy/releases"><img src="https://img.shields.io/github/v/release/geoschem/gcpy?label=Latest%20Stable%20Release"></a>
+   <a href="https://doi.org/10.5281/zenodo.3689589"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.3689589.svg" alt="DOI"></a>
+   <br />
+   <a href="https://github.com/geoschem/gcpy/blob/main/LICENSE.txt"><img src="https://img.shields.io/badge/License-MIT-blue.svg"></a>
+   <a href="https://github.com/geoschem/gcpy/releases/"><img src="https://img.shields.io/github/release-date/geoschem/gcpy"></a>
+   <a href="https://gcpy.readthedocs.io/en/latest/"><img src="https://img.shields.io/readthedocs/gcpy?label=ReadTheDocs"></a>
+   <a href="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment.yml"><img src="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment.yml/badge.svg"></a>
+   </p>
+
 Welcome to the GCPy ReadTheDocs documentation! This site provides documentation
 on the functionality of GCPy and instructions for common use cases.
 

@@ -42,7 +42,7 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.4.0. Edit this version ID if releasing
+This script corresponds with GCPy 1.4.2. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -60,6 +60,7 @@ from gcpy.util import get_filepath, get_filepaths
 from gcpy import benchmark_funcs as bmk
 import gcpy.budget_tt as ttbdg
 import gcpy.ste_flux as ste
+import gcpy.benchmark.modules.benchmark_utils as bmk_util
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -127,8 +128,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     )
     gchp_vs_gcc_refrstdir = os.path.join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["restarts_subdir"]
+        config["data"]["ref"]["gcc"]["dir"],
+        config["data"]["ref"]["gcc"]["restarts_subdir"]
     )
     gchp_vs_gchp_refrstdir = os.path.join(
         config["paths"]["main_dir"],
@@ -298,30 +299,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         sec_per_yr_dev += days_in_mon * 86400.0
 
     # =======================================================================
-    # Print the list of plots & tables to the screen
+    # Print the list of plots & tables being generated
     # =======================================================================
-    print("The following plots and tables will be created for {}:".format(bmk_type))
-    if config["options"]["outputs"]["plot_conc"]:
-        print(" - Concentration plots")
-    if config["options"]["outputs"]["plot_wetdep"]:
-        print(" - Convective and large-scale wet deposition plots")
-    if config["options"]["outputs"]["rnpbbe_budget"]:
-        print(" - Radionuclides budget table")
-    if config["options"]["outputs"]["operations_budget"]:
-        print(" - Operations budget table")
-    if config["options"]["outputs"]["ste_table"]:
-        print(" - Table of strat-trop exchange")
-    if config["options"]["outputs"]["mass_table"]:
-        print(" - Table of species mass")
-    if config["options"]["outputs"]["cons_table"]:
-        print(" - Table of mass conservation")
-    print("Comparisons will be made for the following combinations:")
-    if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
-        print(" - GCC vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
-        print(" - GCHP vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
-        print(" - GCHP vs GCHP")
+    bmk_util.print_benchmark_info(config)
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCC vs GCC benchmark plots and tables
@@ -540,8 +520,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gcc_vs_gcc_mass_table(mon)
+                    results.append(gcc_vs_gcc_mass_table(mon))
 
         # ==================================================================
         # GCC vs GCC operations budgets tables
@@ -829,6 +810,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "is_pre_14.0"]
                 )
 
+                # Create tables
+                bmk.make_benchmark_mass_tables(
+                    refpath,
+                    gchp_vs_gcc_refstr,
+                    devpath,
+                    gchp_vs_gcc_devstr,
+                    dst=gchp_vs_gcc_tablesdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    dev_met_extra=devareapath
+                )
+
             # Create tables in parallel
             # Turn off parallelization if n_jobs==1
             if config["options"]["n_cores"] != 1:
@@ -837,8 +832,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gchp_vs_gcc_mass_table(mon)
+                    results.append(gchp_vs_gcc_mass_table(mon))
 
         # ==================================================================
         # GCHP vs GCC operations budgets tables
@@ -1112,8 +1108,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "Restart",
                     bmk_end_ref,
                     is_gchp=True,
-                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
-                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
                         "is_pre_14.0"]
                 )
                 devareapath = get_filepath(
@@ -1149,8 +1145,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gchp_vs_gchp_mass_table(mon)
+                    results.append(gchp_vs_gchp_mass_table(mon))
 
         # ==================================================================
         # GCHP vs GCHP operations budgets tables

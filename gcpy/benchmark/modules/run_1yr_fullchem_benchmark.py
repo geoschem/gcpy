@@ -43,7 +43,7 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.4.0. Edit this version ID if releasing
+This script corresponds with GCPy 1.4.2. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -63,6 +63,11 @@ import gcpy.oh_metrics as oh
 import gcpy.budget_ox as ox
 from gcpy import benchmark_funcs as bmk
 import gcpy.benchmark.modules.benchmark_models_vs_obs as mvo
+import gcpy.benchmark.modules.benchmark_utils as bmk_util
+#TODO: Peel out routines from benchmark_funcs.py into smaller
+# routines in the gcpy/benchmark/modules folder, such as these:
+from gcpy.benchmark.modules.benchmark_drydep \
+    import drydepvel_species, make_benchmark_drydep_plots
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -305,42 +310,14 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     bmk_mons_gchp_dev = all_months_gchp_dev[bmk_mon_inds]
     bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
 
+    # List of species for dry deposition velocity plots
+        
+    # Get common variables between Ref 
+    
     # ======================================================================
-    # Print the list of plots & tables to the screen
+    # Print the list of plots & tables being generated
     # ======================================================================
-
-    print(f"The following plots and tables will be created for {bmk_type}:")
-    if config["options"]["outputs"]["plot_conc"]:
-        print(" - Concentration plots")
-    if config["options"]["outputs"]["plot_emis"]:
-        print(" - Emissions plots")
-    if config["options"]["outputs"]["plot_jvalues"]:
-        print(" - J-values (photolysis rates) plots")
-    if config["options"]["outputs"]["plot_aod"]:
-        print(" - Aerosol optical depth plots")
-    if config["options"]["outputs"]["ops_budget_table"]:
-        print(" - Operations budget tables")
-    if config["options"]["outputs"]["aer_budget_table"]:
-        print(" - Aerosol budget/burden tables")
-    if config["options"]["outputs"]["emis_table"]:
-        print(" - Table of emissions totals by species and inventory")
-    if config["options"]["outputs"]["mass_table"]:
-        print(" - Table of species mass")
-    if config["options"]["outputs"]["OH_metrics"]:
-        print(" - Table of OH metrics")
-    if config["options"]["outputs"]["ste_table"]:
-        print(" - Table of strat-trop exchange")
-    if config["options"]["outputs"]["plot_models_vs_obs"]:
-        print(" - Plots of models vs. observations")
-    print("Comparisons will be made for the following combinations:")
-    if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
-        print(" - GCC vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
-        print(" - GCHP vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
-        print(" - GCHP vs GCHP")
-    if config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"]:
-        print(" - GCHP vs GCC diff of diffs")
+    bmk_util.print_benchmark_info(config)
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCC vs GCC benchmark plots and tables
@@ -651,6 +628,67 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
         # ==================================================================
+        # GCC vs. GCC drydep plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_drydep"]:
+            print("\n%%% Creating GCC vs. GCC drydep plots %%%")
+
+            # --------------------------------------------------------------
+            # GCC vs GCC drydep plots: Annual mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "DryDep",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "DryDep",
+                all_months_dev
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            make_benchmark_drydep_plots(
+                ref,
+                gcc_vs_gcc_refstr,
+                dev,
+                gcc_vs_gcc_devstr,
+                dst=gcc_vs_gcc_resultsdir,
+                subdst="AnnualMean",
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()
+            )
+
+            # --------------------------------------------------------------
+            # GCC vs GCC drydep plots: Seasonal
+            # --------------------------------------------------------------
+            for mon in range(bmk_n_months):
+                print(f"\nCreating plots for {bmk_mon_strs[mon]}")
+
+                # Create plots
+                mon_ind = bmk_mon_inds[mon]
+                make_benchmark_drydep_plots(
+                    ref[mon_ind],
+                    gcc_vs_gcc_refstr,
+                    dev[mon_ind],
+                    gcc_vs_gcc_devstr,
+                    dst=gcc_vs_gcc_resultsdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    weightsdir=config["paths"]["weights_dir"],
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"],
+                    varlist=drydepvel_species()
+                )
+
+        # ==================================================================
         # GCC vs GCC mass tables
         # ==================================================================
         if config["options"]["outputs"]["mass_table"]:
@@ -694,8 +732,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gcc_vs_gcc_mass_table(mon)
+                    results.append(gcc_vs_gcc_mass_table(mon))
 
         # ==================================================================
         # GCC vs GCC operations budgets tables
@@ -741,8 +780,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gcc_vs_gcc_ops_budg(mon)
+                    results.append(gcc_vs_gcc_ops_budg(mon))
 
         # ==================================================================
         # GCC vs GCC aerosols budgets/burdens tables
@@ -1195,6 +1235,68 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
         # ==================================================================
+        # GCHP vs. GCC drydep plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_drydep"]:
+            print("\n%%% Creating GCHP vs. GCC drydep plots %%%")
+
+            # --------------------------------------------------------------
+            # GCHP vs GCC drydep plots: Annual mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "DryDep",
+                all_months_dev
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gcc_devdir,
+                "DryDep",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            make_benchmark_drydep_plots(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                dst=gchp_vs_gcc_resultsdir,
+                subdst="AnnualMean",
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()                
+            )
+
+            # --------------------------------------------------------------
+            # GCHP vs GCC drydep plots: Seasonal
+            # --------------------------------------------------------------
+            for mon in range(bmk_n_months):
+                print(f"\nCreating plots for {bmk_mon_strs[mon]}")
+
+                # Create plots
+                mon_ind = bmk_mon_inds[mon]
+                make_benchmark_drydep_plots(
+                    ref[mon_ind],
+                    gchp_vs_gcc_refstr,
+                    dev[mon_ind],
+                    gchp_vs_gcc_devstr,
+                    dst=gchp_vs_gcc_resultsdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    weightsdir=config["paths"]["weights_dir"],
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"],
+                    varlist=drydepvel_species()
+                )
+
+        # ==================================================================
         # GCHP vs GCC global mass tables
         # ==================================================================
         if config["options"]["outputs"]["mass_table"]:
@@ -1255,8 +1357,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gchp_vs_gcc_mass_table(mon)
+                    results.append(gchp_vs_gcc_mass_table(mon))
 
         # ==================================================================
         # GCHP vs GCC operations budgets tables
@@ -1311,8 +1414,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gchp_vs_gcc_ops_budg(mon)
+                    results.append(gchp_vs_gcc_ops_budg(mon))
 
         # ==================================================================
         # GCHP vs GCC aerosol budgets and burdens tables
@@ -1787,6 +1891,71 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
         # ==================================================================
+        # GCHP vs GCHP drydep plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_drydep"]:
+            print("\n%%% Creating GCHP vs. GCHP drydep plots %%%")
+
+            # --------------------------------------------------------------
+            # GCHP vs GCHP drydep: Annual Mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gchp_refdir,
+                "DryDep",
+                all_months_gchp_ref,
+                is_gchp=True
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gchp_devdir,
+                "DryDep",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            make_benchmark_drydep_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                dst=gchp_vs_gchp_resultsdir,
+                subdst="AnnualMean",
+                cmpres=cmpres,
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()                
+            )
+
+            # --------------------------------------------------------------
+            # GCHP vs GCHP drydep plots: Seasonal
+            # --------------------------------------------------------------
+            for mon in range(bmk_n_months):
+                print(f"\nCreating plots for {bmk_mon_strs[mon]}")
+
+                # Create plots
+                mon_ind = bmk_mon_inds[mon]
+                make_benchmark_drydep_plots(
+                    ref[mon_ind],
+                    gchp_vs_gchp_refstr,
+                    dev[mon_ind],
+                    gchp_vs_gchp_devstr,
+                    dst=gchp_vs_gchp_resultsdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    cmpres=cmpres,
+                    weightsdir=config["paths"]["weights_dir"],
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"],
+                    varlist=drydepvel_species()
+                )
+
+        # ==================================================================
         # GCHP vs GCHP global mass tables
         # ==================================================================
         if config["options"]["outputs"]["mass_table"]:
@@ -1826,8 +1995,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "Restart",
                     bmk_end_ref,
                     is_gchp=True,
-                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
-                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
                         "is_pre_14.0"]
                 )
                 devareapath = get_filepath(
@@ -1863,8 +2032,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gchp_vs_gchp_mass_table(mon)
+                    results.append(gchp_vs_gchp_mass_table(mon))
 
         # ==================================================================
         # GCHP vs GCHP operations budgets tables
@@ -1921,8 +2091,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     for mon in range(bmk_n_months)
                 )
             else:
+                results = []
                 for mon in range(bmk_n_months):
-                    results = gchp_vs_gchp_ops_budg(mon)
+                    results.append(gchp_vs_gchp_ops_budg(mon))
 
         # ==================================================================
         # GCHP vs GCHP aerosol budgets and burdens tables
