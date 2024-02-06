@@ -1,9 +1,9 @@
 ---
 #
-# GitHub action to build the GCPy production environment with micromamba
+# GitHub action to build the ReadTheDocs environment with micromamba
 # See: https://github.com/marketplace/actions/setup-micromamba
 #
-name: build-gcpy-environment
+name: build-rtd-environment
 
 on:
   push:
@@ -21,18 +21,17 @@ jobs:
     steps:
       - name: Checkout the GCPy repository
         uses: actions/checkout@v4
-      - name: Create "gcpy_env" environment
+      - name: Create "rtd_env" environment
         uses: mamba-org/setup-micromamba@v1
         with:
           micromamba-version: 'latest'
-          environment-file: docs/environment_files/gcpy_environment.yml
+          environment-file: docs/environment_files/read_the_docs_environment.yml
           init-shell: bash
           cache-environment: false
           generate-run-shell: true
           post-cleanup: 'all'
-      - name: Test if "import gcpy" works
-        run: python -c "import gcpy"
-        shell: micromamba-shell {0}
-      - name: Test if we can create a plot
-        run: python -m gcpy.examples.plotting.create_test_plot
+      - name: Get version numbers of packages
+        run: |
+          python --version
+          sphinx-autobuild --version
         shell: micromamba-shell {0}

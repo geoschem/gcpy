@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Badges in `docs/source/index.rst`
 - GitHub action to push GCPy releases to PyPi
 - Script `./release/changeVersionNumbers.sh`, used to update version numbers in various files before release
+- Mamba/Conda enviroment file `docs/environment_files/read_the_docs_environment.yml`, for building ReadTheDocs documentation
+- Environment files `docs/environment_files/gcpy_requirements.txt` and `docs/environment_files/read_the_docs_requirements.txt`
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
@@ -20,6 +22,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - YAML tag `operations_budget` is now `ops_budget_table` in `gcpy/benchmark/config/1yr_tt_benchmark.yml`
 - Now require `matplotlib=3.8.0` in `docs/environment_files/environment.yml` (with other pegged versions)
 - Now run the `stale` GitHub action at 00:00 UTC on the 1st of each month
+- Renamed `docs/environment_files/environment.yml` to `gcpy_environment.yml`
+- `environment.yml` links to `docs/environment_files/gcpy_environment.yml`
+- `requirements.txt` links to `docs/environment_files/requirements.txt`
+- Python packages for RTD documenation builds from `docs/environment_files/environment.yml`
 
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
@@ -34,6 +40,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Example script `gcpy/examples/plotting/mda8_o3_timeseries.py`
 - Removed `Pylint` GitHub action
 
+### Removed
+- Environment file `docs/environment_files/environment.yml`
+- Environment file `docs/environment_files/requirements.txt`
+- Removed `awscli` from the GCPy environment; version 2 is no longer available on conda-forge or PyPi
+
 ## [1.4.2] - 2024-01-26
 ### Added
 - Example script `create_test_plot.py`, which can be used to check that GCPy has been installed properly
@@ -42,7 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - GitHub action `build-test-environment` to test the environment specified in `testing.yml`
 
 ### Changed
-- `build-gcpy-environment` GitHub action now runs with several Python versions 
+- `build-gcpy-environment` GitHub action now runs with several Python versions
 
 ### Fixed
 - Prevent overwriting of the `results` variable when parallel plotting is deactivated (`n_cores: 1`)
