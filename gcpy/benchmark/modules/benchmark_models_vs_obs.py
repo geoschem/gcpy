@@ -25,6 +25,8 @@ from gcpy.constants import skip_these_vars
 from gcpy.util import verify_variable_type, dataset_reader, make_directory
 from gcpy.cstools import extract_grid
 from gcpy.grid import get_nearest_model_data
+from gcpy.benchmark.modules.benchmark_utils import get_geoschem_level_metadata
+
 
 def read_nas(
         input_file,
@@ -368,55 +370,6 @@ def get_nearest_model_data_to_obs(
     rows[good] = True
 
     return dframe[rows].set_index("time")
-
-
-def get_geoschem_level_metadata(
-        filename=None,
-        search_key=None,
-        verbose=False,
-):
-    """
-    Reads a comma-separated variable (.csv) file with GEOS-Chem vertical
-    level metadata and returns it in a pandas.DataFrame object.
-
-    Args:
-    -----
-    filename : str
-        Name of the comma-separated variable to read.
-        Default value: "__file__/GC_72_vertical_levels.csv"
-
-    Keyword Args:
-    -------------
-    search_key : str
-        If present, will return metadata that matches this value.
-        Default: None
-
-    verbose : bool
-        Toggles verbose printout on (True) or off (False).
-        Default value: True
-
-    Returns:
-    --------
-    metadata : pandas.DataFrame
-        Metadata for each of the GEOS-Chem vertical levels.
-    """
-    if filename is None:
-        filename = os.path.join(
-            os.path.dirname(__file__),
-            "GC_72_vertical_levels.csv"
-        )
-
-    try:
-        if verbose:
-            print(f"get_geoschem_level_metadata: Reading {filename}")
-        metadata = pd.read_csv(filename)
-    except (IOError, OSError, FileNotFoundError) as exc:
-        msg = f"Could not read GEOS-Chem level metadata in {filename}!"
-        raise exc(msg) from exc
-
-    if search_key is None:
-        return metadata
-    return metadata[search_key]
 
 
 def prepare_data_for_plot(
