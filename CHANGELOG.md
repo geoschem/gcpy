@@ -23,13 +23,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Renamed `docs/environment_files/environment.yml` to `gcpy_environment.yml`
 - `environment.yml` links to `docs/environment_files/gcpy_environment.yml`
 - `requirements.txt` links to `docs/environment_files/requirements.txt`
+- Python packages for RTD documenation builds from `docs/environment_files/environment.yml`
 
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
 - Prevent an import error by using `seaborn-v0_8-darkgrid` in`gcpy/benchmark/modules/benchmark_models_vs_obs.py`
 
 ### Removed
-- Python packages for RTD documenation builds from `docs/environment_files/environment.yml`
 - Environment file `docs/environment_files/environment.yml`
 - Environment file `docs/environment_files/requirements.txt`
 - Removed `awscli` from the GCPy environment; version 2 is no longer available on conda-forge or PyPi
