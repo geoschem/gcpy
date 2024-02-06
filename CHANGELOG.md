@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
 - Bump pypdf from 3.16.1 to 3.17.0 (dependabot suggested this)
 - YAML tag `operations_budget` is now `ops_budget_table` in `gcpy/benchmark/config/1yr_tt_benchmark.yml`
+- Now require `matplotlib=3.8.0` in `docs/environment_files/environment.yml` (with other pegged versions)
+- Now run the `stale` GitHub action at 00:00 UTC on the 1st of each month
 
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
@@ -25,6 +27,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `gcpy/file_regrid.py` now creates GCHP files with `DELP_DRY` instead of `DELPDRY`
 - Fixed bugs in GCHP vs GCHP sections of 1-yr benchmark run scripts to allow comparison of GCHP runs with different grid resolutions
 - Fixed silent bug in transport tracer benchmark GCC vs GCHP mass tables preventing them from being generated
+- Import error in `gcpy/examples/diagnostics/compare_diags.py`
+- Added missing `n_cores` to `gcpy/examples/diagnostics/compare_diags.yml`
+
+### Removed
+- Example script `gcpy/examples/plotting/mda8_o3_timeseries.py`
+- Removed `Pylint` GitHub action
 
 ## [1.4.2] - 2024-01-26
 ### Added
