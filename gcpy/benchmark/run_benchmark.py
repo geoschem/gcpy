@@ -671,7 +671,7 @@ def run_benchmark_default(config):
                 collections = [
                     'AerosolMass',
                     'Aerosols',
-                    'DryDep',
+                    #'DryDep',
                     'Emissions',
                     'JValues',
                     'Metrics',
