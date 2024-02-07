@@ -4558,12 +4558,15 @@ def make_benchmark_operations_budget(
     # Loop over sections (only those with data in files)
     for gc_section in gc_sections:
 
+        # Keep track of progress in log
+        print(f"  {gc_section}")
+
         # Loop over species in that section
         for i, spc in enumerate(spclist):
 
-            # Keep track of progress
-            if (i + 1) % 50 == 0:
-                print(f"  {gc_section}: species {i + 1} of {n_spc}")
+            # Keep track of progress (debugging print)
+            #if (i + 1) % 50 == 0:
+            #    print(f"  {gc_section}: species {i + 1} of {n_spc}")
 
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
@@ -4620,14 +4623,14 @@ def make_benchmark_operations_budget(
     # Compute Strat for each data operation (if applicable)
     # ------------------------------------------
     if compute_strat:
-        print('Computing Strat budgets from Trop and Full...')
+        print('Computing Strat budgets from Trop and Full')
 
         # Loop over species
         for i, spc in enumerate(spclist):
 
-            # Keep track of progress
-            if (i + 1) % 50 == 0:
-                print(f"  Strat: species {i + 1} of {n_spc}")
+            # Keep track of progress (debugging print)
+            #if (i + 1) % 50 == 0:
+            #    print(f"  Strat: species {i + 1} of {n_spc}")
 
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
@@ -4687,12 +4690,15 @@ def make_benchmark_operations_budget(
         # Loop over all column sections
         for col_section in col_sections:
 
+            # Keep track of progress in log
+            print(f"  {col_section}")
+
             # Loop over species
             for i, spc in enumerate(spclist):
 
-                # Keep track of progress
-                if (i + 1) % 50 == 0:
-                    print(f"  {col_section}: species {i + 1} of {n_spc}")
+                # Keep track of progress (debugging print)
+                #if (i + 1) % 50 == 0:
+                #    print(f"  {col_section}: species {i + 1} of {n_spc}")
 
                 # Get the accumulation dataframe row to fill.Skip if not found.
                 dfrow = (df["Column_Section"] == col_section) \
