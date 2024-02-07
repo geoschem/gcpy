@@ -248,49 +248,58 @@ def get_grid_extents(data, edges=True):
         return -180, 180, -90, 90
 
 
-def get_vert_grid(dataset, AP=[], BP=[]):
+def get_vert_grid(
+        dataset,
+        AP=None,
+        BP=None,
+        p_sfc=1013.25):
     """
     Determine vertical grid of input dataset
 
     Args:
-        dataset: xarray Dataset
-            A GEOS-Chem output dataset
+    -----
+    dataset (xr.Dataset) : A GEOS-Chem output dataset
 
     Keyword Args (optional):
-        AP: list-like type
-            Hybrid grid parameter A in hPa
-            Default value: []
-        BP: list-like type
-            Hybrid grid parameter B (unitless)
-            Default value: []
+    ------------------------
+    AP (list-like) : Hybrid grid parameter A (hPA)
+    BP    (list-like) : Hybrid grid parameter B (unitless)
+    p_sfc (float) :
 
     Returns:
-        p_edge: numpy array
-            Edge pressure values for vertical grid
-        p_mid: numpy array
-            Midpoint pressure values for vertical grid
-        nlev: int
-            Number of levels in vertical grid
+    --------
+    pedge (np.ndarray) : Edge pressure values for vertical grid
+    p_mid (np.ndarray) : Midpoint pressure values for vertical grid
+    nlev: (int       ) : Number of levels in vertical grid
     """
 
+    # 72L GEOS grid
     if dataset.sizes["lev"] in (72, 73):
-        return GEOS_72L_grid.p_edge(), GEOS_72L_grid.p_mid(), 72
-    elif dataset.sizes["lev"] in (47, 48):
-        return GEOS_47L_grid.p_edge(), GEOS_47L_grid.p_mid(), 47
-    elif AP == [] or BP == []:
+        grid = vert_grid(_GEOS_72L_AP, _GEOS_72L_BP, p_sfc)
+        return grid.p_edge(), grid.p_mid(), 72
+
+    # 47L GEOS grid
+    if dataset.sizes["lev"] in (47, 48):
+        grid = vert_grid(_GEOS_47L_AP, _GEOS_47L_BP, p_sfc)
+        return grid.p_edge(), grid.p_mid(), 47
+
+    # Grid without specified AP, BP
+    if AP == None or BP == None:
         if dataset.sizes["lev"] == 1:
             AP = [1, 1]
             BP = [1]
-            new_grid = vert_grid(AP, BP)
-            return new_grid.p_edge(), new_grid.p_mid(), np.size(AP)
-        else:
-            raise ValueError(
-                "Only 72/73 or 47/48 level vertical grids are automatically determined" +
-                "from input dataset by get_vert_grid(), please pass grid parameters AP and BP" +
-                "as keyword arguments")
-    else:
-        new_grid = vert_grid(AP, BP)
-        return new_grid.p_edge(), new_grid.p_mid(), np.size(AP)
+            grid = vert_grid(AP, BP, p_sfc)
+            return grid.p_edge(), grid.p_mid(), np.size(AP)
+
+        raise ValueError(
+            "Only 72/73 or 47/48 level vertical grids are automatically\n" +
+            "determined from input dataset by get_vert_grid().\n" +
+            "please pass grid parameters AP and BP as keyword arguments"
+        )
+
+    # Grid with specified AP, BP
+    grid = vert_grid(AP, BP, p_sfc)
+    return grid.p_edge(), grid.p_mid(), np.size(AP)
 
 
 def get_ilev_coord(
