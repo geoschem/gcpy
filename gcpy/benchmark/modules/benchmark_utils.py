@@ -57,6 +57,7 @@ def read_ref_and_dev(
         ref,
         dev,
         time_mean=False,
+        multi_file=False,
         verbose=False
 ):
     """
@@ -64,14 +65,19 @@ def read_ref_and_dev(
 
     Args:
     -----
-    ref       (str|list  ) : Ref data file(s)
-    def       (str|list  ) : Dev data file(s)
-    time_mean (bool      ) : Return the average over the time dimension?
+    ref (str|list) : Ref data file(s)
+    def (str|list) : Dev data file(s)
+
+    Keyword Args (optional)
+    -----------------------
+    multi_file (bool) : Read multiple files w/o taking avg over time
+    time_mean  (bool) : Return the average over the time dimension?
+    verbose    (bool) : Enable verbose output
 
     Returns:
     --------
-    ref_data  (xr.Dataset) : Data from the Ref model
-    dev_data  (xr.Dataset) ls: Data from the Dev model
+    ref_data (xr.Dataset) : Data from the Ref model
+    dev_data (xr.Dataset) : Data from the Dev model
     """
     util.verify_variable_type(ref, (str, list))
     util.verify_variable_type(dev, (str, list))
@@ -79,7 +85,7 @@ def read_ref_and_dev(
 
     ref_data = None
     dev_data = None
-    reader = util.dataset_reader(time_mean, verbose=verbose)
+    reader = util.dataset_reader(time_mean|multi_file, verbose=verbose)
 
     if ref is not None:
         ref_data = reader(ref, drop_variables=skip_these_vars)
