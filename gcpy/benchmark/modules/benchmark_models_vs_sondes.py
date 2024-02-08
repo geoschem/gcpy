@@ -294,7 +294,7 @@ def page_adjustments(fig):
     """
     Adjusts the page settings after all the subplots have been made.
 
-    Args:
+    Args
     fig : mpl.Figure : Figure object
     """
 
@@ -494,7 +494,7 @@ def make_benchmark_models_vs_sondes_plots(
     Creates plots of sonde data vs. GEOS-Chem output.  For use in the
     1-year benchmark plotting workflow.
 
-    Args:
+    Args
     obs_data_file : str      : File containing sonde data
     obs_site_file : str      : File containing sonde site metadata
     ref_filepaths : str|list : Files for the GEOS-Chem Ref version

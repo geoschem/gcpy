@@ -63,8 +63,8 @@ import gcpy.oh_metrics as oh
 import gcpy.budget_ox as ox
 from gcpy import benchmark_funcs as bmk
 import gcpy.benchmark.modules.benchmark_utils as bmk_util
-from gcpy.benchmark.modules.benchmark_models_vs_ebas_o3 \
-    import make_benchmark_models_vs_ebas_o3_plots
+from gcpy.benchmark.modules.benchmark_models_vs_obs \
+    import make_benchmark_models_vs_obs_plots
 from gcpy.benchmark.modules.benchmark_models_vs_sondes \
     import make_benchmark_models_vs_sondes_plots
 #TODO: Peel out routines from benchmark_funcs.py into smaller
@@ -913,9 +913,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 all_months_dev
             )[0]
 
-            # Plot models vs. EBAS O3 observations
-            make_benchmark_models_vs_ebas_o3_plots(
+            # Plot models vs. observations
+            make_benchmark_models_vs_obs_plots(
                 config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
+                config["paths"]["obs_data"]["ebas_o3"]["data_label"],
                 ref,
                 config["data"]["ref"]["gcc"]["version"],
                 dev,
@@ -1561,9 +1562,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 is_gchp=True
             )[0]
 
-            # Plot models vs. EBAS O3 observations
-            make_benchmark_models_vs_ebas_o3_plots(
+            # Plot models vs. observations
+            make_benchmark_models_vs_obs_plots(
                 config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
+                config["paths"]["obs_data"]["ebas_o3"]["data_label"],
                 ref,
                 config["data"]["dev"]["gcc"]["version"],
                 dev,
@@ -2242,9 +2244,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 is_gchp=True
             )[0]
 
-            # Plot models vs. EBAS O3 observations
-            make_benchmark_models_vs_ebas_o3_plots(
+            # Plot models vs. observations
+            make_benchmark_models_vs_obs_plots(
                 config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
+                config["paths"]["obs_data"]["ebas_o3"]["data_label"],
                 ref,
                 config["data"]["ref"]["gchp"]["version"],
                 dev,
