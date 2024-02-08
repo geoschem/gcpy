@@ -12,7 +12,6 @@ Author: Matt Rowlinson <matthew.rowlinson@york.ac.uk>
 Linted with PyLint and incorporated into GCPy
 by Bob Yantosca <yantosca@seas.harvard.edu>
 """
-import os
 import glob
 from datetime import datetime, timedelta
 from matplotlib.backends.backend_pdf import PdfPages
@@ -633,7 +632,6 @@ def plot_one_page(
         rows_per_page=3,
         cols_per_page=3,
         varname="SpeciesConcVV_O3",
-        **kwargs
 ):
     """
     Plots a single page of models vs. observations.
@@ -841,7 +839,7 @@ def plot_models_vs_obs(
     pdf.close()
 
 
-def make_benchmark_models_vs_obs_plots(
+def make_benchmark_models_vs_ebas_o3_plots(
         obs_filepaths,
         ref_filepaths,
         ref_label,

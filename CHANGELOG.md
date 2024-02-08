@@ -30,6 +30,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Script `benchmark_model_vs_obs.py` now uses grid inquiry functions from `grid.py` to return data nearest to a (lat,lon) location
 - Moved routine `get_geoschem_level_metadata` to `gcpy/benchmark/modules/benchmark_utils.py`
 - Refactored `get_vert_grid.py` (in `gcpy/grid.py`) to accept the `p_sfc` argument; Also never-nested the if-block logic.
+- Renamed `gcpy/benchmark/modules/benchmark_models_vs_obs.py` to `benchmark_models_vs_ebas_o3.py`
+- `benchmark_slurm.sh` script now saves output to a log file with the
+  same base name as the YAML config file
 
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
