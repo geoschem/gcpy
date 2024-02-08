@@ -832,11 +832,14 @@ def plot_models_vs_obs(
             rows_per_page=rows_per_page,  # int
             cols_per_page=cols_per_page,  # int
             varname=varname,              # str
-            **kwargs
         )
 
     # Close the PDF file after all pages are plotted.
     pdf.close()
+
+    # Reset the plot style (this prevents the seaborn style from
+    # being applied to other model vs. obs plotting scripts)
+    plt.style.use("default")
 
 
 def make_benchmark_models_vs_ebas_o3_plots(

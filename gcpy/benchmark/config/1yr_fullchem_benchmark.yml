@@ -36,7 +36,7 @@ paths:
   #
   obs_data:
     ebas_o3:
-      data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/ebas_o3/ebas_sfc_o3_2019
+      data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/ebas_sfc_o3_2019
     sondes:
       data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
       data_file: allozonesondes_2010-2019.csv

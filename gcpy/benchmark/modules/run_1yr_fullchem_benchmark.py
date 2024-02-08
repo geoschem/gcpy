@@ -262,12 +262,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Observational data files
     # ======================================================================
     sondes_data_file = os.path.join(
-        config["paths"]["sondes"]["data_dir"],
-        config["paths"]["sondes"]["data_file"],
+        config["paths"]["obs_data"]["sondes"]["data_dir"],
+        config["paths"]["obs_data"]["sondes"]["data_file"],
     )
     sondes_site_file = os.path.join(
-        config["paths"]["sondes"]["data_dir"],
-        config["paths"]["sondes"]["site_file"],
+        config["paths"]["obs_data"]["sondes"]["data_dir"],
+        config["paths"]["obs_data"]["sondes"]["site_file"],
     )
 
     ########################################################################
@@ -937,7 +937,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 overwrite=True,
             )
 
-
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC benchmark plots and tables
     #
@@ -1581,7 +1580,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 ref,
                 config["data"]["dev"]["gcc"]["version"],
                 dev,
-                config["data"]["dev"]["gcc"]["version"],
+                config["data"]["dev"]["gchp"]["version"],
                 dst=gchp_vs_gcc_models_vs_obs_dir,
                 overwrite=True,
             )
@@ -2247,7 +2246,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             make_benchmark_models_vs_ebas_o3_plots(
                 config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
                 ref,
-                config["data"]["ref"]["version"],
+                config["data"]["ref"]["gchp"]["version"],
                 dev,
                 config["data"]["dev"]["gchp"]["version"],
                 dst=gchp_vs_gchp_models_vs_obs_dir,
@@ -2260,9 +2259,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 sondes_data_file,
                 sondes_site_file,
                 ref,
-                config["data"]["dev"]["gcc"]["version"],
+                config["data"]["ref"]["gchp"]["version"],
                 dev,
-                config["data"]["dev"]["gcc"]["version"],
+                config["data"]["dev"]["gchp"]["version"],
                 dst=gchp_vs_gchp_models_vs_obs_dir,
                 overwrite=True,
             )

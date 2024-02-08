@@ -322,6 +322,23 @@ def page_adjustments(fig):
     )
 
 
+def sort_sites_by_lat(
+        obs_data
+):
+    """
+    Returns a list of sonde sites sorted from N to S in latitude.
+
+    Args
+    obs_data   : pd.DataFrame : Observations from sondes (all sites)
+
+    Returns
+    site_names : list         : Sorted list of site names N to S
+    """
+    sites = obs_data[['Site', "lat"]].sort_values(by=["lat"], ascending=False)
+
+    return sites["Site"].unique()
+
+
 def plot_the_data(
         obs_data,
         obs_site_metadata,
@@ -365,8 +382,9 @@ def plot_the_data(
         'SON': [9, 10, 11]
     }
 
-    # Unique site names (needed for loops below)
-    sorted_sites = sorted(obs_data['Site'].unique())
+
+    # List of site names from N to S latitude
+    sorted_sites = sort_sites_by_lat(obs_data)
 
     # Creating the PDF with no space between subplots
     # Open the plot as a PDF document
