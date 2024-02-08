@@ -527,7 +527,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         # GCC vs GCC operations budgets tables
         # ==================================================================
-        if config["options"]["outputs"]["operations_budget"]:
+        if config["options"]["outputs"]["ops_budget_table"]:
             print("\n%%% Creating GCC vs. GCC operations budget tables %%%")
 
             # Filepaths
@@ -839,7 +839,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         # GCHP vs GCC operations budgets tables
         # ==================================================================
-        if config["options"]["outputs"]["operations_budget"]:
+        if config["options"]["outputs"]["ops_budget_table"]:
             print("\n%%% Creating GCHP vs. GCC operations budget tables %%%")
 
             # Filepaths
@@ -1152,7 +1152,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         # GCHP vs GCHP operations budgets tables
         # ==================================================================
-        if config["options"]["outputs"]["operations_budget"]:
+        if config["options"]["outputs"]["ops_budget_table"]:
             print("\n%%% Creating GCHP vs. GCHP operations budget tables %%%")
 
             # Filepaths
