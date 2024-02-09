@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Script `./release/changeVersionNumbers.sh`, used to update version numbers in various files before release
 - Mamba/Conda enviroment file `docs/environment_files/read_the_docs_environment.yml`, for building ReadTheDocs documentation
 - Environment files `docs/environment_files/gcpy_requirements.txt` and `docs/environment_files/read_the_docs_requirements.txt`
+- New benchmark script `gcpy/benchmark/modules/benchmark_models_vs_sondes.py`
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
@@ -26,6 +27,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `environment.yml` links to `docs/environment_files/gcpy_environment.yml`
 - `requirements.txt` links to `docs/environment_files/requirements.txt`
 - Python packages for RTD documenation builds from `docs/environment_files/environment.yml`
+- Script `benchmark_model_vs_obs.py` now uses grid inquiry functions from `grid.py` to return data nearest to a (lat,lon) location
+- Moved routine `get_geoschem_level_metadata` to `gcpy/benchmark/modules/benchmark_utils.py`
+- Refactored `get_vert_grid.py` (in `gcpy/grid.py`) to accept the `p_sfc` argument; Also never-nested the if-block logic.
+- `benchmark_slurm.sh` script now saves output to a log file with the same base name as the YAML config file
+- `benchmark_models_vs_obs.py` now reads the observational data paths and metadata from  `1yr_fullchem_benchmark.yml`
 
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
@@ -39,8 +45,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Removed
 - Example script `gcpy/examples/plotting/mda8_o3_timeseries.py`
 - Removed `Pylint` GitHub action
-
-### Removed
 - Environment file `docs/environment_files/environment.yml`
 - Environment file `docs/environment_files/requirements.txt`
 - Removed `awscli` from the GCPy environment; version 2 is no longer available on conda-forge or PyPi

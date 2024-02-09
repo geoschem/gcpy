@@ -12,7 +12,6 @@ Author: Matt Rowlinson <matthew.rowlinson@york.ac.uk>
 Linted with PyLint and incorporated into GCPy
 by Bob Yantosca <yantosca@seas.harvard.edu>
 """
-import os
 import glob
 from datetime import datetime, timedelta
 from matplotlib.backends.backend_pdf import PdfPages
@@ -23,7 +22,10 @@ import numpy as np
 import xarray as xr
 from gcpy.constants import skip_these_vars
 from gcpy.util import verify_variable_type, dataset_reader, make_directory
-from gcpy.cstools import extract_grid, find_index, is_cubed_sphere
+from gcpy.cstools import extract_grid
+from gcpy.grid import get_nearest_model_data
+from gcpy.benchmark.modules.benchmark_utils import get_geoschem_level_metadata
+
 
 def read_nas(
         input_file,
@@ -35,24 +37,13 @@ def read_nas(
     Creates data frame of O3 values converted to ppb and dictionary
     with key site information (name, lat, lon, altitude)
 
-    Args:
-    -----
-    input_file : str
-        Path to data file with observational data (e.g. sonde data).
+    Args
+    input_file      : str          : Path to observational data file
+    verbose         : bool         : Toggles verbose output on/off
 
-    Keyword Args:
-    -------------
-    verbose : bool
-        Toggles verbose printout on (True) or off (False).
-        Default value: False
-
-    Returns:
-    --------
-    obs_dataframe : pandas DataFrame
-        Dataframe containing observational data from input_file.
-
-    obs_site_coords : dict
-        Dictionary containing formatted site name: lon, lat and altitude.
+    Returns
+    obs_dataframe   : pd.DataFrame : Observations at each station site
+    obs_site_coords : dict         : Coords (lon/lat/alt) at each site
     """
     verify_variable_type(input_file, str)
 
@@ -142,23 +133,13 @@ def read_observational_data(
     Loops over all data files (in NASA/Ames format) within
     a folder and concatenates them into a single DataFrame.
 
-    Args:
-    -----
-    path : str
-        Path to the observational data directory
+    Args
+    path            : str          : Path to the observational data dir
+    verbose         : bool         : Toggles verbose output on/off
 
-    verbose : bool
-        Toggles verbose printout on (True) or off (False).
-        Default value: False
-
-    Returns:
-    --------
-    obs_dataframe : pandas DataFrame
-        DataFrame object with the observational data (i.e. station
-        names, data, metadata).
-
-    obs_site_coords : dict
-        Dictionary with coordinates of each observation site
+    Returns
+    obs_dataframe   : pd.DataFrame : Observations at each station site
+    obs_site_coords : dict         : Coords (lon/lat/alt) at each site
     """
     verify_variable_type(path, str)
 
@@ -204,25 +185,13 @@ def read_model_data(
     "SpeciesConcVV" or "SpeciesConc".  This is necessary for backwards
     compatitbility with GEOS-Chem output prior to version 14.1.0.
 
-    Args:
-    -----
-    filepaths : list of str
-        List of data files to read.
+    Args
+    filepaths : list         : List of GEOS-Chem data files to read
+    varname   : str          : Variable name(s) to read
+    verbose   : bool         : Toggles verbose output on/off
 
-    varname : str or list of str
-        Variable name(s) to read from data files.
-
-    Keyword Args:
-    -------------
-    varbose : bool
-        Toggles verbose output on (True) or off (False).
-        Default value: False
-
-    Returns:
-    --------
-    dataarray : xarray DataArray
-        DataArray object containing data read from files
-        specified by the filepaths argument.
+    Returns
+    dataarray : xr.DataArray : GEOS-Chem data read from disk
     """
 
     # Read the Ref and Dev model data
@@ -279,23 +248,16 @@ def find_times(
 ):
     """
     Convert timestamps in nasa ames data files to python datetime
-    objects  Set DataFrame index to the new datetime array
+    objects and set DataFrame index to the new datetime array.
 
-    Args:
-    ----------
-    obs_dataframe : pandas DataFrame
-        DataFrame with O3 values from GAW site
-
-    start_time : str
-        Reference start time for timestamp taken from nasa ames file
+    Args
+    obs_dataframe : pd.DataFrame : Observations from GAW sites
+    start_time    : str          : Reference start time for obs data
 
     Returns
-    ------
-    obs_dataframe: pandas DataFrame
-        O3 in ppbV with datetime index
-
-    qcflag : pandas Dataframe
-        QC flag with datetime index
+    obs_dataframe : pd.DataFrame : Observations (ppbv) w/ datetime index
+    qcflag        : pd.DataFrame : Quality control info w/ datetime index
+    start_time    : str          : Reference start time for obs data
     """
     end_time = obs_dataframe[obs_dataframe.columns[1]]
     time_x = []
@@ -310,218 +272,57 @@ def find_times(
     return obs_dataframe, qcflag
 
 
-def get_nearest_model_data_to_obs_cs(
+def get_nearest_model_data_to_obs(
         gc_data,
-        gc_cs_grid,
-        gc_level_alts_m,
+        gc_levels,
         lon_value,
         lat_value,
-        alt_value
+        alt_value,
+        gc_cs_grid=None
+
 ):
     """
     Returns GEOS-Chem model data (on a cubed-sphere grid) at the
     grid box closest to an observation site location.
 
-    Args:
-    -----
-    gc_data : xarray DataArray
-        GEOS-Chem output to be processed
+    Args
+    gc_data    : pd.DataFrame : Observations at each station site
+    gc_levels  : pd.DataFrame : Metadata for model vertical levels
+    lon_value  : float        : Longitude of station site
+    lat_value  : float        : Latitude of station site
+    alt_value  : float        : Altitude of station site
+    gc_cs_grid : xr.Dataset   : Metadata for Dev cubed-sphere grid
 
-    gc_cs_grid: xarray Dataset
-        Coordinate arrays defining the cubed-sphere grid.
-
-    gc_level_alts_m: pandas Series
-        Altitudes of GEOS-Chem levels in meters
-
-    lon_value : float
-        GAW site longitude
-
-    lat_value : float
-        GAW site latitude
-
-    alt_value : float
-        GAW site altitude
-
-    Keyword Args:
-    -------------
-
-    Returns:
-    --------
-    dataframe: pandas.DataFrame
-        Model data closest to the observation site.
+    Returns
+    dataframe  : pd.DataFrame : Model data closest to the station site
     """
     verify_variable_type(gc_data, xr.DataArray)
-    verify_variable_type(gc_cs_grid, xr.Dataset)
-    verify_variable_type(gc_level_alts_m, pd.Series)
+    verify_variable_type(gc_cs_grid, (xr.Dataset, type(None)))
+    verify_variable_type(gc_levels, pd.DataFrame)
 
     # Prevent the latitude from getting too close to the N or S poles
     lat_value = max(min(lat_value, 89.75), -89.75)
 
-    # Indices (nf, yInd, xInd) of box nearest to observation site
-    cs_indices = find_index(
-        lat_value,
-        lon_value,
-        gc_cs_grid
-    )
-
-    # Index of nearest vertical levle to observation site
-    z_idx=(
-        np.abs(
-            gc_level_alts_m.values - float(alt_value)
-        )
-    ).argmin()
-
-    return gc_data.isel(
-        nf=cs_indices[0, 0],
-        Ydim=cs_indices[1, 0],
-        Xdim=cs_indices[2, 0],
-        lev=z_idx
-    ).to_dataframe()
-
-
-def get_nearest_model_data_to_obs_ll(
+    # Nearest GEOS-Chem data to (lat, lon) of observation
+    dframe = get_nearest_model_data(
         gc_data,
-        gc_cs_grid,
-        gc_level_alts_m,
         lon_value,
         lat_value,
-        alt_value,
+        gc_cs_grid=gc_cs_grid
+    )
+    dframe = dframe.reset_index()
 
-):
-    """
-    Returns GEOS-Chem model data (on a cubed-sphere grid) at the
-    grid box closest to an observation site location.
+    # Nearest GEOS-Chem level to observation
+    gc_alts = gc_levels["Altitude (m)"].values
+    n_alts = len(gc_alts)
+    z_idx =(np.abs(gc_alts - float(alt_value))).argmin()
 
-    Args:
-    -----
-    gc_data : xarray DataSet
-        GEOS-Chem output to be processed
+    # Pick out elements of the dataframe at the nearest level to obs
+    rows = np.zeros(len(dframe), dtype=bool)
+    good = [(v * n_alts) + z_idx for v in range(12)]
+    rows[good] = True
 
-    gc_cs_grid : NoneType
-        Dummy variable (needed to make the argument list the
-        same as in get_nearest_model_data_to_obs_ll).
-
-    gc_level_alts_m: pandas Series
-        Altitudes of GEOS-Chem levels in meters
-
-    lon_value : float
-        GAW site longitude
-
-    lat_value : float
-        GAW site latitude
-
-    alt_value : float
-        GAW site altitude
-
-    Returns:
-    --------
-    dataframe: pandas.DataFrame
-        Model data closest to the observation site.
-    """
-    verify_variable_type(gc_data, xr.DataArray)
-    verify_variable_type(gc_cs_grid, type(None))
-    verify_variable_type(gc_level_alts_m, pd.Series)
-
-    x_idx=(
-        np.abs(
-            gc_data.lon.values - float(lon_value)
-        )
-    ).argmin()
-
-    y_idx=(
-        np.abs(
-            gc_data.lat.values - float(lat_value)
-        )
-    ).argmin()
-
-    z_idx=(
-        np.abs(
-            gc_level_alts_m.values - float(alt_value)
-        )
-    ).argmin()
-
-    return gc_data.isel(
-        lon=x_idx,
-        lat=y_idx,
-        lev=z_idx
-    ).to_dataframe()
-
-
-def which_finder_function(
-        data
-):
-    """
-    Returns the function that will be used to get the model data nearest
-    to the observation site.  The function that is returned depends on
-    whether the model grid is lat-lon or cubed-sphere, as different
-    handling needs to be applied to each grid
-
-    Args:
-    -----
-    data : xarray.DataArray
-        Model data
-
-    Returns:
-    --------
-    A reference to the function that will read the data, depending
-    on whether the data is placed on a cubed-sphere grid or on
-    a lat-lon grid.
-    """
-    verify_variable_type(data, (xr.DataArray, xr.Dataset))
-
-    if is_cubed_sphere(data):
-        return get_nearest_model_data_to_obs_cs
-
-    return get_nearest_model_data_to_obs_ll
-
-
-def get_geoschem_level_metadata(
-        filename=None,
-        search_key=None,
-        verbose=False,
-):
-    """
-    Reads a comma-separated variable (.csv) file with GEOS-Chem vertical
-    level metadata and returns it in a pandas DataFrame object.
-
-    Args:
-    -----
-    filename : str
-        Name of the comma-separated variable to read.
-        Default value: "__file__/GC_72_vertical_levels.csv"
-
-    Keyword Args:
-    -------------
-    search_key : str
-        If present, will return metadata that matches this value.
-        Default: None
-
-    verbose : bool
-        Toggles verbose printout on (True) or off (False).
-        Default value: True
-
-    Returns:
-    --------
-    metadata : pandas DataFrame
-        Metadata for each of the GEOS-Chem vertical levels.
-    """
-    if filename is None:
-        filename = os.path.join(
-            os.path.dirname(__file__),
-            "GC_72_vertical_levels.csv"
-        )
-
-    try:
-        if verbose:
-            print(f"get_geoschem_level_metadata: Reading {filename}")
-        metadata = pd.read_csv(filename)
-    except (IOError, OSError, FileNotFoundError) as exc:
-        msg = f"Could not read GEOS-Chem level metadata in {filename}!"
-        raise exc(msg) from exc
-
-    if search_key is None:
-        return metadata
-    return metadata[search_key]
+    return dframe[rows].set_index("time")
 
 
 def prepare_data_for_plot(
@@ -532,9 +333,8 @@ def prepare_data_for_plot(
         ref_cs_grid,
         dev_dataarray,
         dev_cs_grid,
-        gc_level_alts_m,
+        gc_levels,
         varname="SpeciesConcVV_O3",
-        **kwargs,
 ):
     """
     Prepares data for passing to routine plot_single_frames as follows:
@@ -545,47 +345,24 @@ def prepare_data_for_plot(
     (3) Creates the top-of-plot title for the given station site.
 
     Args:
-    -----
-    obs_dataframe : pandas DataFrame
-        Observations at each station site.
-
-    obs_site_coords : dict
-        Coordinates (lon, lat, alt) for each observation station site.
-
-    obs_site_name : str
-        Name of the observation station site.
-
-    ref_dataarray, dev_dataarray : xarray DataArray
-        Data from the Ref and Dev model versions.
-
-    ref_cs_grid, dev_cs_grid : xarray.Dataset or NoneType
-        Dictionary containing the cubed-sphere grid definitions for
-        ref_dataarray and dev_dataarray (or None if ref_dataarray or
-        dev_dataarray are not placed on a cubed-sphere grid).
-
-    gc_level_alts_m : pandas Series
-        Metadata pertaining to GEOS-Chem vertical levels
-
-    Keyword Args (Optional)
-    -----------------------
-    varname : str
-        GEOS-Chem diagnostic name for the Ref and Dev model data.
-        Default value: "SpeciesConcVV_O3"
+    obs_dataframe   : pd.DataFrame : Observations at each station site
+    obs_site_coords : dict         : Coords (lon/lat/alt) at each site
+    obs_site_name   : str          : Names of station sites
+    ref_dataarray   : xr.DataArray : Data from the Ref model version
+    ref_label       : str          : Label for the Ref model data
+    ref_cs_grid     : xr.Dataset   : Metadata for Ref cubed-sphere grid
+    dev_dataarray   : xr.DataArray : Data from the Dev model version
+    dev_label       : str          : Label for the Dev model data
+    dev_cs_grid     : xr.Dataset   : Metadata for Dev cubed-sphere grid
+    gc_levels       : pd.DataFrame : Metadata for model vertical levels
+    varname         : str          : Variable name for model data
 
     Returns:
-    --------
-    obs_dataframe : pandas DataFrame
-        Meanb observational data at the given station site.
-
-    ref_series, dev_series : pandas Series
-        Data from the Ref and Dev model versions at the
-        closest grid box to the observation station site.
-
-    subplot_title : str
-        Plot title string for the given observation station site.
-
-    subplot_ylabel : str
-        Label for the Y-axis (e.g. species name).
+    obs_dataframe   : pd.DataFrame : Mean observational data @ station site
+    ref_series      : pd.Series    : Ref data nearest to the station site
+    dev_series      : pd.Series    : Dev data nearest to the station site
+    subplot_title   : str          : Title for the station site subplot
+    subplot_ylabel  : str          : Y-axis titel for the station site subplot
     """
     verify_variable_type(obs_dataframe, pd.DataFrame)
     verify_variable_type(obs_site_coords, dict)
@@ -594,29 +371,34 @@ def prepare_data_for_plot(
     verify_variable_type(dev_dataarray, xr.DataArray)
     verify_variable_type(ref_cs_grid, (xr.Dataset, type(None)))
     verify_variable_type(dev_cs_grid, (xr.Dataset, type(None)))
-    verify_variable_type(gc_level_alts_m, pd.Series)
+    verify_variable_type(gc_levels, pd.DataFrame)
     verify_variable_type(varname, str)
 
     # Get data from the Ref model closest to the data site
-    finder_function = which_finder_function(ref_dataarray)
-    ref_dataframe = finder_function(
+    coords = [
+        round(obs_site_coords[obs_site_name]['lon'], 2),
+        round(obs_site_coords[obs_site_name]['lat'], 2),
+        round(obs_site_coords[obs_site_name]['alt'], 1)
+    ]
+
+    # Get data from the Ref model closest to the obs site
+    ref_dataframe = get_nearest_model_data_to_obs(
         ref_dataarray,
-        ref_cs_grid,
-        gc_level_alts_m,
-        lon_value=round(obs_site_coords[obs_site_name]['lon'], 2),
-        lat_value=round(obs_site_coords[obs_site_name]['lat'], 2),
-        alt_value=round(obs_site_coords[obs_site_name]['alt'], 1)
+        gc_levels,
+        coords[0],                 # Obs site lon
+        coords[1],                 # Obs site lat
+        coords[2],                 # Obs site alt
+        gc_cs_grid=ref_cs_grid
     )
 
     # Get data from the Dev model closest to the obs site
-    finder_function = which_finder_function(dev_dataarray)
-    dev_dataframe = finder_function(
+    dev_dataframe = get_nearest_model_data_to_obs(
         dev_dataarray,
-        dev_cs_grid,
-        gc_level_alts_m,
-        lon_value=round(obs_site_coords[obs_site_name]['lon'], 2),
-        lat_value=round(obs_site_coords[obs_site_name]['lat'], 2),
-        alt_value=round(obs_site_coords[obs_site_name]['alt'], 1)
+        gc_levels,
+        coords[0],                 # Obs site lon
+        coords[1],                 # Obs site lat
+        coords[2],                 # Obs site alt
+        gc_cs_grid=dev_cs_grid,
     )
 
     # Take the monthly mean of observations for plotting
@@ -653,44 +435,29 @@ def plot_single_station(
         subplot_title,
         subplot_ylabel,
         obs_dataframe,
+        obs_label,
         obs_site_name,
         ref_series,
         ref_label,
         dev_series,
-        dev_label,
-        **kwargs
+        dev_label
 ):
     """
     Plots observation data vs. model data at a single station site.
 
     Args:
-    -----
-    fig : matplotlib.figure.Figure
-        Matplotlib Figure object containing the plot.
-
-    rows_per_page, cols_per_page : int
-        Number of rows and columns on each page of the plot.
-
-    subplot_index : int
-        Index of the subplot on the page.  Runs from 0 to
-        (cols_per_page * rows_per_page - 1).
-
-    subplot_title, subplot_ylabel : str
-        Top title and y-axis label for each subplot
-
-    obs_dataframe : pandas DataFrame
-        Observational data.
-
-    obs_site_name: : str
-        Name of the observation station site.
-
-    ref_series, dev_series : pandas Series
-        GEOS-Chem data at closest grid box to the observation
-        station site for the Ref and Dev model versions.
-
-    ref_label, dev_label : str
-        Descriptive labels (e.g. version numbers) for the
-        GEOS-Chem Ref and Dev model versions.
+    obs_dataframe  : mpl.figure.Figure : Figure object for the plot
+    rows_per_page  : int               : # of rows to plot on a page
+    cols_per_page  : int               : # of columns to plot on a page
+    subplot_index  : int               : Index of each subplot
+    subplot_title  : str               : Title for each subplot
+    subplot_ylabel : str               : Y-axis title for each subplot
+    obs_dataframe  : pd.DataFrame      : Observations at each station site
+    obs_site_name  : str               : Name of the station site
+    ref_series     : pd.Series         : Data from the Ref model version
+    ref_label      : str               : Label for the Ref model data
+    dev_dataarray  : pd.Series         : Data from the Dev model version
+    dev_label      : str               : Label for the Dev model data
     """
     verify_variable_type(fig, Figure)
     verify_variable_type(rows_per_page, int)
@@ -727,7 +494,7 @@ def plot_single_station(
         marker='^',
         markersize=4,
         lw=1,
-        label='Observations'
+        label=f"{obs_label}"
     )
 
     # Plot model data
@@ -785,6 +552,7 @@ def plot_single_station(
 def plot_one_page(
         pdf,
         obs_dataframe,
+        obs_label,
         obs_site_coords,
         obs_site_names,
         ref_dataarray,
@@ -793,54 +561,28 @@ def plot_one_page(
         dev_dataarray,
         dev_label,
         dev_cs_grid,
-        gc_level_alts_m,
+        gc_levels,
         rows_per_page=3,
         cols_per_page=3,
         varname="SpeciesConcVV_O3",
-        **kwargs
 ):
     """
     Plots a single page of models vs. observations.
 
     Args:
-    -----
-    obs_dataframe : pandas DataFrame
-        Observations at each station site.
-
-    obs_site_coords : dict
-        Coordinates (lon, lat, alt) for each observation station site.
-
-    obs_site_names : list of str
-        Names of observation station sites that fit onto a single page.
-
-    ref_dataarray, dev_dataarray : xarray DataArray
-        Data from the Ref and Dev model versions.
-
-    ref_label, dev_label: str
-        Labels describing the Ref and Dev datasets (e.g. version numbers)
-
-    ref_cs_grid, dev_cs_grid : xarray.Dataset or NoneType
-        Dictionary containing the cubed-sphere grid definitions for
-        ref_dataarray and dev_dataarray (or None if ref_dataarray or
-        dev_dataarray are not placed on a cubed-sphere grid).
-
-    gc_level_alts_m : pandas DataFrame
-        Metadata pertaining to GEOS-Chem vertical levels
-
-    Keyword Args:
-    -------------
-
-    rows_per_page, cols_per_page : int
-        Number of rows and columns to plot on a single page.
-        Default values: 3 rows, 3 columns
-
-    varname : str
-        Variable name for GEOS-Chem diagnostic data.
-        Default value: "SpeciesConcVV_O3"
-
-    verbose : bool
-        Toggles verbose printout on (True) or off (False).
-        Default value: False
+    obs_dataframe   : pd.DataFrame : Observations at each station site.
+    obs_label       : str          : Label for the observational data
+    obs_site_coords : dict         : Coords (lon/lat/alt) at each site.
+    obs_site_names  : list         : Names of station sites per page
+    ref_dataarray   : xr.DataArray : Data from the Ref model version
+    ref_label       : str          : Label for the Ref model data
+    ref_cs_grid     : str|None     : Metadata for Ref cubed-sphere grid
+    dev_dataarray   : xr.DataArray : Data from the Dev model version
+    dev_label       : str          : Label for the Dev model data
+    dev_cs_grid     : str|None     : Metadata for Dev cubed-sphere grid
+    gc_levels       : pd.DataFrame : Metadata for model vertical levels
+    rows_per_page   : int          : Number of rows to plot on a page
+    varname         : str          : Variable name for model data
     """
     verify_variable_type(obs_dataframe, pd.DataFrame)
     verify_variable_type(obs_site_coords, dict)
@@ -851,7 +593,7 @@ def plot_one_page(
     verify_variable_type(dev_dataarray, xr.DataArray)
     verify_variable_type(dev_label, str)
     verify_variable_type(dev_cs_grid, (xr.Dataset, type(None)))
-    verify_variable_type(gc_level_alts_m, pd.Series)
+    verify_variable_type(gc_levels, pd.DataFrame)
 
     # Define a new matplotlib.figure.Figure object for this page
     # Landscape width: 11" x 8"
@@ -874,9 +616,8 @@ def plot_one_page(
             ref_cs_grid,                  # dict or none
             dev_dataarray,                # xarray.DataArray
             dev_cs_grid,                  # dict or none
-            gc_level_alts_m,              # pandas.Series
-            varname=varname,              # str
-            **kwargs
+            gc_levels,                    # pandas.DataFrame
+            varname=varname               # str
         )
 
         # Plot models vs. observation for a single station site
@@ -888,12 +629,12 @@ def plot_one_page(
             subplot_title,                # str
             subplot_ylabel,               # str
             obs_dataframe,                # pandas.Dataframe
+            obs_label,                    # str
             obs_site_name,                # str
             ref_series,                   # pandas.Series
             ref_label,                    # str
             dev_series,                   # pandas.Series
             dev_label,                    # str
-            **kwargs
         )
 
     # Add extra spacing around plots
@@ -916,49 +657,30 @@ def plot_one_page(
 
 def plot_models_vs_obs(
         obs_dataframe,
+        obs_label,
         obs_site_coords,
         ref_dataarray,
         ref_label,
         dev_dataarray,
         dev_label,
-        gc_level_alts_m,
+        gc_levels,
         varname="SpeciesConcVV_O3",
         dst="./benchmark",
-        **kwargs
 ):
     """
     Plots models vs. observations using a 3 rows x 3 column layout.
 
     Args:
-    -----
-    obs_dataframe : pandas DataFrame
-        Observations at each station site.
-
-    obs_site_coords : dict
-        Coordinates (lon, lat, alt) for each observation station site.
-
-    ref_dataarray, dev_dataarray : xarray DataArray
-        Data from the Ref and Dev model versions.
-
-    ref_label, dev_label: str
-        Labels describing the Ref and Dev datasets (e.g. version numbers)
-
-    gc_level_alts_m : pandas DataFrame
-        Metadata pertaining to GEOS-Chem vertical levels
-
-    Keyword Args:
-    -------------
-    varname : str
-        Variable name for GEOS-Chem diagnostic data.
-        Default value: "SpeciesConcVV_O3"
-
-    dst : str
-        Root folder where output will be created.
-        Default value: "./benchmark"
-
-    verbose : bool
-        Toggles verbose printout on (True) or off (False).
-        Default value: False
+    obs_dataframe   : pd.DataFrame : Observations at each station site.
+    obs_label       : str          : Label for the observational data
+    obs_site_coords : dict         : Coords (lon/lat/alt) at each site.
+    ref_dataarray   : xr.DataArray : Data from the Ref model version
+    ref_label       : str          : Label for the Ref model data
+    dev_dataarray   : xr.DataArray : Data from the Dev model version
+    dev_label       : str          : Label for the Dev model data
+    gc_levels       : pd.DataFrame : Metadata for model vertical levels
+    varname         : str          : Variable name for model data
+    dst             : str          : Destination folder for plots
     """
     verify_variable_type(obs_dataframe, pd.DataFrame)
     verify_variable_type(obs_site_coords, dict)
@@ -966,7 +688,7 @@ def plot_models_vs_obs(
     verify_variable_type(ref_label, str)
     verify_variable_type(dev_dataarray, xr.DataArray)
     verify_variable_type(dev_label, str)
-    verify_variable_type(gc_level_alts_m, pd.Series)
+    verify_variable_type(gc_levels, pd.DataFrame)
 
     # Get the cubed-sphere grid definitions for Ref & Dev
     # (will be returned as "None" for lat/lon grids)
@@ -1003,6 +725,7 @@ def plot_models_vs_obs(
         plot_one_page(
             pdf,                          # PdfPages
             obs_dataframe,                # pandas.DataFrame
+            obs_label,                    # str
             obs_site_coords,              # dict
             obs_site_names[start:end+1],  # list of str
             ref_dataarray,                # xarray.DataArray
@@ -1011,19 +734,23 @@ def plot_models_vs_obs(
             dev_dataarray,                # xarray.DataArray
             dev_label,                    # str
             dev_cs_grid,                  # xarray.Dataset or NoneType
-            gc_level_alts_m,              # pandas.Series
+            gc_levels,                    # pandas.DataFrame
             rows_per_page=rows_per_page,  # int
             cols_per_page=cols_per_page,  # int
             varname=varname,              # str
-            **kwargs
         )
 
     # Close the PDF file after all pages are plotted.
     pdf.close()
 
+    # Reset the plot style (this prevents the seaborn style from
+    # being applied to other model vs. obs plotting scripts)
+    plt.style.use("default")
+
 
 def make_benchmark_models_vs_obs_plots(
         obs_filepaths,
+        obs_label,
         ref_filepaths,
         ref_label,
         dev_filepaths,
@@ -1037,33 +764,16 @@ def make_benchmark_models_vs_obs_plots(
     Driver routine to create model vs. observation plots.
 
     Args:
-    -----
-    obs_filepaths : str or list
-        Path(s) to the observational data.
-
-    ref_filepaths, dev_filepaths: str or list
-        Path(s) to the Ref and Dev model versions to be compared.
-
-    ref_label, dev_label : str
-        Descriptive labels (e.g. for version numbers) for the
-        Ref and Dev model data.
-
-    Keyword Args (optional):
-    ------------------------
-    varname : str
-        Variable name for model data to be plotted against
-        observations.  Default value: "SpeciesConcVV_O3".
-
-    dst : str
-        Path to the root folder where plots will be created.
-
-    verbose : bool
-        Toggles verbose printout on (True) or off (False).
-        Default value: False
-
-    overwrite : bool
-        Toggles whether plots should be overwritten (True)
-        or not (False). Default value: True
+    obs_filepaths : str|list : Path(s) to the observational data.
+    obs_label     : str      : Label for the observational data
+    ref_filepaths : str      : Paths to the Ref model data
+    ref_label     : str      : Label for the Ref model data
+    dev_filepaths : str      : Paths to the Dev model data
+    dev_label     : str      : Label for the Dev model data
+    varname       : str      : Variable name for model data
+    dst           : str      : Destination folder for plots
+    verbose       : bool     : Toggles verbose output on/off
+    overwrite     : bool     : Toggles overwriting contents of dst
     """
     verify_variable_type(obs_filepaths, (str, list))
     verify_variable_type(ref_filepaths, (str, list))
@@ -1077,11 +787,11 @@ def make_benchmark_models_vs_obs_plots(
         overwrite=overwrite
     )
 
-    # Get altitude [m] of GEOS-Chem level edges
-    gc_level_alts_m = \
-        get_geoschem_level_metadata(
-            search_key="Altitude (km)"
-        ) * 1.0e3
+    # Get GEOS-Chem level metadata
+    gc_levels = get_geoschem_level_metadata(
+        search_key=["Altitude (km)", "Eta Mid"]
+    )
+    gc_levels["Altitude (m)"] = gc_levels["Altitude (km)"] * 1000.0
 
     # Read the observational data
     obs_dataframe, obs_site_coords = read_observational_data(
@@ -1102,13 +812,13 @@ def make_benchmark_models_vs_obs_plots(
     # Plot data vs observations
     plot_models_vs_obs(
         obs_dataframe,                    # pandas.DataFrame
+        obs_label,                        # str
         obs_site_coords,                  # dict
         ref_dataarray,                    # xarray.DataArray
         ref_label,                        # str
         dev_dataarray,                    # xarray.DataArray
         dev_label,                        # str
-        gc_level_alts_m,                  # pandas.Series
+        gc_levels,                        # pandas.DataFrame
         varname=varname,                  # str
         dst=dst,                          # str
-        verbose=verbose                   # bool
     )

@@ -62,8 +62,11 @@ import gcpy.ste_flux as ste
 import gcpy.oh_metrics as oh
 import gcpy.budget_ox as ox
 from gcpy import benchmark_funcs as bmk
-import gcpy.benchmark.modules.benchmark_models_vs_obs as mvo
 import gcpy.benchmark.modules.benchmark_utils as bmk_util
+from gcpy.benchmark.modules.benchmark_models_vs_obs \
+    import make_benchmark_models_vs_obs_plots
+from gcpy.benchmark.modules.benchmark_models_vs_sondes \
+    import make_benchmark_models_vs_sondes_plots
 #TODO: Peel out routines from benchmark_funcs.py into smaller
 # routines in the gcpy/benchmark/modules folder, such as these:
 from gcpy.benchmark.modules.benchmark_drydep \
@@ -255,6 +258,18 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     diff_of_diffs_refstr = bmk.diff_of_diffs_toprow_title(config, "gcc")
     diff_of_diffs_devstr = bmk.diff_of_diffs_toprow_title(config, "gchp")
 
+    # ======================================================================
+    # Observational data files
+    # ======================================================================
+    sondes_data_file = os.path.join(
+        config["paths"]["obs_data"]["sondes"]["data_dir"],
+        config["paths"]["obs_data"]["sondes"]["data_file"],
+    )
+    sondes_site_file = os.path.join(
+        config["paths"]["obs_data"]["sondes"]["data_dir"],
+        config["paths"]["obs_data"]["sondes"]["site_file"],
+    )
+
     ########################################################################
     ###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
     ########################################################################
@@ -310,10 +325,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     bmk_mons_gchp_dev = all_months_gchp_dev[bmk_mon_inds]
     bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
 
-    # List of species for dry deposition velocity plots
-        
-    # Get common variables between Ref 
-    
     # ======================================================================
     # Print the list of plots & tables being generated
     # ======================================================================
@@ -902,9 +913,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 all_months_dev
             )[0]
 
-            # Plot models vs. observations (O3 for now)
-            mvo.make_benchmark_models_vs_obs_plots(
-                config["paths"]["obs_data_dir"],
+            # Plot models vs. observations
+            make_benchmark_models_vs_obs_plots(
+                config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
+                config["paths"]["obs_data"]["ebas_o3"]["data_label"],
                 ref,
                 config["data"]["ref"]["gcc"]["version"],
                 dev,
@@ -914,6 +926,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 verbose=False
             )
 
+            # Plot models vs. sondes
+            make_benchmark_models_vs_sondes_plots(
+                sondes_data_file,
+                sondes_site_file,
+                ref,
+                config["data"]["ref"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gcc"]["version"],
+                dst=gcc_vs_gcc_models_vs_obs_dir,
+                overwrite=True,
+            )
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC benchmark plots and tables
@@ -1271,7 +1294,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
-                varlist=drydepvel_species()                
+                varlist=drydepvel_species()
             )
 
             # --------------------------------------------------------------
@@ -1539,9 +1562,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 is_gchp=True
             )[0]
 
-            # Plot models vs. observations (O3 for now)
-            mvo.make_benchmark_models_vs_obs_plots(
-                config["paths"]["obs_data_dir"],
+            # Plot models vs. observations
+            make_benchmark_models_vs_obs_plots(
+                config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
+                config["paths"]["obs_data"]["ebas_o3"]["data_label"],
                 ref,
                 config["data"]["dev"]["gcc"]["version"],
                 dev,
@@ -1550,6 +1574,19 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 overwrite=True,
                 verbose=False
             )
+
+            # Plot models vs. sondes
+            make_benchmark_models_vs_sondes_plots(
+                sondes_data_file,
+                sondes_site_file,
+                ref,
+                config["data"]["dev"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gcc_models_vs_obs_dir,
+                overwrite=True,
+            )
+
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCHP benchmark plots and tables
@@ -1929,7 +1966,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
-                varlist=drydepvel_species()                
+                varlist=drydepvel_species()
             )
 
             # --------------------------------------------------------------
@@ -2207,9 +2244,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 is_gchp=True
             )[0]
 
-            # Plot models vs. observations (O3 for now)
-            mvo.make_benchmark_models_vs_obs_plots(
-                config["paths"]["obs_data_dir"],
+            # Plot models vs. observations
+            make_benchmark_models_vs_obs_plots(
+                config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
+                config["paths"]["obs_data"]["ebas_o3"]["data_label"],
                 ref,
                 config["data"]["ref"]["gchp"]["version"],
                 dev,
@@ -2217,6 +2255,18 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gchp_vs_gchp_models_vs_obs_dir,
                 overwrite=True,
                 verbose=False
+            )
+
+            # Plot models vs. sondes
+            make_benchmark_models_vs_sondes_plots(
+                sondes_data_file,
+                sondes_site_file,
+                ref,
+                config["data"]["ref"]["gchp"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gchp_models_vs_obs_dir,
+                overwrite=True,
             )
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

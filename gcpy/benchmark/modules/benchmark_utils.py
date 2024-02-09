@@ -4,6 +4,7 @@ TODO: Migrate other benchmark-specific utilities from gcpy/benchmark.py to here.
 """
 import os
 import numpy as np
+import pandas as pd
 from gcpy import util
 from gcpy.constants import skip_these_vars
 
@@ -56,6 +57,7 @@ def read_ref_and_dev(
         ref,
         dev,
         time_mean=False,
+        multi_file=False,
         verbose=False
 ):
     """
@@ -63,14 +65,19 @@ def read_ref_and_dev(
 
     Args:
     -----
-    ref       (str|list  ) : Ref data file(s)
-    def       (str|list  ) : Dev data file(s)
-    time_mean (bool      ) : Return the average over the time dimension?
+    ref (str|list) : Ref data file(s)
+    def (str|list) : Dev data file(s)
+
+    Keyword Args (optional)
+    -----------------------
+    multi_file (bool) : Read multiple files w/o taking avg over time
+    time_mean  (bool) : Return the average over the time dimension?
+    verbose    (bool) : Enable verbose output
 
     Returns:
     --------
-    ref_data  (xr.Dataset) : Data from the Ref model
-    dev_data  (xr.Dataset) ls: Data from the Dev model
+    ref_data (xr.Dataset) : Data from the Ref model
+    dev_data (xr.Dataset) : Data from the Dev model
     """
     util.verify_variable_type(ref, (str, list))
     util.verify_variable_type(dev, (str, list))
@@ -78,7 +85,7 @@ def read_ref_and_dev(
 
     ref_data = None
     dev_data = None
-    reader = util.dataset_reader(time_mean, verbose=verbose)
+    reader = util.dataset_reader(time_mean|multi_file, verbose=verbose)
 
     if ref is not None:
         ref_data = reader(ref, drop_variables=skip_these_vars)
@@ -263,3 +270,52 @@ def print_benchmark_info(
         print(" - GCHP vs GCHP")
     if conf["gchp_vs_gcc_diff_of_diffs"]["run"]:
         print(" - GCHP vs GCC diff of diffs")
+
+
+def get_geoschem_level_metadata(
+        filename=None,
+        search_key=None,
+        verbose=False,
+):
+    """
+    Reads a comma-separated variable (.csv) file with GEOS-Chem vertical
+    level metadata and returns it in a pandas.DataFrame object.
+
+    Args:
+    -----
+    filename : str
+        Name of the comma-separated variable to read.
+        Default value: "__file__/GC_72_vertical_levels.csv"
+
+    Keyword Args:
+    -------------
+    search_key : str
+        If present, will return metadata that matches this value.
+        Default: None
+
+    verbose : bool
+        Toggles verbose printout on (True) or off (False).
+        Default value: True
+
+    Returns:
+    --------
+    metadata : pandas.DataFrame
+        Metadata for each of the GEOS-Chem vertical levels.
+    """
+    if filename is None:
+        filename = os.path.join(
+            os.path.dirname(__file__),
+            "GC_72_vertical_levels.csv"
+        )
+
+    try:
+        if verbose:
+            print(f"get_geoschem_level_metadata: Reading {filename}")
+        metadata = pd.read_csv(filename)
+    except (IOError, OSError, FileNotFoundError) as exc:
+        msg = f"Could not read GEOS-Chem level metadata in {filename}!"
+        raise exc(msg) from exc
+
+    if search_key is None:
+        return metadata
+    return metadata[search_key]

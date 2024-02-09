@@ -24,14 +24,24 @@
 #   spcdb_dir:    Folder in which the species_database.yml file is
 #                  located.  If set to "default", then will look for
 #                  species_database.yml in one of the Dev rundirs.
-#   obs_data_dir: Path to observational data (for models vs obs plots)
+#   obs_data:     Paths to observations (for models vs. obs plots)
 #
 paths:
   main_dir: /path/to/benchmark/main/dir
   results_dir: /path/to/BenchmarkResults
   weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
   spcdb_dir: default
-  obs_data_dir: /path/to/observational/data
+  #
+  # Observational data dirs are on Harvard Cannon, edit if necessary
+  #
+  obs_data:
+    ebas_o3:
+      data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/ebas_sfc_o3_2019
+      data_label: "O3 (EBAS, 2019)"
+    sondes:
+      data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
+      data_file: allozonesondes_2010-2019.csv
+      site_file: allozonesondes_site_elev.csv
 #
 # data: Contains configurations for ref and dev runs
 #   version:         Version string (must not contain spaces)
