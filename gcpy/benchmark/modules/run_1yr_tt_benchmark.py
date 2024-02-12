@@ -57,10 +57,13 @@ from calendar import monthrange
 import numpy as np
 from joblib import Parallel, delayed
 from gcpy.util import get_filepath, get_filepaths
-from gcpy import benchmark_funcs as bmk
-import gcpy.budget_tt as ttbdg
-import gcpy.ste_flux as ste
-import gcpy.benchmark.modules.benchmark_utils as bmk_util
+from gcpy.benchmark.modules.benchmark_funcs import \
+    get_species_database_dir, make_benchmark_conc_plots, \
+    make_benchmark_wetdep_plots, make_benchmark_mass_tables, \
+    make_benchmark_operations_budget, make_benchmark_mass_conservation_table
+from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
+from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
+from gcpy.benchmark.modules.benchmark_utils import print_benchmark_info
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -72,6 +75,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 def run_benchmark(config, bmk_year_ref, bmk_year_dev):
+    """Routine to create benchmark plots and tables"""
     # This script has a fixed benchmark type, year, and months
     bmk_type = config["options"]["bmk_type"]
     bmk_mon_strs = ["Jan", "Apr", "Jul", "Oct"]
@@ -81,7 +85,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # =====================================================================
     # Path to species_database.yml
     # =====================================================================
-    spcdb_dir = bmk.get_species_database_dir(config)
+    spcdb_dir = get_species_database_dir(config)
 
     # ======================================================================
     # Data directories
@@ -254,8 +258,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Get subset of month datetimes and seconds per month
     # for only benchmark months
     bmk_mons_ref = all_months_ref[bmk_mon_inds]
-    bmk_mons_gchp_ref = all_months_gchp_ref[bmk_mon_inds]
-    bmk_sec_per_month_ref = sec_per_month_ref[bmk_mon_inds]
+    #bmk_mons_gchp_ref = all_months_gchp_ref[bmk_mon_inds]
+    #bmk_sec_per_month_ref = sec_per_month_ref[bmk_mon_inds]
 
     # Compute seconds in the Ref year
     sec_per_yr_ref = 0
@@ -289,8 +293,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     all_months_gchp_dev = all_months_dev
 
     bmk_mons_dev = all_months_dev[bmk_mon_inds]
-    bmk_mons_gchp_dev = all_months_gchp_dev[bmk_mon_inds]
-    bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
+    #bmk_mons_gchp_dev = all_months_gchp_dev[bmk_mon_inds]
+    #bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
 
     # Compute seconds in the Dev year
     sec_per_yr_dev = 0
@@ -301,7 +305,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # =======================================================================
     # Print the list of plots & tables being generated
     # =======================================================================
-    bmk_util.print_benchmark_info(config)
+    print_benchmark_info(config)
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCC vs GCC benchmark plots and tables
@@ -349,7 +353,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create plots
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -373,7 +377,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
                 mon_ind = bmk_mon_inds[t]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     ref[mon_ind],
                     gcc_vs_gcc_refstr,
                     dev[mon_ind],
@@ -420,7 +424,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )[0]
 
                 # Create plots
-                bmk.make_benchmark_wetdep_plots(
+                make_benchmark_wetdep_plots(
                     ref,
                     gcc_vs_gcc_refstr,
                     dev,
@@ -443,7 +447,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # ----------------------------------------------------------
                 for t in range(bmk_n_months):
                     mon_ind = bmk_mon_inds[t]
-                    bmk.make_benchmark_wetdep_plots(
+                    make_benchmark_wetdep_plots(
                         ref[mon_ind],
                         gcc_vs_gcc_refstr,
                         dev[mon_ind],
@@ -466,7 +470,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCC vs. GCC radionuclides budget table %%%")
-            ttbdg.transport_tracers_budgets(
+            transport_tracers_budgets(
                 config["data"]["dev"]["gcc"]["dir"],
                 gcc_vs_gcc_devdir,
                 gcc_vs_gcc_devrstdir,
@@ -500,7 +504,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_mass_tables(
+                make_benchmark_mass_tables(
                     refpath,
                     gcc_vs_gcc_refstr,
                     devpath,
@@ -544,7 +548,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create table
-            bmk.make_benchmark_operations_budget(
+            make_benchmark_operations_budget(
                 config["data"]["ref"]["gcc"]["dir"],
                 refs,
                 config["data"]["dev"]["gcc"]["dir"],
@@ -578,8 +582,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 all_months_dev
             )[0]
 
+
             # Make stat-trop exchange table for subset of species
-            ste.make_benchmark_ste_table(
+            make_benchmark_ste_table(
                 config["data"]["dev"]["gcc"]["dir"],
                 devs,
                 int(bmk_year_dev),
@@ -640,7 +645,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create plots
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -664,7 +669,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
                 mon_ind = bmk_mon_inds[t]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     ref[mon_ind],
                     gchp_vs_gcc_refstr,
                     dev[mon_ind],
@@ -712,7 +717,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )[0]
 
                 # Create plots
-                bmk.make_benchmark_wetdep_plots(
+                make_benchmark_wetdep_plots(
                     ref,
                     gchp_vs_gcc_refstr,
                     dev,
@@ -735,7 +740,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # ----------------------------------------------------------
                 for t in range(bmk_n_months):
                     mon_ind = bmk_mon_inds[t]
-                    bmk.make_benchmark_wetdep_plots(
+                    make_benchmark_wetdep_plots(
                         ref[mon_ind],
                         gchp_vs_gcc_refstr,
                         dev[mon_ind],
@@ -758,7 +763,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCHP vs. GCC radionuclides budget table %%%")
-            ttbdg.transport_tracers_budgets(
+            transport_tracers_budgets(
                 config["data"]["dev"]["gchp"]["dir"],
                 gchp_vs_gcc_devdir,
                 gchp_vs_gcc_devrstdir,
@@ -811,7 +816,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_mass_tables(
+                make_benchmark_mass_tables(
                     refpath,
                     gchp_vs_gcc_refstr,
                     devpath,
@@ -857,7 +862,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Make operations budget table
-            bmk.make_benchmark_operations_budget(
+            make_benchmark_operations_budget(
                 config["data"]["dev"]["gcc"]["dir"],
                 refs,
                 config["data"]["dev"]["gchp"]["dir"],
@@ -931,7 +936,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Make concentration plots
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -956,7 +961,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
                 mon_ind = bmk_mon_inds[t]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     ref[mon_ind],
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
@@ -1006,7 +1011,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )[0]
 
                 # Create plots
-                bmk.make_benchmark_wetdep_plots(
+                make_benchmark_wetdep_plots(
                     ref,
                     gchp_vs_gchp_refstr,
                     dev,
@@ -1031,7 +1036,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # ----------------------------------------------------------
                 for t in range(bmk_n_months):
                     mon_ind = bmk_mon_inds[t]
-                    bmk.make_benchmark_wetdep_plots(
+                    make_benchmark_wetdep_plots(
                         ref[mon_ind],
                         gchp_vs_gchp_refstr,
                         dev[mon_ind],
@@ -1055,7 +1060,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCHP vs. GCHP radionuclides budget table %%%")
-            ttbdg.transport_tracers_budgets(
+            transport_tracers_budgets(
                 config["data"]["dev"]["gchp"]["dir"],
                 gchp_vs_gchp_devdir,
                 gchp_vs_gchp_devrstdir,
@@ -1123,7 +1128,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_mass_tables(
+                make_benchmark_mass_tables(
                     refpath,
                     gchp_vs_gchp_refstr,
                     devpath,
@@ -1171,7 +1176,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create table
-            bmk.make_benchmark_operations_budget(
+            make_benchmark_operations_budget(
                 config["data"]["dev"]["gchp"]["dir"],
                 refs,
                 config["data"]["dev"]["gchp"]["dir"],
@@ -1219,7 +1224,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 tablesdir = gcc_vs_gcc_tablesdir
 
             # Create table
-            bmk.make_benchmark_mass_conservation_table(
+            make_benchmark_mass_conservation_table(
                 datafiles,
                 config["data"]["dev"]["gcc"]["dir"],
                 dst=tablesdir,
@@ -1269,7 +1274,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # Read the AREA from the restart file at the end of the
             # simulation.  Due to a GCHP bug, intermediate restarts
             # have AREA with all zeroes.
-            bmk.make_benchmark_mass_conservation_table(
+            make_benchmark_mass_conservation_table(
                 datafiles,
                 config["data"]["dev"]["gchp"]["dir"],
                 dst=tablesdir,
