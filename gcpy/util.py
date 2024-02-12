@@ -4,7 +4,6 @@ objects used throughout GCPy
 """
 import os
 import warnings
-import shutil
 from textwrap import wrap
 from yaml import safe_load
 import numpy as np

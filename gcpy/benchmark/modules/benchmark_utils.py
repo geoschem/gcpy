@@ -3,6 +3,7 @@ Utility functions specific to the benchmark plotting/tabling scripts.
 TODO: Migrate other benchmark-specific utilities from gcpy/benchmark.py to here.
 """
 import os
+import shutil
 import numpy as np
 import xarray as xr
 import pandas as pd
