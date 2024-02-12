@@ -342,7 +342,7 @@ def archive_lumped_species_definitions(
     src = os.path.join(os.path.dirname(__file__), ofile)
     copy = os.path.join(dst, ofile)
     if not os.path.exists(copy):
-        print(f"\nArchiving {lumped_spc} in {dst}")
+        print(f"\nArchiving {ofile} in {dst}")
         shutil.copyfile(src, copy)
 
 
@@ -491,5 +491,5 @@ def archive_species_categories(
     src = os.path.join(os.path.dirname(__file__), ofile)
     copy = os.path.join(dst, ofile)
     if not os.path.exists(copy):
-        print(f"\nArchiving {spc_categories} in {dst}")
+        print(f"\nArchiving {ofile} in {dst}")
         shutil.copyfile(src, copy)
