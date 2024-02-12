@@ -34,7 +34,7 @@ config="1yr_fullchem_benchmark.yml"
 #config="1yr_tt_benchmark.yml"
 
 # Call the run_benchmark script to make the plots
-python -m gcpy.benchmark.run_benchmark "${config}" > "${config/.yml/.log}: 2>&1
+python -m gcpy.benchmark.run_benchmark "${config}" > "${config/.yml/.log}" 2>&1
 
 # Turn off python environment
 mamba deactivate
