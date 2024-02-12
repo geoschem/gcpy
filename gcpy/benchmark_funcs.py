@@ -4269,7 +4269,7 @@ def make_benchmark_operations_budget(
         dev_interval,
         benchmark_type=None,
         label=None,
-        col_sections=["Full", "Trop", "PBL", "Strat"],
+        col_sections=["Full", "Trop", "PBL", "FixedLevs", "Strat"],
         operations=["Chemistry", "Convection", "EmisDryDep",
                     "Mixing", "Transport", "WetDep"],
         compute_accum=True,
@@ -4309,7 +4309,7 @@ def make_benchmark_operations_budget(
             List of column sections to calculate global budgets for. May
             include Strat eventhough not calculated in GEOS-Chem, but Full
             and Trop must also be present to calculate Strat.
-            Default value: ["Full", "Trop", "PBL", "Strat"]
+            Default value: ["Full", "Trop", "PBL", "FixedLevs", "Strat"]
         operations: list of str
             List of operations to calculate global budgets for. Accumulation
             should not be included. It will automatically be calculated if
@@ -4444,6 +4444,18 @@ def make_benchmark_operations_budget(
     devonly = [v for v in devonly if "Budget" in v and "Strat" not in v]
     cmnvars = [v for v in cmnvars if "Budget" in v and "Strat" not in v]
 
+    # Special handling for fixed level budget diagnostic
+    # Get variable name prefix, e.g. Levs1to35. Check that all fixed level
+    # vars have the same prefix. Update section names used in table.
+    fixedlevvars = [v for v in cmnvars if "Budget" in v and "Levs" in v]
+    if fixedlevvars is not None:
+        fixedlevnames = [v[v.index('Levs'):].split("_")[0] for v in fixedlevvars]
+        if len(set(fixedlevnames)) > 1:
+            msg = "Budget fixed level diagnostic name must be constant!"
+            raise ValueError(msg)
+        col_sections = [v.replace('FixedLevs',fixedlevnames[0]) for v in col_sections]
+        gc_sections = [v.replace('FixedLevs',fixedlevnames[0]) for v in gc_sections]
+
     # Get the species list, depending on if species was passed as argument.
     if species is not None:
         spclist = species
@@ -4558,12 +4570,15 @@ def make_benchmark_operations_budget(
     # Loop over sections (only those with data in files)
     for gc_section in gc_sections:
 
+        # Keep track of progress in log
+        print(f"  {gc_section}")
+
         # Loop over species in that section
         for i, spc in enumerate(spclist):
 
-            # Keep track of progress
-            if (i + 1) % 50 == 0:
-                print(f"  {gc_section}: species {i + 1} of {n_spc}")
+            # Keep track of progress (debugging print)
+            #if (i + 1) % 50 == 0:
+            #    print(f"  {gc_section}: species {i + 1} of {n_spc}")
 
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
@@ -4620,14 +4635,14 @@ def make_benchmark_operations_budget(
     # Compute Strat for each data operation (if applicable)
     # ------------------------------------------
     if compute_strat:
-        print('Computing Strat budgets from Trop and Full...')
+        print('Computing Strat budgets from Trop and Full')
 
         # Loop over species
         for i, spc in enumerate(spclist):
 
-            # Keep track of progress
-            if (i + 1) % 50 == 0:
-                print(f"  Strat: species {i + 1} of {n_spc}")
+            # Keep track of progress (debugging print)
+            #if (i + 1) % 50 == 0:
+            #    print(f"  Strat: species {i + 1} of {n_spc}")
 
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
@@ -4687,12 +4702,15 @@ def make_benchmark_operations_budget(
         # Loop over all column sections
         for col_section in col_sections:
 
+            # Keep track of progress in log
+            print(f"  {col_section}")
+
             # Loop over species
             for i, spc in enumerate(spclist):
 
-                # Keep track of progress
-                if (i + 1) % 50 == 0:
-                    print(f"  {col_section}: species {i + 1} of {n_spc}")
+                # Keep track of progress (debugging print)
+                #if (i + 1) % 50 == 0:
+                #    print(f"  {col_section}: species {i + 1} of {n_spc}")
 
                 # Get the accumulation dataframe row to fill.Skip if not found.
                 dfrow = (df["Column_Section"] == col_section) \
