@@ -18,6 +18,8 @@ import xarray as xr
 import gcpy.constants as constants
 from gcpy.grid import get_troposphere_mask
 import gcpy.util as util
+from gcpy.benchmark.modules.benchmark_utils import \
+    rename_speciesconc_to_speciesconcvv
 import gc
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
@@ -205,6 +207,9 @@ class _GlobVars:
             SpeciesConc,
             drop_variables=constants.skip_these_vars,
             **extra_kwargs
+        )
+        self.ds_cnc = rename_speciesconc_to_speciesconcvv(
+            self.ds_cnc
         )
 
         self.ds_wcv = xr.open_mfdataset(

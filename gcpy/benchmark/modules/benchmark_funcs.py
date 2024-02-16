@@ -23,7 +23,7 @@ from gcpy.plot.compare_zonal_mean import compare_zonal_mean
 from gcpy.benchmark.modules.benchmark_utils import \
     AOD_SPC, EMISSION_SPC, EMISSION_INV, add_lumped_species_to_dataset, \
     archive_lumped_species_definitions, get_species_categories, \
-    archive_species_categories
+    archive_species_categories, rename_speciesconc_to_speciesconcvv
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -1030,14 +1030,8 @@ def make_benchmark_conc_plots(
 
     # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
     # naming introduced in GEOS-Chem 14.1.0
-    for v in refds.data_vars.keys():
-        if v.startswith('SpeciesConc_'):
-            spc = v.replace('SpeciesConc_', '')
-            refds = refds.rename({v: 'SpeciesConcVV_' + spc})
-    for v in devds.data_vars.keys():
-        if v.startswith('SpeciesConc_'):
-            spc = v.replace('SpeciesConc_', '')
-            devds = devds.rename({v: 'SpeciesConcVV_' + spc})
+    refds = rename_speciesconc_to_speciesconcvv(refds)
+    devds = rename_speciesconc_to_speciesconcvv(devds)
 
     # -----------------------------------------------------------------
     # Kludge, rename wrong variable name
@@ -4085,10 +4079,7 @@ def make_benchmark_aerosol_tables(
 
     # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
     # naming introduced in GEOS-Chem 14.1.0
-    for v in ds_spc.data_vars.keys():
-        if v.startswith('SpeciesConc_'):
-            spc = v.replace('SpeciesConc_', '')
-            ds_spc = ds_spc.rename({v: 'SpeciesConcVV_' + spc})
+    ds_spc = rename_speciesconc_to_speciesconcvv(ds_spc)
 
     # Get troposphere mask
     tropmask = get_troposphere_mask(ds_met)

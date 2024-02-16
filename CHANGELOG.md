@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Environment files `docs/environment_files/gcpy_requirements.txt` and `docs/environment_files/read_the_docs_requirements.txt`
 - New benchmark script `gcpy/benchmark/modules/benchmark_models_vs_sondes.py`
 - Added fixed level budget diagnostic to budget operations table
+- Function `rename_speciesconc_to_speciesconcvv` in `gcpy/benchmark/modules/benchmark_utils.py`
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
@@ -34,6 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `benchmark_slurm.sh` script now saves output to a log file with the same base name as the YAML config file
 - `benchmark_models_vs_obs.py` now reads the observational data paths and metadata from  `1yr_fullchem_benchmark.yml`
 - Moved benchmark code from `gcpy/` to `gcpy/benchmark/modules/`
+- Benchmark functions now call `rename_speciesconc_to_speciesconcvv`
 
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects

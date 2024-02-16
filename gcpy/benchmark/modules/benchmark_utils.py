@@ -494,3 +494,25 @@ def archive_species_categories(
     if not os.path.exists(copy):
         print(f"\nArchiving {ofile} in {dst}")
         shutil.copyfile(src, copy)
+
+
+def rename_speciesconc_to_speciesconcvv(
+        dset
+):
+    """
+    Renames netCDF variables starting with "SpeciesConc_" (whcih was
+    used prior to GEOS-Chem 14.1.0) to start with "SpeciesConcVV_".
+    This is needed for backwards compatibility with older versions.
+
+    Args
+    dset : xr.Dataset : The input dataset
+
+    Returns
+    dset : xr.Dataset : The modified dataset
+    """
+    rename_dict = {}
+    for var in dset.data_vars.keys():
+        if var.startswith("SpeciesConc_"):
+            rename_dict[var] = var.replace("SpeciesConc_", "SpeciesConcVV_")
+
+    return dset.rename(rename_dict)

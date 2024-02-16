@@ -6,7 +6,9 @@ import gc
 import numpy as np
 from gcpy import util
 from gcpy.plot.compare_single_level import compare_single_level
-import gcpy.benchmark.modules.benchmark_utils as bmk_util
+from gcpy.benchmark.modules.benchmark_utils import \
+    get_lumped_species_definitions, make_output_dir, \
+    pdf_filename, print_sigdiffs, read_ref_and_dev
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -90,7 +92,7 @@ def make_benchmark_drydep_plots(
     """
 
     # Create directory for plots (if it doesn't exist)
-    dst = bmk_util.make_output_dir(
+    dst = make_output_dir(
         dst,
         collection,
         subdst,
@@ -98,7 +100,7 @@ def make_benchmark_drydep_plots(
     )
 
     # Read data
-    refdata, devdata = bmk_util.read_ref_and_dev(
+    refdata, devdata = read_ref_and_dev(
         ref,
         dev,
         time_mean=time_mean
@@ -106,7 +108,7 @@ def make_benchmark_drydep_plots(
 
     # Get common variables between Ref and Dev
     if varlist is None:
-        varlist = bmk_util.get_common_varnames(
+        varlist = get_common_varnames(
             refdata,
             devdata,
             prefix="DryDepVel_",
@@ -115,7 +117,7 @@ def make_benchmark_drydep_plots(
 
     # Create surface plots
     sigdiff_list = []
-    pdfname = bmk_util.pdf_filename(
+    pdfname = pdf_filename(
         dst,
         collection,
         subdst,
@@ -145,7 +147,7 @@ def make_benchmark_drydep_plots(
     )
 
     # Write significant differences to file (if there are any)
-    bmk_util.print_sigdiffs(
+    print_sigdiffs(
         sigdiff_files,
         sigdiff_list,
         sigdiff_type="sfc",
