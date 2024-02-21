@@ -10,23 +10,20 @@ Run this script to generate benchmark comparisons between:
     (2) GCHP vs GCC
     (3) GCHP vs GCHP
 
-You can customize this by editing the settings in the corresponding yaml
-config file (eg. 1yr_tt_benchmark.yml).
+You can customize this by editing the settings in the corresponding YAML
+configiration file (eg. 1yr_tt_benchmark.yml).
 
 To generate benchmark output:
 
-    (1) Copy the gcpy/benchmark/run_benchmark.py script and the
-        1yr_tt_benchmark.yml file anywhere you want to run the test.
+    (1) Copy the file gcpy/benchmark/config/1yr_tt_benchmark.yml
+        to a folder of your choice.
 
-    (2) Edit the 1yr_tt_benchmark.yml to point to the proper file paths
-        on your disk space.
+    (2) Edit the 1yr_tt_benchmark.yml to select the desired options
+        and to point to the proper file paths on your system.
 
-    (3) Make sure the /path/to/gcpy/benchmark is in your PYTHONPATH
-        shell environment variable.
+    (3) Run the command:
 
-    (4) Type at the command line
-
-        ./run_benchmark.py 1yr_tt_benchmark.yml
+        $ python -m gcpy.benchmark.run_benchmark.py 1yr_tt_benchmark.yml
 
 Remarks:
 
@@ -42,7 +39,12 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.4.2. Edit this version ID if releasing
+    Also, to disable matplotlib from trying to open X windows, you may
+    need to set the following environment variable in your shell:
+
+        $ export MPLBACKEND=agg
+
+This script corresponds with GCPy 1.4.3. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -52,11 +54,10 @@ a new version of GCPy.
 
 import os
 import warnings
-from shutil import copyfile
 from calendar import monthrange
 import numpy as np
 from joblib import Parallel, delayed
-from gcpy.util import get_filepath, get_filepaths
+from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
 from gcpy.benchmark.modules.benchmark_funcs import \
     get_species_database_dir, make_benchmark_conc_plots, \
     make_benchmark_wetdep_plots, make_benchmark_mass_tables, \
@@ -177,14 +178,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     if not os.path.exists(mainresultsdir):
         os.mkdir(mainresultsdir)
 
-    # Make copy of benchmark script in results directory
-    curfile = os.path.realpath(__file__)
-    dest = os.path.join(mainresultsdir, curfile.split("/")[-1])
-    if not os.path.exists(dest):
-        copyfile(curfile, dest)
-
-    # Create results directories that don't exist,
-    # and place a copy of this file in each results directory
+    # Create results directories that don't exist, and place a copy of
+    # this file plus the YAML configuration file in each results directory.
     resdir_list = [
         gcc_vs_gcc_resultsdir,
         gchp_vs_gcc_resultsdir,
@@ -195,14 +190,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
         config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
     ]
-    for resdir, plotting_type in zip(resdir_list, comparisons_list):
+    for (resdir, plotting_type) in zip(resdir_list, comparisons_list):
         if plotting_type and not os.path.exists(resdir):
             os.mkdir(resdir)
             if resdir in resdir_list:
-                curfile = os.path.realpath(__file__)
-                dest = os.path.join(resdir, curfile.split("/")[-1])
-                if not os.path.exists(dest):
-                    copyfile(curfile, dest)
+                copy_file_to_dir(__file__, resdir)
+                copy_file_to_dir(config["configuration_file_name"], resdir)
 
     # Tables directories
     gcc_vs_gcc_tablesdir = os.path.join(

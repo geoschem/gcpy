@@ -15,19 +15,15 @@ config file (eg. 1yr_fullchem_benchmark.yml).
 
 To generate benchmark output:
 
-    (1) Copy the gcpy/benchmark/run_benchmark.py script and the
-        1yr_fullchem_benchmark.yml file anywhere you want to generate
-        output plots and tables.
+    (1) Copy the file gcpy/benchmark/config/1yr_fullchem_benchmark.yml
+        to a folder of your choice.
 
-    (2) Edit the 1yr_fullchem_benchmark.yml to point to the proper
-        file paths on your disk space.
+    (2) Edit the 1yr_tt_benchmark.yml to select the desired options
+        and to point to the proper file paths on your system.
 
-    (3) Make sure the /path/to/gcpy/benchmark is in your PYTHONPATH
-        shell environment variable.
+    (3) Run the command:
 
-    (4) Type at the command line
-
-        ./run_benchmark.py 1yr_fullchem_benchmark.yml
+        $ python -m gcpy.benchmark.run_benchmark.py 1yr_fullchem_benchmark.yml
 
 Remarks:
 
@@ -43,7 +39,12 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.4.2. Edit this version ID if releasing
+    Also, to disable matplotlib from trying to open X windows, you may
+    need to set the following environment variable in your shell:
+
+        $ export MPLBACKEND=agg
+
+This script corresponds with GCPy 1.4.3. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -53,11 +54,10 @@ a new version of GCPy.
 
 import os
 import warnings
-from shutil import copyfile
 from calendar import monthrange
 import numpy as np
 from joblib import Parallel, delayed
-from gcpy.util import get_filepath, get_filepaths
+from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
 from gcpy.benchmark.modules.budget_ox import global_ox_budget
@@ -190,16 +190,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         mainresultsdir,
         "GCHP_GCC_diff_of_diffs"
     )
-    # Make copy of benchmark script in results directory
+
+    # Create the main results directory first
     if not os.path.exists(mainresultsdir):
         os.mkdir(mainresultsdir)
-        curfile = os.path.realpath(__file__)
-        dest = os.path.join(mainresultsdir, curfile.split("/")[-1])
-        if not os.path.exists(dest):
-            copyfile(curfile, dest)
 
-    # Create results directories that don't exist,
-    # and place a copy of this file in each results directory
+    # Create results directories that don't exist.  Also place a copy of
+    # this file plus the YAML configuration file in each results directory.
     results_list = [
         gcc_vs_gcc_resultsdir,
         gchp_vs_gchp_resultsdir,
@@ -212,14 +209,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
         config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"]
     ]
-    for resdir, plotting_type in zip(results_list, comparisons_list):
+    for (resdir, plotting_type) in zip(results_list, comparisons_list):
         if plotting_type and not os.path.exists(resdir):
             os.mkdir(resdir)
             if resdir in results_list:
-                curfile = os.path.realpath(__file__)
-                dest = os.path.join(resdir, curfile.split("/")[-1])
-                if not os.path.exists(dest):
-                    copyfile(curfile, dest)
+                copy_file_to_dir(__file__, resdir)
+                copy_file_to_dir(config["configuration_file_name"], resdir)
 
     # Tables directories
     gcc_vs_gcc_tablesdir = os.path.join(

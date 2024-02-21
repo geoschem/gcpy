@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
-run_1mo_benchmark.py: Driver script for creating benchmark plots and
-                      testing gcpy 1-month benchmark capability
+run_benchmark.py: Driver script for creating benchmark plots.
 
 Run this script to generate benchmark comparisons between:
 
@@ -11,11 +10,11 @@ Run this script to generate benchmark comparisons between:
     (4) GCHP vs GCC diff-of-diffs
 
 You can customize this by editing the settings in the corresponding yaml
-config file (eg. 1mo_benchmark.yml).
+configuration file.
 
 Calling sequence:
 
-    ./run_1mo_benchmark.py <path-to-configuration-file>
+    $ python -m gcpy.benchmark.run_benchmark <path-to-configuration-file>
 
 Remarks:
 
@@ -31,7 +30,12 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.4.2. Edit this version ID if releasing
+    Also, to disable matplotlib from trying to open X windows, you may
+    need to set the following environment variable in your shell:
+
+        $ export MPLBACKEND=agg
+
+This script corresponds with GCPy 1.4.3. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -41,11 +45,10 @@ a new version of GCPy.
 
 import os
 import sys
-from shutil import copyfile
 import warnings
 from datetime import datetime
 import numpy as np
-from gcpy.util import get_filepath, read_config_file
+from gcpy.util import copy_file_to_dir, get_filepath, read_config_file
 from gcpy.date_time import add_months, is_full_year
 from gcpy.benchmark.modules.benchmark_funcs import \
     diff_of_diffs_toprow_title, get_species_database_dir, \
@@ -230,7 +233,7 @@ def run_benchmark_default(config):
     )
 
     # make results directories that don't exist
-    for resdir, plotting_type in zip(
+    for (resdir, plotting_type) in zip(
         [
             gcc_vs_gcc_resultsdir,
             base_gchp_resultsdir,
@@ -250,12 +253,16 @@ def run_benchmark_default(config):
     ):
         if plotting_type and not os.path.exists(resdir):
             os.mkdir(resdir)
-            if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
-                # Make copy of benchmark script in results directory
-                curfile = os.path.realpath(__file__)
-                dest = os.path.join(resdir, curfile.split("/")[-1])
-                if os.path.exists(dest):
-                    copyfile(curfile, dest)
+
+            # Copy this script and the config file to each results dir
+            if resdir in [
+                    gcc_vs_gcc_resultsdir,
+                    gchp_vs_gcc_resultsdir,
+                    gchp_vs_gchp_resultsdir,
+                    diff_of_diffs_resultsdir,
+            ]:
+                copy_file_to_dir(__file__, resdir)
+                copy_file_to_dir(config["configuration_file_name"], resdir)
 
     gcc_vs_gcc_tablesdir = os.path.join(
         gcc_vs_gcc_resultsdir,
@@ -1656,6 +1663,7 @@ def main(argv):
     """
     config_filename = argv[1] if len(argv) == 2 else "1mo_benchmark.yml"
     config = read_config_file(config_filename)
+    config["configuration_file_name"] = config_filename
     choose_benchmark_type(config)
 
 

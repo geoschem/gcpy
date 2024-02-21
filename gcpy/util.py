@@ -3,6 +3,7 @@ Internal utilities for helping to manage xarray and numpy
 objects used throughout GCPy
 """
 import os
+from shutil import copyfile
 import warnings
 from textwrap import wrap
 from yaml import safe_load
@@ -2216,3 +2217,21 @@ def verify_variable_type(
     if isinstance(var, var_type):
         return
     raise TypeError( f"{var} is not of type: {var_type}!")
+
+
+def copy_file_to_dir(
+        ifile,
+        dest,
+):
+    """
+    Convenience wrapper for shutil.copyfile, used to copy a file to
+    a directory.
+
+    Args
+    ifile : str : Input file in original location
+    dest  : str : Destination folder where ifile will be copied.
+    """
+    ifile = os.path.realpath(ifile)
+    ofile = os.path.join(dest, os.path.basename(ifile))
+    if not os.path.exists(ofile):
+        copyfile(ifile, ofile)
