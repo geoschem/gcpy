@@ -3,7 +3,6 @@ Utility functions specific to the benchmark plotting/tabling scripts.
 TODO: Migrate other benchmark-specific utilities from gcpy/benchmark.py to here.
 """
 import os
-import shutil
 import numpy as np
 import xarray as xr
 import pandas as pd
@@ -341,10 +340,7 @@ def archive_lumped_species_definitions(
     """
     ofile = LUMPED_SPC
     src = os.path.join(os.path.dirname(__file__), ofile)
-    copy = os.path.join(dst, ofile)
-    if not os.path.exists(copy):
-        print(f"\nArchiving {ofile} in {dst}")
-        shutil.copyfile(src, copy)
+    util.copy_file_to_dir(src, dst)
 
 
 def add_lumped_species_to_dataset(
@@ -490,10 +486,7 @@ def archive_species_categories(
     """
     ofile = BENCHMARK_CAT
     src = os.path.join(os.path.dirname(__file__), ofile)
-    copy = os.path.join(dst, ofile)
-    if not os.path.exists(copy):
-        print(f"\nArchiving {ofile} in {dst}")
-        shutil.copyfile(src, copy)
+    util.copy_file_to_dir(src, dst)
 
 
 def rename_speciesconc_to_speciesconcvv(
