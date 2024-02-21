@@ -132,13 +132,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     )
     gchp_vs_gcc_refrstdir = os.path.join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["restarts_subdir"]
+        config["data"]["dev"]["gcc"]["dir"],
+        config["data"]["dev"]["gcc"]["restarts_subdir"]
     )
     gchp_vs_gchp_refrstdir = os.path.join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["restarts_subdir"]
+        config["data"]["dev"]["gchp"]["dir"],
+        config["data"]["dev"]["gchp"]["restarts_subdir"]
     )
     gcc_vs_gcc_devrstdir = os.path.join(
         config["paths"]["main_dir"],
@@ -470,8 +470,21 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCC vs. GCC radionuclides budget table %%%")
+
+            # Ref
             transport_tracers_budgets(
-                config["data"]["dev"]["gcc"]["dir"],
+                config["data"]["ref"]["gcc"]["version"],
+                gcc_vs_gcc_refdir,
+                gcc_vs_gcc_refrstdir,
+                int(bmk_year_ref),
+                dst=gcc_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+            # Dev
+            transport_tracers_budgets(
+                config["data"]["dev"]["gcc"]["version"],
                 gcc_vs_gcc_devdir,
                 gcc_vs_gcc_devrstdir,
                 int(bmk_year_dev),
@@ -576,16 +589,31 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Diagnostic collection files to read (all 12 months)
             col = "AdvFluxVert"
+            refs = get_filepaths(
+                gcc_vs_gcc_refdir,
+                col,
+                all_months_ref
+            )[0]
             devs = get_filepaths(
                 gcc_vs_gcc_devdir,
                 col,
                 all_months_dev
             )[0]
 
-
-            # Make stat-trop exchange table for subset of species
+            # Ref
             make_benchmark_ste_table(
-                config["data"]["dev"]["gcc"]["dir"],
+                config["data"]["ref"]["gcc"]["version"],
+                devs,
+                int(bmk_year_ref),
+                dst=gcc_vs_gcc_tablesdir,
+                bmk_type=bmk_type,
+                species=["Pb210", "Be7", "Be10"],
+                overwrite=True,
+            )
+
+            # Dev
+            make_benchmark_ste_table(
+                config["data"]["dev"]["gcc"]["version"],
                 devs,
                 int(bmk_year_dev),
                 dst=gcc_vs_gcc_tablesdir,
@@ -763,8 +791,21 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCHP vs. GCC radionuclides budget table %%%")
+
+            # Ref
             transport_tracers_budgets(
-                config["data"]["dev"]["gchp"]["dir"],
+                config["data"]["dev"]["gcc"]["version"],
+                gchp_vs_gcc_refdir,
+                gchp_vs_gcc_refrstdir,
+                int(bmk_year_dev),
+                dst=gchp_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+            # Dev
+            transport_tracers_budgets(
+                config["data"]["dev"]["gchp"]["version"],
                 gchp_vs_gcc_devdir,
                 gchp_vs_gcc_devrstdir,
                 int(bmk_year_dev),
@@ -1060,8 +1101,24 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCHP vs. GCHP radionuclides budget table %%%")
+
+            # Ref
             transport_tracers_budgets(
-                config["data"]["dev"]["gchp"]["dir"],
+                config["data"]["ref"]["gchp"]["version"],
+                gchp_vs_gchp_refdir,
+                gchp_vs_gchp_refrstdir,
+                int(bmk_year_ref),
+                dst=gchp_vs_gchp_tablesdir,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir
+            )
+
+            # Dev
+            transport_tracers_budgets(
+                config["data"]["dev"]["gchp"]["version"],
                 gchp_vs_gchp_devdir,
                 gchp_vs_gchp_devrstdir,
                 int(bmk_year_dev),
@@ -1202,48 +1259,111 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     if config["options"]["outputs"]["cons_table"]:
 
         # ===================================================================
-        # Create mass conservation table for GCC_dev
+        # Create mass conservation table for GCC vs GCC
         # ===================================================================
-        if (
-            config["options"]["comparisons"]["gcc_vs_gcc"]["run"]
-            or config["options"]["comparisons"]["gchp_vs_gcc"]["run"]
-        ):
-            print("\n%%% Creating GCC dev mass conservation table %%%")
+        if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
+            print("\n%%% Creating GCC mass conservation tables %%%")
 
             # Filepaths
-            datafiles = get_filepaths(
+            ref_datafiles = get_filepaths(
+                gcc_vs_gcc_refrstdir,
+                "Restart",
+                all_months_ref
+            )[0]
+            dev_datafiles = get_filepaths(
                 gcc_vs_gcc_devrstdir,
                 "Restart",
                 all_months_dev
             )[0]
 
-            # Pick output folder
-            if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
-                tablesdir = gchp_vs_gcc_tablesdir
-            else:
-                tablesdir = gcc_vs_gcc_tablesdir
-
-            # Create table
+            # Ref
             make_benchmark_mass_conservation_table(
-                datafiles,
-                config["data"]["dev"]["gcc"]["dir"],
-                dst=tablesdir,
+                ref_datafiles,
+                config["data"]["ref"]["gcc"]["version"],
+                dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
 
+            # Dev
+            make_benchmark_mass_conservation_table(
+                dev_datafiles,
+                config["data"]["dev"]["gcc"]["version"],
+                dst=gcc_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+        # ===================================================================
+        # Create mass conservation table for GCHP vs GCC
+        # ===================================================================
+        if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
+            print("\n%%% Creating GCHP vs GCC mass conservation tables %%%")
+
+            # Filepaths
+            ref_datafiles = get_filepaths(
+                gchp_vs_gcc_refrstdir,
+                "Restart",
+                all_months_dev,                  # GCHP vs GCC uses GCC dev
+            )[0]
+            dev_datafiles = get_filepaths(
+                gchp_vs_gcc_devrstdir,
+                "Restart",
+                all_months_dev,                  # GCHP vs GCC uses GCHP dev
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+            )[0]
+
+            # KLUDGE: ewl, bmy, 14 Oct 2022
+            # Read the AREA from the restart file at the end of the
+            # simulation.  Due to a GCHP bug, intermediate restarts
+            # have AREA with all zeroes.
+            dev_areapath = get_filepath(
+                gchp_vs_gcc_devrstdir,
+                "Restart",
+                bmk_end_dev,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+            )
+
+            # Ref
+            make_benchmark_mass_conservation_table(
+                ref_datafiles,
+                config["data"]["dev"]["gcc"]["version"],
+                dst=gchp_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+            # Dev
+            make_benchmark_mass_conservation_table(
+                dev_datafiles,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                areapath=dev_areapath,
+            )
+
         # =====================================================================
-        # Create mass conservation table for GCHP_dev
+        # Create mass conservation table for GCHP vs GCHP
         # =====================================================================
-        if (
-            config["options"]["comparisons"]["gchp_vs_gcc"]["run"]
-            or config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
-        ):
+        if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
             print("\n%%% Creating GCHP dev mass conservation table %%%")
 
             # Filepaths
-            datafiles = get_filepaths(
-                gchp_vs_gcc_devrstdir,
+            ref_datafiles = get_filepaths(
+                gchp_vs_gchp_refrstdir,
+                "Restart",
+                all_months_ref,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
+            )[0]
+            dev_datafiles = get_filepaths(
+                gchp_vs_gchp_devrstdir,
                 "Restart",
                 all_months_dev,
                 is_gchp=True,
@@ -1255,8 +1375,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # Read the AREA from the restart file at the end of the
             # simulation.  Due to a GCHP bug, intermediate restarts
             # have AREA with all zeroes.
-            areapath = get_filepath(
-                gchp_vs_gcc_devrstdir,
+            ref_areapath = get_filepath(
+                gchp_vs_gchp_refrstdir,
+                "Restart",
+                bmk_end_ref,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
+            )
+            dev_areapath = get_filepath(
+                gchp_vs_gchp_devrstdir,
                 "Restart",
                 bmk_end_dev,
                 is_gchp=True,
@@ -1264,26 +1392,27 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )
 
-            # Pick output folder
-            if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
-                tablesdir = gchp_vs_gcc_tablesdir
-            else:
-                tablesdir = gchp_vs_gchp_tablesdir
-
-            # KLUDGE: ewl, bmy, 14 Oct 2022
-            # Read the AREA from the restart file at the end of the
-            # simulation.  Due to a GCHP bug, intermediate restarts
-            # have AREA with all zeroes.
+            # Ref
             make_benchmark_mass_conservation_table(
-                datafiles,
-                config["data"]["dev"]["gchp"]["dir"],
-                dst=tablesdir,
+                ref_datafiles,
+                config["data"]["ref"]["gchp"]["version"],
+                dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                areapath=areapath
+                areapath=ref_areapath
+            )
+
+            # Dev
+            make_benchmark_mass_conservation_table(
+                dev_datafiles,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gchp_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                areapath=dev_areapath
             )
 
     # ==================================================================
     # Print a message indicating that the benchmarks finished
     # ==================================================================
-    print("\n %%%% All requested benchmark plots/tables created! %%%%")
+    print("\n%%% All requested benchmark plots/tables created! %%%")

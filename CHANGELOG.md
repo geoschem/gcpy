@@ -36,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - `benchmark_models_vs_obs.py` now reads the observational data paths and metadata from  `1yr_fullchem_benchmark.yml`
 - Moved benchmark code from `gcpy/` to `gcpy/benchmark/modules/`
 - Benchmark functions now call `rename_speciesconc_to_speciesconcvv`
+- Create radionuclide, STE flux, and mass conservation tables for Ref and Dev versions in TransportTracers benchmarks
 
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects

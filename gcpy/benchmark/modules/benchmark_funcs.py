@@ -4932,15 +4932,6 @@ def make_benchmark_mass_conservation_table(
             Path names of restart files.
         runstr: str
             Name to put in the filename and header of the output file
-        refstr: str
-            A string to describe ref (e.g. version number)
-        dev: str
-            Path name of "Dev" (aka "Development") data set file.
-            The "Dev" data set will be compared against the "Ref" data set.
-        devmet: list of str
-            Path name of dev meteorology data set.
-        devstr: str
-            A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
         dst: str
@@ -5065,7 +5056,7 @@ def make_benchmark_mass_conservation_table(
     # Print masses to file
     # ==================================================================
     # Create file
-    outfilename = os.path.join(dst, "Passive_mass.txt")
+    outfilename = os.path.join(dst, f"Passive_mass.{runstr}.txt")
 
     with open(outfilename, 'w') as f:
         titlestr = '  Global Mass of Passive Tracer in ' + runstr + '  '

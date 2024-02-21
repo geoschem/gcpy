@@ -298,7 +298,7 @@ class _GlobVars:
 
         # Read the species database
         path = os.path.join(spcdb_dir, "species_database.yml")
-        spcdb = util.read_config_file(path)
+        spcdb = util.read_config_file(path, quiet=True)
 
         # Molecular weights [g mol-1], as taken from the species database
         self.mw = {}
@@ -703,11 +703,14 @@ def print_budgets(globvars, data, key):
 
     # Filename to print
     if "_f" in key:
-        filename = f"{globvars.dst}/Pb-Be_budget_trop_strat.txt"
+        filename = \
+            f"{globvars.dst}/Pb-Be_budget_trop_strat.{globvars.devstr}.txt"
     elif "_t" in key:
-        filename = f"{globvars.dst}/Pb-Be_budget_troposphere.txt"
+        filename = \
+            f"{globvars.dst}/Pb-Be_budget_troposphere.{globvars.devstr}.txt"
     elif "_s" in key:
-        filename = f"{globvars.dst}/Pb-Be_budget_stratosphere.txt"
+        filename = \
+            f"{globvars.dst}/Pb-Be_budget_stratosphere.{globvars.devstr}.txt"
 
     # Common title string
     title = "Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n        "
