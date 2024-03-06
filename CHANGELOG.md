@@ -42,6 +42,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed silent bug in transport tracer benchmark GCC vs GCHP mass tables preventing them from being generated
 - Import error in `gcpy/examples/diagnostics/compare_diags.py`
 - Added missing `n_cores` to `gcpy/examples/diagnostics/compare_diags.yml`
+- Added missing `plot_drydep` option to `gcpy/gcpy/benchmark/config/1yr_ch4_benchmark.yml`
 
 ### Removed
 - Example script `gcpy/examples/plotting/mda8_o3_timeseries.py`
