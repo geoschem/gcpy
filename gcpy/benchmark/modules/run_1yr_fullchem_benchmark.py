@@ -18,7 +18,7 @@ To generate benchmark output:
     (1) Copy the file gcpy/benchmark/config/1yr_fullchem_benchmark.yml
         to a folder of your choice.
 
-    (2) Edit the 1yr_tt_benchmark.yml to select the desired options
+    (2) Edit the 1yr_fullchem_benchmark.yml to select the desired options
         and to point to the proper file paths on your system.
 
     (3) Run the command:

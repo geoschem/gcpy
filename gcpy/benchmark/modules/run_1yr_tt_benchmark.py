@@ -138,8 +138,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     )
     gchp_vs_gchp_refrstdir = os.path.join(
         config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["restarts_subdir"]
+        config["data"]["ref"]["gchp"]["dir"],
+        config["data"]["ref"]["gchp"]["restarts_subdir"]
     )
     gcc_vs_gcc_devrstdir = os.path.join(
         config["paths"]["main_dir"],
@@ -251,8 +251,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Get subset of month datetimes and seconds per month
     # for only benchmark months
     bmk_mons_ref = all_months_ref[bmk_mon_inds]
-    #bmk_mons_gchp_ref = all_months_gchp_ref[bmk_mon_inds]
-    #bmk_sec_per_month_ref = sec_per_month_ref[bmk_mon_inds]
 
     # Compute seconds in the Ref year
     sec_per_yr_ref = 0
@@ -286,8 +284,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     all_months_gchp_dev = all_months_dev
 
     bmk_mons_dev = all_months_dev[bmk_mon_inds]
-    #bmk_mons_gchp_dev = all_months_gchp_dev[bmk_mon_inds]
-    #bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
 
     # Compute seconds in the Dev year
     sec_per_yr_dev = 0
