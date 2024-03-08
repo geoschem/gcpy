@@ -20,14 +20,13 @@ from gcpy.units import convert_units
 from gcpy.constants import COL_WIDTH, MW_AIR_g, skip_these_vars, TABLE_WIDTH
 from gcpy.plot.compare_single_level import compare_single_level
 from gcpy.plot.compare_zonal_mean import compare_zonal_mean
+from gcpy.benchmark.modules.benchmark_utils import \
+    AOD_SPC, EMISSION_SPC, EMISSION_INV, add_lumped_species_to_dataset, \
+    archive_lumped_species_definitions, get_species_categories, \
+    archive_species_categories, rename_speciesconc_to_speciesconcvv
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
-
-# YAML files
-AOD_SPC = "aod_species.yml"
-EMISSION_SPC = "emission_species.yml"
-EMISSION_INV = "emission_inventories.yml"
 
 
 def create_total_emissions_table(
@@ -1031,14 +1030,8 @@ def make_benchmark_conc_plots(
 
     # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
     # naming introduced in GEOS-Chem 14.1.0
-    for v in refds.data_vars.keys():
-        if v.startswith('SpeciesConc_'):
-            spc = v.replace('SpeciesConc_', '')
-            refds = refds.rename({v: 'SpeciesConcVV_' + spc})
-    for v in devds.data_vars.keys():
-        if v.startswith('SpeciesConc_'):
-            spc = v.replace('SpeciesConc_', '')
-            devds = devds.rename({v: 'SpeciesConcVV_' + spc})
+    refds = rename_speciesconc_to_speciesconcvv(refds)
+    devds = rename_speciesconc_to_speciesconcvv(devds)
 
     # -----------------------------------------------------------------
     # Kludge, rename wrong variable name
@@ -1229,22 +1222,22 @@ def make_benchmark_conc_plots(
         print("\nComputing lumped species for full chemistry benchmark")
 
         print("-->Adding lumped species to ref dataset")
-        refds = util.add_lumped_species_to_dataset(refds)
+        refds = add_lumped_species_to_dataset(refds)
 
         print("-->Adding lumped species to dev dataset")
-        devds = util.add_lumped_species_to_dataset(devds)
+        devds = add_lumped_species_to_dataset(devds)
 
         if diff_of_diffs:
             print("-->Adding lumped species to dev datasets")
-            second_refds = util.add_lumped_species_to_dataset(second_refds)
-            second_devds = util.add_lumped_species_to_dataset(second_devds)
+            second_refds = add_lumped_species_to_dataset(second_refds)
+            second_devds = add_lumped_species_to_dataset(second_devds)
 
-        util.archive_lumped_species_definitions(dst)
+        archive_lumped_species_definitions(dst)
         print("Lumped species computation complete.\n")
 
     # Get the list of species categories
-    catdict = util.get_species_categories(benchmark_type)
-    util.archive_species_categories(dst)
+    catdict = get_species_categories(benchmark_type)
+    archive_species_categories(dst)
 
     # Make sure that Ref and Dev datasets have the same variables.
     # Variables that are in Ref but not in Dev will be added to Dev
@@ -1618,7 +1611,7 @@ def make_benchmark_emis_plots(
             Set this flag to True to separate plots into PDF files
             according to the benchmark species categories (e.g. Oxidants,
             Aerosols, Nitrogen, etc.)  These categories are specified
-            in the YAML file benchmark_species.yml.
+            in the YAML file benchmark_categories.yml.
             Default value: False
         plot_by_hco_cat: bool
             Set this flag to True to separate plots into PDF files
@@ -1898,7 +1891,7 @@ def make_benchmark_emis_plots(
     # ==================================================================
     if plot_by_spc_cat:
 
-        catdict = util.get_species_categories(benchmark_type)
+        catdict = get_species_categories(benchmark_type)
         # in case any emissions are skipped (for use in nested pdf bookmarks)
         warninglist = ([])
         # for checking if emissions species not defined in benchmark category
@@ -4037,10 +4030,11 @@ def make_benchmark_aerosol_tables(
     mw["Air"] = MW_AIR_g
 
     # Get the list of relevant AOD diagnostics from a YAML file
+    ifile= AOD_SPC
     aod = util.read_config_file(
         os.path.join(
             os.path.dirname(__file__),
-            "aod_species.yml"
+            ifile,
         ),
         quiet=True
     )
@@ -4085,10 +4079,7 @@ def make_benchmark_aerosol_tables(
 
     # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
     # naming introduced in GEOS-Chem 14.1.0
-    for v in ds_spc.data_vars.keys():
-        if v.startswith('SpeciesConc_'):
-            spc = v.replace('SpeciesConc_', '')
-            ds_spc = ds_spc.rename({v: 'SpeciesConcVV_' + spc})
+    ds_spc = rename_speciesconc_to_speciesconcvv(ds_spc)
 
     # Get troposphere mask
     tropmask = get_troposphere_mask(ds_met)
@@ -4941,15 +4932,6 @@ def make_benchmark_mass_conservation_table(
             Path names of restart files.
         runstr: str
             Name to put in the filename and header of the output file
-        refstr: str
-            A string to describe ref (e.g. version number)
-        dev: str
-            Path name of "Dev" (aka "Development") data set file.
-            The "Dev" data set will be compared against the "Ref" data set.
-        devmet: list of str
-            Path name of dev meteorology data set.
-        devstr: str
-            A string to describe dev (e.g. version number)
 
     Keyword Args (optional):
         dst: str
@@ -5074,7 +5056,7 @@ def make_benchmark_mass_conservation_table(
     # Print masses to file
     # ==================================================================
     # Create file
-    outfilename = os.path.join(dst, "Passive_mass.txt")
+    outfilename = os.path.join(dst, f"Passive_mass.{runstr}.txt")
 
     with open(outfilename, 'w') as f:
         titlestr = '  Global Mass of Passive Tracer in ' + runstr + '  '

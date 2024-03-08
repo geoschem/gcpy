@@ -24,7 +24,8 @@ from gcpy.constants import skip_these_vars
 from gcpy.util import verify_variable_type, dataset_reader, make_directory
 from gcpy.cstools import extract_grid
 from gcpy.grid import get_nearest_model_data
-from gcpy.benchmark.modules.benchmark_utils import get_geoschem_level_metadata
+from gcpy.benchmark.modules.benchmark_utils import \
+    get_geoschem_level_metadata, rename_speciesconc_to_speciesconcvv
 
 
 def read_nas(
@@ -199,38 +200,11 @@ def read_model_data(
         multi_files=True,
         verbose=verbose,
     )
-
-    # Set temporary variable name for use below
-    varname_tmp = varname
-
-    # First try reading the data as-is
-    try:
-        dataset = reader(
-            filepaths,
-            drop_variables=skip_these_vars,
-            data_vars=[varname_tmp]
-        ).load()
-
-    # If we encounter a ValueError, it may be because the data is
-    # older # and may have e.g. SpeciesConc fields instead of
-    # SpeciesConcVV fields.  Reset the varname_tmp and try again.
-    except ValueError:
-        varname_tmp = varname_tmp.replace("VV", "")
-        dataset = reader(
-            filepaths,
-            drop_variables=skip_these_vars,
-            data_vars=[varname_tmp]
-        ).load()
-
-        # Rename to the original name to avid confusion with data
-        # from GEOS-Chem versions prior to 14.1.0
-        with xr.set_options(keep_attrs=True):
-            dataset = dataset.rename({varname_tmp: varname})
-
-    # If we fail again, then throw an error!
-    except [FileNotFoundError, OSError, IOError] as exc:
-        msg = f"get_model_data: Could not read Ref data for {varname}!"
-        raise exc(msg) from exc
+    
+    # Read data and rename SpeciesConc_ to SpeciesConcVV_, if necessary
+    # (needed for backwards compatibility with older versions.)
+    dataset = reader(filepaths,drop_variables=skip_these_vars).load()
+    dataset = rename_speciesconc_to_speciesconcvv(dataset)
 
     # Create a DataArray object and convert to ppbv (if necessary)
     with xr.set_options(keep_attrs=True):

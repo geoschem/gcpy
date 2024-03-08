@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 from gcpy.cstools import extract_grid
 from gcpy.grid import get_nearest_model_data, get_vert_grid
 from gcpy.util import make_directory, verify_variable_type
-from gcpy.benchmark.modules.benchmark_utils import read_ref_and_dev
+from gcpy.benchmark.modules.benchmark_utils import \
+    read_ref_and_dev, rename_speciesconc_to_speciesconcvv
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -41,6 +42,11 @@ def get_ref_and_dev_model_data(
         dev_filepaths,
         multi_file=True
     )
+
+    # Rename variables starting with "SpeciesConc_" to "SpeciesConcVV_",
+    # for backwards compatibility with GC versions prior to 14.1.0.
+    ref_data = rename_speciesconc_to_speciesconcvv(ref_data)
+    dev_data = rename_speciesconc_to_speciesconcvv(dev_data)
 
     # Return the species of interest and convert to ppbv
     return ref_data[varname]*1.0e9, dev_data[varname]*1.0e9

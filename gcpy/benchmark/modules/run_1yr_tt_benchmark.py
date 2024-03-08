@@ -10,23 +10,20 @@ Run this script to generate benchmark comparisons between:
     (2) GCHP vs GCC
     (3) GCHP vs GCHP
 
-You can customize this by editing the settings in the corresponding yaml
-config file (eg. 1yr_tt_benchmark.yml).
+You can customize this by editing the settings in the corresponding YAML
+configiration file (eg. 1yr_tt_benchmark.yml).
 
 To generate benchmark output:
 
-    (1) Copy the gcpy/benchmark/run_benchmark.py script and the
-        1yr_tt_benchmark.yml file anywhere you want to run the test.
+    (1) Copy the file gcpy/benchmark/config/1yr_tt_benchmark.yml
+        to a folder of your choice.
 
-    (2) Edit the 1yr_tt_benchmark.yml to point to the proper file paths
-        on your disk space.
+    (2) Edit the 1yr_tt_benchmark.yml to select the desired options
+        and to point to the proper file paths on your system.
 
-    (3) Make sure the /path/to/gcpy/benchmark is in your PYTHONPATH
-        shell environment variable.
+    (3) Run the command:
 
-    (4) Type at the command line
-
-        ./run_benchmark.py 1yr_tt_benchmark.yml
+        $ python -m gcpy.benchmark.run_benchmark.py 1yr_tt_benchmark.yml
 
 Remarks:
 
@@ -42,7 +39,12 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.4.2. Edit this version ID if releasing
+    Also, to disable matplotlib from trying to open X windows, you may
+    need to set the following environment variable in your shell:
+
+        $ export MPLBACKEND=agg
+
+This script corresponds with GCPy 1.4.3. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -52,15 +54,17 @@ a new version of GCPy.
 
 import os
 import warnings
-from shutil import copyfile
 from calendar import monthrange
 import numpy as np
 from joblib import Parallel, delayed
-from gcpy.util import get_filepath, get_filepaths
-from gcpy import benchmark_funcs as bmk
-import gcpy.budget_tt as ttbdg
-import gcpy.ste_flux as ste
-import gcpy.benchmark.modules.benchmark_utils as bmk_util
+from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
+from gcpy.benchmark.modules.benchmark_funcs import \
+    get_species_database_dir, make_benchmark_conc_plots, \
+    make_benchmark_wetdep_plots, make_benchmark_mass_tables, \
+    make_benchmark_operations_budget, make_benchmark_mass_conservation_table
+from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
+from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
+from gcpy.benchmark.modules.benchmark_utils import print_benchmark_info
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -72,6 +76,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 def run_benchmark(config, bmk_year_ref, bmk_year_dev):
+    """Routine to create benchmark plots and tables"""
     # This script has a fixed benchmark type, year, and months
     bmk_type = config["options"]["bmk_type"]
     bmk_mon_strs = ["Jan", "Apr", "Jul", "Oct"]
@@ -81,7 +86,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # =====================================================================
     # Path to species_database.yml
     # =====================================================================
-    spcdb_dir = bmk.get_species_database_dir(config)
+    spcdb_dir = get_species_database_dir(config)
 
     # ======================================================================
     # Data directories
@@ -128,8 +133,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     )
     gchp_vs_gcc_refrstdir = os.path.join(
         config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["restarts_subdir"]
+        config["data"]["dev"]["gcc"]["dir"],
+        config["data"]["dev"]["gcc"]["restarts_subdir"]
     )
     gchp_vs_gchp_refrstdir = os.path.join(
         config["paths"]["main_dir"],
@@ -173,14 +178,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     if not os.path.exists(mainresultsdir):
         os.mkdir(mainresultsdir)
 
-    # Make copy of benchmark script in results directory
-    curfile = os.path.realpath(__file__)
-    dest = os.path.join(mainresultsdir, curfile.split("/")[-1])
-    if not os.path.exists(dest):
-        copyfile(curfile, dest)
-
-    # Create results directories that don't exist,
-    # and place a copy of this file in each results directory
+    # Create results directories that don't exist, and place a copy of
+    # this file plus the YAML configuration file in each results directory.
     resdir_list = [
         gcc_vs_gcc_resultsdir,
         gchp_vs_gcc_resultsdir,
@@ -191,14 +190,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
         config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
     ]
-    for resdir, plotting_type in zip(resdir_list, comparisons_list):
+    for (resdir, plotting_type) in zip(resdir_list, comparisons_list):
         if plotting_type and not os.path.exists(resdir):
             os.mkdir(resdir)
             if resdir in resdir_list:
-                curfile = os.path.realpath(__file__)
-                dest = os.path.join(resdir, curfile.split("/")[-1])
-                if not os.path.exists(dest):
-                    copyfile(curfile, dest)
+                copy_file_to_dir(__file__, resdir)
+                copy_file_to_dir(config["configuration_file_name"], resdir)
 
     # Tables directories
     gcc_vs_gcc_tablesdir = os.path.join(
@@ -254,8 +251,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Get subset of month datetimes and seconds per month
     # for only benchmark months
     bmk_mons_ref = all_months_ref[bmk_mon_inds]
-    bmk_mons_gchp_ref = all_months_gchp_ref[bmk_mon_inds]
-    bmk_sec_per_month_ref = sec_per_month_ref[bmk_mon_inds]
 
     # Compute seconds in the Ref year
     sec_per_yr_ref = 0
@@ -289,8 +284,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     all_months_gchp_dev = all_months_dev
 
     bmk_mons_dev = all_months_dev[bmk_mon_inds]
-    bmk_mons_gchp_dev = all_months_gchp_dev[bmk_mon_inds]
-    bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
 
     # Compute seconds in the Dev year
     sec_per_yr_dev = 0
@@ -301,7 +294,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # =======================================================================
     # Print the list of plots & tables being generated
     # =======================================================================
-    bmk_util.print_benchmark_info(config)
+    print_benchmark_info(config)
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCC vs GCC benchmark plots and tables
@@ -349,7 +342,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create plots
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -373,7 +366,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
                 mon_ind = bmk_mon_inds[t]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     ref[mon_ind],
                     gcc_vs_gcc_refstr,
                     dev[mon_ind],
@@ -420,7 +413,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )[0]
 
                 # Create plots
-                bmk.make_benchmark_wetdep_plots(
+                make_benchmark_wetdep_plots(
                     ref,
                     gcc_vs_gcc_refstr,
                     dev,
@@ -443,7 +436,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # ----------------------------------------------------------
                 for t in range(bmk_n_months):
                     mon_ind = bmk_mon_inds[t]
-                    bmk.make_benchmark_wetdep_plots(
+                    make_benchmark_wetdep_plots(
                         ref[mon_ind],
                         gcc_vs_gcc_refstr,
                         dev[mon_ind],
@@ -466,8 +459,21 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCC vs. GCC radionuclides budget table %%%")
-            ttbdg.transport_tracers_budgets(
-                config["data"]["dev"]["gcc"]["dir"],
+
+            # Ref
+            transport_tracers_budgets(
+                config["data"]["ref"]["gcc"]["version"],
+                gcc_vs_gcc_refdir,
+                gcc_vs_gcc_refrstdir,
+                int(bmk_year_ref),
+                dst=gcc_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+            # Dev
+            transport_tracers_budgets(
+                config["data"]["dev"]["gcc"]["version"],
                 gcc_vs_gcc_devdir,
                 gcc_vs_gcc_devrstdir,
                 int(bmk_year_dev),
@@ -500,7 +506,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_mass_tables(
+                make_benchmark_mass_tables(
                     refpath,
                     gcc_vs_gcc_refstr,
                     devpath,
@@ -544,7 +550,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create table
-            bmk.make_benchmark_operations_budget(
+            make_benchmark_operations_budget(
                 config["data"]["ref"]["gcc"]["dir"],
                 refs,
                 config["data"]["dev"]["gcc"]["dir"],
@@ -572,15 +578,31 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Diagnostic collection files to read (all 12 months)
             col = "AdvFluxVert"
+            refs = get_filepaths(
+                gcc_vs_gcc_refdir,
+                col,
+                all_months_ref
+            )[0]
             devs = get_filepaths(
                 gcc_vs_gcc_devdir,
                 col,
                 all_months_dev
             )[0]
 
-            # Make stat-trop exchange table for subset of species
-            ste.make_benchmark_ste_table(
-                config["data"]["dev"]["gcc"]["dir"],
+            # Ref
+            make_benchmark_ste_table(
+                config["data"]["ref"]["gcc"]["version"],
+                devs,
+                int(bmk_year_ref),
+                dst=gcc_vs_gcc_tablesdir,
+                bmk_type=bmk_type,
+                species=["Pb210", "Be7", "Be10"],
+                overwrite=True,
+            )
+
+            # Dev
+            make_benchmark_ste_table(
+                config["data"]["dev"]["gcc"]["version"],
                 devs,
                 int(bmk_year_dev),
                 dst=gcc_vs_gcc_tablesdir,
@@ -640,7 +662,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create plots
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -664,7 +686,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
                 mon_ind = bmk_mon_inds[t]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     ref[mon_ind],
                     gchp_vs_gcc_refstr,
                     dev[mon_ind],
@@ -712,7 +734,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )[0]
 
                 # Create plots
-                bmk.make_benchmark_wetdep_plots(
+                make_benchmark_wetdep_plots(
                     ref,
                     gchp_vs_gcc_refstr,
                     dev,
@@ -735,7 +757,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # ----------------------------------------------------------
                 for t in range(bmk_n_months):
                     mon_ind = bmk_mon_inds[t]
-                    bmk.make_benchmark_wetdep_plots(
+                    make_benchmark_wetdep_plots(
                         ref[mon_ind],
                         gchp_vs_gcc_refstr,
                         dev[mon_ind],
@@ -758,8 +780,21 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCHP vs. GCC radionuclides budget table %%%")
-            ttbdg.transport_tracers_budgets(
-                config["data"]["dev"]["gchp"]["dir"],
+
+            # Ref
+            transport_tracers_budgets(
+                config["data"]["dev"]["gcc"]["version"],
+                gchp_vs_gcc_refdir,
+                gchp_vs_gcc_refrstdir,
+                int(bmk_year_dev),
+                dst=gchp_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+            # Dev
+            transport_tracers_budgets(
+                config["data"]["dev"]["gchp"]["version"],
                 gchp_vs_gcc_devdir,
                 gchp_vs_gcc_devrstdir,
                 int(bmk_year_dev),
@@ -811,7 +846,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_mass_tables(
+                make_benchmark_mass_tables(
                     refpath,
                     gchp_vs_gcc_refstr,
                     devpath,
@@ -857,7 +892,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Make operations budget table
-            bmk.make_benchmark_operations_budget(
+            make_benchmark_operations_budget(
                 config["data"]["dev"]["gcc"]["dir"],
                 refs,
                 config["data"]["dev"]["gchp"]["dir"],
@@ -931,7 +966,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Make concentration plots
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -956,7 +991,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # --------------------------------------------------------------
             for t in range(bmk_n_months):
                 mon_ind = bmk_mon_inds[t]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     ref[mon_ind],
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
@@ -1006,7 +1041,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )[0]
 
                 # Create plots
-                bmk.make_benchmark_wetdep_plots(
+                make_benchmark_wetdep_plots(
                     ref,
                     gchp_vs_gchp_refstr,
                     dev,
@@ -1031,7 +1066,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 # ----------------------------------------------------------
                 for t in range(bmk_n_months):
                     mon_ind = bmk_mon_inds[t]
-                    bmk.make_benchmark_wetdep_plots(
+                    make_benchmark_wetdep_plots(
                         ref[mon_ind],
                         gchp_vs_gchp_refstr,
                         dev[mon_ind],
@@ -1055,8 +1090,24 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["rnpbbe_budget"]:
             print("\n%%% Creating GCHP vs. GCHP radionuclides budget table %%%")
-            ttbdg.transport_tracers_budgets(
-                config["data"]["dev"]["gchp"]["dir"],
+
+            # Ref
+            transport_tracers_budgets(
+                config["data"]["ref"]["gchp"]["version"],
+                gchp_vs_gchp_refdir,
+                gchp_vs_gchp_refrstdir,
+                int(bmk_year_ref),
+                dst=gchp_vs_gchp_tablesdir,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir
+            )
+
+            # Dev
+            transport_tracers_budgets(
+                config["data"]["dev"]["gchp"]["version"],
                 gchp_vs_gchp_devdir,
                 gchp_vs_gchp_devrstdir,
                 int(bmk_year_dev),
@@ -1123,7 +1174,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_mass_tables(
+                make_benchmark_mass_tables(
                     refpath,
                     gchp_vs_gchp_refstr,
                     devpath,
@@ -1171,7 +1222,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create table
-            bmk.make_benchmark_operations_budget(
+            make_benchmark_operations_budget(
                 config["data"]["dev"]["gchp"]["dir"],
                 refs,
                 config["data"]["dev"]["gchp"]["dir"],
@@ -1197,48 +1248,111 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     if config["options"]["outputs"]["cons_table"]:
 
         # ===================================================================
-        # Create mass conservation table for GCC_dev
+        # Create mass conservation table for GCC vs GCC
         # ===================================================================
-        if (
-            config["options"]["comparisons"]["gcc_vs_gcc"]["run"]
-            or config["options"]["comparisons"]["gchp_vs_gcc"]["run"]
-        ):
-            print("\n%%% Creating GCC dev mass conservation table %%%")
+        if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
+            print("\n%%% Creating GCC mass conservation tables %%%")
 
             # Filepaths
-            datafiles = get_filepaths(
+            ref_datafiles = get_filepaths(
+                gcc_vs_gcc_refrstdir,
+                "Restart",
+                all_months_ref
+            )[0]
+            dev_datafiles = get_filepaths(
                 gcc_vs_gcc_devrstdir,
                 "Restart",
                 all_months_dev
             )[0]
 
-            # Pick output folder
-            if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
-                tablesdir = gchp_vs_gcc_tablesdir
-            else:
-                tablesdir = gcc_vs_gcc_tablesdir
-
-            # Create table
-            bmk.make_benchmark_mass_conservation_table(
-                datafiles,
-                config["data"]["dev"]["gcc"]["dir"],
-                dst=tablesdir,
+            # Ref
+            make_benchmark_mass_conservation_table(
+                ref_datafiles,
+                config["data"]["ref"]["gcc"]["version"],
+                dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
             )
 
+            # Dev
+            make_benchmark_mass_conservation_table(
+                dev_datafiles,
+                config["data"]["dev"]["gcc"]["version"],
+                dst=gcc_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+        # ===================================================================
+        # Create mass conservation table for GCHP vs GCC
+        # ===================================================================
+        if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
+            print("\n%%% Creating GCHP vs GCC mass conservation tables %%%")
+
+            # Filepaths
+            ref_datafiles = get_filepaths(
+                gchp_vs_gcc_refrstdir,
+                "Restart",
+                all_months_dev,                  # GCHP vs GCC uses GCC dev
+            )[0]
+            dev_datafiles = get_filepaths(
+                gchp_vs_gcc_devrstdir,
+                "Restart",
+                all_months_dev,                  # GCHP vs GCC uses GCHP dev
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+            )[0]
+
+            # KLUDGE: ewl, bmy, 14 Oct 2022
+            # Read the AREA from the restart file at the end of the
+            # simulation.  Due to a GCHP bug, intermediate restarts
+            # have AREA with all zeroes.
+            dev_areapath = get_filepath(
+                gchp_vs_gcc_devrstdir,
+                "Restart",
+                bmk_end_dev,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
+            )
+
+            # Ref
+            make_benchmark_mass_conservation_table(
+                ref_datafiles,
+                config["data"]["dev"]["gcc"]["version"],
+                dst=gchp_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+            # Dev
+            make_benchmark_mass_conservation_table(
+                dev_datafiles,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gcc_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                areapath=dev_areapath,
+            )
+
         # =====================================================================
-        # Create mass conservation table for GCHP_dev
+        # Create mass conservation table for GCHP vs GCHP
         # =====================================================================
-        if (
-            config["options"]["comparisons"]["gchp_vs_gcc"]["run"]
-            or config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
-        ):
+        if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
             print("\n%%% Creating GCHP dev mass conservation table %%%")
 
             # Filepaths
-            datafiles = get_filepaths(
-                gchp_vs_gcc_devrstdir,
+            ref_datafiles = get_filepaths(
+                gchp_vs_gchp_refrstdir,
+                "Restart",
+                all_months_ref,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
+            )[0]
+            dev_datafiles = get_filepaths(
+                gchp_vs_gchp_devrstdir,
                 "Restart",
                 all_months_dev,
                 is_gchp=True,
@@ -1250,8 +1364,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             # Read the AREA from the restart file at the end of the
             # simulation.  Due to a GCHP bug, intermediate restarts
             # have AREA with all zeroes.
-            areapath = get_filepath(
-                gchp_vs_gcc_devrstdir,
+            ref_areapath = get_filepath(
+                gchp_vs_gchp_refrstdir,
+                "Restart",
+                bmk_end_ref,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
+            )
+            dev_areapath = get_filepath(
+                gchp_vs_gchp_devrstdir,
                 "Restart",
                 bmk_end_dev,
                 is_gchp=True,
@@ -1259,26 +1381,27 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )
 
-            # Pick output folder
-            if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
-                tablesdir = gchp_vs_gcc_tablesdir
-            else:
-                tablesdir = gchp_vs_gchp_tablesdir
-
-            # KLUDGE: ewl, bmy, 14 Oct 2022
-            # Read the AREA from the restart file at the end of the
-            # simulation.  Due to a GCHP bug, intermediate restarts
-            # have AREA with all zeroes.
-            bmk.make_benchmark_mass_conservation_table(
-                datafiles,
-                config["data"]["dev"]["gchp"]["dir"],
-                dst=tablesdir,
+            # Ref
+            make_benchmark_mass_conservation_table(
+                ref_datafiles,
+                config["data"]["ref"]["gchp"]["version"],
+                dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                areapath=areapath
+                areapath=ref_areapath
+            )
+
+            # Dev
+            make_benchmark_mass_conservation_table(
+                dev_datafiles,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gchp_tablesdir,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                areapath=dev_areapath
             )
 
     # ==================================================================
     # Print a message indicating that the benchmarks finished
     # ==================================================================
-    print("\n %%%% All requested benchmark plots/tables created! %%%%")
+    print("\n%%% All requested benchmark plots/tables created! %%%")

@@ -17,6 +17,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Environment files `docs/environment_files/gcpy_requirements.txt` and `docs/environment_files/read_the_docs_requirements.txt`
 - New benchmark script `gcpy/benchmark/modules/benchmark_models_vs_sondes.py`
 - Added fixed level budget diagnostic to budget operations table
+- Function `rename_speciesconc_to_speciesconcvv` in `gcpy/benchmark/modules/benchmark_utils.py`
+- Function `copy_file_to_dir` in `gcpy/util.py`.  This is a wrapper for `shutil.copyfile`.
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
@@ -33,16 +35,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Refactored `get_vert_grid.py` (in `gcpy/grid.py`) to accept the `p_sfc` argument; Also never-nested the if-block logic.
 - `benchmark_slurm.sh` script now saves output to a log file with the same base name as the YAML config file
 - `benchmark_models_vs_obs.py` now reads the observational data paths and metadata from  `1yr_fullchem_benchmark.yml`
+- Moved benchmark code from `gcpy/` to `gcpy/benchmark/modules/`
+- Benchmark functions now call `rename_speciesconc_to_speciesconcvv`
+- Create radionuclide, STE flux, and mass conservation tables for Ref and Dev versions in TransportTracers benchmarks
+- Use new function `copy_file_to_dir` to copy the benchmark script and configuration file to the benchmark results folders
 
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
 - Prevent an import error by using `seaborn-v0_8-darkgrid` in`gcpy/benchmark/modules/benchmark_models_vs_obs.py`
 - `gcpy/file_regrid.py` now creates GCHP files with `DELP_DRY` instead of `DELPDRY`
 - Fixed bugs in GCHP vs GCHP sections of 1-yr benchmark run scripts to allow comparison of GCHP runs with different grid resolutions
-- Fixed silent bug in transport tracer benchmark GCC vs GCHP mass tables preventing them from being generated
+- Fixed silent bug in transport tracer benchmark GCC vs GCHP mass
+  tables preventi ng them from being generated
 - Import error in `gcpy/examples/diagnostics/compare_diags.py`
 - Added missing `n_cores` to `gcpy/examples/diagnostics/compare_diags.yml`
 - Added missing `plot_drydep` option to `gcpy/gcpy/benchmark/config/1yr_ch4_benchmark.yml`
+- Add `docs/requirements.txt` symbolic link to `docs/environment_files/read_the_docs_requirements.txt` for RTD builds 
 
 ### Removed
 - Example script `gcpy/examples/plotting/mda8_o3_timeseries.py`

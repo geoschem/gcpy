@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 """
-run_1mo_benchmark.py: Driver script for creating benchmark plots and
-                      testing gcpy 1-month benchmark capability
+run_benchmark.py: Driver script for creating benchmark plots.
 
 Run this script to generate benchmark comparisons between:
 
@@ -11,11 +10,11 @@ Run this script to generate benchmark comparisons between:
     (4) GCHP vs GCC diff-of-diffs
 
 You can customize this by editing the settings in the corresponding yaml
-config file (eg. 1mo_benchmark.yml).
+configuration file.
 
 Calling sequence:
 
-    ./run_1mo_benchmark.py <path-to-configuration-file>
+    $ python -m gcpy.benchmark.run_benchmark <path-to-configuration-file>
 
 Remarks:
 
@@ -31,30 +30,40 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.4.2. Edit this version ID if releasing
+    Also, to disable matplotlib from trying to open X windows, you may
+    need to set the following environment variable in your shell:
+
+        $ export MPLBACKEND=agg
+
+This script corresponds with GCPy 1.4.3. Edit this version ID if releasing
 a new version of GCPy.
 """
 
-# =====================================================================
+# ======================================================================
 # Imports and global settings (you should not need to edit these)
-# ====================================q=================================
+# ======================================================================
 
 import os
 import sys
-from shutil import copyfile
 import warnings
 from datetime import datetime
 import numpy as np
-from gcpy.util import get_filepath, read_config_file
-from gcpy import ste_flux as ste
-from gcpy import oh_metrics as oh
-from gcpy import benchmark_funcs as bmk
+from gcpy.util import copy_file_to_dir, get_filepath, read_config_file
 from gcpy.date_time import add_months, is_full_year
+from gcpy.benchmark.modules.benchmark_funcs import \
+    diff_of_diffs_toprow_title, get_species_database_dir, \
+    make_benchmark_conc_plots, make_benchmark_emis_plots, \
+    make_benchmark_emis_tables, make_benchmark_jvalue_plots, \
+    make_benchmark_aod_plots, make_benchmark_mass_tables, \
+    make_benchmark_mass_accumulation_tables, \
+    make_benchmark_operations_budget, create_benchmark_summary_table
+from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
+from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
 from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
     import run_benchmark as run_1yr_benchmark
 from gcpy.benchmark.modules.run_1yr_tt_benchmark \
     import run_benchmark as run_1yr_tt_benchmark
-import gcpy.benchmark.modules.benchmark_utils as bmk_util
+from gcpy.benchmark.modules.benchmark_utils import print_benchmark_info
 from gcpy.benchmark.modules.benchmark_drydep \
     import drydepvel_species, make_benchmark_drydep_plots
 
@@ -118,7 +127,7 @@ def run_benchmark_default(config):
             Contains configuration for 1mon benchmark from yaml file.
     """
     # Folder in which the species_database.yml file is found
-    spcdb_dir = bmk.get_species_database_dir(config)
+    spcdb_dir = get_species_database_dir(config)
 
     # =====================================================================
     # Data directories
@@ -224,7 +233,7 @@ def run_benchmark_default(config):
     )
 
     # make results directories that don't exist
-    for resdir, plotting_type in zip(
+    for (resdir, plotting_type) in zip(
         [
             gcc_vs_gcc_resultsdir,
             base_gchp_resultsdir,
@@ -244,13 +253,17 @@ def run_benchmark_default(config):
     ):
         if plotting_type and not os.path.exists(resdir):
             os.mkdir(resdir)
-            if resdir in [gcc_vs_gcc_resultsdir, base_gchp_resultsdir]:
-                # Make copy of benchmark script in results directory
-                curfile = os.path.realpath(__file__)
-                dest = os.path.join(resdir, curfile.split("/")[-1])
-                if os.path.exists(dest):
-                    copyfile(curfile, dest)
-                    
+
+            # Copy this script and the config file to each results dir
+            if resdir in [
+                    gcc_vs_gcc_resultsdir,
+                    gchp_vs_gcc_resultsdir,
+                    gchp_vs_gchp_resultsdir,
+                    diff_of_diffs_resultsdir,
+            ]:
+                copy_file_to_dir(__file__, resdir)
+                copy_file_to_dir(config["configuration_file_name"], resdir)
+
     gcc_vs_gcc_tablesdir = os.path.join(
         gcc_vs_gcc_resultsdir,
         config["options"]["comparisons"]["gcc_vs_gcc"]["tables_subdir"],
@@ -274,9 +287,9 @@ def run_benchmark_default(config):
     gchp_vs_gcc_devstr = config["data"]["dev"]["gchp"]["version"]
     gchp_vs_gchp_refstr = config["data"]["ref"]["gchp"]["version"]
     gchp_vs_gchp_devstr = config["data"]["dev"]["gchp"]["version"]
-    diff_of_diffs_refstr = bmk.diff_of_diffs_toprow_title(config, "gcc")
-    diff_of_diffs_devstr = bmk.diff_of_diffs_toprow_title(config, "gchp")
-    
+    diff_of_diffs_refstr = diff_of_diffs_toprow_title(config, "gcc")
+    diff_of_diffs_devstr = diff_of_diffs_toprow_title(config, "gchp")
+
     ########################################################################
     ###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
     ########################################################################
@@ -331,7 +344,7 @@ def run_benchmark_default(config):
     # ======================================================================
     # Print the list of plots & tables to the screen
     # ======================================================================
-    bmk_util.print_benchmark_info(config)
+    print_benchmark_info(config)
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCC vs GCC benchmark plots and tables
@@ -386,7 +399,7 @@ def run_benchmark_default(config):
             dev = get_filepath(gcc_vs_gcc_devdir, "SpeciesConc", gcc_dev_date)
 
             # Create plots
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -415,7 +428,7 @@ def run_benchmark_default(config):
             dev = get_filepath(gcc_vs_gcc_devdir, "Emissions", gcc_dev_date)
 
             # Create emissions plots
-            bmk.make_benchmark_emis_plots(
+            make_benchmark_emis_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -444,7 +457,7 @@ def run_benchmark_default(config):
             dev = get_filepath(gcc_vs_gcc_devdir, "Emissions", gcc_dev_date)
 
             # Create tables
-            bmk.make_benchmark_emis_tables(
+            make_benchmark_emis_tables(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -468,7 +481,7 @@ def run_benchmark_default(config):
             dev = get_filepath(gcc_vs_gcc_devdir, "JValues", gcc_dev_date)
 
             # Plot J-values
-            bmk.make_benchmark_jvalue_plots(
+            make_benchmark_jvalue_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -492,7 +505,7 @@ def run_benchmark_default(config):
             dev = get_filepath(gcc_vs_gcc_devdir, "Aerosols", gcc_dev_date)
 
             # Create plots
-            bmk.make_benchmark_aod_plots(
+            make_benchmark_aod_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -541,7 +554,7 @@ def run_benchmark_default(config):
             dev = get_filepath(gcc_vs_gcc_devrst, "Restart", gcc_end_dev_date)
 
             # Create tables
-            bmk.make_benchmark_mass_tables(
+            make_benchmark_mass_tables(
                 ref,
                 config["data"]["ref"]["gcc"]["version"],
                 dev,
@@ -572,7 +585,7 @@ def run_benchmark_default(config):
             devperiod = devs_str + ' - ' + deve_str
 
             # Create tables
-            bmk.make_benchmark_mass_accumulation_tables(
+            make_benchmark_mass_accumulation_tables(
                 refs,
                 refe,
                 config["data"]["ref"]["gcc"]["version"],
@@ -597,7 +610,7 @@ def run_benchmark_default(config):
             dev = get_filepath(gcc_vs_gcc_devdir, "Budget", gcc_dev_date)
 
             # Create table
-            bmk.make_benchmark_operations_budget(
+            make_benchmark_operations_budget(
                 config["data"]["ref"]["gcc"]["version"],
                 ref,
                 config["data"]["dev"]["gcc"]["version"],
@@ -620,7 +633,7 @@ def run_benchmark_default(config):
             dev = get_filepath(gcc_vs_gcc_devdir, "Metrics", gcc_dev_date)
 
             # Create table
-            oh.make_benchmark_oh_metrics(
+            make_benchmark_oh_metrics(
                 ref,
                 config["data"]["ref"]["gcc"]["version"],
                 dev,
@@ -642,7 +655,7 @@ def run_benchmark_default(config):
             # Compute monthly and annual average strat-trop exchange of O3
             # only run if comparison is exactly 1 month
             if add_months(gcc_dev_date, 1) == gcc_end_dev_date:
-                ste.make_benchmark_ste_table(
+                make_benchmark_ste_table(
                     config["data"]["dev"]["gcc"]["version"],
                     dev,
                     gcc_dev_date.astype(datetime).year,
@@ -661,7 +674,7 @@ def run_benchmark_default(config):
 
             # Print summary of which collections are identical
             # between Ref & Dev, and which are not identical.
-            bmk.create_benchmark_summary_table(
+            create_benchmark_summary_table(
                 gcc_vs_gcc_refdir,
                 config["data"]["ref"]["gcc"]["version"],
                 gcc_ref_date,
@@ -751,7 +764,7 @@ def run_benchmark_default(config):
             )
 
             # Create plots
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -785,7 +798,7 @@ def run_benchmark_default(config):
             )
 
             # Create emissions plots
-            bmk.make_benchmark_emis_plots(
+            make_benchmark_emis_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -802,7 +815,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]                
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -821,7 +834,7 @@ def run_benchmark_default(config):
             )
 
             # Create plots
-            bmk.make_benchmark_emis_tables(
+            make_benchmark_emis_tables(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -851,7 +864,7 @@ def run_benchmark_default(config):
             )
 
             # Create plots
-            bmk.make_benchmark_jvalue_plots(
+            make_benchmark_jvalue_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -861,7 +874,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]                
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -880,7 +893,7 @@ def run_benchmark_default(config):
             )
 
             # Create plots
-            bmk.make_benchmark_aod_plots(
+            make_benchmark_aod_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -890,7 +903,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]                
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -945,7 +958,7 @@ def run_benchmark_default(config):
             )
 
             # Create tables
-            bmk.make_benchmark_mass_tables(
+            make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -998,7 +1011,7 @@ def run_benchmark_default(config):
             devperiod = devs_str + ' - ' + deve_str
 
             # Create tables
-            bmk.make_benchmark_mass_accumulation_tables(
+            make_benchmark_mass_accumulation_tables(
                 refs,
                 refe,
                 config["data"]["dev"]["gcc"]["version"],
@@ -1028,7 +1041,7 @@ def run_benchmark_default(config):
             )
 
             # Create table
-            bmk.make_benchmark_operations_budget(
+            make_benchmark_operations_budget(
                 config["data"]["dev"]["gcc"]["version"],
                 ref,
                 config["data"]["dev"]["gchp"]["version"],
@@ -1064,7 +1077,7 @@ def run_benchmark_default(config):
             )
 
             # Create table
-            oh.make_benchmark_oh_metrics(
+            make_benchmark_oh_metrics(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -1090,7 +1103,7 @@ def run_benchmark_default(config):
 
             # Print summary of which collections are identical
             # between Ref & Dev, and which are not identical.
-            bmk.create_benchmark_summary_table(
+            create_benchmark_summary_table(
                 gchp_vs_gcc_refdir,
                 config["data"]["dev"]["gcc"]["version"],
                 gcc_dev_date,
@@ -1189,7 +1202,7 @@ def run_benchmark_default(config):
             )
 
             # Create plots
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1204,7 +1217,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]                
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -1228,7 +1241,7 @@ def run_benchmark_default(config):
             )
 
             # Create plots
-            bmk.make_benchmark_emis_plots(
+            make_benchmark_emis_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1243,7 +1256,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]                
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -1267,7 +1280,7 @@ def run_benchmark_default(config):
             )
 
             # Create tables
-            bmk.make_benchmark_emis_tables(
+            make_benchmark_emis_tables(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1303,7 +1316,7 @@ def run_benchmark_default(config):
             )
 
             # Create plots
-            bmk.make_benchmark_jvalue_plots(
+            make_benchmark_jvalue_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1313,7 +1326,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]                
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -1337,7 +1350,7 @@ def run_benchmark_default(config):
             )
 
             # Create plots
-            bmk.make_benchmark_aod_plots(
+            make_benchmark_aod_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1347,7 +1360,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]                
+                n_job=config["options"]["n_cores"]
             )
 
         # ==================================================================
@@ -1410,7 +1423,7 @@ def run_benchmark_default(config):
             )
 
             # Create tables
-            bmk.make_benchmark_mass_tables(
+            make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1469,7 +1482,7 @@ def run_benchmark_default(config):
             devperiod = devs_str + ' - ' + deve_str
 
             # Create tables
-            bmk.make_benchmark_mass_accumulation_tables(
+            make_benchmark_mass_accumulation_tables(
                 refs,
                 refe,
                 config["data"]["ref"]["gchp"]["version"],
@@ -1504,7 +1517,7 @@ def run_benchmark_default(config):
             )
 
             # Create tables
-            bmk.make_benchmark_operations_budget(
+            make_benchmark_operations_budget(
                 config["data"]["ref"]["gchp"]["version"],
                 ref,
                 config["data"]["dev"]["gchp"]["version"],
@@ -1545,7 +1558,7 @@ def run_benchmark_default(config):
             )
 
             # Create table
-            oh.make_benchmark_oh_metrics(
+            make_benchmark_oh_metrics(
                 ref,
                 config["data"]["ref"]["gchp"]["version"],
                 dev,
@@ -1569,7 +1582,7 @@ def run_benchmark_default(config):
 
             # Print summary of which collections are identical
             # between Ref & Dev, and which are not identical.
-            bmk.create_benchmark_summary_table(
+            create_benchmark_summary_table(
                 gchp_vs_gchp_refdir,
                 config["data"]["ref"]["gchp"]["version"],
                 gchp_ref_date,
@@ -1582,7 +1595,7 @@ def run_benchmark_default(config):
                     'Emissions',
                     'JValues',
                     'Metrics',
-                    'SpeciesConc', 
+                    'SpeciesConc',
                     'StateMet',
                 ],
                 dst=gchp_vs_gchp_tablesdir,
@@ -1619,7 +1632,7 @@ def run_benchmark_default(config):
 
             # Create diff-of-diff plots for species concentrations
             # NOTE: for simplicity, do not convert aerosols to ug/m3.
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 gcc_ref,
                 diff_of_diffs_refstr,
                 gchp_ref,
@@ -1633,7 +1646,7 @@ def run_benchmark_default(config):
                 second_dev=gchp_dev,
                 cats_in_ugm3=None,
                 spcdb_dir=spcdb_dir,
-                n_job=config["options"]["n_cores"]                
+                n_job=config["options"]["n_cores"]
             )
 
 
@@ -1650,6 +1663,7 @@ def main(argv):
     """
     config_filename = argv[1] if len(argv) == 2 else "1mo_benchmark.yml"
     config = read_config_file(config_filename)
+    config["configuration_file_name"] = config_filename
     choose_benchmark_type(config)
 
 
