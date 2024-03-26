@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added fixed level budget diagnostic to budget operations table
 - Function `rename_speciesconc_to_speciesconcvv` in `gcpy/benchmark/modules/benchmark_utils.py`
 - Function `copy_file_to_dir` in `gcpy/util.py`.  This is a wrapper for `shutil.copyfile`.
+- Script `gcpy/benchmark/modules/benchmark_mass_cons_table.py`, with code to create mass conservation tables
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
@@ -58,6 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Environment file `docs/environment_files/environment.yml`
 - Environment file `docs/environment_files/requirements.txt`
 - Removed `awscli` from the GCPy environment; version 2 is no longer available on conda-forge or PyPi
+- Routine `make_benchmark_mass_conservation_table` in `benchmark_funcs.py`; this is now obsolete
 
 ## [1.4.2] - 2024-01-26
 ### Added
