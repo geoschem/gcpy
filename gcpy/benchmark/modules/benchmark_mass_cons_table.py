@@ -133,14 +133,22 @@ def compute_total_mass(
     total_mass : np.float64   : Total mass [Tg] of species.
     """
     with xr.set_options(keep_attrs=True):
+
+        # Local variables
         units = TARGET_UNITS
         varname = get_passive_tracer_varname(dset)
+
+        # If area has multiple time slices, take the first one
+        if "time" in area.dims:
+            area = area.isel(time=0)
+
+        # Compute mass in Tg
         darr = convert_units(
             dset[varname].astype(np.float64).isel(time=t_idx),
             varname,
             metadata,
             units,
-            area_m2=area.isel(time=0),
+            area_m2=area,
             delta_p=delta_p.isel(time=t_idx),
         )
 
@@ -196,6 +204,15 @@ def make_benchmark_mass_conservation_table(
     dev_areapath : list|str : Path to file w/ Dev area data (optional)
     spcdb_dir    : str      : Path to species database file
     """
+    verify_variable_type(ref_files, (list, str))
+    verify_variable_type(ref_label, str)
+    verify_variable_type(dev_files, (list, str))
+    verify_variable_type(dev_label, str)
+    verify_variable_type(dst, (str, type(None)))
+    verify_variable_type(overwrite, bool)
+    verify_variable_type(ref_areapath, (str, type(None)))
+    verify_variable_type(ref_areapath, (str, type(None)))
+    verify_variable_type(spcdb_dir, str)
 
     # ==================================================================
     # Initialize
