@@ -98,6 +98,12 @@ def get_passive_tracer_varname(
     """
     Returns the variable name under which the passive tracer
     is stored GEOS-Chem Classic or GCHP restart files.
+
+    Args
+    dset    : xr.Dataset : The input data
+
+    Returns
+    varname : str        : Variable name for passive tracer
     """
     verify_variable_type(dset, xr.Dataset)
 
@@ -244,11 +250,11 @@ def make_benchmark_mass_conservation_table(
         ref_delta_prs = get_delta_pressure(ref_data)
         dev_delta_prs = get_delta_pressure(dev_data)
 
-        # Number of points in the time dimension
+        # Get datetime values
         ref_time = ref_data["time"].values
         dev_time = dev_data["time"].values
 
-        # Throw an error if Ref & Dev have differing time values
+        # Throw an error if Ref & Dev have differing datetime values
         if not np.all(ref_time == dev_time):
             msg = "Ref and Dev have inconsistent time values!\n"
             raise ValueError(msg)
@@ -257,7 +263,7 @@ def make_benchmark_mass_conservation_table(
         ref_masses = np.zeros(len(dev_time), dtype=np.float64)
         dev_masses = np.zeros(len(dev_time), dtype=np.float64)
 
-        # List for holding the dates & times
+        # List for holding the datetimes
         display_dates = []
 
         # ==================================================================
@@ -284,7 +290,6 @@ def make_benchmark_mass_conservation_table(
                 dev_delta_prs,
                 metadata,
             )
-
 
     # ==================================================================
     # Print masses and statistics to file
