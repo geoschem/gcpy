@@ -61,9 +61,11 @@ from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
 from gcpy.benchmark.modules.benchmark_funcs import \
     get_species_database_dir, make_benchmark_conc_plots, \
     make_benchmark_wetdep_plots, make_benchmark_mass_tables, \
-    make_benchmark_operations_budget, make_benchmark_mass_conservation_table
+    make_benchmark_operations_budget
 from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
+from gcpy.benchmark.modules.benchmark_mass_cons_table import \
+    make_benchmark_mass_conservation_table
 from gcpy.benchmark.modules.benchmark_utils import print_benchmark_info
 
 # Tell matplotlib not to look for an X-window
@@ -1265,17 +1267,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 all_months_dev
             )[0]
 
-            # Ref
+            # Create table
             make_benchmark_mass_conservation_table(
                 ref_datafiles,
                 config["data"]["ref"]["gcc"]["version"],
-                dst=gcc_vs_gcc_tablesdir,
-                overwrite=True,
-                spcdb_dir=spcdb_dir,
-            )
-
-            # Dev
-            make_benchmark_mass_conservation_table(
                 dev_datafiles,
                 config["data"]["dev"]["gcc"]["version"],
                 dst=gcc_vs_gcc_tablesdir,
@@ -1286,7 +1281,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ===================================================================
         # Create mass conservation table for GCHP vs GCC
         # ===================================================================
-        if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
+        if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
             print("\n%%% Creating GCHP vs GCC mass conservation tables %%%")
 
             # Filepaths
@@ -1317,23 +1312,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )
 
-            # Ref
+            # Create table
             make_benchmark_mass_conservation_table(
                 ref_datafiles,
                 config["data"]["dev"]["gcc"]["version"],
-                dst=gchp_vs_gcc_tablesdir,
-                overwrite=True,
-                spcdb_dir=spcdb_dir,
-            )
-
-            # Dev
-            make_benchmark_mass_conservation_table(
                 dev_datafiles,
                 config["data"]["dev"]["gchp"]["version"],
                 dst=gchp_vs_gcc_tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                areapath=dev_areapath,
+                dev_areapath=dev_areapath,
             )
 
         # =====================================================================
@@ -1381,24 +1369,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )
 
-            # Ref
+            # Create table
             make_benchmark_mass_conservation_table(
                 ref_datafiles,
                 config["data"]["ref"]["gchp"]["version"],
-                dst=gchp_vs_gchp_tablesdir,
-                overwrite=True,
-                spcdb_dir=spcdb_dir,
-                areapath=ref_areapath
-            )
-
-            # Dev
-            make_benchmark_mass_conservation_table(
                 dev_datafiles,
                 config["data"]["dev"]["gchp"]["version"],
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                areapath=dev_areapath
+                ref_areapath=ref_areapath,
+                dev_areapath=dev_areapath,
             )
 
     # ==================================================================
