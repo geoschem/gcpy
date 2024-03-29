@@ -405,26 +405,31 @@ def make_benchmark_mass_conservation_table(
 
         # Headers
         print("", file=ofile)
-        template  = " Date & Time" + " "*18 + "Ref mass [Tg]"
-        template +=" "*13 + "Dev mass [Tg]"
+        template  = " Date & Time" + " "*18 + "Ref mass [Tg]" + " "*13
+        template += "Dev mass [Tg]"+ " "*6 + "Abs Diff" + "  % Diff"
         print(template, file=ofile)
-        template = " " + "-"*17 + " "*5 + "-"*20 + " "*6 + "-"*20
+        template  = " " + "-"*17 + " "*5 + "-"*20 + " "*6 + "-"*20
+        template += " " + "-"*13 + " " + "-"*7
         print(template, file=ofile)
 
         # Total masses
         for t_idx, time in enumerate(display_dates):
-            template = f" {time}      "
-            template +=f"{ref_masses[t_idx] : >20.13f}      "
-            template +=f"{dev_masses[t_idx] : >20.13f}"
+            absdiff   = dev_masses[t_idx] - ref_masses[t_idx]
+            pctdiff   = (absdiff / ref_masses[t_idx]) * 100.0
+            template  = f" {time}      "
+            template += f"{ref_masses[t_idx] : >20.13f}      "
+            template += f"{dev_masses[t_idx] : >20.13f} "
+            template += f"{absdiff : >13.6f} "
+            template += f"{pctdiff : >7.3f}"
             print(template, file=ofile)
         print(" ", file=ofile)
 
         # Statistics
-        template = " Summary" + " "*32+ "Ref" + " "*23 + "Dev"
+        template  = " Summary" + " "*32+ "Ref" + " "*23 + "Dev"
         template += " "*6 + "Abs Diff" + "  % Diff"
         print(template, file=ofile)
         template  = " " + "-"*17 + " "*5 + "-"*20 + " "*6 + "-"*20
-        template += " " + "-"*13 +  " " + "-"*7
+        template += " " + "-"*13 + " " + "-"*7
         print(template, file=ofile)
         template  =  " Maximum mass [Tg]     "
         template += f"{ref_stats['max_mass'] : >20.13f}      "
