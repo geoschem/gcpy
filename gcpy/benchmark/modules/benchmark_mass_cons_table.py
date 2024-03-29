@@ -187,8 +187,8 @@ def compute_statistics(masses):
         "end_mass"           : end_mass,
         "startend_absdiff_g" : (end_mass - start_mass) * 1.0e12,
         "startend_pctdiff"   : (end_mass - start_mass)/start_mass * 100.0,
-        "mean_mass"          : np.mean(masses),
-        "variance"           : np.var(masses),
+        "mean_mass"          : np.mean(masses, dtype=np.float64),
+        "variance"           : np.var(masses, dtype=np.float64),
     }
 
 
@@ -406,10 +406,10 @@ def make_benchmark_mass_conservation_table(
         # Headers
         print("", file=ofile)
         template  = " Date & Time" + " "*18 + "Ref mass [Tg]" + " "*13
-        template += "Dev mass [Tg]"+ " "*6 + "Abs Diff" + "  % Diff"
+        template += "Dev mass [Tg]"+ " "*6 + "Abs Diff" + "    % Diff"
         print(template, file=ofile)
         template  = " " + "-"*17 + " "*5 + "-"*20 + " "*6 + "-"*20
-        template += " " + "-"*13 + " " + "-"*7
+        template += " " + "-"*13 + "  " + "-"*8
         print(template, file=ofile)
 
         # Total masses
@@ -419,77 +419,77 @@ def make_benchmark_mass_conservation_table(
             template  = f" {time}      "
             template += f"{ref_masses[t_idx] : >20.13f}      "
             template += f"{dev_masses[t_idx] : >20.13f} "
-            template += f"{absdiff : >13.6f} "
-            template += f"{pctdiff : >7.3f}"
+            template += f"{absdiff : >13.4e}  "
+            template += f"{pctdiff : >8.3f}"
             print(template, file=ofile)
         print(" ", file=ofile)
 
         # Statistics
         template  = " Summary" + " "*32+ "Ref" + " "*23 + "Dev"
-        template += " "*6 + "Abs Diff" + "  % Diff"
+        template += " "*6 + "Abs Diff" + "    % Diff"
         print(template, file=ofile)
         template  = " " + "-"*17 + " "*5 + "-"*20 + " "*6 + "-"*20
-        template += " " + "-"*13 + " " + "-"*7
+        template += " " + "-"*13 + "  " + "-"*8
         print(template, file=ofile)
         template  =  " Maximum mass [Tg]     "
         template += f"{ref_stats['max_mass'] : >20.13f}      "
         template += f"{dev_stats['max_mass'] : >20.13f} "
-        template += f"{diff_stats['max_mass__absdiff'] : >13.6f} "
-        template += f"{diff_stats['max_mass__pctdiff'] : >7.3f}"
+        template += f"{diff_stats['max_mass__absdiff'] : >13.4e}  "
+        template += f"{diff_stats['max_mass__pctdiff'] : >8.3f}"
         print(template, file=ofile)
         template  =  " Minimum mass [Tg]     "
         template += f"{ref_stats['min_mass'] : >20.13f}      "
         template += f"{dev_stats['min_mass'] : >20.13f} "
-        template += f"{diff_stats['min_mass__absdiff'] : >13.6f} "
-        template += f"{diff_stats['min_mass__pctdiff'] : >7.3f} "
+        template += f"{diff_stats['min_mass__absdiff'] : >13.4e}  "
+        template += f"{diff_stats['min_mass__pctdiff'] : >8.3f}"
         print(template, file=ofile)
         template  =  " Abs diff [g]          "
         template += f"{ref_stats['minmax_absdiff_g'] : >20.13f}      "
         template += f"{dev_stats['minmax_absdiff_g'] : >20.13f} "
-        template += f"{diff_stats['minmax_absdiff_g__absdiff'] : >13.6f} "
-        template += f"{diff_stats['minmax_absdiff_g__pctdiff'] : >7.3f}"
+        template += f"{diff_stats['minmax_absdiff_g__absdiff'] : >13.4e}  "
+        template += f"{diff_stats['minmax_absdiff_g__pctdiff'] : >8.3f}"
         print(template, file=ofile)
         template  =  " % difference          "
         template += f"{ref_stats['minmax_pctdiff'] : >20.13f}      "
         template += f"{dev_stats['minmax_pctdiff'] : >20.13f} "
-        template += f"{diff_stats['minmax_pctdiff__absdiff'] : >13.6f} "
-        template += f"{diff_stats['minmax_pctdiff__pctdiff'] : >7.3f}"
+        template += f"{diff_stats['minmax_pctdiff__absdiff'] : >13.4e}  "
+        template += f"{diff_stats['minmax_pctdiff__pctdiff'] : >8.3f}"
         print(template, file=ofile)
         print("", file=ofile)
         template  =  " Start mass [Tg]       "
         template += f"{ref_stats['start_mass'] : >20.13f}      "
         template += f"{dev_stats['start_mass'] : >20.13f} "
-        template += f"{diff_stats['start_mass__absdiff'] : >13.6f} "
-        template += f"{diff_stats['start_mass__pctdiff'] : >7.3f}"
+        template += f"{diff_stats['start_mass__absdiff'] : >13.4e}  "
+        template += f"{diff_stats['start_mass__pctdiff'] : >8.3f}"
         print(template, file=ofile)
         template  =  " End mass [Tg]         "
         template += f"{ref_stats['end_mass'] : >20.13f}      "
         template += f"{dev_stats['end_mass'] : >20.13f} "
-        template += f"{diff_stats['end_mass__absdiff'] : >13.6f} "
-        template += f"{diff_stats['end_mass__pctdiff'] : >7.3f}"
+        template += f"{diff_stats['end_mass__absdiff'] : >13.4e}  "
+        template += f"{diff_stats['end_mass__pctdiff'] : >8.3f}"
         print(template, file=ofile)
         template  =  " Abs diff [g]          "
         template += f"{ref_stats['startend_absdiff_g'] : >20.13f}      "
         template += f"{dev_stats['startend_absdiff_g'] : >20.13f} "
-        template += f"{diff_stats['startend_absdiff_g__absdiff'] : >13.6f} "
-        template += f"{diff_stats['startend_absdiff_g__pctdiff'] : >7.3f}"
+        template += f"{diff_stats['startend_absdiff_g__absdiff'] : >13.4e}  "
+        template += f"{diff_stats['startend_absdiff_g__pctdiff'] : >8.3f}"
         print(template, file=ofile)
         template  =  " % difference          "
         template += f"{ref_stats['startend_pctdiff'] : >20.13f}      "
         template += f"{dev_stats['startend_pctdiff'] : >20.13f} "
-        template += f"{diff_stats['startend_pctdiff__absdiff'] : >13.6f} "
-        template += f"{diff_stats['startend_pctdiff__pctdiff'] : >7.3f}"
+        template += f"{diff_stats['startend_pctdiff__absdiff'] : >13.4e}  "
+        template += f"{diff_stats['startend_pctdiff__pctdiff'] : >8.3f}"
         print(template, file=ofile)
         print("", file=ofile)
         template  =  " Mean mass [Tg]        "
         template += f"{ref_stats['mean_mass']:>20.13f}      "
         template += f"{dev_stats['mean_mass']:>20.13f} "
-        template += f"{diff_stats['mean_mass__absdiff']:>13.6f} "
-        template += f"{diff_stats['mean_mass__pctdiff']:>7.3f}"
+        template += f"{diff_stats['mean_mass__absdiff']:>13.4e}  "
+        template += f"{diff_stats['mean_mass__pctdiff']:>8.3f}"
         print(template, file=ofile)
         template  = " Variance [Tg]         "
-        template += f"{ref_stats['variance']:>20.13f}      "
-        template += f"{dev_stats['variance']:>20.13f} "
-        template += f"{diff_stats['variance__absdiff']:>13.6f} "
-        template += f"{diff_stats['variance__pctdiff']:>7.3f}"
+        template += f"{ref_stats['variance']:>20.13e}      "
+        template += f"{dev_stats['variance']:>20.13e} "
+        template += f"{diff_stats['variance__absdiff']:>13.4e}  "
+        template += f"{diff_stats['variance__pctdiff']:>8.3f}"
         print(template, file=ofile)
