@@ -758,6 +758,12 @@ def reformat_dims(
         })
         return ds_out
 
+    # Filter non-existent coordinates/dimensions
+    def rename_existing(ds, rename_dict):
+        existing_keys = set(ds.coords) | set(ds.dims)
+        filtered_rename_dict = {key: value for key, value in rename_dict.items() if key in existing_keys}
+        return ds.rename(filtered_rename_dict)
+
     dim_formats = {
         'checkpoint': {
             'unravel': [unravel_checkpoint_lat],
@@ -790,13 +796,13 @@ def reformat_dims(
             ds = unravel_callback(ds)
 
         # Rename dimensions
-        ds = ds.rename(dim_formats[format].get('rename', {}))
+        ds = rename_existing(ds, dim_formats[format].get('rename', {}))
         return ds
 
 
     # %%%% Renaming from the common format %%%%
     # Reverse rename
-    ds = ds.rename(
+    ds = rename_existing(ds, 
         {v: k for k, v in dim_formats[format].get('rename', {}).items()})
 
     # Ravel dimensions
