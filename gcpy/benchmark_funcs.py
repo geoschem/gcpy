@@ -1514,9 +1514,6 @@ def make_benchmark_conc_plots(
         result.keys())[0]]['500'] for result in results}
     dict_zm = {list(result.keys())[0]: result[list(
         result.keys())[0]]['zm'] for result in results}
-
-    print("stop here")
-    quit()
     
     # ==============================================================
     # Write the list of species having significant differences,
