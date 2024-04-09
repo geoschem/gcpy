@@ -785,7 +785,8 @@ def reformat_dims(
                 'Ydim': 'Y',
                 'time': 'T',
             },
-            'transpose': ('time', 'lev', 'nf', 'Xdim', 'Ydim')
+            # match format of GCHP output
+            'transpose': ('time', 'lev', 'nf', 'Ydim', 'Xdim')
         }
     }
 
@@ -810,16 +811,7 @@ def reformat_dims(
         ds = ravel_callback(ds)
 
     # Transpose
-    if len(ds.dims) == 5 or (len(ds.dims) == 4 and 'lev' in list(
-            ds.dims) and 'time' in list(ds.dims)):
-        # full dim dataset
-        ds = ds.transpose(*dim_formats[format].get('transpose', []))
-    elif len(ds.dims) == 4:
-        # single time
-        ds = ds.transpose(*dim_formats[format].get('transpose', [])[1:])
-    elif len(ds.dims) == 3:
-        # single level / time
-        ds = ds.transpose(*dim_formats[format].get('transpose', [])[2:])
+    ds = ds.transpose(*[x for x in dim_formats[format].get('transpose', []) if x in list(ds.dims)])
     return ds
 
 
