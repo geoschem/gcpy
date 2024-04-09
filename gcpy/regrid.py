@@ -426,7 +426,7 @@ def create_regridders(
                     "Warning: zonal mean comparison must be lat-lon. Defaulting to 1x1.25")
                 cmpres = '1x1.25'
                 cmpgridtype = "ll"
-            elif sg_ref_params != [] or sg_dev_params != []:
+            elif sg_ref_params != [1, 170, -90] or sg_dev_params != [1, 170, -90]:
                 # pick ref grid when a stretched-grid and non-stretched-grid
                 # are passed
                 cmpres = refres
