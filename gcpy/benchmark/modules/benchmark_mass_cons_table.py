@@ -10,7 +10,8 @@ from gcpy.constants import skip_these_vars
 from gcpy.units import convert_units
 from gcpy.util import dataset_reader, get_area_from_dataset, \
     make_directory, read_config_file, verify_variable_type
-
+from gcpy.benchmark.modules.benchmark_utils import \
+    get_datetimes_from_filenames
 
 # Constants
 SPC_NAME = "PassiveTracer"
@@ -339,8 +340,8 @@ def make_benchmark_mass_conservation_table(
         dev_delta_prs = get_delta_pressure(dev_data)
 
         # Get datetime values
-        ref_time = ref_data["time"].values
-        dev_time = dev_data["time"].values
+        ref_time = get_datetimes_from_filenames(ref_files)
+        dev_time = get_datetimes_from_filenames(dev_files)
 
         # Throw an error if Ref & Dev have differing datetime values
         if not np.all(ref_time == dev_time):
