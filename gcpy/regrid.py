@@ -426,7 +426,7 @@ def create_regridders(
                     "Warning: zonal mean comparison must be lat-lon. Defaulting to 1x1.25")
                 cmpres = '1x1.25'
                 cmpgridtype = "ll"
-            elif sg_ref_params != [] or sg_dev_params != []:
+            elif sg_ref_params != [1, 170, -90] or sg_dev_params != [1, 170, -90]:
                 # pick ref grid when a stretched-grid and non-stretched-grid
                 # are passed
                 cmpres = refres
@@ -758,6 +758,12 @@ def reformat_dims(
         })
         return ds_out
 
+    # Filter non-existent coordinates/dimensions
+    def rename_existing(ds, rename_dict):
+        existing_keys = set(ds.coords) | set(ds.dims)
+        filtered_rename_dict = {key: value for key, value in rename_dict.items() if key in existing_keys}
+        return ds.rename(filtered_rename_dict)
+
     dim_formats = {
         'checkpoint': {
             'unravel': [unravel_checkpoint_lat],
@@ -779,7 +785,8 @@ def reformat_dims(
                 'Ydim': 'Y',
                 'time': 'T',
             },
-            'transpose': ('time', 'lev', 'nf', 'Xdim', 'Ydim')
+            # match format of GCHP output
+            'transpose': ('time', 'lev', 'nf', 'Ydim', 'Xdim')
         }
     }
 
@@ -790,13 +797,13 @@ def reformat_dims(
             ds = unravel_callback(ds)
 
         # Rename dimensions
-        ds = ds.rename(dim_formats[format].get('rename', {}))
+        ds = rename_existing(ds, dim_formats[format].get('rename', {}))
         return ds
 
 
     # %%%% Renaming from the common format %%%%
     # Reverse rename
-    ds = ds.rename(
+    ds = rename_existing(ds, 
         {v: k for k, v in dim_formats[format].get('rename', {}).items()})
 
     # Ravel dimensions
@@ -804,16 +811,7 @@ def reformat_dims(
         ds = ravel_callback(ds)
 
     # Transpose
-    if len(ds.dims) == 5 or (len(ds.dims) == 4 and 'lev' in list(
-            ds.dims) and 'time' in list(ds.dims)):
-        # full dim dataset
-        ds = ds.transpose(*dim_formats[format].get('transpose', []))
-    elif len(ds.dims) == 4:
-        # single time
-        ds = ds.transpose(*dim_formats[format].get('transpose', [])[1:])
-    elif len(ds.dims) == 3:
-        # single level / time
-        ds = ds.transpose(*dim_formats[format].get('transpose', [])[2:])
+    ds = ds.transpose(*[x for x in dim_formats[format].get('transpose', []) if x in list(ds.dims)])
     return ds
 
 
