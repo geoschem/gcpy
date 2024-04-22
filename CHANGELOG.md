@@ -19,7 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added fixed level budget diagnostic to budget operations table
 - Function `rename_speciesconc_to_speciesconcvv` in `gcpy/benchmark/modules/benchmark_utils.py`
 - Function `copy_file_to_dir` in `gcpy/util.py`.  This is a wrapper for `shutil.copyfile`.
-
+- GitHub Action config file `.github/workflows/stale.yml`, which replaces StaleBot
+  
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
 - Bump pypdf from 3.16.1 to 3.17.0 (dependabot suggested this)
@@ -39,7 +40,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Benchmark functions now call `rename_speciesconc_to_speciesconcvv`
 - Create radionuclide, STE flux, and mass conservation tables for Ref and Dev versions in TransportTracers benchmarks
 - Use new function `copy_file_to_dir` to copy the benchmark script and configuration file to the benchmark results folders
-
+- Updated GitHub stalebot config file `stale.yml` with new issue/PR labels that should not go stale
+  
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
 - Prevent an import error by using `seaborn-v0_8-darkgrid` in`gcpy/benchmark/modules/benchmark_models_vs_obs.py`
@@ -58,6 +60,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Environment file `docs/environment_files/environment.yml`
 - Environment file `docs/environment_files/requirements.txt`
 - Removed `awscli` from the GCPy environment; version 2 is no longer available on conda-forge or PyPi
+- GitHub config files `.github/stale.yml` and `.github/no-response.yml`
 
 ## [1.4.2] - 2024-01-26
 ### Added
