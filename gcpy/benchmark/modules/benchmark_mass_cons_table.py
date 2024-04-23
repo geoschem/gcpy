@@ -5,6 +5,7 @@ stored in GEOS-Chem Classic and/or GCHP restart files.
 import os
 import warnings
 import numpy as np
+from dask import config as dask_config
 import xarray as xr
 from gcpy.constants import skip_these_vars
 from gcpy.units import convert_units
@@ -140,7 +141,10 @@ def compute_total_mass(
     Returns
     total_mass : np.float64   : Total mass [Tg] of species.
     """
-    with xr.set_options(keep_attrs=True):
+    # Keep xarray attributes and allow large chunks in Dask slicing
+    with xr.set_options(keep_attrs=True) and dask_config.set({
+        "array.slicing.split_large_chunks": False
+    }):
 
         # Local variables
         units = TARGET_UNITS
@@ -325,8 +329,10 @@ def make_benchmark_mass_conservation_table(
     dev_label = replace_whitespace(dev_label)
     
     # Preserve xarray attributes
-    with xr.set_options(keep_attrs=True):
-
+    with xr.set_options(keep_attrs=True) and dask_config.set({
+        "array.slicing.split_large_chunks": False
+    }):
+        
         # ==============================================================
         # Read data and make sure time dimensions are consistent
         # ==============================================================
