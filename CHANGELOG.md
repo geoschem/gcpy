@@ -53,6 +53,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added missing `n_cores` to `gcpy/examples/diagnostics/compare_diags.yml`
 - Added missing `plot_drydep` option to `gcpy/gcpy/benchmark/config/1yr_ch4_benchmark.yml`
 - Add `docs/requirements.txt` symbolic link to `docs/environment_files/read_the_docs_requirements.txt` for RTD builds 
+- `gcpy/file_regrid.py` now tests if `lon_bnds`, `lat_bnds` are in the dataset before trying to drop them
 
 ### Removed
 - Example script `gcpy/examples/plotting/mda8_o3_timeseries.py`

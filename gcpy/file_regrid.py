@@ -745,7 +745,10 @@ def regrid_ll_to_ll(
             if "lat" not in dset[var].dims       \
                 and "lon" not in dset[var].dims
             ]
-        dset = dset.drop(["lat_bnds", "lon_bnds"])
+        if "lat_bnds" in dset.data_vars:
+            dset = dset.drop(["lat_bnds"])
+        if "lon_bnds" in dset.data_vars:
+            dset = dset.drop(["lon_bnds"])
         non_fields = dset[non_fields]
         dset = dset.drop(non_fields)
 
@@ -756,6 +759,12 @@ def regrid_ll_to_ll(
             dim_format_out="classic"
         )
 
+        # Decide if we are regridding a data file or a mask
+        # by testing for the variable name "MASK"
+        method = "conservative"
+        if "MASK" in dset.data_vars:
+            method = "nearest_s2d"
+
         # Create the regridder and regrid the data
         regridder = make_regridder_L2L(
         ll_res_in,
@@ -763,7 +772,8 @@ def regrid_ll_to_ll(
             reuse_weights=True,
             in_extent=in_extent,
             out_extent=out_extent,
-            weightsdir=weightsdir
+            weightsdir=weightsdir,
+            method=method,
         )
         dset = regridder(
             dset,
