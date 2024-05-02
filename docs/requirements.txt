@@ -1,16 +1,1 @@
-# Requirements for building the GCPy documentation
-#
-# NOTE: Use specific versions for Python packages instead of upper
-# bounds.  Using an upper bound will not necessarily install the
-# intended version if there already is a version that meets the
-# criteria present in the Python environment.
-#  -- Bob Yantosca and Lizzie Lundgren (27 Sep 2022)
-#
-# The following package versions have been proven to work together:
-#
-sphinx==3.5.4
-sphinx_rtd_theme==0.5.2
-sphinxcontrib-bibtex==2.2.0
-recommonmark
-docutils==0.16
-jinja2==3.0.3
+environment_files/read_the_docs_requirements.txt

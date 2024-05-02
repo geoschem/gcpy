@@ -132,7 +132,7 @@ def plot_single_panel(infile, varname, level):
         log_yaxis=True,
         log_color_scale=True,
         plot_type="zonal_mean",
-        title=f"Zonal mean plot for {varname}, stratopshere-only"
+        title=f"Zonal mean plot for {varname}, stratosphere-only"
     )
     plt.show()
 

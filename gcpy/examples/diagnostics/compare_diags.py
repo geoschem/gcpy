@@ -11,7 +11,7 @@ import sys
 import warnings
 import numpy as np
 from gcpy.util import add_missing_variables, compare_varnames, \
-    dataset_reader, read_config_file
+    dataset_reader, read_config_file, rename_and_flip_gchp_rst_vars
 from gcpy.constants import skip_these_vars
 from gcpy.plot.compare_single_level import compare_single_level
 from gcpy.plot.compare_zonal_mean import compare_zonal_mean
@@ -109,8 +109,8 @@ def read_data(config):
     # If the data is from a GCHP restart file, rename variables and
     # flip levels to match the GEOS-Chem Classic naming and level
     # conventions.  Otherwise no changes will be made.
-    refdata = util.rename_and_flip_gchp_rst_vars(refdata)
-    devdata = util.rename_and_flip_gchp_rst_vars(devdata)
+    refdata = rename_and_flip_gchp_rst_vars(refdata)
+    devdata = rename_and_flip_gchp_rst_vars(devdata)
 
     # Define dictionary for return
     data = {

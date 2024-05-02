@@ -3,8 +3,8 @@ Internal utilities for helping to manage xarray and numpy
 objects used throughout GCPy
 """
 import os
+from shutil import copyfile
 import warnings
-import shutil
 from textwrap import wrap
 from yaml import safe_load
 import numpy as np
@@ -345,57 +345,6 @@ def print_totals(
     print(f"{display_name[0:19].ljust(19)}: {ref_fmt}  {dev_fmt}  {diff_fmt}  {pctdiff_fmt}  {diff_str}", file=ofile)
 
     return diff_list
-
-
-def get_species_categories(
-        benchmark_type="FullChemBenchmark"
-):
-    """
-    Returns the list of benchmark categories that each species
-    belongs to.  This determines which PDF files will contain the
-    plots for the various species.
-
-    Args:
-        benchmark_type: str
-            Specifies the type of the benchmark (either
-            FullChemBenchmark (default) or TransportTracersBenchmark).
-
-    Returns:
-        spc_cat_dict: dict
-            A nested dictionary of categories (and sub-categories)
-            and the species belonging to each.
-
-    NOTE: The benchmark categories are specified in YAML file
-    benchmark_species.yml.
-    """
-    spc_cat_dict = read_config_file(
-        os.path.join(
-            os.path.dirname(__file__),
-            "benchmark_categories.yml"
-        )
-    )
-    return spc_cat_dict[benchmark_type]
-
-
-def archive_species_categories(
-        dst
-):
-    """
-    Writes the list of benchmark categories to a YAML file
-    named "benchmark_species.yml".
-
-    Args:
-        dst: str
-            Name of the folder where the YAML file containing
-            benchmark categories ("benchmark_species.yml")
-            will be written.
-    """
-    spc_categories = "benchmark_categories.yml"
-    src = os.path.join(os.path.dirname(__file__), spc_categories)
-    copy = os.path.join(dst, spc_categories)
-    if not os.path.exists(copy):
-        print(f"\nArchiving {spc_categories} in {dst}")
-        shutil.copyfile(src, copy)
 
 
 def add_bookmarks_to_pdf(
@@ -1247,172 +1196,6 @@ def convert_bpch_names_to_netcdf_names(
         dset = dset.rename(name_dict=old_to_new)
 
     # Return the dataset
-    return dset
-
-
-def get_lumped_species_definitions():
-    """
-    Returns lumped species definitions from a YAML file.
-
-    Returns:
-        lumped_spc_dict : dict of str
-            Dictionary of lumped species
-    """
-    return read_config_file(
-        os.path.join(
-            os.path.dirname(__file__),
-            "lumped_species.yml"
-        ),
-        quiet=True
-    )
-
-
-def archive_lumped_species_definitions(
-        dst
-):
-    """
-    Archives lumped species definitions to a YAML file.
-
-    Args:
-        dst : str
-            Name of the folder where the YAML file containing
-            benchmark categories ("benchmark_species.yml")
-            will be written.
-    """
-    lumped_spc = "lumped_species.yml"
-    src = os.path.join(os.path.dirname(__file__), lumped_spc)
-    copy = os.path.join(dst, lumped_spc)
-    if not os.path.exists(copy):
-        print(f"\nArchiving {lumped_spc} in {dst}")
-        shutil.copyfile(src, copy)
-
-
-def add_lumped_species_to_dataset(
-        dset,
-        lspc_dict=None,
-        lspc_yaml="",
-        verbose=False,
-        overwrite=False,
-        prefix="SpeciesConcVV_",
-):
-    """
-    Function to calculate lumped species concentrations and add
-    them to an xarray Dataset. Lumped species definitions may be passed
-    as a dictionary or a path to a yaml file. If neither is passed then
-    the lumped species yaml file stored in gcpy is used. This file is
-    customized for use with benchmark simuation SpeciesConc diagnostic
-    collection output.
-
-    Args:
-        dset: xarray Dataset
-            An xarray Dataset object prior to adding lumped species.
-
-    Keyword Args (optional):
-        lspc_dict: dictionary
-            Dictionary containing list of constituent species and their
-            integer scale factors per lumped species.
-            Default value: False
-        lspc_yaml: str
-            Name of the YAML file containing the list of constituent s
-            species and their integer scale factors per lumped species.
-            Default value: ""
-        verbose: bool
-            Whether to print informational output.
-            Default value: False
-        overwrite: bool
-            Whether to overwrite an existing species dataarray in a dataset
-            if it has the same name as a new lumped species. If False and
-            overlapping names are found then the function will raise an error.
-            Default value: False
-        prefix: str
-            Prefix to prepend to new lumped species names. This argument is
-            also used to extract an existing dataarray in the dataset with
-            the correct size and dimensions to use during initialization of
-            new lumped species dataarrays.
-            Default value: "SpeciesConcVV_"
-
-    Returns:
-        dset: xarray Dataset
-            A new xarray Dataset object containing all of the original
-            species plus new lumped species.
-    """
-
-    # Default is to add all benchmark lumped species.
-    # Can overwrite by passing a dictionary
-    # or a yaml file path containing one
-    assert not (
-        lspc_dict is not None and lspc_yaml != ""
-    ), "Cannot pass both lspc_dict and lspc_yaml. Choose one only."
-    if lspc_dict is None and lspc_yaml == "":
-        lspc_dict = get_lumped_species_definitions()
-    elif lspc_dict is None and lspc_yaml != "":
-        lspc_dict = read_config_file(lspc_yaml)
-
-    # Make sure attributes are transferred when copying dataset / dataarrays
-    with xr.set_options(keep_attrs=True):
-
-        # Get a dummy DataArray to use for initialization
-        dummy_darr = None
-        for var in dset.data_vars:
-            if prefix in var or prefix.replace("VV", "") in var:
-                dummy_darr = dset[var]
-                dummy_type = dummy_darr.dtype
-                dummy_shape = dummy_darr.shape
-                break
-        if dummy_darr is None:
-            msg = "Invalid prefix: " + prefix
-            raise ValueError(msg)
-
-        # Create a list with a copy of the dummy DataArray object
-        n_lumped_spc = len(lspc_dict)
-        lumped_spc = [None] * n_lumped_spc
-        for var, spcname in enumerate(lspc_dict):
-            lumped_spc[var] = dummy_darr.copy(deep=False)
-            lumped_spc[var].name = prefix + spcname
-            lumped_spc[var].values = np.full(dummy_shape, 0.0, dtype=dummy_type)
-
-        # Loop over lumped species list
-        for var, lspc in enumerate(lumped_spc):
-
-            # Search key for lspc_dict is lspc.name minus the prefix
-            cidx = lspc.name.find("_")
-            key = lspc.name[cidx+1:]
-
-            # Check if overlap with existing species
-            if lspc.name in dset.data_vars and overwrite:
-                dset.drop(lspc.name)
-            else:
-                assert(lspc.name not in dset.data_vars), \
-                    f"{lspc.name} already in dataset. To overwrite pass overwrite=True."
-
-            # Verbose prints
-            if verbose:
-                print(f"Creating {lspc.name}")
-
-            # Loop over and sum constituent species values
-            num_spc = 0
-            for _, spcname in enumerate(lspc_dict[key]):
-                varname = prefix + spcname
-                if varname not in dset.data_vars:
-                    if verbose:
-                        print(f"Warning: {varname} needed for {lspc_dict[key][spcname]} not in dataset")
-                    continue
-                if verbose:
-                    print(f" -> adding {varname} with scale {lspc_dict[key][spcname]}")
-                lspc.values += dset[varname].values * lspc_dict[key][spcname]
-                num_spc += 1
-
-            # Replace values with NaN if no species found in dataset
-            if num_spc == 0:
-                if verbose:
-                    print("No constituent species found! Setting to NaN.")
-                lspc.values = np.full(lspc.shape, np.nan)
-
-        # Insert the DataSet into the list of DataArrays
-        # so that we can only do the merge operation once
-        lumped_spc.insert(0, dset)
-        dset = xr.merge(lumped_spc)
-
     return dset
 
 
@@ -2434,3 +2217,21 @@ def verify_variable_type(
     if isinstance(var, var_type):
         return
     raise TypeError( f"{var} is not of type: {var_type}!")
+
+
+def copy_file_to_dir(
+        ifile,
+        dest,
+):
+    """
+    Convenience wrapper for shutil.copyfile, used to copy a file to
+    a directory.
+
+    Args
+    ifile : str : Input file in original location
+    dest  : str : Destination folder where ifile will be copied.
+    """
+    ifile = os.path.realpath(ifile)
+    ofile = os.path.join(dest, os.path.basename(ifile))
+    if not os.path.exists(ofile):
+        copyfile(ifile, ofile)
