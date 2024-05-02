@@ -13,8 +13,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Badges in `docs/source/index.rst`
 - GitHub action to push GCPy releases to PyPi
 - Script `./release/changeVersionNumbers.sh`, used to update version numbers in various files before release
-- Added `gcpy/format_hemco_data.py` from @hannahnesser
-
 - Mamba/Conda enviroment file `docs/environment_files/read_the_docs_environment.yml`, for building ReadTheDocs documentation
 - Environment files `docs/environment_files/gcpy_requirements.txt` and `docs/environment_files/read_the_docs_requirements.txt`
 - New benchmark script `gcpy/benchmark/modules/benchmark_models_vs_sondes.py`
@@ -22,7 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Function `rename_speciesconc_to_speciesconcvv` in `gcpy/benchmark/modules/benchmark_utils.py`
 - Function `copy_file_to_dir` in `gcpy/util.py`.  This is a wrapper for `shutil.copyfile`.
 - GitHub Action config file `.github/workflows/stale.yml`, which replaces StaleBot
-- Example script `gcpy/examples/working_with_files/make_mask_file.py`
+- Example script `gcpy/examples/hemco/make_mask_file.py`
+- Added `gcpy/community/format_hemco_data.py` from @hannahnesser
+- Added `gcpy/examples/hemco/format_hemco_demo.py` from @hannahnesser
   
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
