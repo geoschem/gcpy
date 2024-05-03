@@ -2235,3 +2235,24 @@ def copy_file_to_dir(
     ofile = os.path.join(dest, os.path.basename(ifile))
     if not os.path.exists(ofile):
         copyfile(ifile, ofile)
+
+
+def replace_whitespace(
+        string,
+        repl_char="_"
+):
+    """
+    Replaces whitespace in a string with underscores.
+    Useful for removing spaces in filename strings.
+
+    Args
+    string    : str : The input string
+    repl_char : str : Replacement character (default is "_")
+
+    Returns
+    string    : str : String with whitespace replaced
+    """
+    verify_variable_type(string, str)
+    verify_variable_type(repl_char, str)
+
+    return repl_char.join(string.split())
