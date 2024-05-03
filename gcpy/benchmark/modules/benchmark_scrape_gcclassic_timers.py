@@ -26,16 +26,14 @@ def read_gcclassic(input_files):
     return result
 
 
-def read_timing_data(
-        input_files,
-        reader,
-):
+def read_timing_data(input_files, reader):
     """
     Parses the GEOS-Chem Classic timing information in JSON format
     and returns a dictionary with the results.
 
     Args
     input files : str|list     : JSON or text file(s) to parse
+    reader      : function     : Function that will parse the file(s)
 
     Returns
     timing      : list of dict : Dictionary with timing information
@@ -168,6 +166,12 @@ def sum_timers(timers):
 def print_timer(key, ref, dev, ofile):
     """
     Prints timing info for a single timer to a log file.
+
+    Args
+    key   : str  : Dictionary key to print
+    ref   : dict : Timing information from the "Ref" model
+    dev   : dict : Timing information from the "Dev" model
+    ofile : file : File object where info will be written
     """
     line = f"{key:<25}  {ref[key]:>20.3f}  {dev[key]:>20.3f}"
     print(line, file=ofile)
@@ -178,8 +182,11 @@ def display_timers(ref, ref_label, dev, dev_label, table_file):
     Prints the GEOS-Chem timer information to a table.
 
     Args
-    ref : dict : Timer output from the "Ref" model
-    ref : dict : Timer output from the "Dev" model
+    ref        : dict : Timing information from the "Ref" model
+    ref_label  : str  : Version string for the "Ref" model
+    dev        : dict : Timing information from the "Dev" model
+    dev_label  : str  : Version string for the "Dev" model
+    table_file : str  : File name for the timing table output
     """
     with open(table_file, "w", encoding="utf-8") as ofile:
 
@@ -225,7 +232,15 @@ def make_benchmark_timing_table(
     benchmark simulations given one or more JSON and/or text files
     as input.
 
-    Args:
+    Args
+    ref_files : str|list : File(s) with timing info from the "Ref" model
+    ref_label : str      : Version string for the "Ref" model
+    dev_files : str|list : File(s) with timing info from the "Ref" model
+    dev_label : str      : Version string for the "Dev" model
+
+    Kwargs
+    dst       : str      : Directory where output will be written
+    overwrite : bool     : Overwrite existing files? (default: False)
 
     """
     verify_variable_type(ref_files, (str, list))

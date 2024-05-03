@@ -21,7 +21,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Function `copy_file_to_dir` in `gcpy/util.py`.  This is a wrapper for `shutil.copyfile`.
 - GitHub Action config file `.github/workflows/stale.yml`, which replaces StaleBot
 - Example script `gcpy/examples/working_with_files/make_mask_file.py`
-  
+- Convenience function `replace_whitespace` in `gcpy/util.py`
+- Benchmark script `gcpy/benchmark/modules/benchmark_scrape_gcclassic_timers.py`
+- Benchmark script `gcpy/benchmark/modules/benchmark_scrape_gchp_timers.py`
+
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
 - Bump pypdf from 3.16.1 to 3.17.0 (dependabot suggested this)
