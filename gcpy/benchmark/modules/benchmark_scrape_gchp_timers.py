@@ -39,7 +39,7 @@ def read_timing_data(input_files):
     raise ValueError("Argument 'input_files' is not of type str or list!")
 
 
-def count_characters(text, char_to_match="-"):
+def count_characters(text, char_to_match="."):
     """
     Returns the number of characters in a string of text.
 
@@ -80,62 +80,112 @@ def read_one_text_file(text_file):
     Returns
     result    : dict : Dictionary with timing information
     """
-    keep_line = True
-    temp_timers = []
 
     # Make sure file exists
     if not os.path.exists(text_file):
         raise FileNotFoundError(f"Could not find {text_file}!")
 
-    # Read the line backwards and get just keep the timing information
+    # ==================================================================
+    # Parse the GCHP log file
+    # ==================================================================
+
+    # Initialize local variables
+    keep_line = False
+    temp_timers = []
+    inclusive = 0
+    temp_timers = []
+
+    # Open the log file
     with open(text_file, encoding="utf-8") as ifile:
 
-        for line in reversed(list(ifile)):
-            line = line.strip("\n")
+        # Read each line in the file
+        for line in ifile:
 
-            # Set a flag to denote the start & end of timing info
-            if "-------- --------- ------ --------- ------" in line:
+            # Strip newlines; skip empty lines
+            line = line.strip()
+            if len(line) == 0:
+                continue
+
+            # GCHP timers section (also skip header lines)
+            if 'Times for component <GCHPchem>' in line:
+                keep_line = True
+                inclusive = 3
+                continue
+            if keep_line and 'Min                            Mean' in line:
+                continue
+            if keep_line and '============================' in line:
+                continue
+            if keep_line and 'Name                          %' in line:
+                continue
+            if keep_line and '------ ---------- ----------' in line:
+                continue
+            if keep_line and '---------------------------------' in line:
                 keep_line = False
-                break
+                continue
+
+            # Summary section (also skip header lines)
+            if 'Report on process:  0' in line:
+                keep_line = True
+                inclusive = 2
+                continue
+            if keep_line and 'Inclusive' in line:
+                continue
+            if keep_line and '================' in line:
+                continue
+            if keep_line and 'Name' in line:
+                continue
+            if keep_line and '-------- --------- ------ --------- ------' \
+               in line:
+                continue
 
             # Append timing info lines into a list of dicts
             if keep_line:
                 substr = line.split()
                 key = substr[0].strip()
-                val = float(substr[2].strip())
+                val = float(substr[inclusive].strip())
                 temp_timers.append({key: val})
 
-        # Because we were reading the end of the file backwards, the
-        # entries in temp_timers are reversed.  Now read through them
-        # in the forward order.
-        hdr = ["", "", ""]
-        timers = {}
-        for timer in reversed(temp_timers):
-            for (key, val) in timer.items():
+    # ==================================================================
+    # Save timing results into a "flattened" dictionary
+    # ==================================================================
+    hdr = ["", "", "", "", ""]
+    timers = {}
+    for timer in temp_timers:
+        for (key, val) in timer.items():
 
-                # Denote how deep into the dictionary this key goes
-                # as determined by the number of prefixing "-" characters
-                depth = count_characters(key, "-") / 2
+            # Denote how deep into the dictionary this key goes
+            # as determined by the number of prefixing "-" characters
+            depth = count_characters(key, "-") / 2
 
-                # Remove any prefixed "-" characters
-                new_key = key.strip("-")
+            # Remove any prefixed "-" characters
+            new_key = key.strip("-")
 
-                # Add results into the "timers" dictionary as a
-                # "flattened" dictionary, for expediency
-                if depth == 0:
-                    hdr[0] = new_key
-                    timers[new_key] = val
-                elif depth == 1:
-                    hdr[1] = new_key
-                    new_key = f"{hdr[0]}_{new_key}"
-                    timers[new_key] = val
-                elif depth == 2:
-                    hdr[2] = new_key
-                    new_key = f"{hdr[0]}_{hdr[1]}_{new_key}"
-                    timers[new_key] = val
-                else:
-                    new_key = f"{hdr[0]}_{hdr[1]}_{hdr[2]}_{new_key}"
-                    timers[new_key] = val
+            # Add results into the "timers" dictionary as a
+            # "flattened" dictionary, for expediency
+            # (This is the only way to update a nested dict)
+            if depth == 0:
+                hdr[0] = new_key
+                timers[new_key] = val
+            elif depth == 1:
+                hdr[1] = new_key
+                new_key = f"{hdr[0]}.{new_key}"
+                timers[new_key] = val
+            elif depth == 2:
+                hdr[2] = new_key
+                new_key = f"{hdr[0]}.{hdr[1]}.{new_key}"
+                timers[new_key] = val
+            elif depth == 3:
+                hdr[3] = new_key
+                new_key = f"{hdr[0]}.{hdr[1]}.{hdr[2]}.{new_key}"
+                timers[new_key] = val
+            elif depth == 4:
+                hdr[4] = new_key
+                new_key = f"{hdr[0]}.{hdr[1]}.{hdr[2]}.{hdr[3]}.{new_key}"
+                timers[new_key] = val
+            else:
+                new_key = \
+                    f"{hdr[0]}.{hdr[1]}.{hdr[2]}.{hdr[3]}.{hdr[4]}.{new_key}"
+                timers[new_key] = val
 
     return timers
 
@@ -187,12 +237,12 @@ def print_timer(key, ref, dev, ofile):
     dev   : dict : Timing information from the "Dev" model
     ofile : file : File object where info will be written
     """
-    # Denote the level of the dictionary key by counting "_" chars
-    depth = count_characters(key, "_")
+    # Denote the level of the dictionary key by counting "." chars
+    depth = count_characters(key, ".")
 
     # Prefix "--" characters to the end of the key to denote depth
     # to replicate the label style at the end of the GCHP log file
-    label = "--"*depth + key.split("_")[-1]
+    label = "--"*depth + key.split(".")[-1]
 
     # Line to print
     line = f"{label:<25}  {ref[key]:>20.3f}  {dev[key]:>20.3f}"
@@ -219,37 +269,24 @@ def display_timers(ref, ref_label, dev, dev_label, table_file):
         print(f"%%% Ref = {ref_label}", file=ofile)
         print(f"%%% Dev = {dev_label}", file=ofile)
         print("%"*79, file=ofile)
-        print("\n", file=ofile)
-        print(f"{'Timer':<25}  {'Ref [s]':>20}  {'Dev [s]':>20}", file=ofile)
-        print("-"*79, file=ofile)
 
-        # Print timers
-        print_timer("All",                            ref, dev, ofile)
-        print_timer("All_SetService",                 ref, dev, ofile)
-        print_timer("All_SetService_GCHP",            ref, dev, ofile)
-        print_timer("All_SetService_GCHP_GCHPctmEnv", ref, dev, ofile)
-        print_timer("All_SetService_GCHP_GCHPchem",   ref, dev, ofile)
-        print_timer("All_SetService_GCHP_DYNAMICS",   ref, dev, ofile)
-        print_timer("All_Initialize",                 ref, dev, ofile)
-        print_timer("All_Initialize_GCHP",            ref, dev, ofile)
-        print_timer("All_Initialize_GCHP_GCHPctmEnv", ref, dev, ofile)
-        print_timer("All_Initialize_GCHP_DYNAMICS",   ref, dev, ofile)
-        print_timer("All_Initialize_EXTDATA",         ref, dev, ofile)
-        print_timer("All_Initialize_HIST",            ref, dev, ofile)
-        print_timer("All_Run",                        ref, dev, ofile)
-        print_timer("All_Run_GCHP",                   ref, dev, ofile)
-        print_timer("All_Run_GCHP_GCHPctmEnv",        ref, dev, ofile)
-        print_timer("All_Run_GCHP_GCHPchem",          ref, dev, ofile)
-        print_timer("All_Run_GCHP_DYNAMICS",          ref, dev, ofile)
-        print_timer("All_Run_EXTDATA",                ref, dev, ofile)
-        print_timer("All_Run_HIST",                   ref, dev, ofile)
-        print_timer("All_Finalize",                   ref, dev, ofile)
-        print_timer("All_Finalize_GCHP",              ref, dev, ofile)
-        print_timer("All_Finalize_GCHP_GCHPctmEnv",   ref, dev, ofile)
-        print_timer("All_Finalize_GCHP_GCHPchem",     ref, dev, ofile)
-        print_timer("All_Finalize_GCHP_DYNAMICS",     ref, dev, ofile)
-        print_timer("All_Finalize_EXTDATA",           ref, dev, ofile)
-        print_timer("All_Finalize_HIST",              ref, dev, ofile)
+        # GCHPchem timers
+        print("\n", file=ofile)
+        print(f"{'GCHPchem Timer':<25}  {'Ref [s]':>20}  {'Dev [s]':>20}",
+              file=ofile)
+        print("-"*79, file=ofile)
+        for key in dev:
+            if key.startswith("GCHPchem"):
+                print_timer(key, ref, dev, ofile)
+
+        # Summary timers
+        print("\n", file=ofile)
+        print(f"{'Summary':<25}  {'Ref [s]':>20}  {'Dev [s]':>20}",
+              file=ofile)
+        print("-"*79, file=ofile)
+        for key in dev:
+            if key.startswith("All"):
+                print_timer(key, ref, dev, ofile)
 
 
 def make_benchmark_timing_table(
