@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Example script `gcpy/examples/hemco/make_mask_file.py`
 - Added `gcpy/community/format_hemco_data.py` from @hannahnesser
 - Added `gcpy/examples/hemco/format_hemco_demo.py` from @hannahnesser
-- Added HCl to `gcpy/benchmark/modules/emission_species.yml` for GEOS-Chem 14.4.0
+- Added HCl to `gcpy/benchmark/modules/emission_species.yml` and GTChlorine to `gcpy/benchmark/modules/emission_inventories.yml` for GEOS-Chem 14.4.0
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
