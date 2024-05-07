@@ -219,7 +219,7 @@ def display_timers(ref, ref_label, dev, dev_label, table_file):
         print_timer("Unit conversions",      ref, dev, ofile)
 
 
-def make_benchmark_timing_table(
+def make_benchmark_gcclassic_timing_table(
         ref_files,
         ref_label,
         dev_files,
@@ -272,22 +272,3 @@ def make_benchmark_timing_table(
         replace_whitespace(dev_label),
         timing_table,
     )
-
-
-if __name__ == '__main__':
-
-    REF_FILES = [
-        "./gcclassic_timers.json",
-        "./gcclassic_timers.json"
-    ]
-    DEV_FILES = "./execute.gc_4x5_merra2_fullchem_benchmark.log"
-
-    # Debug test
-    make_benchmark_timing_table(
-        REF_FILES,
-        "GCC 14.4.0 json",
-        DEV_FILES,
-        "GCC 14.4.0 log",
-        dst="./",
-        overwrite=True,
-)

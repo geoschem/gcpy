@@ -138,6 +138,12 @@ def read_one_text_file(text_file):
                in line:
                 continue
 
+            # NOTE: This line only appears in cloud benchmarks,
+            # which signals the end of GCHP output and the start of
+            # job statistics.  Exit when we encounter this.
+            if keep_line and "Command being timed:" in line:
+                break
+
             # Append timing info lines into a list of dicts
             if keep_line:
                 substr = line.split()
@@ -289,7 +295,7 @@ def display_timers(ref, ref_label, dev, dev_label, table_file):
                 print_timer(key, ref, dev, ofile)
 
 
-def make_benchmark_timing_table(
+def make_benchmark_gchp_timing_table(
         ref_files,
         ref_label,
         dev_files,
@@ -341,22 +347,3 @@ def make_benchmark_timing_table(
         replace_whitespace(dev_label),
         timing_table,
     )
-
-
-if __name__ == '__main__':
-
-    REF_FILES = [
-        "./execute.gchp_merra2_fullchem_benchmark.log",
-        "./execute.gchp_merra2_fullchem_benchmark.log",
-    ]
-    DEV_FILES = "./execute.gchp_merra2_fullchem_benchmark.log"
-
-    # Debug test
-    make_benchmark_timing_table(
-        REF_FILES,
-        "GCHP 14.4.0 list input",
-        DEV_FILES,
-        "GCHP 14.4.0 str input",
-        dst="./",
-        overwrite=True,
-)

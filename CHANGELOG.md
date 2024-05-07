@@ -24,6 +24,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Convenience function `replace_whitespace` in `gcpy/util.py`
 - Benchmark script `gcpy/benchmark/modules/benchmark_scrape_gcclassic_timers.py`
 - Benchmark script `gcpy/benchmark/modules/benchmark_scrape_gchp_timers.py`
+- 1-year benchmark scripts now produce GCC vs GCC and GCHP vs GCHP timing tables
+- Functions `gcc_vs_gcc_dirs`, `gchp_vs_gcc_dirs`, `gchp_vs_gchp_dirs`, and `get_log_filepaths` in `gcpy/benchmark/modules/benchmark_utils.py`
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
