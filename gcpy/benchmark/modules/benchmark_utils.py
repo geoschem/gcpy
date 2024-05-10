@@ -636,6 +636,11 @@ def get_log_filepaths(
         if fmt in template:
             format_str += fmt
 
+    # If there is only one timestamp, add it to a list
+    # so that the for loop below will work properly.
+    if timestamps.size == 1:
+        timestamps = [timestamps]
+
     # Create each output logfile name, replacing template with date
     for timestamp in timestamps:
         time = timestamp.item().strftime(format_str)

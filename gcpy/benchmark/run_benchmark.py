@@ -1083,34 +1083,6 @@ def run_benchmark_default(config):
             print(title)
 
         # ==================================================================
-        # GCHP vs. GCHP Benchmark Timing Table
-        # ==================================================================
-        if config["options"]["outputs"]["timing_table"]:
-            print("\n%%% Creating GCHP vs. GCHP Benchmark Timing table %%%")
-
-            # Filepaths
-            ref = get_log_filepaths(
-                gchp_vs_gchp_reflogdir,
-                config["data"]["ref"]["gchp"]["logs_template"],
-                gchp_ref_date,
-            )
-            dev = get_log_filepaths(
-                gchp_vs_gchp_devlogdir,
-                config["data"]["dev"]["gchp"]["logs_template"],
-                gchp_dev_date,
-            )
-
-            # Create the table
-            make_benchmark_gchp_timing_table(
-                ref,
-                config["data"]["ref"]["gchp"]["version"],
-                dev,
-                config["data"]["dev"]["gchp"]["version"],
-                dst=gchp_vs_gchp_tablesdir,
-                overwrite=True,
-            )
-
-        # ==================================================================
         # GCHP vs. GCC summary table
         # ==================================================================
         if config["options"]["outputs"]["summary_table"]:
@@ -1589,6 +1561,34 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["ste_table"]:
             print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
 
+        # ==================================================================
+        # GCHP vs. GCHP Benchmark Timing Table
+        # ==================================================================
+        if config["options"]["outputs"]["timing_table"]:
+            print("\n%%% Creating GCHP vs. GCHP Benchmark Timing table %%%")
+
+            # Filepaths
+            ref = get_log_filepaths(
+                gchp_vs_gchp_reflogdir,
+                config["data"]["ref"]["gchp"]["logs_template"],
+                gchp_ref_date,
+            )
+            dev = get_log_filepaths(
+                gchp_vs_gchp_devlogdir,
+                config["data"]["dev"]["gchp"]["logs_template"],
+                gchp_dev_date,
+            )
+
+            # Create the table
+            make_benchmark_gchp_timing_table(
+                ref,
+                config["data"]["ref"]["gchp"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gchp_tablesdir,
+                overwrite=True,
+            )
+            
         # ==================================================================
         # GCHP vs. GCHP summary table
         # ==================================================================
