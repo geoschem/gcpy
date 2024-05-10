@@ -47,6 +47,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Create radionuclide, STE flux, and mass conservation tables for Ref and Dev versions in TransportTracers benchmarks
 - Use new function `copy_file_to_dir` to copy the benchmark script and configuration file to the benchmark results folders
 - Updated GitHub stalebot config file `stale.yml` with new issue/PR labels that should not go stale
+- Updated benchmark driver scripts and config files to print GCClassic & GCHP timing information 
   
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects

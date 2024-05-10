@@ -85,6 +85,7 @@ from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
+
 # Suppress annoying warning messages
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -124,7 +125,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     gchp_vs_gcc_refrstdir, gchp_vs_gcc_devrstdir = gchp_vs_gcc_dirs(config, s)
     gchp_vs_gchp_refrstdir, gchp_vs_gchp_devrstdir = gchp_vs_gchp_dirs(config, s)
 
-    # Restart file directory paths
+    # Log file directory paths
     s = "logs_subdir"
     gcc_vs_gcc_reflogdir, gcc_vs_gcc_devlogdir = gcc_vs_gcc_dirs(config, s)
     gchp_vs_gcc_reflogdir, gchp_vs_gcc_devlogdir = gchp_vs_gcc_dirs(config, s)
@@ -1575,7 +1576,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
 
         # ==================================================================
-        # GCHP vs GCC filepaths for StateMet collection data
+        # GCHP vs GCHP filepaths for StateMet collection data
         # ==================================================================
         refmet = get_filepaths(
             gchp_vs_gchp_refdir,
@@ -2212,15 +2213,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCHP Benchmark Timing table %%%")
 
             # Filepaths
+            # NOTE: Usually the GCHP 1-yr benchmark is run as
+            # one job, so we only need to take the 1st log file.
             ref = get_log_filepaths(
                 gchp_vs_gchp_reflogdir,
                 config["data"]["ref"]["gchp"]["logs_template"],
-                all_months_ref,
+                all_months_gchp_ref,
             )[0]
             dev = get_log_filepaths(
                 gchp_vs_gchp_devlogdir,
                 config["data"]["dev"]["gchp"]["logs_template"],
-                all_months_dev,
+                all_months_gchp_dev,
             )[0]
 
             # Create the table
@@ -2229,7 +2232,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 config["data"]["ref"]["gchp"]["version"],
                 dev,
                 config["data"]["dev"]["gchp"]["version"],
-                dst=gcc_vs_gcc_tablesdir,
+                dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
             )
 
