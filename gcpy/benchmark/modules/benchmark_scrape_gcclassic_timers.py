@@ -5,6 +5,7 @@ more JSON or text files.
 """
 import os
 import json
+import numpy as np
 from gcpy.util import make_directory, replace_whitespace, verify_variable_type
 
 
@@ -173,7 +174,10 @@ def print_timer(key, ref, dev, ofile):
     dev   : dict : Timing information from the "Dev" model
     ofile : file : File object where info will be written
     """
-    line = f"{key:<25}  {ref[key]:>20.3f}  {dev[key]:>20.3f}"
+    pctdiff = np.nan
+    if np.abs(ref[key] > 0.0):
+        pctdiff = ((dev[key] - ref[key]) / ref[key]) * 100.0
+    line = f"{key:<22}  {ref[key]:>18.3f}  {dev[key]:>18.3f}   {pctdiff:>12.3e}"
     print(line, file=ofile)
 
 
@@ -199,7 +203,7 @@ def display_timers(ref, ref_label, dev, dev_label, table_file):
         print(f"%%% Dev = {dev_label}", file=ofile)
         print("%"*79, file=ofile)
         print("\n", file=ofile)
-        print(f"{'Timer':<25}  {'Ref [s]':>20}  {'Dev [s]':>20}", file=ofile)
+        print(f"{'Timer':<22}  {'Ref [s]':>18}  {'Dev [s]':>18}   {'% Diff':>12}", file=ofile)
         print("-"*79, file=ofile)
 
         # Print timers
