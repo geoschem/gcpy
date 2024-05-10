@@ -121,7 +121,10 @@ def read_one_text_file(text_file):
             if keep_line:
                 substr = line.split(":")
                 key = substr[0].strip()
-                val = substr[3].split()[1].strip()
+                if "THE TIMER DID NOT RUN" in line:
+                    val = np.nan
+                else:
+                    val = substr[3].split()[1].strip()
                 timers[key] = {"seconds": val}
 
     return timers

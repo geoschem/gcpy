@@ -262,7 +262,7 @@ def print_timer(key, ref, dev, ofile):
 
 def display_timers(ref, ref_label, dev, dev_label, table_file):
     """
-    Prints the GEOS-Che timer information to a table.
+    Prints the GCHP timer information to a table.
 
     Args
     ref        : dict : Timing information from the "Ref" model
@@ -275,7 +275,7 @@ def display_timers(ref, ref_label, dev, dev_label, table_file):
 
         # Print header
         print("%"*79, file=ofile)
-        print("%%% GCHP Classic Benchmark Timing Information", file=ofile)
+        print("%%% GCHP Benchmark Timing Information", file=ofile)
         print("%%%", file=ofile)
         print(f"%%% Ref = {ref_label}", file=ofile)
         print(f"%%% Dev = {dev_label}", file=ofile)
@@ -307,9 +307,8 @@ def make_benchmark_gchp_timing_table(
         overwrite=False,
 ):
     """
-    Creates a table of timing information for GEOS-Chem Classic
-    benchmark simulations given one or more JSON and/or text files
-    as input.
+    Creates a table of timing information for GCHP benchmark
+    simulations given one or more text files as input.
 
     Args
     ref_files : str|list : File(s) with timing info from the "Ref" model
