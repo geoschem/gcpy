@@ -48,7 +48,7 @@ data:
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: .
-      logs_template: "log.%Y%m%d"
+      logs_template: "GC.log"
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
     gchp:
@@ -69,7 +69,7 @@ data:
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: .
-      logs_template: "log.%Y%m%d"      
+      logs_template: "GC.log"      
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
     gchp:
