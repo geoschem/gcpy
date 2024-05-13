@@ -788,6 +788,8 @@ def rename_and_flip_gchp_rst_vars(
             old_to_new[var] = 'SpeciesRst_' + spc
         if var == "DELP_DRY":
             old_to_new["DELP_DRY"] = "Met_DELPDRY"
+        if var == "DELPDRY":
+            old_to_new["DELPDRY"] = "Met_DELPDRY"
         if var == "BXHEIGHT":
             old_to_new["BXHEIGHT"] = "Met_BXHEIGHT"
         if var == "TropLev":
