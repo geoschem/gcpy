@@ -20,10 +20,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Function `rename_speciesconc_to_speciesconcvv` in `gcpy/benchmark/modules/benchmark_utils.py`
 - Function `copy_file_to_dir` in `gcpy/util.py`.  This is a wrapper for `shutil.copyfile`.
 - GitHub Action config file `.github/workflows/stale.yml`, which replaces StaleBot
-- Example script `gcpy/examples/hemco/make_mask_file.py`
 - Added `gcpy/community/format_hemco_data.py` from @hannahnesser
 - Added `gcpy/examples/hemco/format_hemco_demo.py` from @hannahnesser
 - Added HCl to `gcpy/benchmark/modules/emission_species.yml` and GTChlorine to `gcpy/benchmark/modules/emission_inventories.yml` for GEOS-Chem 14.4.0
+- Example script `gcpy/examples/working_with_files/make_mask_file.py`
+- Convenience function `replace_whitespace` in `gcpy/util.py`
+- Benchmark script `gcpy/benchmark/modules/benchmark_scrape_gcclassic_timers.py`
+- Benchmark script `gcpy/benchmark/modules/benchmark_scrape_gchp_timers.py`
+- 1-year benchmark scripts now produce GCC vs GCC and GCHP vs GCHP timing tables
+- Functions `gcc_vs_gcc_dirs`, `gchp_vs_gcc_dirs`, `gchp_vs_gchp_dirs`, and `get_log_filepaths` in `gcpy/benchmark/modules/benchmark_utils.py`
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
@@ -45,6 +50,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Create radionuclide, STE flux, and mass conservation tables for Ref and Dev versions in TransportTracers benchmarks
 - Use new function `copy_file_to_dir` to copy the benchmark script and configuration file to the benchmark results folders
 - Updated GitHub stalebot config file `stale.yml` with new issue/PR labels that should not go stale
+- Updated benchmark driver scripts and config files to print GCClassic & GCHP timing information 
   
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects

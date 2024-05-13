@@ -509,3 +509,146 @@ def rename_speciesconc_to_speciesconcvv(
             rename_dict[var] = var.replace("SpeciesConc_", "SpeciesConcVV_")
 
     return dset.rename(rename_dict)
+
+
+def gcc_vs_gcc_dirs(
+        config,
+        subdir,
+):
+    """
+    Convenience function to return GCC vs. GCC file paths
+    for use in the benchmarking modules.
+
+    Args
+    config         : dict : Info read from config file
+    subdir         : str  : Subdirectory
+
+    Returns
+    refdir, devdir : str : Fike paths
+    """
+    util.verify_variable_type(config, dict)
+    util.verify_variable_type(subdir, str)
+
+    # Log file paths
+    refdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gcc"]["dir"],
+        config["data"]["ref"]["gcc"][subdir]
+    )
+    devdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gcc"]["dir"],
+        config["data"]["dev"]["gcc"][subdir]
+    )
+
+    return refdir, devdir
+
+
+def gchp_vs_gcc_dirs(
+        config,
+        subdir,
+):
+    """
+    Convenience function to return GCHP vs. GCC file paths
+    for use in the benchmarking modules.
+
+
+    Args
+    config         : dict : Info read from config file
+    subdir         : str  : Subdirectory
+
+    Returns
+    refdir, devdir : str : Fike paths
+    """
+    util.verify_variable_type(config, dict)
+    util.verify_variable_type(subdir, str)
+
+    refdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gcc"]["dir"],
+        config["data"]["dev"]["gcc"][subdir]
+    )
+    devdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["dir"],
+        config["data"]["dev"]["gchp"][subdir]
+    )
+
+    return refdir, devdir
+
+
+def gchp_vs_gchp_dirs(
+        config,
+        subdir,
+):
+    """
+    Convenience function to return GCHP vs. GCHP file paths
+    for use in the benchmarking modules.
+
+    Args
+    config         : dict : Info read from config file
+    subdir         : str  : Subdirectory
+
+    Returns
+    refdir, devdir : str : Fike paths
+    """
+    util.verify_variable_type(config, dict)
+    util.verify_variable_type(subdir, str)
+
+    refdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["ref"]["gchp"]["dir"],
+        config["data"]["ref"]["gchp"][subdir]
+    )
+    devdir = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"]["gchp"]["dir"],
+        config["data"]["dev"]["gchp"][subdir]
+    )
+
+    return refdir, devdir
+
+
+def get_log_filepaths(
+        logs_dir,
+        template,
+        timestamps,
+):
+    """
+    Returns a list of paths for GEOS-Chem log files.
+    These are needed to compute the benchmark timing tables.
+
+    Args
+    logs_dir   : str  : Path to directory w/ log files
+    template   : str  : Log file template w/ "%DATE%" token
+    timestamps : list : List of datetimes
+    """
+    util.verify_variable_type(logs_dir, str)
+    util.verify_variable_type(template, str)
+
+    # Initialize local variables
+    format_str = ""
+    fmts = ["%Y", "%m", "%d", "%h"]
+    result = []
+
+    # Create the format string for the log file template
+    for fmt in fmts:
+        if fmt in template:
+            format_str += fmt
+
+    # If there is only one timestamp, add it to a list
+    # so that the for loop below will work properly.
+    if timestamps.size == 1:
+        timestamps = [timestamps]
+
+    # Create each output logfile name, replacing template with date
+    for timestamp in timestamps:
+        time = timestamp.item().strftime(format_str)
+        result.append(
+            os.path.join(
+                logs_dir,
+                template.replace(format_str, time),
+            )
+        )
+
+    return result

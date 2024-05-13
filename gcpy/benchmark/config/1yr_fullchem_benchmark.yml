@@ -59,6 +59,8 @@ data:
       dir: GCC_ref
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
+      logs_subdir: Logs
+      logs_template: "log.%Y%m%d"
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
     gchp:
@@ -66,6 +68,8 @@ data:
       dir: GCHP_ref
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
+      logs_subdir: Logs
+      logs_template: "gchp.%Y%m%d_0000z.log"
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
       is_pre_14.0: False
@@ -76,6 +80,8 @@ data:
       dir: GCC_dev
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
+      logs_subdir: Logs
+      logs_template: "log.%Y%m%d"
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
     gchp:
@@ -83,6 +89,8 @@ data:
       dir: GCHP_dev
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
+      logs_subdir: Logs
+      logs_template: "gchp.%Y%m%d_0000z.log"
       bmk_start: "2019-01-01T00:00:00"
       bmk_end: "2020-01-01T00:00:00"
       is_pre_14.0: False
@@ -130,6 +138,7 @@ options:
     Ox_budget_table: True
     ste_table: True # GCC only
     OH_metrics: True
+    timing_table: True
     plot_models_vs_obs: True
     plot_options:
       by_spc_cat: True
