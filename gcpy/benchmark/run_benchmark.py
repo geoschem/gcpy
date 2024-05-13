@@ -510,8 +510,8 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCC vs. GCC global mass tables %%%")
 
             # Filepaths
-            ref = get_filepath(gcc_vs_gcc_refrst, "Restart", gcc_end_ref_date)
-            dev = get_filepath(gcc_vs_gcc_devrst, "Restart", gcc_end_dev_date)
+            ref = get_filepath(gcc_vs_gcc_refrstdir, "Restart", gcc_end_ref_date)
+            dev = get_filepath(gcc_vs_gcc_devrstdir, "Restart", gcc_end_dev_date)
 
             # Create tables
             make_benchmark_mass_tables(
@@ -531,10 +531,10 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCC vs. GCC mass accumulation tables %%%")
 
             # Filepaths for start and end restart files
-            refs = get_filepath(gcc_vs_gcc_refrst, "Restart", gcc_ref_date)
-            devs = get_filepath(gcc_vs_gcc_devrst, "Restart", gcc_dev_date)
-            refe = get_filepath(gcc_vs_gcc_refrst, "Restart", gcc_end_ref_date)
-            deve = get_filepath(gcc_vs_gcc_devrst, "Restart", gcc_end_dev_date)
+            refs = get_filepath(gcc_vs_gcc_refrstdir, "Restart", gcc_ref_date)
+            devs = get_filepath(gcc_vs_gcc_devrstdir, "Restart", gcc_dev_date)
+            refe = get_filepath(gcc_vs_gcc_refrstdir, "Restart", gcc_end_ref_date)
+            deve = get_filepath(gcc_vs_gcc_devrstdir, "Restart", gcc_end_dev_date)
 
             # Get period strings
             refs_str = np.datetime_as_string(gcc_ref_date, unit="s")
@@ -932,12 +932,12 @@ def run_benchmark_default(config):
 
             # Filepaths
             ref = get_filepath(
-                gchp_vs_gcc_refrst,
+                gchp_vs_gcc_refrstdir,
                 "Restart",
                 gcc_end_dev_date
             )
             dev = get_filepath(
-                gchp_vs_gcc_devrst,
+                gchp_vs_gcc_devrstdir,
                 "Restart",
                 gchp_end_dev_date,
                 is_gchp=True,
@@ -964,12 +964,12 @@ def run_benchmark_default(config):
 
             # Filepaths for start and end restart files
             refs = get_filepath(
-                gchp_vs_gcc_refrst,
+                gchp_vs_gcc_refrstdir,
                 "Restart",
                 gcc_dev_date
             )
             devs = get_filepath(
-                gchp_vs_gcc_devrst,
+                gchp_vs_gcc_devrstdir,
                 "Restart",
                 gchp_dev_date,
                 is_gchp=True,
@@ -977,12 +977,12 @@ def run_benchmark_default(config):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
             refe = get_filepath(
-                gchp_vs_gcc_refrst,
+                gchp_vs_gcc_refrstdir,
                 "Restart",
                 gcc_end_dev_date
             )
             deve = get_filepath(
-                gchp_vs_gcc_devrst,
+                gchp_vs_gcc_devrstdir,
                 "Restart",
                 gchp_end_dev_date,
                 is_gchp=True,
@@ -1393,7 +1393,7 @@ def run_benchmark_default(config):
 
             # Filepaths
             ref = get_filepath(
-                gchp_vs_gchp_refrst,
+                gchp_vs_gchp_refrstdir,
                 "Restart",
                 gchp_end_ref_date,
                 is_gchp=True,
@@ -1401,7 +1401,7 @@ def run_benchmark_default(config):
                 gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
             )
             dev = get_filepath(
-                gchp_vs_gchp_devrst,
+                gchp_vs_gchp_devrstdir,
                 "Restart",
                 gchp_end_dev_date,
                 is_gchp=True,
@@ -1428,7 +1428,7 @@ def run_benchmark_default(config):
 
             # Filepaths for start and end restart files
             refs = get_filepath(
-                gchp_vs_gchp_refrst,
+                gchp_vs_gchp_refrstdir,
                 "Restart",
                 gchp_ref_date,
                 is_gchp=True,
@@ -1436,7 +1436,7 @@ def run_benchmark_default(config):
                 gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
             )
             devs = get_filepath(
-                gchp_vs_gchp_devrst,
+                gchp_vs_gchp_devrstdir,
                 "Restart",
                 gchp_dev_date,
                 is_gchp=True,
@@ -1444,7 +1444,7 @@ def run_benchmark_default(config):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
             refe = get_filepath(
-                gchp_vs_gchp_refrst,
+                gchp_vs_gchp_refrstdir,
                 "Restart",
                 gchp_end_ref_date,
                 is_gchp=True,
@@ -1452,7 +1452,7 @@ def run_benchmark_default(config):
                 gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
             )
             deve = get_filepath(
-                gchp_vs_gchp_devrst,
+                gchp_vs_gchp_devrstdir,
                 "Restart",
                 gchp_end_dev_date,
                 is_gchp=True,
