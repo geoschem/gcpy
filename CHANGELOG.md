@@ -29,6 +29,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Benchmark script `gcpy/benchmark/modules/benchmark_scrape_gchp_timers.py`
 - 1-year benchmark scripts now produce GCC vs GCC and GCHP vs GCHP timing tables
 - Functions `gcc_vs_gcc_dirs`, `gchp_vs_gcc_dirs`, `gchp_vs_gchp_dirs`, and `get_log_filepaths` in `gcpy/benchmark/modules/benchmark_utils.py`
+- Script `gcpy/benchmark/modules/benchmark_mass_cons_table.py`, with code to create mass conservation tables
+- Expanded statistics output in benchmark mass conservation tables
+- Function `get_datetimes_from_filenames` in `gcpy/benchmark/modules/benchmark_utils.py`
+- Function `replace_whitespace` in `gcpy/util.py`
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
@@ -72,6 +76,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Environment file `docs/environment_files/requirements.txt`
 - Removed `awscli` from the GCPy environment; version 2 is no longer available on conda-forge or PyPi
 - GitHub config files `.github/stale.yml` and `.github/no-response.yml`
+- Routine `make_benchmark_mass_conservation_table` in `benchmark_funcs.py`; this is now obsolete
 
 ## [1.4.2] - 2024-01-26
 ### Added

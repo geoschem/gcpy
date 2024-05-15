@@ -652,3 +652,31 @@ def get_log_filepaths(
         )
 
     return result
+
+
+def get_datetimes_from_filenames(
+        files
+):
+    """
+    Returns datetimes obtained from GEOS-Chem diagnostic or
+    restart file names.
+
+    Args
+    files     : list       : GEOS-CHem diagnostic/restart file names
+
+    Returns
+    datetimes : np.ndarray : Array of np.datetime64 values
+    """
+    datetimes = np.zeros(
+        len(files),
+        dtype=np.datetime64("1970-01-01T00:00")
+    )
+    for idx, ifile in enumerate(files):
+        substr = os.path.basename(ifile).split("_")
+        date = substr[0].split(".")[-1]
+        time = substr[1].split("z")[0]
+        dt_str = date[0:4] + "-" + date[4:6] + "-" + date[6:8]
+        dt_str += "T" + time[0:2] + ":" + time[2:4]
+        datetimes[idx] = np.datetime64(dt_str)
+
+    return datetimes
