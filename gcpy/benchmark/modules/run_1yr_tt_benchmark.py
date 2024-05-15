@@ -60,6 +60,7 @@ from joblib import Parallel, delayed
 from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
 from gcpy.benchmark.modules.benchmark_funcs import \
     get_species_database_dir, make_benchmark_conc_plots, \
+    make_benchmark_emis_plots, make_benchmark_emis_tables, \
     make_benchmark_wetdep_plots, make_benchmark_mass_tables, \
     make_benchmark_operations_budget, make_benchmark_mass_conservation_table
 from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
@@ -385,6 +386,99 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
         # ==================================================================
+        # GCC vs GCC emissions plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_emis"]:
+            print("\n%%% Creating GCC vs. GCC emissions plots %%%")
+
+            # --------------------------------------------------------------
+            # GCC vs GCC emissions plots: Annual mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "Emissions",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "Emissions",
+                all_months_dev
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            make_benchmark_emis_plots(
+                ref,
+                gcc_vs_gcc_refstr,
+                dev,
+                gcc_vs_gcc_devstr,
+                dst=gcc_vs_gcc_resultsdir,
+                subdst="AnnualMean",
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                benchmark_type=bmk_type,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+            # --------------------------------------------------------------
+            # GCC vs GCC emissions plots: Seasonal
+            # --------------------------------------------------------------
+            for mon in range(bmk_n_months):
+                print(f"\nCreating plots for {bmk_mon_strs[mon]}")
+
+                # Create plots
+                mon_ind = bmk_mon_inds[mon]
+                make_benchmark_emis_plots(
+                    ref[mon_ind],
+                    gcc_vs_gcc_refstr,
+                    dev[mon_ind],
+                    gcc_vs_gcc_devstr,
+                    dst=gcc_vs_gcc_resultsdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=bmk_type,
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
+                )
+
+        # ==================================================================
+        # GCC vs GCC tables of emission and inventory totals
+        # ==================================================================
+        if config["options"]["outputs"]["emis_table"]:
+            print("\n%%% Creating GCC vs. GCC emissions & inventory totals %%%")
+
+            # Filepaths
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "Emissions",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "Emissions",
+                all_months_dev
+            )[0]
+
+            # Create table
+            make_benchmark_emis_tables(
+                ref,
+                gcc_vs_gcc_refstr,
+                dev,
+                gcc_vs_gcc_devstr,
+                dst=gcc_vs_gcc_resultsdir,
+                benchmark_type=bmk_type,
+                ref_interval=sec_per_month_ref,
+                dev_interval=sec_per_month_dev,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+        # ==================================================================
         # GCC vs GCC wet deposition plots
         # ==================================================================
         if config["options"]["outputs"]["plot_wetdep"]:
@@ -704,6 +798,103 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     n_job=config["options"]["n_cores"]
                 )
 
+        # ==============================================================
+        # GCHP vs. GCC emissions plots
+        # ==============================================================
+        if config["options"]["outputs"]["plot_emis"]:
+            print("\n%%% Creating GCHP vs. GCC emissions plots %%%")
+
+            # --------------------------------------------------------------
+            # GCHP vs GCC emissions plots: Annual Mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "Emissions",
+                all_months_dev
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gcc_devdir,
+                "Emissions",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            make_benchmark_emis_plots(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                dst=gchp_vs_gcc_resultsdir,
+                subdst="AnnualMean",
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                benchmark_type=bmk_type,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+            # --------------------------------------------------------------
+            # GCHP vs GCC emissions plots: Seasonal
+            # --------------------------------------------------------------
+            for mon in range(bmk_n_months):
+                print(f"\nCreating plots for {bmk_mon_strs[mon]}")
+
+                # Create plots
+                mon_ind = bmk_mon_inds[mon]
+                make_benchmark_emis_plots(
+                    ref[mon_ind],
+                    gchp_vs_gcc_refstr,
+                    dev[mon_ind],
+                    gchp_vs_gcc_devstr,
+                    dst=gchp_vs_gcc_resultsdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=bmk_type,
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
+                )
+
+        # ==================================================================
+        # GCHP vs. GCC tables of emission and inventory totals
+        # ==================================================================
+        if config["options"]["outputs"]["emis_table"]:
+            print("\n%%% Creating GCHP vs. GCC emissions tables %%%")
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "Emissions",
+                all_months_dev
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gcc_devdir,
+                "Emissions",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Create emissions table that spans entire year
+            make_benchmark_emis_tables(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                devmet=devmet,
+                dst=gchp_vs_gcc_resultsdir,
+                ref_interval=sec_per_month_ref,
+                dev_interval=sec_per_month_dev,
+                benchmark_type=bmk_type,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
+
+
         # ==================================================================
         # GCHP vs GCC wet deposition plots
         # ==================================================================
@@ -1009,6 +1200,107 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     cmpres=cmpres,
                     n_job=config["options"]["n_cores"]
                 )
+
+        # ==================================================================
+        # GCHP vs. GCHP Emissions plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_emis"]:
+            print("\n%%% Creating GCHP vs. GCHP emissions plots %%%")
+
+            # --------------------------------------------------------------
+            # GCHP vs GCHP species concentration plots: Annual Mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gchp_refdir,
+                "Emissions",
+                all_months_gchp_ref,
+                is_gchp=True
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gchp_devdir,
+                "Emissions",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            make_benchmark_emis_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                dst=gchp_vs_gchp_resultsdir,
+                subdst="AnnualMean",
+                cmpres=cmpres,
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                benchmark_type=bmk_type,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+            # --------------------------------------------------------------
+            # GCHP vs GCHP species concentration plots: Seasonal
+            # --------------------------------------------------------------
+            for mon in range(bmk_n_months):
+                print(f"\nCreating plots for {bmk_mon_strs[mon]}")
+
+                # Create plots
+                mon_ind = bmk_mon_inds[mon]
+                make_benchmark_emis_plots(
+                    ref[mon_ind],
+                    gchp_vs_gchp_refstr,
+                    dev[mon_ind],
+                    gchp_vs_gchp_devstr,
+                    dst=gchp_vs_gchp_resultsdir,
+                    cmpres=cmpres,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=bmk_type,
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"]
+                )
+
+        # ==================================================================
+        # GCHP vs. GCHP tables of emission and inventory totals
+        # ==================================================================
+        if config["options"]["outputs"]["emis_table"]:
+            print("\n%%% Creating GCHP vs. GCHP emissions tables %%%")
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gchp_refdir,
+                "Emissions",
+                all_months_gchp_ref,
+                is_gchp=True
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gchp_devdir,
+                "Emissions",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Create table
+            make_benchmark_emis_tables(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                refmet=refmet,
+                devmet=devmet,
+                dst=gchp_vs_gchp_resultsdir,
+                ref_interval=sec_per_month_ref,
+                dev_interval=sec_per_month_dev,
+                benchmark_type=bmk_type,
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+            )
 
         # ==================================================================
         # GCHP vs GCHP wet deposition plots

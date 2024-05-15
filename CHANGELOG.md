@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added fixed level budget diagnostic to budget operations table
 - Function `rename_speciesconc_to_speciesconcvv` in `gcpy/benchmark/modules/benchmark_utils.py`
 - Function `copy_file_to_dir` in `gcpy/util.py`.  This is a wrapper for `shutil.copyfile`.
+- Add option to create emission plots and tables in the transport tracer benchmark
 
 ### Changed
 - Bump pip from 23.2.1 to 23.3 (dependabot suggested this)

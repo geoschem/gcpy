@@ -1,4 +1,3 @@
-
 ---
 # =====================================================================
 # Benchmark configuration file (**EDIT AS NEEDED**)
@@ -108,10 +107,12 @@ options:
   #
   outputs:
     plot_conc: True
+    plot_emis: False
     plot_wetdep: True
     plot_drydep: True
     rnpbbe_budget: True
     ops_budget_table: False
+    emis_table: False
     mass_table: True
     ste_table: True
     cons_table: True
