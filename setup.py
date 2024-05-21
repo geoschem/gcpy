@@ -109,7 +109,7 @@ setup(
         "python==3.9.18",
         "pypdf==3.17.0",
         "recommonmark==0.7.1",
-        "requests==2.31.0",
+        "requests==2.32.0",
         "scipy==1.11.2",
         "sparselt==0.1.3",
         "tabulate==0.9.0",
