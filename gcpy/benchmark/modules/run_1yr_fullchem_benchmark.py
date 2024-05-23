@@ -44,7 +44,7 @@ Remarks:
 
         $ export MPLBACKEND=agg
 
-This script corresponds with GCPy 1.4.3. Edit this version ID if releasing
+This script corresponds with GCPy 1.5.0. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -61,24 +61,31 @@ from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
 from gcpy.benchmark.modules.budget_ox import global_ox_budget
+#TODO: Peel out routines from benchmark_funcs.py into smaller
+# routines in the gcpy/benchmark/modules folder, such as these:
 from gcpy.benchmark.modules.benchmark_funcs import \
     diff_of_diffs_toprow_title, get_species_database_dir, \
     make_benchmark_conc_plots, make_benchmark_emis_plots, \
     make_benchmark_emis_tables, make_benchmark_jvalue_plots, \
     make_benchmark_aod_plots, make_benchmark_mass_tables, \
     make_benchmark_operations_budget, make_benchmark_aerosol_tables
-from gcpy.benchmark.modules.benchmark_utils import print_benchmark_info
+from gcpy.benchmark.modules.benchmark_utils import \
+    gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
+    get_log_filepaths, print_benchmark_info
 from gcpy.benchmark.modules.benchmark_models_vs_obs \
     import make_benchmark_models_vs_obs_plots
 from gcpy.benchmark.modules.benchmark_models_vs_sondes \
     import make_benchmark_models_vs_sondes_plots
-#TODO: Peel out routines from benchmark_funcs.py into smaller
-# routines in the gcpy/benchmark/modules folder, such as these:
 from gcpy.benchmark.modules.benchmark_drydep \
     import drydepvel_species, make_benchmark_drydep_plots
+from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
+    make_benchmark_gcclassic_timing_table
+from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
+    make_benchmark_gchp_timing_table
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
+
 # Suppress annoying warning messages
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -107,73 +114,25 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # ======================================================================
 
     # Diagnostics file directory paths
-    gcc_vs_gcc_refdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["outputs_subdir"],
-    )
-    gcc_vs_gcc_devdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["outputs_subdir"],
-    )
-    gchp_vs_gcc_refdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["outputs_subdir"],
-    )
-    gchp_vs_gcc_devdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["outputs_subdir"],
-    )
-    gchp_vs_gchp_refdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["outputs_subdir"],
-    )
-    gchp_vs_gchp_devdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["outputs_subdir"],
-    )
+    s = "outputs_subdir"
+    gcc_vs_gcc_refdir, gcc_vs_gcc_devdir = gcc_vs_gcc_dirs(config, s)
+    gchp_vs_gcc_refdir, gchp_vs_gcc_devdir = gchp_vs_gcc_dirs(config, s)
+    gchp_vs_gchp_refdir, gchp_vs_gchp_devdir = gchp_vs_gchp_dirs(config, s)
 
     # Restart file directory paths
-    gcc_vs_gcc_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["restarts_subdir"]
-    )
-    gcc_vs_gcc_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["restarts_subdir"]
-    )
-    gchp_vs_gcc_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["restarts_subdir"]
-    )
-    gchp_vs_gcc_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["restarts_subdir"]
-    )
-    gchp_vs_gchp_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["restarts_subdir"]
-    )
-    gchp_vs_gchp_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["restarts_subdir"]
-    )
+    s = "restarts_subdir"
+    gcc_vs_gcc_refrstdir, gcc_vs_gcc_devrstdir = gcc_vs_gcc_dirs(config, s)
+    gchp_vs_gcc_refrstdir, gchp_vs_gcc_devrstdir = gchp_vs_gcc_dirs(config, s)
+    gchp_vs_gchp_refrstdir, gchp_vs_gchp_devrstdir = gchp_vs_gchp_dirs(config, s)
+
+    # Log file directory paths
+    s = "logs_subdir"
+    gcc_vs_gcc_reflogdir, gcc_vs_gcc_devlogdir = gcc_vs_gcc_dirs(config, s)
+    gchp_vs_gcc_reflogdir, gchp_vs_gcc_devlogdir = gchp_vs_gcc_dirs(config, s)
+    gchp_vs_gchp_reflogdir, gchp_vs_gchp_devlogdir = gchp_vs_gchp_dirs(config, s)
 
     # Directories where plots & tables will be created
-    mainresultsdir = os.path.join(
-        config["paths"]["results_dir"]
-    )
+    mainresultsdir = os.path.join(config["paths"]["results_dir"])
     gcc_vs_gcc_resultsdir = os.path.join(
         mainresultsdir,
         config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
@@ -236,15 +195,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     #gchp_vs_gchp_budgetdir = os.path.join(gchp_vs_gchp_resultsdir, "Budget")
 
     # Models vs. observations directories
-    gcc_vs_gcc_models_vs_obs_dir = os.path.join(
-        gcc_vs_gcc_resultsdir, "ModelVsObs"
-    )
-    gchp_vs_gcc_models_vs_obs_dir = os.path.join(
-        gchp_vs_gcc_resultsdir, "ModelVsObs"
-    )
-    gchp_vs_gchp_models_vs_obs_dir = os.path.join(
-        gchp_vs_gchp_resultsdir, "ModelVsObs"
-    )
+    s = "ModelVsObs"
+    gcc_vs_gcc_models_vs_obs_dir = os.path.join(gcc_vs_gcc_resultsdir, s)
+    gchp_vs_gcc_models_vs_obs_dir = os.path.join(gchp_vs_gcc_resultsdir, s)
+    gchp_vs_gchp_models_vs_obs_dir = os.path.join(gchp_vs_gchp_resultsdir, s)
 
     # ======================================================================
     # Plot title strings
@@ -863,6 +817,34 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gcc_vs_gcc_tablesdir,
                 bmk_type=bmk_type,
                 species=["O3"],
+                overwrite=True,
+            )
+
+        # ==================================================================
+        # GCC vs. GCC Benchmark Timing Table
+        # ==================================================================
+        if config["options"]["outputs"]["timing_table"]:
+            print("\n%%% Creating GCC vs. GCC Benchmark Timing table %%%")
+
+            # Filepaths
+            ref = get_log_filepaths(
+                gcc_vs_gcc_reflogdir,
+                config["data"]["ref"]["gcc"]["logs_template"],
+                all_months_ref
+            )
+            dev = get_log_filepaths(
+                gcc_vs_gcc_devlogdir,
+                config["data"]["dev"]["gcc"]["logs_template"],
+                all_months_dev
+            )
+
+            # Create the table
+            make_benchmark_gcclassic_timing_table(
+                ref,
+                config["data"]["ref"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gcc"]["version"],
+                dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
             )
 
@@ -1594,7 +1576,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
 
         # ==================================================================
-        # GCHP vs GCC filepaths for StateMet collection data
+        # GCHP vs GCHP filepaths for StateMet collection data
         # ==================================================================
         refmet = get_filepaths(
             gchp_vs_gchp_refdir,
@@ -2225,12 +2207,44 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
 
         # ==================================================================
+        # GCHP vs. GCHP Benchmark Timing Table
+        # ==================================================================
+        if config["options"]["outputs"]["timing_table"]:
+            print("\n%%% Creating GCHP vs. GCHP Benchmark Timing table %%%")
+
+            # Filepaths
+            # NOTE: Usually the GCHP 1-yr benchmark is run as
+            # one job, so we only need to take the 1st log file.
+            ref = get_log_filepaths(
+                gchp_vs_gchp_reflogdir,
+                config["data"]["ref"]["gchp"]["logs_template"],
+                all_months_gchp_ref,
+            )[0]
+            dev = get_log_filepaths(
+                gchp_vs_gchp_devlogdir,
+                config["data"]["dev"]["gchp"]["logs_template"],
+                all_months_gchp_dev,
+            )[0]
+
+            # Create the table
+            make_benchmark_gchp_timing_table(
+                ref,
+                config["data"]["ref"]["gchp"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gchp_tablesdir,
+                overwrite=True,
+            )
+
+        # ==================================================================
         # GCHP vs GCHP Model vs. Observations plots
         # ==================================================================
         if config["options"]["outputs"]["plot_models_vs_obs"]:
             print("\n%%% Creating GCHP vs. GCHP models vs. obs. plots %%%")
 
             # Filepaths
+            # NOTE: If the GCHP benchmark is done in one-shot
+            # then you need the [0] after the call to get_filepaths.
             ref = get_filepaths(
                 gchp_vs_gchp_refdir,
                 "SpeciesConc",
@@ -2361,4 +2375,4 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # ==================================================================
     # Print a message indicating that the benchmarks finished
     # ==================================================================
-    print("\n %%%% All requested benchmark plots/tables created! %%%%")
+    print("\n%%%% All requested benchmark plots/tables created! %%%%")

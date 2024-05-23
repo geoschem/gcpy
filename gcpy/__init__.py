@@ -3,6 +3,7 @@ GCPy import script
 """
 
 from .benchmark import *
+from .community import *
 from .examples import *
 
 from .append_grid_corners import *

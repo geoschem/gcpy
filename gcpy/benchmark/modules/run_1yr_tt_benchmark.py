@@ -61,10 +61,18 @@ from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
 from gcpy.benchmark.modules.benchmark_funcs import \
     get_species_database_dir, make_benchmark_conc_plots, \
     make_benchmark_wetdep_plots, make_benchmark_mass_tables, \
-    make_benchmark_operations_budget, make_benchmark_mass_conservation_table
+    make_benchmark_operations_budget
 from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
-from gcpy.benchmark.modules.benchmark_utils import print_benchmark_info
+from gcpy.benchmark.modules.benchmark_utils import \
+    gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
+    get_log_filepaths, print_benchmark_info
+from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
+    make_benchmark_gcclassic_timing_table
+from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
+    make_benchmark_gchp_timing_table
+from gcpy.benchmark.modules.benchmark_mass_cons_table import \
+    make_benchmark_mass_conservation_table
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -93,69 +101,23 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # For gchp_vs_gcc_refdir use config["data"]["dev"]["gcc"]["version"], not ref (mps, 6/27/19)
     # ======================================================================
 
-    # Diagnostic file directory paths
-    gcc_vs_gcc_refdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["outputs_subdir"]
-    )
-    gcc_vs_gcc_devdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["outputs_subdir"]
-    )
-    gchp_vs_gcc_refdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["outputs_subdir"]
-    )
-    gchp_vs_gcc_devdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["outputs_subdir"]
-    )
-    gchp_vs_gchp_refdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["outputs_subdir"]
-    )
-    gchp_vs_gchp_devdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["outputs_subdir"]
-    )
+    # Diagnostics file directory paths
+    s = "outputs_subdir"
+    gcc_vs_gcc_refdir, gcc_vs_gcc_devdir = gcc_vs_gcc_dirs(config, s)
+    gchp_vs_gcc_refdir, gchp_vs_gcc_devdir = gchp_vs_gcc_dirs(config, s)
+    gchp_vs_gchp_refdir, gchp_vs_gchp_devdir = gchp_vs_gchp_dirs(config, s)
 
-    # Diagnostic file directory paths
-    gcc_vs_gcc_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["restarts_subdir"]
-    )
-    gchp_vs_gcc_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["restarts_subdir"]
-    )
-    gchp_vs_gchp_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["restarts_subdir"]
-    )
-    gcc_vs_gcc_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["restarts_subdir"]
-    )
-    gchp_vs_gcc_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["restarts_subdir"]
-    )
-    gchp_vs_gchp_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["restarts_subdir"]
-    )
+    # Restart file directory paths
+    s = "restarts_subdir"
+    gcc_vs_gcc_refrstdir, gcc_vs_gcc_devrstdir = gcc_vs_gcc_dirs(config, s)
+    gchp_vs_gcc_refrstdir, gchp_vs_gcc_devrstdir = gchp_vs_gcc_dirs(config, s)
+    gchp_vs_gchp_refrstdir, gchp_vs_gchp_devrstdir = gchp_vs_gchp_dirs(config, s)
+
+    # Log file directory paths
+    s = "logs_subdir"
+    gcc_vs_gcc_reflogdir, gcc_vs_gcc_devlogdir = gcc_vs_gcc_dirs(config, s)
+    gchp_vs_gcc_reflogdir, gchp_vs_gcc_devlogdir = gchp_vs_gcc_dirs(config, s)
+    gchp_vs_gchp_reflogdir, gchp_vs_gchp_devlogdir = gchp_vs_gchp_dirs(config, s)
 
     # Directories where plots & tables will be created
     mainresultsdir = os.path.join(
@@ -608,6 +570,34 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gcc_vs_gcc_tablesdir,
                 bmk_type=bmk_type,
                 species=["Pb210", "Be7", "Be10"],
+                overwrite=True,
+            )
+
+        # ==================================================================
+        # GCC vs. GCC Benchmark Timing Table
+        # ==================================================================
+        if config["options"]["outputs"]["timing_table"]:
+            print("\n%%% Creating GCC vs. GCC Benchmark Timing table %%%")
+
+            # Filepaths
+            ref = get_log_filepaths(
+                gcc_vs_gcc_reflogdir,
+                config["data"]["ref"]["gcc"]["logs_template"],
+                all_months_ref
+            )
+            dev = get_log_filepaths(
+                gcc_vs_gcc_devlogdir,
+                config["data"]["dev"]["gcc"]["logs_template"],
+                all_months_dev
+            )
+
+            # Create the table
+            make_benchmark_gcclassic_timing_table(
+                ref,
+                config["data"]["ref"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gcc"]["version"],
+                dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
             )
 
@@ -1242,6 +1232,36 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gchp_vs_gchp_tablesdir,
             )
 
+        # ==================================================================
+        # GCHP vs. GCHP Benchmark Timing Table
+        # ==================================================================
+        if config["options"]["outputs"]["timing_table"]:
+            print("\n%%% Creating GCHP vs. GCHP Benchmark Timing table %%%")
+
+            # Filepaths
+            # NOTE: Usually the GCHP 1-yr benchmark is run as
+            # one job, so we only need to take the 1st log file.
+            ref = get_log_filepaths(
+                gchp_vs_gchp_reflogdir,
+                config["data"]["ref"]["gchp"]["logs_template"],
+                all_months_gchp_ref,
+            )[0]
+            dev = get_log_filepaths(
+                gchp_vs_gchp_devlogdir,
+                config["data"]["dev"]["gchp"]["logs_template"],
+                all_months_gchp_dev,
+            )[0]
+
+            # Create the table
+            make_benchmark_gchp_timing_table(
+                ref,
+                config["data"]["ref"]["gchp"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gchp_tablesdir,
+                overwrite=True,
+            )
+            
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create mass conservations tables for GCC and GCHP
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1265,17 +1285,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 all_months_dev
             )[0]
 
-            # Ref
+            # Create table
             make_benchmark_mass_conservation_table(
                 ref_datafiles,
                 config["data"]["ref"]["gcc"]["version"],
-                dst=gcc_vs_gcc_tablesdir,
-                overwrite=True,
-                spcdb_dir=spcdb_dir,
-            )
-
-            # Dev
-            make_benchmark_mass_conservation_table(
                 dev_datafiles,
                 config["data"]["dev"]["gcc"]["version"],
                 dst=gcc_vs_gcc_tablesdir,
@@ -1286,7 +1299,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ===================================================================
         # Create mass conservation table for GCHP vs GCC
         # ===================================================================
-        if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
+        if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
             print("\n%%% Creating GCHP vs GCC mass conservation tables %%%")
 
             # Filepaths
@@ -1317,23 +1330,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )
 
-            # Ref
+            # Create table
             make_benchmark_mass_conservation_table(
                 ref_datafiles,
                 config["data"]["dev"]["gcc"]["version"],
-                dst=gchp_vs_gcc_tablesdir,
-                overwrite=True,
-                spcdb_dir=spcdb_dir,
-            )
-
-            # Dev
-            make_benchmark_mass_conservation_table(
                 dev_datafiles,
                 config["data"]["dev"]["gchp"]["version"],
                 dst=gchp_vs_gcc_tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                areapath=dev_areapath,
+                dev_areapath=dev_areapath,
             )
 
         # =====================================================================
@@ -1381,24 +1387,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
             )
 
-            # Ref
+            # Create table
             make_benchmark_mass_conservation_table(
                 ref_datafiles,
                 config["data"]["ref"]["gchp"]["version"],
-                dst=gchp_vs_gchp_tablesdir,
-                overwrite=True,
-                spcdb_dir=spcdb_dir,
-                areapath=ref_areapath
-            )
-
-            # Dev
-            make_benchmark_mass_conservation_table(
                 dev_datafiles,
                 config["data"]["dev"]["gchp"]["version"],
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
                 spcdb_dir=spcdb_dir,
-                areapath=dev_areapath
+                ref_areapath=ref_areapath,
+                dev_areapath=dev_areapath,
             )
 
     # ==================================================================
