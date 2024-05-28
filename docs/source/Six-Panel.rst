@@ -6,7 +6,7 @@ Six Panel Plotting
 
 This example demonstrates GCPy's comparison plotting capabilities.
 Following the example below will generate a plot similar to this:
-   
+
 .. image:: _static/images/six\_panel\_single\_level.png
    :align: center
 
@@ -16,7 +16,7 @@ Following the example below will generate a plot similar to this:
 Source code
 ===========
 
-This example script may be found at `gcpy/examples/plotting/plot_comparisons.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_comparisons.py>`_.
+**Script location:** `gcpy/examples/plotting/plot_comparisons.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_comparisons.py>`_
 
 .. _six-panel-call:
 
@@ -24,14 +24,14 @@ This example script may be found at `gcpy/examples/plotting/plot_comparisons.py 
 Calling sequence
 ================
 
-Make sure that you :ref:`specified the proper Matplotlib backend
+Make sure that you have :ref:`specified the proper Matplotlib backend
 <mpl-backend>` for  your system. Then run the example with:
 
 .. code-block:: console
 
    $ python -m gcpy.examples.plotting.plot_comparisons \
      --ref   /path/to/ref/diagnostic/or/restart/file \
-     --dev   /path/to/ref/diagnostic/or/restart/file \
+     --dev   /path/to/dev/diagnostic/or/restart/file \
      --var   variable-name-to-plot \
      --level level-to-plot
 

@@ -32,7 +32,7 @@ files.
    SpeciesConcVV_ASOG1  : 8.251855e-08           | 8.251855e-08           | 0.0 
    . . .
 		
-as well as optional :ref:`six-panel plots <six-panel plots>`.  This
+as well as optional :ref:`six-panel plots <six-panel>`.  This
 allows you to determine if two GEOS-Chem simulations have yielded
 identical results or not.
 
@@ -42,17 +42,18 @@ identical results or not.
 Source code
 ===========
 
-This example script may be found at
-`gcpy/examples/diagnostics/compare_diags.py
+**Script location:** `gcpy/examples/diagnostics/compare_diags.py
 <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_comparisons.py>`_
-with associated configuration file
-`gcpy/examples/diagnostics/compare_diags.yml <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/compare_diags.yml>`_
 
-.. _comp-diags-call:
+**Related configuration file:**
+`gcpy/examples/diagnostics/compare_diags.yml
+<https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/compare_diags.yml>`_ 
 
-================
-Calling sequence
-================
+.. _comp-diags-usage:
+
+=====
+Usage
+=====
 
 Make sure that you :ref:`specified the proper Matplotlib backend
 <mpl-backend>` for  your system.
@@ -61,7 +62,7 @@ First, copy the :file:`compare_diags.yml` file to your local folder.
 
 .. code-block:: console
 
-   $ cp /path/to/gcpy/gcpy/examples/diagnostics/compare_diags.yml .
+   $ cp /path/to/GCPy/gcpy/examples/diagnostics/compare_diags.yml .
 
 .. tip::
 
@@ -79,7 +80,7 @@ zonal mean plots.
    paths:
      main_dir: /path/to/your/data   # Add the path to your output here
      plots_dir: ./Results
-     weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+     weights_dir: /path/to/regridding/weights/folder
    
    data:
      ref:
@@ -116,4 +117,4 @@ Then, run the script with:
 
 .. code-block:: console
 
-   $ python -m gcpy.examples.diagnostics.compare_diags.py compare_diags.yml
+   $ python -m gcpy.examples.diagnostics.compare_diags compare_diags.yml

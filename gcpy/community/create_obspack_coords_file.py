@@ -2,6 +2,9 @@
 """
 Example to create an ObsPack input file with lon, lat, alt, etc coordinates
 to specify the locations where GEOS-Chem should archive output.
+
+Authors:
+Alli Moon (GitHub: @alli-moon) and Yuk Chun Chan (GitHub: @yc-chan)
 """
 
 import datetime as dt
@@ -11,10 +14,12 @@ import pandas as pd
 
 def main():
     """
-    Creates an obspack file
+    Creates an input file for the GEOS-Chem ObsPack diagnostic for a
+    given station site location and time range.
     """
 
-    # Configurations (edit if necessary)
+    # ==================================================================
+    # Configurable settings -- edit for your own use case!
     DATASET_ID = 'GC-MODEL'
     OUTPUT_DIR = './'
 
@@ -33,7 +38,8 @@ def main():
     SITE_LON = -64.8767
     SITE_ALT = 0
     ASSUMED_INLET_HEIGHT_ABOVE_GROUND = 30 # Unit:m
-        
+    # ==================================================================
+
     for idx_date, i_date in enumerate(SAMPLING_DATES_SUMMER):
         i_num_location = 1
         sites_info_dict = {}
@@ -46,13 +52,13 @@ def main():
         i_coords = {
             'calendar_components': np.arange(6).astype('int8'),
             'obs': np.arange(i_num_obs).astype('int32'),
-        }         
+        }
         i_lat_arr = (np.ones(i_num_obs)*np.nan).astype('float32')
         i_lon_arr = (np.ones(i_num_obs)*np.nan).astype('float32')
         i_alt_arr = (np.ones(i_num_obs)*np.nan).astype('float32')
         i_time_arr = np.zeros([i_num_obs]).astype('int32')
 
-        # Options: 2 = 1-hour avg; 4= instantaneous                    
+        # Options: 2 = 1-hour avg; 4= instantaneous
         i_samplemethod = np.ones(i_num_obs).astype('int8')*2
         i_obspackid_arr = np.chararray(i_num_obs, itemsize=200)
 
@@ -135,7 +141,7 @@ def main():
         samplemethod_data_var.attrs['_FillValue'] = -9
         samplemethod_data_var.attrs['long_name'] = 'model sampling strategy'
         samplemethod_data_var.attrs['values'] = 'How to sample model. 1=4-hour avg; 2=1-hour avg; 3=90-min avg; 4=instantaneous'
-        
+
         i_config_ds = xr.merge(
             [
                 lat_data_var,

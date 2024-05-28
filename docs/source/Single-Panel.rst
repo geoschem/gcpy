@@ -11,7 +11,7 @@ Single Panel Plotting
 This example demonstrates GCPy's single-panel plotting capabilities.
 Following the example below will generate a series of plots such as
 this surface-level ozone concentrations plot:
-   
+
 .. image:: _static/images/single\_panel\_single\_level.png
    :align: center
 
@@ -30,20 +30,20 @@ and this zonal mean plot:
 Source code
 ===========
 
-This example script may be found at `gcpy/examples/plotting/plot_single_panel.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_single_panel.py>`_.
+**Script location:** `gcpy/examples/plotting/plot_single_panel.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_single_panel.py>`_
 
-.. _single-panel-call:
+.. _single-panel-usage:
 
-================
-Calling sequence
-================
+=====
+Usage
+=====
 
-Make sure that you :ref:`specified the proper Matplotlib backend
-<mpl-backend>` for  your system. Then run the example with:
+Make sure that you have :ref:`specified the proper Matplotlib backend
+<mpl-backend>` for your system. Then run the example with:
 
 .. code-block:: console
 
-   $ python -m gcpy.examples.plotting.plot_comparisons \
+   $ python -m gcpy.examples.plotting.plot_single_panel \
      --infile   /path/to/ref/diagnostic/or/restart/file \
      --varname  variable-name-to-plot \
      --level    level-to-plot

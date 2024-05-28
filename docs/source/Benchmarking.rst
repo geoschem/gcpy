@@ -8,9 +8,11 @@
 Benchmarking
 ############
 
-The GEOS-Chem Support Team uses GCPy to produce comparison plots and
-summary tables from GEOS-Chem benchmark simulations.  In this chapter
-we will describe this capability of GCPy.
+The `GEOS-Chem Support Team
+<https://geoschem.github.io/support-team>`_ uses GCPy to produce
+comparison plots and summary tables from GEOS-Chem benchmark
+simulations.  In this chapter we will describe this capability of
+GCPy.
 
 .. _bmk-scripts:
 
@@ -100,7 +102,17 @@ tables from GEOS-Chem benchmark simulations.
         results_dir: /path/to/BenchmarkResults   # EDIT AS NEEDED
         weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
         spcdb_dir: default
-        obs_data_dir: /path/to/observational/data
+      #
+      # Observational data dirs are on Harvard Cannon, edit if necessary
+      #
+      obs_data:
+        ebas_o3:
+          data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/ebas_sfc_o3_2019
+          data_label: "O3 (EBAS, 2019)"
+        sondes:
+          data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
+          data_file: allozonesondes_2010-2019.csv
+          site_file: allozonesondes_site_elev.csv
 
    |br|
 
@@ -126,15 +138,19 @@ tables from GEOS-Chem benchmark simulations.
             dir: GCC_ref
             outputs_subdir: OutputDir
             restarts_subdir: Restarts
-            bmk_start: "2019-01-01T00:00:00"
-            bmk_end: "2020-01-01T00:00:00"
+            logs_subdir: .
+            logs_template: "GC.log"
+            bmk_start: "2019-07-01T00:00:00"
+            bmk_end: "2019-08-01T00:00:00"
           gchp:
-            version: GCC_dev
-            dir: GCC_dev
+            version: GCHP_ref
+            dir: GCHP_ref
             outputs_subdir: OutputDir
             restarts_subdir: Restarts
-            bmk_start: "2019-01-01T00:00:00"
-            bmk_end: "2020-01-01T00:00:00"
+            logs_subdir: .
+            logs_template: "gchp.%Y%m%d_0000z.log"
+            bmk_start: "2019-07-01T00:00:00"
+            bmk_end: "2019-08-01T00:00:00"
             is_pre_14.0: False
             resolution: c24
         dev:
@@ -143,14 +159,19 @@ tables from GEOS-Chem benchmark simulations.
             dir: GCC_dev
             outputs_subdir: OutputDir
             restarts_subdir: Restarts
-            bmk_start: "2019-01-01T00:00:00"
-            bmk_end: "2020-01-01T00:00:00"
+            logs_subdir: .
+            logs_template: "GC.log"
+            bmk_start: "2019-07-01T00:00:00"
+            bmk_end: "2019-08-01T00:00:00"
           gchp:
-            version: GCC_dev
-            dir: GCC_dev
+            version: GCHP_dev
+            dir: GCHP_dev
+            outputs_subdir: OutputDir
             restarts_subdir: Restarts
-            bmk_start: "2019-01-01T00:00:00"
-            bmk_end: "2020-01-01T00:00:00"
+            logs_subdir: Logs
+            logs_template: "gchp.%Y%m%d_0000z.log"
+            bmk_start: "2019-07-01T00:00:00"
+            bmk_end: "2019-08-01T00:00:00"
             is_pre_14.0: False
             resolution: c24
 
@@ -181,6 +202,8 @@ tables from GEOS-Chem benchmark simulations.
           run: True
           dir: GCHP_GCC_diff_of_diffs
 
+   |br|
+
 #. Edit the :literal:`outputs` section to select the plots and tables
    that you would like to generate.
 
@@ -190,21 +213,22 @@ tables from GEOS-Chem benchmark simulations.
       # outputs: Specifies the plots and tables to generate
       #
       outputs:
-         plot_conc: True
-         plot_emis: True
-         emis_table: True
-         plot_jvalues: True
-         plot_aod: True
-         mass_table: True
-         ops_budget_table: False
-         aer_budget_table: True
-         Ox_budget_table: True
-         ste_table: True # GCC only
-         OH_metrics: True
-         plot_models_vs_obs: True
-         plot_options:
-           by_spc_cat: True
-           by_hco_cat: True
+        plot_conc: True
+        plot_emis: True
+        emis_table: True
+        plot_jvalues: True
+        plot_aod: True
+        plot_drydep: False  # Need to save out DryDep collection for 1-mo
+        mass_table: True
+        mass_accum_table: False
+        ops_budget_table: False
+        OH_metrics: True
+        ste_table: True # GCC only
+        timing_table: True
+        summary_table: True
+        plot_options:
+          by_spc_cat: True
+          by_hco_cat: True
 
    |br|
 
@@ -285,7 +309,7 @@ tables from GEOS-Chem benchmark simulations.
          #config="1yr_tt_benchmark.yml"
 
          # Call the run_benchmark script to make the plots
-         python -m gcpy.benchmark.run_benchmark "${config}" > benchmark.log 2>&1
+         python -m gcpy.benchmark.run_benchmark "${config}" > "${config/.yml/.log}" 2>&1
 
          # Turn off python environment
          mamba deactivate
@@ -323,22 +347,36 @@ create summary tables will be described :ref:`in a separate section
    the :file:`benchmark_funcs.py` script is located in the
    :file:`/path/to/GCPy/gcpy/` directory.
 
-.. table:: **Functions creating comparison plots from benchmark
-           simulation output**
+.. table:: **Functions creating six-panel comparison plots**
+   :align: center
 
-   +-----------------------------------------------+----------------------------------------------+
-   | Function                                      | Type of 6-panel comparison plot created      |
-   +===============================================+==============================================+
-   | ``make_benchmark_aod_plots()``                | Comparison plots for aerosol optical depth   |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_conc_plots()``               | Species concentration                        |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_emis_plots()``               | Emissions (by species and catgegory)         |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_jvalue_plots()``             | Comparison plots for J-values (photolysis)   |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_wetdep_plots()``             | Comparison plots for species wet deposition  |
-   +-----------------------------------------------+----------------------------------------------+
+   +-------------------------------+----------------------------------------+
+   | Function                      | Plot that it creates                   |
+   +===============================+========================================+
+   | :ref:`bmk-funcs-plot-aod`     | Aerosol optical depth                  |
+   +-------------------------------+----------------------------------------+
+   | :ref:`bmk-funcs-plot-conc`    | Species concentrations                 |
+   +-------------------------------+----------------------------------------+
+   | :ref:`bmk-funcs-plot-dryd`    | Dry deposition velocities              |
+   +-------------------------------+----------------------------------------+
+   | :ref:`bmk-funcs-plot-emis`    | Emissions (by species and catgegory)   |
+   +-------------------------------+----------------------------------------+
+   | :ref:`bmk-funcs-plot-jvalue`  | J-values (photolysis)                  |
+   +-------------------------------+----------------------------------------+
+   | :ref:`bmk-funcs-plot-wetdep`  | Wet deposition of soluble species      |
+   +-------------------------------+----------------------------------------+
+
+.. table:: **Functions creating model vs. observation plots**
+   :align: center
+
+   +-----------------------------+----------------------------------------------+
+   | Function                    | Plot that it creates                         |
+   +=============================+==============================================+
+   | :ref:`bmk-funcs-plot-mvo`   | Modeled ozone vs. surface observations       |
+   +-----------------------------+----------------------------------------------+
+   | :ref:`bmk-funcs-plot-mvs`   | Vertical profiles of modeled ozone vs.       |
+   |                             | ozonesondes                                  |
+   +-----------------------------+----------------------------------------------+
 
 The functions listed above create comparison plots of most GEOS-Chem
 output variables divided into specific categories, e.g. species
@@ -364,6 +402,8 @@ dataset will be considered to be NaN and will be plotted as such.
 
 make_benchmark_aod_plots
 ------------------------
+
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_funcs`
 
 This function creates column optical depth plots using the Aerosols
 diagnostic output.
@@ -463,8 +503,10 @@ diagnostic output.
 make_benchmark_conc_plots
 -------------------------
 
-This function creates species concentration plots using the
-SpeciesConc diagnostic output by default.  In particular:
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_funcs`
+
+Generates species concentration plots using the :literal:`SpeciesConc`
+diagnostic output by default.  In particular:
 
 - This function is the only benchmark plotting function that supports
   diff-of-diffs plotting, in which 4 datasets are passed and the
@@ -626,12 +668,103 @@ SpeciesConc diagnostic output by default.  In particular:
                Default value: False
        """
 
+.. _bmk-funcs-plot-dryd:
+
+make_benchmark_drydep_plots
+---------------------------
+
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_drydep`
+
+Generates plots of dry deposition velocities using the GEOS-Chem
+:literal:`DryDep` diagnostic output.
+
+.. code-block:: python
+
+   def make_benchmark_drydep_plots(
+           ref,
+           refstr,
+           dev,
+           devstr,
+           collection="DryDep",
+           dst="./benchmark",
+           subdst=None,
+           cmpres=None,
+           overwrite=False,
+           verbose=False,
+           log_color_scale=False,
+           weightsdir=".",
+           sigdiff_files=None,
+           n_job=-1,
+           time_mean=False,
+           varlist=None,
+           spcdb_dir=os.path.join(os.path.dirname(__file__), "..", "..")
+   ):
+       """
+       Creates six-panel comparison plots (PDF format) from GEOS-Chem
+       benchmark simualtion output.  Can be used with data collections
+       that do not require special handling (e.g. concentrations).
+
+       Args:
+           ref: str
+               Path name for the "Ref" (aka "Reference") data set.
+           refstr: str
+               A string to describe ref (e.g. version number)
+           dev: str
+               Path name for the "Dev" (aka "Development") data set.
+               This data set will be compared against the "Reference"
+               data set.
+           devstr: str
+               A string to describe dev (e.g. version number)
+
+       Keyword Args (optional):
+           collection : str
+               Name of the diagnostic collection (e.g. "DryDep")
+           dst: str
+               A string denoting the destination folder where a PDF
+               file containing plots will be written.
+               Default value: ./benchmark
+           subdst: str
+               A string denoting the sub-directory of dst where PDF
+               files containing plots will be written.  In practice,
+               subdst is only needed for the 1-year benchmark output,
+               and denotes a date string (such as "Jan2016") that
+               corresponds to the month that is being plotted.
+               Default value: None
+           benchmark_type: str
+               A string denoting the type of benchmark output to plot, options are
+               FullChemBenchmark, TransportTracersBenchmark, or CH4Benchmark.
+               Default value: "FullChemBenchmark"
+           overwrite: bool
+               Set this flag to True to overwrite files in the
+               destination folder (specified by the dst argument).
+               Default value: False.
+           verbose: bool
+               Set this flag to True to print extra informational output.
+               Default value: False.
+           n_job: int
+               Defines the number of simultaneous workers for parallel plotting.
+               Set to 1 to disable parallel plotting. Value of -1 allows the
+               application to decide.
+               Default value: -1
+           spcdb_dir: str
+               Directory of species_datbase.yml file
+               Default value: Directory of GCPy code repository
+           time_mean : bool
+               Determines if we should average the datasets over time
+               Default value: False
+           varlist: list of str
+               List of variables to plot.  If varlist is None, then
+               all common variables in Ref & Dev will be plotted.
+       """
+
 .. _bmk-funcs-plot-emis:
 
 make_benchmark_emis_plots
 -------------------------
 
-This function generates plots of total emissions using output from
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_funcs`
+
+Generates plots of total emissions using output from
 :file:`HEMCO_diagnostics.*` (for GEOS-Chem Classic) and/or
 :file:`GCHP.Emissions.*` output files.
 
@@ -763,8 +896,10 @@ This function generates plots of total emissions using output from
 make_benchmark_jvalue_plots
 ---------------------------
 
-This function generates plots of J-values using the :literal:`JValues`
-GEOS-Chem output files.
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_funcs`
+
+Generates plots of J-values using the GEOS-Chem :literal:`JValues`
+diagnostic output.
 
 .. code-block:: python
 
@@ -900,13 +1035,14 @@ GEOS-Chem output files.
 make_benchmark_wetdep_plots
 ---------------------------
 
-This function generates plots of wet deposition using
-:literal:`WetLossConv` and :literal:`WetLossLS` GEOS-Chem output files.
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_funcs`
+
+Generates plots of wet deposition using the GEOS-Chem
+:literal:`WetLossConv` and :literal:`WetLossLS` diagnostic outputs.
 It is currently primarily used for 1-Year Transport Tracer benchmarks,
 plotting values for the following species as defined in
 `benchmark_categories.yml
-<https://github.com/geoschem/gcpy/blob/dev/gcpy/benchmark_categories.yml>`_
-(included in GCPY).
+<https://github.com/geoschem/gcpy/blob/dev/gcpy/benchmark/modules/benchmark_categories.yml>`_
 
 .. code-block:: python
 
@@ -1001,35 +1137,135 @@ plotting values for the following species as defined in
                Default value: False
        """
 
+.. _bmk-funcs-plot-mvo:
+
+make_benchmark_model_vs_obs_plots
+---------------------------------
+
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_models_vs_obs`
+
+Gnerates plots of monthly-averaged modeled surface
+ozone concentrations (using the GEOS-Chem :literal:`SpeciesConc`
+diagnostic outputs) vs. the `EBAS 2019 <https://ebas-data.nilu.no/>`_
+observations.
+
+.. note::
+
+   Model vs. observation plots are only available in 1-year
+   full-chemistry benchmarks.
+
+.. code-block:: python
+
+   def make_benchmark_models_vs_obs_plots(
+           obs_filepaths,
+           obs_label,
+           ref_filepaths,
+           ref_label,
+           dev_filepaths,
+           dev_label,
+           varname="SpeciesConcVV_O3",
+           dst="./benchmark",
+           verbose=False,
+           overwrite=False
+   ):
+       """
+       Driver routine to create model vs. observation plots.
+
+       Args:
+       obs_filepaths : str|list : Path(s) to the observational data.
+       obs_label     : str      : Label for the observational data
+       ref_filepaths : str      : Paths to the Ref model data
+       ref_label     : str      : Label for the Ref model data
+       dev_filepaths : str      : Paths to the Dev model data
+       dev_label     : str      : Label for the Dev model data
+       varname       : str      : Variable name for model data
+       dst           : str      : Destination folder for plots
+       verbose       : bool     : Toggles verbose output on/off
+       overwrite     : bool     : Toggles overwriting contents of dst
+
+.. _bmk-funcs-plot-mvs:
+
+make_benchmark_model_vs_sondes_plots
+------------------------------------
+
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_models_vs_sondes`
+
+.. note::
+
+   Model vs. ozonesonde plots are only available in 1-year
+   full-chemistry benchmarks.
+
+Generates vertical profiles of modeled ozone concentrations (using the
+GEOS-Chem :literal:`SpeciesConc` diagnostic outputs) vs. ozonesonde
+observations.
+
+.. code-block:: python
+
+   def make_benchmark_models_vs_sondes_plots(
+           obs_data_file,
+           obs_site_file,
+           ref_filepaths,
+           ref_label,
+           dev_filepaths,
+           dev_label,
+           dst="./benchmark",
+           overwrite=False,
+           varname="SpeciesConcVV_O3",
+
+       ):
+       """
+       Creates plots of sonde data vs. GEOS-Chem output.  For use in the
+       1-year benchmark plotting workflow.
+
+       Args
+       obs_data_file : str      : File containing sonde data
+       obs_site_file : str      : File containing sonde site metadata
+       ref_filepaths : str|list : Files for the GEOS-Chem Ref version
+       ref_label     : str      : GEOS-Chem Ref version label
+       dev_filepaths : str|list : Files for the GEOS-Chem Dev version
+       dev_label     : str      : GEOS-Chem Dev version label
+
+       Keyword Args
+       dst           : str      : Folder where PDF w/ plots will be created
+       overwrite     : bool     : Overwrite contents of dst folder?
+       varname       : str      : GEOS-Chem diagnostic variable name
+       verbose       : bool     : Activate verbose printout?
+       """
+
 .. _bmk-funcs-table:
 
 ===========================
 Benchmark tabling functions
 ===========================
 
-.. table:: **Functions creating summary tables from benchmark
-           simulation output**
+.. table:: **Functions creating summary tables**
+   :align: center
 
-   +-----------------------------------------------+----------------------------------------------+
-   | Function                                      | Type of summary table created                |
-   +===============================================+==============================================+
-   | ``make_benchmark_aerosol_tables()``           | Global aerosol burdens (1yr benchmarks only) |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_emis_tables()``              | Emissions (by species & inventory)           |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_mass_tables()``              | Total mass of each species                   |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_mass_accumulation_tables()`` | Mass accumulation for each species           |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_mass_conservation_table()``  | Total mass of a single species at hourly     |
-   |                                               | intervals (to check mass conservation)       |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_oh_metrics()``               | Global OH metrics (mean OH, CH4 lifetime,    |
-   |                                               | methylchloroform lifetime)                   |
-   +-----------------------------------------------+----------------------------------------------+
-   | ``make_benchmark_operations_budget()``        | Total mass of each species after each        |
-   |                                               | operation (transport, mixing, etc.)          |
-   +-----------------------------------------------+----------------------------------------------+
+   +--------------------------------------+------------------------------------------------+
+   | Function                             | Table that it creates                          |
+   +======================================+================================================+
+   | :ref:`bmk-funcs-table-oxbdg`         | Ox budget (1yr benchmarks only)                |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-aer`           | Global aerosol burdens (1yr benchmarks only)   |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-emis`          | Emissions (by species & inventory)             |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-gcc-timers`    | GEOS-Chem Classic timers output                |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-gchp-timers`   | GCHP timers output                             |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-mass`          | Total mass of each species                     |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-accum`         | Mass accumulation for each species             |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-cons`          | Timeseries of the PassiveTracer species        |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-oh`            | Global OH metrics                              |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-ops`           | Species mass after each operation              |
+   +--------------------------------------+------------------------------------------------+
+   | :ref:`bmk-funcs-table-ttbdg`         | Rn222, Pb210, Be7 budgets (1yr benchmarks only |
+   +--------------------------------------+------------------------------------------------+
 
 The functions listed above create summary tables for quantities such as
 total mass of species, total mass of emissions, and OH metrics.
@@ -1039,12 +1275,71 @@ files. If one dataset includes a variable but the other dataset does
 not, the data for that variable in the latter dataset will be
 considered to be NaN and will be plotted as such.
 
+.. _bmk-funcs-table-oxbdg:
+
+global_ox_budget
+----------------
+
+**Located in module:** :file:`gcpy.benchmark.modules.budget_ox`
+
+Generates a  budget table for the Ox (odd ozone) family from 1-year
+full-chemistry benchmark output.
+
+.. code-block:: python
+
+   def global_ox_budget(
+           devstr,
+           devdir,
+           devrstdir,
+           year,
+           dst='./1yr_benchmark',
+           overwrite=True,
+           spcdb_dir=None,
+           is_gchp=False,
+           gchp_res="c24",
+           gchp_is_pre_14_0=False
+   ):
+       """
+       Main program to compute Ox budgets
+
+       Arguments:
+           maindir: str
+               Top-level benchmark folder
+           devstr: str
+               Denotes the "Dev" benchmark version.
+           year: int
+               The year of the benchmark simulation (e.g. 2016).
+
+       Keyword Args (optional):
+           dst: str
+               Directory where budget tables will be created.
+               Default value: './1yr_benchmark'
+           overwrite: bool
+               Denotes whether to ovewrite existing budget tables.
+               Default value: True
+           spcdb_dir: str
+               Directory where species_database.yml is stored.
+               Default value: GCPy directory
+           is_gchp: bool
+               Denotes if data is from GCHP (True) or GCC (false).
+               Default value: False
+           gchp_res: str
+               GCHP resolution string (e.g. "c24", "c48", etc.)
+               Default value: None
+           gchp_is_pre_14_0: bool
+               Denotes if the version is prior to GCHP 14.0.0 (True)
+               or not (False).
+               Default value: False
+       """
+
 .. _bmk-funcs-table-aer:
 
 make_benchmark_aerosol_tables
 -----------------------------
 
-This function creates tables of global aerosol budgets and burdens from GEOS-Chem
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_funcs`
+
+Generates a table of global aerosol budgets and burdens from GEOS-Chem
 1-year full-chemistry benchmark simulation output.
 
 .. code-block:: python
@@ -1102,8 +1397,10 @@ This function creates tables of global aerosol budgets and burdens from GEOS-Che
 make_benchmark_emis_tables
 --------------------------
 
-This function creates tables of emissions (by species and by
-inventory) from the output of GEOS-Chem benchmark simulations.
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_funcs`
+
+Generates tables of emissions (by species and by inventory) from the
+the :literal:`HEMCO_diagnostics*` outputs.
 
 .. code-block:: python
 
@@ -1174,13 +1471,90 @@ inventory) from the output of GEOS-Chem benchmark simulations.
 
        """
 
+.. _bmk-funcs-table-gcc-timers:
+
+make_benchmark_gcclassic_timing_table
+-------------------------------------
+
+**Located in module:**
+:file:`gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers`
+
+Generates a comparison table of GEOS-Chem Classic timer values.  This
+can be used to determine if computational bottlenecks have been
+introduced.
+
+.. code-block:: python
+
+   def make_benchmark_gcclassic_timing_table(
+           ref_files,
+           ref_label,
+           dev_files,
+           dev_label,
+           dst="./benchmark",
+           overwrite=False,
+   ):
+       """
+       Creates a table of timing information for GEOS-Chem Classic
+       benchmark simulations given one or more JSON and/or text files
+       as input.
+
+       Args
+       ref_files : str|list : File(s) with timing info from the "Ref" model
+       ref_label : str      : Version string for the "Ref" model
+       dev_files : str|list : File(s) with timing info from the "Ref" model
+       dev_label : str      : Version string for the "Dev" model
+
+       Kwargs
+       dst       : str      : Directory where output will be written
+       overwrite : bool     : Overwrite existing files? (default: False)
+       """
+
+.. _bmk-funcs-table-gchp-timers:
+
+make_benchmark_gchp_timing_table
+--------------------------------
+
+**Located in module:**
+:file:`gcpy.benchmark.modules.benchmark_scrape_gchp_timers`
+
+Generates a comparison table of GCHP Classic timer values.  This
+can be used to determine if computational bottlenecks have been
+introduced.
+
+.. code-block:: python
+
+   def make_benchmark_gchp_timing_table(
+           ref_files,
+           ref_label,
+           dev_files,
+           dev_label,
+           dst="./benchmark",
+           overwrite=False,
+   ):
+       """
+       Creates a table of timing information for GCHP benchmark
+       simulations given one or more text files as input.
+
+       Args
+       ref_files : str|list : File(s) with timing info from the "Ref" model
+       ref_label : str      : Version string for the "Ref" model
+       dev_files : str|list : File(s) with timing info from the "Ref" model
+       dev_label : str      : Version string for the "Dev" model
+
+       Kwargs
+       dst       : str      : Directory where output will be written
+       overwrite : bool     : Overwrite existing files? (default: False)
+       """
+
 .. _bmk-funcs-table-mass:
 
 make_benchmark_mass_tables
 --------------------------
 
-This function creates tables of total mass for species in two
-different GEOS-Chem benchmark simulations.
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_funcs`
+
+Generates a comparison table of total mass for each GEOS-Chem species,
+using the GEOS-Chem restart file output.
 
 .. code-block:: python
 
@@ -1260,8 +1634,11 @@ different GEOS-Chem benchmark simulations.
 make_benchmark_mass_accumulation_tables
 ---------------------------------------
 
-This function creates tables of mass accumulation over time for species in two
-different GEOS-Chem benchmark simulations.
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_funcs`
+
+Generates a comparison table of mass accumulation (i.e. mass difference
+between the start and end of Ref and Dev benchmark simulations), using
+GEOS-Chem restart files.
 
 .. code-block:: python
 
@@ -1341,15 +1718,17 @@ different GEOS-Chem benchmark simulations.
            YAML file called "species_database.yml".
        """
 
-
 .. _bmk-funcs-table-cons:
 
 make_benchmark_mass_conservation_table
 --------------------------------------
 
-This function creates a timeseries table of the global mass of the
+**Located in module:** :file:`gcpy.benchmark.modules.benchmark_mass_cons_table`
+
+Generates a timeseries table of the global mass of the
 :literal:`PassiveTracer` species.  Usually used with output from
-1-year TransportTracers benchmark simulations.
+1-year TransportTracers benchmark simulations.  This is an important
+check for mass conservation in GEOS-Chem Classic and GCHP.
 
 .. code-block:: python
 
@@ -1402,8 +1781,11 @@ This function creates a timeseries table of the global mass of the
 make_benchmark_oh_metrics
 -------------------------
 
-This function generates a table of OH metrics from GEOS-Chem benchmark
-simulation output.
+**Located in module:** :file:`gcpy.benchmark.modules.oh_metrics`
+
+Generates a table of OH metrics (mean OH concentration,
+methyl chloroform lifetime, CH4 lifetime) from the GEOS-Chem
+:literal:`Metrics` diagnostic outputs.
 
 .. code-block:: python
 
@@ -1452,8 +1834,11 @@ simulation output.
 make_benchmark_operations_budget
 --------------------------------
 
+**Located in module:** :file:`gcpy.benchmark.module.benchmark_funcs`
+
 Creates a table with the change in species mass after each GEOS-Chem
-operation, using output from GEOS-Chem benchmark simulations.
+operation, using diagnostic output from GEOS-Chem benchmark
+simulations.
 
 .. code-block:: python
 
@@ -1550,4 +1935,107 @@ operation, using output from GEOS-Chem benchmark simulations.
                informational messages.
                Default value: False
        """
-    ""
+
+.. _bmk-funcs-table-ste:
+
+make_benchmark_ste_table
+------------------------
+
+**Located in module:** :file:`gcpy.benchmark.modules.ste_flux`
+
+Generates a table with the stratosphere-troposphere flux of ozone from
+GEOS-Chem benchmark simulation output.
+
+.. note::
+
+   This table is only available for GEOS-Chem Classic benchmarks.
+
+.. code-block:: python
+
+   def make_benchmark_ste_table(devstr, files, year,
+                                dst='./1yr_benchmark',
+                                bmk_type="FullChemBenchmark",
+                                species=["O3"],
+                                overwrite=True,
+                                month=None):
+       """
+       Driver program.  Computes and prints strat-trop exchange for
+       the selected species and benchmark year.
+
+       Args:
+           devstr: str
+               Label denoting the "Dev" version.
+           files: str
+               List of files containing vertical fluxes.
+           year: str
+               Year of the benchmark simulation.
+
+       Keyword Args (optional):
+           dst: str
+               Directory where plots & tables will be created.
+           bmk_type: str
+               FullChemBenchmark or TransportTracersBenchmark.
+           species: list of str
+               Species for which STE fluxes are desired.
+           overwrite: bool
+               Denotes whether to ovewrite existing budget tables.
+           month: float
+               If passed, specifies the month of a 1-month benchmark.
+               Default: None (denotes a 1-year benchmark)
+       """
+
+.. _bmk-funcs-table-ttbdg:
+
+transport_tracers_budgets
+-------------------------
+
+**Located in module:** :file:`gcpy.benchmark.modules.budget_tt`
+
+Generates a budget table for Rn222, Pb210, and Be7 species from 1-year
+TransportTracers benchmark output.
+
+.. code-block:: python
+
+   def transport_tracers_budgets(
+           devstr,
+           devdir,
+           devrstdir,
+           year,
+           dst='./1yr_benchmark',
+           is_gchp=False,
+           gchp_res="c00",
+           gchp_is_pre_14_0=False,
+           overwrite=True,
+           spcdb_dir=os.path.dirname(__file__)):
+       """
+       Main program to compute TransportTracersBenchmark budgets
+
+       Args:
+           maindir: str
+               Top-level benchmark folder
+           devstr: str
+               Denotes the "Dev" benchmark version.
+           year: int
+               The year of the benchmark simulation (e.g. 2016).
+
+       Keyword Args (optional):
+           dst: str
+               Directory where budget tables will be created.
+               Default value: './1yr_benchmark'
+           is_gchp: bool
+               Denotes if data is from GCHP (True) or GCC (false).
+               Default value: False
+           gchp_res: str
+               A string (e.g. "c24") denoting GCHP grid resolution.
+               Default value: "c00".
+           gchp_is_pre_14_0: bool
+               Logical to indicate whether or not the GCHP data is prior
+               to GCHP 14.0.0.  Needed for restart files only.
+               Default value: False
+           overwrite: bool
+               Denotes whether to ovewrite existing budget tables.
+               Default value: True
+           spcdb_dir: str
+               Directory where species_database.yml is stored.
+               Default value: GCPy directory
+       """

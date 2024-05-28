@@ -241,8 +241,8 @@ and B coefficients of the hybrid vertical grid
 <wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_vertical_grids>`__.
 
 When plotting data of differing grid types or horizontal resolutions
-using :ref:`compare_single_level() <plot-csl-and-czm>`
-or :ref:`compare_zonal_mean() <plot-csl-and-czm>`, you
+using :ref:`compare_single_level() <plot-csl>`
+or :ref:`compare_zonal_mean() <plot-czm>`, you
 can specify a comparison resolution using the :literal:`cmpres`
 argument. This resolution will be used for the difference panels in
 each plot (the bottom four panels rather than the top two raw data
