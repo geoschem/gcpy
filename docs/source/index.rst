@@ -29,15 +29,16 @@ For documentation on setting up and running GEOS-Chem please see our
 
 .. toctree::
    :maxdepth: 3
-   :caption: Basic Usage of GCPy:
+   :caption: Overview
 
    About-GCPy
    Getting-Started-with-GCPy
+   Matplotlib-Backend
    Guide-to-Useful-Capabilities
 
 .. toctree::
    :maxdepth: 4
-   :caption: Usage Details:
+   :caption: Using GCPy
 
    Plotting
    Regridding
@@ -45,17 +46,27 @@ For documentation on setting up and running GEOS-Chem please see our
 
 .. toctree::
    :maxdepth: 1
-   :caption: Example Scripts:
+   :caption: Examples
 
-   Six_panel
-   Single_panel
-   plot_timeseries
+   Test-Plot
+   Single-Panel
+   Six-Panel
+   Plot-Timeseries
+   Compare-Diags
 
 .. toctree::
-   :maxdepth: 1
-   :caption: Help & Reference:
+   :maxdepth: 3
+   :caption: Community Contributions
 
+   Hemco-Formatting.rst
+   ObsPack.rst
+   
+.. toctree::
+   :maxdepth: 1
+   :caption: Help & Reference
+
+   Known-Bugs.rst	     
    reference/CONTRIBUTING.md
    reference/SUPPORT.md
    editing_these_docs
-   Release_guide
+   Release-Guide

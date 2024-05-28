@@ -233,7 +233,6 @@ and generates a comparison plot such as:
 
 .. image:: _static/images/six\_panel\_single\_level.png
    :align: center
-   :width: 80%
 
 .. _plot-czm:
 
@@ -411,7 +410,6 @@ and generates a comparison plot such as:
 
 .. image:: _static/images/six\_panel\_zonal\_mean.png
    :align: center
-   :width: 80%
 
 .. _plot-shared:
 
