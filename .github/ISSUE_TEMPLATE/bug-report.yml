@@ -1,0 +1,83 @@
+name: Bug or Issue Report
+description: Report a bug or issue with GCPy
+title: "Put a one-line description here"
+labels: ["category: Bug"]
+body:
+  - type: input
+    id: name
+    attributes:
+      label: Your name
+    validations:
+      required: true
+  - type: input
+    id: affiliation
+    attributes:
+      label: Your affiliation
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened? What did you expect to happen?
+      placeholder: Describe your issue
+    validations:
+      required: true
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: What are the steps to reproduce the bug?
+      placeholder: Explain what you did
+    validations:
+      required: true
+  - type: textarea
+    id: log-files
+    attributes:
+      label: Please attach any relevant configuration and log files.
+      description: Drag and drop files here. You may need to rename files to end in .txt first.
+    validations:
+      required: false
+  - type: input
+    id: version
+    attributes:
+      label: What GCPy version were you using?
+      placeholder: e.g. 1.5.0
+    validations:
+      required: true
+  - type: dropdown
+    id: machine
+    attributes:
+      label: What environment were you running GCPy on?
+      multiple: true
+      options:
+        - Local cluster
+        - AWS
+        - Personal computer
+        - Other (please explain below)
+    validations:
+      required: true
+  - type: input
+    id: compiler-version
+    attributes:
+      label: What python environment were you using?
+      description: Type 'conda list' to view the list of packages in your python environment. Copy the output here or upload a file.
+    validations:
+      required: true
+  - type: dropdown
+    id: implemenation
+    attributes:
+      label: Will you be addressing this bug yourself?
+      description: If Yes, please also assign this issue to yourself (if possible)
+      multiple: false
+      options:
+        - "Yes"
+        - "Yes, but I will need some help"
+        - "No"
+    validations:
+      required: true
+  - type: textarea
+    id: additional-info
+    attributes:
+      label: Additional information
+      description: Please provide any additional information here that you think might be relevant.
+    validations:
+      required: false

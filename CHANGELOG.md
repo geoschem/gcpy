@@ -56,7 +56,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated GitHub stalebot config file `stale.yml` with new issue/PR labels that should not go stale
 - Updated benchmark driver scripts and config files to print GCClassic & GCHP timing information
 - Updated documentation for GCPy 1.5.0 release
-  
+- Converted Github issue templates to issue forms using YAML definition files
+
 ### Fixed
 - CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
 - Prevent an import error by using `seaborn-v0_8-darkgrid` in`gcpy/benchmark/modules/benchmark_models_vs_obs.py`
