@@ -20,14 +20,13 @@ from gcpy.units import convert_units
 from gcpy.constants import COL_WIDTH, MW_AIR_g, skip_these_vars, TABLE_WIDTH
 from gcpy.plot.compare_single_level import compare_single_level
 from gcpy.plot.compare_zonal_mean import compare_zonal_mean
+from gcpy.benchmark.modules.benchmark_utils import \
+    AOD_SPC, EMISSION_SPC, EMISSION_INV, add_lumped_species_to_dataset, \
+    archive_lumped_species_definitions, get_species_categories, \
+    archive_species_categories, rename_speciesconc_to_speciesconcvv
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
-
-# YAML files
-AOD_SPC = "aod_species.yml"
-EMISSION_SPC = "emission_species.yml"
-EMISSION_INV = "emission_inventories.yml"
 
 
 def create_total_emissions_table(
@@ -1031,14 +1030,8 @@ def make_benchmark_conc_plots(
 
     # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
     # naming introduced in GEOS-Chem 14.1.0
-    for v in refds.data_vars.keys():
-        if v.startswith('SpeciesConc_'):
-            spc = v.replace('SpeciesConc_', '')
-            refds = refds.rename({v: 'SpeciesConcVV_' + spc})
-    for v in devds.data_vars.keys():
-        if v.startswith('SpeciesConc_'):
-            spc = v.replace('SpeciesConc_', '')
-            devds = devds.rename({v: 'SpeciesConcVV_' + spc})
+    refds = rename_speciesconc_to_speciesconcvv(refds)
+    devds = rename_speciesconc_to_speciesconcvv(devds)
 
     # -----------------------------------------------------------------
     # Kludge, rename wrong variable name
@@ -1229,22 +1222,22 @@ def make_benchmark_conc_plots(
         print("\nComputing lumped species for full chemistry benchmark")
 
         print("-->Adding lumped species to ref dataset")
-        refds = util.add_lumped_species_to_dataset(refds)
+        refds = add_lumped_species_to_dataset(refds)
 
         print("-->Adding lumped species to dev dataset")
-        devds = util.add_lumped_species_to_dataset(devds)
+        devds = add_lumped_species_to_dataset(devds)
 
         if diff_of_diffs:
             print("-->Adding lumped species to dev datasets")
-            second_refds = util.add_lumped_species_to_dataset(second_refds)
-            second_devds = util.add_lumped_species_to_dataset(second_devds)
+            second_refds = add_lumped_species_to_dataset(second_refds)
+            second_devds = add_lumped_species_to_dataset(second_devds)
 
-        util.archive_lumped_species_definitions(dst)
+        archive_lumped_species_definitions(dst)
         print("Lumped species computation complete.\n")
 
     # Get the list of species categories
-    catdict = util.get_species_categories(benchmark_type)
-    util.archive_species_categories(dst)
+    catdict = get_species_categories(benchmark_type)
+    archive_species_categories(dst)
 
     # Make sure that Ref and Dev datasets have the same variables.
     # Variables that are in Ref but not in Dev will be added to Dev
@@ -1515,9 +1508,6 @@ def make_benchmark_conc_plots(
     dict_zm = {list(result.keys())[0]: result[list(
         result.keys())[0]]['zm'] for result in results}
 
-    print("stop here")
-    quit()
-    
     # ==============================================================
     # Write the list of species having significant differences,
     # which we need to fill out the benchmark approval forms.
@@ -1621,7 +1611,7 @@ def make_benchmark_emis_plots(
             Set this flag to True to separate plots into PDF files
             according to the benchmark species categories (e.g. Oxidants,
             Aerosols, Nitrogen, etc.)  These categories are specified
-            in the YAML file benchmark_species.yml.
+            in the YAML file benchmark_categories.yml.
             Default value: False
         plot_by_hco_cat: bool
             Set this flag to True to separate plots into PDF files
@@ -1901,7 +1891,7 @@ def make_benchmark_emis_plots(
     # ==================================================================
     if plot_by_spc_cat:
 
-        catdict = util.get_species_categories(benchmark_type)
+        catdict = get_species_categories(benchmark_type)
         # in case any emissions are skipped (for use in nested pdf bookmarks)
         warninglist = ([])
         # for checking if emissions species not defined in benchmark category
@@ -4040,10 +4030,11 @@ def make_benchmark_aerosol_tables(
     mw["Air"] = MW_AIR_g
 
     # Get the list of relevant AOD diagnostics from a YAML file
+    ifile= AOD_SPC
     aod = util.read_config_file(
         os.path.join(
             os.path.dirname(__file__),
-            "aod_species.yml"
+            ifile,
         ),
         quiet=True
     )
@@ -4088,10 +4079,7 @@ def make_benchmark_aerosol_tables(
 
     # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
     # naming introduced in GEOS-Chem 14.1.0
-    for v in ds_spc.data_vars.keys():
-        if v.startswith('SpeciesConc_'):
-            spc = v.replace('SpeciesConc_', '')
-            ds_spc = ds_spc.rename({v: 'SpeciesConcVV_' + spc})
+    ds_spc = rename_speciesconc_to_speciesconcvv(ds_spc)
 
     # Get troposphere mask
     tropmask = get_troposphere_mask(ds_met)
@@ -4272,7 +4260,7 @@ def make_benchmark_operations_budget(
         dev_interval,
         benchmark_type=None,
         label=None,
-        col_sections=["Full", "Trop", "PBL", "Strat"],
+        col_sections=["Full", "Trop", "PBL", "FixedLevs", "Strat"],
         operations=["Chemistry", "Convection", "EmisDryDep",
                     "Mixing", "Transport", "WetDep"],
         compute_accum=True,
@@ -4312,7 +4300,7 @@ def make_benchmark_operations_budget(
             List of column sections to calculate global budgets for. May
             include Strat eventhough not calculated in GEOS-Chem, but Full
             and Trop must also be present to calculate Strat.
-            Default value: ["Full", "Trop", "PBL", "Strat"]
+            Default value: ["Full", "Trop", "PBL", "FixedLevs", "Strat"]
         operations: list of str
             List of operations to calculate global budgets for. Accumulation
             should not be included. It will automatically be calculated if
@@ -4447,6 +4435,18 @@ def make_benchmark_operations_budget(
     devonly = [v for v in devonly if "Budget" in v and "Strat" not in v]
     cmnvars = [v for v in cmnvars if "Budget" in v and "Strat" not in v]
 
+    # Special handling for fixed level budget diagnostic
+    # Get variable name prefix, e.g. Levs1to35. Check that all fixed level
+    # vars have the same prefix. Update section names used in table.
+    fixedlevvars = [v for v in cmnvars if "Budget" in v and "Levs" in v]
+    if fixedlevvars is not None:
+        fixedlevnames = [v[v.index('Levs'):].split("_")[0] for v in fixedlevvars]
+        if len(set(fixedlevnames)) > 1:
+            msg = "Budget fixed level diagnostic name must be constant!"
+            raise ValueError(msg)
+        col_sections = [v.replace('FixedLevs',fixedlevnames[0]) for v in col_sections]
+        gc_sections = [v.replace('FixedLevs',fixedlevnames[0]) for v in gc_sections]
+
     # Get the species list, depending on if species was passed as argument.
     if species is not None:
         spclist = species
@@ -4561,12 +4561,15 @@ def make_benchmark_operations_budget(
     # Loop over sections (only those with data in files)
     for gc_section in gc_sections:
 
+        # Keep track of progress in log
+        print(f"  {gc_section}")
+
         # Loop over species in that section
         for i, spc in enumerate(spclist):
 
-            # Keep track of progress
-            if (i + 1) % 50 == 0:
-                print(f"  {gc_section}: species {i + 1} of {n_spc}")
+            # Keep track of progress (debugging print)
+            #if (i + 1) % 50 == 0:
+            #    print(f"  {gc_section}: species {i + 1} of {n_spc}")
 
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
@@ -4623,14 +4626,14 @@ def make_benchmark_operations_budget(
     # Compute Strat for each data operation (if applicable)
     # ------------------------------------------
     if compute_strat:
-        print('Computing Strat budgets from Trop and Full...')
+        print('Computing Strat budgets from Trop and Full')
 
         # Loop over species
         for i, spc in enumerate(spclist):
 
-            # Keep track of progress
-            if (i + 1) % 50 == 0:
-                print(f"  Strat: species {i + 1} of {n_spc}")
+            # Keep track of progress (debugging print)
+            #if (i + 1) % 50 == 0:
+            #    print(f"  Strat: species {i + 1} of {n_spc}")
 
             # Loop over operations (only those with data in files)
             for gc_operation in gc_operations:
@@ -4690,12 +4693,15 @@ def make_benchmark_operations_budget(
         # Loop over all column sections
         for col_section in col_sections:
 
+            # Keep track of progress in log
+            print(f"  {col_section}")
+
             # Loop over species
             for i, spc in enumerate(spclist):
 
-                # Keep track of progress
-                if (i + 1) % 50 == 0:
-                    print(f"  {col_section}: species {i + 1} of {n_spc}")
+                # Keep track of progress (debugging print)
+                #if (i + 1) % 50 == 0:
+                #    print(f"  {col_section}: species {i + 1} of {n_spc}")
 
                 # Get the accumulation dataframe row to fill.Skip if not found.
                 dfrow = (df["Column_Section"] == col_section) \
@@ -4906,181 +4912,6 @@ def make_benchmark_operations_budget(
     del df
     del ref_ds
     del dev_ds
-    gc.collect()
-
-
-def make_benchmark_mass_conservation_table(
-        datafiles,
-        runstr,
-        dst="./benchmark",
-        overwrite=False,
-        areapath=None,
-        spcdb_dir=os.path.dirname(__file__)
-):
-    """
-    Creates a text file containing global mass of the PassiveTracer
-    from Transport Tracer simulations across a series of restart files.
-
-    Args:
-        datafiles: list of str
-            Path names of restart files.
-        runstr: str
-            Name to put in the filename and header of the output file
-        refstr: str
-            A string to describe ref (e.g. version number)
-        dev: str
-            Path name of "Dev" (aka "Development") data set file.
-            The "Dev" data set will be compared against the "Ref" data set.
-        devmet: list of str
-            Path name of dev meteorology data set.
-        devstr: str
-            A string to describe dev (e.g. version number)
-
-    Keyword Args (optional):
-        dst: str
-            A string denoting the destination folder where the file
-            containing emissions totals will be written.
-            Default value: "./benchmark"
-        overwrite: bool
-            Set this flag to True to overwrite files in the
-            destination folder (specified by the dst argument).
-            Default value: False
-        areapath: str
-            Path to a restart file containing surface area data.
-            Default value: None
-        spcdb_dir: str
-            Path to the species_database.yml
-            Default value: points to gcpy/gcpy folder
-    """
-
-    # ==================================================================
-    # Initialize
-    # ==================================================================
-
-    # Create the destination folder
-    util.make_directory(dst, overwrite)
-
-    # Load a YAML file containing species properties (such as
-    # molecular weights), which we will need for unit conversions.
-    properties = util.read_config_file(
-        os.path.join(
-            spcdb_dir,
-            "species_database.yml"
-        ),
-        quiet=True
-    )
-
-    # Get the species name
-    spc_name = 'PassiveTracer'
-
-    # Get a list of properties for the given species
-    species_properties = properties.get(spc_name)
-
-    # Specify target units
-    target_units = "Tg"
-
-    dates = []
-    masses = []
-
-    # ==================================================================
-    # Make sure that surface area data is found
-    # ==================================================================
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", category=xr.SerializationWarning)
-
-
-    # ==================================================================
-    # Calculate global mass for the tracer at all restart dates
-    # ==================================================================
-    for f in datafiles:
-        ds = xr.open_dataset(f, drop_variables=skip_these_vars)
-
-        # Save date in desired format
-        #datestr = str(pd.to_datetime(ds.time.values[0]))
-        #dates.append(datestr[:4] + '-' + datestr[5:7] + '-' + datestr[8:10])
-
-        # Find the area variable in Dev
-        if areapath is None:
-            area = util.get_area_from_dataset(ds)
-        else:
-            area = util.get_area_from_dataset(
-                xr.open_dataset(
-                    areapath,
-                    drop_variables=skip_these_vars
-                )
-            )
-
-        # Assume typical restart file name format, but avoid using dates
-        # from within files which may be incorrect for the initial restart
-        datestr = f.split('/')[-1].split('.')[2][:9]
-        dates.append(datestr[:4] + '-' + datestr[4:6] + '-' + datestr[6:8])
-
-        # Select for GCC or GCHP
-        delta_p = ds['Met_DELPDRY'] if 'Met_DELPDRY' in list(ds.data_vars) else ds['DELP_DRY']
-
-        # ==============================================================
-        # Convert units of Ref and save to a DataArray
-        # (or skip if Ref contains NaNs everywhere)
-        # ==============================================================
-        # Select for GCC or GCHP
-        if 'SpeciesRst_PassiveTracer' in list(ds.data_vars):
-            attrs = ds['SpeciesRst_PassiveTracer'].attrs
-            da = ds['SpeciesRst_PassiveTracer'].astype(np.float64)
-            da.attrs = attrs
-        else:
-            attrs = ds['SPC_PassiveTracer'].attrs
-            da = ds['SPC_PassiveTracer'].astype(np.float64)
-            da.attrs = attrs
-        da = convert_units(
-            da,
-            spc_name,
-            species_properties,
-            target_units,
-            area_m2=area,
-            delta_p=delta_p
-        )
-
-        # Save total global mass
-        masses.append(np.sum(da.values))
-
-        # Clean up
-        del ds
-        del da
-        gc.collect()
-
-    # Calclate max and min mass, absolute diff, percent diff
-    max_mass = np.max(masses)
-    min_mass = np.min(masses)
-    # Convert absdiff to grams
-    absdiff = (max_mass-min_mass) * 10**12
-    pctdiff = (max_mass-min_mass)/min_mass * 100
-
-    # ==================================================================
-    # Print masses to file
-    # ==================================================================
-    # Create file
-    outfilename = os.path.join(dst, "Passive_mass.txt")
-
-    with open(outfilename, 'w') as f:
-        titlestr = '  Global Mass of Passive Tracer in ' + runstr + '  '
-        #headers
-        print('%' * (len(titlestr)+4), file=f)
-        print(titlestr, file=f)
-        print('%' * (len(titlestr)+4), file=f)
-        print('', file=f)
-        print(' Date' + ' ' * 8 + 'Mass [Tg]', file=f)
-        print(' ' + '-' * 10 + '  ' + '-' * 16, file=f)
-        #masses
-        for i in range(len(masses)):
-            print(f" {dates[i]}  {masses[i] : 11.13f}", file=f)
-        print(' ', file=f)
-        print(' Summary', file=f)
-        print(' ' + '-' * 30, file=f)
-        print(f" Max mass =  {max_mass : 2.13f} Tg", file=f)
-        print(f" Min mass =  {min_mass : 2.13f} Tg", file=f)
-        print(f" Abs diff =  {absdiff : >16.3f} g", file=f)
-        print(f" Pct diff =  {pctdiff : >16.10f} %", file=f)
-
     gc.collect()
 
 

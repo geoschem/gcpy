@@ -1,11 +1,15 @@
+.. |br| raw:: html
+
+   <br/>
+
 .. _capabilities:
 
 ########################
 Overview of Capabilities
 ########################
 
-This page outlines the capabilities of GCPy with links to detailed
-function documentation.
+This page outlines the capabilities of :program:`GCPy` with links to
+detailed function documentation.
 
 .. _capabilities-spatial:
 
@@ -138,17 +142,18 @@ for :code:`compare_single_level()` and :code:`compare_zonal_mean()`.
 Comprehensive benchmark plotting
 --------------------------------
 
-The GEOS-Chem Support Team uses comprehensive plotting functions from
-module :file:`gcpy.benchmark_funcs` to generate full plots of benchmark
-diagnostics. Functions like
-:ref:`gcpy.benchmark_funcs.make_benchmark_conc_plots()
-<bmk-funcs-plot-conc>` by default create plots for every variable
-in a given collection (e.g. :literal:`SpeciesConc`) at multiple
-vertical levels (surface, 500hPa, zonal mean) and divide plots into
-separate folders based on category (e.g. Chlorine, Aerosols). The
-GEOS-Chem Support Team uses benchmark plotting and tabling table
-scripts (described in our :ref:`Benchmarking <bmk>` chapter) to
-produce plots and tables for official model benchmarks.
+The `GEOS-Chem Support Team
+<https://geoschem.github.io/support-team>`_ uses comprehensive
+plotting functions (stored in modules located in the
+:file:`gcpy/benchmark/modules` folder) to generate plots and tables
+from of diagnostic output of GEOS-Chem benchmark
+simulations. Functions like :ref:`bmk-funcs-plot-conc` generate plots
+for every variable in  a given collection
+(e.g. :literal:`SpeciesConc`) at multiple vertical levels (surface,
+500hPa, zonal mean) and divide plots into separate folders based on
+category (e.g. Chlorine, Aerosols). For more information about the
+benchmark plotting and tabling scripts, please see our
+:ref:`Benchmarking <bmk>` chapter.
 
 .. _capabilities-table:
 
@@ -171,41 +176,46 @@ the GEOS-Chem :literal:`Budget` diagnostics) or in overall averages for
 different aerosols or the Transport Tracers simulation.
 
 Operations budget tables are created using the
-:ref:`gcpy.benchmark_funcs.make_benchmark_operations_budget()
-<bmk-funcs-table-ops>` function and appear as follows:
+:ref:`bmk-funcs-table-ops` function and appear as follows:
 
 .. image:: _static/images/budget\_table.png
    :align: center
+
+|br|
 
 .. _capabilities-tables-mass:
 
 Mass tables
 -----------
 
-The :ref:`gcpy.benchmark_funcs.make_benchmark_mass_tables()
-<bmk-funcs-table-mass>` function uses species concentrations and info
-from meteorology files to generate the total mass of species in
-certain segments of the atmosphere (currently global or only the
+The :ref:`bmk-funcs-table-mass` function uses species concentrations
+and info from meteorology files to generate the total mass of species
+in certain segments of the atmosphere (currently global or only the
 troposphere). An example table is shown below:
 
 .. image:: _static/images/mass\_table.png
    :align: center
+
+|br|
 
 .. _capabilities-tables-emissions:
 
 Emissions tables
 ----------------
 
-The :ref:`gcpy.benchmark_funcs.make_benchmark_emis_tables()
-<bmk-funcs-table-emis>` function creates tables of total emissions
-categorized by species or by inventory. Examples of both emissions
-table types are shown below:
+The :ref:`bmk-funcs-table-emis` function creates tables of total
+emissions categorized by species or by inventory. Examples of both
+emissions table types are shown below:
 
 .. image:: _static/images/emissions\_totals.png
    :align: center
 
+|br|
+
 .. image:: _static/images/inventory\_totals.png
    :align: center
+
+|br|
 
 .. _capabilities-regridding:
 
@@ -241,8 +251,8 @@ and B coefficients of the hybrid vertical grid
 <wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_vertical_grids>`__.
 
 When plotting data of differing grid types or horizontal resolutions
-using :ref:`compare_single_level() <plot-csl-and-czm>`
-or :ref:`compare_zonal_mean() <plot-csl-and-czm>`, you
+using :ref:`compare_single_level <plot-csl>`
+or :ref:`compare_zonal_mean <plot-czm>`, you
 can specify a comparison resolution using the :literal:`cmpres`
 argument. This resolution will be used for the difference panels in
 each plot (the bottom four panels rather than the top two raw data

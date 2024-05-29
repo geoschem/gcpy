@@ -15,19 +15,15 @@ config file (eg. 1yr_fullchem_benchmark.yml).
 
 To generate benchmark output:
 
-    (1) Copy the gcpy/benchmark/run_benchmark.py script and the
-        1yr_fullchem_benchmark.yml file anywhere you want to generate
-        output plots and tables.
+    (1) Copy the file gcpy/benchmark/config/1yr_fullchem_benchmark.yml
+        to a folder of your choice.
 
-    (2) Edit the 1yr_fullchem_benchmark.yml to point to the proper
-        file paths on your disk space.
+    (2) Edit the 1yr_fullchem_benchmark.yml to select the desired options
+        and to point to the proper file paths on your system.
 
-    (3) Make sure the /path/to/gcpy/benchmark is in your PYTHONPATH
-        shell environment variable.
+    (3) Run the command:
 
-    (4) Type at the command line
-
-        ./run_benchmark.py 1yr_fullchem_benchmark.yml
+        $ python -m gcpy.benchmark.run_benchmark.py 1yr_fullchem_benchmark.yml
 
 Remarks:
 
@@ -43,7 +39,12 @@ Remarks:
 
         https://github.com/ipython/ipython/issues/10627
 
-This script corresponds with GCPy 1.4.2. Edit this version ID if releasing
+    Also, to disable matplotlib from trying to open X windows, you may
+    need to set the following environment variable in your shell:
+
+        $ export MPLBACKEND=agg
+
+This script corresponds with GCPy 1.5.0. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -53,19 +54,38 @@ a new version of GCPy.
 
 import os
 import warnings
-from shutil import copyfile
 from calendar import monthrange
 import numpy as np
 from joblib import Parallel, delayed
-from gcpy.util import get_filepath, get_filepaths
-import gcpy.ste_flux as ste
-import gcpy.oh_metrics as oh
-import gcpy.budget_ox as ox
-from gcpy import benchmark_funcs as bmk
-import gcpy.benchmark.modules.benchmark_models_vs_obs as mvo
+from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
+from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
+from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
+from gcpy.benchmark.modules.budget_ox import global_ox_budget
+#TODO: Peel out routines from benchmark_funcs.py into smaller
+# routines in the gcpy/benchmark/modules folder, such as these:
+from gcpy.benchmark.modules.benchmark_funcs import \
+    diff_of_diffs_toprow_title, get_species_database_dir, \
+    make_benchmark_conc_plots, make_benchmark_emis_plots, \
+    make_benchmark_emis_tables, make_benchmark_jvalue_plots, \
+    make_benchmark_aod_plots, make_benchmark_mass_tables, \
+    make_benchmark_operations_budget, make_benchmark_aerosol_tables
+from gcpy.benchmark.modules.benchmark_utils import \
+    gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
+    get_log_filepaths, print_benchmark_info
+from gcpy.benchmark.modules.benchmark_models_vs_obs \
+    import make_benchmark_models_vs_obs_plots
+from gcpy.benchmark.modules.benchmark_models_vs_sondes \
+    import make_benchmark_models_vs_sondes_plots
+from gcpy.benchmark.modules.benchmark_drydep \
+    import drydepvel_species, make_benchmark_drydep_plots
+from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
+    make_benchmark_gcclassic_timing_table
+from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
+    make_benchmark_gchp_timing_table
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
+
 # Suppress annoying warning messages
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
@@ -87,80 +107,32 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     bmk_n_months = len(bmk_mon_strs)
 
     # Folder in which the species_database.yml file is found
-    spcdb_dir = bmk.get_species_database_dir(config)
+    spcdb_dir = get_species_database_dir(config)
 
     # ======================================================================
     # Data directories
     # ======================================================================
 
     # Diagnostics file directory paths
-    gcc_vs_gcc_refdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["outputs_subdir"],
-    )
-    gcc_vs_gcc_devdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["outputs_subdir"],
-    )
-    gchp_vs_gcc_refdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["outputs_subdir"],
-    )
-    gchp_vs_gcc_devdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["outputs_subdir"],
-    )
-    gchp_vs_gchp_refdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["outputs_subdir"],
-    )
-    gchp_vs_gchp_devdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["outputs_subdir"],
-    )
+    s = "outputs_subdir"
+    gcc_vs_gcc_refdir, gcc_vs_gcc_devdir = gcc_vs_gcc_dirs(config, s)
+    gchp_vs_gcc_refdir, gchp_vs_gcc_devdir = gchp_vs_gcc_dirs(config, s)
+    gchp_vs_gchp_refdir, gchp_vs_gchp_devdir = gchp_vs_gchp_dirs(config, s)
 
     # Restart file directory paths
-    gcc_vs_gcc_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gcc"]["dir"],
-        config["data"]["ref"]["gcc"]["restarts_subdir"]
-    )
-    gcc_vs_gcc_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["restarts_subdir"]
-    )
-    gchp_vs_gcc_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gcc"]["dir"],
-        config["data"]["dev"]["gcc"]["restarts_subdir"]
-    )
-    gchp_vs_gcc_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["restarts_subdir"]
-    )
-    gchp_vs_gchp_refrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["ref"]["gchp"]["dir"],
-        config["data"]["ref"]["gchp"]["restarts_subdir"]
-    )
-    gchp_vs_gchp_devrstdir = os.path.join(
-        config["paths"]["main_dir"],
-        config["data"]["dev"]["gchp"]["dir"],
-        config["data"]["dev"]["gchp"]["restarts_subdir"]
-    )
+    s = "restarts_subdir"
+    gcc_vs_gcc_refrstdir, gcc_vs_gcc_devrstdir = gcc_vs_gcc_dirs(config, s)
+    gchp_vs_gcc_refrstdir, gchp_vs_gcc_devrstdir = gchp_vs_gcc_dirs(config, s)
+    gchp_vs_gchp_refrstdir, gchp_vs_gchp_devrstdir = gchp_vs_gchp_dirs(config, s)
+
+    # Log file directory paths
+    s = "logs_subdir"
+    gcc_vs_gcc_reflogdir, gcc_vs_gcc_devlogdir = gcc_vs_gcc_dirs(config, s)
+    gchp_vs_gcc_reflogdir, gchp_vs_gcc_devlogdir = gchp_vs_gcc_dirs(config, s)
+    gchp_vs_gchp_reflogdir, gchp_vs_gchp_devlogdir = gchp_vs_gchp_dirs(config, s)
 
     # Directories where plots & tables will be created
-    mainresultsdir = os.path.join(
-        config["paths"]["results_dir"]
-    )
+    mainresultsdir = os.path.join(config["paths"]["results_dir"])
     gcc_vs_gcc_resultsdir = os.path.join(
         mainresultsdir,
         config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
@@ -177,16 +149,13 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         mainresultsdir,
         "GCHP_GCC_diff_of_diffs"
     )
-    # Make copy of benchmark script in results directory
+
+    # Create the main results directory first
     if not os.path.exists(mainresultsdir):
         os.mkdir(mainresultsdir)
-        curfile = os.path.realpath(__file__)
-        dest = os.path.join(mainresultsdir, curfile.split("/")[-1])
-        if not os.path.exists(dest):
-            copyfile(curfile, dest)
 
-    # Create results directories that don't exist,
-    # and place a copy of this file in each results directory
+    # Create results directories that don't exist.  Also place a copy of
+    # this file plus the YAML configuration file in each results directory.
     results_list = [
         gcc_vs_gcc_resultsdir,
         gchp_vs_gchp_resultsdir,
@@ -199,14 +168,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
         config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"]
     ]
-    for resdir, plotting_type in zip(results_list, comparisons_list):
+    for (resdir, plotting_type) in zip(results_list, comparisons_list):
         if plotting_type and not os.path.exists(resdir):
             os.mkdir(resdir)
             if resdir in results_list:
-                curfile = os.path.realpath(__file__)
-                dest = os.path.join(resdir, curfile.split("/")[-1])
-                if not os.path.exists(dest):
-                    copyfile(curfile, dest)
+                copy_file_to_dir(__file__, resdir)
+                copy_file_to_dir(config["configuration_file_name"], resdir)
 
     # Tables directories
     gcc_vs_gcc_tablesdir = os.path.join(
@@ -228,15 +195,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     #gchp_vs_gchp_budgetdir = os.path.join(gchp_vs_gchp_resultsdir, "Budget")
 
     # Models vs. observations directories
-    gcc_vs_gcc_models_vs_obs_dir = os.path.join(
-        gcc_vs_gcc_resultsdir, "ModelVsObs"
-    )
-    gchp_vs_gcc_models_vs_obs_dir = os.path.join(
-        gchp_vs_gcc_resultsdir, "ModelVsObs"
-    )
-    gchp_vs_gchp_models_vs_obs_dir = os.path.join(
-        gchp_vs_gchp_resultsdir, "ModelVsObs"
-    )
+    s = "ModelVsObs"
+    gcc_vs_gcc_models_vs_obs_dir = os.path.join(gcc_vs_gcc_resultsdir, s)
+    gchp_vs_gcc_models_vs_obs_dir = os.path.join(gchp_vs_gcc_resultsdir, s)
+    gchp_vs_gchp_models_vs_obs_dir = os.path.join(gchp_vs_gchp_resultsdir, s)
 
     # ======================================================================
     # Plot title strings
@@ -247,8 +209,20 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     gchp_vs_gcc_devstr = config["data"]["dev"]["gchp"]["version"]
     gchp_vs_gchp_refstr = config["data"]["ref"]["gchp"]["version"]
     gchp_vs_gchp_devstr = config["data"]["dev"]["gchp"]["version"]
-    diff_of_diffs_refstr = bmk.diff_of_diffs_toprow_title(config, "gcc")
-    diff_of_diffs_devstr = bmk.diff_of_diffs_toprow_title(config, "gchp")
+    diff_of_diffs_refstr = diff_of_diffs_toprow_title(config, "gcc")
+    diff_of_diffs_devstr = diff_of_diffs_toprow_title(config, "gchp")
+
+    # ======================================================================
+    # Observational data files
+    # ======================================================================
+    sondes_data_file = os.path.join(
+        config["paths"]["obs_data"]["sondes"]["data_dir"],
+        config["paths"]["obs_data"]["sondes"]["data_file"],
+    )
+    sondes_site_file = os.path.join(
+        config["paths"]["obs_data"]["sondes"]["data_dir"],
+        config["paths"]["obs_data"]["sondes"]["site_file"],
+    )
 
     ########################################################################
     ###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
@@ -306,41 +280,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     bmk_sec_per_month_dev = sec_per_month_dev[bmk_mon_inds]
 
     # ======================================================================
-    # Print the list of plots & tables to the screen
+    # Print the list of plots & tables being generated
     # ======================================================================
-
-    print(f"The following plots and tables will be created for {bmk_type}:")
-    if config["options"]["outputs"]["plot_conc"]:
-        print(" - Concentration plots")
-    if config["options"]["outputs"]["plot_emis"]:
-        print(" - Emissions plots")
-    if config["options"]["outputs"]["plot_jvalues"]:
-        print(" - J-values (photolysis rates) plots")
-    if config["options"]["outputs"]["plot_aod"]:
-        print(" - Aerosol optical depth plots")
-    if config["options"]["outputs"]["ops_budget_table"]:
-        print(" - Operations budget tables")
-    if config["options"]["outputs"]["aer_budget_table"]:
-        print(" - Aerosol budget/burden tables")
-    if config["options"]["outputs"]["emis_table"]:
-        print(" - Table of emissions totals by species and inventory")
-    if config["options"]["outputs"]["mass_table"]:
-        print(" - Table of species mass")
-    if config["options"]["outputs"]["OH_metrics"]:
-        print(" - Table of OH metrics")
-    if config["options"]["outputs"]["ste_table"]:
-        print(" - Table of strat-trop exchange")
-    if config["options"]["outputs"]["plot_models_vs_obs"]:
-        print(" - Plots of models vs. observations")
-    print("Comparisons will be made for the following combinations:")
-    if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
-        print(" - GCC vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
-        print(" - GCHP vs GCC")
-    if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
-        print(" - GCHP vs GCHP")
-    if config["options"]["comparisons"]["gchp_vs_gcc_diff_of_diffs"]["run"]:
-        print(" - GCHP vs GCC diff of diffs")
+    print_benchmark_info(config)
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCC vs GCC benchmark plots and tables
@@ -388,7 +330,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -413,7 +355,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     ref[mon_ind],
                     gcc_vs_gcc_refstr,
                     dev[mon_ind],
@@ -455,7 +397,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_emis_plots(
+            make_benchmark_emis_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -482,7 +424,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_emis_plots(
+                make_benchmark_emis_plots(
                     ref[mon_ind],
                     gcc_vs_gcc_refstr,
                     dev[mon_ind],
@@ -519,7 +461,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create table
-            bmk.make_benchmark_emis_tables(
+            make_benchmark_emis_tables(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -556,7 +498,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_jvalue_plots(
+            make_benchmark_jvalue_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -578,7 +520,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_jvalue_plots(
+                make_benchmark_jvalue_plots(
                     ref[mon_ind],
                     gcc_vs_gcc_refstr,
                     dev[mon_ind],
@@ -615,7 +557,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_aod_plots(
+            make_benchmark_aod_plots(
                 ref,
                 gcc_vs_gcc_refstr,
                 dev,
@@ -637,7 +579,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_aod_plots(
+                make_benchmark_aod_plots(
                     ref[mon_ind],
                     gcc_vs_gcc_refstr,
                     dev[mon_ind],
@@ -648,6 +590,67 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                     n_job=config["options"]["n_cores"]
+                )
+
+        # ==================================================================
+        # GCC vs. GCC drydep plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_drydep"]:
+            print("\n%%% Creating GCC vs. GCC drydep plots %%%")
+
+            # --------------------------------------------------------------
+            # GCC vs GCC drydep plots: Annual mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            ref = get_filepaths(
+                gcc_vs_gcc_refdir,
+                "DryDep",
+                all_months_ref
+            )[0]
+            dev = get_filepaths(
+                gcc_vs_gcc_devdir,
+                "DryDep",
+                all_months_dev
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            make_benchmark_drydep_plots(
+                ref,
+                gcc_vs_gcc_refstr,
+                dev,
+                gcc_vs_gcc_devstr,
+                dst=gcc_vs_gcc_resultsdir,
+                subdst="AnnualMean",
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()
+            )
+
+            # --------------------------------------------------------------
+            # GCC vs GCC drydep plots: Seasonal
+            # --------------------------------------------------------------
+            for mon in range(bmk_n_months):
+                print(f"\nCreating plots for {bmk_mon_strs[mon]}")
+
+                # Create plots
+                mon_ind = bmk_mon_inds[mon]
+                make_benchmark_drydep_plots(
+                    ref[mon_ind],
+                    gcc_vs_gcc_refstr,
+                    dev[mon_ind],
+                    gcc_vs_gcc_devstr,
+                    dst=gcc_vs_gcc_resultsdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    weightsdir=config["paths"]["weights_dir"],
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"],
+                    varlist=drydepvel_species()
                 )
 
         # ==================================================================
@@ -674,7 +677,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_mass_tables(
+                make_benchmark_mass_tables(
                     refpath,
                     gcc_vs_gcc_refstr,
                     devpath,
@@ -722,7 +725,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_operations_budget(
+                make_benchmark_operations_budget(
                     config["data"]["ref"]["gcc"]["version"],
                     refpath,
                     config["data"]["dev"]["gcc"]["version"],
@@ -765,7 +768,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Compute tables
-            bmk.make_benchmark_aerosol_tables(
+            make_benchmark_aerosol_tables(
                 gcc_vs_gcc_devdir,
                 devaero,
                 devspc,
@@ -783,7 +786,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ==================================================================
         if config["options"]["outputs"]["Ox_budget_table"]:
             print("\n%%% Creating GCC vs. GCC Ox budget table %%%")
-            ox.global_ox_budget(
+            global_ox_budget(
                 config["data"]["dev"]["gcc"]["version"],
                 gcc_vs_gcc_devdir,
                 gcc_vs_gcc_devrstdir,
@@ -807,13 +810,41 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Compute table
-            ste.make_benchmark_ste_table(
+            make_benchmark_ste_table(
                 config["data"]["dev"]["gcc"]["version"],
                 dev,
                 bmk_year_dev,
                 dst=gcc_vs_gcc_tablesdir,
                 bmk_type=bmk_type,
                 species=["O3"],
+                overwrite=True,
+            )
+
+        # ==================================================================
+        # GCC vs. GCC Benchmark Timing Table
+        # ==================================================================
+        if config["options"]["outputs"]["timing_table"]:
+            print("\n%%% Creating GCC vs. GCC Benchmark Timing table %%%")
+
+            # Filepaths
+            ref = get_log_filepaths(
+                gcc_vs_gcc_reflogdir,
+                config["data"]["ref"]["gcc"]["logs_template"],
+                all_months_ref
+            )
+            dev = get_log_filepaths(
+                gcc_vs_gcc_devlogdir,
+                config["data"]["dev"]["gcc"]["logs_template"],
+                all_months_dev
+            )
+
+            # Create the table
+            make_benchmark_gcclassic_timing_table(
+                ref,
+                config["data"]["ref"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gcc"]["version"],
+                dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
             )
 
@@ -836,7 +867,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create the OH Metrics table
-            oh.make_benchmark_oh_metrics(
+            make_benchmark_oh_metrics(
                 ref,
                 config["data"]["ref"]["gcc"]["version"],
                 dev,
@@ -864,9 +895,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 all_months_dev
             )[0]
 
-            # Plot models vs. observations (O3 for now)
-            mvo.make_benchmark_models_vs_obs_plots(
-                config["paths"]["obs_data_dir"],
+            # Plot models vs. observations
+            make_benchmark_models_vs_obs_plots(
+                config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
+                config["paths"]["obs_data"]["ebas_o3"]["data_label"],
                 ref,
                 config["data"]["ref"]["gcc"]["version"],
                 dev,
@@ -876,6 +908,17 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 verbose=False
             )
 
+            # Plot models vs. sondes
+            make_benchmark_models_vs_sondes_plots(
+                sondes_data_file,
+                sondes_site_file,
+                ref,
+                config["data"]["ref"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gcc"]["version"],
+                dst=gcc_vs_gcc_models_vs_obs_dir,
+                overwrite=True,
+            )
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC benchmark plots and tables
@@ -929,7 +972,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -954,7 +997,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     ref[mon_ind],
                     gchp_vs_gcc_refstr,
                     dev[mon_ind],
@@ -997,7 +1040,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_emis_plots(
+            make_benchmark_emis_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -1024,7 +1067,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_emis_plots(
+                make_benchmark_emis_plots(
                     ref[mon_ind],
                     gchp_vs_gcc_refstr,
                     dev[mon_ind],
@@ -1062,7 +1105,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create emissions table that spans entire year
-            bmk.make_benchmark_emis_tables(
+            make_benchmark_emis_tables(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -1101,7 +1144,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_jvalue_plots(
+            make_benchmark_jvalue_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -1123,7 +1166,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_jvalue_plots(
+                make_benchmark_jvalue_plots(
                     ref[mon_ind],
                     gchp_vs_gcc_refstr,
                     dev[mon_ind],
@@ -1161,7 +1204,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_aod_plots(
+            make_benchmark_aod_plots(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
@@ -1183,7 +1226,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_aod_plots(
+                make_benchmark_aod_plots(
                     ref[mon_ind],
                     gchp_vs_gcc_refstr,
                     dev[mon_ind],
@@ -1194,6 +1237,68 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                     n_job=config["options"]["n_cores"]
+                )
+
+        # ==================================================================
+        # GCHP vs. GCC drydep plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_drydep"]:
+            print("\n%%% Creating GCHP vs. GCC drydep plots %%%")
+
+            # --------------------------------------------------------------
+            # GCHP vs GCC drydep plots: Annual mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gcc_refdir,
+                "DryDep",
+                all_months_dev
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gcc_devdir,
+                "DryDep",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            make_benchmark_drydep_plots(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                dst=gchp_vs_gcc_resultsdir,
+                subdst="AnnualMean",
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()
+            )
+
+            # --------------------------------------------------------------
+            # GCHP vs GCC drydep plots: Seasonal
+            # --------------------------------------------------------------
+            for mon in range(bmk_n_months):
+                print(f"\nCreating plots for {bmk_mon_strs[mon]}")
+
+                # Create plots
+                mon_ind = bmk_mon_inds[mon]
+                make_benchmark_drydep_plots(
+                    ref[mon_ind],
+                    gchp_vs_gcc_refstr,
+                    dev[mon_ind],
+                    gchp_vs_gcc_devstr,
+                    dst=gchp_vs_gcc_resultsdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    weightsdir=config["paths"]["weights_dir"],
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"],
+                    varlist=drydepvel_species()
                 )
 
         # ==================================================================
@@ -1236,7 +1341,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_mass_tables(
+                make_benchmark_mass_tables(
                     refpath,
                     gchp_vs_gcc_refstr,
                     devpath,
@@ -1286,7 +1391,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_operations_budget(
+                make_benchmark_operations_budget(
                     config["data"]["dev"]["gcc"]["version"],
                     refpath,
                     config["data"]["dev"]["gchp"]["version"],
@@ -1339,7 +1444,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create tables
-            bmk.make_benchmark_aerosol_tables(
+            make_benchmark_aerosol_tables(
                 gchp_vs_gcc_devdir,
                 devaero,
                 devspc,
@@ -1360,7 +1465,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCC Ox budget tables %%%")
 
             # Compute Ox budget table for GCC
-            ox.global_ox_budget(
+            global_ox_budget(
                 config["data"]["dev"]["gcc"]["version"],
                 gcc_vs_gcc_devdir,
                 gcc_vs_gcc_devrstdir,
@@ -1371,7 +1476,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )
 
             # Compute Ox budget table for GCHP
-            ox.global_ox_budget(
+            global_ox_budget(
                 config["data"]["dev"]["gchp"]["version"],
                 gchp_vs_gcc_devdir,
                 gchp_vs_gcc_devrstdir,
@@ -1404,7 +1509,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create table
-            oh.make_benchmark_oh_metrics(
+            make_benchmark_oh_metrics(
                 ref,
                 config["data"]["dev"]["gcc"]["version"],
                 dev,
@@ -1439,9 +1544,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 is_gchp=True
             )[0]
 
-            # Plot models vs. observations (O3 for now)
-            mvo.make_benchmark_models_vs_obs_plots(
-                config["paths"]["obs_data_dir"],
+            # Plot models vs. observations
+            make_benchmark_models_vs_obs_plots(
+                config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
+                config["paths"]["obs_data"]["ebas_o3"]["data_label"],
                 ref,
                 config["data"]["dev"]["gcc"]["version"],
                 dev,
@@ -1451,13 +1557,26 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 verbose=False
             )
 
+            # Plot models vs. sondes
+            make_benchmark_models_vs_sondes_plots(
+                sondes_data_file,
+                sondes_site_file,
+                ref,
+                config["data"]["dev"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gcc_models_vs_obs_dir,
+                overwrite=True,
+            )
+
+
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCHP benchmark plots and tables
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
 
         # ==================================================================
-        # GCHP vs GCC filepaths for StateMet collection data
+        # GCHP vs GCHP filepaths for StateMet collection data
         # ==================================================================
         refmet = get_filepaths(
             gchp_vs_gchp_refdir,
@@ -1508,7 +1627,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1536,7 +1655,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     ref[mon_ind],
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
@@ -1581,7 +1700,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_emis_plots(
+            make_benchmark_emis_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1609,7 +1728,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_emis_plots(
+                make_benchmark_emis_plots(
                     ref[mon_ind],
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
@@ -1649,7 +1768,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create table
-            bmk.make_benchmark_emis_tables(
+            make_benchmark_emis_tables(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1690,7 +1809,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_jvalue_plots(
+            make_benchmark_jvalue_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1713,7 +1832,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_jvalue_plots(
+                make_benchmark_jvalue_plots(
                     ref[mon_ind],
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
@@ -1753,7 +1872,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_aod_plots(
+            make_benchmark_aod_plots(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
@@ -1776,7 +1895,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_aod_plots(
+                make_benchmark_aod_plots(
                     ref[mon_ind],
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
@@ -1788,6 +1907,71 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     overwrite=True,
                     spcdb_dir=spcdb_dir,
                     n_job=config["options"]["n_cores"]
+                )
+
+        # ==================================================================
+        # GCHP vs GCHP drydep plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_drydep"]:
+            print("\n%%% Creating GCHP vs. GCHP drydep plots %%%")
+
+            # --------------------------------------------------------------
+            # GCHP vs GCHP drydep: Annual Mean
+            # --------------------------------------------------------------
+
+            # Filepaths
+            ref = get_filepaths(
+                gchp_vs_gchp_refdir,
+                "DryDep",
+                all_months_gchp_ref,
+                is_gchp=True
+            )[0]
+            dev = get_filepaths(
+                gchp_vs_gchp_devdir,
+                "DryDep",
+                all_months_gchp_dev,
+                is_gchp=True
+            )[0]
+
+            # Create plots
+            print("\nCreating plots for annual mean")
+            make_benchmark_drydep_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                dst=gchp_vs_gchp_resultsdir,
+                subdst="AnnualMean",
+                cmpres=cmpres,
+                time_mean=True,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"],
+                varlist=drydepvel_species()
+            )
+
+            # --------------------------------------------------------------
+            # GCHP vs GCHP drydep plots: Seasonal
+            # --------------------------------------------------------------
+            for mon in range(bmk_n_months):
+                print(f"\nCreating plots for {bmk_mon_strs[mon]}")
+
+                # Create plots
+                mon_ind = bmk_mon_inds[mon]
+                make_benchmark_drydep_plots(
+                    ref[mon_ind],
+                    gchp_vs_gchp_refstr,
+                    dev[mon_ind],
+                    gchp_vs_gchp_devstr,
+                    dst=gchp_vs_gchp_resultsdir,
+                    subdst=bmk_mon_yr_strs_dev[mon],
+                    cmpres=cmpres,
+                    weightsdir=config["paths"]["weights_dir"],
+                    overwrite=True,
+                    spcdb_dir=spcdb_dir,
+                    n_job=config["options"]["n_cores"],
+                    varlist=drydepvel_species()
                 )
 
         # ==================================================================
@@ -1830,8 +2014,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "Restart",
                     bmk_end_ref,
                     is_gchp=True,
-                    gchp_res=config["data"]["dev"]["gchp"]["resolution"],
-                    gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
+                    gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                    gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
                         "is_pre_14.0"]
                 )
                 devareapath = get_filepath(
@@ -1845,7 +2029,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Create tables
-                bmk.make_benchmark_mass_tables(
+                make_benchmark_mass_tables(
                     refpath,
                     gchp_vs_gchp_refstr,
                     devpath,
@@ -1898,7 +2082,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 )
 
                 # Compute tables
-                bmk.make_benchmark_operations_budget(
+                make_benchmark_operations_budget(
                     config["data"]["ref"]["gchp"]["version"],
                     refpath,
                     config["data"]["dev"]["gchp"]["version"],
@@ -1951,7 +2135,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create tables
-            bmk.make_benchmark_aerosol_tables(
+            make_benchmark_aerosol_tables(
                 gchp_vs_gchp_devdir,
                 devaero,
                 devspc,
@@ -1972,7 +2156,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP Ox budget table %%%")
 
             # Compute Ox budget table for GCHP
-            ox.global_ox_budget(
+            global_ox_budget(
                 config["data"]["dev"]["gchp"]["version"],
                 gchp_vs_gchp_devdir,
                 gchp_vs_gchp_devrstdir,
@@ -2006,7 +2190,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             )[0]
 
             # Create the OH Metrics table
-            oh.make_benchmark_oh_metrics(
+            make_benchmark_oh_metrics(
                 ref,
                 config["data"]["ref"]["gchp"]["version"],
                 dev,
@@ -2023,12 +2207,44 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Skipping GCHP vs. GCHP Strat-Trop Exchange table %%%")
 
         # ==================================================================
+        # GCHP vs. GCHP Benchmark Timing Table
+        # ==================================================================
+        if config["options"]["outputs"]["timing_table"]:
+            print("\n%%% Creating GCHP vs. GCHP Benchmark Timing table %%%")
+
+            # Filepaths
+            # NOTE: Usually the GCHP 1-yr benchmark is run as
+            # one job, so we only need to take the 1st log file.
+            ref = get_log_filepaths(
+                gchp_vs_gchp_reflogdir,
+                config["data"]["ref"]["gchp"]["logs_template"],
+                all_months_gchp_ref,
+            )[0]
+            dev = get_log_filepaths(
+                gchp_vs_gchp_devlogdir,
+                config["data"]["dev"]["gchp"]["logs_template"],
+                all_months_gchp_dev,
+            )[0]
+
+            # Create the table
+            make_benchmark_gchp_timing_table(
+                ref,
+                config["data"]["ref"]["gchp"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gchp_tablesdir,
+                overwrite=True,
+            )
+
+        # ==================================================================
         # GCHP vs GCHP Model vs. Observations plots
         # ==================================================================
         if config["options"]["outputs"]["plot_models_vs_obs"]:
             print("\n%%% Creating GCHP vs. GCHP models vs. obs. plots %%%")
 
             # Filepaths
+            # NOTE: If the GCHP benchmark is done in one-shot
+            # then you need the [0] after the call to get_filepaths.
             ref = get_filepaths(
                 gchp_vs_gchp_refdir,
                 "SpeciesConc",
@@ -2042,9 +2258,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 is_gchp=True
             )[0]
 
-            # Plot models vs. observations (O3 for now)
-            mvo.make_benchmark_models_vs_obs_plots(
-                config["paths"]["obs_data_dir"],
+            # Plot models vs. observations
+            make_benchmark_models_vs_obs_plots(
+                config["paths"]["obs_data"]["ebas_o3"]["data_dir"],
+                config["paths"]["obs_data"]["ebas_o3"]["data_label"],
                 ref,
                 config["data"]["ref"]["gchp"]["version"],
                 dev,
@@ -2052,6 +2269,18 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gchp_vs_gchp_models_vs_obs_dir,
                 overwrite=True,
                 verbose=False
+            )
+
+            # Plot models vs. sondes
+            make_benchmark_models_vs_sondes_plots(
+                sondes_data_file,
+                sondes_site_file,
+                ref,
+                config["data"]["ref"]["gchp"]["version"],
+                dev,
+                config["data"]["dev"]["gchp"]["version"],
+                dst=gchp_vs_gchp_models_vs_obs_dir,
+                overwrite=True,
             )
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2094,7 +2323,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
             # Create plots
             print("\nCreating plots for annual mean")
-            bmk.make_benchmark_conc_plots(
+            make_benchmark_conc_plots(
                 gcc_ref,
                 diff_of_diffs_refstr,
                 gchp_ref,
@@ -2123,7 +2352,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
 
                 # Create plots
                 mon_ind = bmk_mon_inds[mon]
-                bmk.make_benchmark_conc_plots(
+                make_benchmark_conc_plots(
                     gcc_ref[mon_ind],
                     diff_of_diffs_refstr,
                     gchp_ref[mon_ind],
@@ -2146,4 +2375,4 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # ==================================================================
     # Print a message indicating that the benchmarks finished
     # ==================================================================
-    print("\n %%%% All requested benchmark plots/tables created! %%%%")
+    print("\n%%%% All requested benchmark plots/tables created! %%%%")

@@ -47,6 +47,8 @@ data:
       dir: ref-gcc/run-directory
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
+      logs_subdir: .
+      logs_template: runlog.txt
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-07-01T01:00:00"
     gchp:
@@ -54,6 +56,8 @@ data:
       dir: ref-gchp/run-directory
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
+      logs_subdir: .
+      logs_template: runlog.txt
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-07-01T01:00:00"
       is_pre_14.0: False
@@ -64,6 +68,8 @@ data:
       dir: dev-gcc/run-directory
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
+      logs_subdir: .
+      logs_template: runlog.txt
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-07-01T01:00:00"
     gchp:
@@ -71,6 +77,8 @@ data:
       dir: dev-gchp/run-directory
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
+      logs_subdir: .
+      logs_template: runlog.txt
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-07-01T01:00:00"
       is_pre_14.0: False
@@ -110,12 +118,14 @@ options:
     plot_emis: False
     emis_table: True
     plot_jvalues: False
+    plot_drydep: False
     plot_aod: False
     mass_table: True
     mass_accum_table: False
     ops_budget_table: False
     OH_metrics: True
     ste_table: True # GCC only
+    timing_table: True
     summary_table: True
     plot_options:
       by_spc_cat: True

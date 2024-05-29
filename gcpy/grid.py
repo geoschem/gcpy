@@ -7,8 +7,9 @@ import xarray as xr
 import numpy as np
 import scipy.sparse
 from gcpy.util import get_shape_of_data, verify_variable_type
-from .grid_stretching_transforms import scs_transform
+from gcpy.grid_stretching_transforms import scs_transform
 from gcpy.constants import R_EARTH_m
+from gcpy.cstools import find_index, is_cubed_sphere
 
 
 def get_troposphere_mask(ds):
@@ -247,49 +248,58 @@ def get_grid_extents(data, edges=True):
         return -180, 180, -90, 90
 
 
-def get_vert_grid(dataset, AP=[], BP=[]):
+def get_vert_grid(
+        dataset,
+        AP=None,
+        BP=None,
+        p_sfc=1013.25):
     """
     Determine vertical grid of input dataset
 
     Args:
-        dataset: xarray Dataset
-            A GEOS-Chem output dataset
+    -----
+    dataset (xr.Dataset) : A GEOS-Chem output dataset
 
     Keyword Args (optional):
-        AP: list-like type
-            Hybrid grid parameter A in hPa
-            Default value: []
-        BP: list-like type
-            Hybrid grid parameter B (unitless)
-            Default value: []
+    ------------------------
+    AP (list-like) : Hybrid grid parameter A (hPA)
+    BP    (list-like) : Hybrid grid parameter B (unitless)
+    p_sfc (float) :
 
     Returns:
-        p_edge: numpy array
-            Edge pressure values for vertical grid
-        p_mid: numpy array
-            Midpoint pressure values for vertical grid
-        nlev: int
-            Number of levels in vertical grid
+    --------
+    pedge (np.ndarray) : Edge pressure values for vertical grid
+    p_mid (np.ndarray) : Midpoint pressure values for vertical grid
+    nlev: (int       ) : Number of levels in vertical grid
     """
 
+    # 72L GEOS grid
     if dataset.sizes["lev"] in (72, 73):
-        return GEOS_72L_grid.p_edge(), GEOS_72L_grid.p_mid(), 72
-    elif dataset.sizes["lev"] in (47, 48):
-        return GEOS_47L_grid.p_edge(), GEOS_47L_grid.p_mid(), 47
-    elif AP == [] or BP == []:
+        grid = vert_grid(_GEOS_72L_AP, _GEOS_72L_BP, p_sfc)
+        return grid.p_edge(), grid.p_mid(), 72
+
+    # 47L GEOS grid
+    if dataset.sizes["lev"] in (47, 48):
+        grid = vert_grid(_GEOS_47L_AP, _GEOS_47L_BP, p_sfc)
+        return grid.p_edge(), grid.p_mid(), 47
+
+    # Grid without specified AP, BP
+    if AP == None or BP == None:
         if dataset.sizes["lev"] == 1:
             AP = [1, 1]
             BP = [1]
-            new_grid = vert_grid(AP, BP)
-            return new_grid.p_edge(), new_grid.p_mid(), np.size(AP)
-        else:
-            raise ValueError(
-                "Only 72/73 or 47/48 level vertical grids are automatically determined" +
-                "from input dataset by get_vert_grid(), please pass grid parameters AP and BP" +
-                "as keyword arguments")
-    else:
-        new_grid = vert_grid(AP, BP)
-        return new_grid.p_edge(), new_grid.p_mid(), np.size(AP)
+            grid = vert_grid(AP, BP, p_sfc)
+            return grid.p_edge(), grid.p_mid(), np.size(AP)
+
+        raise ValueError(
+            "Only 72/73 or 47/48 level vertical grids are automatically\n" +
+            "determined from input dataset by get_vert_grid().\n" +
+            "please pass grid parameters AP and BP as keyword arguments"
+        )
+
+    # Grid with specified AP, BP
+    grid = vert_grid(AP, BP, p_sfc)
+    return grid.p_edge(), grid.p_mid(), np.size(AP)
 
 
 def get_ilev_coord(
@@ -1577,3 +1587,180 @@ def rotate_sphere_3D(theta, phi, r, rot_ang, rot_axis='x'):
     theta_new, phi_new, r_new = cartesian_to_spherical(x_new, y_new, z_new)
 
     return theta_new, phi_new, r_new
+
+
+def get_nearest_model_data_cs(
+        gc_data,
+        gc_cs_grid,
+        lon_value,
+        lat_value,
+        varlist=None
+):
+    """
+    Returns GEOS-Chem model data (on a cubed-sphere grid) at the
+    grid box closest to a given (lat, lon) location.
+
+    Args:
+    -----
+    gc_data : xarray.DataArray or xarray.Dataset
+        GEOS-Chem model data for a single variable
+
+    gc_cs_grid: xarray Dataset
+        Coordinate arrays defining the cubed-sphere grid.
+
+    lon_value : float
+        Longitude at the location of interest
+
+    lat_value : float
+        Latitude at the location of interest
+
+
+    Keyword Args (optional):
+    ------------------------
+    varlist : list of str
+        List of data variables to include in the output
+
+    Returns:
+    --------
+    dataframe: pandas.DataFrame
+        Model data closest to the observation site.
+    """
+    verify_variable_type(gc_data, (xr.DataArray, xr.Dataset))
+    verify_variable_type(gc_cs_grid, xr.Dataset)
+
+    # Prevent the latitude from getting too close to the N or S poles
+    lat_value = max(min(lat_value, 89.75), -89.75)
+
+    # Indices (nf, yInd, xInd) of box nearest to observation site
+    cs_indices = find_index(
+        lat_value,
+        lon_value,
+        gc_cs_grid
+    )
+
+    if varlist is not None:
+        return gc_data[varlist].isel(
+            nf=cs_indices[0, 0],
+            Ydim=cs_indices[1, 0],
+            Xdim=cs_indices[2, 0],
+        ).to_dataframe()
+
+    return gc_data.isel(
+        nf=cs_indices[0, 0],
+        Ydim=cs_indices[1, 0],
+        Xdim=cs_indices[2, 0],
+    ).to_dataframe()
+
+
+def get_nearest_model_data_ll(
+        gc_data,
+        lon_value,
+        lat_value,
+        varlist=None
+
+):
+    """
+    Returns GEOS-Chem model data (on a cubed-sphere grid) at the
+    grid box closest to a given (lat, lon) location.
+
+    Args:
+    -----
+    gc_data : xarray.DataArray or xarray.Dataset
+        GEOS-Chem model data
+
+    lon_value : float
+        Longitude at the location of interest
+
+    lat_value : float
+        Latitude at the location of interest
+
+    Keyword Args (optional):
+    ------------------------
+    varlist : list of str
+        List of data variables to include in the output
+
+    Returns:
+    --------
+    dataframe: pandas.DataFrame
+        Model data closest to the observation site.
+    """
+    verify_variable_type(gc_data, (xr.DataArray, xr.Dataset))
+
+    x_idx=(
+        np.abs(
+            gc_data.lon.values - float(lon_value)
+        )
+    ).argmin()
+
+    y_idx=(
+        np.abs(
+            gc_data.lat.values - float(lat_value)
+        )
+    ).argmin()
+
+    if varlist is not None:
+        return gc_data[varlist].isel(
+            lon=x_idx,
+            lat=y_idx,
+        ).to_dataframe()
+
+    return gc_data.isel(
+        lon=x_idx,
+        lat=y_idx,
+    ).to_dataframe()
+
+
+def get_nearest_model_data(
+        gc_data,
+        lon_value,
+        lat_value,
+        gc_cs_grid=None,
+        varlist=None
+):
+    """
+    Args:
+    -----
+    gc_data : xarray.DataArray or xarray.Dataset
+        GEOS-Chem data for a single variable
+
+    gc_cs_grid: xarray.Dataset or NoneType
+        Coordinate arrays defining the cubed-sphere grid.
+
+    lon_value : float
+        Longitude at the location of interest
+
+    lat_value : float
+        Latitude at the location of interest
+
+    Keyword Args (optional):
+    ------------------------
+    gc_cs_grid : xarray.Dataset
+        Datasaet with cubed-sphere grid definition.  This can be
+        obtained as the output of function gcpy.util.extract_data().
+
+    varlist : list of str
+        List of data variables to include in the output
+
+    Returns:
+    --------
+    dataframe: pandas.DataFrame
+        Model data closest to the observation site.
+    """
+    verify_variable_type(gc_data, (xr.DataArray, xr.Dataset))
+    verify_variable_type(gc_cs_grid, (xr.Dataset, type(None)))
+
+    if is_cubed_sphere(gc_data):
+        return get_nearest_model_data_cs(
+            gc_data,
+            gc_cs_grid,
+            lon_value,
+            lat_value,
+            varlist=varlist
+        )
+
+    return get_nearest_model_data_ll(
+        gc_data,
+        lon_value,
+        lat_value,
+        varlist=varlist,
+    )

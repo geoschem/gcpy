@@ -4,6 +4,82 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+### Added
+- Script `gcpy/benchmark/modules/benchmark_utils.py`, with common benchmark utility functions
+- Script `gcpy/benchmark/modules/benchmark_drydep.py`, with code to create drydep velocity plots
+- YAML tag `plot_drydep` in `gcpy/benchmark/config/*.yml` files
+- Badge for `build-gcpy-environment` GitHub Action in `README.md`
+- Badges in `docs/source/index.rst`
+- GitHub action to push GCPy releases to PyPi
+- Script `./release/changeVersionNumbers.sh`, used to update version numbers in various files before release
+- Mamba/Conda enviroment file `docs/environment_files/read_the_docs_environment.yml`, for building ReadTheDocs documentation
+- Environment files `docs/environment_files/gcpy_requirements.txt` and `docs/environment_files/read_the_docs_requirements.txt`
+- New benchmark script `gcpy/benchmark/modules/benchmark_models_vs_sondes.py`
+- Added fixed level budget diagnostic to budget operations table
+- Function `rename_speciesconc_to_speciesconcvv` in `gcpy/benchmark/modules/benchmark_utils.py`
+- Function `copy_file_to_dir` in `gcpy/util.py`.  This is a wrapper for `shutil.copyfile`.
+- GitHub Action config file `.github/workflows/stale.yml`, which replaces StaleBot
+- Added `gcpy/community/format_hemco_data.py` from @hannahnesser
+- Added `gcpy/examples/hemco/format_hemco_demo.py` from @hannahnesser
+- Added HCl to `gcpy/benchmark/modules/emission_species.yml` and GTChlorine to `gcpy/benchmark/modules/emission_inventories.yml` for GEOS-Chem 14.4.0
+- Example script `gcpy/examples/working_with_files/make_mask_file.py`
+- Convenience function `replace_whitespace` in `gcpy/util.py`
+- Benchmark script `gcpy/benchmark/modules/benchmark_scrape_gcclassic_timers.py`
+- Benchmark script `gcpy/benchmark/modules/benchmark_scrape_gchp_timers.py`
+- 1-year benchmark scripts now produce GCC vs GCC and GCHP vs GCHP timing tables
+- Functions `gcc_vs_gcc_dirs`, `gchp_vs_gcc_dirs`, `gchp_vs_gchp_dirs`, and `get_log_filepaths` in `gcpy/benchmark/modules/benchmark_utils.py`
+- Script `gcpy/benchmark/modules/benchmark_mass_cons_table.py`, with code to create mass conservation tables
+- Expanded statistics output in benchmark mass conservation tables
+- Function `get_datetimes_from_filenames` in `gcpy/benchmark/modules/benchmark_utils.py`
+- Function `replace_whitespace` in `gcpy/util.py`
+
+### Changed
+- Bump pip from 23.2.1 to 23.3 (dependabot suggested this)
+- Bump pypdf from 3.16.1 to 3.17.0 (dependabot suggested this)
+- YAML tag `operations_budget` is now `ops_budget_table` in `gcpy/benchmark/config/1yr_tt_benchmark.yml`
+- Now require `matplotlib=3.8.0` in `docs/environment_files/environment.yml` (with other pegged versions)
+- Now run the `stale` GitHub action at 00:00 UTC on the 1st of each month
+- Renamed `docs/environment_files/environment.yml` to `gcpy_environment.yml`
+- `environment.yml` links to `docs/environment_files/gcpy_environment.yml`
+- `requirements.txt` links to `docs/environment_files/requirements.txt`
+- Python packages for RTD documenation builds from `docs/environment_files/environment.yml`
+- Script `benchmark_model_vs_obs.py` now uses grid inquiry functions from `grid.py` to return data nearest to a (lat,lon) location
+- Moved routine `get_geoschem_level_metadata` to `gcpy/benchmark/modules/benchmark_utils.py`
+- Refactored `get_vert_grid.py` (in `gcpy/grid.py`) to accept the `p_sfc` argument; Also never-nested the if-block logic.
+- `benchmark_slurm.sh` script now saves output to a log file with the same base name as the YAML config file
+- `benchmark_models_vs_obs.py` now reads the observational data paths and metadata from  `1yr_fullchem_benchmark.yml`
+- Moved benchmark code from `gcpy/` to `gcpy/benchmark/modules/`
+- Benchmark functions now call `rename_speciesconc_to_speciesconcvv`
+- Create radionuclide, STE flux, and mass conservation tables for Ref and Dev versions in TransportTracers benchmarks
+- Use new function `copy_file_to_dir` to copy the benchmark script and configuration file to the benchmark results folders
+- Updated GitHub stalebot config file `stale.yml` with new issue/PR labels that should not go stale
+- Updated benchmark driver scripts and config files to print GCClassic & GCHP timing information
+- Updated documentation for GCPy 1.5.0 release
+- Converted Github issue templates to issue forms using YAML definition files
+
+### Fixed
+- CS inquiry functions in `gcpy/cstools.py` now work properly for `xr.Dataset` and `xr.DataArray` objects
+- Prevent an import error by using `seaborn-v0_8-darkgrid` in`gcpy/benchmark/modules/benchmark_models_vs_obs.py`
+- `gcpy/file_regrid.py` now creates GCHP files with `DELP_DRY` instead of `DELPDRY`
+- Fixed bugs in GCHP vs GCHP sections of 1-yr benchmark run scripts to allow comparison of GCHP runs with different grid resolutions
+- Fixed silent bug in transport tracer benchmark GCC vs GCHP mass
+  tables preventi ng them from being generated
+- Import error in `gcpy/examples/diagnostics/compare_diags.py`
+- Added missing `n_cores` to `gcpy/examples/diagnostics/compare_diags.yml`
+- Added missing `plot_drydep` option to `gcpy/gcpy/benchmark/config/1yr_ch4_benchmark.yml`
+- Add `docs/requirements.txt` symbolic link to `docs/environment_files/read_the_docs_requirements.txt` for RTD builds 
+- `gcpy/file_regrid.py` now tests if `lon_bnds`, `lat_bnds` are in the dataset before trying to drop them
+
+### Removed
+- Example script `gcpy/examples/plotting/mda8_o3_timeseries.py`
+- Removed `Pylint` GitHub action
+- Environment file `docs/environment_files/environment.yml`
+- Environment file `docs/environment_files/requirements.txt`
+- Removed `awscli` from the GCPy environment; version 2 is no longer available on conda-forge or PyPi
+- GitHub config files `.github/stale.yml` and `.github/no-response.yml`
+- Routine `make_benchmark_mass_conservation_table` in `benchmark_funcs.py`; this is now obsolete
+
 ## [1.4.2] - 2024-01-26
 ### Added
 - Example script `create_test_plot.py`, which can be used to check that GCPy has been installed properly
@@ -12,7 +88,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - GitHub action `build-test-environment` to test the environment specified in `testing.yml`
 
 ### Changed
-- `build-gcpy-environment` GitHub action now runs with several Python versions 
+- `build-gcpy-environment` GitHub action now runs with several Python versions
 
 ### Fixed
 - Prevent overwriting of the `results` variable when parallel plotting is deactivated (`n_cores: 1`)

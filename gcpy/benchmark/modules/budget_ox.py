@@ -14,7 +14,10 @@ import numpy as np
 import xarray as xr
 import gcpy.constants as constants
 from gcpy.grid import get_troposphere_mask
-import gcpy.util as util
+from gcpy.util import get_filepath, read_config_file, \
+    rename_and_flip_gchp_rst_vars, reshape_MAPL_CS
+from gcpy.benchmark.modules.benchmark_utils import \
+    add_lumped_species_to_dataset, get_lumped_species_definitions
 import gc
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
@@ -107,8 +110,8 @@ class _GlobVars:
         # vertical axis.  Also test if the restart files have the BXHEIGHT
         # variable contained within them.
         if is_gchp:
-            self.ds_ini = util.rename_and_flip_gchp_rst_vars(self.ds_ini)
-            self.ds_end = util.rename_and_flip_gchp_rst_vars(self.ds_end)
+            self.ds_ini = rename_and_flip_gchp_rst_vars(self.ds_ini)
+            self.ds_end = rename_and_flip_gchp_rst_vars(self.ds_end)
 
         # Read diagnostics
         self.get_diag_paths()
@@ -140,17 +143,17 @@ class _GlobVars:
         # First look in the current folder
         lspc_path = "lumped_species.yml"
         if os.path.exists(lspc_path):
-            lspc_dict = util.read_config_file(lspc_path, quiet=True)
+            lspc_dict = read_config_file(lspc_path, quiet=True)
             return lspc_dict
 
         # Then look in the same folder where the species database is
         lspc_path = os.path.join(self.spcdb_dir, "lumped_species.yml")
         if os.path.exists(lspc_path):
-            lspc_dict = util.read_config_file(lspc_path, quiet=True)
+            lspc_dict = read_config_file(lspc_path, quiet=True)
             return lspc_dict
 
         # Then look in the GCPy source code folder
-        lspc_dict = util.get_lumped_species_definitions()
+        lspc_dict = get_lumped_species_definitions()
         return lspc_dict
 
 
@@ -161,7 +164,7 @@ class _GlobVars:
         Arguments:
             ystr : Year string (YYYY) format
         """
-        return util.get_filepath(
+        return get_filepath(
             self.devrstdir,
             "Restart",
             np.datetime64(f"{ystr}-01-01T00:00:00"),
@@ -214,7 +217,7 @@ class _GlobVars:
         else:
             RstPrefix="SpeciesRst_"
 
-        ds = util.add_lumped_species_to_dataset(
+        ds = add_lumped_species_to_dataset(
             ds,
             lspc_dict=self.lspc_dict,
             verbose=False,
@@ -243,7 +246,7 @@ class _GlobVars:
         )
 
         if prefix is not None:
-            ds = util.add_lumped_species_to_dataset(
+            ds = add_lumped_species_to_dataset(
                 ds,
                 lspc_dict=self.lspc_dict,
                 verbose=False,
@@ -265,7 +268,7 @@ class _GlobVars:
                 msg = 'Could not find Met_AREAM2 in StateMet_avg collection!'
                 raise ValueError(msg)
             area_m2 = self.ds_met["Met_AREAM2"].isel(time=0)
-            area_m2 = util.reshape_MAPL_CS(area_m2)
+            area_m2 = reshape_MAPL_CS(area_m2)
             self.area_m2 = area_m2
             self.area_cm2 = self.ds_met["Met_AREAM2"].isel(time=0) * 1.0e4
         else:
@@ -311,7 +314,7 @@ class _GlobVars:
         """
         # Read the species database
         path = os.path.join(spcdb_dir, "species_database.yml")
-        spcdb = util.read_config_file(path, quiet=True)
+        spcdb = read_config_file(path, quiet=True)
 
         # Molecular weights [kg mol-1], as taken from the species database
         self.mw = {}

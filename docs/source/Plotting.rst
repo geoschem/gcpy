@@ -20,13 +20,13 @@ Six-panel comparison plots
 The functions listed below generate six-panel plots comparing
 variables between two datasets:
 
-+-----------------------------+------------------------------------+
-| Plotting function           | Located in GCPy module             |
-+=============================+====================================+
-| ``compare_single_level()``  | ``gcpy.plot.compare_single_level`` |
-+-----------------------------+------------------------------------+
-| ``compare_zonal_mean()``    | ``gcpy.plot.compare_zonal_mean``   |
-+-----------------------------+------------------------------------+
++----------------------------------------+------------------------------------+
+| Plotting function                      | Located in module                  |
++========================================+====================================+
+| :ref:`compare_single_level <plot-csl>` | ``gcpy.plot.compare_single_level`` |
++----------------------------------------+------------------------------------+
+| :ref:`compare_zonal_mean <plot-czm>`   | ``gcpy.plot.compare_zonal_mean``   |
++----------------------------------------+------------------------------------+
 
 Both :code:`compare_single_level()` and :code:`compare_zonal_mean()`
 generate a six panel plot for each variable passed. These plots can
@@ -233,7 +233,6 @@ and generates a comparison plot such as:
 
 .. image:: _static/images/six\_panel\_single\_level.png
    :align: center
-   :width: 80%
 
 .. _plot-czm:
 
@@ -411,7 +410,6 @@ and generates a comparison plot such as:
 
 .. image:: _static/images/six\_panel\_zonal\_mean.png
    :align: center
-   :width: 80%
 
 .. _plot-shared:
 

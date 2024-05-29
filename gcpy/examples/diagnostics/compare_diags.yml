@@ -33,3 +33,4 @@ options:
     filename: ''
     skip_small_diffs: True
     small_diff_threshold: 0.0000
+  n_cores: -1
