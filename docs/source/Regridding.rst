@@ -238,7 +238,7 @@ three stage process:
 .. note::
 
    As of GCPy 1.4.0, the :ref:`default GCPy environment
-   <gcpy_install>` (aka :literal:`gcpy_env`) now contains
+   <install>` (aka :literal:`gcpy_env`) now contains
    :literal:`gridspec` and :literal:`sparselt` packages.  You no
    longer need to use the separate :literal:`gchp_regridding`
    environment as in prior versions.

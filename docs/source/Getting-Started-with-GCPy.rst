@@ -2,13 +2,11 @@
 
    <br/>
 
-.. _install:
-
 ###############
 Installing GCPy
 ###############
 
-.. _requirements:
+.. _install:
 
 ============
 Requirements
@@ -20,7 +18,63 @@ Requirements
 #. Windows Subsystem for Linux (running in Microsoft Windows 11)
 #. MacOS
 
-To install GCPy, you will need:
+You may choose one of the following methods to install GCPy on your
+system.
+
+.. _install-pip:
+
+=================================
+For most users: Install from PyPi
+=================================
+
+If you only plan on using GCPy for visualization of GEOS-Chem
+simulation results, we recommend that you install GCPy from the
+:program:`Python
+Package Index (PyPi)` using the `Pip installer
+<https://pypi.org/project/pip/>`_.
+
+If your system does not already have Pip installed, you may install it
+with the `get-pip.py
+<https://pip.pypa.io/en/stable/installation/#get-pip-py>`_ script.
+
+.. _install-pip-first:
+
+First-time installation with Pip
+--------------------------------
+
+Once you are sure that Pip is installed, you may proceed to download
+GCPy with this command:
+
+.. code-block:: console
+
+   $ pip install geoschem-gcpy
+
+To validate the installation, we recommend running the
+:ref:`test-plot` example scruot,
+
+.. _install-pip-update:
+
+Updating to a newer version with Pip
+------------------------------------
+
+Use this command to update an existing GCPy installation to a newer version:
+
+.. code-block:: console
+
+   $ pip install -U geoschem-gcpy
+
+
+You may now skip ahead to the :ref:`mpl-backend` chapter.
+
+.. _install-dev:
+
+=====================================
+For developers: Install GCPy from Git
+=====================================
+
+If you plan on actively developing GCPy, we recommend that you install
+GCPy from Git and create a :program:`Mamba` or :program:`Conda`
+environment.  You will also need:
 
 - **EITHER** a distribution of the :program:`Mamba` package manager
 - **OR** a distribution of the :program:`Conda` package manager.
@@ -39,7 +93,7 @@ environment will contain a version of the Python interpreter
    with :program:`Conda`.  See the following sections for detailed
    instructions.
 
-.. _requirements-mamba:
+.. _install-dev-req-mamba:
 
 Check if Mamba is installed
 ---------------------------
@@ -57,10 +111,10 @@ If :program:`Mamba` has been installed, you will see output similar to this:
    mamba version X.Y.Z
    conda version A.B.C
 
-If you see this output, you may skip ahead to the :ref:`gcpy-install`
+If you see this output, you may skip ahead to the :ref:`install-dev-gcpy-install`
 section.
 
-.. _requirements-conda:
+.. _install-dev-req-conda:
 
 Check if Conda is installed
 ---------------------------
@@ -81,9 +135,9 @@ printed to the screen:
 
 If neither :program:`Conda` or :program:`Mamba` are installed, we
 recommend installing the :program:`Mamba` package manager yourself.
-Please proceed to the :ref:`mamba-install` section for instructions.
+Please proceed to the :ref:`install-dev-mamba-install` section for instructions.
 
-.. _requirements-conda-older:
+.. _install-dev-req-conda-older:
 
 Additional setup for older Conda versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,13 +160,12 @@ creation considerably.
    The :program:`Mamba` environment solver is used by default in
    :program:`Conda` 23.7 and later.
 
-You may now skip ahead to the :ref:`gcpy-install` section.
+You may now skip ahead to the :ref:`install-dev-gcpy-install` section.
 
-.. _mamba-install:
+.. _install-dev-mamba-install:
 
-==================
 Install MambaForge
-==================
+------------------
 
 We recommend installing the :program:`MambaForge`, distribution, which
 is a full implementation of :program:`Mamba` (as opposed to the
@@ -121,7 +174,7 @@ minimal :program:`MicroMamba` distribution).
 Follow the instructions below to install :program:`MambaForge`:
 
 MacOS
------
+~~~~~
 
 #. Install :program:`MambaForge` with `Homebrew <https://brew.sh/>`_:
 
@@ -149,11 +202,11 @@ MacOS
 #. Exit your current terminal session and open a new terminal
    session.  This will apply the changes.
 
-You may now skip ahead  to the :ref:`gcpy-install` section.
+You may now skip ahead  to the :ref:`install-dev-gcpy-install` section.
 
 
 Linux and Windows Subsystem for Linux
---------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #. Download the :program:`MambaForge` installer script from the
    `conda-forge GitHub releases page
@@ -243,8 +296,9 @@ Linux and Windows Subsystem for Linux
       :program:`MambaForge` will downlad and install Python software
       packages into the  :file:`pkgs` subfolder of the root
       installation path.  Similarly, when you :ref:`create Python
-      environments <gcpy-install>`, these will be installed to the
-      :file:`envs` subfolder of the root installation path.
+      environments <install-dev-gcpy-install>`, these will be
+      installed to the :file:`envs` subfolder of the root installation
+      path.
 
    |br|
 
@@ -262,7 +316,7 @@ Linux and Windows Subsystem for Linux
    As long as your :envvar:`PYTHONPATH` environment variable only
    contains the path to the root-level GCPy folder, you may safely
    ignore this.  (More on :envvar:`PYTHONPATH` in the :ref:`next
-   section <gcpy-install>`.) |br|
+   section <install-dev-gcpy-install>`.) |br|
    |br|
 
 #. Tell the installer to initialize :program:`MambaForge`.
@@ -283,11 +337,10 @@ Linux and Windows Subsystem for Linux
 #. Exit your current terminal session.  Start a new terminal session
    to apply the updates.  You are now ready to install GCPy.
 
-.. _gcpy-install:
+.. _install-dev-gcpy-install:
 
-=================================
 Install GCPy and its dependencies
-=================================
+---------------------------------
 
 Once you have made sure that :program:`Mamba` (or :program:`Conda`) is
 present on your system, you may create a Python environment for GCPy.
@@ -405,24 +458,24 @@ Follow these steps:
 
 #. **Perform a simple test:**
 
-   Run the following commands in your terminal to check if the
-   installation was succcesful.
+   Make sure that you have specified the proper :ref:`mpl-backend` for
+   your system.  Then run the following commands in your terminal:
 
    .. code-block:: console
 
-      $ source $HOME/.bashrc     # Alternatively close and reopen your terminal
-      $ echo $PYTHONPATH         # Check it contains path to your GCPy clone
+      $ source $HOME/.bashrc                      # Alternatively close and reopen your terminal
+      $ echo $PYTHONPATH                          # Check it contains path to your GCPy clone
       $ mamba activate gcpy_env
-      $ mamba list               # Check it contains contents of gcpy env file
-      $ python
-      >>> import gcpy
+      $ mamba list                                # Check it contains contents of gcpy env file
+      $ python -m gcpy.examples.create_test_plot  # Create a test plot
+
+If the plot appears on your screen, then the GCPy installation was successful.
 
 If no error messages are displayed, you have successfully installed
 GCPy and its dependencies.
 
-=======================
 Upgrading GCPy versions
-=======================
+-----------------------
 
 Sometimes the GCPy dependency list changes with a new GCPy version,
 either through the addition of new packages or a change in the minimum

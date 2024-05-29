@@ -28,7 +28,7 @@ For documentation on setting up and running GEOS-Chem please see our
 <https://geos-chem.readthedocs.io/en/latest/geos-chem-shared-docs/supplemental-guides/related-docs.html>`_.
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 4
    :caption: Overview
 
    About-GCPy
