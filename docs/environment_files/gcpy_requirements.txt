@@ -25,7 +25,7 @@ pylint==2.17.5                  # Python linter
 pyproj==3.6.1                   # Python map projections library
 python==3.9.18                  # Python language
 pypdf==3.17.0                   # PDF utilities (bookmarks, etc.)
-requests==2.31.0                # HTTP library
+requests==2.32.2                # HTTP library
 scipy==1.11.2                   # Scientific python package
 sparselt==0.1.3                 # Regridding earth system model data
 tabulate==0.9.0                 # Pretty-printing for column data
