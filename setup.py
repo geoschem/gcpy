@@ -29,8 +29,8 @@ CLASSIFIERS = [
 ]
 
 MAJOR = 1
-MINOR = 4
-MICRO = 2
+MINOR = 5
+MICRO = 0
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
 VERSION = f"{MAJOR}.{MINOR}.{MICRO}{EXTRA}"
