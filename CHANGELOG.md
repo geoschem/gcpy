@@ -17,6 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `checkout` GitHub action to v4
 - Updated `CodeQL` GitHub action to v3
 - Updated `publish-python` GitHub action to v5
+- In environment files `gcpy_environment.yml` and `gcpy_requirements.txt`:
+  - Update `python` to 3.12.0
+  - Update `xesmf` to 0.8.5
+  - Update `esmf` and `esmpy` to 8.6.1
+- In environment files `read_the_docs_environment.yml` and `read_the_docs_requirements.txt`
+  - Update `jinja` to 3.1.4 (fixes a security issue)
+- Update `gcpy/setup.py` with the new Python package version numbers
 
 ### Fixed
 - Fixed formatting error in `.github/workflows/stale.yml` that caused the Mark Stale Issues action not to run
@@ -87,7 +94,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Import error in `gcpy/examples/diagnostics/compare_diags.py`
 - Added missing `n_cores` to `gcpy/examples/diagnostics/compare_diags.yml`
 - Added missing `plot_drydep` option to `gcpy/gcpy/benchmark/config/1yr_ch4_benchmark.yml`
-- Add `docs/requirements.txt` symbolic link to `docs/environment_files/read_the_docs_requirements.txt` for RTD builds 
+- Add `docs/requirements.txt` symbolic link to `docs/environment_files/read_the_docs_requirements.txt` for RTD builds
 - `gcpy/file_regrid.py` now tests if `lon_bnds`, `lat_bnds` are in the dataset before trying to drop them
 
 ### Removed
