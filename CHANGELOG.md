@@ -5,6 +5,11 @@ All notable changes to GCPy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased] - TBD
+### Changed
+- Updated `checkout` GitHub action to v4
+- Updated `CodeQL` GitHub action to v3
+- Updated `publish-python` GitHub action to v5
+
 ### Fixed
 - Fixed formatting error in `.github/workflows/stale.yml` that caused the Mark Stale Issues action not to run
 
