@@ -24,7 +24,7 @@ CLASSIFIERS = [
     'Operating System :: OS Independent',
     'Intended Audience :: Science/Research',
     'Programming Language :: Python',
-    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.12',
     'Topic :: Scientific/Engineering',
 ]
 
@@ -34,7 +34,7 @@ MICRO = 0
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
 VERSION = f"{MAJOR}.{MINOR}.{MICRO}{EXTRA}"
-'''
+"""
 #DEV format (using git hash) is intriguing but incompatible with PEP 440
 #No hashes can be used in version field
 DEV = True
@@ -59,13 +59,14 @@ if DEV:
         git_rev = git_rev.decode('ascii') # necessary for Python >= 3
 
         VERSION += ".dev-{}".format(git_rev)
-'''
+"""
 
 def _write_version_file():
 
     fn = os.path.join(os.path.dirname(__file__), 'gcpy', '_version.py')
 
-    version_str = dedent("""
+    version_str = dedent(
+        """
         __version__ = '{}'
         """)
 
@@ -90,41 +91,32 @@ setup(
     packages = find_packages(),
     include_package_data=True,
     install_requires=[
-        "awscli==2.13.39",
-        "cartopy==0.22.0",
-        "cf_xarray==0.8.4",
-        "dask==2023.9.2",
+        "cartopy==0.23.0",
+        "cf_xarray==0.9.1",
+        "dask==2024.5.2",
+        "esmf==8.6.1",
+        "esmpy==8.6.1",
         "gridspec==0.1.0",
-        "ipython==8.15.0",
-        "joblib==1.3.2",
+        "ipython==8.25.0",
+        "joblib==1.4.2",
         "jupyter==1.0.0",
-        "matplotlib==3.8.0",
-        "netcdf4==1.6.0",
-        "netcdf-fortran==4.5.4",
-        "numpy==1.26.0",
-        "pandas==2.1.1",
-        "pip==23.3",
-        "pylint==2.17.5",
+        "matplotlib==3.8.4",
+        "netcdf4==1.6.5",
+        "netcdf-fortran==4.6.1",
+        "numpy==1.26.4",
+        "pandas==2.2.2",
+        "pip==24.0",
+        "pylint==3.2.2",
         "pyproj==3.6.1",
-        "python==3.9.18",
-        "pypdf==3.17.0",
-        "recommonmark==0.7.1",
-        "requests==2.32.0",
-        "scipy==1.11.2",
+        "python==3.12.0",
+        "pypdf==4.2.0",
+        "requests==2.32.3",
+        "scipy==1.13.1",
         "sparselt==0.1.3",
         "tabulate==0.9.0",
-        "tk==8.6.12",
-        "xarray==2023.8.0",
-        "esmf==8.1.1",
-        "esmpy==8.1.1",
-        "xesmf==0.5.1",
-        "docutils==0.16",
-        "jinja2==3.0.3",
-        "sphinx==3.5.4",
-        "sphinx-autoapi==1.9.0",
-        "sphinx-autobuild==2021.3.14",
-        "sphinxcontrib-bibtex==2.2.0",
-        "sphinx_rtd_theme==0.5.2",
+        "tk==8.6.13",
+        "xarray==2024.5.0",
+        "xesmf==0.8.5",
     ],
     classifiers = CLASSIFIERS
 )
