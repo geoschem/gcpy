@@ -45,7 +45,8 @@ We recommend that GCPy developers adhere to the [PEP-8 Python style guide](https
   1. Include thorough comments in all submitted code.
   2. Include full citations for references at the top of relevant source code modules.
   3. Remove extraneous code updates (e.g. testing options, other science).
-  4. Run `pylint` on each source code file that you have modified to check for bugs and conformance to the PEP-8 style conventions.
+  4. Check that you have updated the `CHANGELOG.md` file.
+  5. Run `pylint` on each source code file that you have modified to check for bugs and conformance to the PEP-8 style conventions.
 
 ## How can I request a new feature?
 
