@@ -12,6 +12,9 @@ FullChemBenchmark:
   C2H6: Tg
   C3H8: Tg
   CH2Br2: Tg
+  CH2I2: Tg
+  CH2IBr: Tg
+  CH2ICl: Tg
   CH2O: Tg
   CHBr3: Tg
   CO: Tg
@@ -36,17 +39,24 @@ FullChemBenchmark:
   MEK: Tg
   MENO3: Tg
   MGLY: Tg
+  MOH: Tg
   MTPA: Tg
   MTPO: Tg
   NH3: Tg
   'NO': Tg
   NO2: Tg
+  O3: Tg
   OCPI: Tg
   OCPO: Tg
+  PHEN: Tg
   PRPE: Tg
   RCHO: Tg
   SALA: Tg
+  SALAAL: Tg
+  SALACL: Tg
   SALC: Tg
+  SALCAL: Tg
+  SALCCL: Tg
   SO2: Tg
   SO4: Tg
   SOAP: Tg
