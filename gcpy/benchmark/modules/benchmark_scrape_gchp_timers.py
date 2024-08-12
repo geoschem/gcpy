@@ -257,6 +257,8 @@ def print_timer(key, ref, dev, ofile):
         pctdiff = ((dev[key] - ref[key]) / ref[key]) * 100.0
     line = \
         f"{label:<22}  {ref[key]:>18.3f}  {dev[key]:>18.3f}   {pctdiff:>12.3e}"
+    if np.abs(pctdiff) >= 10.0:  # Flag diffs > +/- 10%
+        line += " *"
     print(line, file=ofile)
 
 
