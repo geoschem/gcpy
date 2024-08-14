@@ -134,16 +134,20 @@ FullChemBenchmark:
       - LIMO
     HCs:
       - ALK4
+      - ALK6
       - BENZ
       - CH4
       - C2H2
       - C2H4
       - C2H6
       - C3H8
+      - C4H6
+      - EBZ
       - PRPE
+      - STYR
+      - TMB
       - TOLU
       - XYLE
-  ROy:
     ROy:
       - H2O2
       - H
@@ -182,6 +186,7 @@ FullChemBenchmark:
     Acids:
       - ACTA
     Aldehydes:
+      - ACR
       - ALD2
       - BALD
       - CH2O
@@ -201,6 +206,7 @@ FullChemBenchmark:
       - GLYC
       - GLYX
       - HCOOH
+      - RCOOH
       - MAP
       - PHEN
       - RCHO
