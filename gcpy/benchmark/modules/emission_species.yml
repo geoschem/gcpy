@@ -1,4 +1,5 @@
 FullChemBenchmark:
+  ACR: Tg
   ACET: Tg
   ALD2: Tg
   ALK4: Tg
@@ -11,6 +12,7 @@ FullChemBenchmark:
   C2H4: Tg
   C2H6: Tg
   C3H8: Tg
+  C4H6: Tg
   CH2Br2: Tg
   CH2I2: Tg
   CH2IBr: Tg
@@ -37,6 +39,7 @@ FullChemBenchmark:
   LIMO: Tg
   MACR: Tg
   MEK: Tg
+  MVK: Tg
   MENO3: Tg
   MGLY: Tg
   MOH: Tg
@@ -61,6 +64,8 @@ FullChemBenchmark:
   SO4: Tg
   SOAP: Tg
   SOAS: Tg
+  STYR: Tg
+  TMB: Tg
   TOLU: Tg
   XYLE: Tg
   pFe: Tg
