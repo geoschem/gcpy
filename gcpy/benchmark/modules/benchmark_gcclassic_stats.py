@@ -49,16 +49,16 @@ def print_stats(stats):
     stats (dict) : Dictionary with statistics to print
     """
     # Time and memory
-    line = f"{stats['Wall Time']}  {stats['Memory']}  "
+    line = f"{stats['Wall Time']},{stats['Memory']},"
 
     # OH metrics
-    line += f"{stats['Mean OH']}  {stats['CH3CCl3']}  {stats['CH4']}  "
+    line += f"{stats['Mean OH']},blank,{stats['CH3CCl3']},{stats['CH4']}"
 
     # Timers
     timers = TIMERS
     for timer in timers:
         timer = format_timer(timer.split(":", maxsplit=1)[0])
-        line += f"{stats[timer]}  "
+        line += f"{stats[timer]},"
 
     print(line)
 
@@ -80,7 +80,7 @@ def parse_timer(timer):
     """
     sub_strings = timer.split(":")
     timer = format_timer(sub_strings[0])
-    seconds = sub_strings[3].split()[1]
+    seconds = sub_strings[3].split()[1].strip()
     return timer, seconds
 
 
@@ -108,11 +108,11 @@ def scrape_stats(text):
 
         # Look for the various metrics
         if line_count == 2 and "Dev" in line:
-            stats["CH4"] = line.split(":")[1]
+            stats["CH4"] = line.split(":")[1].strip()
         if line_count == 10 and "Dev" in line:
-            stats["CH3CCl3"] = line.split(":")[1]
+            stats["CH3CCl3"] = line.split(":")[1].strip()
         if line_count == 18 and "Dev" in line:
-            stats["Mean OH"] = line.split(":")[1]
+            stats["Mean OH"] = line.split(":")[1].strip()
 
         # Skip commands
         if "++ sed" in line:
@@ -121,11 +121,11 @@ def scrape_stats(text):
 
         # Wall time
         if "wall clock" in line:
-            stats["Wall Time"] = line.split("m:ss):")[1]
+            stats["Wall Time"] = line.split("m:ss):")[1].strip()
 
         # Memory (GB)
         if "Maximum resident set size" in line:
-            stats["Memory"] = str(float(line.split(":")[1]) / 1.0e6)
+            stats["Memory"] = str(float(line.split(":")[1]) / 1.0e6).strip()
 
         # GEOS-Chem Classic timers
         for timer in timers:
