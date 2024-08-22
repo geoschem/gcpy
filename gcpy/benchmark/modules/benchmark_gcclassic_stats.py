@@ -52,7 +52,7 @@ def print_stats(stats):
     line = f"{stats['Wall Time']}  {stats['Memory']}  "
 
     # OH metrics
-    line += f"{stats['Mean OH']}  {stats['CH4']}  {stats['CH3CCl3']}  "
+    line += f"{stats['Mean OH']}  {stats['CH3CCl3']}  {stats['CH4']}  "
 
     # Timers
     timers = TIMERS
