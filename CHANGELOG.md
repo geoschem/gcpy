@@ -10,6 +10,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - Changed format of `% diff` column from `12.3e` to `12.3f` in benchmark timing tables 
+- Updated `gcpy/benchmark/modules/emission_species.yml` file with emission species for GEOS-Chem 14.5.0
+- Updated `gcpy/benchmark/modules/benchmark_categories.yml` with the latest categories for GEOS-Chem 14.5.0
+- Updated `gcpy/benchmark/modules/lumped_species.yml` with speciations for GEOS-Chem 14.5.0 
 
 ### Fixed
 - Fixed formatting error in `.github/workflows/stale.yml` that caused the Mark Stale Issues action not to run
