@@ -49,10 +49,10 @@ def print_stats(stats):
     stats (dict) : Dictionary with statistics to print
     """
     # Time and memory
-    line = f"{stats['Wall Time']},{stats['Memory']},"
+    line = f"{stats['Wall Time']},,,{stats['Memory']},"
 
     # OH metrics
-    line += f"{stats['Mean OH']},blank,{stats['CH3CCl3']},{stats['CH4']}"
+    line += f"{stats['Mean OH']},,{stats['CH3CCl3']},{stats['CH4']},,"
 
     # Timers
     timers = TIMERS
@@ -113,7 +113,7 @@ def scrape_stats(text):
             stats["CH3CCl3"] = line.split(":")[1].strip()
         if line_count == 18 and "Dev" in line:
             stats["Mean OH"] = line.split(":")[1].strip()
-
+            
         # Skip commands
         if "++ sed" in line:
             line_count += 1
