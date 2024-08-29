@@ -8,12 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Example script `gcpy/examples/hemco/make_hemco_sa_spec.py` (creates the HEMCO standalone configuration file `HEMCO_sa_Spec.rc`)
 - Module `benchmark_gcclassic_stats.py` for scraping statistics from GEOS-Chem Classic cloud benchmarks
+- Dry deposition velocity comparison plots in 1-month cloud benchmarks
 
 ### Changed
 - Changed format of `% diff` column from `12.3e` to `12.3f` in benchmark timing tables 
 - Updated `gcpy/benchmark/modules/emission_species.yml` file with emission species for GEOS-Chem 14.5.0
 - Updated `gcpy/benchmark/modules/benchmark_categories.yml` with the latest categories for GEOS-Chem 14.5.0
 - Updated `gcpy/benchmark/modules/lumped_species.yml` with speciations for GEOS-Chem 14.5.0 
+- Add `DryDep` to list of collections included in benchmark summary table
 
 ### Fixed
 - Fixed formatting error in `.github/workflows/stale.yml` that caused the Mark Stale Issues action not to run
