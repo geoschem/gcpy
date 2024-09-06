@@ -243,7 +243,7 @@ def check_for_species_changes(species, ref, dev):
         print(key, value)
 
 
-def create_wiki_tables(
+def make_benchmark_species_changes_wiki_tables(
         ref_label,
         ref_log,
         dev_label,
@@ -368,7 +368,7 @@ def main():
 
     args = parser.parse_args()
 
-    create_wiki_tables(
+    make_benchmark_species_changes_wiki_tables(
         args.ref_label,
         args.ref_log,
         args.dev_label,
