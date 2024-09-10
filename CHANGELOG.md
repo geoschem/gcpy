@@ -32,6 +32,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added brackets around `exempt-issue-labels` list in `.github/workflows/stale.yml`
 - Now flag differences greater than +/- 10% in benchmark timing table outputs
 
+### Removed
+- Removed `gcpy/benchmark/modules/species_database.yml` file and corresponding code pointing to this
+
 ## [1.5.0] - 2024-05-29
 ### Added
 - Script `gcpy/benchmark/modules/benchmark_utils.py`, with common benchmark utility functions

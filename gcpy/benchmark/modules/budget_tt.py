@@ -297,6 +297,8 @@ class _GlobVars:
         self.species_list = ["Pb210", "Be7", "Be10"]
 
         # Read the species database
+        if spcdb_dir is None:
+            raise ValueError("The 'spcdb_dir' argument has not been specified!")
         path = os.path.join(spcdb_dir, "species_database.yml")
         spcdb = util.read_config_file(path, quiet=True)
 
