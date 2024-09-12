@@ -21,7 +21,8 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 from gcpy.constants import skip_these_vars
-from gcpy.util import verify_variable_type, dataset_reader, make_directory
+from gcpy.util import \
+    dataset_reader, make_directory, replace_whitespace, verify_variable_type
 from gcpy.cstools import extract_grid
 from gcpy.grid import get_nearest_model_data
 from gcpy.benchmark.modules.benchmark_utils import \
@@ -50,6 +51,11 @@ def read_nas(
 
     if verbose:
         print(f"read_nas: Reading {input_file}")
+
+    # Initialize
+    lon = 0.0
+    lat = 0.0
+    alt = 0.0
 
     with open(input_file, encoding='UTF-8') as the_file:
         header = np.array(
@@ -113,11 +119,11 @@ def read_nas(
         index=obs_dataframe.index
     )
     obs_site_coords = { site:
-          {
-              'lon': lon,
-              'lat': lat,
-              'alt': alt
-          }
+        {
+            'lon': lon,
+            'lat': lat,
+            'alt': alt
+        }
     }
 
     return obs_dataframe, obs_site_coords
@@ -194,13 +200,12 @@ def read_model_data(
     Returns
     dataarray : xr.DataArray : GEOS-Chem data read from disk
     """
-
     # Read the Ref and Dev model data
     reader = dataset_reader(
         multi_files=True,
         verbose=verbose,
     )
-    
+
     # Read data and rename SpeciesConc_ to SpeciesConcVV_, if necessary
     # (needed for backwards compatibility with older versions.)
     dataset = reader(filepaths,drop_variables=skip_these_vars).load()
@@ -754,6 +759,10 @@ def make_benchmark_models_vs_obs_plots(
     verify_variable_type(ref_label, str)
     verify_variable_type(dev_filepaths, (str, list))
     verify_variable_type(dev_label, str)
+
+    # Replace whitespace in the ref and dev labels
+    ref_label = replace_whitespace(ref_label)
+    dev_label = replace_whitespace(dev_label)
 
     # Create the destination folder
     make_directory(

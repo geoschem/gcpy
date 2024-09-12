@@ -15,7 +15,7 @@ import warnings
 import numpy as np
 import xarray as xr
 import gcpy.constants as const
-from gcpy.util import make_directory, read_config_file
+from gcpy.util import make_directory, read_config_file, replace_whitespace
 
 # =====================================================================
 # %%% METHODS %%%
@@ -219,7 +219,6 @@ def init_common_vars(ref, refstr, dev, devstr, spcdb_dir):
     Returns:
         common_vars: dict
     """
-
     # Get species database
     spcdb = read_config_file(
         os.path.join(
@@ -469,6 +468,10 @@ def make_benchmark_oh_metrics(
     # Make sure the species database folder is passed
     if spcdb_dir is None:
         raise ValueError("The 'spcdb_dir' argument has not been specified!")
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Tell matplotlib not to look for an X-window
     os.environ["QT_QPA_PLATFORM"] = "offscreen"

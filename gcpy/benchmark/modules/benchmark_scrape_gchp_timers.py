@@ -331,6 +331,10 @@ def make_benchmark_gchp_timing_table(
     # Create the destination folder
     make_directory(dst, overwrite)
 
+    # Replace whitespace in the ref and dev labels
+    ref_label = replace_whitespace(ref_label)
+    dev_label = replace_whitespace(dev_label)
+
     # Strip timing info from JSON/text file(s) and sum the them.
     ref_timers = sum_timers(read_timing_data(ref_files))
     dev_timers = sum_timers(read_timing_data(dev_files))

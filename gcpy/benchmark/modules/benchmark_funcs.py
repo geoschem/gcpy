@@ -16,6 +16,7 @@ from tabulate import tabulate
 from gcpy import util
 from gcpy.regrid import create_regridders
 from gcpy.grid import get_troposphere_mask
+from gcpy.util import replace_whitespace
 from gcpy.units import convert_units
 from gcpy.constants import COL_WIDTH, MW_AIR_g, skip_these_vars, TABLE_WIDTH
 from gcpy.plot.compare_single_level import compare_single_level
@@ -154,6 +155,10 @@ def create_total_emissions_table(
         ),
         quiet=True
     )
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Get the list of emission variables for which we will print totals
@@ -447,6 +452,10 @@ def create_global_mass_table(
         quiet=True
     )
 
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
+
     # ==================================================================
     # Open file for output
     # ==================================================================
@@ -691,6 +700,10 @@ def create_mass_accumulation_table(
         ),
         quiet=True
     )
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Open file for output
@@ -1031,6 +1044,10 @@ def make_benchmark_conc_plots(
         extra_title_txt = subdst
     else:
         extra_title_txt = None
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Pick the proper function to read the data
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -1710,6 +1727,10 @@ def make_benchmark_emis_plots(
     else:
         extra_title_txt = None
 
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
+
     # Get the function that will read the dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
 
@@ -2098,6 +2119,10 @@ def make_benchmark_emis_tables(
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir)
 
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
+
     # ==================================================================
     # Read data from netCDF into Dataset objects
     # ==================================================================
@@ -2342,6 +2367,10 @@ def make_benchmark_jvalue_plots(
 
     # Create the directory for output
     util.make_directory(dst, overwrite)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Get the function that will read file(s) into a Dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -2727,6 +2756,10 @@ def make_benchmark_aod_plots(
     else:
         extra_title_txt = None
 
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
+
     # Get the function that will read file(s) into a dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
 
@@ -3009,10 +3042,18 @@ def make_benchmark_mass_tables(
             which do not contain the Area variable.
             Default value: ''
     """
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
     # Make sure the species database folder is passed
     if spcdb_dir is None:
         msg = "The 'spcdb_dir' argument has not been specified!"
         raise ValueError(msg)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Define destination directory
@@ -3275,10 +3316,18 @@ def make_benchmark_mass_accumulation_tables(
             Directory of species_datbase.yml file
             Default value: None
     """
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
     # Make sure the species database folder is passed
     if spcdb_dir is None:
         msg = "The 'spcdb_dir' argument has not been specified!"
         raise ValueError(msg)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Define destination directory
@@ -3543,9 +3592,15 @@ def make_benchmark_oh_metrics(
     """
 
     # ==================================================================
-    # Define destination directory
+    # Initialization
     # ==================================================================
+
+    # Define destination directory
     util.make_directory(dst, overwrite)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -3832,6 +3887,10 @@ def make_benchmark_wetdep_plots(
         targetdst = os.path.join(targetdst, datestr)
         if not os.path.isdir(targetdst):
             os.mkdir(targetdst)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Get the function that will read file(s) into a dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -4388,6 +4447,9 @@ def make_benchmark_operations_budget(
             Directory containing the species_database.yml file.
             Default value: None
     """
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ------------------------------------------
     # Column sections
@@ -5082,6 +5144,10 @@ def create_benchmark_summary_table(
     # ==================================================================
     # Open file for output
     # ==================================================================
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Create the directory for output
     util.make_directory(dst, overwrite)

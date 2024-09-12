@@ -9,8 +9,8 @@ import xarray as xr
 from gcpy.constants import skip_these_vars
 from gcpy.units import convert_units
 from gcpy.util import \
-    replace_whitespace, dataset_reader, get_area_from_dataset, \
-    make_directory, read_config_file, verify_variable_type
+    dataset_reader, get_area_from_dataset, make_directory, \
+    read_config_file, replace_whitespace, verify_variable_type
 from gcpy.benchmark.modules.benchmark_utils import \
     get_datetimes_from_filenames
 
@@ -316,6 +316,10 @@ def make_benchmark_mass_conservation_table(
 
     # Create the destination folder
     make_directory(dst, overwrite)
+
+    # Replace whitespace in the ref and dev labels
+    ref_label = replace_whitespace(ref_label)
+    dev_label = replace_whitespace(dev_label)
 
     # Get a list of properties for the given species
     metadata = get_passive_tracer_metadata(spcdb_dir)
