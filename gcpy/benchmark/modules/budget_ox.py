@@ -81,7 +81,7 @@ class _GlobVars:
         self.dst = dst
         self.overwrite = overwrite
         if spcdb_dir is None:
-            spcdb_dir = os.path.dirname(__file__)
+            raise ValueError("The 'spcdb_dir' argument has not been specified!")
         self.spcdb_dir = spcdb_dir
         self.is_gchp = is_gchp
         self.gchp_res = gchp_res
@@ -147,7 +147,7 @@ class _GlobVars:
             return lspc_dict
 
         # Then look in the same folder where the species database is
-        lspc_path = os.path.join(self.spcdb_dir, "lumped_species.yml")
+        lspc_path = os.path.join(__file__, "lumped_species.yml")
         if os.path.exists(lspc_path):
             lspc_dict = read_config_file(lspc_path, quiet=True)
             return lspc_dict

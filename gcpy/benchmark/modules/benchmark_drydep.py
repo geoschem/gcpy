@@ -31,7 +31,7 @@ def make_benchmark_drydep_plots(
         n_job=-1,
         time_mean=False,
         varlist=None,
-        spcdb_dir=os.path.join(os.path.dirname(__file__), "..", "..")
+        spcdb_dir=None,
 ):
     """
     Creates six-panel comparison plots (PDF format) from GEOS-Chem
@@ -82,7 +82,7 @@ def make_benchmark_drydep_plots(
             Default value: -1
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
         time_mean : bool
             Determines if we should average the datasets over time
             Default value: False
@@ -90,6 +90,10 @@ def make_benchmark_drydep_plots(
             List of variables to plot.  If varlist is None, then
             all common variables in Ref & Dev will be plotted.
     """
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        msg = "The spcdb_dir argument has not been specified!"
+        raise ValueError(msg)
 
     # Create directory for plots (if it doesn't exist)
     dst = make_output_dir(

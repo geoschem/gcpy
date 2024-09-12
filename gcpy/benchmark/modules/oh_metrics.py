@@ -214,7 +214,7 @@ def init_common_vars(ref, refstr, dev, devstr, spcdb_dir):
 
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
 
     Returns:
         common_vars: dict
@@ -431,7 +431,7 @@ def make_benchmark_oh_metrics(
         devstr,
         dst="./benchmark",
         overwrite=True,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates a text file containing metrics of global mean OH, MCF lifetime,
@@ -464,8 +464,12 @@ def make_benchmark_oh_metrics(
 
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
     """
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        raise ValueError("The 'spcdb_dir' argument has not been specified!")
+
     # Tell matplotlib not to look for an X-window
     os.environ["QT_QPA_PLATFORM"] = "offscreen"
 

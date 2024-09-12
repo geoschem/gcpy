@@ -283,7 +283,7 @@ def make_benchmark_mass_conservation_table(
         overwrite=False,
         ref_areapath=None,
         dev_areapath=None,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None
 ):
     """
     Creates a text file containing global mass of passive species
