@@ -2,15 +2,21 @@
 """
 Convenience script to verify that photolysis reactions are specified
 properly in GEOS-Chem.
-"""
 
+Calling sequence:
+$ python -m gcpy.examples.geoschem.check_photolysis    \
+   --spc-db-path  /path/to/species_database.yml        \
+   --fjx-j2j-path /path/to/FJX_j2j.dat                 \
+   --kpp-eqn-path /path/to/fullchem.eqn (or custom.eqn)
+"""
+import argparse
 from gcpy.util import read_config_file, verify_variable_type
 
 def get_photo_species_from_species_db(path):
     """
     Returns a list of species that have the "Is_Photolysis: true"
     setting in the species_database.yml file.
-   
+
     Args
     path    : str : Absolute path to the species_database.yml file
 
@@ -65,7 +71,7 @@ def get_photo_species_from_kpp_eqn(path):
     species : dict : Species name plus index of the PHOTOL array
     """
     verify_variable_type(path, str)
-    
+
     species = []
     photol = []
     with open(path, "r", encoding="utf-8") as ifile:
@@ -79,7 +85,7 @@ def get_photo_species_from_kpp_eqn(path):
                     line.split(":")[1].split(";")[0]\
                     .strip().strip("PHOTOL(").strip(")")
                 ))
-                
+
     return list(zip(species, photol))
 
 
@@ -98,13 +104,13 @@ def get_max_index(multi_list):
     for (species, index) in multi_list:
         if index > max_index:
             max_index = index
-            
+
     return index
 
 
 def print_results(spc_db, fjx_j2j, kpp_eqn):
     """
-    Prints results 
+    Prints results
 
     Args
     spc_db  : dict : Photolyzing species listed in species_database.yml
@@ -120,7 +126,7 @@ def print_results(spc_db, fjx_j2j, kpp_eqn):
     if max_kpp != max_j2j:
         msg = "ERROR: Mismatch between FJX_j2j.dat and fullchem.eqn!"
         raise ValueError(msg)
-    
+
     # Print photolyzing species and the corresponding index
     # of the KPP PHOTOL array that it uses.  Ths should be the
     # same order as in the FJX_j2j.dat file.
@@ -135,25 +141,63 @@ def print_results(spc_db, fjx_j2j, kpp_eqn):
             print(msg)
 
 
-def main():
+def check_geos_chem_photolysis(spc_db_path, fjx_j2j_path, kpp_eqn_path):
     """
     """
-    
+
     # Get all species with "Is_Photolysis: true" in the species database
-    path = "/n/holyscratch01/jacob_lab/ryantosca/tests/14.5.0/gc2457/GCClassic/src/GEOS-Chem/run/shared/species_database.yml"
-    spc_db = get_photo_species_from_species_db(path)
+    spc_db = get_photo_species_from_species_db(spc_db_path)
 
     # Get all species listed in FJX_j2j.dat
-    path = "/n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/CHEM_INPUTS/CLOUD_J/v2024-09/FJX_j2j.dat"
-    fjx_j2j = get_photo_species_from_fjx_j2j(path)
+    fjx_j2j = get_photo_species_from_fjx_j2j(fjx_j2j_path)
 
-    # Get all species with a photo reaction in the f
-    path = "/n/holyscratch01/jacob_lab/ryantosca/tests/14.5.0/gc2457/GCClassic/src/GEOS-Chem/KPP/fullchem/fullchem.eqn"
-    kpp_eqn = get_photo_species_from_kpp_eqn(path)
+    # Get all species with a listed photo reaction
+    # in the the KPP fullchem.eqn ir custom.eqn file
+    kpp_eqn = get_photo_species_from_kpp_eqn(kpp_eqn_path)
 
     # Print results
     print_results(spc_db, fjx_j2j, kpp_eqn)
-    
+
+
+def main():
+    """
+    Parses command-line arguments and calls check_geos_chem_photolysis.
+    """
+   # Tell the parser which arguments to look for
+    parser = argparse.ArgumentParser(
+        description="Single-panel plotting example program"
+    )
+    parser.add_argument(
+        "--spc-db-path",
+        metavar="spc_db_path",
+        type=str,
+        required=True,
+        help="Path to the species_database.yml file"
+    )
+    parser.add_argument(
+        "--fjx-j2j-path",
+        metavar="fjx_j2j_path",
+        type=str,
+        required=True,
+        help="Path to the FJX_j2j.dat file"
+    )
+    parser.add_argument(
+        "--kpp-eqn-path",
+        metavar="kpp_eqn_path",
+        type=str,
+        required=True,
+        help="Path to the KPP fullchem.eqn or custom.eqn file"
+    )
+
+    # Parse command-line arguments
+    args = parser.parse_args()
+
+    # Call the plot_single_panel routine
+    check_geos_chem_photolysis(
+        args.spc_db_path,
+        args.fjx_j2j_path,
+        args.kpp_eqn_path,
+    )
 
 if __name__ == '__main__':
     main()
