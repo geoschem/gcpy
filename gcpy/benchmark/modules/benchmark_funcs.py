@@ -4175,7 +4175,7 @@ def make_benchmark_aerosol_tables(
 
             # Print top header
             print("%" * 79, file=f)
-            print(f" {title} for {year} in {devstr}")
+            print(f" {title} for {year} in {devstr}", file=f)
             print(" (weighted by the number of days per month)", file=f)
             print("%" * 79, file=f)
             line = "\n" + " " * 40 + "Strat         Trop         Strat+Trop\n"
