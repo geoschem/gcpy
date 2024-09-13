@@ -59,7 +59,7 @@ class _GlobVars:
         # ------------------------------
         # Arguments from outside
         # ------------------------------
-        self.devstr = devstr
+        self.devstr = util.replace_whitespace(devstr)
         self.files = files
         self.dst = dst
         self.overwrite = overwrite

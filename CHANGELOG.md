@@ -26,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - In environment files `read_the_docs_environment.yml` and `read_the_docs_requirements.txt`
   - Update `jinja` to 3.1.4 (fixes a security issue)
 - Update `gcpy/setup.py` with the new Python package version numbers
+- Updated code in `gcpy/benchmark/modules/` to replace whitespace in Ref and Dev labels with underscores
 
 ### Fixed
 - Fixed formatting error in `.github/workflows/stale.yml` that caused the Mark Stale Issues action not to run

@@ -1,14 +1,13 @@
 """
 Specific utilities for creating plots from GEOS-Chem benchmark simulations.
 """
-import os
 import gc
 import numpy as np
 from gcpy import util
 from gcpy.plot.compare_single_level import compare_single_level
 from gcpy.benchmark.modules.benchmark_utils import \
-    get_lumped_species_definitions, make_output_dir, \
-    pdf_filename, print_sigdiffs, read_ref_and_dev
+    get_common_varnames, make_output_dir, pdf_filename, \
+    print_sigdiffs, read_ref_and_dev
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -94,6 +93,10 @@ def make_benchmark_drydep_plots(
     if spcdb_dir is None:
         msg = "The spcdb_dir argument has not been specified!"
         raise ValueError(msg)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = util.replace_whitespace(refstr)
+    devstr = util.replace_whitespace(devstr)
 
     # Create directory for plots (if it doesn't exist)
     dst = make_output_dir(

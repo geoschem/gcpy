@@ -9,7 +9,7 @@ $ python -m gcpy.benchmark.modules.benchmark_scrape_gcclassic_stats 14.5.0-alpha
 """
 import sys
 import requests
-from gcpy.util import verify_variable_type
+from gcpy.util import replace_whitespace, verify_variable_type
 
 # ----------------------------------------------------------------------
 # Global variables
@@ -113,7 +113,7 @@ def scrape_stats(text):
             stats["CH3CCl3"] = line.split(":")[1].strip()
         if line_count == 18 and "Dev" in line:
             stats["Mean OH"] = line.split(":")[1].strip()
-            
+
         # Skip commands
         if "++ sed" in line:
             line_count += 1
@@ -167,6 +167,10 @@ def main(ref_label, dev_label):
     """
     verify_variable_type(ref_label, str)
     verify_variable_type(dev_label, str)
+
+    # Replace whitespace in the ref and dev labels
+    ref_label = replace_whitespace(ref_label)
+    dev_label = replace_whitespace(dev_label)
 
     # Scrape the log file text into a variable
     bmk_id = f"gcc-4x5-1Mon-{dev_label}"
