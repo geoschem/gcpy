@@ -24,8 +24,9 @@ from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
     read_config_file, verify_variable_type
 from gcpy.units import check_units, data_unit_is_mol_per_mol
 from gcpy.constants import MW_AIR_g
-from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
-    _warning_format, WhGrYlRd
+from gcpy.plot.core import \
+    extent_is_undefined, gcpy_style, six_panel_subplot_names, \
+    _warning_format, WhGrYlRd, UNDEFINED_EXTENT
 from gcpy.plot.six_plot import six_plot
 
 # Suppress numpy divide by zero warnings to prevent output spam
@@ -154,7 +155,6 @@ def compare_single_level(
         extent: list
             Defines the extent of the region to be plotted in form
             [minlon, maxlon, minlat, maxlat].
-            Default value plots extent of input grids.
             Default value: [-1000, -1000, -1000, -1000]
         n_job: int
             Defines the number of simultaneous workers for parallel
@@ -201,10 +201,12 @@ def compare_single_level(
     verify_variable_type(devdata, xr.Dataset)
 
     # Create empty lists for keyword arguments
-    if extent is None:
-        extent = [-1000, -1000, -1000, -1000]
+    if extent_is_undefined(extent):
+        extent = UNDEFINED_EXTENT
     if sigdiff_list is None:
         sigdiff_list = []
+    if "None" in cmpres:
+        cmpres = None
 
     # Determine if doing diff-of-diffs
     diff_of_diffs = second_ref is not None and second_dev is not None
@@ -285,7 +287,7 @@ def compare_single_level(
     refminlon, refmaxlon, refminlat, refmaxlat = get_grid_extents(refgrid)
     devminlon, devmaxlon, devminlat, devmaxlat = get_grid_extents(devgrid)
 
-    if -1000 not in extent:
+    if not extent_is_undefined(extent):
         cmpminlon, cmpmaxlon, cmpminlat, cmpmaxlat = extent
     else:
         # Account for 0-360 coordinate scale
@@ -700,10 +702,11 @@ def compare_single_level(
         # ==============================================================
 
         # Choose from values within plot extent
-        if -1000 not in extent:
+        if not extent_is_undefined(extent):
             min_max_extent = extent
         else:
             min_max_extent = cmp_extent
+
         # Find min and max lon
         min_max_minlon = np.min([min_max_extent[0], min_max_extent[1]])
         min_max_maxlon = np.max([min_max_extent[0], min_max_extent[1]])
@@ -752,7 +755,7 @@ def compare_single_level(
             min_max_minlat,
             min_max_maxlat
         )
-
+        
         # Ref
         vmin_ref = float(np.nanmin(ds_ref_reg.data))
         vmax_ref = float(np.nanmax(ds_ref_reg.data))
@@ -760,7 +763,7 @@ def compare_single_level(
         # Dev
         vmin_dev = float(np.nanmin(ds_dev_reg.data))
         vmax_dev = float(np.nanmax(ds_dev_reg.data))
-
+        
 # Pylint says that these are unused variables, so comment out
 #  -- Bob Yantosca (15 Aug 2023)
 #        # Comparison
@@ -778,6 +781,7 @@ def compare_single_level(
         # Get overall min & max
         vmin_abs = np.nanmin([vmin_ref, vmin_dev])#, vmin_cmp])
         vmax_abs = np.nanmax([vmax_ref, vmax_dev])#, vmax_cmp])
+
         # ==============================================================
         # Test if Ref and/or Dev contain all zeroes or all NaNs.
         # This will have implications as to how we set min and max
@@ -999,7 +1003,7 @@ def compare_single_level(
             fracdiff_is_all_nan,
             fracdiff_is_all_nan,
         ]
-        if -1000 not in extent:
+        if not extent_is_undefined(extent):
             extents = [extent[:], extent[:],
                        extent[:], extent[:],
                        extent[:], extent[:]]

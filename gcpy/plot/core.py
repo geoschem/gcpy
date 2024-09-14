@@ -22,6 +22,9 @@ WhGrYlRd = colors.ListedColormap(_rgb_WhGrYlRd / 255.0)
 # Use a style sheet to control plot attributes
 gcpy_style = path.join(_plot_dir, "gcpy_plot_style")
 
+# Setting when the extent is undefined
+UNDEFINED_EXTENT = [-1000, -1000, -1000, -1000]
+
 
 def six_panel_subplot_names(diff_of_diffs):
     """
@@ -145,3 +148,24 @@ def normalize_colors(
 
     # For linear color scales: Normalize between min & max
     return colors.Normalize(vmin=vmin, vmax=vmax)
+
+
+def extent_is_undefined(extent):
+    """
+    Determines if the extent variable (which specifies the min
+    and max lon and lat values) is undefined.
+
+    Args
+    extent : list : min lon, max lon, min lat, max lat
+
+    Returns
+    result : bool : True if extent is undefined
+    """
+    if isinstance(extent, (list, np.ndarray)):
+        return np.array_equal(extent, UNDEFINED_EXTENT)
+
+    if isinstance(extent, type(None)):
+        return isinstance(extent, type(None))
+
+    if isinstance(extent, str):
+        return "None" in extent

@@ -6,9 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] - TBD
 ### Added
-- Example script `gcpy/examples/hemco/make_hemco_sa_spec.py` (creates the HEMCO standalone configuration file `HEMCO_sa_Spec.rc`)
-- Module `benchmark_gcclassic_stats.py` for scraping statistics from GEOS-Chem Classic cloud benchmarks
-- Dry deposition velocity comparison plots in 1-month cloud benchmarks
+- Added example script `gcpy/examples/hemco/make_hemco_sa_spec.py` (creates the HEMCO standalone configuration file `HEMCO_sa_Spec.rc`)
+- Added module `benchmark_gcclassic_stats.py` for scraping statistics from GEOS-Chem Classic cloud benchmarks
+- Added dry deposition velocity comparison plots in 1-month cloud benchmarks
+- Added new function `extent_is_undefined` in `gcpy/plot/core.py`
 
 ### Changed
 - Changed format of `% diff` column from `12.3e` to `12.3f` in benchmark timing tables 
@@ -27,6 +28,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Update `jinja` to 3.1.4 (fixes a security issue)
 - Update `gcpy/setup.py` with the new Python package version numbers
 - Updated code in `gcpy/benchmark/modules/` to replace whitespace in Ref and Dev labels with underscores
+- Updated `compare_diags.py` example script to read `cmpres` and `extent` from YAML
 
 ### Fixed
 - Fixed formatting error in `.github/workflows/stale.yml` that caused the Mark Stale Issues action not to run

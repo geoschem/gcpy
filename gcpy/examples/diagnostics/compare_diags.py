@@ -10,8 +10,9 @@ import os
 import sys
 import warnings
 import numpy as np
-from gcpy.util import add_missing_variables, compare_varnames, \
-    dataset_reader, read_config_file, rename_and_flip_gchp_rst_vars
+from gcpy.util import \
+    add_missing_variables, compare_varnames, dataset_reader, \
+    read_config_file, rename_and_flip_gchp_rst_vars, replace_whitespace
 from gcpy.constants import skip_these_vars
 from gcpy.plot.compare_single_level import compare_single_level
 from gcpy.plot.compare_zonal_mean import compare_zonal_mean
@@ -182,12 +183,10 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
     diff_label = "Dev - Ref"
     if do_percent_diff:
         diff_label = "(Dev-Ref)/Ref % diff"
-    line = "{} Ref={} Dev={} {}".format(
-        "Variable".ljust(22),
-        config["data"]["ref"]["label"].ljust(20),
-        config["data"]["dev"]["label"].ljust(20),
-        diff_label
-    )
+    line = f"{'Variable':<22} "
+    line += f"Ref={replace_whitespace(config['data']['ref']['label']):<20} "
+    line += f"Ref={replace_whitespace(config['data']['dev']['label']):<20} "
+    line += f"{diff_label}"
     if do_file:
         print(line, file=ofile)
     if do_screen:
@@ -294,6 +293,8 @@ def compare_data(config, data):
             config["data"]["ref"]["label"],
             devdata,
             config["data"]["dev"]["label"],
+            cmpres=config["options"]["level_plot"]["cmpres"],
+            extent=config["options"]["level_plot"]["extent"],
             flip_ref=flip_ref,
             flip_dev=flip_dev,
             ilev=config["options"]["level_plot"]["level_to_plot"],
@@ -318,6 +319,8 @@ def compare_data(config, data):
             config["data"]["ref"]["label"],
             devdata,
             config["data"]["dev"]["label"],
+            cmpres=config["options"]["zonal_mean"]["cmpres"],
+            extent=config["options"]["zonal_mean"]["extent"],
             flip_ref=flip_ref,
             flip_dev=flip_dev,
             varlist=varlist_zonal,
