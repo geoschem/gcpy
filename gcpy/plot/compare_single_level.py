@@ -23,10 +23,10 @@ from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
     all_zero_or_nan, slice_by_lev_and_time, compare_varnames, \
     read_config_file, verify_variable_type
 from gcpy.units import check_units, data_unit_is_mol_per_mol
-from gcpy.constants import MW_AIR_g
+from gcpy.constants import MW_AIR_g, UNDEFINED_EXTENT
 from gcpy.plot.core import \
     extent_is_undefined, gcpy_style, six_panel_subplot_names, \
-    _warning_format, WhGrYlRd, UNDEFINED_EXTENT
+    _warning_format, WhGrYlRd
 from gcpy.plot.six_plot import six_plot
 
 # Suppress numpy divide by zero warnings to prevent output spam
@@ -683,6 +683,10 @@ def compare_single_level(
         frac_ds_dev_cmp = frac_ds_dev_cmps[ivar]
 
         # Reshape comparison cubed sphere data, if any
+        ds_ref_cmp_reshaped = None
+        ds_dev_cmp_reshaped = None
+        frac_ds_ref_cmp_reshaped = None
+        frac_ds_dev_cmp_reshaped = None
         if cmpgridtype == "cs":
             def call_reshape(cmp_data):
                 new_data = None
@@ -755,7 +759,7 @@ def compare_single_level(
             min_max_minlat,
             min_max_maxlat
         )
-        
+
         # Ref
         vmin_ref = float(np.nanmin(ds_ref_reg.data))
         vmax_ref = float(np.nanmax(ds_ref_reg.data))
@@ -763,7 +767,7 @@ def compare_single_level(
         # Dev
         vmin_dev = float(np.nanmin(ds_dev_reg.data))
         vmax_dev = float(np.nanmax(ds_dev_reg.data))
-        
+
 # Pylint says that these are unused variables, so comment out
 #  -- Bob Yantosca (15 Aug 2023)
 #        # Comparison

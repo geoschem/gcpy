@@ -9,12 +9,14 @@ import numpy as np
 from dask.array import Array as DaskArray
 import xarray as xr
 import cartopy.crs as ccrs
+from gcpy.constants import DEFAULT_SG_PARAMS
 from gcpy.grid import get_vert_grid, get_pressure_indices, \
     pad_pressure_edges, convert_lev_to_pres, get_grid_extents, \
     call_make_grid, get_input_res
 from gcpy.regrid import regrid_comparison_data, create_regridders
 from gcpy.util import reshape_MAPL_CS, all_zero_or_nan, verify_variable_type
-from gcpy.plot.core  import gcpy_style, normalize_colors, WhGrYlRd
+from gcpy.plot.core import \
+    extent_is_undefined, gcpy_style, normalize_colors, WhGrYlRd
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -203,7 +205,7 @@ def single_panel(
     # Generate grid if not passed
     if grid is None:
         res, gridtype = get_input_res(plot_vals)
-        sg_params = [1, 170, -90]
+        sg_params = DEFAULT_SG_PARAMS
         if sg_path != '':
             sg_attrs = xr.open_dataset(sg_path).attrs
             sg_params = [
@@ -275,7 +277,7 @@ def single_panel(
             plot_vals = plot_vals.mean(axis=lon_ind)
     if gridtype == "":
         _, gridtype = get_input_res(plot_vals)
-    if extent is None or extent == (None, None, None, None):
+    if extent_is_undefined(extent):
         extent = get_grid_extents(grid)
         # convert to -180 to 180 grid if needed (necessary if going
         # cross-dateline later)
@@ -519,7 +521,7 @@ def single_panel(
         # Catch issue with plots extending into both the western and eastern
         # hemisphere
         if np.max(grid["lon_b"] > 180):
-            grid["lon_b"] = (((grid["lon_b"] + 180) % 360) - 180)
+            grid["lon_b"] = ((grid["lon_b"] + 180) % 360) - 180
 
         plots = []
         for j in range(6):

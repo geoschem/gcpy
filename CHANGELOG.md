@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added module `benchmark_gcclassic_stats.py` for scraping statistics from GEOS-Chem Classic cloud benchmarks
 - Added dry deposition velocity comparison plots in 1-month cloud benchmarks
 - Added new function `extent_is_undefined` in `gcpy/plot/core.py`
+- Added `DEFAULT_EXTENT`, `DEFAULT_SG_PARAMS`, `UNDEFINED_EXTENT` in `gcpy/constatnts.py`
 
 ### Changed
 - Changed format of `% diff` column from `12.3e` to `12.3f` in benchmark timing tables 

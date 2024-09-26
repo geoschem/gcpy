@@ -8,7 +8,8 @@ import numpy as np
 import scipy.sparse
 from gcpy.util import get_shape_of_data, verify_variable_type
 from gcpy.grid_stretching_transforms import scs_transform
-from gcpy.constants import R_EARTH_m
+from gcpy.constants import \
+    DEFAULT_EXTENT, DEFAULT_SG_PARAMS, R_EARTH_m
 from gcpy.cstools import find_index, is_cubed_sphere
 
 
@@ -142,8 +143,13 @@ def get_input_res(data):
             return data.dims["Xdim"], "cs"
 
 
-def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
-                   out_extent=[-180, 180, -90, 90], sg_params=[1, 170, -90]):
+def call_make_grid(
+        res,
+        gridtype,
+        in_extent=None,
+        out_extent=None,
+        sg_params=None,
+):
     """
     Create a mask with NaN values removed from an input array
 
@@ -174,10 +180,18 @@ def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
             grid_list is a list of grids if gridtype is 'cs', else it is None
     """
 
+    # Defaults for keyword args
+    if in_extent is None:
+        in_extent = DEFAULT_EXTENT
+    if out_extent is None:
+        out_extent = DEFAULT_EXTENT
+    if sg_params is None:
+        sg_params = DEFAULT_SG_PARAMS
+
     # call appropriate make_grid function and return new grid
     if gridtype == "ll":
         return [make_grid_LL(res, in_extent, out_extent), None]
-    elif sg_params == [1, 170, -90]:
+    elif sg_params == DEFAULT_SG_PARAMS:
         # standard CS
         return make_grid_CS(res)
     else:
@@ -798,7 +812,7 @@ _CAM_26L_BP = np.flip(np.array([0., 0., 0., 0.,
 CAM_26L_grid = vert_grid(_CAM_26L_AP, _CAM_26L_BP)
 
 
-def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
+def make_grid_LL(llres, in_extent=None, out_extent=None):
     """
     Creates a lat/lon grid description.
 
@@ -824,24 +838,32 @@ def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
                                              'lat_b' : lat edges,
                                              'lon_b' : lon edges}
     """
+    if in_extent is None:
+        in_extent = DEFAULT_EXTENT
 
     # get initial bounds of grid
     [minlon, maxlon, minlat, maxlat] = in_extent
     [dlat, dlon] = list(map(float, llres.split('x')))
-    lon_b = np.linspace(minlon - dlon / 2, maxlon - dlon /
-                        2, int((maxlon - minlon) / dlon) + 1)
-    lat_b = np.linspace(minlat - dlat / 2, maxlat + dlat / 2,
-                        int((maxlat - minlat) / dlat) + 2)
+    lon_b = np.linspace(
+        minlon - dlon / 2.0,
+        maxlon - dlon / 2.0,
+        int((maxlon - minlon) / dlon) + 1
+    )
+    lat_b = np.linspace(
+        minlat - dlat / 2.0,
+        maxlat + dlat / 2.0,
+        int((maxlat - minlat) / dlat) + 2
+    )
     if minlat <= -90:
         lat_b = lat_b.clip(-90, None)
     if maxlat >= 90:
         lat_b = lat_b.clip(None, 90)
-    lat = (lat_b[1:] + lat_b[:-1]) / 2
-    lon = (lon_b[1:] + lon_b[:-1]) / 2
+    lat = (lat_b[1:] + lat_b[:-1]) / 2.0
+    lon = (lon_b[1:] + lon_b[:-1]) / 2.0
 
     # trim grid bounds when your desired extent is not the same as your
     # initial grid extent
-    if out_extent == []:
+    if out_extent is None:
         out_extent = in_extent
     if out_extent != in_extent:
         [minlon, maxlon, minlat, maxlat] = out_extent

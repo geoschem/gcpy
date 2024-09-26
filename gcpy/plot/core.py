@@ -5,6 +5,7 @@ from os import path
 import warnings
 from matplotlib import colors
 import numpy as np
+from gcpy.constants import UNDEFINED_EXTENT
 
 # Save warnings format to undo overwriting built into pypdf
 _warning_format = warnings.showwarning
@@ -21,9 +22,6 @@ WhGrYlRd = colors.ListedColormap(_rgb_WhGrYlRd / 255.0)
 
 # Use a style sheet to control plot attributes
 gcpy_style = path.join(_plot_dir, "gcpy_plot_style")
-
-# Setting when the extent is undefined
-UNDEFINED_EXTENT = [-1000, -1000, -1000, -1000]
 
 
 def six_panel_subplot_names(diff_of_diffs):
@@ -169,3 +167,5 @@ def extent_is_undefined(extent):
 
     if isinstance(extent, str):
         return "None" in extent
+
+    return False

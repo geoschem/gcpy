@@ -61,3 +61,16 @@ COL_WIDTH = 20
 # ======================================================================
 ENCODING = "UTF-8"
 
+# ======================================================================
+# Defaults for grid variables
+# ======================================================================
+
+# Default plotting extent (minlon, maxlon, minlat, maxlat)
+DEFAULT_EXTENT = [-180, 180, 90, -90]
+
+# Denotes when plotting extent is undefined
+UNDEFINED_EXTENT = [None, None, None, None]
+
+# Default stretched-grid parameters (no stretching)
+DEFAULT_SG_PARAMS = [1, 170, -90]
+
