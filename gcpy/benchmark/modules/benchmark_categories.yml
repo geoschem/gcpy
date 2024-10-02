@@ -1,3 +1,4 @@
+
 FullChemBenchmark:
   Aerosols:
     Dust:
@@ -134,7 +135,7 @@ FullChemBenchmark:
       - LIMO
     HCs:
       - ALK4
-      - ALK7
+      - ALK6
       - BENZ
       - CH4
       - C2H2
