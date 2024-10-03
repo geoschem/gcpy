@@ -150,16 +150,15 @@ def write_wiki_table_header(ofile):
     Args
     ofile   : _.io.TextIOWrapper : Output file handle
     """
-    line = "{| border=1 cellspacing=0 cellpadding=5"
-    line += "|-bgcolor='#CCCCCC'\n"
-    line += "!width='100px'|Name\n"
-    line += "!width='100px'|Formula\n"
-    line += "!width='200px'|Fullname\n"
-    line += "!width='30px'|Advected\n"
-    line += "!width='30px'|Dry deposited\n"
-    line += "!width='30px'|Gas\n"
-    line += "!width='30px'|Photolyzed\n"
-    line += "!width='30px'|Wet deposited\n"
+    line = "{| border=1 cellspacing=0 cellpadding=5\n"
+    line += "!width='100px' bgcolor='#CCCCCC'|Name\n"
+    line += "!width='100px' bgcolor='#CCCCCC'|Formula\n"
+    line += "!width='200px' bgcolor='#CCCCCC'|Fullname\n"
+    line += "!width='30px' bgcolor='#CCCCCC'|Advected\n"
+    line += "!width='30px' bgcolor='#CCCCCC'|Dry deposited\n"
+    line += "!width='30px' bgcolor='#CCCCCC'|Gas\n"
+    line += "!width='30px' bgcolor='#CCCCCC'|Photolyzed\n"
+    line += "!width='30px' bgcolor='#CCCCCC'|Wet deposited\n"
 
     print(line, file=ofile)
 
@@ -297,14 +296,14 @@ def make_benchmark_species_changes_wiki_tables(
     # Create the wiki tables
     with open(output_file, "w", encoding="utf-8") as ofile:
 
-        print("### Species added\n", file=ofile)
+        print("=== Species added ===\n", file=ofile)
         print(
             f"Species added between versions {ref_label} and {dev_label}:\n",
             file=ofile
         )
         create_table(added, dev, ofile)
 
-        print("### Species removed\n", file=ofile)
+        print("=== Species removed===\n", file=ofile)
         print(
             f"Species removed between versions {ref_label} and {dev_label}:\n",
             file=ofile
