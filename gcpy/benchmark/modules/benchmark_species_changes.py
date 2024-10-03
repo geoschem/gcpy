@@ -151,7 +151,7 @@ def write_wiki_table_header(ofile):
     ofile   : _.io.TextIOWrapper : Output file handle
     """
     line = "{| border=1 cellspacing=0 cellpadding=5"
-    line += "|-bgcolor='#CCCCCC'"
+    line += "|-bgcolor='#CCCCCC'\n"
     line += "!width='100px'|Name\n"
     line += "!width='100px'|Formula\n"
     line += "!width='200px'|Fullname\n"
