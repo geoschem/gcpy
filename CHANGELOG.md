@@ -6,9 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] - TBD
 ### Added
-- Example script `gcpy/examples/hemco/make_hemco_sa_spec.py` (creates the HEMCO standalone configuration file `HEMCO_sa_Spec.rc`)
-- Module `benchmark_gcclassic_stats.py` for scraping statistics from GEOS-Chem Classic cloud benchmarks
-- Dry deposition velocity comparison plots in 1-month cloud benchmarks
+- Added example script `gcpy/examples/hemco/make_hemco_sa_spec.py` (creates the HEMCO standalone configuration file `HEMCO_sa_Spec.rc`)
+- Added module `benchmark_gcclassic_stats.py` for scraping statistics from GEOS-Chem Classic cloud benchmarks
+- Added dry deposition velocity comparison plots in 1-month cloud benchmarks
+- Added `gcpy/benchmark/modules/benchmark_species_changes.py` to compute the table of species changes between versions
 
 ### Changed
 - Changed format of `% diff` column from `12.3e` to `12.3f` in benchmark timing tables 
