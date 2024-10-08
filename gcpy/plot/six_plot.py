@@ -544,10 +544,10 @@ def vmin_vmax_for_ratio_plots(
     """
     # Ratio (dynamic range) subplot)
     if subplot in "dyn_ratio":
-        vmax = np.max(
+        vmin = np.min(
             [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
         )
-        vmin = 1.0 / vmax
+        vmax = 1.0 / vmin
         if vmin > vmax:
             vmin, vmax = vmax, vmin
         verbose_print(verbose, rowcol, vmin, vmax)
