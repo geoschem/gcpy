@@ -32,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - Fixed formatting error in `.github/workflows/stale.yml` that caused the Mark Stale Issues action not to run
 - Now flag differences greater than +/- 10% in benchmark timing table outputs
+- Fixed error in computation of dynamic ratio plot min & max values in `plot/six_plot.py`
 
 ### Removed
 - Removed `gcpy/benchmark/modules/species_database.yml` file and corresponding code pointing to this
