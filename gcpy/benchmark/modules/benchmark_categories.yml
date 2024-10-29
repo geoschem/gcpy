@@ -1,4 +1,3 @@
-
 FullChemBenchmark:
   Aerosols:
     Dust:
@@ -149,6 +148,7 @@ FullChemBenchmark:
       - TMB
       - TOLU
       - XYLE
+  ROy:
     ROy:
       - H2O2
       - H
