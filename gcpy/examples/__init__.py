@@ -5,6 +5,7 @@ GCPy import script
 #from .bpch_to_nc import *
 from .diagnostics import *
 from .dry_run import *
+from .kpp import *
 from .plotting import *
 from .timeseries import *
 from .working_with_files import *

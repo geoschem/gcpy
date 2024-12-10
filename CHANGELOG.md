@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added module `benchmark_gcclassic_stats.py` for scraping statistics from GEOS-Chem Classic cloud benchmarks
 - Added dry deposition velocity comparison plots in 1-month cloud benchmarks
 - Added `gcpy/benchmark/modules/benchmark_species_changes.py` to compute the table of species changes between versions
+- Added `gcpy/examples/kpp/kppsa_visualize.py` script to plot output from the KPP-Standalone box model
 
 ### Changed
 - Changed format of `% diff` column from `12.3e` to `12.3f` in benchmark timing tables 
