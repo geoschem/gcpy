@@ -5,7 +5,7 @@ KPP-Standalone box model.
 """
 
 # Imports
-from os.path import abspath, join
+from os.path import expanduser, join
 from glob import glob
 import matplotlib.pyplot as plt
 import numpy as np
@@ -29,7 +29,7 @@ def kppsa_get_file_list(
     Returns
     file_list : list : List of files matching the criteria
     """
-    return glob(abspath(join(input_dir, f"*{pattern}*")))
+    return glob(join(expanduser(input_dir), f"*{pattern}*"))
 
 
 def kppsa_read_one_csv_file(file_name):
@@ -160,9 +160,9 @@ def kppsa_prepare_site_data(
 
     # Create the top title for the subplot for this observation site
     # (use integer lon & lat values and N/S lat and E/W lon notation)
-    lat = int(round(get_element_of_series(dframe["Latitude"], 0)))
-    lon = int(round(get_element_of_series(dframe["Longitude"], 0)))
-    time = get_element_of_series(dframe["DateTime"], 0)
+    lat = int(round(get_element_of_series(site_data["Latitude"], 0)))
+    lon = int(round(get_element_of_series(site_data["Longitude"], 0)))
+    time = get_element_of_series(site_data["DateTime"], 0)
     ystr = "S"
     if lat >= 0:
         ystr = "N"
@@ -281,7 +281,7 @@ def kppsa_plot_single_site(
 
     # Set Y-axis range
     axes_subplot.set_ylim(
-        1000.0,
+        1020.0,
         500.0
     )
     axes_subplot.set_yticks(
