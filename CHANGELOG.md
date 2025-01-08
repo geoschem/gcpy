@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Now flag differences greater than +/- 10% in benchmark timing table outputs
 - Fixed error in computation of dynamic ratio plot min & max values in `plot/six_plot.py`
 - Fixed erroneous species classification in `gcpy/benchmark/modules/benchmark_categories.yml`
+- Fixed type errors in `calc_rectilinear_lon_edge` and `calc_rectangular_lat_edge` by casting the length of the output   array from `float` to `int`
 
 ### Removed
 - Removed `gcpy/benchmark/modules/species_database.yml` file and corresponding code pointing to this
