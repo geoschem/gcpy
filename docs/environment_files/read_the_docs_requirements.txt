@@ -12,6 +12,6 @@ sphinxcontrib-bibtex==2.6.2
 sphinx-autobuild==2021.3.14
 recommonmark==0.7.1
 docutils==0.20.1
-jinja2==3.1.4
+jinja2==3.1.5
 
 
