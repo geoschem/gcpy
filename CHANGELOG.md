@@ -25,7 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Update `xesmf` to 0.8.5
   - Update `esmf` and `esmpy` to 8.6.1
 - In environment files `read_the_docs_environment.yml` and `read_the_docs_requirements.txt`
-  - Update `jinja` to 3.1.4 (fixes a security issue)
+  - Update `jinja` to 3.1.5 (fixes a security issue)
 - Update `gcpy/setup.py` with the new Python package version numbers
 - Updated code in `gcpy/benchmark/modules/` to replace whitespace in Ref and Dev labels with underscores
 
