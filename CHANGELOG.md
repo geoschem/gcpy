@@ -11,12 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added dry deposition velocity comparison plots in 1-month cloud benchmarks
 - Added new function `extent_is_undefined` in `gcpy/plot/core.py`
 - Added `DEFAULT_EXTENT`, `DEFAULT_SG_PARAMS`, `UNDEFINED_EXTENT` in `gcpy/constatnts.py`
+- Added `gcpy/benchmark/modules/benchmark_species_changes.py` to compute the table of species changes between versions
 
 ### Changed
 - Changed format of `% diff` column from `12.3e` to `12.3f` in benchmark timing tables 
 - Updated `gcpy/benchmark/modules/emission_species.yml` file with emission species for GEOS-Chem 14.5.0
 - Updated `gcpy/benchmark/modules/benchmark_categories.yml` with the latest categories for GEOS-Chem 14.5.0
-- Updated `gcpy/benchmark/modules/lumped_species.yml` with speciations for GEOS-Chem 14.5.0 
+- Updated `gcpy/benchmark/modules/lumped_species.yml` with speciations for GEOS-Chem 14.5.0
 - Add `DryDep` to list of collections included in benchmark summary table
 - Updated `checkout` GitHub action to v4
 - Updated `CodeQL` GitHub action to v3
@@ -26,15 +27,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Update `xesmf` to 0.8.5
   - Update `esmf` and `esmpy` to 8.6.1
 - In environment files `read_the_docs_environment.yml` and `read_the_docs_requirements.txt`
-  - Update `jinja` to 3.1.4 (fixes a security issue)
+  - Update `jinja` to 3.1.5 (fixes a security issue)
 - Update `gcpy/setup.py` with the new Python package version numbers
 - Updated code in `gcpy/benchmark/modules/` to replace whitespace in Ref and Dev labels with underscores
 - Updated `compare_diags.py` example script to read `cmpres` and `extent` from YAML
 
 ### Fixed
 - Fixed formatting error in `.github/workflows/stale.yml` that caused the Mark Stale Issues action not to run
-- Added brackets around `exempt-issue-labels` list in `.github/workflows/stale.yml`
 - Now flag differences greater than +/- 10% in benchmark timing table outputs
+- Fixed error in computation of dynamic ratio plot min & max values in `plot/six_plot.py`
+- Fixed erroneous species classification in `gcpy/benchmark/modules/benchmark_categories.yml`
+- Fixed type errors in `calc_rectilinear_lon_edge` and `calc_rectangular_lat_edge` by casting the length of the output   array from `float` to `int`
 
 ### Removed
 - Removed `gcpy/benchmark/modules/species_database.yml` file and corresponding code pointing to this

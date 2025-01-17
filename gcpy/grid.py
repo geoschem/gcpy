@@ -971,7 +971,9 @@ def make_grid_SG(csres, stretch_factor, target_lon, target_lat):
 
 
 def calc_rectilinear_lon_edge(lon_stride, center_at_180):
-    """ Compute longitude edge vector for a rectilinear grid.
+    """
+    Compute longitude edge vector for a rectilinear grid.
+
     Parameters
     ----------
     lon_stride: float
@@ -981,26 +983,20 @@ def calc_rectilinear_lon_edge(lon_stride, center_at_180):
         Whether or not the grid should have a cell center at 180 degrees (i.e.
         on the date line). If true, the first grid cell is centered on the date
         line; if false, the first grid edge is on the date line.
+
     Returns
     -------
     Longitudes of cell edges in degrees East.
+
     Notes
     -----
     All values are forced to be between [-180,180]. For a grid with N cells in
     each band, N+1 edges will be returned, with the first and last value being
     duplicates.
-    Examples
-    --------
-    >>> from gcpy.grid.horiz import calc_rectilinear_lon_edge
-    >>> calc_rectilinear_lon_edge(5.0,true)
-    np.array([177.5,-177.5,-172.5,...,177.5])
-    See Also
-    --------
-    [NONE]
     """
 
-    n_lon = np.round(360.0 / lon_stride)
-    lon_edge = np.linspace(-180.0, 180.0, num=n_lon + 1)
+    n_lon_edge = int(np.round(360.0 / lon_stride)) + 1
+    lon_edge = np.linspace(-180.0, 180.0, num=n_lon_edge)
     if center_at_180:
         lon_edge = lon_edge - (lon_stride / 2.0)
 
@@ -1011,7 +1007,9 @@ def calc_rectilinear_lon_edge(lon_stride, center_at_180):
 
 
 def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
-    """ Compute latitude edge vector for a rectilinear grid.
+    """
+    Compute latitude edge vector for a rectilinear grid.
+
     Parameters
     ----------
     lat_stride: float
@@ -1022,22 +1020,16 @@ def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
         half the size). In either case the grid will start and end at -/+ 90,
         but when half_polar_grid is True, the first and last bands will have a
         width of 1/2 the normal lat_stride.
+
     Returns
     -------
     Latitudes of cell edges in degrees North.
+
     Notes
     -----
     All values are forced to be between [-90,90]. For a grid with N cells in
     each band, N+1 edges will be returned, with the first and last value being
     duplicates.
-    Examples
-    --------
-    >>> from gcpy.grid.horiz import calc_rectilinear_lat_edge
-    >>> calc_rectilinear_lat_edge(4.0,true)
-    np.array([-90,-88,-84,-80,...,84,88,90])
-    See Also
-    --------
-    [NONE]
     """
 
     if half_polar_grid:
@@ -1045,8 +1037,9 @@ def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
     else:
         start_pt = 90.0
 
-    lat_edge = np.linspace(-1.0 * start_pt, start_pt,
-                           num=1 + np.round(2.0 * start_pt / lat_stride))
+    n_lat_edge = int(np.round(2.0 * start_pt / lat_stride)) + 1
+
+    lat_edge = np.linspace(-1.0 * start_pt, start_pt, num=n_lat_edge)
 
     # Force back onto +/- 90
     lat_edge[lat_edge > 90.0] = 90.0
@@ -1056,22 +1049,17 @@ def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
 
 
 def calc_rectilinear_grid_area(lon_edge, lat_edge):
-    """ Compute grid cell areas (in m2) for a rectilinear grid.
+    """
+    Compute grid cell areas (in m2) for a rectilinear grid.
+
     Parameters
     ----------
-    #TODO
+    lon_edge : float : Grid box longitude edges (in degrees north)
+    lat_edge : float : Grid box latitude edges (in degrees east)
+
     Returns
     -------
-    #TODO
-    Notes
-    -----
-    #TODO
-    Examples
-    --------
-    #TODO
-    See Also
-    --------
-    [NONE]
+    area     : float : Array of grid box areas in m2.
     """
 
     # Convert from km to m
