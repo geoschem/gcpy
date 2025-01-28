@@ -29,7 +29,7 @@ CLASSIFIERS = [
 ]
 
 MAJOR = 1
-MINOR = 5
+MINOR = 6
 MICRO = 0
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 

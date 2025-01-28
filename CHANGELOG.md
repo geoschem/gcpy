@@ -4,7 +4,7 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - TBD
+## [1.6.0] - 2025-01-28
 ### Added
 - Added example script `gcpy/examples/hemco/make_hemco_sa_spec.py` (creates the HEMCO standalone configuration file `HEMCO_sa_Spec.rc`)
 - Added module `benchmark_gcclassic_stats.py` for scraping statistics from GEOS-Chem Classic cloud benchmarks
