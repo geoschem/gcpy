@@ -70,7 +70,7 @@ FullChemBenchmark:
       - HCl
       - Halons
       - HCFCs
-      - OClO    
+      - OClO
   Iodine:
     Iodine:
       - Iy
@@ -122,7 +122,7 @@ FullChemBenchmark:
       - O3
       - CO
       - OH
-      - NOx    
+      - NOx
   Primary_Organics:
     Alcohols:
       - EOH
@@ -134,13 +134,18 @@ FullChemBenchmark:
       - LIMO
     HCs:
       - ALK4
+      - ALK6
       - BENZ
       - CH4
       - C2H2
       - C2H4
       - C2H6
       - C3H8
+      - C4H6
+      - EBZ
       - PRPE
+      - STYR
+      - TMB
       - TOLU
       - XYLE
   ROy:
@@ -181,12 +186,20 @@ FullChemBenchmark:
   Secondary_Organics:
     Acids:
       - ACTA
+      - HACTA
+      - HCOOH
+      - MAP
+      - RCOOH
     Aldehydes:
+      - ACR
       - ALD2
       - BALD
       - CH2O
+      - GLYC
+      - GLYX
       - HPALDs
       - MACR
+      - RCHO
     Epoxides:
       - IEPOX
     Ketones:
@@ -198,12 +211,8 @@ FullChemBenchmark:
       - ISOPN
     Other:
       - FURA
-      - GLYC
-      - GLYX
-      - HCOOH
-      - MAP
       - PHEN
-      - RCHO
+      - TLFUONE
     Peroxides:
       - ETHP
       - MP

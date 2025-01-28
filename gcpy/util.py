@@ -8,6 +8,7 @@ import warnings
 from textwrap import wrap
 from yaml import safe_load
 import numpy as np
+from pandas import Series
 import xarray as xr
 from pypdf import PdfWriter, PdfReader
 from gcpy.constants import ENCODING, TABLE_WIDTH
@@ -2258,3 +2259,20 @@ def replace_whitespace(
     verify_variable_type(repl_char, str)
 
     return repl_char.join(string.split())
+
+
+def get_element_of_series(series, element):
+    """
+    Returns a specified element of a pd.Series object.
+
+    Args
+    serie   : pd.Series : A pd.Series object
+    element : int       : Element of the pd.Series object to return
+
+    Returns
+    value   : various   : The returned element
+    """
+    verify_variable_type(series, Series)
+    verify_variable_type(element, int)
+
+    return list(series)[element]

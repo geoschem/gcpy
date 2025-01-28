@@ -256,7 +256,9 @@ def print_timer(key, ref, dev, ofile):
     if np.abs(ref[key] > 0.0):
         pctdiff = ((dev[key] - ref[key]) / ref[key]) * 100.0
     line = \
-        f"{label:<22}  {ref[key]:>18.3f}  {dev[key]:>18.3f}   {pctdiff:>12.3e}"
+        f"{label:<22}  {ref[key]:>18.3f}  {dev[key]:>18.3f}   {pctdiff:>12.3f}"
+    if np.abs(pctdiff) >= 10.0:  # Flag diffs > +/- 10%
+        line += " *"
     print(line, file=ofile)
 
 
@@ -328,6 +330,10 @@ def make_benchmark_gchp_timing_table(
 
     # Create the destination folder
     make_directory(dst, overwrite)
+
+    # Replace whitespace in the ref and dev labels
+    ref_label = replace_whitespace(ref_label)
+    dev_label = replace_whitespace(dev_label)
 
     # Strip timing info from JSON/text file(s) and sum the them.
     ref_timers = sum_timers(read_timing_data(ref_files))

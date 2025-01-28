@@ -10,17 +10,16 @@ TransportTracersBenchmark simulations.
 # ======================================================================
 
 import os
-from glob import glob
 import warnings
 from calendar import monthrange
+import gc
 import numpy as np
 import xarray as xr
-import gcpy.constants as constants
+from gcpy import constants
 from gcpy.grid import get_troposphere_mask
-import gcpy.util as util
+from gcpy import util
 from gcpy.benchmark.modules.benchmark_utils import \
     rename_speciesconc_to_speciesconcvv
-import gc
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -67,7 +66,7 @@ class _GlobVars:
         # ------------------------------
         # Arguments from outside
         # ------------------------------
-        self.devstr = devstr
+        self.devstr = util.replace_whitespace(devstr)
         self.devdir = devdir
         self.devrstdir = devrstdir
         self.dst = dst
@@ -297,6 +296,8 @@ class _GlobVars:
         self.species_list = ["Pb210", "Be7", "Be10"]
 
         # Read the species database
+        if spcdb_dir is None:
+            raise ValueError("The 'spcdb_dir' argument has not been specified!")
         path = os.path.join(spcdb_dir, "species_database.yml")
         spcdb = util.read_config_file(path, quiet=True)
 
