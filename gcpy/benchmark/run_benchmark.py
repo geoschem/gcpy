@@ -35,7 +35,7 @@ Remarks:
 
         $ export MPLBACKEND=agg
 
-This script corresponds with GCPy 1.5.0. Edit this version ID if releasing
+This script corresponds with GCPy 1.6.0. Edit this version ID if releasing
 a new version of GCPy.
 """
 
@@ -672,7 +672,7 @@ def run_benchmark_default(config):
                 collections = [
                     'AerosolMass',
                     'Aerosols',
-                    #'DryDep',
+                    'DryDep',
                     'Emissions',
                     'JValues',
                     'Metrics',
@@ -1100,6 +1100,7 @@ def run_benchmark_default(config):
                 collections=[
                     'AerosolMass',
                     'Aerosols',
+                    'DryDep',
                     'Emissions',
                     'JValues',
                     'Metrics',
@@ -1607,6 +1608,7 @@ def run_benchmark_default(config):
                 collections=[
                     'AerosolMass',
                     'Aerosols',
+                    'DryDep',
                     'Emissions',
                     'JValues',
                     'Metrics',

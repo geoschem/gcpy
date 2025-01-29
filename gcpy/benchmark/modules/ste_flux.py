@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import gcpy.constants as physconsts
-from gcpy.util import make_directory
+from gcpy.util import make_directory, replace_whitespace
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
@@ -59,7 +59,7 @@ class _GlobVars:
         # ------------------------------
         # Arguments from outside
         # ------------------------------
-        self.devstr = devstr
+        self.devstr = replace_whitespace(devstr)
         self.files = files
         self.dst = dst
         self.overwrite = overwrite

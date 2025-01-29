@@ -11,7 +11,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 from gcpy.cstools import extract_grid
 from gcpy.grid import get_nearest_model_data, get_vert_grid
-from gcpy.util import make_directory, verify_variable_type
+from gcpy.util import make_directory, replace_whitespace, verify_variable_type
 from gcpy.benchmark.modules.benchmark_utils import \
     read_ref_and_dev, rename_speciesconc_to_speciesconcvv
 
@@ -521,6 +521,10 @@ def make_benchmark_models_vs_sondes_plots(
     verify_variable_type(ref_label, str)
     verify_variable_type(dev_filepaths, (str, list))
     verify_variable_type(dev_label, str)
+
+    # Replace whitespace in the ref and dev labels
+    ref_label = replace_whitespace(ref_label)
+    dev_label = replace_whitespace(dev_label)
 
     # Create the destination folder
     make_directory(

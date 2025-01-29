@@ -16,6 +16,7 @@ from tabulate import tabulate
 from gcpy import util
 from gcpy.regrid import create_regridders
 from gcpy.grid import get_troposphere_mask
+from gcpy.util import replace_whitespace
 from gcpy.units import convert_units
 from gcpy.constants import COL_WIDTH, MW_AIR_g, skip_these_vars, TABLE_WIDTH
 from gcpy.plot.compare_single_level import compare_single_level
@@ -41,7 +42,7 @@ def create_total_emissions_table(
         template="Emis{}_",
         refmetdata=None,
         devmetdata=None,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates a table of emissions totals (by sector and by inventory)
@@ -105,7 +106,7 @@ def create_total_emissions_table(
             Default value: None
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
 
     Remarks:
         This method is mainly intended for model benchmarking purposes,
@@ -145,6 +146,8 @@ def create_total_emissions_table(
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this folder where
     # this benchmark.py file is found.
+    if spcdb_dir is None:
+        raise ValueError("The 'spcdb_dir' argument has not been specified!")
     properties = util.read_config_file(
         os.path.join(
             spcdb_dir,
@@ -152,6 +155,10 @@ def create_total_emissions_table(
         ),
         quiet=True
     )
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Get the list of emission variables for which we will print totals
@@ -367,7 +374,7 @@ def create_global_mass_table(
         trop_only=False,
         outfilename="GlobalMass_TropStrat.txt",
         verbose=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates a table of global masses for a list of species in contained in
@@ -410,7 +417,7 @@ def create_global_mass_table(
             Default value: False
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
 
     Remarks:
         This method is mainly intended for model benchmarking purposes,
@@ -435,6 +442,8 @@ def create_global_mass_table(
     # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
+    if spcdb_dir is None:
+        raise ValueError("The 'spcdb_dir' argument has not been specified!")
     properties = util.read_config_file(
         os.path.join(
             spcdb_dir,
@@ -442,6 +451,10 @@ def create_global_mass_table(
         ),
         quiet=True
     )
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Open file for output
@@ -599,7 +612,7 @@ def create_mass_accumulation_table(
         trop_only=False,
         outfilename="GlobalMassAccum_TropStrat.txt",
         verbose=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates a table of global mass accumulation for a list of species in
@@ -650,7 +663,7 @@ def create_mass_accumulation_table(
             Default value: False
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
 
     Remarks:
         This method is mainly intended for model benchmarking purposes,
@@ -677,6 +690,9 @@ def create_mass_accumulation_table(
     # Load a YAML file containing species properties (such as
     # molecular weights), which we will need for unit conversions.
     # This is located in the "data" subfolder of this current directory.2
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        raise ValueError("The 'spcdb_dir' argument has not been specified!")
     properties = util.read_config_file(
         os.path.join(
             spcdb_dir,
@@ -684,6 +700,10 @@ def create_mass_accumulation_table(
         ),
         quiet=True
     )
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Open file for output
@@ -894,7 +914,7 @@ def make_benchmark_conc_plots(
         second_ref=None,
         second_dev=None,
         time_mean=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -998,7 +1018,7 @@ def make_benchmark_conc_plots(
             Default value: None
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
         time_mean : bool
             Determines if we should average the datasets over time
             Default value: False
@@ -1011,6 +1031,10 @@ def make_benchmark_conc_plots(
     # Initialization and data read
     # ==================================================================
 
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        raise ValueError("The 'spcdb_dir' argument has not been specified!")
+
     # Create the destination folder
     util.make_directory(dst, overwrite)
 
@@ -1020,6 +1044,10 @@ def make_benchmark_conc_plots(
         extra_title_txt = subdst
     else:
         extra_title_txt = None
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Pick the proper function to read the data
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -1500,7 +1528,7 @@ def make_benchmark_conc_plots(
         for _, filecat in enumerate(catdict):
             results.append(createplots(filecat))
     # --------------------------------------------
-    
+
     dict_sfc = {list(result.keys())[0]: result[list(
         result.keys())[0]]['sfc'] for result in results}
     dict_500 = {list(result.keys())[0]: result[list(
@@ -1576,7 +1604,7 @@ def make_benchmark_emis_plots(
         weightsdir='.',
         n_job=-1,
         time_mean=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates PDF files containing plots of emissions for model
@@ -1662,7 +1690,7 @@ def make_benchmark_emis_plots(
             Default value: -1
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
         time_mean : bool
             Determines if we should average the datasets over time
             Default value: False
@@ -1679,6 +1707,10 @@ def make_benchmark_emis_plots(
     # Initialization and data read
     # =================================================================
 
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        raise ValueError("The 'spcdb_dir' argument has not been specified!")
+
     # Create the destination folder
     util.make_directory(dst, overwrite)
 
@@ -1694,6 +1726,10 @@ def make_benchmark_emis_plots(
         extra_title_txt = subdst
     else:
         extra_title_txt = None
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Get the function that will read the dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -2011,7 +2047,7 @@ def make_benchmark_emis_tables(
         overwrite=False,
         ref_interval=[2678400.0],
         dev_interval=[2678400.0],
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates a text file containing emission totals by species and
@@ -2070,6 +2106,11 @@ def make_benchmark_emis_tables(
     # Initialization
     # ==================================================================
 
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        msg = "The 'spcdb_dir' argument has not been specified!"
+        raise ValueError(msg)
+
     # Create the destination folder
     util.make_directory(dst, overwrite)
 
@@ -2077,6 +2118,10 @@ def make_benchmark_emis_tables(
     emisdir = os.path.join(dst, "Tables")
     if not os.path.isdir(emisdir):
         os.mkdir(emisdir)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -2204,7 +2249,7 @@ def make_benchmark_jvalue_plots(
         weightsdir='.',
         n_job=-1,
         time_mean=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates PDF files containing plots of J-values for model
@@ -2290,7 +2335,7 @@ def make_benchmark_jvalue_plots(
             Default value: -1
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
         time_mean : bool
             Determines if we should average the datasets over time
             Default value: False
@@ -2315,8 +2360,17 @@ def make_benchmark_jvalue_plots(
     # Initialization
     # ==================================================================
 
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        msg = "The 'spcdb_dir' argument has not been specified!"
+        raise ValueError(msg)
+
     # Create the directory for output
     util.make_directory(dst, overwrite)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Get the function that will read file(s) into a Dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -2605,7 +2659,7 @@ def make_benchmark_aod_plots(
         weightsdir='.',
         n_job=-1,
         time_mean=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates PDF files containing plots of column aerosol optical
@@ -2671,7 +2725,7 @@ def make_benchmark_aod_plots(
             Default value: -1
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
         time_mean : bool
             Determines if we should average the datasets over time
             Default value: False
@@ -2679,6 +2733,11 @@ def make_benchmark_aod_plots(
     # ==================================================================
     # Initialization and also read data
     # ==================================================================
+
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        msg = "The 'spcdb_dir' argument has not been specified!"
+        raise ValueError(msg)
 
     # Create destination plots directory
     util.make_directory(dst, overwrite)
@@ -2696,6 +2755,10 @@ def make_benchmark_aod_plots(
         extra_title_txt = subdst
     else:
         extra_title_txt = None
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Get the function that will read file(s) into a dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -2920,7 +2983,7 @@ def make_benchmark_mass_tables(
         overwrite=False,
         verbose=False,
         label="at end of simulation",
-        spcdb_dir=os.path.dirname(__file__),
+        spcdb_dir=None,
         ref_met_extra=None,
         dev_met_extra=None
 ):
@@ -2969,7 +3032,7 @@ def make_benchmark_mass_tables(
             Default value: False.
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
         ref_met_extra: str
             Path to ref Met file containing area data for use with restart files
             which do not contain the Area variable.
@@ -2979,6 +3042,18 @@ def make_benchmark_mass_tables(
             which do not contain the Area variable.
             Default value: ''
     """
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        msg = "The 'spcdb_dir' argument has not been specified!"
+        raise ValueError(msg)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Define destination directory
@@ -3181,7 +3256,7 @@ def make_benchmark_mass_accumulation_tables(
         overwrite=False,
         verbose=False,
         label="at end of simulation",
-        spcdb_dir=os.path.dirname(__file__),
+        spcdb_dir=None,
 ):
     """
     Creates a text file containing global mass totals by species and
@@ -3239,8 +3314,20 @@ def make_benchmark_mass_accumulation_tables(
             Default value: False.
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
     """
+    # ==================================================================
+    # Initialization
+    # ==================================================================
+
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        msg = "The 'spcdb_dir' argument has not been specified!"
+        raise ValueError(msg)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Define destination directory
@@ -3505,9 +3592,15 @@ def make_benchmark_oh_metrics(
     """
 
     # ==================================================================
-    # Define destination directory
+    # Initialization
     # ==================================================================
+
+    # Define destination directory
     util.make_directory(dst, overwrite)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ==================================================================
     # Read data from netCDF into Dataset objects
@@ -3707,7 +3800,7 @@ def make_benchmark_wetdep_plots(
         weightsdir='.',
         n_job=-1,
         time_mean=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -3771,11 +3864,15 @@ def make_benchmark_wetdep_plots(
             Default value: -1
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
         time_mean : bool
             Determines if we should average the datasets over time
             Default value: False
     """
+    # Make sure the species database folder is passed
+    if spcdb_dir is None:
+        msg = "The 'spcdb_dir' argument has not been specified!"
+        raise ValueError(msg)
 
     # Create destination plot directory
     util.make_directory(dst, overwrite)
@@ -3790,6 +3887,10 @@ def make_benchmark_wetdep_plots(
         targetdst = os.path.join(targetdst, datestr)
         if not os.path.isdir(targetdst):
             os.mkdir(targetdst)
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Get the function that will read file(s) into a dataset
     reader = util.dataset_reader(time_mean, verbose=verbose)
@@ -3971,7 +4072,7 @@ def make_benchmark_aerosol_tables(
         dst='./benchmark',
         overwrite=False,
         is_gchp=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Compute FullChemBenchmark aerosol budgets & burdens
@@ -4004,10 +4105,9 @@ def make_benchmark_aerosol_tables(
             Default value: False
         spcdb_dir: str
             Directory of species_datbase.yml file
-            Default value: Directory of GCPy code repository
+            Default value: None
 
     """
-
     # Create destination directory
     util.make_directory(dst, overwrite)
 
@@ -4015,6 +4115,8 @@ def make_benchmark_aerosol_tables(
     species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC"]
 
     # Read the species database
+    if spcdb_dir is None:
+        raise ValueError("The 'spcdb_dir' argument has not been specified!")
     spcdb = util.read_config_file(
         os.path.join(
             spcdb_dir,
@@ -4132,7 +4234,7 @@ def make_benchmark_aerosol_tables(
 
             # Print top header
             print("%" * 79, file=f)
-            print(f" {title} for {year} in {devstr}")
+            print(f" {title} for {year} in {devstr}", file=f)
             print(" (weighted by the number of days per month)", file=f)
             print("%" * 79, file=f)
             line = "\n" + " " * 40 + "Strat         Trop         Strat+Trop\n"
@@ -4270,7 +4372,7 @@ def make_benchmark_operations_budget(
         species=None,
         overwrite=True,
         verbose=False,
-        spcdb_dir=os.path.dirname(__file__)
+        spcdb_dir=None,
 ):
     """
     Prints the "operations budget" (i.e. change in mass after
@@ -4341,7 +4443,13 @@ def make_benchmark_operations_budget(
             Set this switch to True if you wish to print out extra
             informational messages.
             Default value: False
+        spcdb_dir : str
+            Directory containing the species_database.yml file.
+            Default value: None
     """
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # ------------------------------------------
     # Column sections
@@ -4746,6 +4854,8 @@ def make_benchmark_operations_budget(
 
         # Load a YAML file containing species properties (such as
         # molecular weights), which we will need for unit conversions.
+        if spcdb_dir is None:
+            raise ValueError("The 'spcdb_dir' argument has not been specified!")
         properties = util.read_config_file(
             os.path.join(
                 spcdb_dir,
@@ -5034,6 +5144,10 @@ def create_benchmark_summary_table(
     # ==================================================================
     # Open file for output
     # ==================================================================
+
+    # Replace whitespace in the ref and dev labels
+    refstr = replace_whitespace(refstr)
+    devstr = replace_whitespace(devstr)
 
     # Create the directory for output
     util.make_directory(dst, overwrite)

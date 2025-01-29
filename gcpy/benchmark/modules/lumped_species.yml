@@ -108,6 +108,21 @@ NOx:
   OLND: 1
   OLNN: 1
 NOy:
+  ALK4N1: 1
+  ALK4N2: 1
+  APAN: 1
+  APINN: 1
+  AROMPN: 1
+  BPINN: 1
+  BPINON: 1
+  BrNO2: 1
+  BrNO3: 1
+  BUTN: 1
+  BZPAN: 1
+  C96N: 1
+  ClNO2: 1
+  ClNO3: 1
+  ETHN: 1
   ETHLN: 1
   ETNO3: 1
   HNO2: 1
@@ -130,6 +145,7 @@ NOy:
   INO: 1
   INO2B: 1
   INO2D: 1
+  INPB: 1
   INPD: 1
   IONO: 1
   IONO2: 1
@@ -138,6 +154,9 @@ NOy:
   ISOPNOO2: 1
   ITCN: 1
   ITHN: 1
+  LIMN: 1
+  LIMNB: 1
+  LIMPAN: 1
   MACRNO2: 1
   MCRHN: 1
   MCRHNB: 1
@@ -148,6 +167,7 @@ NOy:
   N: 1
   N2O5: 2
   'NO': 1
+  NPHEN: 1
   NO2: 1
   NO3: 1
   NPRNO3: 1
@@ -230,12 +250,26 @@ Ox:
   R4N2: 1
 RO2:
   A3O2: 1
+  ACO3: 1
+  ACRO2: 1
+  ALK4N1: 1
+  ALK4O2: 1
+  APINO2: 1
+  AROMCO3: 1
+  AROMRO2: 1
   ATO2: 1
   B3O2: 1
-  BRO2: 2
+  BENZO2: 1
+  BPINO2: 1
+  BPINOO2: 1
+  BUTO2: 1
+  BZCO3: 1
   C4HVP1: 1
   C4HVP2: 1
+  C96O2: 1
   ETO2: 1
+  ETOO: 1
+  GCO3: 1
   HO2: 1
   HPALD1OO: 1
   HPALD2OO: 1
@@ -260,20 +294,22 @@ RO2:
   ISOPNOO2: 1
   KO2: 1
   LIMO2: 1
+  LIMO3: 1
+  LIMKO2: 1
   MACR1OO: 1
   MACRNO2: 1
   MCROHOO: 1
   MCO3: 1
+  MEKCO3: 1
   MO2: 1
   MVKOHOO: 1
+  OTHRO2: 1
   PIO2: 1
   PO2: 1
   PRN1: 1
   R4N1: 1
   R4O2: 1
   RCO3: 1
-  TRO2: 1
-  XRO2: 1
 SOx:
   SO2: 1
   SO4: 1

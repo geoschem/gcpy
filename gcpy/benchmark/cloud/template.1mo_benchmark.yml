@@ -119,7 +119,7 @@ options:
     emis_table: True
     plot_jvalues: True
     plot_aod: True
-    plot_drydep: False #Hotfix (bmy, 06 Feb 2024)
+    plot_drydep: True
     mass_table: True
     mass_accum_table: False
     ops_budget_table: False
