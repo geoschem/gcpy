@@ -22,7 +22,16 @@ def kppsa_plot_species_at_sites(
         pdfname,
 ):
     """
-    TBD
+    Creates vertical profile plots of a given species
+    from KPP-Standalone box model output.
+
+    Args
+    ref_file_list : list : KPP-Standalone log files for "Ref" version
+    ref_label     : str  : Label for the "Ref" version
+    dev_file_list : list : KPP-Standalone log files for "Dev" version
+    dev_label     : str  : Label for the "Dev" version
+    species       : str  : Name of the species to plot
+    pdfname       : str  : Name of the output PDF file
     """
     verify_variable_type(ref_file_list, list)
     verify_variable_type(ref_label, str)
@@ -75,7 +84,17 @@ def kppsa_plot_species_at_sites(
 
 def main():
     """
-    TBD
+    Parses arguments from the command line and calls
+    kppsa_plot_species_at_sites.
+
+    Command-line arguments
+    --refdir   : Folder with KPP-Standalone output from Ref model
+    --reflabel : Plot label for the Ref model
+    --devdir   : Folder with KPP-Standalone output from Dev model
+    --devlabel : Plot label for the Dev model
+    --pattern  : Look for filenames matching this pattern
+    --species  : Species to plot
+    --pdfname  : Name of the PDF file to be created
     """
     # Tell the parser which arguments to look for
     parser = argparse.ArgumentParser(

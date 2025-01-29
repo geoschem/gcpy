@@ -87,6 +87,12 @@ def main():
     Parses arguments and calls function kppsa_make_quick_look_plot
     to generate a "quick-look" plot from KPP-Standalone box model
     output.
+
+    Command-line arguments
+    --dirname (or -d) : Folder containing KPP-Standalone output
+    --label   (or -l) : Label for top-of-plot
+    --pattern (or -p) : Look for files matching this pattern
+    --species (or -s) : Name of the species to plot
     """
 
     # Tell the parser which arguments to look for
