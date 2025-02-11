@@ -235,6 +235,12 @@ def compare_single_level(
         print("Plotting all common variables")
     n_var = len(varlist)
 
+    # ewl debug - cesm: convert from 0-360 lon to -180-180
+    refdata.coords['lon'] = (refdata.coords['lon'] + 180) % 360 - 180
+    refdata = refdata.sortby(refdata.lon)
+    devdata.coords['lon'] = (devdata.coords['lon'] + 180) % 360 - 180
+    devdata = devdata.sortby(refdata.lon)
+    
     # If no PDF name passed, then do not save to PDF
     savepdf = True
     if pdfname == "":
@@ -357,101 +363,105 @@ def compare_single_level(
         #  Handle units as needed
         # ==================================================================
 
-        # Convert to ppb if units string is variation of mol/mol
-        if data_unit_is_mol_per_mol(ds_refs[i]):
-            ds_refs[i].values = ds_refs[i].values * 1e9
-            ds_refs[i].attrs["units"] = "ppb"
-        if data_unit_is_mol_per_mol(ds_devs[i]):
-            ds_devs[i].values = ds_devs[i].values * 1e9
-            ds_devs[i].attrs["units"] = "ppb"
-
-        # If units string is ppbv (true for bpch data) then rename units
-        if ds_refs[i].units.strip() == "ppbv":
-            ds_refs[i].attrs["units"] = "ppb"
-        if ds_devs[i].units.strip() == "ppbv":
-            ds_devs[i].attrs["units"] = "ppb"
-
-        # If units string is W/m2 (may be true for bpch data) then rename units
-        if ds_refs[i].units.strip() == "W/m2":
-            ds_refs[i].attrs["units"] = "W m-2"
-        if ds_devs[i].units.strip() == "W/m2":
-            ds_devs[i].attrs["units"] = "W m-2"
-
-        # If units string is UNITLESS (may be true for bpch data) then rename
-        # units
-        if ds_refs[i].units.strip() == "UNITLESS":
-            ds_refs[i].attrs["units"] = "1"
-        if ds_devs[i].units.strip() == "UNITLESS":
-            ds_devs[i].attrs["units"] = "1"
-
-        # Compare units of ref and dev. The check_units function will throw an
-        # error if units do not match and enforce_units is True.
-        check_units(ds_refs[i], ds_devs[i], enforce_units)
-
-        # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
-        if convert_to_ugm3:
-
-            # Error checks: must pass met, not normalize by area, and be in ppb
-            if refmet is None or devmet is None:
-                msg = "Met mata ust be passed to convert units to ug/m3."
-                raise ValueError(msg)
-            if normalize_by_area:
-                msg = "Normalizing by area is not allowed if plotting ug/m3"
-                raise ValueError(msg)
-            if ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
-                msg = "Units must be mol/mol if converting to ug/m3."
-                raise ValueError(msg)
-
-            # Slice air density data by lev and time
-            # (assume same format and dimensions as refdata and devdata)
-            ref_airden = slice_by_lev_and_time(
-                refmet,
-                "Met_AIRDEN",
-                itime,
-                ilev,
-                False
-            )
-            dev_airden = slice_by_lev_and_time(
-                devmet,
-                "Met_AIRDEN",
-                itime,
-                ilev,
-                False
-            )
-
-            # Get a list of properties for the given species
-            spc_name = varname.replace(varname.split("_")[0] + "_", "")
-            species_properties = properties.get(spc_name)
-
-            # If no properties are found, then exit with an error.
-            # Otherwise, get the molecular weight in g/mol.
-            if species_properties is None:
-                # Hack lumped species until we implement a solution
-                if spc_name in ["Simple_SOA", "Complex_SOA"]:
-                    spc_mw_g = 150.0
-                else:
-                    msg = f"No properties found for {spc_name}. Cannot convert" \
-                          + " to ug/m3."
-                    raise ValueError(msg)
-            else:
-                spc_mw_g = species_properties.get("MW_g")
-                if spc_mw_g is None:
-                    msg = f"Molecular weight not found for species {spc_name}!" \
-                          + " Cannot convert to ug/m3."
-                    raise ValueError(msg)
-
-            # Convert values from ppb to ug/m3:
-            # ug/m3 = mol/mol * mol/g air * kg/m3 air * 1e3g/kg
-            #         * g/mol spc * 1e6ug/g
-            #       = ppb * air density * (spc MW / air MW)
-            ds_refs[i].values = ds_refs[i].values * ref_airden.values \
-                * (spc_mw_g / MW_AIR_g)
-            ds_devs[i].values = ds_devs[i].values * dev_airden.values \
-                * (spc_mw_g / MW_AIR_g)
-
-            # Update units string
-            ds_refs[i].attrs["units"] = "\u03BCg/m3"  # ug/m3 using mu
-            ds_devs[i].attrs["units"] = "\u03BCg/m3"
+        # ewl debug - also try to fix lons here
+        
+        ds_refs[i].attrs["units"] = "conc"
+        ds_devs[i].attrs["units"] = "conc"
+#        # Convert to ppb if units string is variation of mol/mol
+#        if data_unit_is_mol_per_mol(ds_refs[i]):
+#            ds_refs[i].values = ds_refs[i].values * 1e9
+#            ds_refs[i].attrs["units"] = "ppb"
+#        if data_unit_is_mol_per_mol(ds_devs[i]):
+#            ds_devs[i].values = ds_devs[i].values * 1e9
+#            ds_devs[i].attrs["units"] = "ppb"
+#
+#        # If units string is ppbv (true for bpch data) then rename units
+#        if ds_refs[i].units.strip() == "ppbv":
+#            ds_refs[i].attrs["units"] = "ppb"
+#        if ds_devs[i].units.strip() == "ppbv":
+#            ds_devs[i].attrs["units"] = "ppb"
+#
+#        # If units string is W/m2 (may be true for bpch data) then rename units
+#        if ds_refs[i].units.strip() == "W/m2":
+#            ds_refs[i].attrs["units"] = "W m-2"
+#        if ds_devs[i].units.strip() == "W/m2":
+#            ds_devs[i].attrs["units"] = "W m-2"
+#
+#        # If units string is UNITLESS (may be true for bpch data) then rename
+#        # units
+#        if ds_refs[i].units.strip() == "UNITLESS":
+#            ds_refs[i].attrs["units"] = "1"
+#        if ds_devs[i].units.strip() == "UNITLESS":
+#            ds_devs[i].attrs["units"] = "1"
+#
+#        # Compare units of ref and dev. The check_units function will throw an
+#        # error if units do not match and enforce_units is True.
+#        check_units(ds_refs[i], ds_devs[i], enforce_units)
+#
+#        # Convert from ppb to ug/m3 if convert_to_ugm3 is passed as true
+#        if convert_to_ugm3:
+#
+#            # Error checks: must pass met, not normalize by area, and be in ppb
+#            if refmet is None or devmet is None:
+#                msg = "Met mata ust be passed to convert units to ug/m3."
+#                raise ValueError(msg)
+#            if normalize_by_area:
+#                msg = "Normalizing by area is not allowed if plotting ug/m3"
+#                raise ValueError(msg)
+#            if ds_refs[i].units != "ppb" or ds_devs[i].units != "ppb":
+#                msg = "Units must be mol/mol if converting to ug/m3."
+#                raise ValueError(msg)
+#
+#            # Slice air density data by lev and time
+#            # (assume same format and dimensions as refdata and devdata)
+#            ref_airden = slice_by_lev_and_time(
+#                refmet,
+#                "Met_AIRDEN",
+#                itime,
+#                ilev,
+#                False
+#            )
+#            dev_airden = slice_by_lev_and_time(
+#                devmet,
+#                "Met_AIRDEN",
+#                itime,
+#                ilev,
+#                False
+#            )
+#
+#            # Get a list of properties for the given species
+#            spc_name = varname.replace(varname.split("_")[0] + "_", "")
+#            species_properties = properties.get(spc_name)
+#
+#            # If no properties are found, then exit with an error.
+#            # Otherwise, get the molecular weight in g/mol.
+#            if species_properties is None:
+#                # Hack lumped species until we implement a solution
+#                if spc_name in ["Simple_SOA", "Complex_SOA"]:
+#                    spc_mw_g = 150.0
+#                else:
+#                    msg = f"No properties found for {spc_name}. Cannot convert" \
+#                          + " to ug/m3."
+#                    raise ValueError(msg)
+#            else:
+#                spc_mw_g = species_properties.get("MW_g")
+#                if spc_mw_g is None:
+#                    msg = f"Molecular weight not found for species {spc_name}!" \
+#                          + " Cannot convert to ug/m3."
+#                    raise ValueError(msg)
+#
+#            # Convert values from ppb to ug/m3:
+#            # ug/m3 = mol/mol * mol/g air * kg/m3 air * 1e3g/kg
+#            #         * g/mol spc * 1e6ug/g
+#            #       = ppb * air density * (spc MW / air MW)
+#            ds_refs[i].values = ds_refs[i].values * ref_airden.values \
+#                * (spc_mw_g / MW_AIR_g)
+#            ds_devs[i].values = ds_devs[i].values * dev_airden.values \
+#                * (spc_mw_g / MW_AIR_g)
+#
+#            # Update units string
+#            ds_refs[i].attrs["units"] = "\u03BCg/m3"  # ug/m3 using mu
+#            ds_devs[i].attrs["units"] = "\u03BCg/m3"
 
     # ==================================================================
     # Get the area variables if normalize_by_area=True. They can be

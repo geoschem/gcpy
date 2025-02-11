@@ -283,6 +283,11 @@ def get_vert_grid(
         grid = vert_grid(_GEOS_47L_AP, _GEOS_47L_BP, p_sfc)
         return grid.p_edge(), grid.p_mid(), 47
 
+    # 32L CESM grid
+    if dataset.sizes["lev"] in (32, 33):
+        grid = vert_grid(_CESM_DUMMY_AP, _CESM_DUMMY_BP, p_sfc)
+        return grid.p_edge(), grid.p_mid(), 47
+
     # Grid without specified AP, BP
     if AP == None or BP == None:
         if dataset.sizes["lev"] == 1:
@@ -350,10 +355,14 @@ def get_ilev_coord(
         AP_edge = _GEOS_72L_AP
     if AP_edge is None and n_lev == 47:
         AP_edge = _GEOS_47L_AP
+    if AP_edge is None and n_lev == 32:
+        AP_edge = _CESM_DUMMY_AP
     if BP_edge is None and n_lev == 72:
         BP_edge = _GEOS_72L_BP
     if BP_edge is None and n_lev == 47:
         BP_edge = _GEOS_47L_BP
+    if BP_edge is None and n_lev == 32:
+        BP_edge = _CESM_DUMMY_BP
     ilev = np.array((AP_edge/1000.0) + BP_edge, dtype=np.float64)
     if top_down:
         ilev = ilev[::-1]
@@ -408,10 +417,14 @@ def get_lev_coord(
         AP_edge = _GEOS_72L_AP
     if AP_edge is None and n_lev == 47:
         AP_edge = _GEOS_47L_AP
+    if AP_edge is None and n_lev == 32:
+        AP_edge = _CESM_DUMMY_AP
     if BP_edge is None and n_lev == 72:
         BP_edge = _GEOS_72L_BP
     if BP_edge is None and n_lev == 47:
         BP_edge = _GEOS_47L_BP
+    if BP_edge is None and n_lev == 32:
+        BP_edge = _CESM_DUMMY_BP
     AP_edge = np.array(AP_edge)
     BP_edge = np.array(BP_edge)
     AP_mid = (AP_edge[0:n_lev:1] + AP_edge[1:n_lev+1:1]) * 0.5
@@ -700,6 +713,14 @@ _GEOS_47L_BP = np.zeros(48)
 _GEOS_47L_AP[0] = _GEOS_72L_AP[0]
 _GEOS_47L_BP[0] = _GEOS_72L_BP[0]
 
+# Dummy CESM grid
+_CESM_DUMMY_AP = np.zeros(33)
+_CESM_DUMMY_BP = np.zeros(33)
+
+# Fill in the values for the surface
+_CESM_DUMMY_AP[0] = _GEOS_72L_AP[0]
+_CESM_DUMMY_BP[0] = _GEOS_72L_BP[0]
+
 # Build the GEOS 72-layer to 47-layer mapping matrix at the same time
 _xmat_i = np.zeros((72))
 _xmat_j = np.zeros((72))
@@ -718,6 +739,20 @@ for _i_lev in range(1, 37):
     # Copy over the pressure edge for the top of the grid cell
     _GEOS_47L_AP[_i_lev] = _GEOS_72L_AP[_i_lev]
     _GEOS_47L_BP[_i_lev] = _GEOS_72L_BP[_i_lev]
+
+# CESM dummy
+# Index here is the 1-indexed layer number
+for _i_lev in range(1, 32):
+    # Map from 1-indexing to 0-indexing
+    _x_lev = _i_lev - 1
+    # Sparse matrix for regridding
+    # Below layer 37, it's 1:1
+    _xct = _x_lev
+    _xmat_i[_xct] = _x_lev
+    _xmat_j[_xct] = _x_lev
+    _xmat_s[_xct] = 1.0
+    _CESM_DUMMY_AP[_i_lev] = _GEOS_72L_AP[_i_lev]
+    _CESM_DUMMY_BP[_i_lev] = _GEOS_72L_BP[_i_lev]
 
 # Now deal with the lumped layers
 _skip_size_vec = [2, 4]
