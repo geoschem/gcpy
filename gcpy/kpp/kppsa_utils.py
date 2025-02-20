@@ -16,7 +16,7 @@ from gcpy.util import get_element_of_series, verify_variable_type
 
 def kppsa_get_file_list(
         input_dir,
-        pattern=""
+        pattern="",
 ):
     """
     Returns a list of KPP-Standalone log files matching
@@ -32,7 +32,10 @@ def kppsa_get_file_list(
     return glob(join(expanduser(input_dir), f"*{pattern}*"))
 
 
-def kppsa_read_one_csv_file(file_name):
+def kppsa_read_one_csv_file(
+        file_name,
+        kppsa_input=False,
+):
     """
     Reads a single log file (in CSV format) from the KPP
     standalone box model into a pandas.DataFrame object.
@@ -57,7 +60,7 @@ def kppsa_read_one_csv_file(file_name):
     with open(file_name, "r", encoding=ENCODING) as ifile:
 
         # Find the number of rows to skip
-        skiprows = int(ifile.readline().strip()) + 1
+        skiprows = int(ifile.readline().strip())
 
         # Read the rest of the header contents
         for line in ifile:
@@ -83,16 +86,23 @@ def kppsa_read_one_csv_file(file_name):
             if "Species Name" in line:
                 break
 
+    # Set the data type for the data values
+    if kppsa_input:
+        dtype = {"Value": np.float64}
+    else:
+        dtype = {
+            "Initial Concentration (molec/cm3)": np.float64,
+            "Final Concentration (molec/cm3)": np.float64,
+        }
+
     # Read the CSV into a DataFrame object
     dframe = pd.read_csv(
         file_name,
         skiprows=skiprows,
         delimiter=",",
-        dtype={
-            "Initial Concentration (molec/cm3)": np.float64,
-            "Final Concentration (molec/cm3)": np.float64,
-        },
-        engine="c"
+        dtype=dtype,
+        engine="c",
+        skipinitialspace=True,
     )
 
     # Add series with metadata obtained from the header
@@ -264,7 +274,6 @@ def kppsa_plot_single_site(
             lw=1,
             label=f"{dev_label}",
         )
-
 
     # Set X and Y axis labels
     axes_subplot.set_xlabel(
