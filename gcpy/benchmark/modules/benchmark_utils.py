@@ -237,6 +237,14 @@ def print_benchmark_info(
             print(" - Emissions plots")
         if "plot_jvalues" in key and conf[key]:
             print(" - J-values (photolysis rates) plots")
+        if "plot_budget" in key and conf[key]:
+            print(" - Budget plots")
+        if "plot_uvflux" in key and conf[key]:
+            print(" - UVFlux plots")
+        if "plot_2d_met" in key and conf[key]:
+            print(" - StateMet 2D variable plots plots")
+        if "plot_3d_met" in key and conf[key]:
+            print(" - StateMet 3D variable plots")
         if "plot_aod" in key and conf[key]:
             print(" - Aerosol optical depth plots")
         if "plot_drydep" in key and conf[key]:

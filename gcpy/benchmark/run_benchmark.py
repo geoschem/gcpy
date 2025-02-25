@@ -52,12 +52,16 @@ from gcpy.util import copy_file_to_dir, get_filepath, read_config_file
 from gcpy.date_time import add_months, is_full_year
 from gcpy.benchmark.modules.benchmark_funcs import \
     diff_of_diffs_toprow_title, get_species_database_dir, \
+    create_benchmark_summary_table, \
+    create_benchmark_sanity_check_table, \
     make_benchmark_conc_plots, make_benchmark_emis_plots, \
     make_benchmark_emis_tables, make_benchmark_jvalue_plots, \
     make_benchmark_aod_plots, make_benchmark_mass_tables, \
     make_benchmark_mass_accumulation_tables, \
-    make_benchmark_operations_budget, create_benchmark_summary_table, \
-    create_benchmark_sanity_check_table
+    make_benchmark_operations_budget, \
+    make_benchmark_collection_2d_var_plots, \
+    make_benchmark_collection_3d_var_plots, \
+    make_benchmark_operations_budget
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
 from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
@@ -441,7 +445,7 @@ def run_benchmark_default(config):
             ref = get_filepath(gcc_vs_gcc_refdir, "JValues", gcc_ref_date)
             dev = get_filepath(gcc_vs_gcc_devdir, "JValues", gcc_dev_date)
 
-            # Plot J-values
+            # Create plots
             make_benchmark_jvalue_plots(
                 ref,
                 gcc_vs_gcc_refstr,
@@ -456,14 +460,120 @@ def run_benchmark_default(config):
             )
 
         # ==================================================================
+        # GCC vs GCC budget plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_budget"]:
+            print("\n%%% Creating GCC vs. GCC Budget plots %%%")
+
+            colname = "Budget"
+
+            # Diagnostic collection files to read
+            ref = get_filepath(gcc_vs_gcc_refdir, colname, gcc_ref_date)
+            dev = get_filepath(gcc_vs_gcc_devdir, colname, gcc_dev_date)
+
+            # Create plots
+            make_benchmark_collection_2d_var_plots(
+                ref,
+                gcc_vs_gcc_refstr,
+                dev,
+                gcc_vs_gcc_devstr,
+                colname=colname,
+                var_prefix=colname,
+                dst=gcc_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCC vs GCC UVFlux plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_uvflux"]:
+            print("\n%%% Creating GCC vs. GCC UVFlux plots %%%")
+
+            colname = "UVFlux"
+
+            # Diagnostic collection files to read
+            ref = get_filepath(gcc_vs_gcc_refdir, colname, gcc_ref_date)
+            dev = get_filepath(gcc_vs_gcc_devdir, colname, gcc_dev_date)
+
+            # Create plots
+            make_benchmark_collection_3d_var_plots(
+                ref,
+                gcc_vs_gcc_refstr,
+                dev,
+                gcc_vs_gcc_devstr,
+                colname=colname,
+                dst=gcc_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCC vs GCC 2D StateMet plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_2d_met"]:
+            print("\n%%% Creating GCC vs. GCC 2D StateMet plots %%%")
+
+            colname = "StateMet"
+
+            # Diagnostic collection files to read
+            ref = get_filepath(gcc_vs_gcc_refdir, colname, gcc_ref_date)
+            dev = get_filepath(gcc_vs_gcc_devdir, colname, gcc_dev_date)
+
+            # Create plots
+            make_benchmark_collection_2d_var_plots(
+                ref,
+                gcc_vs_gcc_refstr,
+                dev,
+                gcc_vs_gcc_devstr,
+                colname=colname,
+                var_prefix='Met',
+                dst=gcc_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCC vs GCC 3D StateMet plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_3d_met"]:
+            print("\n%%% Creating GCC vs. GCC 3D StateMet plots %%%")
+
+            colname = "StateMet"
+
+            # Diagnostic collection files to read
+            ref = get_filepath(gcc_vs_gcc_refdir, colname, gcc_ref_date)
+            dev = get_filepath(gcc_vs_gcc_devdir, colname, gcc_dev_date)
+
+            make_benchmark_collection_3d_var_plots(
+                ref,
+                gcc_vs_gcc_refstr,
+                dev,
+                gcc_vs_gcc_devstr,
+                colname=colname,
+                var_prefix='Met',
+                dst=gcc_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
         # GCC vs GCC column AOD plots
         # ==================================================================
         if config["options"]["outputs"]["plot_aod"]:
             print("\n%%% Creating GCC vs. GCC column AOD plots %%%")
 
             # Filepaths
-            ref = get_filepath(gcc_vs_gcc_refdir, "Aerosols", gcc_ref_date)
-            dev = get_filepath(gcc_vs_gcc_devdir, "Aerosols", gcc_dev_date)
+            ref = get_filepath(gcc_vs_gcc_refdir, "AOD", gcc_ref_date)
+            dev = get_filepath(gcc_vs_gcc_devdir, "AOD", gcc_dev_date)
 
             # Create plots
             make_benchmark_aod_plots(
@@ -890,6 +1000,133 @@ def run_benchmark_default(config):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCHP vs. GCC Budget plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_budget"]:
+            print("\n%%% Creating GCHP vs. GCC Budget plots %%%")
+
+            colname = "Budget"
+
+            # Filepaths
+            ref = get_filepath(gchp_vs_gcc_refdir, colname, gcc_dev_date)
+            dev = get_filepath(
+                gchp_vs_gcc_devdir,
+                colname,
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_collection_2d_var_plots(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                colname=colname,
+                var_prefix=colname,
+                dst=gchp_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCHP vs. GCC UVFlux plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_uvflux"]:
+            print("\n%%% Creating GCHP vs. GCC UVFlux plots %%%")
+
+            colname = "UVFlux"
+
+            # Filepaths
+            ref = get_filepath(gchp_vs_gcc_refdir, colname, gcc_dev_date)
+            dev = get_filepath(
+                gchp_vs_gcc_devdir,
+                colname,
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_collection_3d_var_plots(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                colname=colname,
+                dst=gcc_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCHP vs. GCC 2D StateMet plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_2d_met"]:
+            print("\n%%% Creating GCHP vs. GCC 2D StateMet plots %%%")
+
+            colname = "StateMet"
+
+            # Filepaths
+            ref = get_filepath(gchp_vs_gcc_refdir, colname, gcc_dev_date)
+            dev = get_filepath(
+                gchp_vs_gcc_devdir,
+                colname,
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_collection_2d_var_plots(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                colname=colname,
+                var_prefix='Met',
+                dst=gchp_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCHP vs. GCC 3D StateMet plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_3d_met"]:
+            print("\n%%% Creating GCHP vs. GCC 3D StateMet plots %%%")
+
+            colname = "StateMet"
+
+            # Filepaths
+            ref = get_filepath(gchp_vs_gcc_refdir, colname, gcc_dev_date)
+            dev = get_filepath(
+                gchp_vs_gcc_devdir,
+                colname,
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_collection_3d_var_plots(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                colname=colname,
+                var_prefix='Met',
+                dst=gcc_vs_gcc_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
@@ -1342,6 +1579,153 @@ def run_benchmark_default(config):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCHP vs. GCHP Budget plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_budget"]:
+            print("\n%%% Creating GCHP vs. GCHP Budget plots %%%")
+
+            colname = "Budget"
+
+            # Filepaths
+            ref = get_filepath(
+                gchp_vs_gchp_refdir,
+                colname,
+                gchp_ref_date,
+                is_gchp=True
+            )
+            dev = get_filepath(
+                gchp_vs_gchp_devdir,
+                colname,
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_collection_2d_var_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                colname=colname,
+                var_prefix=colname,
+                dst=gchp_vs_gchp_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCHP vs. GCHP UVFlux plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_uvflux"]:
+            print("\n%%% Creating GCHP vs. GCHP UVFlux plots %%%")
+
+            colname = "UVFlux"
+
+            # Filepaths
+            ref = get_filepath(
+                gchp_vs_gchp_refdir,
+                colname,
+                gchp_ref_date,
+                is_gchp=True
+            )
+            dev = get_filepath(
+                gchp_vs_gchp_devdir,
+                colname,
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_collection_3d_var_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                colname=colname,
+                dst=gchp_vs_gchp_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCHP vs. GCHP 2D StateMet plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_2d_met"]:
+            print("\n%%% Creating GCHP vs. GCHP 2D StateMet plots %%%")
+
+            colname = "StateMet"
+
+            # Filepaths
+            ref = get_filepath(
+                gchp_vs_gchp_refdir,
+                colname,
+                gchp_ref_date,
+                is_gchp=True
+            )
+            dev = get_filepath(
+                gchp_vs_gchp_devdir,
+                colname,
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_collection_2d_var_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                colname=colname,
+                var_prefix='Met',
+                dst=gchp_vs_gchp_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
+                spcdb_dir=spcdb_dir,
+                n_job=config["options"]["n_cores"]
+            )
+
+        # ==================================================================
+        # GCHP vs. GCHP 3D StateMet plots
+        # ==================================================================
+        if config["options"]["outputs"]["plot_3d_met"]:
+            print("\n%%% Creating GCHP vs. GCHP 3D StateMet plots %%%")
+
+            colname = "StateMet"
+
+            # Filepaths
+            ref = get_filepath(
+                gchp_vs_gchp_refdir,
+                colname,
+                gchp_ref_date,
+                is_gchp=True
+            )
+            dev = get_filepath(
+                gchp_vs_gchp_devdir,
+                colname,
+                gchp_dev_date,
+                is_gchp=True
+            )
+
+            # Create plots
+            make_benchmark_collection_3d_var_plots(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                colname=colname,
+                var_prefix='Met',
+                dst=gchp_vs_gchp_resultsdir,
+                weightsdir=config["paths"]["weights_dir"],
+                overwrite=True,
                 spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
