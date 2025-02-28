@@ -2809,7 +2809,7 @@ def make_benchmark_collection_2d_var_plots(
     extra_title_txt = None
     pdfname = os.path.join(
         bdir,
-        f"{colname}.pdf"
+        f"{colname}_2D.pdf"
     )
 
     compare_single_level(
