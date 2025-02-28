@@ -29,7 +29,7 @@
 paths:
   main_dir: /path/to/benchmark/main/dir
   results_dir: /path/to/BenchmarkResults
-  weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
+  weights_dir: /n/holylfs06/LABS/jacob_lab/Shared/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
   spcdb_dir: default
   #
   # Observational data dirs are on Harvard Cannon, edit if necessary

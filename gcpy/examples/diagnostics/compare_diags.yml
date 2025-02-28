@@ -2,7 +2,7 @@
 paths:
   main_dir: /path/to/your/data   # Add the path to your output here
   plots_dir: ./Results
-  weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+  weights_dir: /n/holylfs06/LABS/jacob_lab/Shared/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
 
 data:
   ref:
