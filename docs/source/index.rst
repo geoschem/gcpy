@@ -60,7 +60,13 @@ For documentation on setting up and running GEOS-Chem please see our
 
    Hemco-Formatting
    ObsPack
-   
+
+.. toctree::
+   :maxdepth: 3
+   :caption: Supplemental Guides
+
+   Install-Mamba-Conda
+	     
 .. toctree::
    :maxdepth: 1
    :caption: Help & Reference

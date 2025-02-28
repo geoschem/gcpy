@@ -89,9 +89,9 @@ has produced identical or nearly-identical results to Ref.
 
 .. _kppsa-ref:
 
-====================
+=====================
 Source code reference
-====================
+=====================
 
 .. _kppsa-ref-list:
 
