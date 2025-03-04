@@ -9,6 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `Install-Mamba-Conda.rst` ReadTheDocs supplmental guide for Mamba/Conda installation
 - Added Anaconda, PyPI, Platforms, Downloads badges to `README.md` and `docs/source/index.rst`
 
+### Changed
+- Edited installation instructions via Mamba/Conda to more accurately reflect the needed commands
+
 ### Removed
 - Remove Mamba/Conda installation instructions from `Getting-Started-from-GCPy.rst`
 - Removed "Latest pre-release" bade from `README.md` and `docs/source/index.rst`

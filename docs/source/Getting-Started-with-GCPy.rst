@@ -203,9 +203,8 @@ named :literal:`gcpy_env` and to install GCPy into this environment.
 
 .. code-block:: console
 
-   $ mamba env create -n gcpy_env
+   $ mamba create -n gcpy_env
    $ mamba activate gcpy_env
-   $ mamba config --add channels conda-forge
    $ mamba install geoschem-gcpy
 
 After you have installed GCPy, check if the installation was
@@ -234,9 +233,8 @@ named :literal:`gcpy_env` and to install GCPy into this environment.
 
 .. code-block:: console
 
-   $ conda env create -n gcpy_env
+   $ conda create -n gcpy_env
    $ conda activate gcpy_env
-   $ conda config --add channels conda-forge
    $ conda install geoschem-gcpy
 
 After you have installed GCPy, check if the installation was
