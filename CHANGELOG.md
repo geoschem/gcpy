@@ -7,9 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - 2025-01-29
 ### Added
 - Added `Install-Mamba-Conda.rst` ReadTheDocs supplmental guide for Mamba/Conda installation
+- Added Anaconda, PyPI, Platforms, Downloads badges to `README.md` and `docs/source/index.rst`
 
 ### Removed
 - Remove Mamba/Conda installation instructions from `Getting-Started-from-GCPy.rst`
+- Removed "Latest pre-release" bade from `README.md` and `docs/source/index.rst`
 
 ## [1.6.0] - 2025-01-29
 ### Added
