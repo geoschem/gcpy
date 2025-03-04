@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Changed
 - Edited installation instructions via Mamba/Conda to more accurately reflect the needed commands
+- Updated the ReadTheDocs "Releasing new versions" guide with info on conda-forge
 
 ### Removed
 - Remove Mamba/Conda installation instructions from `Getting-Started-from-GCPy.rst`
