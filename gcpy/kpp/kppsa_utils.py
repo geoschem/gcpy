@@ -152,7 +152,7 @@ def kppsa_prepare_site_data(
     dframe     : pd.DataFrame : KPP-Standalone output data
     site_name  : str          : Name of site to plot
     species    : species      : Name of species to plot
-    
+
     Returns
     site_data  : pd.DataFrame : Data for the given site & species
     site_title : str          : Corresponding plot title string
@@ -414,3 +414,87 @@ def kppsa_get_unique_site_names(dframe):
             unique_site_names.append(site_name)
 
     return unique_site_names
+
+
+def kppsa_read_tolerance_loop(filename):
+    """
+    Reads output from a KPP-Standalone loop over absolute and
+    relative tolerances.
+
+    Args
+    filename : str          : Name of file with tolerance loop data
+
+    Returns
+    data     : pd.DataFrame : Object containing data read from file
+    """
+
+    def split_line(line):
+        """
+        Splits a line by colon and returns the second substring
+        as the specified numeric type.
+
+        Args
+        line   : str        : Line to parse
+
+        Returns
+        result : np.float64 : 2nd substring returned as a number
+        """
+        return np.float64(line.split(":")[1].strip())
+
+    # Initialize
+    key = ""
+    data = {}
+    line_data = {}
+
+    with open(filename, "r", encoding=ENCODING) as ifile:
+        for line in ifile:
+            line = line.strip()
+
+            if "Combination" in line:
+                combo = line.strip(">").strip("<").strip(" Combination")
+                key = f"combo{combo.zfill(3)}"
+                continue
+            if "ATOL" in line:
+                line_data["ATOL"] = split_line(line)
+                continue
+            if "RTOL" in line:
+                line_data["RTOL"] = split_line(line)
+                continue
+            if "Number of times function F was computed" in line:
+                line_data["FunCount"] = split_line(line)
+                continue
+            if "Number of times Jacobian was computed" in line:
+                line_data["JacCount"] = split_line(line)
+                continue
+            if "Number of internal timesteps" in line:
+                line_data["TotSteps"] = split_line(line)
+                continue
+            if "--> Accepted timesteps" in line:
+                line_data["AccSteps"] = split_line(line)
+                continue
+            if "--> Rejected timesteps" in line:
+                line_data["RejSteps"] = split_line(line)
+                continue
+            if "Number of LU decompositions performed" in line:
+                line_data["LuDecomps"] = split_line(line)
+                continue
+            if "Number of forward/backward substitutions" in line:
+                line_data["Substs"] = split_line(line)
+                continue
+            if "Texit (time corresponding to computed Y)" in line:
+                line_data["Texit"] = split_line(line)
+                continue
+            if "Hexit (last accepted step before exit)" in line:
+                line_data["Hexit"] = split_line(line)
+                continue
+            if "Hnew (last predicted step not yet taken)" in line:
+                line_data["Hnew"] = split_line(line)
+                continue
+            if "Wall clock time" in line:
+                line_data["WallTime"] = split_line(line)
+
+                # Wall clock time is the last line
+                data[key] = line_data
+                line_data = {}
+
+    return(pd.DataFrame(data).transpose())
