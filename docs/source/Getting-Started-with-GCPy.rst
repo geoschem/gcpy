@@ -39,73 +39,113 @@ GCPy requires several other Python packages, which are listed below.
    :align: center
 
    * - Package
-     - Required version
-     - Package
-     - Required version
+     - Version (Python 3.12)
+     - Version (Python 3.13)
    * - `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_
      - 0.23.0
-     - cf_xarray
+     - 0.24.0
+   * - cf_xarray
      - 0.9.1
+     - 0.10.0
    * - dask
      - 2024.5.2
-     - esmf
+     - 2025.2.0
+   * - esmf [#A]_
      - 8.6.1
-   * - `esmpy <https://www.earthsystemcog.org/projects/esmpy/>`_
+     - 8.8.0
+   * - `esmpy <https://www.earthsystemcog.org/projects/esmpy/>`_ [#A]_
      - 8.6.1
-     - gridspec
+     - 8.8.0
+   * - gridspec
+     - 0.1.0
      - 0.1.0
    * - ipython
      - 8.25.0
-     - `joblib <https://joblib.readthedocs.io/en/latest/>`_
+     - 9.0.0
+   * - `joblib <https://joblib.readthedocs.io/en/latest/>`_
+     - 1.4.2
      - 1.4.2
    * - jupyter
      - 1.0.0
-     - `matplotlib <https://matplotlib.org/>`_
+     - 1.1.1
+   * - `matplotlib <https://matplotlib.org/>`_
      - 3.8.4
+     - 3.10.1
    * - netcdf4
      - 1.6.5
-     - netcdf-fortran
+     - 1.7.2
+   * - netcdf-fortran
+     - 4.6.1
      - 4.6.1
    * - `numpy <http://www.numpy.org/>`_
      - 1.26.4
-     - `pandas <https://pandas.pydata.org/docs/>`_
+     - 2.1.3
+   * - `pandas <https://pandas.pydata.org/docs/>`_
      - 2.2.2
+     - 2.2.3
    * - pip
      - 24.0
-     - pylint
+     - 25.0.1
+   * - pylint
      - 3.2.2
+     - 3.3.4
    * - pyproj
      - 3.6.1
-     - `python <https://www.python.org/>`_
+     - 3.7.1
+   * - `python <https://www.python.org/>`_
      - 3.12.0
+     - 3.13.0
    * - pypdf
      - 4.2.0
-     - requests
+     - 5.3.1
+   * - requests
+     - 2.32.3
      - 2.32.3
    * - `scipy <http://www.scipy.org/>`_
      - 1.13.1
-     - `sparselt <https://github.com/liambindle/sparselt>`_
+     - 1.15.2
+   * - `sparselt <https://github.com/liambindle/sparselt>`_
+     - 0.1.3
      - 0.1.3
    * - tabulate
      - 0.9.0
-     - tk
+     - 0.9.0
+   * - tk
+     - 8.6.13
      - 8.6.13
    * - `xarray <http://xarray.pydata.org>`_
      - 2024.5.0
-     - `xesmf <https://xesmf.readthedocs.io>`_
+     - 2025.1.2
+   * - `xesmf <https://xesmf.readthedocs.io>`_
+     - 0.8.5
      - 0.8.5
 
-These packages are also listed the environment file
-:file:`docs/environment_files/gcpy_environment.yml`, which is
-symlinked to the GCPy root directory as :file:`environment.yml`.
+.. rubric:: Notes
 
-.. note::
+.. [#A] GCPy requires the :program:`esmf` and :program:`esmpy`
+	packages, which are not supported on Microsoft Windows.  Thus,
+	the only way to use GCPy on a Windows PC is from within a
+	Windows Subsystem for Linux (WSL) instance.
+       
+The default GCPy environment uses Python 3.12.  In the root folder you
+will find a symbolic link :file:`environment.yml`, which points to the
+file :file:`docs/environment_files/gcpy_environment_py312.yml` file.
+Ths file contains the package specifications listed above under the
+**Version (Python 3.12)** column.
 
-   GCPy requires the :program:`esmf` and :program:`esmpy` packages,
-   which are not supported on Microsoft Windows.  Thus, the only way
-   to use GCPy on a Windows PC is from within a Windows Subsystem for
-   Linux (WSL) instance.
+We also maintain GCPy environment files for newer Python versions
+(e.g. :file:`docs/environment_files/gcpy_environment_py313.yml`, which
+is based on Python 3.13). This will allow you to build a GCPy
+environment based on a newer Python version, which is often necessary
+for testing and development.  For most GCPy users, it should be
+sufficient to use the default environment based on Python 3.12.
 
+Python versions typically have a 5-year lifetime.  Older Python
+versions are then deprecated and eventually desupported.  For this
+reason we occasionally need to add new GCPy environments based on
+newer Python versions, and to remove GCPy environments based on the
+desupported Python versions.
+     
 .. _install-reqs-mamba-conda:
 
 Mamba or Conda
@@ -511,7 +551,7 @@ Python environment for GCPy. Follow these steps:
    all packages and their versions to be included in the environment.
    GCPy includes such as file, :file:`environment.yml`, located in the
    top-level directory of the package.
-
+   
    Run one of the following commands at the command prompt to create a virtual
    environment for use with GCPy. You can name environment whatever you
    wish. This example names it :file:`gcpy_env`.
