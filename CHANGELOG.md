@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Removed
 - Removed PyPi configuration file  `docs/environment_files/gcpy_requirements.txt` and symbolic link `./requirements.txt`
+- Removed Python 3.8 from the `python-version` list in `.github/workflows/*.yml` files
 
 ## [1.6.0] - 2025-01-29
 ### Added
