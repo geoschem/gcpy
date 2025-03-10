@@ -97,7 +97,8 @@ def main():
     Command-line arguments
     --filename  (or -f) : File w/ KPP-Standalone tolerance loop output
     --sort-by   (or -s) : DataFrame key to sort by
-    --ascending (or -a) : Sort in ascending order (true/false)?
+    --ascending (or -a) : Sort in ascending order (default)
+    --ascending (or -d) : Sort in descending order
     --values    (or -v) : Number of values to display
     """
     # Tell the parser which arguments to look for
@@ -121,6 +122,7 @@ def main():
     parser.add_argument(
         "--ascending", "-a",
         required=False,
+        default=True,
         action="store_true",
         help="Sort in ascending order",
     )
