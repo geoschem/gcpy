@@ -49,7 +49,7 @@ GCPy requires several other Python packages, which are listed below.
      - cf_xarray
      - 0.9.1
    * - dask
-     - 2024.5.2
+     - 2025.3.0
      - esmf
      - 8.6.1
    * - `esmpy <https://www.earthsystemcog.org/projects/esmpy/>`_
