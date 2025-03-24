@@ -8,6 +8,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Added GCPy environment file `docs/environment_files/gcpy_environment_py313.yml`, which is based on Python 3.13
 - Added GitHub Actions config file`.github/workflows/build-gcpy-environment-py313.yml`
+- Added `Install-Mamba-Conda.rst` ReadTheDocs supplmental guide for Mamba/Conda installation
+- Added Anaconda, PyPI, Platforms, Downloads badges to `README.md` and `docs/source/index.rst`
 
 ### Changed
 - Updated paths to regridding weights in `benchmark/config/*.yml` and `examples/diagnostics/compare_diags.yml` files
@@ -17,10 +19,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated package version information in ReadTheDocs documentation
 - Bumped dask from version 2024.5.2 to 2025.3.0 to fix a security issue (raised by @dependabot)
 - Bumped jinja2 from version 3.1.5 to 3.1.6 to fix a security issue (raised by @dependabot)
+- Edited installation instructions via Mamba/Conda to more accurately reflect the needed commands
+- Updated the ReadTheDocs "Releasing new versions" guide with info on conda-forge
 
 ### Removed
 - Removed PyPi configuration file  `docs/environment_files/gcpy_requirements.txt` and symbolic link `./requirements.txt`
 - Removed Python 3.8 from the `python-version` list in `.github/workflows/*.yml` files
+- Remove Mamba/Conda installation instructions from `Getting-Started-from-GCPy.rst`
+- Removed "Latest pre-release" bade from `README.md` and `docs/source/index.rst`
 
 ## [1.6.0] - 2025-01-29
 ### Added
