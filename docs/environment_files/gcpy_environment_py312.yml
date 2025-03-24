@@ -1,0 +1,40 @@
+---
+# ======================================================================
+# GCPy environment file (based on Python 3.12)
+#
+# If you wish to build a Mamba/Conda environment with the dependencies
+# for GCPy, use this command:
+#
+# $ mamba env create -n gcpy_env --file=/path/to/gcpy_environment_py312.yml
+# =====================================================================
+name: gcpy_env
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - cartopy        ==0.23.0     # Geospatial data processing
+  - cf_xarray      ==0.9.1      # CF conventions for xarray
+  - dask           ==2025.3.0   # Parallel library; backend for xarray
+  - esmf           ==8.6.1      # Earth system modeling framework
+  - esmpy          ==8.6.1      # Python wrapper for ESMF
+  - gridspec       ==0.1.0      # Define Earth System Model grids
+  - ipython        ==8.25.0     # Interactive Python (used by Jupyter)
+  - joblib         ==1.4.2      # Parallelize python code
+  - jupyter        ==1.0.0      # Jupyter Notebook
+  - matplotlib     ==3.8.4      # Creates plots and visualizations
+  - netcdf4        ==1.6.5      # Python wrapper for netCDF
+  - netcdf-fortran ==4.6.1      # Python wrapper for netCDF-Fortran
+  - numpy          ==1.26.4     # Optimized mathematical functions
+  - pandas         ==2.2.2      # Tables/timeseries manipulation
+  - pip            ==24.0       # Install packages from PyPi
+  - pylint         ==3.2.2      # Python linter
+  - pyproj         ==3.6.1      # Python map projections library
+  - python         ==3.12.0     # Python language
+  - pypdf          ==4.2.0      # PDF utilities (bookmarks, etc.)
+  - requests       ==2.32.3     # HTTP library
+  - scipy          ==1.13.1     # Scientific python package
+  - sparselt       ==0.1.3      # Regridding earth system model data
+  - tabulate       ==0.9.0      # Pretty-printing for column data
+  - tk             ==8.6.13     # Tcl/tk library
+  - xarray         ==2024.5.0   # Read data from netCDF etc files
+  - xesmf          ==0.8.5      # Universal regridder

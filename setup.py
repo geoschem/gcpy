@@ -30,7 +30,7 @@ CLASSIFIERS = [
 
 MAJOR = 1
 MINOR = 6
-MICRO = 0
+MICRO = 1
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
 VERSION = f"{MAJOR}.{MINOR}.{MICRO}{EXTRA}"
@@ -93,7 +93,7 @@ setup(
     install_requires=[
         "cartopy==0.23.0",
         "cf_xarray==0.9.1",
-        "dask==2024.5.2",
+        "dask==2025.3.0",
         "esmf==8.6.1",
         "esmpy==8.6.1",
         "gridspec==0.1.0",

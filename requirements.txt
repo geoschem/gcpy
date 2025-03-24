@@ -1,1 +1,0 @@
-docs/environment_files/gcpy_requirements.txt

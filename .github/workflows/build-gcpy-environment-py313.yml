@@ -1,9 +1,10 @@
 ---
 #
-# GitHub action to build the GCPy production environment with micromamba
+# GitHub action to build the GCPy production environment
+# (for Python 3.12) with micromamba
 # See: https://github.com/marketplace/actions/setup-micromamba
 #
-name: build-gcpy-environment
+name: build-gcpy-environment-py313
 
 on:
   push:
@@ -17,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - name: Checkout the GCPy repository
         uses: actions/checkout@v4
@@ -25,7 +26,7 @@ jobs:
         uses: mamba-org/setup-micromamba@v1
         with:
           micromamba-version: 'latest'
-          environment-file: docs/environment_files/gcpy_environment.yml
+          environment-file: docs/environment_files/gcpy_environment_py313.yml
           init-shell: bash
           cache-environment: false
           generate-run-shell: true
