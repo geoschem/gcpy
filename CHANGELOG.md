@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated symbolic link `environment.yml` to point to `docs/source/gcpy_environment_py312.yml`
 - Renamed GitHub Actions config file `.github/workflows/build-gcpy-environment.yml` to `build-gcpy-environment-py312.yml`
 - Updated package version information in ReadTheDocs documentation
+- Bumped dask from version 2024.5.2 to 2025.3.0 to fix a security issue (raised by @dependabot)
 
 ### Removed
 - Removed PyPi configuration file  `docs/environment_files/gcpy_requirements.txt` and symbolic link `./requirements.txt`
