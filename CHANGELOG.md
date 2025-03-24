@@ -4,7 +4,7 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - TBD
+## [1.6.1] - 2025-03-24
 ### Added
 - Added GCPy environment file `docs/environment_files/gcpy_environment_py313.yml`, which is based on Python 3.13
 - Added GitHub Actions config file`.github/workflows/build-gcpy-environment-py313.yml`
