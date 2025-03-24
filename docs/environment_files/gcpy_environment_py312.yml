@@ -14,7 +14,7 @@ channels:
 dependencies:
   - cartopy        ==0.23.0     # Geospatial data processing
   - cf_xarray      ==0.9.1      # CF conventions for xarray
-  - dask           ==2024.5.2   # Parallel library; backend for xarray
+  - dask           ==2025.3.0   # Parallel library; backend for xarray
   - esmf           ==8.6.1      # Earth system modeling framework
   - esmpy          ==8.6.1      # Python wrapper for ESMF
   - gridspec       ==0.1.0      # Define Earth System Model grids
