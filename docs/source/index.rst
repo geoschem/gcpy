@@ -56,6 +56,7 @@ For documentation on setting up and running GEOS-Chem please see our
    Single-Panel
    Six-Panel
    Compare-Diags
+   Code-Profiling
    KPP-Standalone
 
 .. toctree::
