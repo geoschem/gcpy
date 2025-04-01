@@ -44,7 +44,7 @@ would use this command:
 
    $ gprofng collect app ./gcclassic
 
-:program:`Gprofng` will send profiling output to a folder named 
+:program:`Gprofng` will send profiling output to a folder named
 :file:`test.N.er`, where :code:`N` is an integer index and :code:`er`
 stands for  "experiment record".
 
@@ -57,9 +57,9 @@ Next, send function profiling information to a file:
 Here is a sample :file:`functions_profile.txt` for GEOS-Chem Classic.
 
 .. code-block:: text
-		
+
    (gp-display-text) Functions sorted by metric: Exclusive Total CPU Time
-		
+
    Excl. Total     Incl. Total      Name
    CPU             CPU
       sec.      %     sec.      %
@@ -84,11 +84,15 @@ following command:
 
 .. code-block:: console
 
-   $ python -m gcpy.examples.gprofng.plot_functions functions_profile.txt 40
+   $ python -m gcpy.examples.gprofng.plot_functions functions_profile.txt 1 40
 
-This will create the plot above, where 40 functions having the highest
-exclusive time are displayed.  You can change the number of
-functions to include in the plot by passing a different number as
-the second argument.  You should display less than 50 functions per
-plot, or else the plot will become unreadable.
-   
+This will create a plot similar to that shown above, which shows the
+top 40 functions sorted by exclusive time. To see the next 40
+functions sorted by exclusive time, use this command:
+
+.. code-block:: console
+
+   $ python -m gcpy.examples.gprofng.plot_functions functions_profile.txt 41 80
+
+etc.  You should display fewer than 50 functions in order to prevent
+the time and percent labels from overlapping.
