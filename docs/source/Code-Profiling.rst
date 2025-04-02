@@ -2,33 +2,41 @@
 
    <br/>
 
-.. _gprofng-functions:
+.. _code-profiling:
 
-#########################################
-Plotting output from the gprofng profiler
-#########################################
+###################################
+Plotting output from code profilers
+###################################
+
+GCPy contains functions to plot output from the :program:`gprofng` and
+:program:`Intel VTune` code profilers, which can help you to identify
+computational bottlenecks (aka "hotspots") in GEOS-Chem
+Classic, GCHP, and HEMCO.
+
+.. _code-profiling-gprofng:
+
+=======
+gprofng
+=======
 
 This example demonstrates how you can plot function profiles generated
-by the :program:`gprofng` performance profiler.  This is useful for
-identifying computational bottlenecks in GEOS-Chem and related programs.
+by the :program:`gprofng` performance profiler.
 
 .. image:: _static/images/gprofng\_functions.png
    :align: center
 
 
-.. _gprofng-functions-source:
+.. _code-profiling-gprofng-source:
 
-===========
 Source code
-===========
+-----------
 
 **Script location:** `gcpy/examples/gprofng/plot_functions.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/gprofng/plot_functions.py>`_
 
-.. _gprofng-functions-usage:
+.. _code-profiling-gprofng-usage:
 
-=====
 Usage
-=====
+-----
 
 First, generate a function profile with :program:`gprofng`:
 
@@ -84,7 +92,7 @@ following command:
 
 .. code-block:: console
 
-   $ python -m gcpy.examples.gprofng.plot_functions functions_profile.txt 1 40
+   $ python -m gcpy.examples.profile.gprofng_functions functions_profile.txt 1 40
 
 This will create a plot similar to that shown above, which shows the
 top 40 functions sorted by exclusive time. To see the next 40
@@ -92,7 +100,15 @@ functions sorted by exclusive time, use this command:
 
 .. code-block:: console
 
-   $ python -m gcpy.examples.gprofng.plot_functions functions_profile.txt 41 80
+   $ python -m gcpy.examples.profile.gprofng_functions functions_profile.txt 41 80
 
 etc.  You should display fewer than 50 functions in order to prevent
 the time and percent labels from overlapping.
+
+.. _code-profiling-vtune:
+
+===========
+Intel VTune
+===========
+
+To be added
