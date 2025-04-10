@@ -18,7 +18,8 @@ from gcpy.regrid import create_regridders
 from gcpy.grid import get_troposphere_mask
 from gcpy.util import replace_whitespace
 from gcpy.units import convert_units
-from gcpy.constants import COL_WIDTH, MW_AIR_g, skip_these_vars, TABLE_WIDTH
+from gcpy.constants import \
+    COL_WIDTH, ENCODING, MW_AIR_g, skip_these_vars, TABLE_WIDTH
 from gcpy.plot.compare_single_level import compare_single_level
 from gcpy.plot.compare_zonal_mean import compare_zonal_mean
 from gcpy.benchmark.modules.benchmark_utils import \
@@ -5358,3 +5359,135 @@ def diff_of_diffs_toprow_title(config, model):
         )
 
     return title
+
+
+def create_benchmark_sanity_check_table(
+        devpath,
+        devstr,
+        devdate,
+        collections,
+        dst="./benchmark",
+        is_gchp=False,
+        overwrite=False,
+        outfilename="Diagnostic_Sanity_Check.txt",
+        verbose=False,
+):
+    """
+    Creates a diagnostic sanity check table that shows which diagnostic
+    variables are zero or NaN everywhere.  This can help to identify
+    bugs in diagnostic output.
+
+    Args:
+        devpath: str
+            Path to the data set to be compared (aka "Dev").
+        devstr: str
+            A string that can be used to identify the data set specified
+            by devfile (e.g. a model version number or other identifier).
+        devdate: np.datetime64
+            Date/time stamp used by the "Dev" data files.
+        collections: list of strings
+            List of diagnostic collections to examine.
+
+    Keyword Args (optional):
+        dst: str
+            A string denoting the destination folder where the file
+            containing emissions totals will be written.
+            Default value: "./benchmark"
+        is_gchp : bool
+           Set this flag to true to denote if the data is from GCHP.
+        overwrite: bool
+            Set this flag to True to overwrite files in the
+            destination folder (specified by the dst argument).
+            Default value: False
+        outfilename: str
+            Name of the text file which will contain the table of
+            emissions totals.
+            Default value: "Summary.txt"
+        verbose: bool
+            Set this switch to True if you wish to print out extra
+            informational messages.
+            Default value: False
+        spcdb_dir: str
+            Directory of species_datbase.yml file
+            Default value: Directory of GCPy code repository
+
+    Remarks:
+        This method is mainly intended for model benchmarking purposes,
+        rather than as a general-purpose tool.
+    """
+
+    # ==================================================================
+    # Initial preparations
+    # ==================================================================
+
+    # Replace whitespace in the ref and dev labels
+    devstr = replace_whitespace(devstr)
+
+    # Create the directory for output (if necessary)
+    util.make_directory(dst, overwrite)
+    outfilename = os.path.join(dst, outfilename)
+
+    # Pick the proper function to read the data
+    reader = util.dataset_reader(
+        multi_files=False,
+        verbose=verbose
+    )
+
+    # Variables to skip
+    skip_vars = skip_these_vars.append("AREA")
+    
+    # ==================================================================
+    # Open output file and write header
+    # ==================================================================
+    with open(outfilename, "w", encoding=ENCODING) as ofile:
+    
+        # Title strings
+        title1 = "### Benchmark diagnostic sanity check table"
+        title2 = f"### Dev = {devstr}"
+
+        # Print header to file
+        print("#" * 80, file=ofile)
+        print(f"{title1 : <77}{'###'}", file=ofile)
+        print(f"{'###'  : <77}{'###'}", file=ofile)
+        print(f"{title2 : <77}{'###'}", file=ofile)
+        print("#" * 80, file=ofile)
+
+        # ==============================================================
+        # Loop over diagnostic collections and scan files
+        # ==============================================================
+        for col in collections:
+
+            # Read data into an xr.DataSet object
+            file_name = util.get_filepath(
+                devpath,
+                col,
+                devdate,
+                is_gchp=is_gchp,
+            )
+            dset = reader(
+                file_name,
+                drop_variables=skip_vars
+            ).load()
+
+            # Determine which variables are all zeroes or NaN
+            all_zeros_or_nans = []
+            for var in dset.data_vars:
+                data = dset[var].values
+                if np.all(data == 0) or np.all(data == np.nan):
+                    all_zeros_or_nans.append(var)
+
+            # ===========================================================
+            # Print results for each collection
+            # ===========================================================
+            print("", file=ofile)
+            print("="*80, file=ofile)
+            print(f"{os.path.basename(file_name)}", file=ofile)
+            print("="*80, file=ofile)
+            print("", file=ofile)
+            
+            if len(all_zeros_or_nans) == 0:
+                print("No variables were all zero or all NaN", file=ofile)
+            else:
+                print("These variables were all zero or all NaN:", file=ofile)
+                for var in all_zeros_or_nans:
+                    print(f"   {var}", file=ofile)
