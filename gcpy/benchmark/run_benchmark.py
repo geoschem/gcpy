@@ -56,7 +56,8 @@ from gcpy.benchmark.modules.benchmark_funcs import \
     make_benchmark_emis_tables, make_benchmark_jvalue_plots, \
     make_benchmark_aod_plots, make_benchmark_mass_tables, \
     make_benchmark_mass_accumulation_tables, \
-    make_benchmark_operations_budget, create_benchmark_summary_table
+    make_benchmark_operations_budget, create_benchmark_summary_table, \
+    create_benchmark_sanity_check_table
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
 from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
@@ -685,6 +686,34 @@ def run_benchmark_default(config):
                 verbose=False,
             )
 
+        # ==================================================================
+        # GCC vs. GCC diagnostic sanity check table
+        # ==================================================================
+        if config["options"]["outputs"]["sanity_check_table"]:
+            print("\n%%% Creating GCC vs. GCC sanity_check table %%%")
+
+            # Print summary of which collections are identical
+            # between Ref & Dev, and which are not identical.
+            create_benchmark_sanity_check_table(
+                gcc_vs_gcc_devdir,
+                config["data"]["dev"]["gcc"]["version"],
+                gcc_dev_date,
+                collections = [
+                    'AerosolMass',
+                    'Aerosols',
+                    'DryDep',
+                    'Emissions',
+                    'JValues',
+                    'Metrics',
+                    'SpeciesConc',
+                    'StateMet'
+                ],
+                dst=gcc_vs_gcc_tablesdir,
+                outfilename="Diagnostic_Sanity_Check.txt",
+                overwrite=True,
+                verbose=False,
+            )
+            
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC benchmark plots and tables
@@ -1113,7 +1142,7 @@ def run_benchmark_default(config):
                 verbose=False,
                 dev_gchp=True
             )
-
+            
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCHP benchmark plots and tables
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1623,6 +1652,35 @@ def run_benchmark_default(config):
                 dev_gchp=True,
             )
 
+        # ==================================================================
+        # GCHP vs. GCHP diagnostic sanity check table
+        # ==================================================================
+        if config["options"]["outputs"]["sanity_check_table"]:
+            print("\n%%% Creating GCHP vs. GCHP sanity check table %%%")
+
+            # Print summary of which collections are identical
+            # between Ref & Dev, and which are not identical.
+            create_benchmark_sanity_check_table(
+                gchp_vs_gchp_devdir,
+                config["data"]["dev"]["gchp"]["version"],
+                gchp_dev_date,
+                collections=[
+                    'AerosolMass',
+                    'Aerosols',
+                    'DryDep',
+                    'Emissions',
+                    'JValues',
+                    'Metrics',
+                    'SpeciesConc',
+                    'StateMet',
+                ],
+                dst=gchp_vs_gchp_tablesdir,
+                is_gchp=True,
+                outfilename="Diagnostic_Sanity_Check.txt",
+                overwrite=True,
+                verbose=False,
+            )
+            
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC difference of differences benchmark plots
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
