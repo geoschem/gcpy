@@ -67,7 +67,7 @@ def vtune_how_is_report_grouped(
 
 
 def vtune_ask_user_to_continue_or_quit(
-        header_line,
+        header,
         linecount,
         lines_per_screen,
 ):
@@ -76,7 +76,7 @@ def vtune_ask_user_to_continue_or_quit(
     to the screen, or if they wish to quit.
 
     Args
-    header_line      : str  : Header line for hotspot report
+    header           : str  : Header line for hotspot report
     linecount        : int  : Index of the line being displayed
     lines_per_screen : int  : Pause after showing these many lines
 
@@ -92,7 +92,7 @@ def vtune_ask_user_to_continue_or_quit(
 
         # User wishes to continue
         print("")
-        print(header_line)
+        print(header)
         return False
 
     # Continue by default
@@ -115,19 +115,13 @@ def vtune_list_all_hotspots_by_line(
     """
     verify_variable_type(report, pd.DataFrame)
 
-    def print_header(report):
-        """
-        Internal function that displays the header line
-        to be placed atop each column of data.
-        """
-        col = list(report.columns)
-        print(f"Rank      {col[0]:<30}  {col[1]:>12}  {col[2]:>20}")
-
     # Crop the report to necessary columns
     report = report[["Source File", "Source Line", "CPU Time [s]"]]
 
     # Print column headers
-    print_header(report)
+    col = list(report.columns)
+    header = f"Rank      {col[0]:<30}  {col[1]:>12}  {col[2]:>20}"
+    print(header)
 
     # Return each row of the DataFrame as a tuple
     for row in report.itertuples():
@@ -142,7 +136,7 @@ def vtune_list_all_hotspots_by_line(
         # continue or quit.  If quit, then break out of this loop
         # Ask user to continue/quit.  If returns true, exit
         if vtune_ask_user_to_continue_or_quit(
-            print_header(report),
+            header,
             linecount,
             lines_per_screen
         ):
@@ -165,19 +159,13 @@ def vtune_list_all_hotspots_by_function(
     """
     verify_variable_type(report, pd.DataFrame)
 
-    def print_header(report):
-        """
-        Internal function that displays the header line
-        to be placed atop each column of data.
-        """
-        col = list(report.columns)
-        print(f"Rank      {col[0]:<60}  {col[1]:>20}")
-
     # Crop the data to necessary columns
     report = report[["Function", "CPU Time [s]"]]
 
     # Print column headers
-    print_header(report)
+    col = list(report.columns)
+    header = f"Rank      {col[0]:<60}  {col[1]:>20}"
+    print(header)
 
     # Return each row of the DataFrame as a tuple
     for row in report.itertuples():
@@ -185,13 +173,12 @@ def vtune_list_all_hotspots_by_function(
         # Print each line
         linecount = row[0] + 1
         display = f"{linecount:<8}  {row[1]:<60}  {float(row[2]):>20.6f}"
-        print(display)
 
         # After a certain number of lines, ask user if they want to
         # continue or quit.  If quit, then break out of this loop
         # Ask user to continue/quit.  If returns true, exit
         if vtune_ask_user_to_continue_or_quit(
-            print_header(report),
+            header,
             linecount,
             lines_per_screen
         ):
