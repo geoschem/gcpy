@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero
 or NaN
+- Added `check_gchp_emission_diags.py` example script (checks if entries in `HISTORY.rc` and `HEMCO_Diagn.rc` are consistent)
 
 ## [1.6.1] - 2025-03-24
 ### Added
@@ -24,7 +25,7 @@ or NaN
 - Updated package version information in ReadTheDocs documentation
 - Bumped dask from version 2024.5.2 to 2025.3.0 to fix a security issue (raised by @dependabot)
 - Bumped jinja2 from version 3.1.5 to 3.1.6 to fix a security issue (raised by @dependabot)
-- Edited installation instructions via Mamba/Conda to more accurately reflect the needed commands
+- Edited installation instructions via Mamba/Conda to more accurately reflect the needed commandsm
 - Updated the ReadTheDocs "Releasing new versions" guide with info on conda-forge
 
 ### Removed
