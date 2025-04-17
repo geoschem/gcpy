@@ -6,9 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] - TBD
 ### Added
-- Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero
-or NaN
-- Added `check_gchp_emission_diags.py` example script (checks if entries in `HISTORY.rc` and `HEMCO_Diagn.rc` are consistent)
+- Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN
+- Added `check_gchp_emission_diags.py` example script and documentation
 
 ## [1.6.1] - 2025-03-24
 ### Added
