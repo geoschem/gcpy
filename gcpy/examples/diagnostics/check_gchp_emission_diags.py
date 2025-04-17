@@ -115,11 +115,11 @@ def compare_containers(history_entries, hco_diagn_entries):
 
     # Diagnostic entries common to History and HEMCO
     result = {}
-    result["common"] = list(set_history & set_hemco)
+    result["common"] = sorted(list(set_history & set_hemco))
 
     # Diagnostic entries found in one file but not the other
-    result["in_history_not_hemco"] = list(set_history - set_hemco)
-    result["in_hemco_not_history"] = list(set_hemco - set_history)
+    result["in_history_not_hemco"] = sorted(list(set_history - set_hemco))
+    result["in_hemco_not_history"] = sorted(list(set_hemco - set_history))
 
     return result
 
