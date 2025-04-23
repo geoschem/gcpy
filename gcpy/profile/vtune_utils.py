@@ -84,7 +84,9 @@ def vtune_ask_user_to_continue_or_quit(
     result           : bool : True if user wishes to quit
     """
     if linecount % lines_per_screen == 0:
-        result = input("\nHit any key to continue or Q/q to quit >>> ")
+        result = input(
+            "\nPress ENTER to continue, or Q/q then ENTER to quit >>> "
+        )
 
         # User wishes to quit
         if "Q" in result or "q" in result:
@@ -173,6 +175,7 @@ def vtune_list_all_hotspots_by_function(
         # Print each line
         linecount = row[0] + 1
         display = f"{linecount:<8}  {row[1]:<60}  {float(row[2]):>20.6f}"
+        print(display)
 
         # After a certain number of lines, ask user if they want to
         # continue or quit.  If quit, then break out of this loop
