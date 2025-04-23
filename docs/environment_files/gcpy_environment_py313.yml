@@ -23,8 +23,8 @@ dependencies:
   - cartopy        ==0.24.0     # Geospatial data processing
   - cf_xarray      ==0.10.0     # CF conventions for xarray
   - dask           ==2025.3.0   # Parallel library; backend for xarray
-  - esmf           ==8.8.0      # Earth System Model Framework
-  - esmpy          ==8.8.0      # Python wrapper for ESMF
+  - esmf           ==8.8.1      # Earth System Model Framework
+  - esmpy          ==8.8.1      # Python wrapper for ESMF
   - gridspec       ==0.1.0      # Define Earth System Model grids
   - ipython        ==9.0.0      # Interactive Python (used by Jupyter)
   - joblib         ==1.4.2      # Parallelize python code
