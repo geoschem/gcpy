@@ -14,6 +14,7 @@ from .file_regrid import *
 from .grid import *
 from .grid_stretching_transforms import *
 from .plot import *
+from .profile import *
 from .raveller_1D import *
 from .regrid import *
 from .regrid_restart_file import *
