@@ -197,6 +197,6 @@ if __name__ == '__main__':
 
     if len(argv) != 3:
         MSG = "Usage: python -m gcpy.examples.diagnostics.check_gchp_emission_diags /path/to/run/GCHP SIMULATION-NAME"
-        raise ValueError(msg)
+        raise ValueError(MSG)
 
     main(argv[1], argv[2])
