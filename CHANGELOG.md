@@ -24,7 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated package version information in ReadTheDocs documentation
 - Bumped dask from version 2024.5.2 to 2025.3.0 to fix a security issue (raised by @dependabot)
 - Bumped jinja2 from version 3.1.5 to 3.1.6 to fix a security issue (raised by @dependabot)
-- Edited installation instructions via Mamba/Conda to more accurately reflect the needed commandsm
+- Edited installation instructions via Mamba/Conda to more accurately reflect the needed commands
 - Updated the ReadTheDocs "Releasing new versions" guide with info on conda-forge
 
 ### Removed
