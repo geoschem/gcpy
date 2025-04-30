@@ -518,19 +518,13 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["plot_2d_met"]:
             print("\n%%% Creating GCC vs. GCC 2D StateMet plots %%%")
 
-            colname = "StateMet"
-
-            # Diagnostic collection files to read
-            ref = get_filepath(gcc_vs_gcc_refdir, colname, gcc_ref_date)
-            dev = get_filepath(gcc_vs_gcc_devdir, colname, gcc_dev_date)
-
             # Create plots
             make_benchmark_collection_2d_var_plots(
-                ref,
+                refmet,
                 gcc_vs_gcc_refstr,
-                dev,
+                devmet,
                 gcc_vs_gcc_devstr,
-                colname=colname,
+                colname="StateMet",
                 var_prefix='Met',
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -545,18 +539,13 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["plot_3d_met"]:
             print("\n%%% Creating GCC vs. GCC 3D StateMet plots %%%")
 
-            colname = "StateMet"
-
-            # Diagnostic collection files to read
-            ref = get_filepath(gcc_vs_gcc_refdir, colname, gcc_ref_date)
-            dev = get_filepath(gcc_vs_gcc_devdir, colname, gcc_dev_date)
-
+            # Create plots
             make_benchmark_collection_3d_var_plots(
-                ref,
+                refmet,
                 gcc_vs_gcc_refstr,
-                dev,
+                devmet,
                 gcc_vs_gcc_devstr,
-                colname=colname,
+                colname="StateMet",
                 var_prefix='Met',
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1073,24 +1062,13 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["plot_2d_met"]:
             print("\n%%% Creating GCHP vs. GCC 2D StateMet plots %%%")
 
-            colname = "StateMet"
-
-            # Filepaths
-            ref = get_filepath(gchp_vs_gcc_refdir, colname, gcc_dev_date)
-            dev = get_filepath(
-                gchp_vs_gcc_devdir,
-                colname,
-                gchp_dev_date,
-                is_gchp=True
-            )
-
             # Create plots
             make_benchmark_collection_2d_var_plots(
-                ref,
+                refmet,
                 gchp_vs_gcc_refstr,
-                dev,
+                devmet,
                 gchp_vs_gcc_devstr,
-                colname=colname,
+                colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1105,24 +1083,13 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["plot_3d_met"]:
             print("\n%%% Creating GCHP vs. GCC 3D StateMet plots %%%")
 
-            colname = "StateMet"
-
-            # Filepaths
-            ref = get_filepath(gchp_vs_gcc_refdir, colname, gcc_dev_date)
-            dev = get_filepath(
-                gchp_vs_gcc_devdir,
-                colname,
-                gchp_dev_date,
-                is_gchp=True
-            )
-
             # Create plots
             make_benchmark_collection_3d_var_plots(
-                ref,
+                refmet,
                 gchp_vs_gcc_refstr,
-                dev,
+                devmet,
                 gchp_vs_gcc_devstr,
-                colname=colname,
+                colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1662,29 +1629,13 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["plot_2d_met"]:
             print("\n%%% Creating GCHP vs. GCHP 2D StateMet plots %%%")
 
-            colname = "StateMet"
-
-            # Filepaths
-            ref = get_filepath(
-                gchp_vs_gchp_refdir,
-                colname,
-                gchp_ref_date,
-                is_gchp=True
-            )
-            dev = get_filepath(
-                gchp_vs_gchp_devdir,
-                colname,
-                gchp_dev_date,
-                is_gchp=True
-            )
-
             # Create plots
             make_benchmark_collection_2d_var_plots(
-                ref,
+                refmet,
                 gchp_vs_gchp_refstr,
-                dev,
+                devmet,
                 gchp_vs_gchp_devstr,
-                colname=colname,
+                colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1699,29 +1650,13 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["plot_3d_met"]:
             print("\n%%% Creating GCHP vs. GCHP 3D StateMet plots %%%")
 
-            colname = "StateMet"
-
-            # Filepaths
-            ref = get_filepath(
-                gchp_vs_gchp_refdir,
-                colname,
-                gchp_ref_date,
-                is_gchp=True
-            )
-            dev = get_filepath(
-                gchp_vs_gchp_devdir,
-                colname,
-                gchp_dev_date,
-                is_gchp=True
-            )
-
             # Create plots
             make_benchmark_collection_3d_var_plots(
-                ref,
+                refmet,
                 gchp_vs_gchp_refstr,
-                dev,
+                devmet,
                 gchp_vs_gchp_devstr,
-                colname=colname,
+                colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
