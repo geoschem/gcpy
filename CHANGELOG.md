@@ -7,11 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - TBD
 ### Added
 - Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN
+- Added a chapter on using code profiling tools in the ReadTheDocs documentatio
+n
+- Added code profiling scripts (in `gcpy/gcpy/profile`) to read and display output from gprofng and Intel VTune profilers
+- Added `check_gchp_emission_diags.py` example script and documentation
 
 ### Changed
 - Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
-- Added code profiling scripts (in `gcpy/gcpy/profile`) to read and display output from gprofng and Intel VTune profilers
-- Added a chapter on using code profiling tools in the ReadTheDocs documentation
 
 ## [1.6.1] - 2025-03-24
 ### Added
