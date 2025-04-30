@@ -236,11 +236,15 @@ def compare_zonal_mean(
         frac_devstr = 'GCHP_dev / GCHP_ref'
 
     # If no varlist is passed, plot all 3D variables in the dataset
+    # Also remove Met_AREAM2 from GCHP StateMet collection,
+    # since we cannot make zonal mean plots from this variable.
     if varlist is None:
         quiet = not verbose
         vardict = compare_varnames(refdata, devdata, quiet=quiet)
         varlist = vardict["commonvars3D"]
         print("Plotting all 3D variables")
+    if "Met_AREAM2" in varlist:
+        varlist.remove("Met_AREAM2")
     n_var = len(varlist)
 
     # Exit out if there are no 3D variables
