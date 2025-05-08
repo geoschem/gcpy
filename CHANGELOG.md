@@ -14,10 +14,12 @@ n
 - Added new benchmark functions `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots` which can be used with any GEOS-Chem output collection
 - Added 1-month benchmark comparison plot options for `Budget`, `UVFlux`, and `StateMet` collections (2D and 3D vars separately) which are off by default
 - Added `export MPLBACKEND=agg` to `gcpy/benchmark/modules/benchmark_slurm.sh` to request a non-interactive MatPlotLib backend
-- Added code to remove `Met_AREAM2` from the list of variables for which zonal mean plots will be created in `plot/compare_zonal_mean.py`
 
 ### Changed
 - Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
+
+### Fixed
+- Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
 
 ## [1.6.1] - 2025-03-24
 ### Added
