@@ -131,6 +131,11 @@ options:
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
+    # Comparison plots for other collections
+    plot_budget: False
+    plot_2d_met: False
+    plot_3d_met: False
+    plot_uvflux: False
   #
   # n_cores: Specify the number of cores to use.
   # -1: Use $OMP_NUM_THREADS         cores
