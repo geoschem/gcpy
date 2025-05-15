@@ -20,6 +20,7 @@ n
 
 ### Fixed
 - Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
+- Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
 
 ## [1.6.1] - 2025-03-24
 ### Added

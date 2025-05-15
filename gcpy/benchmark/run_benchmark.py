@@ -561,8 +561,8 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCC vs. GCC column AOD plots %%%")
 
             # Filepaths
-            ref = get_filepath(gcc_vs_gcc_refdir, "AOD", gcc_ref_date)
-            dev = get_filepath(gcc_vs_gcc_devdir, "AOD", gcc_dev_date)
+            ref = get_filepath(gcc_vs_gcc_refdir, "Aerosols", gcc_ref_date)
+            dev = get_filepath(gcc_vs_gcc_devdir, "Aerosols", gcc_dev_date)
 
             # Create plots
             make_benchmark_aod_plots(
