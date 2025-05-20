@@ -40,8 +40,8 @@ def create_track_func(args):
     #(ds['latitude'] / 180) * args.vertical_scan_time) % 24
     # vary overpass time with latitude
     overpass_offset = ds['latitude'] / 90 * 24 / args.orbits_per_day / 4 * 60
-    if args.direction == 'ascending':
-        # overpass delayed at high northern latitudes if ascending
+    if args.direction == 'descending':
+        # overpass advanced at high northern latitudes if descending
         overpass_offset = -overpass_offset
 
     longitude = ds.longitude.values
