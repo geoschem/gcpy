@@ -57,7 +57,7 @@ def create_track_func(args):
     ds = ds.sortby('time')
 
     ds = ds.reset_index('track')
-    ds = ds.assign_coords({'track': ds.time}).drop(
+    ds = ds.assign_coords({'track': ds.time}).drop_vars(
         'time').rename({'track': 'time'})
 
     ds['longitude'].attrs['long_name'] = 'longitude'
@@ -67,7 +67,7 @@ def create_track_func(args):
     ds['latitude'].attrs['long_name'] = 'latitude'
     ds['latitude'].attrs['units'] = 'degrees_north'
 
-    ds2 = ds.drop(['nf', 'Ydim', 'Xdim'])
+    ds2 = ds.drop_vars(['nf', 'Ydim', 'Xdim'])
     ds2['nf'] = xr.DataArray(ds.nf.values, dims=['time'])
     ds2['Ydim'] = xr.DataArray(ds.Ydim.values, dims=['time'])
     ds2['Xdim'] = xr.DataArray(ds.Xdim.values, dims=['time'])
@@ -126,7 +126,7 @@ def unravel_func(args):
 
     # Create a multiindex for nf,Ydim,Xdim
     track_mi = pd.MultiIndex.from_arrays([track.nf.values, track.Ydim.values, track.Xdim.values], names=['nf', 'Ydim', 'Xdim'])
-    track = track.drop(['nf', 'Ydim', 'Xdim', 'latitude', 'longitude'])
+    track = track.drop_vars(['nf', 'Ydim', 'Xdim', 'latitude', 'longitude'])
 
     # Merge datasets
     tracked_output = tracked_output
