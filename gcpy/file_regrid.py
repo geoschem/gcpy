@@ -105,10 +105,10 @@ def file_regrid(
     #  -- Bob Yantosca & Lizzie Lundgren (24 Oct 2023)
     if not np.array_equal(sg_params_in, [1.0, 170.0, -90.0]) or \
        not np.array_equal(sg_params_out, [1.0, 170.0, -90.0]):
-       msg = "Regridding to or from cubed-sphere stretched grids is\n" + \
-           "currently not supported.  Please use the offline regridding\n" + \
-           "method described in the Regridding section of gcpy.readthedocs.io."
-       raise RuntimeError(msg)
+        msg = "Regridding to or from cubed-sphere stretched grids is\n" + \
+            "currently not supported.  Please use the offline regridding\n" + \
+            "method described in the Regridding section of gcpy.readthedocs.io."
+        raise RuntimeError(msg)
     # ------------------------------------------------------------------
 
     # Load dataset
@@ -330,7 +330,7 @@ def regrid_cssg_to_cssg(
     """
     if verbose:
         print("file_regrid.py: Regridding from CS/SG to CS/SG")
-        
+
     # Keep all xarray attributes
     with xr.set_options(keep_attrs=True):
 
@@ -1128,7 +1128,7 @@ def rename_restart_variables(
         # checkpoint -> classic/diagnostic
         # ==============================================================
         for var in dset.data_vars.keys():
-            if var == "DELP_DRY" or var == "DELPDRY":
+            if var in ("DELP_DRY", "DELPDRY"):
                 old_to_new[var] = "Met_DELPDRY"
             if var == "BXHEIGHT":
                 old_to_new[var] = "Met_BXHEIGHT"
