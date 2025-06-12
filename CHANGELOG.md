@@ -3,11 +3,8 @@
 All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-## [Unreleased] - TBD
-### Fixed
-- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
 
-## [Unreleased] - TBD
+## [1.6.2] - 2025-06-12
 ### Added
 - Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN
 - Added a chapter on using code profiling tools in the ReadTheDocs documentatio
@@ -25,15 +22,16 @@ n
 ### Fixed
 - Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
 - Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
+- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
 
-## [Unreleased] - TBD
+## [1.6.2] - 2025-06-12
 ### Changed
 - Bumped `requests` from 2.32.3 to 2.32.4 in environment files to fix a security issue flagged by Dependabot
 
 ### Fixed
 - Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
 
-## [Unreleased] - TBD
+## [1.6.2] - 2025-06-12
 ### Added
 - Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN
 - Added a chapter on using code profiling tools in the ReadTheDocs documentatio
