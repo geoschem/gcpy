@@ -889,14 +889,15 @@ def compare_varnames(
     refonly = [var for var in refvars if var not in devvars]
     devonly = [var for var in devvars if var not in refvars]
     dimmismatch = [v for v in commonvars if refdata[v].ndim != devdata[v].ndim]
-    # Assume plottable data has lon and lat
+    # Assume plottable data has (lon, lat) or (Xdim, Ydim)
     # This is OK for purposes of benchmarking
     #  -- Bob Yantosca (09 Feb 2023)
     commonvars_data = [
         var for var in commonvars if (
-            ("lat" in refdata[var].dims or "Ydim" in refdata[var].dims)
-            and
-            ("lon" in refdata[var].dims or "Xdim" in refdata[var].dims)
+            ("lat" in refdata[var].dims or "Ydim" in refdata[var].dims) and
+            ("lon" in refdata[var].dims or "Xdim" in refdata[var].dims) and
+            ("lat" in devdata[var].dims or "Ydim" in devdata[var].dims) and
+            ("lon" in devdata[var].dims or "Xdim" in devdata[var].dims)
         )
     ]
     commonvars_other = [
@@ -907,11 +908,13 @@ def compare_varnames(
     commonvars_2d = [
         var for var in commonvars if (
             (var in commonvars_data) and ("lev" not in refdata[var].dims)
+                                     and ("lev" not in devdata[var].dims)
         )
     ]
     commonvars_3d = [
         var for var in commonvars if (
             (var in commonvars_data) and ("lev" in refdata[var].dims)
+                                     and ("lev" in devdata[var].dims)
         )
     ]
 

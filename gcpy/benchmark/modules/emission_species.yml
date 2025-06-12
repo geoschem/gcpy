@@ -47,7 +47,7 @@ FullChemBenchmark:
   MTPA: Tg
   MTPO: Tg
   NH3: Tg
-  'NO': Tg
+  'NO': Tg  # Quotes are necessary, otherwise YAML interprets NO as False
   NO2: Tg
   O3: Tg
   OCPI: Tg

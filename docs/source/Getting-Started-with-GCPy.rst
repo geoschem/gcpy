@@ -54,10 +54,10 @@ GCPy requires several other Python packages, which are listed below.
      - 2025.3.0
    * - esmf [#A]_
      - 8.6.1
-     - 8.8.0
+     - 8.8.1
    * - `esmpy <https://www.earthsystemcog.org/projects/esmpy/>`_ [#A]_
      - 8.6.1
-     - 8.8.0
+     - 8.8.1
    * - gridspec
      - 0.1.0
      - 0.1.0

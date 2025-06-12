@@ -24,13 +24,16 @@
 export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
 export OMP_STACKSIZE=500m
 
+# Use a non-interactive backend for matplotlib (we're printing to file)
+export MPLBACKEND=agg
+
 # Turn on Python environment (edit for your setup)
 mamba activate gcpy_env
 
 # Specify a YAML file with benchmark options
 # Uncomment the file that you wish:
-#config="1mo_benchmark.yml"
-config="1yr_fullchem_benchmark.yml"
+config="1mo_benchmark.yml"
+#config="1yr_fullchem_benchmark.yml"
 #config="1yr_tt_benchmark.yml"
 
 # Call the run_benchmark script to make the plots

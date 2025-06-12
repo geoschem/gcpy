@@ -18,7 +18,8 @@ def make_regridder_L2L(
         weightsdir='.',
         reuse_weights=False,
         in_extent=[-180, 180, -90, 90],
-        out_extent=[-180, 180, -90, 90]
+        out_extent=[-180, 180, -90, 90],
+        method="conservative",
 ):
     """
     Create an xESMF regridder between two lat/lon grids
@@ -78,14 +79,14 @@ def make_regridder_L2L(
         regridder = xe.Regridder(
             llgrid_in,
             llgrid_out,
-            method='conservative',
+            method=method,
             filename=weightsfile,
             reuse_weights=reuse_weights)
     except BaseException:
         regridder = xe.Regridder(
             llgrid_in,
             llgrid_out,
-            method='conservative',
+            method=method,
             filename=weightsfile,
             reuse_weights=reuse_weights)
     return regridder
@@ -96,7 +97,8 @@ def make_regridder_C2L(
         llres_out,
         weightsdir='.',
         reuse_weights=True,
-        sg_params=[1, 170, -90]
+        sg_params=[1, 170, -90],
+        method="conservative",
 ):
     """
     Create an xESMF regridder from a cubed-sphere to lat/lon grid
@@ -151,14 +153,14 @@ def make_regridder_C2L(
             regridder = xe.Regridder(
                 csgrid_list[i],
                 llgrid,
-                method='conservative',
+                method=method,
                 filename=weightsfile,
                 reuse_weights=reuse_weights)
         except BaseException:
             regridder = xe.Regridder(
                 csgrid_list[i],
                 llgrid,
-                method='conservative',
+                method=method,
                 filename=weightsfile,
                 reuse_weights=reuse_weights)
         regridder_list.append(regridder)
@@ -175,7 +177,9 @@ def make_regridder_S2S(
         tlon_out=170,
         tlat_out=-90,
         weightsdir='.',
-        verbose=True):
+        verbose=True,
+        method="conservative",
+):
     """
     Create an xESMF regridder from a cubed-sphere / stretched-grid grid
     to another cubed-sphere / stretched-grid grid.
@@ -238,7 +242,7 @@ def make_regridder_S2S(
             try:
                 regridder = xe.Regridder(igrid_list[i_face],
                                          ogrid_list[o_face],
-                                         method='conservative',
+                                         method=method,
                                          filename=weightsfile,
                                          reuse_weights=reuse_weights)
                 regridder_list[-1][i_face] = regridder
@@ -254,7 +258,8 @@ def make_regridder_L2S(
         csres_out,
         weightsdir='.',
         reuse_weights=True,
-        sg_params=[1, 170, -90]
+        sg_params=[1, 170, -90],
+        method="conservative"
 ):
     """
     Create an xESMF regridder from a lat/lon to a cubed-sphere grid
@@ -309,14 +314,14 @@ def make_regridder_L2S(
             regridder = xe.Regridder(
                 llgrid,
                 csgrid_list[i],
-                method='conservative',
+                method=method,
                 filename=weightsfile,
                 reuse_weights=reuse_weights)
         except BaseException:
             regridder = xe.Regridder(
                 llgrid,
                 csgrid_list[i],
-                method='conservative',
+                method=method,
                 filename=weightsfile,
                 reuse_weights=reuse_weights)
         regridder_list.append(regridder)
@@ -643,7 +648,7 @@ def regrid_comparison_data(
                 new_data=new_data[cmpminlat_ind:cmpmaxlat_ind +
                                   1, cmpminlon_ind:cmpmaxlon_ind + 1].squeeze()
             return new_data
-        elif cmpgridtype == "ll":
+        if cmpgridtype == "ll":
             # CS to ll
             if nlev == 1:
                 new_data = np.zeros([global_cmp_grid['lat'].size,
@@ -662,7 +667,7 @@ def regrid_comparison_data(
                 new_data=new_data[cmpminlat_ind:cmpmaxlat_ind +
                                   1, cmpminlon_ind:cmpmaxlon_ind + 1].squeeze()
             return new_data
-        elif cmpgridtype == "cs":
+        if cmpgridtype == "cs":
             # CS to CS
             # Reformat dimensions to T, Z, F, Y, X
             if 'Xdim' in data.dims:
@@ -803,7 +808,7 @@ def reformat_dims(
 
     # %%%% Renaming from the common format %%%%
     # Reverse rename
-    ds = rename_existing(ds, 
+    ds = rename_existing(ds,
         {v: k for k, v in dim_formats[format].get('rename', {}).items()})
 
     # Ravel dimensions
