@@ -91,98 +91,98 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     bmk_mon_inds = [0, 3, 6, 9]
     bmk_n_months = len(bmk_mon_strs)
 
-    # =====================================================================
     # Path to species_database.yml
-    # =====================================================================
     spcdb_dir = get_species_database_dir(config)
 
-    # ======================================================================
-    # Data directories
-    # For gchp_vs_gcc_refdir use config["data"]["dev"]["gcc"]["version"], not ref (mps, 6/27/19)
-    # ======================================================================
-
-    # Diagnostics file directory paths
-    s = "outputs_subdir"
-    gcc_vs_gcc_refdir, gcc_vs_gcc_devdir = gcc_vs_gcc_dirs(config, s)
-    gchp_vs_gcc_refdir, gchp_vs_gcc_devdir = gchp_vs_gcc_dirs(config, s)
-    gchp_vs_gchp_refdir, gchp_vs_gchp_devdir = gchp_vs_gchp_dirs(config, s)
-
-    # Restart file directory paths
-    s = "restarts_subdir"
-    gcc_vs_gcc_refrstdir, gcc_vs_gcc_devrstdir = gcc_vs_gcc_dirs(config, s)
-    gchp_vs_gcc_refrstdir, gchp_vs_gcc_devrstdir = gchp_vs_gcc_dirs(config, s)
-    gchp_vs_gchp_refrstdir, gchp_vs_gchp_devrstdir = gchp_vs_gchp_dirs(config, s)
-
-    # Log file directory paths
-    s = "logs_subdir"
-    gcc_vs_gcc_reflogdir, gcc_vs_gcc_devlogdir = gcc_vs_gcc_dirs(config, s)
-    gchp_vs_gcc_reflogdir, gchp_vs_gcc_devlogdir = gchp_vs_gcc_dirs(config, s)
-    gchp_vs_gchp_reflogdir, gchp_vs_gchp_devlogdir = gchp_vs_gchp_dirs(config, s)
-
-    # Directories where plots & tables will be created
+    # Create the main results directory
     mainresultsdir = os.path.join(
         config["paths"]["results_dir"]
     )
-    gcc_vs_gcc_resultsdir = os.path.join(
-        mainresultsdir,
-        config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
-    )
-    gchp_vs_gcc_resultsdir = os.path.join(
-        mainresultsdir,
-        config["options"]["comparisons"]["gchp_vs_gcc"]["dir"]
-    )
-    gchp_vs_gchp_resultsdir = os.path.join(
-        mainresultsdir,
-        config["options"]["comparisons"]["gchp_vs_gchp"]["dir"]
-    )
-
-    # Create the main results directory
     if not os.path.exists(mainresultsdir):
         os.mkdir(mainresultsdir)
-
-    # Create results directories that don't exist, and place a copy of
-    # this file plus the YAML configuration file in each results directory.
-    resdir_list = [
-        gcc_vs_gcc_resultsdir,
-        gchp_vs_gcc_resultsdir,
-        gchp_vs_gchp_resultsdir
-    ]
-    comparisons_list =  [
-        config["options"]["comparisons"]["gcc_vs_gcc"]["run"],
-        config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
-        config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
-    ]
-    for (resdir, plotting_type) in zip(resdir_list, comparisons_list):
-        if plotting_type and not os.path.exists(resdir):
+    
+    # GCC vs GCC comparison output directories
+    if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
+        gcc_vs_gcc_refdir, gcc_vs_gcc_devdir = gcc_vs_gcc_dirs(config, "outputs_subdir")
+        gcc_vs_gcc_refrstdir, gcc_vs_gcc_devrstdir = gcc_vs_gcc_dirs(config, "restarts_subdir")
+        gcc_vs_gcc_reflogdir, gcc_vs_gcc_devlogdir = gcc_vs_gcc_dirs(config, "logs_subdir")
+        gcc_vs_gcc_resultsdir = os.path.join(
+            mainresultsdir,
+            config["options"]["comparisons"]["gcc_vs_gcc"]["dir"]
+        )
+        resdir=gcc_vs_gcc_resultsdir
+        if not os.path.exists(resdir):
             os.mkdir(resdir)
-            if resdir in resdir_list:
-                copy_file_to_dir(__file__, resdir)
-                copy_file_to_dir(config["configuration_file_name"], resdir)
+            copy_file_to_dir(__file__, resdir)
+            copy_file_to_dir(config["configuration_file_name"], resdir)
+        gcc_vs_gcc_tablesdir = os.path.join(
+            gcc_vs_gcc_resultsdir,
+            config["options"]["comparisons"]["gcc_vs_gcc"]["tables_subdir"],
+        )
+        gcc_vs_gcc_refstr = config["data"]["ref"]["gcc"]["version"]
+        gcc_vs_gcc_devstr = config["data"]["dev"]["gcc"]["version"]
+ 
+    # GCHP vs GCC comparison output directories
+    if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
+        gchp_vs_gcc_refdir, gchp_vs_gcc_devdir = gchp_vs_gcc_dirs(config, "outputs_subdir")
+        gchp_vs_gcc_refrstdir, gchp_vs_gcc_devrstdir = gchp_vs_gcc_dirs(config, "restarts_subdir")
+        gchp_vs_gcc_reflogdir, gchp_vs_gcc_devlogdir = gchp_vs_gcc_dirs(config, "logs_subdir")
+        gchp_vs_gcc_resultsdir = os.path.join(
+            mainresultsdir,
+            config["options"]["comparisons"]["gchp_vs_gcc"]["dir"]
+        )
+        resdir=gchp_vs_gcc_resultsdir
+        if not os.path.exists(resdir):
+            os.mkdir(resdir)
+            copy_file_to_dir(__file__, resdir)
+            copy_file_to_dir(config["configuration_file_name"], resdir)
+        gchp_vs_gcc_tablesdir = os.path.join(
+            gchp_vs_gcc_resultsdir,
+            config["options"]["comparisons"]["gchp_vs_gcc"]["tables_subdir"],
+        )
+        gchp_vs_gcc_refstr = config["data"]["dev"]["gcc"]["version"]
+        gchp_vs_gcc_devstr = config["data"]["dev"]["gchp"]["version"]
 
-    # Tables directories
-    gcc_vs_gcc_tablesdir = os.path.join(
-        gcc_vs_gcc_resultsdir,
-        config["options"]["comparisons"]["gcc_vs_gcc"]["tables_subdir"],
-    )
-    gchp_vs_gcc_tablesdir = os.path.join(
-        gchp_vs_gcc_resultsdir,
-        config["options"]["comparisons"]["gchp_vs_gcc"]["tables_subdir"],
-    )
-    gchp_vs_gchp_tablesdir = os.path.join(
-        gchp_vs_gchp_resultsdir,
-        config["options"]["comparisons"]["gchp_vs_gchp"]["tables_subdir"],
-    )
+    # GCHP vs GCHP comparison output directories
+    if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
+        gchp_vs_gchp_refdir, gchp_vs_gchp_devdir = gchp_vs_gchp_dirs(config, "outputs_subdir")
+        gchp_vs_gchp_refrstdir, gchp_vs_gchp_devrstdir = gchp_vs_gchp_dirs(config, "restarts_subdir")
+        gchp_vs_gchp_reflogdir, gchp_vs_gchp_devlogdir = gchp_vs_gchp_dirs(config, "logs_subdir")
+        gchp_vs_gchp_resultsdir = os.path.join(
+            mainresultsdir,
+            config["options"]["comparisons"]["gchp_vs_gchp"]["dir"]
+        )
+        resdir=gchp_vs_gchp_resultsdir
+        if not os.path.exists(resdir):
+            os.mkdir(resdir)
+            copy_file_to_dir(__file__, resdir)
+            copy_file_to_dir(config["configuration_file_name"], resdir)
+        gchp_vs_gchp_tablesdir = os.path.join(
+            gchp_vs_gchp_resultsdir,
+            config["options"]["comparisons"]["gchp_vs_gchp"]["tables_subdir"],
+        )
+        gchp_vs_gchp_refstr = config["data"]["ref"]["gchp"]["version"]
+        gchp_vs_gchp_devstr = config["data"]["dev"]["gchp"]["version"]
 
-    # ======================================================================
-    # Plot title strings
-    # For gchp_vs_gcc_refstr use config["data"]["dev"]["gcc"]["version"], not ref (mps, 6/27/19)
-    # ======================================================================
-    gcc_vs_gcc_refstr = config["data"]["ref"]["gcc"]["version"]
-    gcc_vs_gcc_devstr = config["data"]["dev"]["gcc"]["version"]
-    gchp_vs_gcc_refstr = config["data"]["dev"]["gcc"]["version"]
-    gchp_vs_gcc_devstr = config["data"]["dev"]["gchp"]["version"]
-    gchp_vs_gchp_refstr = config["data"]["ref"]["gchp"]["version"]
-    gchp_vs_gchp_devstr = config["data"]["dev"]["gchp"]["version"]
+#    # Create results directories that don't exist, and place a copy of
+#    # this file plus the YAML configuration file in each results directory.
+#    resdir_list = [
+#        gcc_vs_gcc_resultsdir,
+#        gchp_vs_gcc_resultsdir,
+#        gchp_vs_gchp_resultsdir
+#    ]
+#    comparisons_list =  [
+#        config["options"]["comparisons"]["gcc_vs_gcc"]["run"],
+#        config["options"]["comparisons"]["gchp_vs_gcc"]["run"],
+#        config["options"]["comparisons"]["gchp_vs_gchp"]["run"]
+#    ]
+#    for (resdir, plotting_type) in zip(resdir_list, comparisons_list):
+#        if plotting_type and not os.path.exists(resdir):
+#            os.mkdir(resdir)
+#            if resdir in resdir_list:
+#                copy_file_to_dir(__file__, resdir)
+#                copy_file_to_dir(config["configuration_file_name"], resdir)
+
 
     ########################################################################
     ###    THE REST OF THESE SETTINGS SHOULD NOT NEED TO BE CHANGED      ###
@@ -302,6 +302,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 collection,
                 all_months_dev
             )[0]
+
+            print(dev)
 
             # Create plots
             make_benchmark_conc_plots(
@@ -1082,6 +1084,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             print("\n%%% Creating GCHP vs. GCHP radionuclides budget table %%%")
 
             # Ref
+            print('ewl: calling budget. spcdb_dir is: ',spcdb_dir)
             transport_tracers_budgets(
                 config["data"]["ref"]["gchp"]["version"],
                 gchp_vs_gchp_refdir,
