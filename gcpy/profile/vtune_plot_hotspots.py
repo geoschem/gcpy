@@ -1,57 +1,58 @@
 #!/usr/bin/env python3
 """
-Plots the top functions by exclusive time from a gprofng profile.
+Plots the top functions by exclusive time from an
+Intel VTune profile of hotspots listed by function.
 """
 from sys import argv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from gcpy.util import verify_variable_type
 from gcpy.plot.core import text_to_data_units
-from gcpy.constants import ENCODING
+from gcpy.profile.vtune_utils import vtune_read_hotspots_csv
 
 
-def gprofng_read_functions(filename):
+def vtune_read_hotspots(filename):
     """
-    Reads function profiling information from gprofng output.
+    Reads an Intel VTune hotspot data report and returns a
+    pd.DataFrame object with the results.
 
     Args
-    filename : str          : Name of file w/ profiling information
+    filename : str          : CSV file containing hotspot data
 
     Returns
-    data     : pd.DataFrame : Profiling information read from filename
+    dframe   : pd.DataFrame : DataFrame w/ hotspot data
     """
-    results = {}
 
-    with open(filename, "r", encoding=ENCODING) as ifile:
-        line_count = 0
+    # Read the profiling data
+    dframe = vtune_read_hotspots_csv(filename)
 
-        for line in ifile:
+    # Hotspots listed by function
+    if "Function" in dframe.columns:
+        dframe = dframe.set_index("Function")
+        return dframe
 
-            # Skip the first 5 header lines
-            line_count += 1
-            if line_count < 6:
-                continue
+    # Hotspots listed by source line
+    if "Source File" in dframe.columns and "Source Line" in dframe.columns:
 
-            # Split timing info into columns
-            columns = [var for var in line.strip().split(" ") if len(var) > 0]
-            if len(columns) != 5:
-                continue
+        # Drop repeated entries
+        dframe = dframe[~dframe["Source File"].isin(["wait.h", "mutex.c"])]
 
-            # Store in a dict
-            results[columns[4]] = {
-                "Exclusive time": np.float64(columns[0]),
-                "Exclusive %": np.float64(columns[1]),
-                "Inclusive time": np.float64(columns[2]),
-                "Inclusive %": np.float64(columns[3])
-            }
+        # Concatenate "Source File" and "Source Line" into "Function",
+        # which will become the index
+        dframe["Function"] = dframe["Source File"] + \
+            "_L" + dframe["Source Line"]
+        dframe = dframe.set_index("Function")
 
-    return pd.DataFrame(results).transpose()
+        return dframe
+
+    return None
 
 
-def gprofng_plot_functions(dframe, filename, n_min, n_max):
+def vtune_plot_functions(dframe, filename, n_min, n_max):
     """
-    Plots functions having the largest exclusive time from
-    gprofng profiling output.
+    Plots functions having the largest CPU time as listed in
+    an Intel Vtune hotspots report.
 
     Args
     dframe   : pd.DataFrame : Profiling information
@@ -59,19 +60,23 @@ def gprofng_plot_functions(dframe, filename, n_min, n_max):
     n_min    : int          : Display functions starting with this index
     n_max    : int          : Display functions ending with this index
     """
+    verify_variable_type(dframe, pd.DataFrame)
+    verify_variable_type(filename, str)
+    verify_variable_type(n_min, int)
+    verify_variable_type(n_max, int)
+
     # ------------------------------------------------------------------
     # Prepare the data
     # ------------------------------------------------------------------
 
     # Extract info from the data
     labels = list(dframe.index)
-    times  = [var[0] for var in dframe[["Exclusive time"]].to_numpy()]
-    percents = [var[0] for var in dframe[["Exclusive %"]].to_numpy()]
+    times  = [var[0] for var in dframe[["CPU Time [s]"]].to_numpy()]
+    times  = [np.float64(var) for var in times]
 
     # Take the top n_funcs values (excluding total) and reverse
     labels = labels[n_min:n_max][::-1]
     times = times[n_min:n_max][::-1]
-    percents = percents[n_min:n_max][::-1]
 
     # Invert values for bars to extend to the left
     neg_values = [-var for var in times]
@@ -90,13 +95,12 @@ def gprofng_plot_functions(dframe, filename, n_min, n_max):
 
     # Initialize
     time_len = 0.0
-    percent_len = 0.0
 
     # Starting position of the time label at right of plot
     xmin = min(neg_values) * 1.02
     time_x = round(abs(xmin) * 0.02)
 
-    # Create labels for exclusive times [s] and also compute
+    # Create labels for CPU times [s] and also compute
     # the length of the longest label in data units
     for hbar, time in zip(hbars, times):
         text = ax.text(
@@ -108,28 +112,13 @@ def gprofng_plot_functions(dframe, filename, n_min, n_max):
         )
         time_len = max(text_to_data_units(ax, text), 0.0)
 
-    # Starting position for the percent labels at right of plpot
-    percent_x = time_x + round(2.0*time_len)
-
-    # Create labels for exclusive times [T] and also compute
-    # the length of the longest label in data units
-    for hbar, percent in zip(hbars, percents):
-        text = ax.text(
-            percent_x,
-            hbar.get_y() + hbar.get_height()/2,
-            f"{percent}%",
-            va="center",
-            ha="left",
-        )
-        percent_len = max(text_to_data_units(ax, text), 0.0)
-
     # ------------------------------------------------------------------
     # Set X axis parameters
     # ------------------------------------------------------------------
-    xmax = percent_x + 3.0*percent_len
+    xmax = time_x + 3.0*time_len
     ax.set_xlim(xmin, xmax)
     ax.set_xlabel(
-        "Exclusive time (seconds and percent)",
+        "CPU time [s]",
         fontsize=10
     )
     ax.set_xticks([])
@@ -152,12 +141,12 @@ def gprofng_plot_functions(dframe, filename, n_min, n_max):
 def main():
     """
     Main program. Reads arguments and calls routines to
-    read and plot function profiling data from gprofng output.
+    read and plot hotspots from Intel VTune output.
     """
 
     # Raise an error if too few or too many arguments are passed
     if len(argv) != 4:
-        msg = "Usage: python -m gcpy.examples.gprofng.functions "
+        msg = "Usage: python -m gcpy.examples.vtune_plot_hotspots "
         msg += " FILENAME N_MIN N_MAX"
         raise ValueError(msg)
 
@@ -167,10 +156,12 @@ def main():
     n_max = int(argv[3])
 
     # Read the profiling data
-    dframe = gprofng_read_functions(filename)
+    dframe = vtune_read_hotspots(filename)
+    if dframe is None:
+        raise ValueError("Could not read Intel VTune hotspots data!")
 
     # Plot the profiling data
-    gprofng_plot_functions(dframe, filename, n_min, n_max)
+    vtune_plot_functions(dframe, filename, n_min, n_max)
 
 
 if __name__ == '__main__':

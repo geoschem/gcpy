@@ -145,3 +145,26 @@ def normalize_colors(
 
     # For linear color scales: Normalize between min & max
     return colors.Normalize(vmin=vmin, vmax=vmax)
+
+
+def text_to_data_units(ax, text):
+    """
+    Computes the width of a label in data units.
+
+    Args
+    ax     : mpl.Axes.Subplot : MatPlotLib Axes.Subplot object
+    text   : ax.text          : Text that is being plotted
+
+    Returns
+    length : float            : Length in data units
+    """
+
+    # Get the extent of the text as a Bbox object
+    bbox = text.get_window_extent()
+
+    # Convert Bbox width from pixels to data units
+    inv = ax.transData.inverted()
+    pixel_to_data = inv.transform([[bbox.x0, bbox.y0], [bbox.x1, bbox.y0]])
+    width_in_data_units = abs(pixel_to_data[1][0] - pixel_to_data[0][0])
+
+    return width_in_data_units
