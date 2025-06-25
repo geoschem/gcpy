@@ -27,6 +27,12 @@ def vtune_read_hotspots(filename):
     # Read the profiling data
     dframe = vtune_read_hotspots_csv(filename)
 
+    # Drop entries for system calls that can be listed more
+    # than once in the report, causing confusing output
+    dframe = dframe[~dframe["Source File"].isin(
+        ["wait.h", "mutex.c", "do_spin", "simple-bar.h"]
+    )]
+
     # Hotspots listed by function
     if "Function" in dframe.columns:
         dframe = dframe.set_index("Function")
@@ -34,9 +40,6 @@ def vtune_read_hotspots(filename):
 
     # Hotspots listed by source line
     if "Source File" in dframe.columns and "Source Line" in dframe.columns:
-
-        # Drop repeated entries
-        dframe = dframe[~dframe["Source File"].isin(["wait.h", "mutex.c"])]
 
         # Concatenate "Source File" and "Source Line" into "Function",
         # which will become the index
