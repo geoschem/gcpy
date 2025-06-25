@@ -113,7 +113,7 @@ def read_one_text_file(text_file):
             # Set a flag to denote the start & end of timing info
             if "Unit conversions" in line:
                 keep_line = True
-            if "----------" in line:
+            if "-"*78 in line:
                 keep_line = False
                 break
 
