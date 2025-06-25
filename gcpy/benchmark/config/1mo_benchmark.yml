@@ -77,7 +77,7 @@ data:
       dir: GCHP_dev
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
-      logs_subdir: Logs
+      logs_subdir: .
       logs_template: "gchp.%Y%m%d_0000z.log"
       bmk_start: "2019-07-01T00:00:00"
       bmk_end: "2019-08-01T00:00:00"
