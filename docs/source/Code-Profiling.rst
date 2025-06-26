@@ -130,6 +130,9 @@ Source code
 - `gcpy/profile/vtune_compare_hotspots.py
   <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_compare_hotspots.py>`_
 
+- `gcpy/profile/vtune_plot_hotspots.py
+  <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_plot_hotspots.py>`_
+
 .. _code-profiling-vtune-usage:
 
 Usage
@@ -295,11 +298,11 @@ both runs.  Use the following command:
 
 .. code-block:: console
 
-   python -m gcpy.profile.vtune_compare_hotspots             \
-     --ref-file     "hotspot-report-by-function.before.csv"  \
-     --ref-label    "Before"                                 \
-     --dev-file     "hotspot-report-by-function.after.csv"   \
-     --dev-label    "After"                                  \
+   python -m gcpy.profile.vtune_compare_hotspots       \
+     --ref-file     "hotspots.by-function.before.csv"  \
+     --ref-label    "Before"                           \
+     --dev-file     "hotspots.by-function.after.csv"   \
+     --dev-label    "After"                            \
      --hotspot-name "get_current_emissions"
 
 You will then see output similar to this:
@@ -308,3 +311,25 @@ You will then see output similar to this:
 
    Hotspot                          Before         After      Abs Diff    % Diff
    get_current_emissions         113.13094     103.69507      -9.43587     -8.34
+
+
+Plotting hotspots
+~~~~~~~~~~~~~~~~~
+
+Make sure that you have :ref:`specified the proper Matplotlib backend
+<mpl-backend>` for your system. Then run the example script with the
+following command:
+
+.. code-block:: console
+
+   $ python -m gcpy.profile.vtune_plot_hotspots hotspots.by-function.csv 1 40
+
+or
+
+.. code-block:: console
+
+   $ python -m gcpy.profile.vtune_plot_hotspots hotspots.by-line.csv 1 40
+
+This will show the first 40 hotspots plotted in decreasing order of
+CPU time, similar to the :ref:`example shown in our gprofng
+section above <code-profiling-gprofng>`.
