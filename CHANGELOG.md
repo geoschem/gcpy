@@ -13,6 +13,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
 - Moved `gprofng_text_to_data_units` to function `text_to_data_units` in `gcpy/plot/core.py` so that it can be used by `gprofng_functions` and `vtune_plot_hotspots`
 
+### Fixed
+- Fix grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
+
 ## [1.6.2] - 2025-06-12
 ### Added
 - Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN

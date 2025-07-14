@@ -270,7 +270,10 @@ def sphere_angle(
 
 def grid_area(
         cs_grid=None,
-        cs_res=None
+        cs_res=None,
+        stretch_factor=None,
+        target_lon=None,
+        target_lat=None
 ):
     """
     Return area (m2) for each cell in a cubed-sphere grid
@@ -296,17 +299,16 @@ def grid_area(
     if cs_res is None:
         cs_res = cs_grid['lon_b'].shape[-1] - 1
     elif cs_grid is None:
-        cs_grid = gcpy.csgrid_GMAO(cs_res)
+        cs_grid = gcpy.gen_grid(cs_res, stretch_factor, target_lon, target_lat)
     elif cs_grid is not None and cs_res is not None:
         assert cs_res == cs_grid['lon_b'].shape[-1], \
         'Routine grid_area received inconsistent inputs'
     cs_area = np.zeros((6,cs_res,cs_res))
-    cs_area[0,:,:] = face_area(
-        cs_grid['lon_b'][0,:,:],
-        cs_grid['lat_b'][0,:,:]
-    )
-    for i_face in range(1,6):
-        cs_area[i_face,:,:] = cs_area[0,:,:].copy()
+    for i_face in range(6):
+        cs_area[i_face,:,:] = face_area(
+            cs_grid['lon_b'][i_face,:,:],
+            cs_grid['lat_b'][i_face,:,:]
+        )
 
     return cs_area
 
