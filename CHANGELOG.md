@@ -30,37 +30,12 @@ n
 
 ### Changed
 - Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
-
-### Fixed
-- Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
-- Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
-- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
-
-## [1.6.2] - 2025-06-12
-### Changed
 - Bumped `requests` from 2.32.3 to 2.32.4 in environment files to fix a security issue flagged by Dependabot
 
 ### Fixed
-- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
-
-## [1.6.2] - 2025-06-12
-### Added
-- Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN
-- Added a chapter on using code profiling tools in the ReadTheDocs documentatio
-n
-- Added code profiling scripts (in `gcpy/gcpy/profile`) to read and display output from gprofng and Intel VTune profilers
-- Added `check_gchp_emission_diags.py` example script and documentation
-- Added new benchmark functions `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots` which can be used with any GEOS-Chem output collection
-- Added 1-month benchmark comparison plot options for `Budget`, `UVFlux`, and `StateMet` collections (2D and 3D vars separately) which are off by default
-- Added `export MPLBACKEND=agg` to `gcpy/benchmark/modules/benchmark_slurm.sh` to request a non-interactive MatPlotLib backend
-- Added `method` keyword argument to `make_regridder_*` routines in `regrid.py`, with default value `conservative`
-
-### Changed
-- Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
-
-### Fixed
 - Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
 - Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
+- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
 
 ## [1.6.1] - 2025-03-24
 ### Added
