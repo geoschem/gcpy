@@ -22,6 +22,10 @@ jobs:
     steps:
       - name: Checkout the GCPy repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Create "gcpy_env" environment
         uses: mamba-org/setup-micromamba@v1
         with:
@@ -31,9 +35,11 @@ jobs:
           cache-environment: false
           generate-run-shell: true
           post-cleanup: 'all'
+
       - name: Test if "import gcpy" works
         run: python -c "import gcpy"
         shell: micromamba-shell {0}
+
       - name: Test if we can create a plot
         run: python -m gcpy.examples.plotting.create_test_plot
         shell: micromamba-shell {0}

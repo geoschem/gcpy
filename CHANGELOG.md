@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 - Fix grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
+- Fixed various security issues in GitHub Actions workflows
 
 ## [1.6.2] - 2025-06-12
 ### Added

@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Checkout the GCPy repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Create "rtd_env" environment
         uses: mamba-org/setup-micromamba@v1
         with:
@@ -30,6 +34,7 @@ jobs:
           cache-environment: false
           generate-run-shell: true
           post-cleanup: 'all'
+
       - name: Get version numbers of packages
         run: |
           python --version
