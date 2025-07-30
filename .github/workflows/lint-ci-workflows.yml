@@ -1,0 +1,77 @@
+# Workflow to run linting checks on source
+name: Lint
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on pushes to the "main", "dev", or "dev/** branches,
+  # i.e., PR merges
+  push:
+    branches: [ "main", "dev", "dev/**" ]
+
+  # Triggers the workflow on pushes to open pull requests with code changes
+  pull_request:
+    paths:
+      - '.github/workflows/*.yml'
+
+  # Allows you to run this workflow manually from the Actions tab
+  # (usually leave it blank)
+  workflow_dispatch:
+
+# Allow the jobs to read the secret GitHub token
+permissions:
+  contents: read
+
+# Cancel jobs running if new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+# Workflow run - one or more jobs that can run sequentially or in parallel
+jobs:
+
+  # This workflow contains a single job called "lint"
+  lint:
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Don't quit the Action at the first 
+    strategy:
+      fail-fast: false
+
+    # GitHub secret token
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # Steps represent a sequence of tasks that will be
+    # executed as part of the job
+    steps:
+
+      # Checks-out your repository under $GITHUB_WORKSPACE,
+      # so your job can access it
+      - name: Checkout code
+        with:
+          persist-credentials: false
+        uses: actions/checkout@v4
+
+      # Installs Python 3.x
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      # Installs Python packages
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m venv ci_venv
+          . ci_venv/bin/activate
+          pip install zizmor==0.9.2
+
+      # Apply GitHub Actions linter, zizmor
+      - name: zizmor
+        if: always()
+        run: |
+          cd ${{ github.workspace }}
+          . ci_venv/bin/activate
+          zizmor .github/workflows/*.yml
