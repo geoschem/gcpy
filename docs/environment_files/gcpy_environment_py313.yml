@@ -6,14 +6,6 @@
 # for GCPy, use this command:
 #
 # $ mamba env create -n gcpy_env --file=/path/to/gcpy/environment.yml
-#
-# NOTE: This combination of packages may produce a warning
-#
-#   VersionWarning: ESMF installation version 8.8.0, ESMPy version 8.8.0b0
-#
-# that you can disable by adding this to your ~/.bashrc
-#
-#   export PYTHONWARNINGS="ignore"
 # =====================================================================
 name: gcpy_env
 channels:

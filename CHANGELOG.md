@@ -8,13 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Added `gcpy/profile/vtune_plot_hotspots.py` to plot a bargraph of hotspots from Intel VTune reports
 - Added ReadTheDocs documentation for plotting hotspots from Intel VTune reports
+- Added "Lint" GitHub Action to check other actions for security issues
+- Added `gcpy_environment_py314.ym1` to specify the GCPy environment packages with Python 3.14 
+- Added GitHub action `build-gcpy-environment-py314.yml` to test building the GCPy environment with Python 3.14
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
 - Moved `gprofng_text_to_data_units` to function `text_to_data_units` in `gcpy/plot/core.py` so that it can be used by `gprofng_functions` and `vtune_plot_hotspots`
+- Updated GitHub badges in `README.md` and `docs/source/index.rst`
 
 ### Fixed
 - Fix grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
+- Fixed various security issues in GitHub Actions workflows
 
 ## [1.6.2] - 2025-06-12
 ### Added
