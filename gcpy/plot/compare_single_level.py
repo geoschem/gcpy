@@ -264,7 +264,7 @@ def compare_single_level(
                 sg_ref_attrs['TARGET_LON'],
                 sg_ref_attrs['TARGET_LAT']]
         else:
-            msg = "Stretched grid global parameters missing from dev file"
+            msg = "Stretched grid global parameters missing from ref file"
             raise ValueError(msg)
 
     if sg_dev_path != '':
