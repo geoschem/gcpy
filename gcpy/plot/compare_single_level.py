@@ -767,15 +767,18 @@ def compare_single_level(
             min_max_maxlat
         )
 
-        # Use global data to determine cbar bounds if comparing cubed-sphere
-        if cmpgridtype == "cs":
+        # Use global data to determine cbar bounds if plotting cubed-sphere
+        if refgridtype == "cs":
             vmin_ref = float(np.nanmin(ds_ref.data))
             vmax_ref = float(np.nanmax(ds_ref.data))
-            vmin_dev = float(np.nanmin(ds_dev.data))
-            vmax_dev = float(np.nanmax(ds_dev.data))
         else:
             vmin_ref = float(np.nanmin(ds_ref_reg.data))
             vmax_ref = float(np.nanmax(ds_ref_reg.data))
+
+        if devgridtype == "cs":
+            vmin_dev = float(np.nanmin(ds_dev.data))
+            vmax_dev = float(np.nanmax(ds_dev.data))
+        else:
             vmin_dev = float(np.nanmin(ds_dev_reg.data))
             vmax_dev = float(np.nanmax(ds_dev_reg.data))
 
