@@ -93,7 +93,7 @@ class _GlobVars:
             try:
                 self.ds_flx = xr.open_mfdataset(
                     files,
-                    drop_variables=physconsts.skip_these_vars,
+                    drop_variables=physconsts.SKIP_THESE_VARS,
                     combine="nested",
                     concat_dim="time"
                 )
@@ -104,7 +104,7 @@ class _GlobVars:
             try:
                 self.ds_flx = xr.open_mfdataset(
                     files,
-                    drop_variables=physconsts.skip_these_vars,
+                    drop_variables=physconsts.SKIP_THESE_VARS,
                 )
             except FileNotFoundError as exc:
                 msg = f"Could not find one or more files in {files}"

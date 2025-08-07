@@ -146,8 +146,8 @@ def get_input_res(data):
             return data.dims["Xdim"], "cs"
 
 
-def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
-                   out_extent=[-180, 180, -90, 90], sg_params=[1, 170, -90]):
+def call_make_grid(res, gridtype, in_extent=DEFAULT_LL_EXTENT,
+                   out_extent=DEFAULT_LL_EXTENT, sg_params=DEFAULT_SG_PARAMS):
     """
     Create a mask with NaN values removed from an input array
 
@@ -161,16 +161,16 @@ def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
         in_extent: list[float, float, float, float]
             Describes minimum and maximum latitude and longitude of input data
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value: [-180, 180, -90, 90]
+            Default value: DEFAULT_LL_EXTENT
         out_extent: list[float, float, float, float]
             Desired minimum and maximum latitude and longitude of output grid
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value: [-180, 180, -90, 90]
+            Default value: DEFAULT_LL_EXTENT
         sg_params: list[float, float, float] (stretch_factor, target_longitude, target_latitude)
             Desired stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
             Will trigger stretched-grid creation if not default values.
-            Default value: [1, 170, -90] (no stretching)
+            Default value: DEFAULT_SG_PARAMS (no stretching)
 
     Returns:
         [grid, grid_list]: list(dict, list(dict))
@@ -181,7 +181,7 @@ def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
     # call appropriate make_grid function and return new grid
     if gridtype == "ll":
         return [make_grid_LL(res, in_extent, out_extent), None]
-    elif sg_params == [1, 170, -90]:
+    elif sg_params == DEFAULT_SG_PARAMS:
         # standard CS
         return make_grid_CS(res)
     else:
@@ -556,7 +556,7 @@ GCAP2_40L_grid = vert_grid(_GCAP2_40L_AP, _GCAP2_40L_BP)
 CAM_26L_grid = vert_grid(_CAM_26L_AP, _CAM_26L_BP)
 
 
-def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
+def make_grid_LL(llres, in_extent=DEFAULT_LL_EXTENT, out_extent=[]):
     """
     Creates a lat/lon grid description.
 

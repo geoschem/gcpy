@@ -210,7 +210,7 @@ class _GlobVars:
         """
         ds = xr.open_dataset(
             self.rst_file_path(ystr),
-            drop_variables=constants.skip_these_vars
+            drop_variables=constants.SKIP_THESE_VARS
         )
 
         if self.is_gchp:
@@ -241,7 +241,7 @@ class _GlobVars:
         """
         ds = xr.open_mfdataset(
             self.pathlist[collection],
-            drop_variables=constants.skip_these_vars,
+            drop_variables=constants.SKIP_THESE_VARS,
             combine="nested",
             concat_dim="time"
         )

@@ -133,7 +133,7 @@ def main():
     # These are mostly variables introduced into GCHP with the MAPL v1.0.0
     # update.  These variables contain either repeated or non-standard
     # dimensions that can cause problems in xarray when combining datasets.
-    skip_vars = constants.skip_these_vars
+    skip_vars = constants.SKIP_THESE_VARS
 
     # Look for all the netCDF files in the path
     file_list = find_files_in_dir(path_to_dir, substrs)

@@ -7,7 +7,7 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 from gcpy import util
-from gcpy.constants import skip_these_vars
+from gcpy.constants import SKIP_THESE_VARS
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -95,12 +95,12 @@ def read_ref_and_dev(
     reader = util.dataset_reader(time_mean|multi_file, verbose=verbose)
 
     if ref is not None:
-        ref_data = reader(ref, drop_variables=skip_these_vars)
+        ref_data = reader(ref, drop_variables=SKIP_THESE_VARS)
         if time_mean:
             ref_data = util.dataset_mean(ref_data)
 
     if dev is not None:
-        dev_data = reader(dev, drop_variables=skip_these_vars)
+        dev_data = reader(dev, drop_variables=SKIP_THESE_VARS)
         if time_mean:
             dev_data = util.dataset_mean(dev_data)
 

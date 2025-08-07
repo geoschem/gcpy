@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere 
 - Added `Ap` and `Bp` parameters for GCAP2 vertical grids
 - Added `GCAP2_102L_grid`, `GCAP2_74L_grid`, and `GCAP2_40L_grid` to `grid.py`
+- Added new constants `DEFAULT_LL_EXTENT` and `DEFAULT_SG_PARAMS`
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -25,6 +26,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bumped `pypdf` from version 4.2.0 to 6.0.0 in `docs/environments/gcpy_environment_py312.yml`
 - Bumped `pypdf` from version 5.3.1 to 6.0.0 in `docs/environments/gcpy_environment_py313.yml`
 - Moved `Ap` and `Bp` parameters that define vertical grids from `grid.py` to `vgrid_defs.py`
+- Replaced `[-180, 180, -90, 90]` with `DEFAULT_LL_EXTENT` in functions
+- Replaced `[1, 170, -90]` with `DEFAULT_SG_PARAMS` in functions
+- Renamed `skip_these_vars` to `SKIP_THESE_VARS` to conform to Python style for constants
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
