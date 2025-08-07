@@ -741,15 +741,17 @@ def compare_zonal_mean(
             zm_dev = ds_dev.mean(dim="lon")
         else:
             zm_dev = ds_dev.mean(axis=2)
+
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
         if diff_of_diffs:
             frac_zm_dev_cmp = frac_ds_dev_cmp.mean(axis=2)
             frac_zm_ref_cmp = frac_ds_ref_cmp.mean(axis=2)
+
         # ==============================================================
-        # Get min and max values for use in the colorbars
-        # and also flag if Ref and/or Dev are all zero or all NaN
+        # Get min and max values for use in the top-row plot colorbars
+        # and also flag if Ref and/or Dev are all zero or all NaN.
         # ==============================================================
 
         # Ref
@@ -760,13 +762,9 @@ def compare_zonal_mean(
         vmin_dev = float(zm_dev.min())
         vmax_dev = float(zm_dev.max())
 
-        # Comparison
-        vmin_cmp = np.min([zm_ref_cmp.min(), zm_dev_cmp.min()])
-        vmax_cmp = np.max([zm_ref_cmp.max(), zm_dev_cmp.max()])
-
-        # Take min/max across all grids
-        vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
-        vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
+        # Set vmin_both and vmax_both to use if match_cbar=True
+        vmin_both = np.min([vmin_ref, vmin_dev])
+        vmax_both = np.max([vmax_ref, vmax_dev])
 
         # ==============================================================
         # Test if Ref and/or Dev contain all zeroes or all NaNs.
@@ -973,8 +971,8 @@ def compare_zonal_mean(
         pedge_inds = [ref_pedge_ind, dev_pedge_ind, pedge_ind,
                       pedge_ind, pedge_ind, pedge_ind]
 
-        mins = [vmin_ref, vmin_dev, vmin_abs]
-        maxs = [vmax_ref, vmax_dev, vmax_abs]
+        mins = [vmin_ref, vmin_dev, vmin_both]
+        maxs = [vmax_ref, vmax_dev, vmax_both]
 
         ratio_logs = [False, False, False, False, True, True]
         # Plot
