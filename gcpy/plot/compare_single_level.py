@@ -253,17 +253,35 @@ def compare_single_level(
     # Get stretched-grid info if passed
     if sg_ref_path != '':
         sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
-        sg_ref_params = [
-            sg_ref_attrs['stretch_factor'],
-            sg_ref_attrs['target_longitude'],
-            sg_ref_attrs['target_latitude']]
+        if 'stretch_factor' in sg_ref_attrs:
+            sg_ref_params = [
+                sg_ref_attrs['stretch_factor'],
+                sg_ref_attrs['target_lon'],
+                sg_ref_attrs['target_lat']]
+        elif 'STRETCH_FACTOR' in sg_ref_attrs:
+            sg_ref_params = [
+                sg_ref_attrs['STRETCH_FACTOR'],
+                sg_ref_attrs['TARGET_LON'],
+                sg_ref_attrs['TARGET_LAT']]
+        else:
+            msg = "Stretched grid global parameters missing from dev file"
+            raise ValueError(msg)
 
     if sg_dev_path != '':
         sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
-        sg_dev_params = [
-            sg_dev_attrs['stretch_factor'],
-            sg_dev_attrs['target_longitude'],
-            sg_dev_attrs['target_latitude']]
+        if 'stretch_factor' in sg_dev_attrs:
+            sg_dev_params = [
+                sg_dev_attrs['stretch_factor'],
+                sg_dev_attrs['target_lon'],
+                sg_dev_attrs['target_lat']]
+        elif 'STRETCH_FACTOR' in sg_dev_attrs:
+            sg_dev_params = [
+                sg_dev_attrs['STRETCH_FACTOR'],
+                sg_dev_attrs['TARGET_LON'],
+                sg_dev_attrs['TARGET_LAT']]
+        else:
+            msg = "Stretched grid global parameters missing from dev file"
+            raise ValueError(msg)
 
     # Get grid info and regrid if necessary
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref,
