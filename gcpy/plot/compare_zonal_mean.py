@@ -316,17 +316,35 @@ def compare_zonal_mean(
     # Get stretched-grid info if passed
     if sg_ref_path != '':
         sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
-        sg_ref_params = [
-            sg_ref_attrs['stretch_factor'],
-            sg_ref_attrs['target_longitude'],
-            sg_ref_attrs['target_latitude']]
+        if 'stretch_factor' in sg_ref_attrs:
+            sg_ref_params = [
+                sg_ref_attrs['stretch_factor'],
+                sg_ref_attrs['target_lon'],
+                sg_ref_attrs['target_lat']]
+        elif 'STRETCH_FACTOR' in sg_ref_attrs:
+            sg_ref_params = [
+                sg_ref_attrs['STRETCH_FACTOR'],
+                sg_ref_attrs['TARGET_LON'],
+                sg_ref_attrs['TARGET_LAT']]
+        else:
+            msg = "Stretched grid global parameters missing from ref file"
+            raise ValueError(msg)
 
     if sg_dev_path != '':
         sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
-        sg_dev_params = [
-            sg_dev_attrs['stretch_factor'],
-            sg_dev_attrs['target_longitude'],
-            sg_dev_attrs['target_latitude']]
+        if 'stretch_factor' in sg_dev_attrs:
+            sg_dev_params = [
+                sg_dev_attrs['stretch_factor'],
+                sg_dev_attrs['target_lon'],
+                sg_dev_attrs['target_lat']]
+        elif 'STRETCH_FACTOR' in sg_dev_attrs:
+            sg_dev_params = [
+                sg_dev_attrs['STRETCH_FACTOR'],
+                sg_dev_attrs['TARGET_LON'],
+                sg_dev_attrs['TARGET_LAT']]
+        else:
+            msg = "Stretched grid global parameters missing from dev file"
+            raise ValueError(msg)
 
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype,
      regridref, regriddev, regridany, refgrid, devgrid, cmpgrid,
@@ -723,15 +741,17 @@ def compare_zonal_mean(
             zm_dev = ds_dev.mean(dim="lon")
         else:
             zm_dev = ds_dev.mean(axis=2)
+
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
         if diff_of_diffs:
             frac_zm_dev_cmp = frac_ds_dev_cmp.mean(axis=2)
             frac_zm_ref_cmp = frac_ds_ref_cmp.mean(axis=2)
+
         # ==============================================================
-        # Get min and max values for use in the colorbars
-        # and also flag if Ref and/or Dev are all zero or all NaN
+        # Get min and max values for use in the top-row plot colorbars
+        # and also flag if Ref and/or Dev are all zero or all NaN.
         # ==============================================================
 
         # Ref
@@ -742,13 +762,9 @@ def compare_zonal_mean(
         vmin_dev = float(zm_dev.min())
         vmax_dev = float(zm_dev.max())
 
-        # Comparison
-        vmin_cmp = np.min([zm_ref_cmp.min(), zm_dev_cmp.min()])
-        vmax_cmp = np.max([zm_ref_cmp.max(), zm_dev_cmp.max()])
-
-        # Take min/max across all grids
-        vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
-        vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
+        # Set vmin_both and vmax_both to use if match_cbar=True
+        vmin_both = np.min([vmin_ref, vmin_dev])
+        vmax_both = np.max([vmax_ref, vmax_dev])
 
         # ==============================================================
         # Test if Ref and/or Dev contain all zeroes or all NaNs.
@@ -955,8 +971,8 @@ def compare_zonal_mean(
         pedge_inds = [ref_pedge_ind, dev_pedge_ind, pedge_ind,
                       pedge_ind, pedge_ind, pedge_ind]
 
-        mins = [vmin_ref, vmin_dev, vmin_abs]
-        maxs = [vmax_ref, vmax_dev, vmax_abs]
+        mins = [vmin_ref, vmin_dev, vmin_both]
+        maxs = [vmax_ref, vmax_dev, vmax_both]
 
         ratio_logs = [False, False, False, False, True, True]
         # Plot

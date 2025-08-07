@@ -253,17 +253,35 @@ def compare_single_level(
     # Get stretched-grid info if passed
     if sg_ref_path != '':
         sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
-        sg_ref_params = [
-            sg_ref_attrs['stretch_factor'],
-            sg_ref_attrs['target_longitude'],
-            sg_ref_attrs['target_latitude']]
+        if 'stretch_factor' in sg_ref_attrs:
+            sg_ref_params = [
+                sg_ref_attrs['stretch_factor'],
+                sg_ref_attrs['target_lon'],
+                sg_ref_attrs['target_lat']]
+        elif 'STRETCH_FACTOR' in sg_ref_attrs:
+            sg_ref_params = [
+                sg_ref_attrs['STRETCH_FACTOR'],
+                sg_ref_attrs['TARGET_LON'],
+                sg_ref_attrs['TARGET_LAT']]
+        else:
+            msg = "Stretched grid global parameters missing from ref file"
+            raise ValueError(msg)
 
     if sg_dev_path != '':
         sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
-        sg_dev_params = [
-            sg_dev_attrs['stretch_factor'],
-            sg_dev_attrs['target_longitude'],
-            sg_dev_attrs['target_latitude']]
+        if 'stretch_factor' in sg_dev_attrs:
+            sg_dev_params = [
+                sg_dev_attrs['stretch_factor'],
+                sg_dev_attrs['target_lon'],
+                sg_dev_attrs['target_lat']]
+        elif 'STRETCH_FACTOR' in sg_dev_attrs:
+            sg_dev_params = [
+                sg_dev_attrs['STRETCH_FACTOR'],
+                sg_dev_attrs['TARGET_LON'],
+                sg_dev_attrs['TARGET_LAT']]
+        else:
+            msg = "Stretched grid global parameters missing from dev file"
+            raise ValueError(msg)
 
     # Get grid info and regrid if necessary
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref,
@@ -505,14 +523,9 @@ def compare_single_level(
     for i in range(n_var):
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
-        #ds_ref_cmps[i] = reshape_MAPL_CS(ds_ref_cmps[i])
-        #ds_dev_cmps[i] = reshape_MAPL_CS(ds_dev_cmps[i])
         if diff_of_diffs:
             frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
             frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
-            #frac_ds_ref_cmps[i] = reshape_MAPL_CS(frac_ds_ref_cmps[i])
-            #frac_ds_dev_cmps[i] = reshape_MAPL_CS(frac_ds_dev_cmps[i])
-
 
     # ==================================================================
     # Create arrays for each variable in Ref and Dev datasets
@@ -696,7 +709,8 @@ def compare_single_level(
             frac_ds_dev_cmp_reshaped = call_reshape(frac_ds_dev_cmp)
 
         # ==============================================================
-        # Get min and max values for use in the colorbars
+        # Get min and max values for use in the top-row plot colorbars
+        # and also flag if Ref and/or Dev are all zero or all NaN.
         # ==============================================================
 
         # Choose from values within plot extent
@@ -753,31 +767,25 @@ def compare_single_level(
             min_max_maxlat
         )
 
-        # Ref
-        vmin_ref = float(np.nanmin(ds_ref_reg.data))
-        vmax_ref = float(np.nanmax(ds_ref_reg.data))
+        # Use global data to determine cbar bounds if plotting cubed-sphere
+        if refgridtype == "cs":
+            vmin_ref = float(np.nanmin(ds_ref.data))
+            vmax_ref = float(np.nanmax(ds_ref.data))
+        else:
+            vmin_ref = float(np.nanmin(ds_ref_reg.data))
+            vmax_ref = float(np.nanmax(ds_ref_reg.data))
 
-        # Dev
-        vmin_dev = float(np.nanmin(ds_dev_reg.data))
-        vmax_dev = float(np.nanmax(ds_dev_reg.data))
+        if devgridtype == "cs":
+            vmin_dev = float(np.nanmin(ds_dev.data))
+            vmax_dev = float(np.nanmax(ds_dev.data))
+        else:
+            vmin_dev = float(np.nanmin(ds_dev_reg.data))
+            vmax_dev = float(np.nanmax(ds_dev_reg.data))
 
-# Pylint says that these are unused variables, so comment out
-#  -- Bob Yantosca (15 Aug 2023)
-#        # Comparison
-#        if cmpgridtype == "cs":
-#            vmin_ref_cmp = float(np.nanmin(ds_ref_cmp))
-#            vmax_ref_cmp = float(np.nanmax(ds_ref_cmp))
-#            vmin_dev_cmp = float(np.nanmin(ds_dev_cmp))
-#            vmax_dev_cmp = float(np.nanmax(ds_dev_cmp))
-#            vmin_cmp = np.nanmin([vmin_ref_cmp, vmin_dev_cmp])
-#            vmax_cmp = np.nanmax([vmax_ref_cmp, vmax_dev_cmp])
-#        else:
-#            vmin_cmp = np.nanmin([np.nanmin(ds_ref_cmp), np.nanmin(ds_dev_cmp)])
-#            vmax_cmp = np.nanmax([np.nanmax(ds_ref_cmp), np.nanmax(ds_dev_cmp)])
+        # Set vmin_both and vmax_both to use if match_cbar=True
+        vmin_both = np.nanmin([vmin_ref, vmin_dev])
+        vmax_both = np.nanmax([vmax_ref, vmax_dev])
 
-        # Get overall min & max
-        vmin_abs = np.nanmin([vmin_ref, vmin_dev])#, vmin_cmp])
-        vmax_abs = np.nanmax([vmax_ref, vmax_dev])#, vmax_cmp])
         # ==============================================================
         # Test if Ref and/or Dev contain all zeroes or all NaNs.
         # This will have implications as to how we set min and max
@@ -1064,8 +1072,8 @@ def compare_single_level(
         other_all_nans = [dev_is_all_nan, ref_is_all_nan,
                           False, False, False, False]
 
-        mins = [vmin_ref, vmin_dev, vmin_abs]
-        maxs = [vmax_ref, vmax_dev, vmax_abs]
+        mins = [vmin_ref, vmin_dev, vmin_both]
+        maxs = [vmax_ref, vmax_dev, vmax_both]
 
         ratio_logs = [False, False, False, False, True, True]
 

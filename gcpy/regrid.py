@@ -431,12 +431,16 @@ def create_regridders(
                     "Warning: zonal mean comparison must be lat-lon. Defaulting to 1x1.25")
                 cmpres = '1x1.25'
                 cmpgridtype = "ll"
-            elif sg_ref_params != [1, 170, -90] or sg_dev_params != [1, 170, -90]:
-                # pick ref grid when a stretched-grid and non-stretched-grid
-                # are passed
+            elif sg_ref_params == [1, 170, -90] and sg_dev_params != [1, 170, -90]:
+                # pick ref grid if dev is stretched and ref is not
                 cmpres = refres
                 cmpgridtype = "cs"
                 sg_cmp_params = sg_ref_params
+            elif sg_ref_params != [1, 170, -90] and sg_dev_params == [1, 170, -90]:
+                # pick dev grid if ref is stretched and dev is not
+                cmpres = devres
+                cmpgridtype = "cs"
+                sg_cmp_params = sg_dev_params
             else:
                 # pick higher resolution CS grid out of two standard
                 # cubed-sphere grids
