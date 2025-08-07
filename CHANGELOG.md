@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Moved `gprofng_text_to_data_units` to function `text_to_data_units` in `gcpy/plot/core.py` so that it can be used by `gprofng_functions` and `vtune_plot_hotspots`
 - Updated GitHub badges in `README.md` and `docs/source/index.rst`
 - Expanded possible stretched grid attribute names to include STRETCH_FACTOR, TARGET_LAT, and TARGET_LON
+- Changed regridding for plots to always compare stretched-grid to uniform CS grid on the uniform CS grid rather than whatever grid is ref
 
 ### Fixed
 - Fix grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
