@@ -62,7 +62,14 @@ COL_WIDTH = 20
 ENCODING = "UTF-8"
 
 # ======================================================================
-# Parameters for lat/lon and cubed-sphere grids
+# Parameters for lat/lon (LL) and cubed-sphere stretched grids (SG)
 # ======================================================================
 DEFAULT_LL_EXTENT = [-180, 180, -90, 90]
-DEFAULT_SG_PARAMS = [1, 170, -90]
+DEFAULT_SG_STRETCH_FACTOR = 1
+DEFAULT_SG_TARGET_LON = 170
+DEFAULT_SG_TARGET_LAT = -90
+DEFAULT_SG_PARAMS = [
+    DEFAULT_SG_STRETCH_FACTOR,
+    DEFAULT_SG_TARGET_LON,
+    DEFAULT_SG_TARGET_LAT
+]

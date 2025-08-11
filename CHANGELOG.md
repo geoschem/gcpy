@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `Ap` and `Bp` parameters for GCAP2 vertical grids
 - Added `GCAP2_102L_grid`, `GCAP2_74L_grid`, and `GCAP2_40L_grid` to `grid.py`
 - Added new constants `DEFAULT_LL_EXTENT` and `DEFAULT_SG_PARAMS`
+- Added new constants: `DEFAULT_LL_EXTENT`, `DEFAULT_SG_STRETCH_FACTOR`, `DEFAULT_SG_TARGET_LON`, `DEFAULT_SG_TARGET_LAT`, `DEFAULT_SG_PARAMS`
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
