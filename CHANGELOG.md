@@ -36,6 +36,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `make_grid_CS     --> make_grid_cs`
   - `make_grid_SG     --> make_grid_sg`
   - `rotate_sphere_3D --> rotate_sphere_3d`
+- Renamed the following routines in `gcpy/regrid.py` to conform to snake-case naming convention
+  - `make_regridder_L2L --> make_regridder_ll2ll`
+  - `make_regridder_C2L --> make_regridder_cs2ll`
+  - `make_regridder_S2G --> make_regridder_sg2sg`
+  - `make_regridder_L2S --> make_regridder_ll2sg`
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
