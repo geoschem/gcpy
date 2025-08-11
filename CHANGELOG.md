@@ -30,6 +30,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Replaced `[-180, 180, -90, 90]` with `DEFAULT_LL_EXTENT` in functions
 - Replaced `[1, 170, -90]` with `DEFAULT_SG_PARAMS` in functions
 - Renamed `skip_these_vars` to `SKIP_THESE_VARS` to conform to Python style for constants
+- Modified code in `grid.py`, `regrid.py`, `file_regrid.py`, and `cstools.py` as directed by Pylint to better conform to the Python style guide
+- Renamed the following routines in `gcpy/grid.py` to conform to snake-case naming convention
+  - `make_grid_LL     --> make_grid_ll`
+  - `make_grid_CS     --> make_grid_cs`
+  - `make_grid_SG     --> make_grid_sg`
+  - `rotate_sphere_3D --> rotate_sphere_3d`
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
