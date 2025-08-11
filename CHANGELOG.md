@@ -42,6 +42,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `make_regridder_C2L --> make_regridder_cs2ll`
   - `make_regridder_S2G --> make_regridder_sg2sg`
   - `make_regridder_L2S --> make_regridder_ll2sg`
+- Updated `cstools.py`, `file_regrid.py`, and `append_grid_corners.py` to import and use renamed functions
+- Updated `append_grid_corners.py` to use `DEFAULT_SG_PARAMS` from `constants.py`
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
