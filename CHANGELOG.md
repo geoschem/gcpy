@@ -32,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Renamed `skip_these_vars` to `SKIP_THESE_VARS` to conform to Python style for constants
 - Modified code in `grid.py`, `regrid.py`, `file_regrid.py`, and `cstools.py` as directed by Pylint to better conform to the Python style guide
 - Renamed the following routines in `gcpy/grid.py` to conform to snake-case naming convention
+  - `csgrid_GMAO      --> csgrid_gmao`
   - `make_grid_LL     --> make_grid_ll`
   - `make_grid_CS     --> make_grid_cs`
   - `make_grid_SG     --> make_grid_sg`
