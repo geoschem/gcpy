@@ -11,8 +11,8 @@ import xarray as xr
 import pandas as pd
 import scipy.sparse
 from gcpy.constants import \
-    DEFAULT_LL_EXTENT, DEFAULT_SG_STRETCH_FACTOR, DEFAULT_SG_TARGET_LON, \
-    DEFAULT_SG_TARGET_LAT, DEFAULT_SG_PARAMS
+    GLOBAL_LL_EXTENT, NO_STRETCH_SG_STRETCH_FACTOR, NO_STRETCH_SG_TARGET_LON, \
+    NO_STRETCH_SG_TARGET_LAT, NO_STRETCH_SG_PARAMS
 from gcpy.grid import \
     call_make_grid, get_grid_extents, get_input_res, get_vert_grid, \
     make_grid_cs, make_grid_ll, make_grid_sg, vert_grid
@@ -47,11 +47,11 @@ def make_regridder_ll2ll(
         in_extent: list
             Describes minimum and maximum latitude and longitude of input grid
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value: DEFAULT_LL_EXTENT (i.e. [-180, 180, -90, 90])
+            Default value: GLOBAL_LL_EXTENT (i.e. [-180, 180, -90, 90])
         out_extent: list
             Desired minimum and maximum latitude and longitude of output grid
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value:  DEFAULT_LL_EXTENT (i.e. [-180, 180, -90, 90])
+            Default value:  GLOBAL_LL_EXTENT (i.e. [-180, 180, -90, 90])
 
     Returns:
         regridder: xesmf.Regridder
@@ -62,16 +62,16 @@ def make_regridder_ll2ll(
 
     # Default settings for keyword arguments
     if in_extent is None:
-        in_extent = DEFAULT_LL_EXTENT
+        in_extent = GLOBAL_LL_EXTENT
     if out_extent is None:
-        out_extent = DEFAULT_LL_EXTENT
+        out_extent = GLOBAL_LL_EXTENT
 
     # Create grids
     llgrid_in = make_grid_ll(llres_in, in_extent, out_extent)
     llgrid_out = make_grid_ll(llres_out, out_extent)
 
     # Specify the name of the weights file
-    if in_extent == DEFAULT_LL_EXTENT and out_extent == DEFAULT_LL_EXTENT:
+    if in_extent == GLOBAL_LL_EXTENT and out_extent == GLOBAL_LL_EXTENT:
         weightsfile = os.path.join(
             weightsdir,
             f"conservative_{llres_in}_{llres_out}.nc"
@@ -148,11 +148,11 @@ def make_regridder_cs2ll(
 
     # Default settings for keyword args
     if sg_params is None:
-        sg_params = DEFAULT_SG_PARAMS
+        sg_params = NO_STRETCH_SG_PARAMS
 
     # Create grids
     [sf_in, tlon_in, tlat_in] = sg_params
-    if sg_params == DEFAULT_SG_PARAMS:
+    if sg_params == NO_STRETCH_SG_PARAMS:
         _, csgrid_list = make_grid_cs(csres_in)
     else:
         _, csgrid_list = make_grid_sg(
@@ -166,7 +166,7 @@ def make_regridder_cs2ll(
     for i in range(6):
 
         # Specify the name of the weights file
-        if sg_params == DEFAULT_SG_PARAMS:
+        if sg_params == NO_STRETCH_SG_PARAMS:
             weightsfile = os.path.join(
                 weightsdir,
                 f"conservative_c{csres_in}_{llres_out}_{str(i)}.nc"
@@ -201,12 +201,12 @@ def make_regridder_cs2ll(
 def make_regridder_sg2sg(
         csres_in,
         csres_out,
-        sf_in=DEFAULT_SG_STRETCH_FACTOR,
-        tlon_in=DEFAULT_SG_TARGET_LON,
-        tlat_in=DEFAULT_SG_TARGET_LAT,
-        sf_out=DEFAULT_SG_STRETCH_FACTOR,
-        tlon_out=DEFAULT_SG_TARGET_LON,
-        tlat_out=DEFAULT_SG_TARGET_LAT,
+        sf_in=NO_STRETCH_SG_STRETCH_FACTOR,
+        tlon_in=NO_STRETCH_SG_TARGET_LON,
+        tlat_in=NO_STRETCH_SG_TARGET_LAT,
+        sf_out=NO_STRETCH_SG_STRETCH_FACTOR,
+        tlon_out=NO_STRETCH_SG_TARGET_LON,
+        tlat_out=NO_STRETCH_SG_TARGET_LAT,
         weightsdir='.',
         verbose=True,
         method="conservative",
@@ -335,7 +335,7 @@ def make_regridder_ll2sg(
             Output grid stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
             Will trigger stretched-grid creation if not default values.
-            Default value: DEFAULT_SG_PARAMS (i.e. [1, 170, -90])
+            Default value: NO_STRETCH_SG_PARAMS (i.e. [1, 170, -90])
 
     Returns:
         regridder_list: list[6 xESMF regridders]
@@ -347,11 +347,11 @@ def make_regridder_ll2sg(
 
     # Default settings for keyword args
     if sg_params is None:
-        sg_params = DEFAULT_SG_PARAMS
+        sg_params = NO_STRETCH_SG_PARAMS
 
     # Create grids
     llgrid = make_grid_ll(llres_in)
-    if sg_params == DEFAULT_SG_PARAMS:
+    if sg_params == NO_STRETCH_SG_PARAMS:
         _, csgrid_list = make_grid_cs(csres_out)
     else:
         _, csgrid_list = make_grid_sg(
@@ -366,7 +366,7 @@ def make_regridder_ll2sg(
     for i in range(6):
 
         # Specify the weights file to use
-        if sg_params == DEFAULT_SG_PARAMS:
+        if sg_params == NO_STRETCH_SG_PARAMS:
             weightsfile = os.path.join(
                 weightsdir,
                 f"conservative_{llres_in}_c{str(csres_out)}_{str(i)}.nc"
@@ -437,12 +437,12 @@ def create_regridders(
             (stretch_factor, target_longitude, target_latitude)
             Ref grid stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
-            Default value: DEFAULT_SG_PARAMS (no stretching)
+            Default value: NO_STRETCH_SG_PARAMS (no stretching)
         sg_dev_params: list[float, float, float]
             (stretch_factor, target_longitude, target_latitude)
             Dev grid stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
-            Default value: DEFAULT_SG_PARAMS (no stretching)
+            Default value: NO_STRETCH_SG_PARAMS (no stretching)
 
     Returns:
         list of many different quantities needed for regridding in plotting functions
@@ -467,9 +467,9 @@ def create_regridders(
 
     # Default settings for keyword arguments
     if sg_ref_params is None:
-        sg_ref_params = DEFAULT_SG_PARAMS
+        sg_ref_params = NO_STRETCH_SG_PARAMS
     if sg_dev_params is None:
-        sg_dev_params = DEFAULT_SG_PARAMS
+        sg_dev_params = NO_STRETCH_SG_PARAMS
 
     # Take two lat/lon or cubed-sphere xarray datasets and regrid them if
     # needed
@@ -495,7 +495,7 @@ def create_regridders(
     # If one dataset is lat-lon and the other is cubed-sphere, and no comparison
     # grid resolution is passed, then default to 1x1.25. If both cubed-sphere and
     # plotting zonal mean, over-ride to be 1x1.25 lat-lon with a warning
-    sg_cmp_params = DEFAULT_SG_PARAMS
+    sg_cmp_params = NO_STRETCH_SG_PARAMS
     if cmpres is None:
         if refres == devres and refgridtype == "ll":
             cmpres = refres
@@ -509,14 +509,14 @@ def create_regridders(
                     "Warning: zonal mean comparison must be lat-lon. Defaulting to 1x1.25")
                 cmpres = '1x1.25'
                 cmpgridtype = "ll"
-            elif sg_ref_params == DEFAULT_SG_PARAMS and \
-                 sg_dev_params != DEFAULT_SG_PARAMS:
+            elif sg_ref_params == NO_STRETCH_SG_PARAMS and \
+                 sg_dev_params != NO_STRETCH_SG_PARAMS:
                 # pick ref grid if dev is stretched and ref is not
                 cmpres = refres
                 cmpgridtype = "cs"
                 sg_cmp_params = sg_ref_params
-            elif sg_ref_params != DEFAULT_SG_PARAMS and \
-                 sg_dev_params == DEFAULT_SG_PARAMS:
+            elif sg_ref_params != NO_STRETCH_SG_PARAMS and \
+                 sg_dev_params == NO_STRETCH_SG_PARAMS:
                 # pick dev grid if ref is stretched and dev is not
                 cmpres = devres
                 cmpgridtype = "cs"

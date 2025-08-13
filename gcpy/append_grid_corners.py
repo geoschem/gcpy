@@ -5,7 +5,7 @@ contianing cubed-sphere "stretched-grid" data.
 """
 import argparse
 import xarray as xr
-from gcpy.constants import DEFAULT_SG_PARAMS
+from gcpy.constants import NO_STRETCH_SG_PARAMS
 from gcpy.grid import make_grid_sg
 
 if __name__ == '__main__':
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     parser.add_argument('filein')
     parser.add_argument(
         '--sg_params', metavar='P', type=float, nargs=3,
-        default=DEFAULT_SG_PARAMS,
+        default=NO_STRETCH_SG_PARAMS,
         help='input grid stretching parameters (stretch-factor, target longitude, target latitude)'
     )
     args = parser.parse_args()
