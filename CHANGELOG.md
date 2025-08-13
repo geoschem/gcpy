@@ -43,7 +43,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `make_regridder_S2G --> make_regridder_sg2sg`
   - `make_regridder_L2S --> make_regridder_ll2sg`
 - Updated `cstools.py`, `file_regrid.py`, `append_grid_corners.py`, and `raveller_1D.py` to import and use renamed functions
+<<<<<<< HEAD
 - Updated `append_grid_corners.py` to use `NO_STRETCH_SG_PARAMS` from `constants.py`
+=======
+- Updated `append_grid_corners.py` to use `DEFAULT_SG_PARAMS` from `constants.py`
+- Rema,med `vert_grid` class in `gcpy/grid.py` to `VertGrid` to conform to PascalCase naming convention
+>>>>>>> d9f7662 (Update constants in grid.py; Also rename vert_grid to VertGrid)
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`

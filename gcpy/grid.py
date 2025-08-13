@@ -10,7 +10,7 @@ from gcpy.util import get_shape_of_data, verify_variable_type
 from gcpy.grid_stretching_transforms import scs_transform
 from gcpy.constants import R_EARTH_m
 from gcpy.vgrid_defs import \
-    DEFAULT_LL_EXTENT, DEFAULT_SG_PARAMS _GCAP2_102L_AP, \
+    GLOBAL_LL_EXTENT, NO_STRETCH_SG_PARAMS _GCAP2_102L_AP, \
     _GCAP2_102L_BP, _GCAP2_74L_AP, _GCAP2_74L_BP, _GCAP2_40L_AP, \
     _GCAP2_40L_BP, _GEOS_72L_AP, _GEOS_72L_BP, _GEOS_47L_AP, \
     _GEOS_47L_BP, _CAM_26L_AP, _CAM_26L_BP, R_EARTH_m 
@@ -168,16 +168,16 @@ def call_make_grid(
         in_extent: list[float, float, float, float]
             Describes minimum and maximum latitude and longitude of input data
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value: DEFAULT_LL_EXTENT, i.e. [-180, 180, -90, 90]
+            Default value: GLOBAL_LL_EXTENT, i.e. [-180, 180, -90, 90]
         out_extent: list[float, float, float, float]
             Desired minimum and maximum latitude and longitude of output grid
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value: DEFAULT_LL_EXTENT, i.e. [-180, 180, -90, 90]
+            Default value: GLOBAL_LL_EXTENT, i.e. [-180, 180, -90, 90]
         sg_params: list
             Desired stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
             Will trigger stretched-grid creation if not default values.
-            Default value: DEFAULT_SG_PARAMS (no stretching, [1, 170, -90])
+            Default value: NO_STRETCH_SG_PARAMS (no stretching, [1, 170, -90])
 
     Returns:
         [grid, grid_list]: list(dict, list(dict))
@@ -189,18 +189,18 @@ def call_make_grid(
 
     # Set defaults for keyword args
     if in_extent is None:
-        in_extent = DEFAULT_LL_EXTENT
+        in_extent = GLOBAL_LL_EXTENT
     if out_extent is None:
-        out_extent = DEFAULT_LL_EXTENT
+        out_extent = GLOBAL_LL_EXTENT
     if sg_params is None:
-        sg_params = DEFAULT_SG_PARAMS
+        sg_params = NO_STRETCH_SG_PARAMS
 
     # Lat-lon grid
     if gridtype == "ll":
         return [make_grid_ll(res, in_extent, out_extent), None]
 
     # Standard cubed-sphere
-    if sg_params == DEFAULT_SG_PARAMS:
+    if sg_params == NO_STRETCH_SG_PARAMS:
         return make_grid_cs(res)
 
     # Stretched-grid
@@ -239,8 +239,8 @@ def get_grid_extents(data, edges=True):
                 np.min(data["lon"]), np.max(data["lon"]), \
                 np.min(data["lat"]), np.max(data["lat"])
         return \
-            DEFAULT_LL_EXTENT[0], DEFAULT_LL_EXTENT[1], \
-            DEFAULT_LL_EXTENT[2], DEFAULT_LL_EXTENT[3]
+            GLOBAL_LL_EXTENT[0], GLOBAL_LL_EXTENT[1], \
+            GLOBAL_LL_EXTENT[2], GLOBAL_LL_EXTENT[3]
 
     if "lat" in data.dims and "lon" in data.dims:
         lat = data["lat"].values
@@ -265,8 +265,8 @@ def get_grid_extents(data, edges=True):
 
     # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
     return \
-        DEFAULT_LL_EXTENT[0], DEFAULT_LL_EXTENT[1], \
-        DEFAULT_LL_EXTENT[2], DEFAULT_LL_EXTENT[3]
+        GLOBAL_LL_EXTENT[0], GLOBAL_LL_EXTENT[1], \
+        GLOBAL_LL_EXTENT[2], GLOBAL_LL_EXTENT[3]
 
 
 def get_vert_grid(
@@ -296,12 +296,12 @@ def get_vert_grid(
 
     # 72L GEOS grid
     if dataset.sizes["lev"] in (72, 73):
-        grid = vert_grid(_GEOS_72L_AP, _GEOS_72L_BP, p_sfc)
+        grid = VertGrid(_GEOS_72L_AP, _GEOS_72L_BP, p_sfc)
         return grid.p_edge(), grid.p_mid(), 72
 
     # 47L GEOS grid
     if dataset.sizes["lev"] in (47, 48):
-        grid = vert_grid(_GEOS_47L_AP, _GEOS_47L_BP, p_sfc)
+        grid = VertGrid(_GEOS_47L_AP, _GEOS_47L_BP, p_sfc)
         return grid.p_edge(), grid.p_mid(), 47
 
     # Grid without specified AP, BP
@@ -309,7 +309,7 @@ def get_vert_grid(
         if dataset.sizes["lev"] == 1:
             AP = [1, 1]
             BP = [1]
-            grid = vert_grid(AP, BP, p_sfc)
+            grid = VertGrid(AP, BP, p_sfc)
             return grid.p_edge(), grid.p_mid(), np.size(AP)
 
         raise ValueError(
@@ -319,7 +319,7 @@ def get_vert_grid(
         )
 
     # Grid with specified AP, BP
-    grid = vert_grid(AP, BP, p_sfc)
+    grid = VertGrid(AP, BP, p_sfc)
     return grid.p_edge(), grid.p_mid(), np.size(AP)
 
 
@@ -544,10 +544,15 @@ def convert_lev_to_pres(dataset, pmid, pedge, lev_type='pmid'):
     return dataset
 
 
-class vert_grid:
+class VertGrid:
     """
     Class that defines a vertical grid given the Ap and Bp
     grid parameters and surface pressure.
+    
+    Args
+    AP    : list-like : Hybrid-grid A parameter
+    BP    : list-like : Hybrid-grid B parameter
+    P_sfc : float     : Surface pressure
     """
     def __init__(self, AP=None, BP=None, p_sfc=1013.25):
         if (len(AP) != len(BP)) or (AP is None):
@@ -604,7 +609,7 @@ def make_grid_ll(llres, in_extent=None, out_extent=None):
 
     # Default values for keyword args
     if in_extent is None:
-        in_extent = DEFAULT_LL_EXTENT
+        in_extent = GLOBAL_LL_EXTENT
     if out_extent is None:
         out_extent = in_extent
 
@@ -738,12 +743,13 @@ def calc_rectilinear_lon_edge(lon_stride, center_at_180):
     Parameters
     ----------
     lon_stride: float
-        Stride length in degrees. For example, for a standard GEOS-Chem Classic
-        4x5 grid, lon_stride would be 5.
+        Stride length in degrees. For example, for a standard GEOS-Chem 
+        Classic 4x5 grid, lon_stride would be 5.
     center_at_180: bool
-        Whether or not the grid should have a cell center at 180 degrees (i.e.
-        on the date line). If true, the first grid cell is centered on the date
-        line; if false, the first grid edge is on the date line.
+        Whether or not the grid should have a cell center at 180 
+        degrees (i.e. on the date line). If true, the first grid cell 
+        is centered on the date line; if false, the first grid edge is 
+        on the date line.
 
     Returns
     -------
@@ -774,13 +780,13 @@ def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
     Parameters
     ----------
     lat_stride: float
-        Stride length in degrees. For example, for a standard GEOS-Chem Classic
-        4x5 grid, lat_stride would be 4.
+        Stride length in degrees. For example, for a standard GEOS-Chem 
+        Classic 4x5 grid, lat_stride would be 4.
     half_polar_grid: bool
-        Whether or not the grid should be "half-polar" (i.e. bands at poles are
-        half the size). In either case the grid will start and end at -/+ 90,
-        but when half_polar_grid is True, the first and last bands will have a
-        width of 1/2 the normal lat_stride.
+        Whether or not the grid should be "half-polar" (i.e. bands 
+        at poles are half the size). In either case the grid will start
+        and end at -/+ 90, but when half_polar_grid is True, the first 
+        and last bands will have a width of 1/2 the normal lat_stride.
 
     Returns
     -------
