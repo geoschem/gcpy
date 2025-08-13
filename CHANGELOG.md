@@ -14,8 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere 
 - Added `Ap` and `Bp` parameters for GCAP2 vertical grids
 - Added `GCAP2_102L_grid`, `GCAP2_74L_grid`, and `GCAP2_40L_grid` to `grid.py`
-- Added new constants `DEFAULT_LL_EXTENT` and `DEFAULT_SG_PARAMS`
-- Added new constants: `DEFAULT_LL_EXTENT`, `DEFAULT_SG_STRETCH_FACTOR`, `DEFAULT_SG_TARGET_LON`, `DEFAULT_SG_TARGET_LAT`, `DEFAULT_SG_PARAMS`
+- Added new constants: `GLOBAL_LL_EXTENT`, `NO_STRETCH_SG_STRETCH_FACTOR`, `NO_STRETCH_SG_TARGET_LON`, `NO_STRETCH_SG_TARGET_LAT`, `NO_STRETCH_SG_PARAMS`
 - Added PyDoc headers in `gcpy/grid.py`, `gcpy/append_grid_corners.py`, and `gcpy/raveller_1D.py`
 
 ### Changed
@@ -28,8 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bumped `pypdf` from version 4.2.0 to 6.0.0 in `docs/environments/gcpy_environment_py312.yml`
 - Bumped `pypdf` from version 5.3.1 to 6.0.0 in `docs/environments/gcpy_environment_py313.yml`
 - Moved `Ap` and `Bp` parameters that define vertical grids from `grid.py` to `vgrid_defs.py`
-- Replaced `[-180, 180, -90, 90]` with `DEFAULT_LL_EXTENT` in functions
-- Replaced `[1, 170, -90]` with `DEFAULT_SG_PARAMS` in functions
+- Replaced `[-180, 180, -90, 90]` with `GLOBAL_LL_EXTENT` in functions
+- Replaced `[1, 170, -90]` with `NO_STRETCH_SG_PARAMS` in functions
 - Renamed `skip_these_vars` to `SKIP_THESE_VARS` to conform to Python style for constants
 - Modified code in `grid.py`, `regrid.py`, `file_regrid.py`, and `cstools.py`, and `raveller_1D.py`  as directed by Pylint to better conform to the Python style guide
 - Renamed the following routines in `gcpy/grid.py` to conform to snake-case naming convention
@@ -44,7 +43,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `make_regridder_S2G --> make_regridder_sg2sg`
   - `make_regridder_L2S --> make_regridder_ll2sg`
 - Updated `cstools.py`, `file_regrid.py`, `append_grid_corners.py`, and `raveller_1D.py` to import and use renamed functions
-- Updated `append_grid_corners.py` to use `DEFAULT_SG_PARAMS` from `constants.py`
+- Updated `append_grid_corners.py` to use `NO_STRETCH_SG_PARAMS` from `constants.py`
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
