@@ -348,7 +348,7 @@ def gen_grid(
         where each value has an extra face dimension of length 6.
     """
     if stretch_factor is not None:
-        cs_temp, _ = gcpy.make_grid_SG(
+        cs_temp, _ = gcpy.make_grid_sg(
             n_cs,
             stretch_factor,
             target_lon,
