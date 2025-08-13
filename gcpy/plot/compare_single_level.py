@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 compare_single_level.py: Function to create a six-panel plot comparing
 quantities at a single model level for two different model versions.
@@ -16,7 +17,7 @@ import numpy as np
 import xarray as xr
 import cartopy.crs as ccrs
 from joblib import Parallel, delayed
-from pypdf import PdfMerger
+from pypdf import PdfReader, PdfWriter
 from gcpy.grid import get_grid_extents, call_make_grid
 from gcpy.regrid import regrid_comparison_data, create_regridders
 from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
@@ -680,6 +681,12 @@ def compare_single_level(
         # Get comparison data sets, regridding input slices if needed
         # ==============================================================
 
+        # Initialize objects to avoid Pylint warnings
+        ds_ref_cmp_reshaped = xr.Dataset()
+        ds_dev_cmp_reshaped = xr.Dataset()
+        frac_ds_ref_cmp_reshaped = xr.Dataset()
+        frac_ds_dev_cmp_reshaped = xr.Dataset()
+
         # Reshape ref/dev cubed sphere data, if any
         ds_ref_reshaped = None
         if refgridtype == "cs":
@@ -1174,22 +1181,32 @@ def compare_single_level(
             # ==========================================================
             # Finish
             # ==========================================================
-            if verbose:
-                print("Closed PDF")
-            merge = PdfMerger()
-            #print(f"Creating {pdfname} for {n_var} variables")
+
+            # Close the PDF object
             pdf = PdfPages(pdfname)
             pdf.close()
+            if verbose:
+                print("Closed PDF")
+
+            # Concatenate individual PDFs together
+            # Now use PdfWriter instead of PdfMerger
+            writer = PdfWriter()
             for i in range(n_var):
                 temp_pdfname = pdfname
-                if pdfname[0] == '/':
+                if pdfname.startswith('/'):
                     temp_pdfname = temp_pdfname[1:]
-                merge.append(
-                    os.path.join(
-                        str(temp_dir),
-                        temp_pdfname +
-                        "BENCHMARKFIGCREATION.pdf" +
-                        str(i)))
-            merge.write(pdfname)
-            merge.close()
+                temp_pdfname = os.path.join(
+                    str(temp_dir),
+                    f"{temp_pdfname}BENCHMARKFIGCREATION.pdf{str(i)}"
+                )
+                reader = PdfReader(temp_pdfname)
+                for page in reader.pages:
+                    writer.add_page(page)
+
+            # Write combined PDF
+            with open(pdfname, "wb") as ofile:
+                writer.write(ofile)
+            if verbose:
+                print(f"Created {pdfname} for {n_var} variables")
+
             warnings.showwarning = _warning_format

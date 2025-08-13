@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Creates a six-panel comparison plot of zonal means from two different
 GEOS-Chem model versions.  Called from the GEOS-Chem benchmarking scripts
@@ -14,7 +15,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import xarray as xr
 from joblib import Parallel, delayed
-from pypdf import PdfMerger
+from pypdf import PdfReader, PdfWriter
 from gcpy.grid import get_vert_grid, get_pressure_indices, \
     pad_pressure_edges, convert_lev_to_pres
 from gcpy.regrid import regrid_comparison_data, create_regridders, gen_xmat, \
@@ -1076,22 +1077,32 @@ def compare_zonal_mean(
             # ==========================================================
             # Finish
             # ==========================================================
-            if verbose:
-                print("Closed PDF")
-            merge = PdfMerger()
-            #print("Creating {} for {} variables".format(pdfname, n_var))
+
+            # Close the PDF object
             pdf = PdfPages(pdfname)
             pdf.close()
+            if verbose:
+                print("Closed PDF")
+
+            # Concatenate individual PDFs together
+            # Now use PdfWriter instead of PdfMerger
+            writer = PdfWriter()
             for i in range(n_var):
                 temp_pdfname = pdfname
                 if pdfname[0] == '/':
                     temp_pdfname = temp_pdfname[1:]
-                merge.append(
-                    os.path.join(
-                        str(temp_dir),
-                        temp_pdfname +
-                        "BENCHMARKFIGCREATION.pdf" +
-                        str(i)))
-            merge.write(pdfname)
-            merge.close()
+                temp_pdfname = os.path.join(
+                    str(temp_dir),
+                    f"{temp_pdfname}BENCHMARKFIGCREATION.pdf{str(i)}"
+                )
+                reader = PdfReader(temp_pdfname)
+                for page in reader.pages:
+                    writer.add_page(page)
+
+            # Write combined PDF
+            with open(pdfname, "wb") as ofile:
+                writer.write(ofile)
+            if verbose:
+                print(f"Created {pdfname} for {n_var} variables")
+
             warnings.showwarning = _warning_format
