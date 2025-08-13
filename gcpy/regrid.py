@@ -926,7 +926,7 @@ def sg_hash(
     target_lat     : float : Target latitude (degrees)
     target_lon     : float : Target longitude (degrees)
     """
-    return hashlib.sha1(
+    return hashlib.sha256(
         f'cs={cs_res},sf={stretch_factor:.5f},tx={target_lon:.5f},ty={target_lat:.5f}'.encode()
     ).hexdigest()[:7]
 

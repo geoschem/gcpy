@@ -47,8 +47,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `append_grid_corners.py` to use `NO_STRETCH_SG_PARAMS` from `constants.py`
 =======
 - Updated `append_grid_corners.py` to use `DEFAULT_SG_PARAMS` from `constants.py`
-- Rema,med `vert_grid` class in `gcpy/grid.py` to `VertGrid` to conform to PascalCase naming convention
->>>>>>> d9f7662 (Update constants in grid.py; Also rename vert_grid to VertGrid)
+<<<<<<< HEAD
+- Remamed `vert_grid` class in `gcpy/grid.py` to `VertGrid` to conform to PascalCase naming convention
+- Replaced `hashlib.sha1` with `hashlib.sha256` in routine `sg_hash` in `gcpy/regrid.py`
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
