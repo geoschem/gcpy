@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added "Lint" GitHub Action to check other actions for security issues
 - Added `gcpy_environment_py314.ym1` to specify the GCPy environment packages with Python 3.14 
 - Added GitHub action `build-gcpy-environment-py314.yml` to test building the GCPy environment with Python 3.14
-- Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere
+- Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere 
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -20,6 +20,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Expanded possible stretched grid attribute names to include `STRETCH_FACTOR`, `TARGET_LAT`, and `TARGET_LON`
 - Changed regridding for plots to always compare stretched-grid to uniform CS grid on the uniform CS grid rather than whatever grid is ref
 - Updated PDF writing algorithm in `compare_single_level` and `compare_zonal_mean` to use `PdfReader` and `PdfWriter` instead of `PdfMerger`
+- Bumped `pypdf` from version 4.2.0 to 6.0.0 in `docs/environments/gcpy_environment_py312.yml`
+- Bumped `pypdf` from version 5.3.1 to 6.0.0 in `docs/environments/gcpy_environment_py313.yml`
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
