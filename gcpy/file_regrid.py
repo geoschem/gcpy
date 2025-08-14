@@ -3,6 +3,7 @@ Regrids data horizontally between lat/lon and/or cubed-sphere grids
 (including stretched grids).
 """
 import argparse
+import logging
 import os
 import warnings
 import numpy as np
@@ -1294,6 +1295,7 @@ def drop_classic_vars(
     """
     with xr.set_options(keep_attrs=True):
         if towards_gchp:
+            logging.info("Dropping GC-Classic variables")
             dset = dset.drop_vars(
                 ["P0",
                  "hyam",

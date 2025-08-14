@@ -36,7 +36,7 @@ import numpy as np
 import sparselt.esmf
 import sparselt.xr
 import requests
-
+from gcpy.file_regrid import drop_classic_vars
 
 TEMP_FILES = []
 
@@ -515,6 +515,7 @@ def regrid_restart_file(
     is_conversion = input_is_gchp != output_is_gchp
     if is_conversion:
         to_gchp = output_is_gchp
+        dataset = drop_classic_vars(dataset, to_gchp)
         dataset = rename_variables(dataset, to_gchp)
         dataset = reverse_lev(dataset, to_gchp)
 

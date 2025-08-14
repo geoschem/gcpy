@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added "Lint" GitHub Action to check other actions for security issues
 - Added `gcpy_environment_py314.ym1` to specify the GCPy environment packages with Python 3.14 
 - Added GitHub action `build-gcpy-environment-py314.yml` to test building the GCPy environment with Python 3.14
+- Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
