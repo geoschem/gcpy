@@ -318,7 +318,7 @@ def compare_zonal_mean(
             refdata.attrs['TARGET_LON'],
             refdata.attrs['TARGET_LAT']]
     else:
-        sg_ref_params = [1, 170, -90]
+        sg_ref_params = NO_STRETCH_SG_PARAMS
 
     # Dev stretch attributes
     if 'stretch_factor' in devdata.attrs:
@@ -332,7 +332,7 @@ def compare_zonal_mean(
             devdata.attrs['TARGET_LON'],
             devdata.attrs['TARGET_LAT']]
     else:
-        sg_dev_params = [1, 170, -90]
+        sg_dev_params = NO_STRETCH_SG_PARAMS
 
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype,
      regridref, regriddev, regridany, refgrid, devgrid, cmpgrid,

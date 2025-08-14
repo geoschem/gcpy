@@ -255,7 +255,7 @@ def compare_single_level(
             refdata.attrs['TARGET_LON'],
             refdata.attrs['TARGET_LAT']]
     else:
-        sg_ref_params = [1, 170, -90]
+        sg_ref_params = NO_STRETCH_SG_PARAMS
 
     # Dev stretch attributes
     if 'stretch_factor' in devdata.attrs:
@@ -269,7 +269,7 @@ def compare_single_level(
             devdata.attrs['TARGET_LON'],
             devdata.attrs['TARGET_LAT']]
     else:
-        sg_dev_params = [1, 170, -90]
+        sg_dev_params = NO_STRETCH_SG_PARAMS
 
     # Get grid info and regrid if necessary
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref,
