@@ -15,7 +15,7 @@ from gcpy.constants import \
     NO_STRETCH_SG_TARGET_LAT, NO_STRETCH_SG_PARAMS
 from gcpy.grid import \
     call_make_grid, get_grid_extents, get_input_res, get_vert_grid, \
-    make_grid_cs, make_grid_ll, make_grid_sg, vert_grid
+    make_grid_cs, make_grid_ll, make_grid_sg, VertGrid
 from gcpy.util import verify_variable_type
 
 
@@ -981,7 +981,7 @@ def regrid_vertical_datasets(
     if len(ref_pedge) != len(dev_pedge) or target_vert_params is not None:
         if target_vert_params is not None:
             #use a specific target grid for regridding if passed
-            target_grid = vert_grid(*target_vert_params)
+            target_grid = VertGrid(*target_vert_params)
             target_pedge = target_grid.p_edge()
             target_pmid = target_grid.p_mid()
         elif target_grid_choice == 'ref':
