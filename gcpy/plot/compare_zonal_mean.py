@@ -307,7 +307,6 @@ def compare_zonal_mean(
     # Stretch factor 1 corresponds with no stretch.
 
     # Ref stretch attributes
-    print(refdata.attrs)
     if 'stretch_factor' in refdata.attrs:
         sg_ref_params = [
             refdata.attrs['stretch_factor'],
@@ -322,7 +321,6 @@ def compare_zonal_mean(
         sg_ref_params = [1, 170, -90]
 
     # Dev stretch attributes
-    print(devdata.attrs)
     if 'stretch_factor' in devdata.attrs:
         sg_dev_params = [
             devdata.attrs['stretch_factor'],
