@@ -73,7 +73,7 @@ For documentation on setting up and running GEOS-Chem please see our
    :maxdepth: 3
    :caption: Supplemental Guides
 
-   Install-Mamba-Conda
+   Install-Conda
    
 .. toctree::
    :maxdepth: 1
