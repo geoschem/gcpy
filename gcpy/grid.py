@@ -8,12 +8,12 @@ import xarray as xr
 import numpy as np
 from gcpy.util import get_shape_of_data, verify_variable_type
 from gcpy.grid_stretching_transforms import scs_transform
-from gcpy.constants import R_EARTH_m
+from gcpy.constants import \
+    GLOBAL_LL_EXTENT, NO_STRETCH_SG_PARAMS, R_EARTH_m
 from gcpy.vgrid_defs import \
-    GLOBAL_LL_EXTENT, NO_STRETCH_SG_PARAMS _GCAP2_102L_AP, \
-    _GCAP2_102L_BP, _GCAP2_74L_AP, _GCAP2_74L_BP, _GCAP2_40L_AP, \
-    _GCAP2_40L_BP, _GEOS_72L_AP, _GEOS_72L_BP, _GEOS_47L_AP, \
-    _GEOS_47L_BP, _CAM_26L_AP, _CAM_26L_BP, R_EARTH_m 
+    _GCAP2_102L_AP, _GCAP2_102L_BP, _GCAP2_74L_AP, _GCAP2_74L_BP, \
+    _GCAP2_40L_AP, _GCAP2_40L_BP, _GEOS_72L_AP, _GEOS_72L_BP, \
+    _GEOS_47L_AP, _GEOS_47L_BP, _CAM_26L_AP, _CAM_26L_BP
 from gcpy.cstools import find_index, is_cubed_sphere
 
 
@@ -571,12 +571,12 @@ class VertGrid:
         return (p_edge[1:] + p_edge[:-1]) / 2.0
 
 # Define commonly-used vertical grids
-GEOS_72L_grid = vert_grid(_GEOS_72L_AP, _GEOS_72L_BP)
-GEOS_47L_grid = vert_grid(_GEOS_47L_AP, _GEOS_47L_BP)
-GCAP2_102L_grid = vert_grid(_GCAP2_102L_AP, _GCAP2_102L_BP)
-GCAP2_74L_grid = vert_grid(_GCAP2_74L_AP, _GCAP2_74L_BP)
-GCAP2_40L_grid = vert_grid(_GCAP2_40L_AP, _GCAP2_40L_BP)
-CAM_26L_grid = vert_grid(_CAM_26L_AP, _CAM_26L_BP)
+GEOS_72L_grid = VertGrid(_GEOS_72L_AP, _GEOS_72L_BP)
+GEOS_47L_grid = VertGrid(_GEOS_47L_AP, _GEOS_47L_BP)
+GCAP2_102L_grid = VertGrid(_GCAP2_102L_AP, _GCAP2_102L_BP)
+GCAP2_74L_grid = VertGrid(_GCAP2_74L_AP, _GCAP2_74L_BP)
+GCAP2_40L_grid = VertGrid(_GCAP2_40L_AP, _GCAP2_40L_BP)
+CAM_26L_grid = VertGrid(_CAM_26L_AP, _CAM_26L_BP)
 
 
 def make_grid_ll(llres, in_extent=None, out_extent=None):
