@@ -4,6 +4,37 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+### Added
+- Added `gcpy/profile/vtune_plot_hotspots.py` to plot a bargraph of hotspots from Intel VTune reports
+- Added ReadTheDocs documentation for plotting hotspots from Intel VTune reports
+- Added "Lint" GitHub Action to check other actions for security issues
+- Added `gcpy_environment_py314.ym1` to specify the GCPy environment packages with Python 3.14 
+- Added GitHub action `build-gcpy-environment-py314.yml` to test building the GCPy environment with Python 3.14
+- Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere 
+- Added `Ap` and `Bp` parameters for GCAP2 vertical grids
+- Added `GCAP2_102L_grid`, `GCAP2_74L_grid`, and `GCAP2_40L_grid` to `grid.py`
+
+### Changed
+- Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
+- Moved `gprofng_text_to_data_units` to function `text_to_data_units` in `gcpy/plot/core.py` so that it can be used by `gprofng_functions` and `vtune_plot_hotspots`
+- Updated GitHub badges in `README.md` and `docs/source/index.rst`
+- Expanded possible stretched grid attribute names to include `STRETCH_FACTOR`, `TARGET_LAT`, and `TARGET_LON`
+- Changed regridding for plots to always compare stretched-grid to uniform CS grid on the uniform CS grid rather than whatever grid is ref
+- Updated PDF writing algorithm in `compare_single_level` and `compare_zonal_mean` to use `PdfReader` and `PdfWriter` instead of `PdfMerger`
+- Bumped `pypdf` from version 4.2.0 to 6.0.0 in `docs/environments/gcpy_environment_py312.yml`
+- Bumped `pypdf` from version 5.3.1 to 6.0.0 in `docs/environments/gcpy_environment_py313.yml`
+- Moved `Ap` and `Bp` parameters that define vertical grids from `grid.py` to `vgrid_defs.py`
+- Bumped `pip` to version 25.2 as suggested by Dependabot
+
+### Fixed
+- Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
+- Fixed various security issues in GitHub Actions workflows
+- Fixed colorbar bounds for case of comparing cubed-sphere grids
+
+### Removed
+- Removed `PdfMerger()` from `compare_single_level` and `compare_zonal_mean`, it has been removed in pypdf >= 5.0.0
+
 ## [1.6.2] - 2025-06-12
 ### Added
 - Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN
@@ -18,37 +49,12 @@ n
 
 ### Changed
 - Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
-
-### Fixed
-- Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
-- Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
-- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
-
-## [1.6.2] - 2025-06-12
-### Changed
 - Bumped `requests` from 2.32.3 to 2.32.4 in environment files to fix a security issue flagged by Dependabot
 
 ### Fixed
-- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
-
-## [1.6.2] - 2025-06-12
-### Added
-- Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN
-- Added a chapter on using code profiling tools in the ReadTheDocs documentatio
-n
-- Added code profiling scripts (in `gcpy/gcpy/profile`) to read and display output from gprofng and Intel VTune profilers
-- Added `check_gchp_emission_diags.py` example script and documentation
-- Added new benchmark functions `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots` which can be used with any GEOS-Chem output collection
-- Added 1-month benchmark comparison plot options for `Budget`, `UVFlux`, and `StateMet` collections (2D and 3D vars separately) which are off by default
-- Added `export MPLBACKEND=agg` to `gcpy/benchmark/modules/benchmark_slurm.sh` to request a non-interactive MatPlotLib backend
-- Added `method` keyword argument to `make_regridder_*` routines in `regrid.py`, with default value `conservative`
-
-### Changed
-- Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
-
-### Fixed
 - Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
 - Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
+- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
 
 ## [1.6.1] - 2025-03-24
 ### Added
