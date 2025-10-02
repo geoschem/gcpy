@@ -528,7 +528,6 @@ def regrid_restart_file(
 
     dataset, output_template = drop_variables(dataset, output_template)
     dataset = regrid(dataset, output_template, weights_file=regrid_weights)
-    dataset = update_encoding(dataset)
     check_for_nans(dataset)
 
     if stretch_factor and target_lat and target_lon:
