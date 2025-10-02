@@ -377,6 +377,13 @@ def regrid(dataset, output_template, weights_file):
         np.prod(output_template_shape) != weights.dst_grid_dims.item()
     )
     if resize_output_template:
+        error_message = (
+            "GCHP output template grid resolution must be the same size "
+            "as the target grid! For example, if creating restart file "
+            " with parameters c24 and stretch factor 10, the template "
+            " GCHP file must be c24 with any or no stretch factor."
+        )
+        raise ValueError(error_message)
         if is_gchp_restart_file(output_template):
             # This is useful for stretched-grid simulations because they usually
             # don't have a "normal" grid size
