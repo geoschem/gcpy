@@ -9,9 +9,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `gcpy/profile/vtune_plot_hotspots.py` to plot a bargraph of hotspots from Intel VTune reports
 - Added ReadTheDocs documentation for plotting hotspots from Intel VTune reports
 - Added "Lint" GitHub Action to check other actions for security issues
-- Added `gcpy_environment_py314.ym1` to specify the GCPy environment packages with Python 3.14 
+- Added `gcpy_environment_py314.ym1` to specify the GCPy environment packages with Python 3.14
 - Added GitHub action `build-gcpy-environment-py314.yml` to test building the GCPy environment with Python 3.14
-- Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere 
+- Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere
 - Added `Ap` and `Bp` parameters for GCAP2 vertical grids
 - Added `GCAP2_102L_grid`, `GCAP2_74L_grid`, and `GCAP2_40L_grid` to `grid.py`
 - Added new constants: `GLOBAL_LL_EXTENT`, `NO_STRETCH_SG_STRETCH_FACTOR`, `NO_STRETCH_SG_TARGET_LON`, `NO_STRETCH_SG_TARGET_LAT`, `NO_STRETCH_SG_PARAMS`
@@ -43,13 +43,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `make_regridder_S2G --> make_regridder_sg2sg`
   - `make_regridder_L2S --> make_regridder_ll2sg`
 - Updated `cstools.py`, `file_regrid.py`, `append_grid_corners.py`, and `raveller_1D.py` to import and use renamed functions
-<<<<<<< HEAD
 - Updated `append_grid_corners.py` to use `NO_STRETCH_SG_PARAMS` from `constants.py`
-=======
-- Updated `append_grid_corners.py` to use `DEFAULT_SG_PARAMS` from `constants.py`
-<<<<<<< HEAD
 - Remamed `vert_grid` class in `gcpy/grid.py` to `VertGrid` to conform to PascalCase naming convention
 - Replaced `hashlib.sha1` with `hashlib.sha256` in routine `sg_hash` in `gcpy/regrid.py`
+- Bumped `pip` to version 25.2 as suggested by Dependabot
+- Required passing template output file to offline restart regridding that has grid dimensions that do not match target restart grid
+- Changed offline restart regridding to preserve source restart file precision
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`

@@ -310,8 +310,8 @@ def compare_zonal_mean(
     if 'stretch_factor' in refdata.attrs:
         sg_ref_params = [
             refdata.attrs['stretch_factor'],
-            refdata.attrs['target_lon'],
-            refdata.attrs['target_lat']]
+            refdata.attrs['target_longitude'],
+            refdata.attrs['target_latitude']]
     elif 'STRETCH_FACTOR' in refdata.attrs:
         sg_ref_params = [
             refdata.attrs['STRETCH_FACTOR'],
@@ -324,8 +324,8 @@ def compare_zonal_mean(
     if 'stretch_factor' in devdata.attrs:
         sg_dev_params = [
             devdata.attrs['stretch_factor'],
-            devdata.attrs['target_lon'],
-            devdata.attrs['target_lat']]
+            devdata.attrs['target_longitude'],
+            devdata.attrs['target_latitude']]
     elif 'STRETCH_FACTOR' in devdata.attrs:
         sg_dev_params = [
             devdata.attrs['STRETCH_FACTOR'],
