@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bumped `pypdf` from version 4.2.0 to 6.0.0 in `docs/environments/gcpy_environment_py312.yml`
 - Bumped `pypdf` from version 5.3.1 to 6.0.0 in `docs/environments/gcpy_environment_py313.yml`
 - Moved `Ap` and `Bp` parameters that define vertical grids from `grid.py` to `vgrid_defs.py`
+- Changed `mamba` to `conda` in `benchmarks/benchmark_slurm.sh`
+- Separated plot and table options for clarity in  `benchmarks/config/*yml` and  `benchmarks/cloud/*.yml`
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`

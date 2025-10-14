@@ -114,24 +114,32 @@ options:
   # outputs: Specifies the plots and tables to generate
   #
   outputs:
-    plot_conc: True
-    plot_emis: True
-    emis_table: True
-    plot_jvalues: True
+    #
+    # Benchmark plots
+    #
     plot_aod: True
+    plot_conc: True
     plot_drydep: True
-    mass_table: True
-    mass_accum_table: False
-    ops_budget_table: False
-    OH_metrics: True
-    ste_table: True # GCC only
-    timing_table: True
-    summary_table: True
-    sanity_check_table: True
+    plot_emis: True
+    plot_jvalues: True
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
-    # Comparison plots for other collections
+    #
+    # Benchmark tables
+    #
+    emis_table: True
+    mass_accum_table: False
+    mass_table: True
+    OH_metrics: True
+    ops_budget_table: False
+    sanity_check_table: True
+    ste_table: True # GCC only
+    timing_table: True
+    #
+    # Comparison plots for selected collections
+    # (not normally used for benchmarks)
+    #
     plot_budget: False
     plot_2d_met: False
     plot_3d_met: False

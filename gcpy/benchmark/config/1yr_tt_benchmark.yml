@@ -1,4 +1,3 @@
-
 ---
 # =====================================================================
 # Benchmark configuration file (**EDIT AS NEEDED**)
@@ -115,15 +114,28 @@ options:
   # outputs: Specifies the plots and tables to generate
   #
   outputs:
+    #
+    # Benchmark plots
+    #
     plot_conc: True
-    plot_wetdep: True
     plot_drydep: True
-    rnpbbe_budget: True
-    ops_budget_table: False
-    mass_table: True
-    ste_table: True
+    plot_wetdep: True
+    #
+    # Benchmark tables
+    #
     cons_table: True
+    mass_table: True
+    ops_budget_table: False
+    rnpbbe_budget: True
+    ste_table: True
     timing_table: False
+    #
+    # Comparison plots for selected collections
+    # (not normally used for benchmarks)
+    #
+    plot_budget: False
+    plot_2d_met: False
+    plot_3d_met: False
   #
   # n_cores: Specify the number of cores to use.
   # -1: Use $OMP_NUM_THREADS         cores
