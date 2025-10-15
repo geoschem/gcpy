@@ -28,7 +28,7 @@ export OMP_STACKSIZE=500m
 export MPLBACKEND=agg
 
 # Turn on Python environment (edit for your setup)
-mamba activate gcpy_env
+conda activate gcpy_env
 
 # Specify a YAML file with benchmark options
 # Uncomment the file that you wish:
@@ -40,7 +40,7 @@ config="1mo_benchmark.yml"
 python -m gcpy.benchmark.run_benchmark "${config}" > "${config/.yml/.log}" 2>&1
 
 # Turn off python environment
-mamba deactivate
+conda deactivate
 
 exit 0
 

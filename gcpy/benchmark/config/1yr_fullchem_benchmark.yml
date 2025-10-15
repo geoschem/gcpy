@@ -126,23 +126,37 @@ options:
   # outputs: Specifies the plots and tables to generate
   #
   outputs:
-    plot_conc: True
-    plot_emis: True
-    emis_table: True
-    plot_jvalues: True
+    #
+    # Benchmark plots
+    #
     plot_aod: True
+    plot_conc: True
     plot_drydep: True
-    mass_table: True
-    ops_budget_table: False
-    aer_budget_table: True
-    Ox_budget_table: True
-    ste_table: True # GCC only
-    OH_metrics: True
-    timing_table: True
-    plot_models_vs_obs: True
+    plot_emis: True
+    plot_jvalues: True
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
+    #
+    # Benchmark tables
+    #
+    emis_table: True
+    mass_accum_table: False
+    mass_table: True
+    OH_metrics: True
+    ops_budget_table: False
+    sanity_check_table: True
+    ste_table: True # GCC only
+    summary_table: False
+    timing_table: True
+    #
+    # Comparison plots for selected collections
+    # (not normally used for benchmarks)
+    #
+    plot_budget: False
+    plot_2d_met: False
+    plot_3d_met: False
+    plot_uvflux: False
   #
   # n_cores: Specify the number of cores to use.
   # -1: Use $OMP_NUM_THREADS         cores

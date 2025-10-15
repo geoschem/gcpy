@@ -28,6 +28,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bumped `pip` to version 25.2 as suggested by Dependabot
 - Required passing template output file to offline restart regridding that has grid dimensions that do not match target restart grid
 - Changed offline restart regridding to preserve source restart file precision
+- Changed `mamba` to `conda` in `benchmarks/benchmark_slurm.sh`
+- Separated plot and table options for clarity in  `benchmarks/config/*yml` and  `benchmarks/cloud/*.yml`
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
