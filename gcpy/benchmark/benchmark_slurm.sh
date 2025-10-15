@@ -32,7 +32,7 @@ conda activate gcpy_env
 
 # Specify a YAML file with benchmark options
 # Uncomment the file that you wish:
-config="1mo_benchmark.yml"x
+config="1mo_benchmark.yml"
 #config="1yr_fullchem_benchmark.yml"
 #config="1yr_tt_benchmark.yml"
 
