@@ -18,6 +18,7 @@ n
 
 ### Changed
 - Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
+- Updated `setup.py`, `gcpy_environment_py312.yml`, and `gcpy_environment_py313.yml` to use `pypdf==6.1.3`
 
 ### Fixed
 - Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
