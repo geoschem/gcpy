@@ -22,8 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Expanded possible stretched grid attribute names to include `STRETCH_FACTOR`, `TARGET_LAT`, and `TARGET_LON`
 - Changed regridding for plots to always compare stretched-grid to uniform CS grid on the uniform CS grid rather than whatever grid is ref
 - Updated PDF writing algorithm in `compare_single_level` and `compare_zonal_mean` to use `PdfReader` and `PdfWriter` instead of `PdfMerger`
-- Bumped `pypdf` from version 4.2.0 to 6.0.0 in `docs/environments/gcpy_environment_py312.yml`
-- Bumped `pypdf` from version 5.3.1 to 6.0.0 in `docs/environments/gcpy_environment_py313.yml`
+- Bumped `pypdf` from version 4.2.0 to 6.1.3 in `docs/environments/gcpy_environment_py312.yml`
+- Bumped `pypdf` from version 5.3.1 to 6.1.3 in `docs/environments/gcpy_environment_py313.yml`
 - Moved `Ap` and `Bp` parameters that define vertical grids from `grid.py` to `vgrid_defs.py`
 - Bumped `pip` to version 25.2 as suggested by Dependabot
 - Required passing template output file to offline restart regridding that has grid dimensions that do not match target restart grid
@@ -53,6 +53,14 @@ n
 
 ### Changed
 - Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
+
+### Fixed
+- Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
+- Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
+- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
+
+## [1.6.2] - 2025-06-12
+### Changed
 - Bumped `requests` from 2.32.3 to 2.32.4 in environment files to fix a security issue flagged by Dependabot
 
 ### Fixed
