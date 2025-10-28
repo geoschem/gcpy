@@ -559,9 +559,9 @@ if __name__ == "__main__":
         logging.info("Creating a stretched-grid restart file")
 
         if (
-            (not COMMAND_LINE.stretch_factor)
-            or (not COMMAND_LINE.target_latitude)
-            or (not COMMAND_LINE.target_longitude)
+            COMMAND_LINE.stretch_factor is None
+            or COMMAND_LINE.target_latitude is None
+            or COMMAND_LINE.target_longitude is None
         ):
             ERROR_MESSAGE = (
                 "--stretched-grid was set but not all stretched-"

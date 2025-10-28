@@ -35,6 +35,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
 - Fixed various security issues in GitHub Actions workflows
 - Fixed colorbar bounds for case of comparing cubed-sphere grids
+- Fixed the restart regridding for stretched GCHP when target lat/lon is exactly 0.0 in `gcpy/regrid_restart_file.py`
+
 
 ### Removed
 - Removed `PdfMerger()` from `compare_single_level` and `compare_zonal_mean`, it has been removed in pypdf >= 5.0.0
