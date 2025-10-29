@@ -135,6 +135,7 @@ options:
     ops_budget_table: False
     sanity_check_table: True
     ste_table: True # GCC only
+    summary_table: True
     timing_table: True
     #
     # Comparison plots for selected collections
