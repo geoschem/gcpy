@@ -2,7 +2,7 @@
 """
 Prints information about a GEOS-Chem Classic horizontal grid
 """
-from gcpy.grid import make_grid_LL
+from gcpy.grid import make_grid_ll
 
 
 def print_vals(values):
@@ -30,21 +30,27 @@ def create_grid_and_print_info(grid_params):
     res = grid_params[0]
     lon_range = grid_params[1]
     lat_range = grid_params[2]
+    grid_type = grid_params[3]
+
+    # Make resolution a pretty string
+    res_display = res.replace("x", "\u00B0 x ") + "\u00B0"
 
     # Create a grid object
     out_extent = [lon_range[0], lon_range[1], lat_range[0], lat_range[1]]
-    grid = make_grid_LL(res, out_extent=out_extent)
+    grid = make_grid_ll(res, out_extent=out_extent)
 
     # Print metadata
-    print("resolution")
-    print(res)
-    print("longitude centers")
+    print(f"Name            : {res_display} {grid_type}")
+    print(f"Resolution      : {res}")
+    print(f"Longitude Range : {lon_range}")
+    print(f"Latitude Range  : {lat_range}")
+    print("Longitude centers")
     print_vals(grid["lon"])
-    print("latitude centers")
+    print("Latitude centers")
     print_vals(grid["lat"])
-    print("longitude edges")
+    print("Longitude edges")
     print_vals(grid["lon_b"])
-    print("latitude edges")
+    print("Latitude edges")
     print_vals(grid["lat_b"])
 
 
@@ -61,27 +67,27 @@ def get_grid_parameters(selection):
     """
     #    Resolution       # Lon range            # Lat range
     grids = [
-        ("4.0x5.0",       [-180.0,    180.0   ], [-90.0,  90.0 ]),  # 4.0   x 5.0     global
-        ("2.0x2.5",       [-180.0,    180.0   ], [-90.0,  90.0 ]),  # 2.0   x 2.5     global
-        ("0.5x0.625",     [-180.0,    180.0   ], [-90.0,  90.0 ]),  # 0.5   x 0.625   global
-        ("0.5x0.625",     [  60.0,    150.0   ], [-11.0,  55.0 ]),  # 0.5   x 0.625   AS
-        ("0.5x0.625",     [ -30.0,     50.0   ], [ 30.0,  70.0 ]),  # 0.5   x 0.625   EU
-        ("0.5x0.625",     [-140.0,    -40.0   ], [ 10.0,  70.0 ]),  # 0.5   x 0.625   NA
-        ("0.25x0.3125",   [-180.0,    180.0   ], [-90.0,  90.0 ]),  # 0.25  x 0.3125  global
-        ("0.25x0.3125",   [ -20.0,     52.8125], [-37.0,  40.0 ]),  # 0.25  x 0.3125  AF
-        ("0.25x0.3125",   [  70.0,    140.0   ], [ 32.75, 61.25]),  # 0.25  x 0.3125  AS
-        ("0.25x0.3125",   [ -15.0,     40.0   ], [ 15.0,  55.0 ]),  # 0.25  x 0.3125  EU
-        ("0.25x0.3125",   [ -20.0,     70.0   ], [ 12.0,  44.0 ]),  # 0.25  x 0.3125  ME
-        ("0.25x0.3125",   [-130.0,    -60.0   ], [  9.75, 60.0 ]),  # 0.25  x 0.3125  NA
-        ("0.25x0.3125",   [ 110.0,    180.0   ], [-50.0,   5.0 ]),  # 0.25  x 0.3125  OC
-        ("0.25x0.3125",   [ -87.8125, -31.25  ], [-59.0,  16.0 ]),  # 0.25  x 0.3125  SA
-        ("0.25x0.3125",   [  20.0,    180.0   ], [ 41.0,  83.0 ]),  # 0.25  x 0.3125  RU
-        ("0.125x0.15625", [-180.0,    180.0   ], [-90.0,  90.0 ]),  # 0.125 x 0.15625 global
-        ("0.125x0.15625", [ -20.0,     52.8125], [-59.0,  16.0 ]),  # 0.125 x 0.15625 AF
-        ("0.125x0.15625", [  70.0,    140.0   ], [ 15.0,  55.0 ]),  # 0.125 x 0.15625 AS
-        ("0.125x0.15625", [ -15.0,     40.0   ], [ 32.75, 61.25]),  # 0.125 x 0.15625 EU
-        ("0.125x0.15625", [-130.0,    -60.0   ], [  9.75, 60.0 ]),  # 0.125 x 0.15625 NA
-        ("0.125x0.15625", [ -87.8125, -31.25  ], [-59.0,  16.0 ]),  # 0.125 x 0.15625 SA
+        ("4.0x5.0",       [-180.0,    180.0   ], [-90.0,  90.0 ], "global"),
+        ("2.0x2.5",       [-180.0,    180.0   ], [-90.0,  90.0 ], "global"),
+        ("0.5x0.625",     [-180.0,    180.0   ], [-90.0,  90.0 ], "global"),
+        ("0.5x0.625",     [  60.0,    150.0   ], [-11.0,  55.0 ], "nested AS"),
+        ("0.5x0.625",     [ -30.0,     50.0   ], [ 30.0,  70.0 ], "nested EU"),
+        ("0.5x0.625",     [-140.0,    -40.0   ], [ 10.0,  70.0 ], "nested NA"),
+        ("0.25x0.3125",   [-180.0,    180.0   ], [-90.0,  90.0 ], "global"),
+        ("0.25x0.3125",   [ -20.0,     52.8125], [-37.0,  40.0 ], "nested AF"),
+        ("0.25x0.3125",   [  70.0,    140.0   ], [ 32.75, 61.25], "nested AS"),
+        ("0.25x0.3125",   [ -15.0,     40.0   ], [ 15.0,  55.0 ], "nested EU"),
+        ("0.25x0.3125",   [ -20.0,     70.0   ], [ 12.0,  44.0 ], "nested ME"),
+        ("0.25x0.3125",   [-130.0,    -60.0   ], [  9.75, 60.0 ], "nested NA"),
+        ("0.25x0.3125",   [ 110.0,    180.0   ], [-50.0,   5.0 ], "nested OC"),
+        ("0.25x0.3125",   [ -87.8125, -31.25  ], [-59.0,  16.0 ], "nested SA"),
+        ("0.25x0.3125",   [  20.0,    180.0   ], [ 41.0,  83.0 ], "nested RU"),
+        ("0.125x0.15625", [-180.0,    180.0   ], [-90.0,  90.0 ], "global"),
+        ("0.125x0.15625", [ -20.0,     52.8125], [-59.0,  16.0 ], "nested AF"),
+        ("0.125x0.15625", [  70.0,    140.0   ], [ 15.0,  55.0 ], "nested AS"),
+        ("0.125x0.15625", [ -15.0,     40.0   ], [ 32.75, 61.25], "nested EU"),
+        ("0.125x0.15625", [-130.0,    -60.0   ], [  9.75, 60.0 ], "nested NA"),
+        ("0.125x0.15625", [ -87.8125, -31.25  ], [-59.0,  16.0 ], "nested SA"),
     ]
 
     return grids[selection]
