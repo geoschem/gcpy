@@ -13,7 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added GitHub action `build-gcpy-environment-py314.yml` to test building the GCPy environment with Python 3.14
 - Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere
 - Added `Ap` and `Bp` parameters for GCAP2 vertical grids
-- Added `GCAP2_102L_grid`, `GCAP2_74L_grid`, and `GCAP2_40L_grid` to `grid.py`
+- Added new constants for default lon/lat and stretched-grid settings in `gcpy/constants.py`
+- Added PyDoc headers in routines where they were missing
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -22,9 +23,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Expanded possible stretched grid attribute names to include `STRETCH_FACTOR`, `TARGET_LAT`, and `TARGET_LON`
 - Changed regridding for plots to always compare stretched-grid to uniform CS grid on the uniform CS grid rather than whatever grid is ref
 - Updated PDF writing algorithm in `compare_single_level` and `compare_zonal_mean` to use `PdfReader` and `PdfWriter` instead of `PdfMerger`
-- Bumped `pypdf` from version 4.2.0 to 6.1.3 in `docs/environments/gcpy_environment_py312.yml`
-- Bumped `pypdf` from version 5.3.1 to 6.1.3 in `docs/environments/gcpy_environment_py313.yml`
+- Bumped `pypdf` from version 4.2.0 to 6.1.3 in environment files
 - Moved `Ap` and `Bp` parameters that define vertical grids from `grid.py` to `vgrid_defs.py`
+- Replaced hardwired default lon/lat and stretched-grid settings with new constants from `gcpy/constants.py`
+- Modified code in several modules as directed by Pylint to better conform to the Python style guide
+- Renamed grid routines to use all lower-case letters in order to conform to Python snake-case convention
+- Remamed `vert_grid` class in `gcpy/grid.py` to `VertGrid` to conform to PascalCase naming convention
+- Replaced `hashlib.sha1` with `hashlib.sha256` in routine `sg_hash` in `gcpy/regrid.py`
 - Bumped `pip` to version 25.2 as suggested by Dependabot
 - Required passing template output file to offline restart regridding that has grid dimensions that do not match target restart grid
 - Changed offline restart regridding to preserve source restart file precision
@@ -36,7 +41,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed various security issues in GitHub Actions workflows
 - Fixed colorbar bounds for case of comparing cubed-sphere grids
 - Fixed the restart regridding for stretched GCHP when target lat/lon is exactly 0.0 in `gcpy/regrid_restart_file.py`
-
 
 ### Removed
 - Removed `PdfMerger()` from `compare_single_level` and `compare_zonal_mean`, it has been removed in pypdf >= 5.0.0

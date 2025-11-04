@@ -6,7 +6,7 @@ import os
 import warnings
 import numpy as np
 import xarray as xr
-from gcpy.constants import skip_these_vars
+from gcpy.constants import SKIP_THESE_VARS
 from gcpy.units import convert_units
 from gcpy.util import \
     dataset_reader, get_area_from_dataset, make_directory, \
@@ -44,7 +44,7 @@ def get_area(
     # Otherwise read the data from the supplied area_path)
     reader = dataset_reader(multi_files=False, verbose=False)
     return get_area_from_dataset(
-        reader(area_path, drop_variables=skip_these_vars).load()
+        reader(area_path, drop_variables=SKIP_THESE_VARS).load()
     )
 
 
@@ -370,11 +370,11 @@ def make_benchmark_mass_conservation_table(
             # Get data
             ref_data = reader(
                 ref_files[t_idx],
-                drop_variables=skip_these_vars
+                drop_variables=SKIP_THESE_VARS
             ).load()
             dev_data = reader(
                 dev_files[t_idx],
-                drop_variables=skip_these_vars
+                drop_variables=SKIP_THESE_VARS
             ).load()
             ref_area = get_area(ref_areapath, ref_data)
             dev_area = get_area(dev_areapath, dev_data)

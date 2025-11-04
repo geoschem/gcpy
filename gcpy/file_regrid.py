@@ -10,8 +10,8 @@ import numpy as np
 import xarray as xr
 from gcpy.grid import get_input_res, get_grid_extents, \
     get_ilev_coord, get_lev_coord
-from gcpy.regrid import make_regridder_S2S, reformat_dims, \
-    make_regridder_L2S, make_regridder_C2L, make_regridder_L2L
+from gcpy.regrid import make_regridder_sg2sg, reformat_dims, \
+    make_regridder_ll2sg, make_regridder_cs2ll, make_regridder_ll2ll
 from gcpy.util import verify_variable_type
 from gcpy.cstools import get_cubed_sphere_res, is_gchp_lev_positive_down
 
@@ -368,7 +368,7 @@ def regrid_cssg_to_cssg(
             return dset
 
         # Make regridders
-        regridders = make_regridder_S2S(
+        regridders = make_regridder_sg2sg(
             cs_res_in,
             cs_res_out,
             sf_in=sg_params_in[0],
@@ -537,7 +537,7 @@ def regrid_cssg_to_ll(
         )
 
         # Regrid data
-        regridders = make_regridder_C2L(
+        regridders = make_regridder_cs2ll(
             cs_res_in,
             ll_res_out,
             sg_params=sg_params_in,
@@ -642,7 +642,7 @@ def regrid_ll_to_cssg(
         llres_in = get_input_res(dset)[0]
 
         # Regrid data to CS/SG
-        regridders = make_regridder_L2S(
+        regridders = make_regridder_ll2sg(
             llres_in,
             cs_res_out,
             sg_params=sg_params_out,
@@ -767,7 +767,7 @@ def regrid_ll_to_ll(
             method = "nearest_s2d"
 
         # Create the regridder and regrid the data
-        regridder = make_regridder_L2L(
+        regridder = make_regridder_ll2ll(
         ll_res_in,
             ll_res_out,
             reuse_weights=True,

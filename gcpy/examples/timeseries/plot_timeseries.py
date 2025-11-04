@@ -146,7 +146,7 @@ def read_geoschem_data(path, collections):
     # These are mostly variables introduced into GCHP with the MAPL v1.0.0
     # update.  These variables contain either repeated or non-standard
     # dimensions that can cause problems in xarray when combining datasets.
-    skip_vars = constants.skip_these_vars
+    skip_vars = constants.SKIP_THESE_VARS
 
     # Find all files in the given
     file_list = find_files_in_dir(path, collections)

@@ -41,7 +41,7 @@ RV = 461.0
 # netCDF variables that we should skip reading
 # (these are from cubed-sphere data sets)
 # ======================================================================
-skip_these_vars = [
+SKIP_THESE_VARS = [
     "anchor",
     "ncontact",
     "orientation",
@@ -61,3 +61,15 @@ COL_WIDTH = 20
 # ======================================================================
 ENCODING = "UTF-8"
 
+# ======================================================================
+# Parameters for lat/lon (LL) and cubed-sphere stretched grids (SG)
+# ======================================================================
+GLOBAL_LL_EXTENT = [-180, 180, -90, 90]
+NO_STRETCH_SG_STRETCH_FACTOR = 1
+NO_STRETCH_SG_TARGET_LON = 170
+NO_STRETCH_SG_TARGET_LAT = -90
+NO_STRETCH_SG_PARAMS = [
+    NO_STRETCH_SG_STRETCH_FACTOR,
+    NO_STRETCH_SG_TARGET_LON,
+    NO_STRETCH_SG_TARGET_LAT
+]

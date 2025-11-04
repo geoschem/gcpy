@@ -24,7 +24,7 @@ def main():
     """
 
     # Data vars to skip
-    skip_vars = constants.skip_these_vars
+    skip_vars = constants.SKIP_THESE_VARS
 
     # List of dates (EDIT accordingly)
     file_list = [

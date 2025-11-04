@@ -42,7 +42,7 @@ def combine_dataset(file_list=None):
         try:
             ds = xr.open_mfdataset(
                 file_list,
-                drop_variables=const.skip_these_vars,
+                drop_variables=const.SKIP_THESE_VARS,
                 combine="nested",
                 concat_dim="time"
             )
@@ -53,7 +53,7 @@ def combine_dataset(file_list=None):
         try:
             ds = xr.open_mfdataset(
                 file_list,
-                drop_variables=const.skip_these_vars
+                drop_variables=const.SKIP_THESE_VARS
             )
         except FileNotFoundError as exc:
             msg = f"Could not find one or more files in {file_list}"

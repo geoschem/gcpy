@@ -172,13 +172,13 @@ class _GlobVars:
 
         self.ds_ini = xr.open_dataset(
             RstInit,
-            drop_variables=constants.skip_these_vars,
+            drop_variables=constants.SKIP_THESE_VARS,
             **extra_kwargs
         )
 
         self.ds_end = xr.open_dataset(
             RstFinal,
-            drop_variables=constants.skip_these_vars,
+            drop_variables=constants.SKIP_THESE_VARS,
             **extra_kwargs
         )
 
@@ -192,19 +192,19 @@ class _GlobVars:
         # Diagnostics
         self.ds_dcy = xr.open_mfdataset(
             RadioNucl,
-            drop_variables=constants.skip_these_vars,
+            drop_variables=constants.SKIP_THESE_VARS,
             **extra_kwargs
         )
 
         self.ds_dry = xr.open_mfdataset(
             DryDep,
-            drop_variables=constants.skip_these_vars,
+            drop_variables=constants.SKIP_THESE_VARS,
             **extra_kwargs
         )
 
         self.ds_cnc = xr.open_mfdataset(
             SpeciesConc,
-            drop_variables=constants.skip_these_vars,
+            drop_variables=constants.SKIP_THESE_VARS,
             **extra_kwargs
         )
         self.ds_cnc = rename_speciesconc_to_speciesconcvv(
@@ -213,13 +213,13 @@ class _GlobVars:
 
         self.ds_wcv = xr.open_mfdataset(
             WetLossConv,
-            drop_variables=constants.skip_these_vars,
+            drop_variables=constants.SKIP_THESE_VARS,
             **extra_kwargs
         )
 
         self.ds_wls = xr.open_mfdataset(
             WetLossLS,
-            drop_variables=constants.skip_these_vars,
+            drop_variables=constants.SKIP_THESE_VARS,
             **extra_kwargs
         )
 
@@ -228,13 +228,13 @@ class _GlobVars:
         if is_gchp and gchp_use_statemet_avg:
             self.ds_met = xr.open_mfdataset(
                 StateMetAvg,
-                drop_variables=constants.skip_these_vars,
+                drop_variables=constants.SKIP_THESE_VARS,
                 **extra_kwargs
             )
         else:
             self.ds_met = xr.open_mfdataset(
                 StateMet,
-                drop_variables=constants.skip_these_vars,
+                drop_variables=constants.SKIP_THESE_VARS,
                 **extra_kwargs
             )
 
@@ -242,13 +242,13 @@ class _GlobVars:
         if self.is_gchp:
             self.ds_hco = xr.open_mfdataset(
                 GCHPEmiss,
-                drop_variables=constants.skip_these_vars,
+                drop_variables=constants.SKIP_THESE_VARS,
                 **extra_kwargs
             )
         else:
             self.ds_hco = xr.open_mfdataset(
                 HemcoDiag,
-                drop_variables=constants.skip_these_vars,
+                drop_variables=constants.SKIP_THESE_VARS,
                 **extra_kwargs
             )
 

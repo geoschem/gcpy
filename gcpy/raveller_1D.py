@@ -1,28 +1,38 @@
+#!/usr/bin/env python3
+"""
+Module containing functions to generate a satellite track file
+for cubed-sphere grids.
+"""
 import argparse
 import numpy as np
 import xarray as xr
 import pandas as pd
-from gcpy.grid import make_grid_CS
+from gcpy.grid import make_grid_cs
 
 
 def create_track_func(args):
+    """
+    Creates the satellite track file
+    """
     nf = np.linspace(1, 6, 6)
     Ydim = np.linspace(1, args.cs_res, args.cs_res)
     Xdim = np.linspace(1, args.cs_res, args.cs_res)
 
-    grid, _ = make_grid_CS(args.cs_res)
-    #grid, _ = make_grid_SG(args.cs_res, *args.sg_params)
+    grid, _ = make_grid_cs(args.cs_res)
+    #grid, _ = make_grid_sg(args.cs_res, *args.sg_params)
 
     lon = xr.DataArray(
         grid['lon'] % 360,
         coords={
             'nf': nf,
             'Ydim': Ydim,
-            'Xdim': Xdim},
+            'Xdim': Xdim
+        },
         dims=[
             'nf',
             'Ydim',
-            'Xdim'])
+            'Xdim']
+    )
     lat = xr.DataArray(
         grid['lat'],
         coords={
@@ -32,7 +42,8 @@ def create_track_func(args):
         dims=[
             'nf',
             'Ydim',
-            'Xdim'])
+            'Xdim']
+    )
 
     ds = xr.Dataset({'longitude': lon, 'latitude': lat})
 
@@ -46,12 +57,13 @@ def create_track_func(args):
 
     longitude = ds.longitude.values
     longitude[longitude > 180] -= 360
-    
+
     # overpass time is early in the east and late in the west
     overpass_time_timedelta_min = -longitude / 360 * 24 * 60 + overpass_offset
 
     overhead_time = pd.to_datetime(args.overpass_time, format='%H:%M').time()
-    ds['time'] = (overhead_time.hour + overhead_time.minute / 60 + overpass_time_timedelta_min / 60) % 24
+    ds['time'] = (overhead_time.hour + overhead_time.minute / 60 + \
+                  overpass_time_timedelta_min / 60) % 24
 
     ds = ds.stack(track=['nf', 'Ydim', 'Xdim'])
     ds = ds.sortby('time')
@@ -83,11 +95,16 @@ def create_track_func(args):
 
 
 def unravel_func(args):
+    """
+    Unpacks a satellite track file onto a cubed-sphere grid.
+    """
     def time_to_time_of_day(ds, numpy_time_unit='ns'):
         # Get mode date
-        (unique_dates, date_counts) = np.unique(ds.time.astype('datetime64[D]'), return_counts=True)
+        (unique_dates, date_counts) = \
+            np.unique(ds.time.astype('datetime64[D]'), return_counts=True)
         mode_date = unique_dates[np.argmax(date_counts)]
-        time_of_day = (ds.time - mode_date).astype(f'timedelta64[{numpy_time_unit}]')
+        time_of_day = \
+            (ds.time - mode_date).astype(f'timedelta64[{numpy_time_unit}]')
         return ds.assign_coords(time=time_of_day), mode_date
 
     def find_shift(tracked_output, track_file):
@@ -95,7 +112,11 @@ def unravel_func(args):
         track_time = track_file.time.values.astype(float) / 1e9 / 3600 % 24
 
         def score(shift):
-            return np.sum(np.abs(np.concatenate([output_time[shift:], output_time[:shift]]) - track_time))
+            return np.sum(
+                np.abs(np.concatenate([output_time[shift:],
+                                       output_time[:shift]]) - track_time
+                )
+            )
 
         def has_converged(absdiff, curr_min, n=10):
             return len(absdiff) > n and np.all(absdiff[-n:] - curr_min > 0)
@@ -125,7 +146,12 @@ def unravel_func(args):
     tracked_output = tracked_output.roll(dict(time=-shift))
 
     # Create a multiindex for nf,Ydim,Xdim
-    track_mi = pd.MultiIndex.from_arrays([track.nf.values, track.Ydim.values, track.Xdim.values], names=['nf', 'Ydim', 'Xdim'])
+    track_mi = pd.MultiIndex.from_arrays([
+        track.nf.values,
+        track.Ydim.values,
+        track.Xdim.values],
+        names=['nf', 'Ydim', 'Xdim']
+    )
     track = track.drop_vars(['nf', 'Ydim', 'Xdim', 'latitude', 'longitude'])
 
     # Merge datasets
@@ -151,7 +177,9 @@ if __name__ == '__main__':
     subparsers = parser.add_subparsers(dest='command')
 
     create_track = subparsers.add_parser(
-        'create_track', help='Generate satellite track file')
+        'create_track',
+        help='Generate satellite track file'
+    )
     create_track.add_argument('--cs_res',
                               metavar='RES',
                               type=int,

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Module containing functions for creating xESMF regridder objects.
 """
@@ -9,16 +10,22 @@ import numpy as np
 import xarray as xr
 import pandas as pd
 import scipy.sparse
-from gcpy.grid import make_grid_LL, make_grid_CS, make_grid_SG, \
-    get_input_res, call_make_grid, get_grid_extents, get_vert_grid
+from gcpy.constants import \
+    GLOBAL_LL_EXTENT, NO_STRETCH_SG_STRETCH_FACTOR, NO_STRETCH_SG_TARGET_LON, \
+    NO_STRETCH_SG_TARGET_LAT, NO_STRETCH_SG_PARAMS
+from gcpy.grid import \
+    call_make_grid, get_grid_extents, get_input_res, get_vert_grid, \
+    make_grid_cs, make_grid_ll, make_grid_sg, VertGrid
+from gcpy.util import verify_variable_type
 
-def make_regridder_L2L(
+
+def make_regridder_ll2ll(
         llres_in,
         llres_out,
         weightsdir='.',
         reuse_weights=False,
-        in_extent=[-180, 180, -90, 90],
-        out_extent=[-180, 180, -90, 90],
+        in_extent=None,
+        out_extent=None,
         method="conservative",
 ):
     """
@@ -37,27 +44,38 @@ def make_regridder_L2L(
         reuse_weights: bool
             Set this flag to True to reuse existing xESMF regridder NetCDF files
             Default value: False
-        in_extent: list[float, float, float, float]
+        in_extent: list
             Describes minimum and maximum latitude and longitude of input grid
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value: [-180, 180, -90, 90]
-        out_extent: list[float, float, float, float]
+            Default value: GLOBAL_LL_EXTENT (i.e. [-180, 180, -90, 90])
+        out_extent: list
             Desired minimum and maximum latitude and longitude of output grid
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value: [-180, 180, -90, 90]
+            Default value:  GLOBAL_LL_EXTENT (i.e. [-180, 180, -90, 90])
 
     Returns:
-        regridder: xESMF regridder
-            regridder object between the two specified grids
+        regridder: xesmf.Regridder
+            Regridder object between the two specified grids
     """
+    verify_variable_type(llres_in, str)
+    verify_variable_type(llres_out, str)
 
-    llgrid_in = make_grid_LL(llres_in, in_extent, out_extent)
-    llgrid_out = make_grid_LL(llres_out, out_extent)
-    if in_extent == [-180, 180, -90,
-                     90] and out_extent == [-180, 180, -90, 90]:
+    # Default settings for keyword arguments
+    if in_extent is None:
+        in_extent = GLOBAL_LL_EXTENT
+    if out_extent is None:
+        out_extent = GLOBAL_LL_EXTENT
+
+    # Create grids
+    llgrid_in = make_grid_ll(llres_in, in_extent, out_extent)
+    llgrid_out = make_grid_ll(llres_out, out_extent)
+
+    # Specify the name of the weights file
+    if in_extent == GLOBAL_LL_EXTENT and out_extent == GLOBAL_LL_EXTENT:
         weightsfile = os.path.join(
-            weightsdir, 'conservative_{}_{}.nc'.format(
-                llres_in, llres_out))
+            weightsdir,
+            f"conservative_{llres_in}_{llres_out}.nc"
+        )
     else:
         in_extent_str = str(in_extent).replace(
             '[', '').replace(
@@ -68,36 +86,34 @@ def make_regridder_L2L(
             ']', '').replace(
             ', ', 'x')
         weightsfile = os.path.join(
-            weightsdir, 'conservative_{}_{}_{}_{}.nc'.format(
-                llres_in, llres_out, in_extent_str, out_extent_str))
+            weightsdir,
+            f'conservative_{llres_in}_{llres_out}_{in_extent_str}_{out_extent_str}.nc'
+        )
 
+    # Create regridder, but don't attempt to reuse weights
+    # if the specified weight file doesn't exist.
     if not os.path.isfile(weightsfile) and reuse_weights:
-        #prevent error with more recent versions of xesmf
         reuse_weights=False
-
     try:
         regridder = xe.Regridder(
             llgrid_in,
             llgrid_out,
             method=method,
             filename=weightsfile,
-            reuse_weights=reuse_weights)
-    except BaseException:
-        regridder = xe.Regridder(
-            llgrid_in,
-            llgrid_out,
-            method=method,
-            filename=weightsfile,
-            reuse_weights=reuse_weights)
+            reuse_weights=reuse_weights
+        )
+    except (FileNotFoundError, ValueError, OSError) as exc:
+        raise ValueError("Failed to create LL -> LL regridder!") from exc
+
     return regridder
 
 
-def make_regridder_C2L(
+def make_regridder_cs2ll(
         csres_in,
         llres_out,
         weightsdir='.',
         reuse_weights=True,
-        sg_params=[1, 170, -90],
+        sg_params=None,
         method="conservative",
 ):
     """
@@ -116,7 +132,7 @@ def make_regridder_C2L(
         reuse_weights: bool
             Set this flag to True to reuse existing xESMF regridder NetCDF files
             Default value: False
-        sg_params: list[float, float, float] (stretch_factor, target_longitude, target_latitude)
+        sg_params: list
             Input grid stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
             Will trigger stretched-grid creation if not default values.
@@ -124,58 +140,73 @@ def make_regridder_C2L(
 
     Returns:
         regridder_list: list[6 xESMF regridders]
-            list of regridder objects (one per cubed-sphere face) between the two specified grids
+            list of regridder objects (one per cubed-sphere face)
+            between the two specified grids
     """
+    verify_variable_type(csres_in, int)
+    verify_variable_type(llres_out, str)
+
+    # Default settings for keyword args
+    if sg_params is None:
+        sg_params = NO_STRETCH_SG_PARAMS
+
+    # Create grids
     [sf_in, tlon_in, tlat_in] = sg_params
-    if sg_params == [1, 170, -90]:
-        _, csgrid_list = make_grid_CS(csres_in)
+    if sg_params == NO_STRETCH_SG_PARAMS:
+        _, csgrid_list = make_grid_cs(csres_in)
     else:
-        _, csgrid_list = make_grid_SG(
+        _, csgrid_list = make_grid_sg(
             csres_in, stretch_factor=sg_params[0],
             target_lon=sg_params[1],
             target_lat=sg_params[2])
-    llgrid = make_grid_LL(llres_out)
+    llgrid = make_grid_ll(llres_out)
     regridder_list = []
+
+    # Loop over the 6 cubed-sphere faces
     for i in range(6):
-        if sg_params == [1, 170, -90]:
+
+        # Specify the name of the weights file
+        if sg_params == NO_STRETCH_SG_PARAMS:
             weightsfile = os.path.join(
-                weightsdir, 'conservative_c{}_{}_{}.nc'.format(
-                    str(csres_in), llres_out, str(i)))
+                weightsdir,
+                f"conservative_c{csres_in}_{llres_out}_{str(i)}.nc"
+            )
         else:
-            weights_fname = f'conservative_sg{sg_hash(csres_in, sf_in, tlat_in, tlon_in)}_ll{llres_out}_F{i}.nc'
+            weights_fname = sg_hash(csres_in, sf_in, tlat_in, tlon_in)
+            weights_fname = \
+                f"conservative_sg{weights_fname}_ll{llres_out}_F{i}.nc"
             weightsfile = os.path.join(weightsdir, weights_fname)
 
+        # Create regridder for the i-th face.  Don't attempt to
+        # reuse weights if the specified weight file doesn't exist.
         if not os.path.isfile(weightsfile) and reuse_weights:
-            #prevent error with more recent versions of xesmf
             reuse_weights=False
-
         try:
             regridder = xe.Regridder(
                 csgrid_list[i],
                 llgrid,
                 method=method,
                 filename=weightsfile,
-                reuse_weights=reuse_weights)
-        except BaseException:
-            regridder = xe.Regridder(
-                csgrid_list[i],
-                llgrid,
-                method=method,
-                filename=weightsfile,
-                reuse_weights=reuse_weights)
+                reuse_weights=reuse_weights
+            )
+        except (FileNotFoundError, ValueError, OSError) as exc:
+            raise ValueError("Failed to create CS -> LL regridder!") from exc
+
+        # Append the i-th face regridder into the list of regridders
         regridder_list.append(regridder)
+
     return regridder_list
 
 
-def make_regridder_S2S(
+def make_regridder_sg2sg(
         csres_in,
         csres_out,
-        sf_in=1,
-        tlon_in=170,
-        tlat_in=-90,
-        sf_out=1,
-        tlon_out=170,
-        tlat_out=-90,
+        sf_in=NO_STRETCH_SG_STRETCH_FACTOR,
+        tlon_in=NO_STRETCH_SG_TARGET_LON,
+        tlat_in=NO_STRETCH_SG_TARGET_LAT,
+        sf_out=NO_STRETCH_SG_STRETCH_FACTOR,
+        tlon_out=NO_STRETCH_SG_TARGET_LON,
+        tlat_out=NO_STRETCH_SG_TARGET_LAT,
         weightsdir='.',
         verbose=True,
         method="conservative",
@@ -220,31 +251,54 @@ def make_regridder_S2S(
 
     Returns:
         regridder_list: list[6 xESMF regridders]
-            list of regridder objects (one per cubed-sphere face) between the two specified grids
+            list of regridder objects (one per cubed-sphere face)
+            between the two specified grids
     """
+    verify_variable_type(csres_in, int)
+    verify_variable_type(csres_out, int)
 
-    _, igrid_list = make_grid_SG(
-        csres_in, stretch_factor=sf_in, target_lat=tlat_in, target_lon=tlon_in)
-    _, ogrid_list = make_grid_SG(
-        csres_out, stretch_factor=sf_out, target_lat=tlat_out,
-        target_lon=tlon_out)
+    # Create grids
+    _, igrid_list = make_grid_sg(
+        csres_in,
+        stretch_factor=sf_in,
+        target_lat=tlat_in,
+        target_lon=tlon_in
+    )
+    _, ogrid_list = make_grid_sg(
+        csres_out,
+        stretch_factor=sf_out,
+        target_lat=tlat_out,
+        target_lon=tlon_out
+    )
     regridder_list = []
+
+    # Loop over the 6 cubed-sphere faces of the output grid
     for o_face in range(6):
         regridder_list.append({})
+
+        # Loop over the 6 cubed-sphere faces of the input grid
         for i_face in range(6):
-            weights_fname = f'conservative_sg{sg_hash(csres_in, sf_in, tlat_in, tlon_in)}_F{i_face}_sg{sg_hash(csres_out, sf_out, tlat_out, tlon_out)}_F{o_face}.nc'
+
+            # Specify the name of the weights file
+            in_grid = sg_hash(csres_in, sf_in, tlat_in, tlon_in)
+            out_grid = sg_hash(csres_out, sf_out, tlat_out, tlon_out)
+            weights_fname = \
+                f'conservative_sg{in_grid}_F{i_face}_sg{out_grid}_F{o_face}.nc'
             weightsfile = os.path.join(weightsdir, weights_fname)
             reuse_weights = os.path.exists(weightsfile)
-            if not os.path.isfile(weightsfile) and reuse_weights:
-                #prevent error with more recent versions of xesmf
-                reuse_weights=False
 
+            # Create regridder from i_face to o_face.  Don't attempt to
+            # reuse weights if the specified weight file doesn't exist.
+            if not os.path.isfile(weightsfile) and reuse_weights:
+                reuse_weights=False
             try:
-                regridder = xe.Regridder(igrid_list[i_face],
-                                         ogrid_list[o_face],
-                                         method=method,
-                                         filename=weightsfile,
-                                         reuse_weights=reuse_weights)
+                regridder = xe.Regridder(
+                    igrid_list[i_face],
+                    ogrid_list[o_face],
+                    method=method,
+                    filename=weightsfile,
+                    reuse_weights=reuse_weights
+                )
                 regridder_list[-1][i_face] = regridder
             except ValueError:
                 if verbose:
@@ -253,12 +307,12 @@ def make_regridder_S2S(
     return regridder_list
 
 
-def make_regridder_L2S(
+def make_regridder_ll2sg(
         llres_in,
         csres_out,
         weightsdir='.',
         reuse_weights=True,
-        sg_params=[1, 170, -90],
+        sg_params=None,
         method="conservative"
 ):
     """
@@ -277,54 +331,70 @@ def make_regridder_L2S(
         reuse_weights: bool
             Set this flag to True to reuse existing xESMF regridder NetCDF files
             Default value: False
-        sg_params: list[float, float, float] (stretch_factor, target_longitude, target_latitude)
+        sg_params: list
             Output grid stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
             Will trigger stretched-grid creation if not default values.
-            Default value: [1, 170, -90] (no stretching)
+            Default value: NO_STRETCH_SG_PARAMS (i.e. [1, 170, -90])
 
     Returns:
         regridder_list: list[6 xESMF regridders]
-            list of regridder objects (one per cubed-sphere face) between the two specified grids
+            list of regridder objects (one per cubed-sphere face)
+            between the two specified grids
     """
+    verify_variable_type(llres_in, str)
+    verify_variable_type(csres_out, int)
 
-    llgrid = make_grid_LL(llres_in)
-    if sg_params == [1, 170, -90]:
-        _, csgrid_list = make_grid_CS(csres_out)
+    # Default settings for keyword args
+    if sg_params is None:
+        sg_params = NO_STRETCH_SG_PARAMS
+
+    # Create grids
+    llgrid = make_grid_ll(llres_in)
+    if sg_params == NO_STRETCH_SG_PARAMS:
+        _, csgrid_list = make_grid_cs(csres_out)
     else:
-        _, csgrid_list = make_grid_SG(
-            csres_out, stretch_factor=sg_params[0],
+        _, csgrid_list = make_grid_sg(
+            csres_out,
+            stretch_factor=sg_params[0],
             target_lon=sg_params[1],
-            target_lat=sg_params[2])
-
+            target_lat=sg_params[2]
+        )
     regridder_list = []
-    for i in range(6):
-        if sg_params == [1, 170, -90]:
-            weightsfile = os.path.join(
-                weightsdir, 'conservative_{}_c{}_{}.nc'.format(
-                    llres_in, str(csres_out), str(i)))
-        else:
-            weights_fname = f'conservative_ll{llres_in}_sg{sg_hash(csres_out, *sg_params)}_F{i}.nc'
-            weightsfile = os.path.join(weightsdir, weights_fname)
-        if not os.path.isfile(weightsfile) and reuse_weights:
-            #prevent error with more recent versions of xesmf
-            reuse_weights=False
 
+    # Loop over the 6 cubed-sphere faces
+    for i in range(6):
+
+        # Specify the weights file to use
+        if sg_params == NO_STRETCH_SG_PARAMS:
+            weightsfile = os.path.join(
+                weightsdir,
+                f"conservative_{llres_in}_c{str(csres_out)}_{str(i)}.nc"
+            )
+        else:
+            weights_fname = sg_hash(csres_out, *sg_params)
+            weights_fname = \
+                f"conservative_ll{llres_in}_sg{weights_fname}_F{i}.nc"
+            weightsfile = os.path.join(weightsdir, weights_fname)
+
+        # Create regridder for the i-th face.  Don't attempt to
+        # reuse weights if the specified weight file doesn't exist.
+        if not os.path.isfile(weightsfile) and reuse_weights:
+            reuse_weights=False
         try:
             regridder = xe.Regridder(
                 llgrid,
                 csgrid_list[i],
                 method=method,
                 filename=weightsfile,
-                reuse_weights=reuse_weights)
-        except BaseException:
-            regridder = xe.Regridder(
-                llgrid,
-                csgrid_list[i],
-                method=method,
-                filename=weightsfile,
-                reuse_weights=reuse_weights)
+                reuse_weights=reuse_weights
+            )
+        except (FileNotFoundError, ValueError, OSError) as exc:
+            raise ValueError("Failed to create LL -> SG regridder!") from exc
+
+        # Append regridder for the i-th face into the list of regridders
         regridder_list.append(regridder)
+
     return regridder_list
 
 
@@ -335,8 +405,8 @@ def create_regridders(
         reuse_weights=True,
         cmpres=None,
         zm=False,
-        sg_ref_params=[1, 170, -90],
-        sg_dev_params=[1, 170, -90]
+        sg_ref_params=None,
+        sg_dev_params=None,
 ):
     """
     Internal function used for creating regridders between two datasets.
@@ -367,12 +437,12 @@ def create_regridders(
             (stretch_factor, target_longitude, target_latitude)
             Ref grid stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
-            Default value: [1, 170, -90] (no stretching)
+            Default value: NO_STRETCH_SG_PARAMS (no stretching)
         sg_dev_params: list[float, float, float]
             (stretch_factor, target_longitude, target_latitude)
             Dev grid stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
-            Default value: [1, 170, -90] (no stretching)
+            Default value: NO_STRETCH_SG_PARAMS (no stretching)
 
     Returns:
         list of many different quantities needed for regridding in plotting functions
@@ -392,6 +462,14 @@ def create_regridders(
                  or devgrid and cmpgrid (will be None if input grid is
                  not cubed-sphere)
     """
+    verify_variable_type(refds, xr.Dataset)
+    verify_variable_type(devds, xr.Dataset)
+
+    # Default settings for keyword arguments
+    if sg_ref_params is None:
+        sg_ref_params = NO_STRETCH_SG_PARAMS
+    if sg_dev_params is None:
+        sg_dev_params = NO_STRETCH_SG_PARAMS
 
     # Take two lat/lon or cubed-sphere xarray datasets and regrid them if
     # needed
@@ -417,7 +495,7 @@ def create_regridders(
     # If one dataset is lat-lon and the other is cubed-sphere, and no comparison
     # grid resolution is passed, then default to 1x1.25. If both cubed-sphere and
     # plotting zonal mean, over-ride to be 1x1.25 lat-lon with a warning
-    sg_cmp_params = [1, 170, -90]
+    sg_cmp_params = NO_STRETCH_SG_PARAMS
     if cmpres is None:
         if refres == devres and refgridtype == "ll":
             cmpres = refres
@@ -431,12 +509,14 @@ def create_regridders(
                     "Warning: zonal mean comparison must be lat-lon. Defaulting to 1x1.25")
                 cmpres = '1x1.25'
                 cmpgridtype = "ll"
-            elif sg_ref_params == [1, 170, -90] and sg_dev_params != [1, 170, -90]:
+            elif sg_ref_params == NO_STRETCH_SG_PARAMS and \
+                 sg_dev_params != NO_STRETCH_SG_PARAMS:
                 # pick ref grid if dev is stretched and ref is not
                 cmpres = refres
                 cmpgridtype = "cs"
                 sg_cmp_params = sg_ref_params
-            elif sg_ref_params != [1, 170, -90] and sg_dev_params == [1, 170, -90]:
+            elif sg_ref_params != NO_STRETCH_SG_PARAMS and \
+                 sg_dev_params == NO_STRETCH_SG_PARAMS:
                 # pick dev grid if ref is stretched and dev is not
                 cmpres = devres
                 cmpgridtype = "cs"
@@ -446,10 +526,14 @@ def create_regridders(
                 # cubed-sphere grids
                 cmpres = max([refres, devres])
                 cmpgridtype = "cs"
-        elif refgridtype == "ll" and float(refres.split('x')[0]) < 1 and float(refres.split('x')[1]) < 1.25:
+        elif refgridtype == "ll" and \
+             float(refres.split('x')[0]) < 1 and \
+             float(refres.split('x')[1]) < 1.25:
             cmpres = refres
             cmpgridtype = "ll"
-        elif devgridtype == "ll" and float(devres.split('x')[0]) < 1 and float(devres.split('x')[1]) < 1.25:
+        elif devgridtype == "ll" and \
+             float(devres.split('x')[0]) < 1 and \
+             float(devres.split('x')[1]) < 1.25:
             cmpres = devres
             cmpgridtype = "ll"
         else:
@@ -499,14 +583,14 @@ def create_regridders(
     if regridref:
         if refgridtype == "ll":
             if cmpgridtype == "cs":
-                refregridder_list = make_regridder_L2S(
+                refregridder_list = make_regridder_ll2sg(
                     refres,
                     cmpres,
                     weightsdir=weightsdir,
                     reuse_weights=reuse_weights,
                     sg_params=sg_cmp_params)
             else:
-                refregridder = make_regridder_L2L(
+                refregridder = make_regridder_ll2ll(
                     refres,
                     cmpres,
                     weightsdir=weightsdir,
@@ -514,7 +598,7 @@ def create_regridders(
                     in_extent=ref_extent)
         else:
             if cmpgridtype == "cs":
-                refregridder_list = make_regridder_S2S(
+                refregridder_list = make_regridder_sg2sg(
                     refres,
                     cmpres,
                     *sg_ref_params,
@@ -522,7 +606,7 @@ def create_regridders(
                     weightsdir=weightsdir,
                     verbose=False)
             else:
-                refregridder_list = make_regridder_C2L(
+                refregridder_list = make_regridder_cs2ll(
                     refres,
                     cmpres,
                     weightsdir=weightsdir,
@@ -531,14 +615,14 @@ def create_regridders(
     if regriddev:
         if devgridtype == "ll":
             if cmpgridtype == "cs":
-                devregridder_list = make_regridder_L2S(
+                devregridder_list = make_regridder_ll2sg(
                     devres,
                     cmpres,
                     weightsdir=weightsdir,
                     reuse_weights=reuse_weights,
                     sg_params=sg_cmp_params)
             else:
-                devregridder = make_regridder_L2L(
+                devregridder = make_regridder_ll2ll(
                     devres,
                     cmpres,
                     weightsdir=weightsdir,
@@ -546,7 +630,7 @@ def create_regridders(
                     in_extent=dev_extent)
         else:
             if cmpgridtype == "cs":
-                devregridder_list = make_regridder_S2S(
+                devregridder_list = make_regridder_sg2sg(
                     devres,
                     cmpres,
                     *sg_dev_params,
@@ -554,7 +638,7 @@ def create_regridders(
                     weightsdir=weightsdir,
                     verbose=False)
             else:
-                devregridder_list = make_regridder_C2L(
+                devregridder_list = make_regridder_cs2ll(
                     devres,
                     cmpres,
                     weightsdir=weightsdir,
@@ -634,7 +718,8 @@ def regrid_comparison_data(
 
     Returns:
         data: xarray DataArray
-            Original DataArray regridded to comparison grid (including resolution and extent changes)
+            Original DataArray regridded to comparison grid
+            (including resolution and extent changes)
     """
 
     if regrid:
@@ -693,12 +778,12 @@ def regrid_comparison_data(
             oface_datasets = []
             for oface in range(6):
                 oface_regridded = []
-                for iface, regridder in regridder_list[oface].items():
+                for iface, the_regridder in regridder_list[oface].items():
                     ds_iface = new_data.isel(F=iface)
                     if 'F' in ds_iface.coords:
                         ds_iface = ds_iface.drop('F')
                     oface_regridded.append(
-                        regridder(ds_iface, keep_attrs=True))
+                        the_regridder(ds_iface, keep_attrs=True))
                 oface_regridded = xr.concat(
                     oface_regridded, dim='intersecting_ifaces').sum(
                     'intersecting_ifaces', keep_attrs=True)
@@ -770,7 +855,9 @@ def reformat_dims(
     # Filter non-existent coordinates/dimensions
     def rename_existing(ds, rename_dict):
         existing_keys = set(ds.coords) | set(ds.dims)
-        filtered_rename_dict = {key: value for key, value in rename_dict.items() if key in existing_keys}
+        filtered_rename_dict = \
+            {key: value for key, value in rename_dict.items() \
+             if key in existing_keys}
         return ds.rename(filtered_rename_dict)
 
     dim_formats = {
@@ -828,22 +915,29 @@ def sg_hash(
         cs_res,
         stretch_factor: float,
         target_lat: float,
-        target_lon: float):
-    return hashlib.sha1(
-        'cs={cs_res},sf={stretch_factor:.5f},tx={target_lon:.5f},ty={target_lat:.5f}'.format(
-            stretch_factor=stretch_factor,
-            target_lat=target_lat,
-            target_lon=target_lon,
-            cs_res=cs_res).encode()).hexdigest()[
-        :7]
+        target_lon: float
+):
+    """
+    Creates a SHA-1 hash based on stretched-grid parameters.
+
+    Args:
+    cs_res         : int   : Number of cells along one stretched grid face
+    stretch_factor : float : Stretch factor (unitless)
+    target_lat     : float : Target latitude (degrees)
+    target_lon     : float : Target longitude (degrees)
+    """
+    return hashlib.sha256(
+        f'cs={cs_res},sf={stretch_factor:.5f},tx={target_lon:.5f},ty={target_lat:.5f}'.encode()
+    ).hexdigest()[:7]
+
 
 def regrid_vertical_datasets(
         ref,
         dev,
         target_grid_choice='ref',
-        ref_vert_params=[[],[]],
-        dev_vert_params=[[],[]],
-        target_vert_params=[[],[]]
+        ref_vert_params=None,
+        dev_vert_params=None,
+        target_vert_params=None,
 ):
     """
     Perform complete vertical regridding of GEOS-Chem datasets to
@@ -862,15 +956,15 @@ def regrid_vertical_datasets(
         ref_vert_params (optional): list(list, list) of list-like types
             Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
             Needed if ref grid is not 47 or 72 levels
-            Default value: [[], []]
+            Default value: None
         dev_vert_params (optional): list(list, list) of list-like types
             Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
             Needed if dev grid is not 47 or 72 levels
-            Default value: [[], []]
+            Default value: None
         target_vert_params (optional): list(list, list) of list-like types
             Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
             Will override target_grid_choice as target grid
-            Default value: [[], []]
+            Default value: None
     Returns:
         new_ref: xarray.Dataset
             First dataset, possibly regridded to a new vertical grid
@@ -884,10 +978,10 @@ def regrid_vertical_datasets(
 
     new_ref, new_dev = ref, dev
 
-    if len(ref_pedge) != len(dev_pedge) or target_vert_params != [[],[]]:
-        if target_vert_params != [[],[]]:
+    if len(ref_pedge) != len(dev_pedge) or target_vert_params is not None:
+        if target_vert_params is not None:
             #use a specific target grid for regridding if passed
-            target_grid = vert_grid(*target_vert_params)
+            target_grid = VertGrid(*target_vert_params)
             target_pedge = target_grid.p_edge()
             target_pmid = target_grid.p_mid()
         elif target_grid_choice == 'ref':
@@ -907,13 +1001,15 @@ def regrid_vertical_datasets(
             if len(ds_pedge) != len(target_pedge):
                 #regrid all 3D (plus possible time dimension) variables
                 xmat_ds = gen_xmat(ds_pedge, target_pedge)
-                regrid_variables = [v for v in ds.data_vars if (
-                    ("lat" in ds[v].dims or "Xdim" in ds[v].dims) and \
-                    ("lon" in ds[v].dims or "Ydim" in ds[v].dims) and \
-                    ("lev" in ds[v].dims)
-                )]
+                regrid_variables = \
+                    [v for v in ds.data_vars if (
+                        ("lat" in ds[v].dims or "Xdim" in ds[v].dims) and \
+                        ("lon" in ds[v].dims or "Ydim" in ds[v].dims) and \
+                        ("lev" in ds[v].dims)
+                    )]
                 new_ds = xr.Dataset()
-                #currently drop data vars that have lev but don't also have x and y coordinates
+                #currently drop data vars that have lev but
+                # don't also have x and y coordinates
                 for v in (set(ds.data_vars)-set(regrid_variables)):
                     if 'lev' not in ds[v].dims:
                         new_ds[v] = ds[v]
@@ -930,7 +1026,7 @@ def regrid_vertical_datasets(
                             new_ds_temp.append(new_ds_v.expand_dims("time"))
                         new_ds[v] = xr.concat(new_ds_temp, "time")
                     else:
-                        new_ds[v] = regrid_vertical(ds[v], xmat, target_pmid)
+                        new_ds[v] = regrid_vertical(ds[v], xmat_ds, target_pmid)
             return new_ds
 
         new_ref = regrid_one_vertical_dataset(
@@ -948,20 +1044,21 @@ def regrid_vertical_datasets(
 
     return new_ref, new_dev
 
-def regrid_vertical(src_data_3D, xmat_regrid, target_levs=[]):
+def regrid_vertical(src_data_3d, xmat_regrid, target_levs=None):
     """
     Performs vertical regridding using a sparse regridding matrix
     This function was originally written by Sebastian Eastham and included
     in package gcgridobj: https://github.com/sdeastham/gcgridobj
 
     Args:
-        src_data_3D: xarray DataArray or numpy array
+        src_data_3d: xarray DataArray or numpy array
             Data to be regridded
         xmat_regrid: sparse scipy coordinate matrix
             Regridding matrix from input data grid to target grid
         target_levs (optional): list
-            Values for Z coordinate of returned data (if returned data is of type xr.DataArray)
-            Default value: []
+            Values for Z coordinate of returned data (if returned data
+            is of type xr.DataArray)
+            Default value: None
 
     Returns:
         out_data: xarray DataArray or numpy array
@@ -969,7 +1066,7 @@ def regrid_vertical(src_data_3D, xmat_regrid, target_levs=[]):
     """
 
     # Assumes that the FIRST dimension of the input data is vertical
-    nlev_in = src_data_3D.shape[0]
+    nlev_in = src_data_3d.shape[0]
     if xmat_regrid.shape[1] == nlev_in:
         # Current regridding matrix is for the reverse regrid
         # Rescale matrix to get the contributions right
@@ -988,40 +1085,41 @@ def regrid_vertical(src_data_3D, xmat_regrid, target_levs=[]):
         # Matrix correctly dimensioned
         xmat_renorm = xmat_regrid.copy()
     else:
-        print(src_data_3D, xmat_regrid.shape)
+        print(src_data_3d, xmat_regrid.shape)
         raise ValueError('Regridding matrix not correctly sized')
 
     nlev_out = xmat_renorm.shape[1]
-    out_shape = [nlev_out] + list(src_data_3D.shape[1:])
-    n_other = np.product(src_data_3D.shape[1:])
+    out_shape = [nlev_out] + list(src_data_3d.shape[1:])
+    n_other = np.product(src_data_3d.shape[1:])
     temp_data = np.zeros((nlev_out, n_other))
-    in_data = np.reshape(np.array(src_data_3D), (nlev_in, n_other))
+    in_data = np.reshape(np.array(src_data_3d), (nlev_in, n_other))
     for ix in range(n_other):
         in_data_vec = np.matrix(in_data[:, ix])
         temp_data[:, ix] = in_data_vec * xmat_renorm
     out_data = np.reshape(temp_data, out_shape)
 
     # Transfer over old / create new coordinates for xarray DataArrays
-    if isinstance(src_data_3D, xr.DataArray):
+    if isinstance(src_data_3d, xr.DataArray):
         new_coords = {
-            coord: src_data_3D.coords[coord].data
-            for coord in src_data_3D.coords if coord != 'lev'}
-        if target_levs == []:
+            coord: src_data_3d.coords[coord].data
+            for coord in src_data_3d.coords if coord != 'lev'}
+        if target_levs is None:
             new_coords['lev'] = np.arange(
-                1, out_data.shape[0], out_data.shape[0])
+                1, out_data.shape[0], out_data.shape[0]
+            )
         else:
             new_coords['lev'] = target_levs
         # GCHP-specific
-        if 'lats' in src_data_3D.coords:
+        if 'lats' in src_data_3d.coords:
             new_coords['lats'] = (
-                ('lat', 'lon'), src_data_3D.coords['lats'].data)
-        if 'lons' in src_data_3D.coords:
+                ('lat', 'lon'), src_data_3d.coords['lats'].data)
+        if 'lons' in src_data_3d.coords:
             new_coords['lons'] = (
-                ('lat', 'lon'), src_data_3D.coords['lons'].data)
+                ('lat', 'lon'), src_data_3d.coords['lons'].data)
         out_data = xr.DataArray(out_data,
-                                dims=tuple(list(src_data_3D.dims)),
+                                dims=tuple(list(src_data_3d.dims)),
                                 coords=new_coords,
-                                attrs=src_data_3D.attrs)
+                                attrs=src_data_3d.attrs)
 
     return out_data
 

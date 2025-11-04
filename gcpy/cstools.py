@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Contains tools for working with cubed-sphere data.
 
@@ -173,7 +174,7 @@ def face_area(
             xyz_corner = np.zeros((4,3))
             for i_vert in range(4):
                 x_lon = i_lon + (i_vert > 1)
-                x_lat = i_lat + (i_vert == 0 or i_vert == 3)
+                x_lat = i_lat + i_vert in (0, 3)
                 lon_corner[i_vert] = lon_b_rad[x_lon,x_lat]
                 lat_corner[i_vert] = lat_b_rad[x_lon,x_lat]
             for i_vert in range(4):
@@ -347,14 +348,14 @@ def gen_grid(
         where each value has an extra face dimension of length 6.
     """
     if stretch_factor is not None:
-        cs_temp, _ = gcpy.make_grid_SG(
+        cs_temp, _ = gcpy.make_grid_sg(
             n_cs,
             stretch_factor,
             target_lon,
             target_lat
         )
     else:
-        cs_temp = gcpy.csgrid_GMAO(n_cs)
+        cs_temp = gcpy.csgrid_gmao(n_cs)
 
     return xr.Dataset(
         {'nf':     (['nf'], np.array(range(6))),
@@ -750,7 +751,7 @@ def is_cubed_sphere_rst_grid(data):
     # NOTE: in DataArray objects, dims is a tuple but not a dict!
     # Comparing the len of the lat & lon coords will work for both.
     if "lat" in data.coords:
-         return len(data.coords["lat"]) == len(data.coords["lon"]) * 6
+        return len(data.coords["lat"]) == len(data.coords["lon"]) * 6
 
     # Dataset: search data.data_vars for "SPC_"
     # DataArray: search data.name for "SPC_"
