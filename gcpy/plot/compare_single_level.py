@@ -24,7 +24,7 @@ from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
     all_zero_or_nan, slice_by_lev_and_time, compare_varnames, \
     read_config_file, verify_variable_type
 from gcpy.units import check_units, data_unit_is_mol_per_mol
-from gcpy.constants import MW_AIR_g
+from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
     _warning_format, WhGrYlRd
 from gcpy.plot.six_plot import six_plot
