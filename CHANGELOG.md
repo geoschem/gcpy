@@ -13,9 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added GitHub action `build-gcpy-environment-py314.yml` to test building the GCPy environment with Python 3.14
 - Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere
 - Added `Ap` and `Bp` parameters for GCAP2 vertical grids
-- Added `GCAP2_102L_grid`, `GCAP2_74L_grid`, and `GCAP2_40L_grid` to `grid.py`
-- Added new constants: `GLOBAL_LL_EXTENT`, `NO_STRETCH_SG_STRETCH_FACTOR`, `NO_STRETCH_SG_TARGET_LON`, `NO_STRETCH_SG_TARGET_LAT`, `NO_STRETCH_SG_PARAMS`
-- Added PyDoc headers in `gcpy/grid.py`, `gcpy/append_grid_corners.py`, and `gcpy/raveller_1D.py`
+- Added new constants for default lon/lat and stretched-grid settings in `gcpy/constants.py`
+- Added PyDoc headers in routines where they were missing
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -24,26 +23,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Expanded possible stretched grid attribute names to include `STRETCH_FACTOR`, `TARGET_LAT`, and `TARGET_LON`
 - Changed regridding for plots to always compare stretched-grid to uniform CS grid on the uniform CS grid rather than whatever grid is ref
 - Updated PDF writing algorithm in `compare_single_level` and `compare_zonal_mean` to use `PdfReader` and `PdfWriter` instead of `PdfMerger`
-- Bumped `pypdf` from version 4.2.0 to 6.0.0 in `docs/environments/gcpy_environment_py312.yml`
-- Bumped `pypdf` from version 5.3.1 to 6.0.0 in `docs/environments/gcpy_environment_py313.yml`
+- Bumped `pypdf` from version 4.2.0 to 6.0.0 in environment files
 - Moved `Ap` and `Bp` parameters that define vertical grids from `grid.py` to `vgrid_defs.py`
-- Replaced `[-180, 180, -90, 90]` with `GLOBAL_LL_EXTENT` in functions
-- Replaced `[1, 170, -90]` with `NO_STRETCH_SG_PARAMS` in functions
-- Renamed `skip_these_vars` to `SKIP_THESE_VARS` to conform to Python style for constants
-- Modified code in `grid.py`, `regrid.py`, `file_regrid.py`, and `cstools.py`, and `raveller_1D.py`  as directed by Pylint to better conform to the Python style guide
-- Renamed the following routines in `gcpy/grid.py` to conform to snake-case naming convention
-  - `csgrid_GMAO      --> csgrid_gmao`
-  - `make_grid_LL     --> make_grid_ll`
-  - `make_grid_CS     --> make_grid_cs`
-  - `make_grid_SG     --> make_grid_sg`
-  - `rotate_sphere_3D --> rotate_sphere_3d`
-- Renamed the following routines in `gcpy/regrid.py` to conform to snake-case naming convention
-  - `make_regridder_L2L --> make_regridder_ll2ll`
-  - `make_regridder_C2L --> make_regridder_cs2ll`
-  - `make_regridder_S2G --> make_regridder_sg2sg`
-  - `make_regridder_L2S --> make_regridder_ll2sg`
-- Updated `cstools.py`, `file_regrid.py`, `append_grid_corners.py`, and `raveller_1D.py` to import and use renamed functions
-- Updated `append_grid_corners.py` to use `NO_STRETCH_SG_PARAMS` from `constants.py`
+- Replaced hardwired default lon/lat and stretched-grid settings with new constants from `gcpy/constants.py`
+- Modified code in several modules as directed by Pylint to better conform to the Python style guide
+- Renamed grid routines to use all lower-case letters in order to conform to Python snake-case convention
 - Remamed `vert_grid` class in `gcpy/grid.py` to `VertGrid` to conform to PascalCase naming convention
 - Replaced `hashlib.sha1` with `hashlib.sha256` in routine `sg_hash` in `gcpy/regrid.py`
 - Bumped `pip` to version 25.2 as suggested by Dependabot
