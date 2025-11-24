@@ -1,76 +1,281 @@
+.. |br| raw:: html
 
-Editing these docs
-==================
+   <br />
 
-This documentation is generated with Sphinx. This page describes how to contribute to the GCPy documentation.
+.. _editing_this_user_guide:
 
+#######################
+Editing this User Guide
+#######################
+
+This user guide is generated with `Sphinx
+<https://www.sphinx-doc.org/>`_.  Sphinx is an open-source Python
+project designed to make writing software documentation easier.  The
+documentation is written in :ref:`reStructuredText (reST)
+<editing_this_user_guide_rest>`, a plaintext markup language that
+Sphinx extends for software documentation. The source for the
+documentation is the :file:`docs/source` directory in top-level of the
+source code (and its subdirectories).
+
+.. _editing_this_user_guide_quickstart:
+
+===========
 Quick start
------------
+===========
 
-You need the Sphinx Python to build (and therefore edit) this documentation. Assuming you already have Python installed,
-install Sphinx:
+First-time setup: Install Sphinx
+--------------------------------
+
+To build this user guide on your local machine, you need to install
+Sphinx and its dependencies, which are listed in the table below.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 50 20
+
+   * - Package
+     - Description
+     - Version
+   * - sphinx
+     - Creates online user manual documentation from markup text files
+     - 7.2.6
+   * - `sphinx-autobuild <https://github.com/sphinx-doc/sphinx-autobuild>`_
+     - Dynamically builds Sphinx documentation and displays it in a
+       browser
+     - 2021.3.14
+   * - `sphinx_rtd_theme <https://github.com/readthedocs/sphinx_rtd_theme>`_
+     - Sphinx theme for ReadTheDocs
+     - 2.0.0
+   * - `sphinxcontrib-bibtex <https://pypi.org/project/sphinxcontrib-bibtex/>`_
+     - Inserts LaTeX-style bibliography citations into ReadTheDocs
+       documentation
+     - 2.6.2
+   * - `docutils <https://docutils.sourceforge.io/>`_
+     - Processes plaintext documentation into HTML and other formats
+     - 0.20.1
+   * - `recommonmark  <https://github.com/readthedocs/recommonmark>`_
+     - Parses text for docutils
+     - 0.7.1
+   * - `jinja2 <https://jinja.palletsprojects.com/en/stable/>`_
+     - Replaces tokenized strings with text
+     - 3.1.6
+
+We recommend that you create a standalone :program:`Conda` environment
+to install Sphinx and its dependencies.  The YAML file
+:file:`docs/environment_files/read_the_docs_environment.yaml` contains
+the proper package specifications.  Use these commands:
 
 .. code-block:: console
 
-   $ pip install sphinx
+   $ cd docs
+   $ conda env create -n rtd_env --file=environment_files/read_the_docs_environment.yml
 
-To build the documentation, navigate to :literal:`gcpy/docs` and make the html target:
+This step only needs to be done once.
 
-.. code-block:: shell-session
+Build the documentation
+-----------------------
 
-   gcuser:~$ cd gcpy/docs
-   gcuser:~/gcpy/docs$ make html
+#. Activate the :program:`Conda` environment containing
+   :program:`Sphinx` and its dependencies.
 
-This will generate the HTML documentation in :literal:`gcpy/docs/build/html` from the reST files in
-:literal:`gcpy/docs/source`. You can view this local HTML documentation by opening
-:literal:`index.html` in your web-browser.
+   .. code-block:: console
 
-.. note::
+      $ conda activate rtd_env
 
-   You can clean the documentation with :code:`make clean`.
+#. Navigate to the :file:`docs/` folder.
 
-Learning reST
--------------
+   .. code-block:: console
 
-Writing reST can be a bit tricky at first. Whitespace matters (just like in Python), and some directives
-can be easily miswritten. Two important things you should know right away are:
+      (rtd_env) $ cd docs     # Skip if you are already in the docs folder
 
-* Indents are 3-spaces
-* "Things" are separated by 1 blank line (e.g., a list or code-block following a paragraph should be separated from the paragraph by 1 blank line)
+#. Clean out any leftover HTML files (in :file:`docs/build/html`) that
+   might be leftover from a previous build:
 
-You should keep these in mind when you're first getting started. Dedicating an hour to learning reST
-will save you time in the long-run. Below are some good resources for learning reST.
+   .. code-block:: console
 
-* `reStructuredText primer <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_: (single best resource; however, it's better read than skimmed)
-* Official `reStructuredText reference <https://docutils.sourceforge.io/docs/user/rst/quickref.html>`_ (there is *a lot* of information here)
-* `Presentation by Eric Holscher <https://www.youtube.com/watch?v=eWNiwMwMcr4>`_ (co-founder of Read The Docs) at DjangoCon US 2015 (the entire presentation is good, but reST is described from 9:03 to 21:04)
-* `YouTube tutorial by Audrey Tavares's <https://www.youtube.com/watch?v=DSIuLnoKLd8>`_
+      (rtd_env) $ make clean
 
-A good starting point would be Eric Holscher's presentations followed by reading the reStructuredText primer.
+#. Start the :command:`sphinx-autobuild` server:
 
+   .. code-block:: console
+
+      (rtd_env) $ sphinx-autobuild source build/html
+
+   This will parse the reST-format files in the :file:`docs/source/`
+   directory tree and generate new HTML files in
+   :file:`docs/build/html`. |br|
+   |br|
+
+#. Open a web browser and navigate to :file:`localhost:8000`. |br|
+   |br|
+
+#. Open your favorite text editor and start making changes to the
+   reST-format documentation files in the :file:`docs/source`
+   directory tree.  While :program:`sphinx-autobuild` is running,
+   you will see your updates rendered in the web browser as soon as you
+   soon as you save your changes to disk. |br|
+   |br|
+
+#. Once you are satisfied with your edits, commit your changes to Git
+   and push the documentation to the :file:`docs/dev` branch of this
+   repository, |br|
+   |br|
+
+#. Remove the HTML generated documentation files:
+
+   .. code-block:: console
+
+      (rtd_env) $ make clean
+
+#. Halt the :program:`sphinx-autobuild` server by typing
+   :program:`CTRL-C`. |br|
+   |br|
+
+#. Deactivate the :program:`Conda` environment.
+
+   .. code-block:: console
+
+      (rtd_env) $ conda deactivate
+
+.. _editing_this_user_guide_rest:
+
+==========================
+Learning reStructured Text
+==========================
+
+ReadTheDocs documentation is generated from text files in **reStructured
+Text (reST)**, which is an easy-to-read, what-you-see-is-what-you-get
+plaintext markup language. It is the default markup language used by
+Sphinx.
+
+Writing reST can be tricky at first. Whitespace matters, and some
+directives can be easily miswritten. Two important things you should
+know right away are:
+
+- Indents are 3-spaces
+- "Things" are separated by 1 blank line. For example, a list or
+  code-block following a paragraph should be separated from the
+  paragraph by 1 blank line.
+
+You should keep these in mind when you're first getting
+started. Dedicating an hour to learning reST will save you time in the
+long-run. Below are some good resources for learning reST.
+
+- `reStructuredText primer
+  <https://www.sphinx-doc.org/en/master/usage/restructuredtext/basics.html>`_:
+  (single best resource; however, it's better read than skimmed) |br|
+  |br|
+
+- Official `reStructuredText reference
+  <https://docutils.sourceforge.io/docs/user/rst/quickref.html>`_
+  (there is *a lot* of information here) |br|
+  |br|
+
+- `Presentation by Eric Holscher
+  <https://www.youtube.com/watch?v=eWNiwMwMcr4>`_ (co-founder of Read
+  The Docs) at DjangoCon US 2015 (the entire presentation is good, but
+  reST is described from 9:03 to 21:04) |br|
+  |br|
+
+- `YouTube tutorial by Audrey Tavares
+  <https://www.youtube.com/watch?v=DSIuLnoKLd8>`_
+
+A good starting point would be Eric Holscher's presentations followed
+by the reStructuredText primer.
+
+.. _editing_this_user_guide_style:
+
+================
 Style guidelines
-----------------
+================
 
-.. important::  
+This user guide is written in semantic markup. This is important so
+that the user guide remains maintainable. Before contributing to
+this documentation, please review our style guidelines
+(below). When editing the source, please refrain from using
+elements with the wrong semantic meaning for aesthetic
+reasons. Aesthetic issues can be addressed by changes to the theme.
 
-   This documentation is written in semantic markup. This is important so that the documentation
-   remains maintainable by the GEOS-Chem Support Team. Before contributing to this documentation,
-   please review our style guidelines. When editing the documentation, please refrain from using
-   elements with the wrong semantic meaning for aesthetic reasons. Aesthetic issues should be
-   addressed by changes to the theme (not changes to reST files).
+Titles and headers
+------------------
 
-For **titles and headers**:
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
 
-* H1 titles should be underlined by :literal:`#` characters
-* H2 headers should be underlined by :literal:`-` characters
-* H3 headers should be underlined by :literal:`^` characters
-* H4 headers should be avoided, but if necessary, they should be underlined by :literal:`"` characters
+   * - Element
+     - reST Markup
+   * - Section header |br| (aka "Heading 1)
+     - Overline by :literal:`#` and underline by :literal:`#`
+   * - Sub-section header |br| (aka "Heading 2")
+     - Overline by :literal:`=` and underline by :literal:`=`
+   * - Sub-sub-section header |br| (aka "Heading 3")
+     - Underline by :literal:`-`
+   * - Sub-sub-sub-section header |br| (aka "Heading 4")
+     - Underline by :literal:`~`
+   * - Sub-sub-sub-sub-section header |br| (aka "Heading 5")
+     - Underline by :literal:`^`
 
-**File paths** occuring in the text should use the :literal:`:literal:` role.
+References and links
+--------------------
 
-**Inline code**, or references to variables in code, occuring in the text should use the :literal:`:code:` role.
+.. list-table::
+   :header-rows: 1
+   :widths: 30 35 35
 
-**Code snippets** should use :literal:`.. code-block:: <language>` directive like so
+   * - Element
+     - reST Markup Example
+     - Rendered text
+   * - Reference to a named anchor
+     - ``:ref:`editing_this_user_guide_quickstart```
+     - :ref:`editing_this_user_guide_quickstart`
+   * - Renamed reference to a named anchor
+     - ``:ref:`Getting Started <editing_this_user_guide_quickstart>``
+     - :ref:`Getting Started <editing_this_user_guide_quickstart>`
+   * - HTML link
+     - ```ReadTheDocs <https://geos-chem.readthedocs.io>`_``
+     - `GEOS-Chem Manual <https://geos-chem.readthedocs.io>`_
+
+Other common style elements
+---------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 35 35
+
+   * - Element
+     - reST Markup Example
+     - Rendered text
+   * - File paths
+     - ``:file:`myfile.nc```
+     - :file:`myfile.nc`
+   * - Directories
+     - ``:file:`/usr/bin```
+     - :file:`/usr/bin`
+   * - Program names
+     - ``:program:`cmake```
+     - :program:`cmake`
+   * - OS-level commands
+     - ``:program:`rm -rf```
+     - :program:`rm -rf`
+   * - Environment variables
+     - ``:envvar:`$HOME```
+     - :envvar:`$HOME`
+   * - Inline code or code variables
+     - ``:code:`PRINT*, "HELLO!"```
+     - :code:`PRINT*, "HELLO!"`
+   * - Inline literal text
+     - ``:literal:`$```
+     - :literal:`$`
+
+Indented code and text blocks
+-----------------------------
+
+Code snippets should use :literal:`.. code-block:: <language>`
+directives:
+
+Python
+~~~~~~
 
 .. code-block:: none
 
@@ -79,11 +284,81 @@ For **titles and headers**:
       import gcpy
       print("hello world")
 
-The language can be "none" to omit syntax highlighting. 
+Renders as:
 
-For command line instructions, the "console" language should be used. The :literal:`$` should be used
-to denote the console's prompt. If the current working directory is relevant to the instructions,
-a prompt like :literal:`gcuser:~/path1/path2$` should be used.
+.. code-block:: python
 
-**Inline literals** (such as the :literal:`$` above) should use the :literal:`:literal:` role.
+    import gcpy
+    print("hello world")
 
+Fortran
+~~~~~~~
+
+.. code-block:: none
+
+   .. code-block:: Fortran
+
+      DO I = 1, 10
+         PRINT*, I
+      ENDDO
+
+Renders as:
+
+.. code-block:: Fortran
+
+   DO I = 1, 10
+      PRINT*, I
+   ENDDO
+
+Bash
+~~~~
+
+.. code-block:: none
+
+   .. code-block:: bash
+
+      #!/bin/bash
+
+      for f in *.nc; do
+          echo $f
+      done
+
+Renders as:
+
+.. code-block:: bash
+
+   #!/bin/bash
+
+   for f in *.nc; do
+       echo $f
+   done
+
+Command line (aka "console")
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: none
+
+   .. code-block:: console
+
+      $ ls -l $HOME
+
+Renders as:
+
+.. code-block:: console
+
+   $ ls -l $HOME
+
+No formatting
+~~~~~~~~~~~~~
+
+.. code-block:: none
+
+   .. code-block:: none
+
+      This text renders without any special formatting.
+
+Renders as:
+
+.. code-block:: none
+
+   This text renders without any special formatting.
