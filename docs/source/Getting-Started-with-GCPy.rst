@@ -128,7 +128,7 @@ GCPy requires several other Python packages, which are listed below.
 	packages, which are not supported on Microsoft Windows.  Thus,
 	the only way to use GCPy on a Windows PC is from within a
 	Windows Subsystem for Linux (WSL) instance.
-       
+
 The default GCPy environment uses Python 3.12.  In the root folder you
 will find a symbolic link :file:`environment.yml`, which points to the
 file :file:`docs/environment_files/gcpy_environment_py312.yml` file.
@@ -225,44 +225,14 @@ will handle the installation of all dependencies and sub-dependencies
 for GCPy, which includes many Python packages and several non-Python
 libraries.  If you do not already have a version of :program:`Mamba`
 or :program:`Conda` on your system, please see our
-:ref:`install-mamba-conda` Supplemental Guide.
-
-.. _install-conda-forge-mamba:
-
-Installing GCPy with Mamba
---------------------------
-
-Use these :program:`Mamba` commands to create a Python environment
-named :literal:`gcpy_env` and to install GCPy into this environment.
-
-.. code-block:: console
-
-   $ mamba create -n gcpy_env
-   $ mamba activate gcpy_env
-   $ mamba install geoschem-gcpy
-
-After you have installed GCPy, check if the installation was
-successful by running a test program:
-
-.. code-block:: console
-
-   $ export MPLBACKEND=tkagg   # Sets the matplotlib backend to Tk/Tcl
-   $ python -m gcpy.examples.plotting.create_test_plot
-
-If a plot appears on your screen, you have installed GCPy
-successfully.  Close the plot window (click the close button or type
-:command:`q`) and then deactivate the environment:
-
-.. code-block:: console
-
-   $ mamba deactivate
+:ref:`install-conda` Supplemental Guide.
 
 .. _install-conda-forge-conda:
 
 Installing GCPy with Conda
 --------------------------
 
-Use these :program:`Mamba` commands to create a Python environment
+Use these :program:`Conda` commands to create a Python environment
 named :literal:`gcpy_env` and to install GCPy into this environment.
 
 .. code-block:: console
@@ -297,15 +267,16 @@ If you plan on actively developing GCPy, we recommend that you install
 GCPy from Git and create a :program:`Mamba` or :program:`Conda`
 environment. If you do not already have a version of :program:`Mamba`
 or :program:`Conda` on your system, please see our
-:ref:`install-mamba-conda` Supplemental Guide.
+:ref:`install-conda` Supplemental Guide.
 
+.. _install-dev-gcpy-install:
 
 Install GCPy and its dependencies
 ---------------------------------
 
-Once you have made sure that :ref:`a Mamba or Conda installation
-exists on your system <install-mamba-conda-check>`, you may create a
-Python environment for GCPy. Follow these steps:
+Once you have made sure that :ref:`a Conda installation exists on your
+system <install-conda-check>`, you may create a Python environment for
+GCPy. Follow these steps:
 
 #. **Download the GCPy source code.**
 
@@ -331,22 +302,19 @@ Python environment for GCPy. Follow these steps:
    maintain a set of package dependencies compatible with GCPy without
    interfering with Python packages you use for other work. You can
    create a Python virtual environment from anywhere on your
-   system. It will be stored in your :program:`Mamba` (or
-   :program:`Conda` installation rather than the directory from which
-   you create it).
+   system. It will be stored in your :program:`Conda` installation
+   rather than the directory from which you create it).
 
    You can create a Python virtual environment using a file that lists
    all packages and their versions to be included in the environment.
    GCPy includes such as file, :file:`environment.yml`, located in the
    top-level directory of the package.
-   
+
    Run one of the following commands at the command prompt to create a virtual
    environment for use with GCPy. You can name environment whatever you
    wish. This example names it :file:`gcpy_env`.
 
    .. code-block:: console
-
-      $ mamba env create -n gcpy_env --file=environment.yml   # If using Mamba
 
       $ conda env create -n gcpy_env --file=environment.yml   # If using Conda
 
@@ -360,15 +328,11 @@ Python environment for GCPy. Follow these steps:
 
    .. code-block:: console
 
-      $ mamba activate gcpy_env   # If using Mamba
-
-      $ conda activate gcpy_env   # If using Conda
+      $ conda activate gcpy_env
 
    To exit the environment, use one of these commands:
 
    .. code-block:: console
-
-      $ mamba deactivate   # If using Mamba
 
       $ conda deactivate   # If using Conda
 
@@ -378,7 +342,7 @@ Python environment for GCPy. Follow these steps:
 
    The environment variable :envvar:`PYTHONPATH` specifies the
    locations of Python libraries on your system that were not
-   installed by :program:`Mamba`.
+   installed by :program:`Conda`.
 
    Add the path to your GCPy source code folder :file:`~/.bashrc` file:
 
@@ -470,6 +434,6 @@ commands to then update your virtual environment:
 
 .. code-block:: console
 
-   $ mamba activate gcpy_env
+   $ conda activate gcpy_env
    $ cd $HOME/python/GCPy
-   $ mamba env update --file environment.yml --prune
+   $ conda env update --file environment.yml --prune

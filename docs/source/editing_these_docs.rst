@@ -62,8 +62,8 @@ Sphinx and its dependencies, which are listed in the table below.
 
 We recommend that you create a standalone :program:`Conda` environment
 to install Sphinx and its dependencies.  The YAML file
-:file:`docs/environment_files/read_the_docs_environment.yaml` contains
-the proper package specifications.  Use these commands:
+:file:`docs/environment_files/read_the_docs_environment.yaml` contains the proper package
+specifications.  Use these commands:
 
 .. code-block:: console
 
@@ -76,30 +76,38 @@ Build the documentation
 -----------------------
 
 #. Activate the :program:`Conda` environment containing
-   :program:`Sphinx` and its dependencies.
+   :program:`Sphinx` and its dependencies:
 
    .. code-block:: console
 
       $ conda activate rtd_env
 
-#. Navigate to the :file:`docs/` folder.
+#. Navigate to the :file:`docs/` folder:
 
    .. code-block:: console
 
       (rtd_env) $ cd docs     # Skip if you are already in the docs folder
 
-#. Clean out any leftover HTML files (in :file:`docs/build/html`) that
-   might be leftover from a previous build:
+#. Check out the :file:`docs/dev` branch of this repository, as this
+   is the branch from which the :program:`latest` ReadTheDocs version
+   will be built:
 
    .. code-block:: console
 
-      (rtd_env) $ make clean
+      (rtd_env) $ git checkout docs/dev   # Skip if you are already on the docs/dev branch
 
 #. Start the :command:`sphinx-autobuild` server:
 
    .. code-block:: console
 
       (rtd_env) $ sphinx-autobuild source build/html
+
+#. Remove any HTML files (in :file:`docs/build/html`) that might be
+   left behind from a previous build:
+
+   .. code-block:: console
+
+      (rtd_env) $ make clean
 
    This will parse the reST-format files in the :file:`docs/source/`
    directory tree and generate new HTML files in
@@ -111,17 +119,17 @@ Build the documentation
 
 #. Open your favorite text editor and start making changes to the
    reST-format documentation files in the :file:`docs/source`
-   directory tree.  While :program:`sphinx-autobuild` is running,
-   you will see your updates rendered in the web browser as soon as you
+   directory tree.  While :program:`sphinx-autobuild` is running, you
+   will see your updates rendered in the web browser as soon as you
    soon as you save your changes to disk. |br|
    |br|
 
 #. Once you are satisfied with your edits, commit your changes to Git
-   and push the documentation to the :file:`docs/dev` branch of this
-   repository, |br|
+   and push the documentation to the :file:`docs/dev` remote branch of
+   this repository, |br|
    |br|
 
-#. Remove the HTML generated documentation files:
+#. Remove the generated HTML documentation files:
 
    .. code-block:: console
 
@@ -131,7 +139,7 @@ Build the documentation
    :program:`CTRL-C`. |br|
    |br|
 
-#. Deactivate the :program:`Conda` environment.
+#. Deactivate the :program:`Conda` environment:
 
    .. code-block:: console
 

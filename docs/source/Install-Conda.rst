@@ -2,7 +2,7 @@
 
    <br/>
 
-.. _install-mamba-conda:
+.. _install-conda:
 
 ########################################
 Install the Conda Python package manager
@@ -28,7 +28,7 @@ not already present on your system.
    :program:`Miniforge` distribution.
 
 
-.. _install-mamba-conda-check:
+.. _install-conda-check:
 
 ===================================
 Check if Conda is already installed
@@ -52,7 +52,7 @@ If a :program:`Conda` version exists, you may skip ahead to the
 :ref:`install-methods` section.  If not, then proceed as described
 below.
 
-.. _install-mamba-conda-mambaforge:
+.. _install-conda-miniforge:
 
 ==================================
 Install the Miniforge distribution
