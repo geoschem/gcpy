@@ -98,8 +98,8 @@ GCPy requires several other Python packages, which are listed below.
      - 3.12.0
      - 3.13.0
    * - pypdf
-     - 4.2.0
-     - 5.3.1
+     - 6.4.0
+     - 6.4.0
    * - requests
      - 2.32.3
      - 2.32.3
@@ -153,65 +153,23 @@ You can choose among the following installation methods:
 .. list-table:: GCPy installation methods
    :header-rows: 1
    :align: center
+   :widths: 40 10 50
 
    * - Method
      - Complexity
      - Who should use it
-   * - :ref:`install-pip`
+   * - :ref:`install-conda-forge` (Recommended)
      - Simple
      - Most GCPy users
-   * - :ref:`install-conda-forge`
-     - Medium
-     - GCPy users who have experience building mamba/conda environments
+   * - :ref:`install-pip`
+     - Simple
+     - Those who do not wish to install a Conda environment
    * - :ref:`install-dev`
      - Complex
      - GCPy developers
 
 Unless you are going to be actively developing GCPy, you should
-install from conda-forge.
-
-.. _install-pip:
-
-======================
-Install GCPy from PyPI
-======================
-
-If you only plan on using GCPy for visualization of GEOS-Chem
-simulation results, you can install GCPy from the :program:`Python
-Package Index (PyPi)` using the `Pip installer
-<https://pypi.org/project/pip/>`_.
-
-If your system does not already have Pip installed, you may install it
-with the `get-pip.py
-<https://pip.pypa.io/en/stable/installation/#get-pip-py>`_ script.
-
-.. _install-pip-first:
-
-First-time installation with Pip
---------------------------------
-
-Once you are sure that Pip is installed, you may proceed to download
-GCPy with this command:
-
-.. code-block:: console
-
-   $ pip install geoschem-gcpy
-
-To validate the installation, we recommend running the
-:ref:`test-plot` example script.
-
-.. _install-pip-update:
-
-Updating to a newer version with Pip
-------------------------------------
-
-Use this command to update an existing GCPy installation to a newer version:
-
-.. code-block:: console
-
-   $ pip install -U geoschem-gcpy
-
-You may now skip ahead to the :ref:`mpl-backend` chapter.
+:ref:`install from conda-forge <install-conda-forge>`.
 
 .. _install-conda-forge:
 
@@ -220,42 +178,122 @@ Install GCPy from conda-forge
 =============================
 
 GCPy is available through the :code:`conda-forge` channel under the
-name :code:`geoschem-gcpy`. :program:`Mamba` or :program:`Conda`
-will handle the installation of all dependencies and sub-dependencies
-for GCPy, which includes many Python packages and several non-Python
-libraries.  If you do not already have a version of :program:`Mamba`
-or :program:`Conda` on your system, please see our
-:ref:`install-conda` Supplemental Guide.
+name :code:`geoschem-gcpy`. :program:`Conda` will handle the
+installation of all dependencies and sub-dependencies for GCPy, which
+includes many Python packages and several non-Python libraries.  If
+you do not already have a version of :program:`Conda` on your system,
+please see our :ref:`install-conda` Supplemental Guide.
 
-.. _install-conda-forge-conda:
+1. Create and activate a Python virtual environment
+----------------------------------------------------
 
-Installing GCPy with Conda
---------------------------
+You will use :program:`Conda` to create a Python virtual environment
+named :literal:`gcpy_env`, into which you will install GCPy and its
+dependencies.  A :program:`Python virtual environment` is a named set
+of Python packages that are independent of other virtual
+environments. Using an environment dedicated to GCPy is useful to
+maintain a set of package dependencies compatible with GCPy without
+interfering with Python packages you use for other work.
 
-Use these :program:`Conda` commands to create a Python environment
-named :literal:`gcpy_env` and to install GCPy into this environment.
+To create and activate the GCPy Python environment, use these
+commands:
 
 .. code-block:: console
 
    $ conda create -n gcpy_env
    $ conda activate gcpy_env
-   $ conda install geoschem-gcpy
+   (gcpy_env) $
 
-After you have installed GCPy, check if the installation was
-successful by running a test program:
+Activating the environment adds the :literal:`(gcpy_env)` prefix added
+to the command prompt.  This is a visual cue to remind you that the
+environment is active.
 
-.. code-block:: console
+2. Install GCPy with Conda
+--------------------------
 
-   $ export MPLBACKEND=tkagg   # Sets the matplotlib backend to Tk/Tcl
-   $ python -m gcpy.examples.plotting.create_test_plot
-
-If a plot appears on your screen, you have installed GCPy
-successfully.  Close the plot window (click the close button or type
-:command:`q`) and then deactivate the environment:
+Next, install GCPy from conda-forge:
 
 .. code-block:: console
 
-   $ conda deactivate
+   (gcpy_env) $ conda install geoschem-gcpy
+
+Conda will ask you to confirm that you want to proceed with the
+installation.  Type :program:`y` to proceed.
+
+3. Verify the installation
+--------------------------
+
+Run the :ref:`test-plot` example script to validate the installation.
+If you see a plot created on your screen, GCPy has been installed
+successfully.
+
+4. Deactivate the Python environment
+------------------------------------
+
+Next, deactivate the :literal:`gcpy_env` environment:
+
+.. code-block:: console
+
+   (gcpy_env) $ conda deactivate
+   $
+
+This also removes the :literal:`(gcpy_env)` prefix from the command
+prompt.
+
+You may now skip ahead to the :ref:`next chapter <mpl-backend>`.
+
+.. _install-pip:
+
+======================
+Install GCPy from PyPI
+======================
+
+If you do not wish to create a Python virtual environment, you may
+install GCPy from the :program:`Python Package Index (PyPi)` using the
+`Pip installer <https://pypi.org/project/pip/>`_.  If your system does
+not already have Pip installed, you may install it with the
+`get-pip.py
+<https://pip.pypa.io/en/stable/installation/#get-pip-py>`_ script.
+
+.. attention::
+
+   If you install GCPy from PyPI, you will lose the ability to keep
+   the Python packages needed for GCPy separate from other Python
+   packages. This can potentially lead to package conflicts.  For this
+   reason we recommend :ref:`installing GCPy from conda-forge
+   <install-conda-forge>`.
+
+.. _install-pip-first:
+
+1. Install GCPy with Pip
+------------------------
+
+Once you are sure that Pip is installed, you may proceed to download
+GCPy with this command:
+
+.. code-block:: console
+
+   $ pip install geoschem-gcpy
+
+2. Validate the installation
+----------------------------
+
+Run the :ref:`test-plot` example script to validate the installation.
+If you see a plot created on your screen, GCPy has been installed
+successfully.
+
+.. _install-pip-update:
+
+(Optional) Update to a newer GCPy version
+-----------------------------------------
+
+Use this command to update an existing GCPy installation to a newer version:
+
+.. code-block:: console
+
+   $ pip install -U geoschem-gcpy
+
+You may now skip ahead to the :ref:`next chapter <mpl-backend>`.
 
 .. _install-dev:
 
@@ -264,9 +302,9 @@ Download GCPy with Git and build a Python virtual environment
 =============================================================
 
 If you plan on actively developing GCPy, we recommend that you install
-GCPy from Git and create a :program:`Mamba` or :program:`Conda`
-environment. If you do not already have a version of :program:`Mamba`
-or :program:`Conda` on your system, please see our
+GCPy from Git and create a :program:`Python virtual environment` with
+:program:`Conda`.  If :program:`Conda` is not already installed on
+your system, you may follow the instructions in our
 :ref:`install-conda` Supplemental Guide.
 
 .. _install-dev-gcpy-install:
@@ -278,126 +316,138 @@ Once you have made sure that :ref:`a Conda installation exists on your
 system <install-conda-check>`, you may create a Python environment for
 GCPy. Follow these steps:
 
-#. **Download the GCPy source code.**
+1. Download the GCPy source code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Create and go to the directory in which you would like to store GCPy. In
-   this example we will store GCPy in your :file:`$HOME/python/`
-   path, but you can store it wherever you wish.  You can also name
-   the GCPy download whatever you want. In this example the GCPy
-   directory is called :file:`GCPy`.
+Create and go to the directory in which you would like to store GCPy. In
+this example we will store GCPy in your :file:`$HOME/python/`
+path, but you can store it wherever you wish.  You can also name
+the GCPy download whatever you want. In this example the GCPy
+directory is called :file:`GCPy`.
 
-   .. code-block:: console
+.. code-block:: console
 
-      $ cd $HOME/python
-      $ git clone https://github.com/geoschem/gcpy.git GCPy
-      $ cd GCPy
+   $ cd $HOME/python
+   $ git clone https://github.com/geoschem/gcpy.git GCPy
+   $ cd GCPy
 
-   |br|
+2. Create a new Python virtual environment for GCPy
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-#. **Create a new Python virtual environment for GCPy.**
+A :program:`Python virtual environment` is a named set of Python
+packages that are independent of other virtual environments. Using an
+environment dedicated to GCPy is useful to maintain a set of package
+dependencies compatible with GCPy without interfering with Python
+packages you use for other work.
 
-   A Python virtual environment is a named set of Python installs,
-   e.g. packages, that are independent of other virtual
-   environments. Using an environment dedicated to GCPy is useful to
-   maintain a set of package dependencies compatible with GCPy without
-   interfering with Python packages you use for other work. You can
-   create a Python virtual environment from anywhere on your
-   system. It will be stored in your :program:`Conda` installation
-   rather than the directory from which you create it).
+GCPy ships with YAML files that specify Python environments for Python
+3.12 and 3.13.  These are located in the
+:file:`docs/environment_files` folder.  The symbolic link
+:file:`environment.yml`, located in the top-level directory of the
+package, points to the default environment.
 
-   You can create a Python virtual environment using a file that lists
-   all packages and their versions to be included in the environment.
-   GCPy includes such as file, :file:`environment.yml`, located in the
-   top-level directory of the package.
+Use this command to create a Python environment named :file:`gcpy_env`
+for use with GCPy:
 
-   Run one of the following commands at the command prompt to create a virtual
-   environment for use with GCPy. You can name environment whatever you
-   wish. This example names it :file:`gcpy_env`.
+.. code-block:: console
 
-   .. code-block:: console
+   $ conda env create -n gcpy_env --file=environment.yml
 
-      $ conda env create -n gcpy_env --file=environment.yml   # If using Conda
+A list of packages to be downloaded will be displayed.  A
+confirmation message will ask you if you really wish to install all
+of the listed packages.  Type :command:`Y` to proceed or
+:command:`n` to abort.
 
-   A list of packages to be downloaded will be displayed.  A
-   confirmation message will ask you if you really wish to install all
-   of the listed packages.  Type :command:`Y` to proceed or
-   :command:`n` to abort.
+Once successfully created you can activate the environment with
+one of these commands:
 
-   Once successfully created you can activate the environment with
-   one of these commands:
+.. code-block:: console
 
-   .. code-block:: console
+   $ conda activate gcpy_env
+   (gcpy_env) $
 
-      $ conda activate gcpy_env
+Activating the GCPy Python environment adds the
+:literal:`(gcpy_env)` added to the command prompt.  This is a visual
+cue to remind you that the environment is active.
 
-   To exit the environment, use one of these commands:
+To exit the environment, use this command:
 
-   .. code-block:: console
+.. code-block:: console
 
-      $ conda deactivate   # If using Conda
+   (gcpy_env) $ conda deactivate
+   $
 
-   |br|
+Deactivating the environment removes :literal:`(gcpy_env)` from the
+command prompt.
 
-#. **Add GCPy to** :envvar:`PYTHONPATH`
+3. Add GCPy to :envvar:`PYTHONPATH`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   The environment variable :envvar:`PYTHONPATH` specifies the
-   locations of Python libraries on your system that were not
-   installed by :program:`Conda`.
+The environment variable :envvar:`PYTHONPATH` specifies the
+locations of Python libraries on your system that were not
+installed by :program:`Conda`.
 
-   Add the path to your GCPy source code folder :file:`~/.bashrc` file:
+Add the path to your GCPy source code folder :file:`~/.bashrc` file:
 
-   .. code-block:: bash
+.. code-block:: bash
 
-      export PYTHONPATH=$PYTHONPATH:$HOME/python/GCPy
+   export PYTHONPATH=$PYTHONPATH:$HOME/python/GCPy
 
-   and then use
+and then use
 
-   .. code-block:: console
+.. code-block:: console
 
-      $ source ~/.bashrc
+   $ source ~/.bashrc
 
-   to apply the change. |br|
-   |br|
+ to apply the change.
 
-#. **Set the** :envvar:`MPLBACKEND` **environment variable**
+4. Set the :envvar:`MPLBACKEND` environment variable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-   The environment variable :envvar:`MPLBACKEND` specifies the X11
-   backend that the Matplotlib package will use to render plots to the
-   screen.
+The environment variable :envvar:`MPLBACKEND` specifies the X11
+backend that the Matplotlib package will use to render plots to the
+screen.
 
-   Add this line to your :file:`~/.bashrc` file on your local PC/Mac
-   and on any remote computer systems where you will use GCPy:
+Add this line to your :file:`~/.bashrc` file on your local PC/Mac
+and on any remote computer systems where you will use GCPy:
 
-   .. code-block:: bash
+.. code-block:: bash
 
-      export MPLBACKEND=tkagg
+   export MPLBACKEND=tkagg   # or MacOSX if you are on a Mac
 
-   And then use:
+And then use:
 
-   .. code-block:: console
+.. code-block:: console
 
-      $ source ~/.bashrc
+   $ source ~/.bashrc
 
-   to apply the change. |br|
-   |br|
+to apply the change.
 
-#. **Perform a simple test:**
+5. Perform a simple test
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-   Make sure that you have specified the proper :ref:`mpl-backend` for
-   your system.  Then run the following commands in your terminal:
+Make sure that you have specified the proper :ref:`mpl-backend` for
+your system.  Then run the following commands in your terminal:
 
-   .. code-block:: console
+.. code-block:: console
 
-      $ source $HOME/.bashrc                      # Alternatively close and reopen your terminal
-      $ echo $PYTHONPATH                          # Check it contains path to your GCPy clone
-      $ mamba activate gcpy_env
-      $ mamba list                                # Check it contains contents of gcpy env file
-      $ python -m gcpy.examples.create_test_plot  # Create a test plot
+   $ source $HOME/.bashrc                                 # Or, close and reopen your terminal
 
-If the plot appears on your screen, then the GCPy installation was successful.
+   $ echo $PYTHONPATH                                     # Check it contains path to your GCPy clone
 
-If no error messages are displayed, you have successfully installed
-GCPy and its dependencies.
+   $ conda activate gcpy_env                              # Activate the environment
+
+   (gcpy_env) $ conda list                                # Check it contains contents of gcpy env file
+
+You may now run the :ref:`test-plot` example script.  If you see a
+plot created on your screen, the installation was successful.
+
+Then deactivate the environment with:
+
+.. code-block:: console
+
+   (gcpy_env) conda deactivate
+   $
 
 .. _install-dev-upgrade:
 

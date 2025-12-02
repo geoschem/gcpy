@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new constants for default lon/lat and stretched-grid settings in `gcpy/constants.py`
 - Added PyDoc headers in routines where they were missing
 - Added `examples/grids/display_gcclassic_grid_info.py`  to display info about a GEOS-Chem Classic horizontal grid
+- Added "HEMCO Examples" chapter to ReadTheDocs documentation
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -36,6 +37,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Changed offline restart regridding to preserve source restart file precision
 - Changed `mamba` to `conda` in `benchmarks/benchmark_slurm.sh`
 - Separated plot and table options for clarity in  `benchmarks/config/*yml` and  `benchmarks/cloud/*.yml`
+- Clarified the GCPy installation process in ReadTheDocs documentation
+- Updated the instructions in the "Create a Test Plot" example in ReadTheDocs documentation
 - Updated default GCPy Python environment to use Python 3.13 (instead of 3.12)
 
 ### Fixed
