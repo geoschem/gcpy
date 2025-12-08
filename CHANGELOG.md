@@ -36,6 +36,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Changed offline restart regridding to preserve source restart file precision
 - Changed `mamba` to `conda` in `benchmarks/benchmark_slurm.sh`
 - Separated plot and table options for clarity in  `benchmarks/config/*yml` and  `benchmarks/cloud/*.yml`
+- Updated default GCPy Python environment to use Python 3.13 (instead of 3.12)
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
