@@ -129,18 +129,19 @@ GCPy requires several other Python packages, which are listed below.
 	the only way to use GCPy on a Windows PC is from within a
 	Windows Subsystem for Linux (WSL) instance.
 
-The default GCPy environment uses Python 3.12.  In the root folder you
+The default GCPy environment uses Python 3.13.  In the root folder you
 will find a symbolic link :file:`environment.yml`, which points to the
-file :file:`docs/environment_files/gcpy_environment_py312.yml` file.
+file :file:`docs/environment_files/gcpy_environment_py313.yml` file.
 Ths file contains the package specifications listed above under the
-**Version (Python 3.12)** column.
+**Version (Python 3.13)** column.
 
-We also maintain GCPy environment files for newer Python versions
-(e.g. :file:`docs/environment_files/gcpy_environment_py313.yml`, which
-is based on Python 3.13). This will allow you to build a GCPy
-environment based on a newer Python version, which is often necessary
-for testing and development.  For most GCPy users, it should be
-sufficient to use the default environment based on Python 3.12.
+We also maintain a GCPy environment file for backwards compatibility
+with Python 3.12
+(:file:`docs/environment_files/gcpy_environment_py312.yml`).  However,
+we have not yet been able to construct a GCPy environment using Python
+3.14, due to conflicts in installing the :program:`esmf` and
+:program:`xesmf` packages.  We hope to be able to resolve this in the
+near future.
 
 .. _install-methods:
 
@@ -344,7 +345,8 @@ GCPy ships with YAML files that specify Python environments for Python
 3.12 and 3.13.  These are located in the
 :file:`docs/environment_files` folder.  The symbolic link
 :file:`environment.yml`, located in the top-level directory of the
-package, points to the default environment.
+package, points to the default environment (which is based on Python
+3.13).
 
 Use this command to create a Python environment named :file:`gcpy_env`
 for use with GCPy:
