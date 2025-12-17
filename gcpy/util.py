@@ -50,6 +50,7 @@ def convert_lon(
     """
     verify_variable_type(data, (xr.DataArray, xr.Dataset))
 
+    roll_len = 0
     data_copy = data.copy()
 
     lon = data_copy[dim].values
@@ -2269,7 +2270,7 @@ def get_element_of_series(series, element):
     Returns a specified element of a pd.Series object.
 
     Args
-    serie   : pd.Series : A pd.Series object
+    series  : pd.Series : A pd.Series object
     element : int       : Element of the pd.Series object to return
 
     Returns
@@ -2279,3 +2280,33 @@ def get_element_of_series(series, element):
     verify_variable_type(element, int)
 
     return list(series)[element]
+
+
+def read_species_metadata(files, quiet=True):
+    """
+    Reads species metadata from multiple files and returns a dict
+    containing metadata for the union of species.
+
+    Args
+    files : str|list : Species database file(s) to read
+
+    Keyword Args
+    quiet : bool     : Quiet (true) or verbose (false) printout
+
+    Returns
+    spcdb : dict     : Metadata for the union of species
+    """
+    if isinstance(files, str):
+        return read_config_file(files, quiet=quiet)
+
+    if isinstance(files, list):
+        count = 0
+        n_files = len(files)
+        spcdb = read_config_file(files[0], quiet=quiet)
+        while count < n_files:
+            tmp_spcdb = read_config_file(files[count], quiet=quiet)
+            spcdb = spcdb | tmp_spcdb
+            count += 1
+        return spcdb
+
+    raise ValueError("Argument 'files' must be of type 'str' or 'list'!")
