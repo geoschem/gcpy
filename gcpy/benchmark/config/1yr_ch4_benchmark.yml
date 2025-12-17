@@ -29,7 +29,6 @@ paths:
   main_dir: /path/to/benchmark/main/dir    # EDIT AS NEEDED
   results_dir: /path/to/BenchmarkResults   # EDIT AS NEEDED
   weights_dir: /n/holylfs06/LABS/jacob_lab/Shared/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
-  spcdb_dir: default
   #
   # Observational data dirs are on Harvard Cannon, edit if necessary
   #
@@ -43,19 +42,23 @@ paths:
       site_file: allozonesondes_site_elev.csv
 #
 # data: Contains configurations for ref and dev runs
-#   version:         Version string (must not contain spaces)
-#   dir:             Path to run directory
-#   outputs_subdir:  Subdirectory w/ GEOS-Chem diagnostic files
-#   restarts_subdir: Subdirectory w/ GEOS-Chem restarts
-#   bmk_start:       Simulation start date (YYYY-MM-DDThh:mm:ss)
-#   bmk_end:         Simulation end date (YYYY-MM-DDThh:mm:ss)
-#   resolution:      GCHP resolution string
+#   version:          Version string (must not contain spaces)
+#   dir:              Path to run directory
+#   species_metadata: Path to species_database.yml file (in dir)
+#   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
+#   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
+#   logs_subdir:      Subdirectory w/ GEOS-Chem log files
+#   logs_template:    Template for log file names (may include tokens)
+#   bmk_start:        Simulation start date (YYYY-MM-DDThh:mm:ss)
+#   bmk_end:          Simulation end date (YYYY-MM-DDThh:mm:ss)
+#   resolution:       GCHP resolution string
 #
 data:
   ref:
     gcc:
       version: GCC_ref
       dir: GCC_ref
+      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"
@@ -63,6 +66,7 @@ data:
     gchp:
       version: GCHP_ref
       dir: GCHP_ref
+      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"
@@ -73,6 +77,7 @@ data:
     gcc:
       version: GCC_dev 
       dir: GCC_dev
+      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"
@@ -80,6 +85,7 @@ data:
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
+      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       bmk_start: "2019-01-01T00:00:00"

@@ -32,19 +32,23 @@ paths:
   spcdb_dir: default
 #
 # data: Contains configurations for ref and dev runs
-#   version:         Version string (must not contain spaces)
-#   dir:             Path to run directory
-#   outputs_subdir:  Subdirectory w/ GEOS-Chem diagnostic files
-#   restarts_subdir: Subdirectory w/ GEOS-Chem restarts
-#   bmk_start:       Simulation start date (YYYY-MM-DDThh:mm:ss)
-#   bmk_end:         Simulation end date (YYYY-MM-DDThh:mm:ss)
-#   resolution:      GCHP resolution string
+#   version:          Version string (must not contain spaces)
+#   dir:              Path to run directory
+#   species_metadata: Path to species_database.yml file (in dir)
+#   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
+#   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
+#   logs_subdir:      Subdirectory w/ GEOS-Chem log files
+#   logs_template:    Template for log file names (may include tokens)
+#   bmk_start:        Simulation start date (YYYY-MM-DDThh:mm:ss)
+#   bmk_end:          Simulation end date (YYYY-MM-DDThh:mm:ss)
+#   resolution:       GCHP resolution string
 #
 data:
   ref:
     gcc:
       version: ${GEOSCHEM_BENCHMARK_REF_PRIMARY_KEY}
       dir: ref-gcc/run-directory
+      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: .
@@ -54,6 +58,7 @@ data:
     gchp:
       version: ${GEOSCHEM_BENCHMARK_REF_PRIMARY_KEY}
       dir: ref-gchp/run-directory
+      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: .
@@ -66,6 +71,7 @@ data:
     gcc:
       version: ${GEOSCHEM_BENCHMARK_DEV_PRIMARY_KEY}
       dir: dev-gcc/run-directory
+      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: .
@@ -75,6 +81,7 @@ data:
     gchp:
       version: ${GEOSCHEM_BENCHMARK_DEV_PRIMARY_KEY}
       dir: dev-gchp/run-directory
+      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: .
