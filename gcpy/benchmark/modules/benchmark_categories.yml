@@ -5,6 +5,13 @@ FullChemBenchmark:
       - DST2
       - DST3
       - DST4
+      - DSTbin1
+      - DSTbin2
+      - DSTbin3
+      - DSTbin4
+      - DSTbin5
+      - DSTbin6
+      - DSTbin7
     Inorganic:
       - NH4
       - NIT

@@ -37,6 +37,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Changed `mamba` to `conda` in `benchmarks/benchmark_slurm.sh`
 - Separated plot and table options for clarity in  `benchmarks/config/*yml` and  `benchmarks/cloud/*.yml`
 - Updated default GCPy Python environment to use Python 3.13 (instead of 3.12)
+- Benchmark routines now look for `species_database.yml` in the `Ref` and `Dev` run directories
+- Replaced `get_species_database_dir` with `get_species_database_files` in `gcpy/benchmark/modules/benchmark_funcs.py`
+- Replaced `spcdb_dir` YAML tag with directory-specific `species_metadata` tags to specify paths to `species_database.yml` files  
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
@@ -66,6 +69,9 @@ n
 - Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
 - Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
 - Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
+
+### Removed
+- Removed `gchp_is_pre_14.0` logical in calls to `get_filepaths` in benchmark modules
 
 ## [1.6.2] - 2025-06-12
 ### Changed

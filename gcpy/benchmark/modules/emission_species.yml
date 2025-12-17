@@ -26,6 +26,13 @@ FullChemBenchmark:
   DST2: Tg
   DST3: Tg
   DST4: Tg
+  DSTbin1: Tg
+  DSTbin2: Tg
+  DSTbin3: Tg
+  DSTbin4: Tg
+  DSTbin5: Tg
+  DSTbin6: Tg
+  DSTbin7: Tg
   EOH: Tg
   ETNO3: Tg
   FURA: Tg
