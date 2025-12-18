@@ -22,7 +22,7 @@ from gcpy.grid import get_grid_extents, call_make_grid
 from gcpy.regrid import regrid_comparison_data, create_regridders
 from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
     all_zero_or_nan, slice_by_lev_and_time, compare_varnames, \
-    read_config_file, verify_variable_type
+    read_species_metadata, verify_variable_type
 from gcpy.units import check_units, data_unit_is_mol_per_mol
 from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
@@ -64,7 +64,7 @@ def compare_single_level(
         sigdiff_list=None,
         second_ref=None,
         second_dev=None,
-        spcdb_dir=os.path.dirname(__file__),
+        spcdb_files=None,
         ll_plot_func='imshow',
         **extra_plot_args
 ):
@@ -127,6 +127,10 @@ def compare_single_level(
         convert_to_ugm3: bool
             Whether to convert data units to ug/m3 for plotting.
             Default value: False
+        spcdb_files: str | list
+            A single species_database.yml file or a list of files
+            (e.g. for Ref & Dev).  Only used when convert_ugm3=True.
+            Default value: None
         flip_ref: bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
@@ -172,9 +176,6 @@ def compare_single_level(
             A dataset of the same model type / grid as devdata,
             to be used in diff-of-diffs plotting.
             Default value: None
-        spcdb_dir: str
-            Directory containing species_database.yml file.
-            Default value: Path of GCPy code repository
         ll_plot_func: str
             Function to use for lat/lon single level plotting with
             possible values 'imshow' and 'pcolormesh'. imshow is much
@@ -230,14 +231,16 @@ def compare_single_level(
     savepdf = True
     if pdfname == "":
         savepdf = False
+
+    # If converting to ug/m3, read species database file(s) to obtain
+    # molecular weights.  If more than one file is given, return
+    # metadata for the union of species.
     if convert_to_ugm3:
-        properties = read_config_file(
-            os.path.join(
-                spcdb_dir,
-                "species_database.yml"
-            ),
-            quiet=True
-        )
+        if spcdb_files is None:
+            msg = "You must pass a value for 'spcdb_files' when "
+            msg += "convert_to_ugm3=True!"
+            raise ValueError(msg)
+        properties = read_species_metadata(spcdb_files, quiet=True)
 
     # Get stretched grid info, if any.
     # Parameter order is stretch factor, target longitude, target latitude.
