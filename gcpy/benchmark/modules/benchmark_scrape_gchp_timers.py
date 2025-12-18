@@ -4,7 +4,9 @@ Scrapes GCHP Classic benchmark timing information from one or
 more text files.
 """
 import os
+import subprocess
 import numpy as np
+from gcpy.constants import ENCODING
 from gcpy.util import make_directory, replace_whitespace, verify_variable_type
 
 
@@ -70,6 +72,37 @@ def count_characters(text, char_to_match="."):
     return count[char_to_match]
 
 
+def check_file_for_timing_info(text_file):
+    """
+    Checks if a given text file contains GCHP timers output.  If not,
+    we will reset the file name to allPEs.log (in the same path).
+
+    This update is necessary because MAPL v2.59 has switched the GCHP
+    timers printout from the GCHP log file to allPEs.log.  This will
+    allow backwards compatibility with output from GCHP simulations
+    that use older MAPL versions.
+
+    Args
+    text_file : str : Name of the text file to check
+
+    Returns
+    text_file : str : Name of the text file containing GCHP timers
+                      output (either the input file or "allPEs.log")
+    """
+    result = subprocess.run(
+        ['grep', 'Times for component <GCHPchem>', text_file],
+        capture_output=True,
+        text=True
+    )
+    if len(result.stdout) == 0:
+        text_file = os.path.join(
+            os.path.dirname(text_file),
+            "allPEs.log"
+        )
+
+    return text_file
+
+
 def read_one_text_file(text_file):
     """
     Parses the GCHP log file (plain text) with timing information
@@ -96,18 +129,27 @@ def read_one_text_file(text_file):
     inclusive = 0
     temp_timers = []
 
+    # Check if the input file has GCHP timers, otherwise use "allPEs.log"
+    text_file = check_file_for_timing_info(text_file)
+
     # Open the log file
-    with open(text_file, encoding="utf-8") as ifile:
+    with open(text_file, encoding=ENCODING) as ifile:
 
         # Read each line in the file
         for line in ifile:
 
-            # Strip newlines; skip empty lines
+            # Strip out lines that are only present in "allPEs.log"
+            line = line.replace("0000: GCHPctmEnv: INFO:", "")
+            line = line.replace("0000: MAPL.profiler: INFO:", "")
+
+            # Strip newlines
             line = line.strip()
+
+            # Skip empty lines
             if len(line) == 0:
                 continue
 
-            # GCHP timers section (also skip header lines)
+            # GCHPchem timers section (also skip header lines)
             if 'Times for component <GCHPchem>' in line:
                 keep_line = True
                 inclusive = 3
@@ -124,8 +166,13 @@ def read_one_text_file(text_file):
                 keep_line = False
                 continue
 
+            # Skip everything that follows GCHPchem until the
+            # summary timers section
+            if "Times for component <DYNAMICS>" in line:
+                keep_line = False
+
             # Summary section (also skip header lines)
-            if 'Report on process:  0' in line:
+            if 'Report on process:' in line:
                 keep_line = True
                 inclusive = 2
                 continue
@@ -139,10 +186,10 @@ def read_one_text_file(text_file):
                in line:
                 continue
 
-            # NOTE: This line only appears in cloud benchmarks,
-            # which signals the end of GCHP output and the start of
-            # job statistics.  Exit when we encounter this.
-            if keep_line and "Command being timed:" in line:
+            # This line appears in GCHP log files using MAPL
+            # versions prior to 2.59.  It indicates the end of the
+            # GCHP timers section.  Exit when we encounter this.
+            if keep_line and "++" in line:
                 break
 
             # Append timing info lines into a list of dicts
@@ -273,7 +320,7 @@ def display_timers(ref, ref_label, dev, dev_label, table_file):
     dev_label  : str  : Version string for the "Dev" model
     table_file : str  : File name for the timing table output
     """
-    with open(table_file, "w", encoding="utf-8") as ofile:
+    with open(table_file, "w", encoding=ENCODING) as ofile:
 
         # Print header
         print("%"*79, file=ofile)
