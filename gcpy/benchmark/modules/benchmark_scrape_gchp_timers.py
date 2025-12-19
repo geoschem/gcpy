@@ -92,7 +92,8 @@ def check_file_for_timing_info(text_file):
     result = subprocess.run(
         ['grep', 'Times for component <GCHPchem>', text_file],
         capture_output=True,
-        text=True
+        text=True,
+        check=False,
     )
     if len(result.stdout) == 0:
         text_file = os.path.join(
