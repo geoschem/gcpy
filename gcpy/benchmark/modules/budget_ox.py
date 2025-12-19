@@ -13,11 +13,12 @@ from calendar import monthrange
 import gc
 import numpy as np
 import xarray as xr
-from gcpy import constants
+from gcpy.constants import \
+    AVOGADRO, ENCODING, G, MW_AIR_g, SKIP_THESE_VARS
 from gcpy.grid import get_troposphere_mask
-from gcpy.util import get_filepath, read_config_file, \
-    rename_and_flip_gchp_rst_vars, reshape_MAPL_CS, \
-    replace_whitespace
+from gcpy.util import \
+    get_filepath, read_config_file, read_species_metadata, \
+    rename_and_flip_gchp_rst_vars, reshape_MAPL_CS, replace_whitespace
 from gcpy.benchmark.modules.benchmark_utils import \
     add_lumped_species_to_dataset, get_lumped_species_definitions
 
@@ -42,7 +43,7 @@ class _GlobVars:
             year,
             dst,
             overwrite,
-            spcdb_dir,
+            spcdb_file,
             is_gchp,
             gchp_res,
             gchp_is_pre_14_0
@@ -63,8 +64,8 @@ class _GlobVars:
                 Year of the benchmark simulation.
             overwrite: bool
                 Denotes whether to ovewrite existing budget tables.
-            spcdb_dir: str
-                Directory where species_database.yml is stored.
+            spcdb_files : list 
+                Paths to species_database.yml files in Ref & Dev rundirs
             is_gchp: bool
                 Denotes if this is GCHP (True) or GCC (False) data.
             gchp_res: str
@@ -81,9 +82,7 @@ class _GlobVars:
         self.devrstdir = devrstdir
         self.dst = dst
         self.overwrite = overwrite
-        if spcdb_dir is None:
-            raise ValueError("The 'spcdb_dir' argument has not been specified!")
-        self.spcdb_dir = spcdb_dir
+        self.spcdb_file = spcdb_file
         self.is_gchp = is_gchp
         self.gchp_res = gchp_res
         self.gchp_is_pre_14_0 = gchp_is_pre_14_0
@@ -93,8 +92,8 @@ class _GlobVars:
         # ---------------------------------------------------------------
         self.y0 = int(year)
         self.y1 = self.y0 + 1
-        self.y0_str = "{}".format(self.y0)
-        self.y1_str = "{}".format(self.y1)
+        self.y0_str = f"{self.y0}"
+        self.y1_str = f"{self.y1}"
 
         # --------------------------------------------------------------
         # Read data into datasets
@@ -128,7 +127,7 @@ class _GlobVars:
         self.get_area_and_volume()
         self.tropmask = get_troposphere_mask(self.ds_met)
         self.get_time_info()
-        self.get_conv_factors(spcdb_dir)
+        self.get_conv_factors(spcdb_file)
 
 
     # ==================================================================
@@ -210,19 +209,19 @@ class _GlobVars:
         """
         ds = xr.open_dataset(
             self.rst_file_path(ystr),
-            drop_variables=constants.SKIP_THESE_VARS
+            drop_variables=SKIP_THESE_VARS
         )
 
         if self.is_gchp:
-            RstPrefix="SPC_"
+            rst_prefix="SPC_"
         else:
-            RstPrefix="SpeciesRst_"
+            rst_prefix="SpeciesRst_"
 
         ds = add_lumped_species_to_dataset(
             ds,
             lspc_dict=self.lspc_dict,
             verbose=False,
-            prefix=RstPrefix
+            prefix=rst_prefix
         )
 
         return ds
@@ -241,7 +240,7 @@ class _GlobVars:
         """
         ds = xr.open_mfdataset(
             self.pathlist[collection],
-            drop_variables=constants.SKIP_THESE_VARS,
+            drop_variables=SKIP_THESE_VARS,
             combine="nested",
             concat_dim="time"
         )
@@ -285,13 +284,12 @@ class _GlobVars:
         Returns time information for the budget computations.
         """
         # Months
-        self.N_MONTHS = 12
-        self.N_MONTHS_FLOAT = self.N_MONTHS * 1.0
+        self.n_months = 12
 
         # Days per month in the benchmark year
-        self.d_per_m = np.zeros(self.N_MONTHS)
-        self.s_per_m = np.zeros(self.N_MONTHS)
-        for t in range(self.N_MONTHS):
+        self.d_per_m = np.zeros(self.n_months)
+        self.s_per_m = np.zeros(self.n_months)
+        for t in range(self.n_months):
             self.d_per_m[t] = monthrange(self.y0, t + 1)[1] * 1.0
             self.s_per_m[t] = self.d_per_m[t] * 86400.0
 
@@ -300,28 +298,27 @@ class _GlobVars:
         self.s_per_a = np.sum(self.s_per_m)
 
         # Fraction of year occupied by each month
-        self.frac_of_a = np.zeros(self.N_MONTHS)
-        for t in range(self.N_MONTHS):
+        self.frac_of_a = np.zeros(self.n_months)
+        for t in range(self.n_months):
             self.frac_of_a[t] = self.d_per_m[t] / self.d_per_a
 
 
-    def get_conv_factors(self, spcdb_dir):
+    def get_conv_factors(self, spcdb_file):
         """
         Gets conversion factors used in budget computations
 
         Arguments:
-           spcdb_dir : str
-               Path to the species_database.yml file
+            spcdb_file : str
+                Paths to the species_database.yml file
         """
-        # Read the species database
-        path = os.path.join(spcdb_dir, "species_database.yml")
-        spcdb = read_config_file(path, quiet=True)
+        # Read the species database files Dev rundir.
+        spcdb = read_species_metadata(spcdb_file, quiet=True)
 
         # Molecular weights [kg mol-1], as taken from the species database
         self.mw = {}
         self.mw["O3"] = spcdb["O3"]["MW_g"] * 1.0e-3
         self.mw["Ox"] = self.mw["O3"]
-        self.mw["Air"] = constants.MW_AIR_g * 1.0e-3
+        self.mw["Air"] = MW_AIR_g * 1.0e-3
 
         # kg/s --> Tg/d
         self.kg_s_to_tg_a_value = 86400.0 * self.d_per_a * 1e-9
@@ -360,7 +357,7 @@ def init_and_final_mass(
         deltap_end = globvars.ds_end["Met_DELPDRY"].isel(time=0).values
     else:
         deltap_end = globvars.ds_end["Met_DELPDRY"].values
-    g100 = 100.0 / constants.G
+    g100 = 100.0 / G
     airmass_ini = (deltap_ini * globvars.area_m2.values) * g100
     airmass_end = (deltap_end * globvars.area_m2.values) * g100
 
@@ -393,7 +390,7 @@ def init_and_final_mass(
         )
         tropmass_end = np.ma.masked_array(
             mass_end,
-            globvars.tropmask[globvars.N_MONTHS-1, :, :, :]
+            globvars.tropmask[globvars.n_months-1, :, :, :]
         )
 
         # Create a dict to return values
@@ -419,7 +416,7 @@ def annual_average_prodloss(
     """
 
     # Conversion factors
-    mw_avo = globvars.mw["Ox"] / constants.AVOGADRO
+    mw_avo = globvars.mw["Ox"] / AVOGADRO
     kg_to_tg = 1.0e-9
 
     # Tropospheric P(Ox) and L(Ox) [molec/s]
@@ -435,7 +432,7 @@ def annual_average_prodloss(
     # Compute monthly-weighted averages [Tg Ox]
     prod_tot = 0.0
     loss_tot = 0.0
-    for t in range(globvars.N_MONTHS):
+    for t in range(globvars.n_months):
         prod_tot += np.sum(prod_trop[t, :, :, :]) * globvars.frac_of_a[t]
         loss_tot += np.sum(loss_trop[t, :, :, :]) * globvars.frac_of_a[t]
     prod_tot *= globvars.s_per_a * kg_to_tg * mw_avo
@@ -464,7 +461,7 @@ def annual_average_drydep(
     """
 
     # Conversion factors and area
-    mw_avo = (globvars.mw["Ox"] / constants.AVOGADRO)
+    mw_avo = globvars.mw["Ox"] / AVOGADRO
     kg_to_tg = 1.0e-9
     area_cm2 = globvars.area_cm2.values
 
@@ -473,7 +470,7 @@ def annual_average_drydep(
 
     # Convert to Tg Ox
     dry_tot = 0.0
-    for t in range(globvars.N_MONTHS):
+    for t in range(globvars.n_months):
         dry_tot += np.nansum(dry[t, :, :] * area_cm2) * globvars.frac_of_a[t]
     result = dry_tot * globvars.s_per_a * kg_to_tg * mw_avo
 
@@ -508,7 +505,7 @@ def annual_average_wetdep(globvars):
     # Monthly-weighted conv & LS wet losses [kg HNO3/s]
     wetcv_tot = 0.0
     wetls_tot = 0.0
-    for t in range(globvars.N_MONTHS):
+    for t in range(globvars.n_months):
         wetcv_tot += np.nansum(wetcv_trop[t, :, :, :]) * globvars.frac_of_a[t]
         wetls_tot += np.nansum(wetls_trop[t, :, :, :]) * globvars.frac_of_a[t]
 
@@ -590,19 +587,16 @@ def print_budget(
     # Create the plot directory hierarchy if it doesn't already exist
     if os.path.isdir(globvars.dst) and not globvars.overwrite:
         err_str = "Pass overwrite=True to overwrite files in that directory"
-        print("Directory {} exists. {}".format(globvars.dst, err_str))
+        print(f"Directory {globvars} exists. {err_str}")
         return
     if not os.path.isdir(globvars.dst):
         os.makedirs(globvars.dst)
 
     # Filename
-    filename = "{}/Ox_budget_troposphere_{}.txt".format(
-        globvars.dst,
-        globvars.y0_str
-    )
+    filename = f"{globvars.dst}/Ox_budget_troposphere_{globvars.y0_str}.txt"
 
     # Open file and print budgets
-    with open(filename, "w+") as f:
+    with open(filename, "w+", encoding=ENCODING) as f:
         print("="*50, file=f)
         print("Annual Average Global Ox Budget", file=f)
         print(f"for GEOS-Chem {globvars.devstr} 1-year benchmark\n", file=f)
@@ -613,46 +607,46 @@ def print_budget(
         print("  MASS ACCUMULATION       Tg Ox a-1    Tg O3 a-1", file=f)
         print("  -----------------      ----------   ----------\n", file=f)
         v = [mass["Ox_ini"], mass["O3_ini"]]
-        print("    Initial mass        {:11.4f}  {:11.4f}".format(*v), file=f)
+        print(f"    Initial mass        {v[0]:11.4f}  {v[1]:11.4f}", file=f)
         v = [mass["Ox_end"], mass["O3_end"]]
-        print("    Final mass          {:11.4f}  {:11.4f}".format(*v), file=f)
+        print(f"    Final mass          {v[0]:11.4f}  {v[1]:11.4f}", file=f)
         print("                         ----------   ----------", file=f)
         v = [mass["Ox_acc"], mass["O3_acc"]]
-        print("    Difference          {:11.7f}  {:11.7f}".format(*v), file=f)
+        print(f"    Difference          {v[0]:11.7f}  {v[1]:11.7f}", file=f)
         print("\n", file=f)
         print("  Ox SOURCES              Tg Ox a-1", file=f)
         print("  -----------------      ----------\n", file=f)
         print("  * Chemistry", file=f)
         v = prodloss["POx"]
-        print("      Total POx         {:11.4f}".format(v), file=f)
+        print(f"      Total POx         {v:11.4f}", file=f)
         v = prodloss["LOx"]
-        print("      Total LOx         {:11.4f}".format(v), file=f)
+        print(f"      Total LOx         {v:11.4f}", file=f)
         print("                         ----------", file=f)
         v = prodloss["POx-LOx"]
-        print("      Net POx - LOx     {:11.6f}\n".format(v), file=f)
+        print(f"      Net POx - LOx     {v:11.6f}\n", file=f)
         v = metrics["dyn"]
         print("  * Dynamics", file=f)
-        print("      Strat Flux(Ox)    {:11.4f}\n".format(v), file=f)
+        print(f"      Strat Flux(Ox)    {v:11.4f}\n", file=f)
         print("\n  Ox SINKS                Tg Ox a-1", file=f)
         print("  -----------------      ----------\n", file=f)
         v = drydep
-        print("  * Dry deposition      {:11.4f}\n".format(v), file=f)
+        print(f"  * Dry deposition      {v:11.4f}\n", file=f)
         print("  * Wet deposition", file=f)
         v = wetdep["CV"]
-        print("      Convective        {:11.4f}".format(v), file=f)
+        print(f"      Convective        {v:11.4f}", file=f)
         v = wetdep["LS"]
-        print("      Large-Scale       {:11.4f}".format(v), file=f)
+        print(f"      Large-Scale       {v:11.4f}", file=f)
         print("                         ----------", file=f)
         v = wetdep["Total"]
-        print("      Total Wetdep      {:11.6f}\n".format(v), file=f)
+        print(f"      Total Wetdep      {v:11.6f}\n", file=f)
         print("\n  Ox METRICS", file=f)
         print("  -----------------      ----------\n", file=f)
         print("  * Delta Ox", file=f)
         v = metrics["net"]
-        print("      Chem+Dyn-Dry-Wet  {:11.6f}  Tg Ox a-1".format(v), file=f)
+        print(f"      Chem+Dyn-Dry-Wet  {v:11.6f}  Tg Ox a-1", file=f)
         print("\n  * Ox Lifetime", file=f)
         v = metrics["life"]
-        print("     Mass/(LOx+Dyn+Wet) {:11.6f}  days".format(v), file=f)
+        print(f"     Mass/(LOx+Dyn+Wet) {v:11.6f}  days", file=f)
         print(file=f)
 
         f.close()
@@ -663,44 +657,30 @@ def global_ox_budget(
         devdir,
         devrstdir,
         year,
+        spcdb_file,
         dst='./1yr_benchmark',
         overwrite=True,
-        spcdb_dir=None,
         is_gchp=False,
         gchp_res="c24",
         gchp_is_pre_14_0=False
 ):
     """
-    Main program to compute Ox budgets
+    Main program to compute Ox budgets from GEOS-Chem Classic or
+    GCHP benchmark simulations.
 
-    Arguments:
-        maindir: str
-            Top-level benchmark folder
-        devstr: str
-            Denotes the "Dev" benchmark version.
-        year: int
-            The year of the benchmark simulation (e.g. 2016).
+    Args
+    devstr           : str  : Label for the Dev version
+    devdir           : str  : Path to the Dev data directory 
+    devrstdir        : str  : Path to the Dev restart file directory
+    year             : int  : Year of the benchmark simulation
+    spcdb_file       : str  : Path to the Dev species_database.yml file
 
-    Keyword Args (optional):
-        dst: str
-            Directory where budget tables will be created.
-            Default value: './1yr_benchmark'
-        overwrite: bool
-            Denotes whether to ovewrite existing budget tables.
-            Default value: True
-        spcdb_dir: str
-            Directory where species_database.yml is stored.
-            Default value: GCPy directory
-        is_gchp: bool
-            Denotes if data is from GCHP (True) or GCC (false).
-            Default value: False
-        gchp_res: str
-            GCHP resolution string (e.g. "c24", "c48", etc.)
-            Default value: None
-        gchp_is_pre_14_0: bool
-            Denotes if the version is prior to GCHP 14.0.0 (True)
-            or not (False).
-            Default value: False
+    Keyword Args
+    dst              : str  : Directory where tables will be written
+    overwrite        : bool : Should existing tables should be overwritten?
+    is_gchp          : bool : Is Dev from a GCHP benchmark simulation?
+    gchp_res         : str  : GCHP resolution string (e.g. "c24")
+    gchp_is_pre_14_0 : bool : Is Dev from a GCHP version prior to 14.0.0?
     """
 
     # Store global variables in a private class
@@ -711,7 +691,7 @@ def global_ox_budget(
         year,
         dst,
         overwrite,
-        spcdb_dir,
+        spcdb_file,
         is_gchp,
         gchp_res,
         gchp_is_pre_14_0,

@@ -15,9 +15,12 @@ from calendar import monthrange
 import gc
 import numpy as np
 import xarray as xr
-from gcpy import constants
+from gcpy.constants import \
+    AVOGADRO, ENCODING, G, MW_AIR_g, SKIP_THESE_VARS
 from gcpy.grid import get_troposphere_mask
-from gcpy import util
+from gcpy.util import \
+    get_filepath, dict_diff, read_species_metadata, \
+    rename_and_flip_gchp_rst_vars, replace_whitespace, reshape_MAPL_CS
 from gcpy.benchmark.modules.benchmark_utils import \
     rename_speciesconc_to_speciesconcvv
 
@@ -36,7 +39,7 @@ class _GlobVars:
     """
 
     def __init__(self, devstr, devdir, devrstdir, year, dst, is_gchp,
-                 gchp_res, gchp_is_pre_14_0, overwrite, spcdb_dir):
+                 gchp_res, gchp_is_pre_14_0, overwrite, spcdb_file):
         """
         Initializes the _GlobVars class.
 
@@ -60,13 +63,13 @@ class _GlobVars:
                 to GCHP 14.0.0.  Needed for restart files only.
             overwrite: bool
                 Denotes whether to ovewrite existing budget tables.
-            spcdb_dir: str
-                Directory where species_database.yml is stored.
+            spcdb_file : str
+                Paths to species_database.yml files in the Dev rundir
         """
         # ------------------------------
         # Arguments from outside
         # ------------------------------
-        self.devstr = util.replace_whitespace(devstr)
+        self.devstr = replace_whitespace(devstr)
         self.devdir = devdir
         self.devrstdir = devrstdir
         self.dst = dst
@@ -80,15 +83,15 @@ class _GlobVars:
         # ------------------------------
         self.y0 = year
         self.y1 = self.y0 + 1
-        self.y0_str = "{}".format(self.y0)
-        self.y1_str = "{}".format(self.y1)
+        self.y0_str = f"{self.y0}"
+        self.y1_str = f"{self.y1}"
 
         # ------------------------------
         # Collection file lists
         # ------------------------------
 
         # Initial restart file
-        RstInit = util.get_filepath(
+        rst_init = get_filepath(
             self.devrstdir,
             "Restart",
             np.datetime64(f"{self.y0_str}-01-01T00:00:00"),
@@ -98,7 +101,7 @@ class _GlobVars:
         )
 
         # Final restart file
-        RstFinal = util.get_filepath(
+        rst_final = get_filepath(
             self.devrstdir,
             "Restart",
             np.datetime64(f"{self.y1_str}-01-01T00:00:00"),
@@ -108,57 +111,58 @@ class _GlobVars:
         )
 
         # Diagnostics
-        HemcoDiag = os.path.join(
+        hemco_diag = os.path.join(
             self.devdir,
             f"HEMCO_diagnostics.{self.y0_str}*.nc"
         )
 
-        DryDep = os.path.join(
+        dry_dep = os.path.join(
             self.devdir,
             f"*.DryDep.{self.y0_str}*.nc4"
         )
 
-        RadioNucl = os.path.join(
+        radio_nucl = os.path.join(
             self.devdir,
             f"*.RadioNuclide.{self.y0_str}*.nc4"
         )
 
+        gchp_use_statemet_avg = False
         if is_gchp:
-            StateMetAvg = os.path.join(
+            state_met_avg = os.path.join(
                 self.devdir,
                 f"*.StateMet_avg.{self.y0_str}*.nc4"
             )
 
-            StateMet = os.path.join(
+            state_met = os.path.join(
                 self.devdir,
                 f"*.StateMet.{self.y0_str}*.nc4"
             )
 
             # Set a logical if we need to read StateMet_avg or StateMet
-            gchp_use_statemet_avg  = os.path.exists(StateMetAvg)
+            gchp_use_statemet_avg  = os.path.exists(state_met_avg)
 
         else:
-            StateMet = os.path.join(
+            state_met = os.path.join(
                 self.devdir,
                 f"*.StateMet.{self.y0_str}*.nc4"
             )
 
-        SpeciesConc = os.path.join(
+        species_conc = os.path.join(
             self.devdir,
             f"*.SpeciesConc.{self.y0_str}*.nc4"
         )
 
-        WetLossConv = os.path.join(
+        wet_loss_conv = os.path.join(
             self.devdir,
             f"*.WetLossConv.{self.y0_str}*.nc4"
         )
 
-        WetLossLS = os.path.join(
+        wet_loss_ls = os.path.join(
             self.devdir,
             f"*.WetLossLS.{self.y0_str}*.nc4"
         )
 
-        GCHPEmiss = os.path.join(
+        gchp_emiss = os.path.join(
             self.devdir,
             f"*.Emissions.{self.y0_str}*.nc4"
         )
@@ -171,14 +175,14 @@ class _GlobVars:
         extra_kwargs = {}
 
         self.ds_ini = xr.open_dataset(
-            RstInit,
-            drop_variables=constants.SKIP_THESE_VARS,
+            rst_init,
+            drop_variables=SKIP_THESE_VARS,
             **extra_kwargs
         )
 
         self.ds_end = xr.open_dataset(
-            RstFinal,
-            drop_variables=constants.SKIP_THESE_VARS,
+            rst_final,
+            drop_variables=SKIP_THESE_VARS,
             **extra_kwargs
         )
 
@@ -186,25 +190,25 @@ class _GlobVars:
         # vertical axis.  Also test if the restart files have the BXHEIGHT
         # variable contained within them.
         if is_gchp:
-            self.ds_ini = util.rename_and_flip_gchp_rst_vars(self.ds_ini)
-            self.ds_end = util.rename_and_flip_gchp_rst_vars(self.ds_end)
+            self.ds_ini = rename_and_flip_gchp_rst_vars(self.ds_ini)
+            self.ds_end = rename_and_flip_gchp_rst_vars(self.ds_end)
 
         # Diagnostics
         self.ds_dcy = xr.open_mfdataset(
-            RadioNucl,
-            drop_variables=constants.SKIP_THESE_VARS,
+            radio_nucl,
+            drop_variables=SKIP_THESE_VARS,
             **extra_kwargs
         )
 
         self.ds_dry = xr.open_mfdataset(
-            DryDep,
-            drop_variables=constants.SKIP_THESE_VARS,
+            dry_dep,
+            drop_variables=SKIP_THESE_VARS,
             **extra_kwargs
         )
 
         self.ds_cnc = xr.open_mfdataset(
-            SpeciesConc,
-            drop_variables=constants.SKIP_THESE_VARS,
+            species_conc,
+            drop_variables=SKIP_THESE_VARS,
             **extra_kwargs
         )
         self.ds_cnc = rename_speciesconc_to_speciesconcvv(
@@ -212,14 +216,14 @@ class _GlobVars:
         )
 
         self.ds_wcv = xr.open_mfdataset(
-            WetLossConv,
-            drop_variables=constants.SKIP_THESE_VARS,
+            wet_loss_conv,
+            drop_variables=SKIP_THESE_VARS,
             **extra_kwargs
         )
 
         self.ds_wls = xr.open_mfdataset(
-            WetLossLS,
-            drop_variables=constants.SKIP_THESE_VARS,
+            wet_loss_ls,
+            drop_variables=SKIP_THESE_VARS,
             **extra_kwargs
         )
 
@@ -227,28 +231,28 @@ class _GlobVars:
         # For GCHP: Read from StateMet_avg if present (otherwise StateMet)
         if is_gchp and gchp_use_statemet_avg:
             self.ds_met = xr.open_mfdataset(
-                StateMetAvg,
-                drop_variables=constants.SKIP_THESE_VARS,
+                state_met_avg,
+                drop_variables=SKIP_THESE_VARS,
                 **extra_kwargs
             )
         else:
             self.ds_met = xr.open_mfdataset(
-                StateMet,
-                drop_variables=constants.SKIP_THESE_VARS,
+                state_met,
+                drop_variables=SKIP_THESE_VARS,
                 **extra_kwargs
             )
 
         # Emissions
         if self.is_gchp:
             self.ds_hco = xr.open_mfdataset(
-                GCHPEmiss,
-                drop_variables=constants.SKIP_THESE_VARS,
+                gchp_emiss,
+                drop_variables=SKIP_THESE_VARS,
                 **extra_kwargs
             )
         else:
             self.ds_hco = xr.open_mfdataset(
-                HemcoDiag,
-                drop_variables=constants.SKIP_THESE_VARS,
+                hemco_diag,
+                drop_variables=SKIP_THESE_VARS,
                 **extra_kwargs
             )
 
@@ -261,7 +265,7 @@ class _GlobVars:
                 msg = 'Could not find Met_AREAM2 in StateMet_avg collection!'
                 raise ValueError(msg)
             area_m2 = self.ds_met["Met_AREAM2"].isel(time=0)
-            area_m2 = util.reshape_MAPL_CS(area_m2)
+            area_m2 = reshape_MAPL_CS(area_m2)
             self.area_m2 = area_m2
             self.area_cm2 = self.ds_met["Met_AREAM2"] * 1.0e4
         else:
@@ -272,20 +276,20 @@ class _GlobVars:
         # ------------------------------
         # Months and days
         # ------------------------------
-        self.N_MONTHS = 12
-        self.N_MONTHS_FLOAT = self.N_MONTHS * 1.0
+        self.n_months = 12
+        self.n_months_float = self.n_months * 1.0
 
         # Days per month in the benchmark year
-        self.d_per_mon = np.zeros(self.N_MONTHS)
-        for t in range(self.N_MONTHS):
+        self.d_per_mon = np.zeros(self.n_months)
+        for t in range(self.n_months):
             self.d_per_mon[t] = monthrange(self.y0, t + 1)[1] * 1.0
 
         # Days in the benchmark year
         self.d_per_yr = np.sum(self.d_per_mon)
 
         # Fraction of year occupied by each month
-        self.frac_of_yr = np.zeros(self.N_MONTHS)
-        for t in range(self.N_MONTHS):
+        self.frac_of_yr = np.zeros(self.n_months)
+        for t in range(self.n_months):
             self.frac_of_yr[t] = self.d_per_mon[t] / self.d_per_yr
 
         # ------------------------------
@@ -295,17 +299,14 @@ class _GlobVars:
         # List of species (and subsets for the trop & strat)
         self.species_list = ["Pb210", "Be7", "Be10"]
 
-        # Read the species database
-        if spcdb_dir is None:
-            raise ValueError("The 'spcdb_dir' argument has not been specified!")
-        path = os.path.join(spcdb_dir, "species_database.yml")
-        spcdb = util.read_config_file(path, quiet=True)
+        # Read the species database files in the Dev rundirs
+        spcdb = read_species_metadata(spcdb_file, quiet=True)
 
         # Molecular weights [g mol-1], as taken from the species database
         self.mw = {}
         for v in self.species_list:
             self.mw[v] = spcdb[v]["MW_g"]
-        self.mw["Air"] = constants.MW_AIR_g
+        self.mw["Air"] = MW_AIR_g
 
         # kg/s --> g/day
         self.kg_s_to_g_d_value = 86400.0 * 1000.0
@@ -323,7 +324,7 @@ class _GlobVars:
             self.kg_s_to_g_d[spc] = self.kg_s_to_g_d_value
 
             # kg/mole for each species
-            self.kg_per_mol[spc] = constants.AVOGADRO / (self.mw[spc] * 1e-3)
+            self.kg_per_mol[spc] = AVOGADRO / (self.mw[spc] * 1e-3)
 
             # v/v dry --> g
             self.vv_to_g[spc] = self.ds_met["Met_AD"].values  \
@@ -393,7 +394,7 @@ def mass_from_rst(globvars, ds, tropmask):
     # Conversion factors based on restart-file met fields
     # NOTE: Convert DataArray to numpy ndarray so that the
     # broadcasting will be done properly!!!
-    g100 = 100.0 / constants.G
+    g100 = 100.0 / G
     if 'time' in ds["Met_DELPDRY"].dims:
         deltap = ds["Met_DELPDRY"].isel(time=0).values
     else:
@@ -407,10 +408,7 @@ def mass_from_rst(globvars, ds, tropmask):
     # Determine if restart file variables have a time dimension
     # (if one does, they all do)
     varname = prefix + globvars.species_list[0]
-    if 'time' in ds[varname].dims:
-        has_time_dim = True
-    else:
-        has_time_dim = False
+    has_time_dim = 'time' in ds[varname].dims
 
     # Loop over species
     for spc in globvars.species_list:
@@ -460,9 +458,9 @@ def annual_average(globvars, ds, collection, conv_factor):
 
     # Initialize
     q = {}
-    q_sum_f = np.zeros(globvars.N_MONTHS)
-    q_sum_t = np.zeros(globvars.N_MONTHS)
-    q_sum_s = np.zeros(globvars.N_MONTHS)
+    q_sum_f = np.zeros(globvars.n_months)
+    q_sum_t = np.zeros(globvars.n_months)
+    q_sum_s = np.zeros(globvars.n_months)
     result = {}
 
     for spc in globvars.species_list:
@@ -534,9 +532,9 @@ def annual_average_sources(globvars):
 
     # Initialize
     q = {}
-    q_sum_f = np.zeros(globvars.N_MONTHS)
-    q_sum_t = np.zeros(globvars.N_MONTHS)
-    q_sum_s = np.zeros(globvars.N_MONTHS)
+    q_sum_f = np.zeros(globvars.n_months)
+    q_sum_t = np.zeros(globvars.n_months)
+    q_sum_s = np.zeros(globvars.n_months)
     result = {}
 
     # Pb210 source is from Rn222 decay, in the RadioNuclide collection
@@ -560,16 +558,16 @@ def annual_average_sources(globvars):
     q["Be10_f"] = np.zeros(q_shape)
 
     # Error traps
-    if q_shape[0] != globvars.N_MONTHS:
-        msg = f"Expected {globvars.N_MONTHS} but only found {q_shape[0]}"
-        raise ValueException(msg)
+    if q_shape[0] != globvars.n_months:
+        msg = f"Expected {globvars.n_months} but only found {q_shape[0]}"
+        raise ValueError(msg)
     if q_shape[1] != n_levs:
         msg = f"Expected {n_levs} but only found {q_shape[1]}!"
-        raise ValueException(msg)
+        raise ValueError(msg)
 
     # Convert Be7 and Be10 sources from kg/m2/s to g/day
     # If GCHP data, must vertically flip the emissions diagnostic
-    for t in range(globvars.N_MONTHS):
+    for t in range(globvars.n_months):
         for k in range(n_levs):
             if globvars.is_gchp:
                 kf = n_levs - k - 1
@@ -669,14 +667,14 @@ def trop_residence_time(globvars):
         q_wls_sum = np.sum(q_wls, axis=sum_axes)
 
         # Compute lifetime
-        for t in range(globvars.N_MONTHS):
+        for t in range(globvars.n_months):
             num = q_cnc_sum[t]
             denom = q_dry_sum[t] + q_wcv_sum[t] + q_wls_sum[t]
             result[spc + "_t"] += 1.0 / (num / denom)
 
         # Convert residence time [d]
         result[spc + "_t"] = 1.0 \
-            / (result[spc + "_t"] / globvars.N_MONTHS_FLOAT)
+            / (result[spc + "_t"] / globvars.n_months_float)
 
     return result
 
@@ -699,10 +697,11 @@ def print_budgets(globvars, data, key):
         err_str = "Pass overwrite=True to overwrite files in that directory"
         print(f"Directory {globvars.dst} exists. {err_str}")
         return
-    elif not os.path.isdir(globvars.dst):
+    if not os.path.isdir(globvars.dst):
         os.makedirs(globvars.dst)
 
     # Filename to print
+    filename = ""
     if "_f" in key:
         filename = \
             f"{globvars.dst}/Pb-Be_budget_trop_strat.{globvars.devstr}.txt"
@@ -717,7 +716,7 @@ def print_budgets(globvars, data, key):
     title = "Annual Average Global Budgets of 210Pb, 7Be, and 10Be\n        "
 
     # Open file and print budgets
-    with open(filename, "w+") as f:
+    with open(filename, "w+", encoding=ENCODING) as f:
         if "_f" in key:
             print(
                 f"Table 1. {title} in the Troposphere + Stratosphere in {globvars.devstr} for year {globvars.y0_str}\n", file=f)
@@ -733,8 +732,7 @@ def print_budgets(globvars, data, key):
             file=f)
 
         vals = [v[1] for v in list(data["burden"].items()) if key in v[0]]
-        print("  Burden, g               {:11.4f}  {:11.4f}  {:11.4f}".format(
-            *vals), file=f)
+        print(f"  Burden, g               {vals[0]:11.4f}  {vals[1]:11.4f}  {vals[2]:11.4f}", file=f)
         print(file=f)
 
         if "_t" in key:
@@ -742,56 +740,45 @@ def print_budgets(globvars, data, key):
                     for v in list(data["res_time"].items()) if key in v[0]]
 
             print(
-                "  Residence time, d       {:11.4f}  {:11.4f}  {:11.4f}".format(
-                    *vals), file=f)
+                f"  Residence time, d       {vals[0]:11.4f}  {vals[1]:11.4f}  {vals[2]:11.4f}", file=f)
             print(file=f)
 
         vals = [v[1] for v in list(data["src_total"].items()) if key in v[0]]
-        print("  Sources, g d-1          {:11.4f}  {:11.4f}  {:11.4f}".format(
-            *vals), file=f)
+        print(f"  Sources, g d-1          {vals[0]:11.4f}  {vals[1]:11.4f}  {vals[2]:11.4f}", file=f)
         print(file=f)
 
         vals = [v[1] for v in list(data["snk_total"].items()) if key in v[0]]
-        print("  Sinks, g d-1            {:11.4f}  {:11.4f}  {:11.4f}".format(
-            *vals), file=f)
+        print(f"  Sinks, g d-1            {vals[0]:11.4f}  {vals[1]:11.4f}  {vals[2]:11.4f}", file=f)
 
         vals = [v[1] for v in list(data["snk_drydep"].items()) if key in v[0]]
-        print("    Dry deposition        {:11.4f}  {:11.4f}  {:11.4f}".format(
-            *vals), file=f)
+        print(f"    Dry deposition        {vals[0]:11.4f}  {vals[1]:11.4f}  {vals[2]:11.4f}", file=f)
         print("    Wet deposition", file=f)
 
         vals = [v[1] for v in list(data["snk_wetls"].items()) if key in v[0]]
-        print("      Stratiform          {:11.4f}  {:11.4f}  {:11.4f}".format(
-            *vals), file=f)
+        print(f"      Stratiform          {vals[0]:11.4f}  {vals[1]:11.4f}  {vals[2]:11.4f}", file=f)
 
         vals = [v[1] for v in list(data["snk_wetconv"].items()) if key in v[0]]
-        print("      Convective          {:11.4f}  {:11.4f}  {:11.4f}".format(
-            *vals), file=f)
+        print(f"      Convective          {vals[0]:11.4f}  {vals[1]:11.4f}  {vals[2]:11.4f}", file=f)
 
         vals = [v[1] for v in list(data["snk_decay"].items()) if key in v[0]]
-        print("    Radioactive decay     {:11.7f}  {:11.7f}  {:11.8f}".format(
-            *vals), file=f)
+        print(f"    Radioactive decay     {vals[0]:11.7f}  {vals[1]:11.7f}  {vals[2]:11.8f}", file=f)
         print(file=f)
 
         vals = [v[1] for v in list(data["src_minus_snk"].items())
                 if key in v[0]]
-        print("  Sources - Sinks, g d-1  {:11.6f}  {:11.6f}  {:11.6f}".format(
-            *vals), file=f)
+        print(f"  Sources - Sinks, g d-1  {vals[0]:11.6f}  {vals[1]:11.6f}  {vals[2]:11.6f}", file=f)
 
         print(file=f)
         print("  Accumulation Term", file=f)
 
         vals = [v[1] for v in list(data["accum_init"].items()) if key in v[0]]
-        print("    Initial mass, g       {:11.4f}  {:11.4f}  {:11.4f}".format(
-            *vals), file=f)
+        print(f"    Initial mass, g       {vals[0]:11.4f}  {vals[1]:11.4f}  {vals[2]:11.4f}", file=f)
 
         vals = [v[1] for v in list(data["accum_final"].items()) if key in v[0]]
-        print("    Final mass, g         {:11.4f}  {:11.4f}  {:11.4f}".format(
-            *vals), file=f)
+        print(f"    Final mass, g         {vals[0]:11.4f}  {vals[1]:11.4f}  {vals[2]:11.4f}", file=f)
 
         vals = [v[1] for v in list(data["accum_diff"].items()) if key in v[0]]
-        print("    Difference, g         {:11.7f}  {:11.7f}  {:11.7f}".format(
-            *vals), file=f)
+        print(f"    Difference, g         {vals[0]:11.7f}  {vals[1]:11.7f}  {vals[2]:11.7f}", file=f)
         f.close()
 
 
@@ -800,43 +787,30 @@ def transport_tracers_budgets(
         devdir,
         devrstdir,
         year,
+        spcdb_file,
         dst='./1yr_benchmark',
         is_gchp=False,
         gchp_res="c00",
         gchp_is_pre_14_0=False,
         overwrite=True,
-        spcdb_dir=os.path.dirname(__file__)):
+):
     """
-    Main program to compute TransportTracersBenchmark budgets
+    Main program to compute TransportTracers budgets from
+    GEOS-Chem Classic or GCHP benchmark simulations.
 
-    Args:
-        maindir: str
-            Top-level benchmark folder
-        devstr: str
-            Denotes the "Dev" benchmark version.
-        year: int
-            The year of the benchmark simulation (e.g. 2016).
+    Args
+    devstr           : str  : Label for the Dev version
+    devdir           : str  : Path to the Dev data directory
+    devrstdir        : str  : Path to the Dev restart file directory
+    year             : int  : Year of the benchmark simulation
+    spcdb_file       : str  : Path to the Dev species_database.yml file
 
-    Keyword Args (optional):
-        dst: str
-            Directory where budget tables will be created.
-            Default value: './1yr_benchmark'
-        is_gchp: bool
-            Denotes if data is from GCHP (True) or GCC (false).
-            Default value: False
-        gchp_res: str
-            A string (e.g. "c24") denoting GCHP grid resolution.
-            Default value: "c00".
-        gchp_is_pre_14_0: bool
-            Logical to indicate whether or not the GCHP data is prior
-            to GCHP 14.0.0.  Needed for restart files only.
-            Default value: False
-        overwrite: bool
-            Denotes whether to ovewrite existing budget tables.
-            Default value: True
-        spcdb_dir: str
-            Directory where species_database.yml is stored.
-            Default value: GCPy directory
+    Keyword Args
+    dst              : str  : Directory where tables will be written
+    overwrite        : bool : Should existing tables should be overwritten?
+    is_gchp          : bool : Is Dev from a GCHP benchmark simulation?
+    gchp_res         : str  : GCHP resolution string (e.g. "c24")
+    gchp_is_pre_14_0 : bool : Is Dev from a GCHP version prior to 14.0.0?
     """
 
     # Store global variables in a private class
@@ -850,7 +824,7 @@ def transport_tracers_budgets(
         gchp_res,
         gchp_is_pre_14_0,
         overwrite,
-        spcdb_dir
+        spcdb_file,
     )
 
     # Data structure for budgets
@@ -871,14 +845,14 @@ def transport_tracers_budgets(
 
     # Get initial mass from restart file
     ds = globvars.ds_end
-    tropmask = globvars.tropmask[globvars.N_MONTHS - 1, :, :, :]
+    tropmask = globvars.tropmask[globvars.n_months - 1, :, :, :]
     data["accum_final"] = mass_from_rst(
         globvars,
         ds, tropmask
     )
 
     # Take the difference final - init
-    data["accum_diff"] = util.dict_diff(
+    data["accum_diff"] = dict_diff(
         data["accum_init"],
         data["accum_final"]
     )
@@ -940,7 +914,7 @@ def transport_tracers_budgets(
     )
 
     # Sources - sinks
-    data["src_minus_snk"] = util.dict_diff(
+    data["src_minus_snk"] = dict_diff(
         data["snk_total"],
         data["src_total"]
     )

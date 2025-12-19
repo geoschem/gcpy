@@ -8,14 +8,14 @@ for selected benchmark species.
 # Imports etc.
 # ======================================================================
 
-import os
 from calendar import monthrange, month_abbr
 import warnings
 import gc
 import numpy as np
 import pandas as pd
 import xarray as xr
-import gcpy.constants as physconsts
+from gcpy.constants import \
+    ENCODING, SKIP_THESE_VARS
 from gcpy.util import make_directory, replace_whitespace
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
@@ -65,7 +65,7 @@ class _GlobVars:
         self.overwrite = overwrite
         self.species = species
         self.month = month
-        self.is_TransportTracers = "TransportTracers" in bmk_type
+        self.is_transport_tracers = "TransportTracers" in bmk_type
 
         # ------------------------------
         # Benchmark year
@@ -86,35 +86,20 @@ class _GlobVars:
 
         # Vertical flux diagnostics
         # Return a single Dataset containing data from all files.
-        # NOTE: Need to add combine="nested" and concat_dim="time"
-        # for xarray 0.15 and higher!!!
-        v = xr.__version__.split(".")
-        if int(v[0]) == 0 and int(v[1]) >= 15:
-            try:
-                self.ds_flx = xr.open_mfdataset(
-                    files,
-                    drop_variables=physconsts.SKIP_THESE_VARS,
-                    combine="nested",
-                    concat_dim="time"
-                )
-            except FileNotFoundError as exc:
-                msg = f"Could not find one or more files in {files}"
-                raise FileNotFoundError(msg) from exc
-        else:
-            try:
-                self.ds_flx = xr.open_mfdataset(
-                    files,
-                    drop_variables=physconsts.SKIP_THESE_VARS,
-                )
-            except FileNotFoundError as exc:
-                msg = f"Could not find one or more files in {files}"
-                raise FileNotFoundError(msg) from exc
+        try:
+            self.ds_flx = xr.open_mfdataset(
+                files,
+                drop_variables=SKIP_THESE_VARS,
+            )
+        except FileNotFoundError as exc:
+            msg = f"Could not find one or more files in {files}"
+            raise FileNotFoundError(msg) from exc
 
         # Set a flag to denote if this data is from GCHP
         self.is_gchp = "nf" in self.ds_flx.dims.keys()
 
         # 100 hPa level (assumes GEOS-FP/MERRA2 72-level grid)
-        self.hPa_100_lev = 35
+        self.hpa_100_lev = 35
 
         # Set a flag to denote if this is a 1-year benchmark
         self.is_1yr = self.month is None
@@ -125,17 +110,16 @@ class _GlobVars:
             # -----------------------------------
             # Months and days: 1-year benchmark
             # -----------------------------------
-            self.N_MONTHS = 12
-            self.N_MONTHS_FLOAT = self.N_MONTHS * 1.0
+            self.n_months = 12
 
             # Days per month in the benchmark year
-            self.d_per_mon = np.zeros(self.N_MONTHS)
-            for t in range(self.N_MONTHS):
+            self.d_per_mon = np.zeros(self.n_months)
+            for t in range(self.n_months):
                 self.d_per_mon[t] = monthrange(self.y0, t + 1)[1] * 1.0
 
             # Month names
             self.mon_name = []
-            for t in range(self.N_MONTHS):
+            for t in range(self.n_months):
                 self.mon_name.append(f"{ month_abbr[t + 1]} {self.y0_str}")
             self.mon_name.append("Annual Mean")
 
@@ -147,8 +131,7 @@ class _GlobVars:
             # -----------------------------------
             # Months and days: 1-month benchmark
             # -----------------------------------
-            self.N_MONTHS = 1
-            self.N_MONTHS_FLOAT = self.N_MONTHS * 1.0
+            self.n_months = 1
 
             # Days per month in the benchmark year
             self.d_per_mon = [monthrange(self.y0, self.month)[1] * 1.0]
@@ -166,7 +149,7 @@ class _GlobVars:
         # ------------------------------
 
         # kg/s --> Tg/yr
-        kg_s_to_Tg_yr = 1.0e-9 * 86400.0 * self.d_per_yr
+        kg_s_to_tg_yr = 1.0e-9 * 86400.0 * self.d_per_yr
 
         # kg/s --> g/yr
         kg_s_to_g_yr = 1000.0 * 86400.0 * self.d_per_yr
@@ -174,10 +157,10 @@ class _GlobVars:
         # Define the conversion factor dict
         self.conv_factor = {}
         for spc in species:
-            if self.is_TransportTracers:
+            if self.is_transport_tracers:
                 self.conv_factor[spc] = kg_s_to_g_yr
             else:
-                self.conv_factor[spc] = kg_s_to_Tg_yr
+                self.conv_factor[spc] = kg_s_to_tg_yr
 
 
 # ======================================================================
@@ -199,13 +182,13 @@ def compute_ste(globvars):
     """
 
     # 100 hPa level index (convert to Python array notation)
-    lev = globvars.hPa_100_lev - 1
+    lev = globvars.hpa_100_lev - 1
 
     # 1-year benchmarks also include the annual mean row
     if globvars.is_1yr:
-        n_rows = globvars.N_MONTHS + 1
+        n_rows = globvars.n_months + 1
     else:
-        n_rows = globvars.N_MONTHS
+        n_rows = globvars.n_months
 
     # Create a dictionary to define a DataFrame
     df_dict = {}
@@ -217,7 +200,7 @@ def compute_ste(globvars):
 
     # Compute monthly strat-trop exchange fluxes,
     # taken as the vertical flux across the 100hPa level
-    for t in range(globvars.N_MONTHS):
+    for t in range(globvars.n_months):
         month = globvars.mon_name[t]
         for spc in globvars.species:
             var = globvars.data_vars[spc]
@@ -256,7 +239,7 @@ def print_ste(globvars, df):
     pd.options.display.float_format = '{:11.4f}'.format
 
     # Open filename for output
-    with open(filename, "w+") as f:
+    with open(filename, "w+", encoding=ENCODING) as f:
 
         # Print header
         print("%" * 79, file=f)
@@ -282,7 +265,7 @@ def print_ste(globvars, df):
 def make_benchmark_ste_table(devstr, files, year,
                              dst='./1yr_benchmark',
                              bmk_type="FullChemBenchmark",
-                             species=["O3"],
+                             species=None,
                              overwrite=True,
                              month=None):
     """
@@ -310,6 +293,9 @@ def make_benchmark_ste_table(devstr, files, year,
             If passed, specifies the month of a 1-month benchmark.
             Default: None (denotes a 1-year benchmark)
     """
+
+    if species is None:
+        species = ["O3"]
 
     # Initialize a private class with required global variables
     globvars = _GlobVars(devstr, files, dst, int(year),
