@@ -5,19 +5,20 @@ can be printed on the GEOS-Chem wiki.
 
 Example:
 
-  python -m gcpy.benchmark.modules.benchmark_species_changes \
-   --ref-label "14.4.0"                                      \
-   --ref-log   "gcc_14.4.0/14.4.0.log                        \
-   --dev-label "14.5.0"                                      \
-   --dev-log   "gcc_14.5.0/14.5.0.log"                       \
-   --spcdb-dir "gcc_14.5.0/14.5.0.log"                       \
+  python -m gcpy.benchmark.modules.benchmark_species_changes  \
+   --ref-label   "14.4.0"                                     \
+   --ref-log     "gcc_14.4.0/14.4.0.log                       \
+   --dev-label   "14.5.0"                                     \
+   --dev-log     "gcc_14.5.0/14.5.0.log"                      \
+   --spcdb-files ["gcc_14.4.0/species_database.yml",          \
+                  "gcc_14.5.0/species_database.yml"],         \
    --output-file "wiki_tables.txt"
 """
 
-from os.path import exists, join
+from os.path import exists
 import argparse
 import pandas as pd
-from gcpy.util import read_config_file, verify_variable_type
+from gcpy.util import read_species_metadata, verify_variable_type
 
 
 def read_one_log_file(log_file):
@@ -247,7 +248,7 @@ def make_benchmark_species_changes_wiki_tables(
         ref_log,
         dev_label,
         dev_log,
-        spcdb_dir,
+        spcdb_files,
         output_file,
 ):
     """
@@ -255,26 +256,23 @@ def make_benchmark_species_changes_wiki_tables(
     between Ref and Dev versions.
 
     Args
-    ref_label   : str : Label for the Ref version
-    ref_log     : str : Path to log file for the Ref version
-    dev_label   : str : Label for the Dev version
-    dev_log     : str : Path to log file for the Dev version
-    spcdb_dir   : str : Directory containing species_database.yml
-    output_file : str : Path to file with generated wiki tables
+    ref_label   : str  : Label for the Ref version
+    ref_log     : str  : Path to log file for the Ref version
+    dev_label   : str  : Label for the Dev version
+    dev_log     : str  : Path to log file for the Dev version
+    spcdb_files : list : Paths to Ref & Dev species_database.yml files
+    output_file : str  : Path to file with generated wiki tables
     """
     verify_variable_type(ref_label, str)
     verify_variable_type(ref_log, str)
     verify_variable_type(dev_label, str)
     verify_variable_type(dev_log, str)
-    verify_variable_type(spcdb_dir, str)
+    verify_variable_type(spcdb_files, list)
 
-    # Read the species database
-    input_file = join(spcdb_dir, "species_database.yml")
-    try:
-        species_database = read_config_file(input_file)
-    except FileNotFoundError as exc:
-        msg = f"Could not find {input_file}!"
-        raise FileNotFoundError(msg) from exc
+    # Read the species database files in the Ref & Dev rundirs, and
+    # return a dict containing metadata for the union of species.
+    # We'll need properties such as mol. wt. for unit conversions, etc.
+    species_database = read_species_metadata(spcdb_files, quiet=True)
 
     # Get species metadata for the Ref and Dev versions
     ref = get_species_metadata(ref_log, species_database)
@@ -349,12 +347,12 @@ def main():
         help="Log file from the Dev version"
     )
     parser.add_argument(
-        "--spcdb-dir",
-        metavar="SPCDB_DIR",
-        type=str,
+        "--spcdb-files",
+        metavar="SPCDB_FILES",
+        type=list,
         required=True,
         default="./",
-        help="Directory where the species_database.yml file resides"
+        help="Paths to the Ref & Dev species_database.yml files"
     )
     parser.add_argument(
         "-o", "--output-file",
@@ -372,7 +370,7 @@ def main():
         args.ref_log,
         args.dev_label,
         args.dev_log,
-        args.spcdb_dir,
+        args.spcdb_files,
         args.output_file
     )
 
