@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 run_1yr_tt_benchmark.py:
     Script containing code for creating benchmark plots and testing
@@ -59,14 +59,13 @@ import numpy as np
 from joblib import Parallel, delayed
 from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
 from gcpy.benchmark.modules.benchmark_funcs import \
-    get_species_database_dir, make_benchmark_conc_plots, \
-    make_benchmark_wetdep_plots, make_benchmark_mass_tables, \
-    make_benchmark_operations_budget
+    make_benchmark_conc_plots, make_benchmark_wetdep_plots, \
+    make_benchmark_mass_tables, make_benchmark_operations_budget
 from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.benchmark_utils import \
     gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
-    get_log_filepaths, print_benchmark_info
+    get_log_filepaths, get_species_database_files, print_benchmark_info
 from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
     make_benchmark_gcclassic_timing_table
 from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
@@ -91,11 +90,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     bmk_mon_inds = [0, 3, 6, 9]
     bmk_n_months = len(bmk_mon_strs)
 
-    # =====================================================================
-    # Path to species_database.yml
-    # =====================================================================
-    spcdb_dir = get_species_database_dir(config)
-
     # ======================================================================
     # Data directories
     # For gchp_vs_gcc_refdir use config["data"]["dev"]["gcc"]["version"], not ref (mps, 6/27/19)
@@ -116,7 +110,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Log file directory paths
     s = "logs_subdir"
     gcc_vs_gcc_reflogdir, gcc_vs_gcc_devlogdir = gcc_vs_gcc_dirs(config, s)
-    gchp_vs_gcc_reflogdir, gchp_vs_gcc_devlogdir = gchp_vs_gcc_dirs(config, s)
     gchp_vs_gchp_reflogdir, gchp_vs_gchp_devlogdir = gchp_vs_gchp_dirs(config, s)
 
     # Directories where plots & tables will be created
@@ -263,6 +256,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
 
+        # GCC vs GCC species database files
+        spcdb_files = get_species_database_files(config, "gcc", "gcc")
+
         # ==================================================================
         # GCC vs GCC filepaths for StateMet collection data
         # ==================================================================
@@ -309,6 +305,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 collection=collection,
                 refmet=refmet,
                 devmet=devmet,
@@ -319,7 +316,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 restrict_cats=restrict_cats,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -333,6 +329,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gcc_vs_gcc_refstr,
                     dev[mon_ind],
                     gcc_vs_gcc_devstr,
+                    spcdb_files,
                     collection=collection,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
@@ -342,7 +339,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     restrict_cats=restrict_cats,
                     overwrite=True,
-                    spcdb_dir=spcdb_dir,
                     n_job=config["options"]["n_cores"]
                 )
 
@@ -380,7 +376,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gcc_vs_gcc_refstr,
                     dev,
                     gcc_vs_gcc_devstr,
-                    collection=collection,
+                    collection,
+                    spcdb_files,
                     refmet=refmet,
                     devmet=devmet,
                     dst=gcc_vs_gcc_resultsdir,
@@ -389,7 +386,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     benchmark_type=bmk_type,
                     overwrite=True,
-                    spcdb_dir=spcdb_dir,
                     n_job=config["options"]["n_cores"]
                 )
 
@@ -403,7 +399,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         gcc_vs_gcc_refstr,
                         dev[mon_ind],
                         gcc_vs_gcc_devstr,
-                        collection=collection,
+                        collection,
+                        spcdb_files,
                         refmet=refmet[mon_ind],
                         devmet=devmet[mon_ind],
                         dst=gcc_vs_gcc_resultsdir,
@@ -411,7 +408,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         weightsdir=config["paths"]["weights_dir"],
                         benchmark_type=bmk_type,
                         overwrite=True,
-                        spcdb_dir=spcdb_dir,
                         n_job=config["options"]["n_cores"]
                     )
 
@@ -428,9 +424,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gcc_vs_gcc_refdir,
                 gcc_vs_gcc_refrstdir,
                 int(bmk_year_ref),
+                spcdb_files,
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
             )
 
             # Dev
@@ -439,9 +435,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gcc_vs_gcc_devdir,
                 gcc_vs_gcc_devrstdir,
                 int(bmk_year_dev),
+                spcdb_files,
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -473,11 +469,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gcc_vs_gcc_refstr,
                     devpath,
                     gcc_vs_gcc_devstr,
+                    spcdb_files,
                     dst=gcc_vs_gcc_tablesdir,
                     subdst=bmk_mon_yr_strs_dev[mon],
                     label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
                     overwrite=True,
-                    spcdb_dir=spcdb_dir,
                 )
 
             # Create tables in parallel
@@ -519,6 +515,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 devs,
                 sec_per_yr_ref,
                 sec_per_yr_dev,
+                spcdb_files,
                 benchmark_type=bmk_type,
                 label=bmk_year_dev,
                 operations=[
@@ -606,6 +603,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
 
+        # GCHP vs GCC species database files
+        spcdb_files = get_species_database_files(config, "gcc", "gchp")
+
         # ==================================================================
         # GCHP vs GCC filepaths for StateMet collection data
         #
@@ -657,6 +657,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 collection=collection,
                 refmet=refmet,
                 devmet=devmet,
@@ -667,7 +668,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 restrict_cats=restrict_cats,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -681,6 +681,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_refstr,
                     dev[mon_ind],
                     gchp_vs_gcc_devstr,
+                    spcdb_files,
                     collection=collection,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
@@ -690,7 +691,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     restrict_cats=restrict_cats,
                     overwrite=True,
-                    spcdb_dir=spcdb_dir,
                     n_job=config["options"]["n_cores"]
                 )
 
@@ -729,7 +729,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_refstr,
                     dev,
                     gchp_vs_gcc_devstr,
-                    collection=collection,
+                    collection,
+                    spcdb_files,
                     devmet=devmet,
                     dst=gchp_vs_gcc_resultsdir,
                     datestr="AnnualMean",
@@ -738,7 +739,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     overwrite=True,
                     benchmark_type=bmk_type,
                     normalize_by_area=True,
-                    spcdb_dir=spcdb_dir,
                     n_job=config["options"]["n_cores"]
                 )
 
@@ -752,7 +752,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         gchp_vs_gcc_refstr,
                         dev[mon_ind],
                         gchp_vs_gcc_devstr,
-                        collection=collection,
+                        collection,
+                        spcdb_files,
                         refmet=refmet[mon_ind],
                         devmet=devmet[mon_ind],
                         dst=gchp_vs_gcc_resultsdir,
@@ -761,7 +762,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         overwrite=True,
                         benchmark_type=bmk_type,
                         normalize_by_area=True,
-                        spcdb_dir=spcdb_dir,
                         n_job=config["options"]["n_cores"]
                     )
 
@@ -777,9 +777,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gcc_refdir,
                 gchp_vs_gcc_refrstdir,
                 int(bmk_year_dev),
+                spcdb_files,
                 dst=gchp_vs_gcc_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
             )
 
             # Dev
@@ -788,12 +788,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gcc_devdir,
                 gchp_vs_gcc_devrstdir,
                 int(bmk_year_dev),
+                spcdb_files,
                 dst=gchp_vs_gcc_tablesdir,
                 is_gchp=True,
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -841,11 +841,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_refstr,
                     devpath,
                     gchp_vs_gcc_devstr,
+                    spcdb_files,
                     dst=gchp_vs_gcc_tablesdir,
                     subdst=bmk_mon_yr_strs_dev[mon],
                     label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
                     overwrite=True,
-                    spcdb_dir=spcdb_dir,
                     dev_met_extra=devareapath
                 )
 
@@ -889,6 +889,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 devs,
                 sec_per_yr_ref,
                 sec_per_yr_dev,
+                spcdb_files,
                 benchmark_type=bmk_type,
                 label=bmk_year_dev,
                 operations=[
@@ -906,6 +907,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     # Create GCHP vs GCHP benchmark plots and tables
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
+
+        # GCHP vs GCHP species database files
+        spcdb_files = get_species_database_files(config, "gchp", "gchp")
 
         # Option to specify grid resolution of comparison plots
         # This is a temporary hack until cs->cs regridding in GCPy is fixed
@@ -961,6 +965,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 collection=collection,
                 refmet=refmet,
                 devmet=devmet,
@@ -971,7 +976,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 restrict_cats=restrict_cats,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 cmpres=cmpres,
                 n_job=config["options"]["n_cores"]
             )
@@ -986,6 +990,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_refstr,
                     dev[mon_ind],
                     gchp_vs_gchp_devstr,
+                    spcdb_files,
                     collection=collection,
                     refmet=refmet[mon_ind],
                     devmet=devmet[mon_ind],
@@ -995,7 +1000,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     benchmark_type=bmk_type,
                     restrict_cats=restrict_cats,
                     overwrite=True,
-                    spcdb_dir=spcdb_dir,
                     cmpres=cmpres,
                     n_job=config["options"]["n_cores"]
                 )
@@ -1036,7 +1040,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_refstr,
                     dev,
                     gchp_vs_gchp_devstr,
-                    collection=collection,
+                    collection,
+                    spcdb_files,
                     refmet=refmet,
                     devmet=devmet,
                     dst=gchp_vs_gchp_resultsdir,
@@ -1046,7 +1051,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     overwrite=True,
                     benchmark_type=bmk_type,
                     normalize_by_area=True,
-                    spcdb_dir=spcdb_dir,
                     cmpres=cmpres,
                     n_job=config["options"]["n_cores"]
                 )
@@ -1061,7 +1065,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         gchp_vs_gchp_refstr,
                         dev[mon_ind],
                         gchp_vs_gchp_devstr,
-                        collection=collection,
+                        collection,
+                        spcdb_files,
                         refmet=refmet[mon_ind],
                         devmet=devmet[mon_ind],
                         dst=gchp_vs_gchp_resultsdir,
@@ -1070,7 +1075,6 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         overwrite=True,
                         benchmark_type=bmk_type,
                         normalize_by_area=True,
-                        spcdb_dir=spcdb_dir,
                         cmpres=cmpres,
                         n_job=config["options"]["n_cores"]
                     )
@@ -1087,12 +1091,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_refdir,
                 gchp_vs_gchp_refrstdir,
                 int(bmk_year_ref),
+                spcdb_files,
                 dst=gchp_vs_gchp_tablesdir,
                 is_gchp=True,
                 gchp_res=config["data"]["ref"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir
             )
 
             # Dev
@@ -1101,12 +1105,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 gchp_vs_gchp_devdir,
                 gchp_vs_gchp_devrstdir,
                 int(bmk_year_dev),
+                spcdb_files,
                 dst=gchp_vs_gchp_tablesdir,
                 is_gchp=True,
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir
             )
 
         # ==================================================================
@@ -1169,11 +1173,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_refstr,
                     devpath,
                     gchp_vs_gchp_devstr,
+                    spcdb_files,
                     dst=gchp_vs_gchp_tablesdir,
                     subdst=bmk_mon_yr_strs_dev[mon],
                     label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
                     overwrite=True,
-                    spcdb_dir=spcdb_dir,
                     ref_met_extra=refareapath,
                     dev_met_extra=devareapath
                 )
@@ -1219,6 +1223,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 devs,
                 sec_per_yr_ref,
                 sec_per_yr_dev,
+                spcdb_files,
                 benchmark_type=bmk_type,
                 label=bmk_year_dev,
                 operations=[
@@ -1261,11 +1266,14 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
             )
-            
+
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create mass conservations tables for GCC and GCHP
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     if config["options"]["outputs"]["cons_table"]:
+
+        # GCC vs GCC species database files
+        spcdb_files = get_species_database_files(config, "gcc", "gcc")
 
         # ===================================================================
         # Create mass conservation table for GCC vs GCC
@@ -1290,10 +1298,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 ref_datafiles,
                 config["data"]["ref"]["gcc"]["version"],
                 dev_datafiles,
+                spcdb_files,
                 config["data"]["dev"]["gcc"]["version"],
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
             )
 
         # ===================================================================
@@ -1301,6 +1309,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # ===================================================================
         if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
             print("\n%%% Creating GCHP vs GCC mass conservation tables %%%")
+
+            # GCHP vs GCC species database files
+            spcdb_files = get_species_database_files(config, "gcc", "gchp")
 
             # Filepaths
             ref_datafiles = get_filepaths(
@@ -1336,9 +1347,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 config["data"]["dev"]["gcc"]["version"],
                 dev_datafiles,
                 config["data"]["dev"]["gchp"]["version"],
+                spcdb_files,
                 dst=gchp_vs_gcc_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 dev_areapath=dev_areapath,
             )
 
@@ -1347,6 +1358,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         # =====================================================================
         if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
             print("\n%%% Creating GCHP dev mass conservation table %%%")
+
+            # GCHP vs GCHP species database files
+            spcdb_files = get_species_database_files(config, "gchp", "gchp")
 
             # Filepaths
             ref_datafiles = get_filepaths(
@@ -1393,9 +1407,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 config["data"]["ref"]["gchp"]["version"],
                 dev_datafiles,
                 config["data"]["dev"]["gchp"]["version"],
+                spcdb_files,
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 ref_areapath=ref_areapath,
                 dev_areapath=dev_areapath,
             )
