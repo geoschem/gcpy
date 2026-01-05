@@ -1012,9 +1012,9 @@ def make_benchmark_conc_plots(
     # ==================================================================
     # Initialization and data read
     # ==================================================================
-    verify_variable_type(ref, str)
+    verify_variable_type(ref, (str, list))
     verify_variable_type(refstr, str)
-    verify_variable_type(dev, str)
+    verify_variable_type(dev, (str, list))
     verify_variable_type(devstr, str)
     verify_variable_type(spcdb_files, list)
 
@@ -1729,9 +1729,9 @@ def make_benchmark_emis_plots(
     # =================================================================
     # Initialization and data read
     # =================================================================
-    verify_variable_type(ref, str)
+    verify_variable_type(ref, (str,list))
     verify_variable_type(refstr, str)
-    verify_variable_type(dev, str)
+    verify_variable_type(dev, (str,list))
     verify_variable_type(devstr, str)
     verify_variable_type(spcdb_files, list)
 
