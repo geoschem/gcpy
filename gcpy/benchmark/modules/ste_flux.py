@@ -14,8 +14,7 @@ import gc
 import numpy as np
 import pandas as pd
 import xarray as xr
-from gcpy.constants import \
-    ENCODING, SKIP_THESE_VARS
+from gcpy.constants import ENCODING, SKIP_THESE_VARS
 from gcpy.util import make_directory, replace_whitespace
 
 # Suppress harmless run-time warnings (mostly about underflow in division)
@@ -243,7 +242,7 @@ def print_ste(globvars, df):
 
         # Print header
         print("%" * 79, file=f)
-        if globvars.is_TransportTracers:
+        if globvars.is_transport_tracers:
             print(f" Table 4. Strat-trop exchange in {globvars.devstr} for year {globvars.y0_str}", file=f)
             print("          (i.e. species flux across 100 hPa)", file=f)
             print("\n Units: g/yr", file=f)
@@ -262,12 +261,16 @@ def print_ste(globvars, df):
         print(df, file=f)
 
 
-def make_benchmark_ste_table(devstr, files, year,
-                             dst='./1yr_benchmark',
-                             bmk_type="FullChemBenchmark",
-                             species=None,
-                             overwrite=True,
-                             month=None):
+def make_benchmark_ste_table(
+        devstr,
+        files,
+        year,
+        dst='./1yr_benchmark',
+        bmk_type="FullChemBenchmark",
+        species=None,
+        overwrite=True,
+        month=None
+):
     """
     Driver program.  Computes and prints strat-trop exchange for
     the selected species and benchmark year.
