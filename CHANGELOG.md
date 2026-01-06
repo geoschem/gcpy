@@ -54,6 +54,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Removed
 - Removed `PdfMerger()` from `compare_single_level` and `compare_zonal_mean`, it has been removed in pypdf >= 5.0.0
 - Removed `paths:spcdb_dir` YAML tag in benchmark configuration files
+- Removed `st_Ox` from `benchmark_categories.yml`; this species is no longer used in TransportTracers simulations
 
 ## [1.6.2] - 2025-06-12
 ### Added
