@@ -1298,8 +1298,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 ref_datafiles,
                 config["data"]["ref"]["gcc"]["version"],
                 dev_datafiles,
-                spcdb_files,
                 config["data"]["dev"]["gcc"]["version"],
+                spcdb_files,
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
             )
