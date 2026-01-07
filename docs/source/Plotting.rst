@@ -20,13 +20,16 @@ Six-panel comparison plots
 The functions listed below generate six-panel plots comparing
 variables between two datasets:
 
-+----------------------------------------+------------------------------------+
-| Plotting function                      | Located in module                  |
-+========================================+====================================+
-| :ref:`compare_single_level <plot-csl>` | ``gcpy.plot.compare_single_level`` |
-+----------------------------------------+------------------------------------+
-| :ref:`compare_zonal_mean <plot-czm>`   | ``gcpy.plot.compare_zonal_mean``   |
-+----------------------------------------+------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 50 50
+
+   * - Plotting function
+     - Located in module
+   * - :ref:`compare_single_level <plot-csl>`
+     - ``gcpy.plot.compare_single_level``
+   * - :ref:`compare_zonal_mean <plot-czm>`
+     - ``gcpy.plot.compare_zonal_mean``
 
 Both :code:`compare_single_level()` and :code:`compare_zonal_mean()`
 generate a six panel plot for each variable passed. These plots can
@@ -96,9 +99,7 @@ arguments:
            sigdiff_list=None,
            second_ref=None,
            second_dev=None,
-           spcdb_dir=os.path.dirname(__file__),
-           sg_ref_path='',
-           sg_dev_path='',
+           spcdb_files=None,
            ll_plot_func='imshow',
            **extra_plot_args
    ):
@@ -161,6 +162,10 @@ arguments:
            convert_to_ugm3: bool
                Whether to convert data units to ug/m3 for plotting.
                Default value: False
+           spcdb_files: str | list
+               A single species_database.yml file or a list of files
+               (e.g. for Ref & Dev).  Only used when convert_ugm3=True.
+               Default value: None
            flip_ref: bool
                Set this flag to True to flip the vertical dimension of
                3D variables in the Ref dataset.
@@ -206,17 +211,6 @@ arguments:
                A dataset of the same model type / grid as devdata,
                to be used in diff-of-diffs plotting.
                Default value: None
-           spcdb_dir: str
-               Directory containing species_database.yml file.
-               Default value: Path of GCPy code repository
-           sg_ref_path: str
-               Path to NetCDF file containing stretched-grid info
-               (in attributes) for the ref dataset
-               Default value: '' (will not be read in)
-           sg_dev_path: str
-               Path to NetCDF file containing stretched-grid info
-               (in attributes) for the dev dataset
-               Default value: '' (will not be read in)
            ll_plot_func: str
                Function to use for lat/lon single level plotting with
                possible values 'imshow' and 'pcolormesh'. imshow is much
@@ -227,7 +221,7 @@ arguments:
                Any extra keyword arguments are passed through the
                plotting functions to be used in calls to pcolormesh() (CS)
                or imshow() (Lat/Lon).
-   """
+       """
 
 and generates a comparison plot such as:
 
@@ -258,6 +252,7 @@ Function :code:`compare_zonal_mean`
            normalize_by_area=False,
            enforce_units=True,
            convert_to_ugm3=False,
+           spcdb_files=None,
            flip_ref=False,
            flip_dev=False,
            use_cmap_RdBu=False,
@@ -269,9 +264,6 @@ Function :code:`compare_zonal_mean`
            sigdiff_list=None,
            second_ref=None,
            second_dev=None,
-           spcdb_dir=os.path.dirname(__file__),
-           sg_ref_path='',
-           sg_dev_path='',
            ref_vert_params=None,
            dev_vert_params=None,
            **extra_plot_args
@@ -337,6 +329,10 @@ Function :code:`compare_zonal_mean`
            convert_to_ugm3: str
                Whether to convert data units to ug/m3 for plotting.
                Default value: False
+           spcdb_files: str | list
+               A single species_database.yml file or a list of files
+               (e.g. for Ref & Dev).  Only used when convert_to_ugm3=True.
+               Default value: None
            flip_ref: bool
                Set this flag to True to flip the vertical dimension of
                3D variables in the Ref dataset.
@@ -381,17 +377,6 @@ Function :code:`compare_zonal_mean`
                A dataset of the same model type / grid as devdata,
                to be used in diff-of-diffs plotting.
                Default value: None
-           spcdb_dir: str
-               Directory containing species_database.yml file.
-               Default value: Path of GCPy code repository
-           sg_ref_path: str
-               Path to NetCDF file containing stretched-grid info
-               (in attributes) for the ref dataset
-               Default value: '' (will not be read in)
-           sg_dev_path: str
-               Path to NetCDF file containing stretched-grid info
-               (in attributes) for the dev dataset
-               Default value: '' (will not be read in)
            ref_vert_params: list(AP, BP) of list-like types
                Hybrid grid parameter A in hPa and B (unitless).
                Needed if ref grid is not 47 or 72 levels.

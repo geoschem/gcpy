@@ -23,31 +23,28 @@ Location of benchmark plotting scripts
 The source code for creating benchmark plots is located in the
 :file:`gcpy/benchmark` directory tree.
 
-.. table:: **Contents of the gcpy/benchmark directory**
+.. list-table:: **Contents of the gcpy/benchmark directory**
+   :header-rows: 1
+   :widths: 25 75
 
-   +-------------------------+--------------------------------------------+
-   | File or folder          | Description                                |
-   +=========================+============================================+
-   | ``run_benchmark.py``    | Benchmark driver script                    |
-   +-------------------------+--------------------------------------------+
-   | ``benchmark_slurm.sh``  | Bash script to submit ``run_benchmark,py`` |
-   |                         | as a SLURM batch job                       |
-   +-------------------------+--------------------------------------------+
-   | ``cloud/``              | Directory containing template config files |
-   |                         | (in YAML format) for 1-hour and 1-month    |
-   |                         | benchmark plot jobs on the AWS cloud.      |
-   +-------------------------+--------------------------------------------+
-   | ``config/``             | Directory containing editable config files |
-   |                         | (in YAML format) for 1-month and 1-year    |
-   |                         | benchmark plot jobs.                       |
-   +-------------------------+--------------------------------------------+
-   | ``__init__.py``         | Python import script                       |
-   +-------------------------+--------------------------------------------+
-   | ``modules/``            | Contains Python modules imported into the  |
-   |                         | ``run_benchmark.py`` script.               |
-   +-------------------------+--------------------------------------------+
-   | ``README.md``           | Readme file in Markdown format             |
-   +-------------------------+--------------------------------------------+
+   * - File or folder
+     - Description
+   * - ``run_benchmark.py``
+     - Benchmark driver script
+   * - ``benchmark_slurm.sh``
+     - Bash script to submit ``run_benchmark.py`` as a SLURM batch job
+   * - ``cloud/``
+     - Directory containing template config files (in YAML format) for
+       1-hour and 1-month benchmark plot jobs on the AWS cloud.
+   * - ``config/``
+     - Directory containing editable config files (in YAML format) for
+       1-month and 1-year benchmark plot jobs.
+   * - ``__init__.py``
+     - Python import script
+   * - ``modules/``
+     - Contains Python modules imported into the ``run_benchmark.py`` script.
+   * - ``README.md``
+     - Readme file in Markdown format
 
 .. note::
 
@@ -86,33 +83,29 @@ tables from GEOS-Chem benchmark simulations.
 
    .. code-block:: yaml
 
-      # Configuration for 1-year FullChemBenchmark
-      #
-      # paths:
-      #   main_dir:     High-level directory containing ref & dev rundirs
-      #   results_dir:  Directory where plots/tables will be created
-      #   weights_dir:  Path to regridding weights
-      #   spcdb_dir:    Folder in which the species_database.yml file is
-      #                  located.  If set to "default", then will look for
-      #                  species_database.yml in one of the Dev rundirs.
-      #   obs_data_dir: Path to observational data (for models vs obs plots)
-      #
-      paths:
-        main_dir: /path/to/benchmark/main/dir    # EDIT AS NEEDED
-        results_dir: /path/to/BenchmarkResults   # EDIT AS NEEDED
-        weights_dir: /n/holyscratch01/external_repos/GEOS-CHEM/gcgrid/data/ExtData/GCHP/RegriddingWeights
-        spcdb_dir: default
-      #
-      # Observational data dirs are on Harvard Cannon, edit if necessary
-      #
-      obs_data:
-        ebas_o3:
-          data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/ebas_sfc_o3_2019
-          data_label: "O3 (EBAS, 2019)"
-        sondes:
-          data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
-          data_file: allozonesondes_2010-2019.csv
-          site_file: allozonesondes_site_elev.csv
+   # Configuration for 1-year FullChemBenchmark
+   #
+   # paths:
+   #   main_dir:     High-level directory containing ref & dev rundirs
+   #   results_dir:  Directory where plots/tables will be created
+   #   weights_dir:  Path to regridding weights
+   #   obs_data:     Paths to observations (for models vs. obs plots)
+   #
+   paths:
+     main_dir: /n/home09/ryantosca/T/BM/1yr/
+     results_dir: /n/home09/ryantosca/T/BM/1yr/14.7.0-rc.0/GCClassic/FullChem/BenchmarkResults
+     weights_dir: /n/holylfs06/LABS/jacob_lab/Shared/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+     #
+     # Observational data dirs are on Harvard Cannon, edit if necessary
+     #
+     obs_data:
+       ebas_o3:
+         data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/ebas_sfc_o3_2019
+         data_label: "O3 (EBAS, 2019)"
+       sondes:
+         data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
+         data_file: allozonesondes_2010-2019.csv
+         site_file: allozonesondes_site_elev.csv
 
    |br|
 
@@ -121,59 +114,67 @@ tables from GEOS-Chem benchmark simulations.
 
    .. code-block:: yaml
 
-      #
-      # data: Contains configurations for ref and dev runs
-      #   version:         Version string (must not contain spaces)
-      #   dir:             Path to run directory
-      #   outputs_subdir:  Subdirectory w/ GEOS-Chem diagnostic files
-      #   restarts_subdir: Subdirectory w/ GEOS-Chem restarts
-      #   bmk_start:       Simulation start date (YYYY-MM-DDThh:mm:ss)
-      #   bmk_end:         Simulation end date (YYYY-MM-DDThh:mm:ss)
-      #   resolution:      GCHP resolution string
-      #
-      data:
-        ref:
-          gcc:
-            version: GCC_ref
-            dir: GCC_ref
-            outputs_subdir: OutputDir
-            restarts_subdir: Restarts
-            logs_subdir: .
-            logs_template: "GC.log"
-            bmk_start: "2019-07-01T00:00:00"
-            bmk_end: "2019-08-01T00:00:00"
-          gchp:
-            version: GCHP_ref
-            dir: GCHP_ref
-            outputs_subdir: OutputDir
-            restarts_subdir: Restarts
-            logs_subdir: .
-            logs_template: "gchp.%Y%m%d_0000z.log"
-            bmk_start: "2019-07-01T00:00:00"
-            bmk_end: "2019-08-01T00:00:00"
-            is_pre_14.0: False
-            resolution: c24
-        dev:
-          gcc:
-            version: GCC_dev
-            dir: GCC_dev
-            outputs_subdir: OutputDir
-            restarts_subdir: Restarts
-            logs_subdir: .
-            logs_template: "GC.log"
-            bmk_start: "2019-07-01T00:00:00"
-            bmk_end: "2019-08-01T00:00:00"
-          gchp:
-            version: GCHP_dev
-            dir: GCHP_dev
-            outputs_subdir: OutputDir
-            restarts_subdir: Restarts
-            logs_subdir: Logs
-            logs_template: "gchp.%Y%m%d_0000z.log"
-            bmk_start: "2019-07-01T00:00:00"
-            bmk_end: "2019-08-01T00:00:00"
-            is_pre_14.0: False
-            resolution: c24
+   #
+   # data: Contains configurations for ref and dev runs
+   #   version:          Version string (must not contain spaces)
+   #   dir:              Path to run directory
+   #   species_metadata: Path to species_database.yml file (in dir)
+   #   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
+   #   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
+   #   logs_subdir:      Subdirectory w/ GEOS-Chem log files
+   #   logs_template:    Template for log file names (may include tokens)
+   #   bmk_start:        Simulation start date (YYYY-MM-DDThh:mm:ss)
+   #   bmk_end:          Simulation end date (YYYY-MM-DDThh:mm:ss)
+   #   resolution:       GCHP resolution string
+   #
+   #
+   data:
+     ref:
+       gcc:
+         version: GCC_ref
+         dir: GCC_ref
+         species_metadata: species_database.yml
+         outputs_subdir: OutputDir
+         restarts_subdir: Restarts
+         logs_subdir: Logs
+         logs_template: "log.%Y%m%d"
+         bmk_start: "2019-01-01T00:00:00"
+         bmk_end: "2020-01-01T00:00:00"
+       gchp:
+         version: GCHP_ref
+         dir: GCHP_ref
+         species_metadata: species_database.yml
+         outputs_subdir: OutputDir
+         restarts_subdir: Restarts
+         logs_subdir: Logs
+         logs_template: "gchp.%Y%m%d_0000z.log"
+         bmk_start: "2019-01-01T00:00:00"
+         bmk_end: "2020-01-01T00:00:00"
+         is_pre_14.0: False
+         resolution: c24
+     dev:
+       gcc:
+         version: GCC_dev
+         dir: GCC_dev
+         species_metadata: species_database.yml
+         outputs_subdir: OutputDir
+         restarts_subdir: Restarts
+         logs_subdir: Logs
+         logs_template: "log.%Y%m%d"
+         bmk_start: "2019-01-01T00:00:00"
+         bmk_end: "2020-01-01T00:00:00"
+       gchp:
+         version: GCHP_dev
+         dir: GCHP_dev
+         species_metadata: species_database.yml
+         outputs_subdir: OutputDir
+         restarts_subdir: Restarts
+         logs_subdir: Logs
+         logs_template: "gchp.%Y%m%d_0000z.log"
+         bmk_start: "2019-01-01T00:00:00"
+         bmk_end: "2020-01-01T00:00:00"
+         is_pre_14.0: False
+         resolution: c24
 
    |br|
 
@@ -213,22 +214,37 @@ tables from GEOS-Chem benchmark simulations.
       # outputs: Specifies the plots and tables to generate
       #
       outputs:
-        plot_conc: True
-        plot_emis: True
-        emis_table: True
-        plot_jvalues: True
+        #
+        # Benchmark plots
+        #
         plot_aod: True
-        plot_drydep: False  # Need to save out DryDep collection for 1-mo
-        mass_table: True
-        mass_accum_table: False
-        ops_budget_table: False
-        OH_metrics: True
-        ste_table: True # GCC only
-        timing_table: True
-        summary_table: True
+        plot_conc: True
+        plot_drydep: True
+        plot_emis: True
+        plot_jvalues: True
         plot_options:
           by_spc_cat: True
           by_hco_cat: True
+        #
+        # Benchmark tables
+        #
+        emis_table: True
+        mass_accum_table: False
+        mass_table: True
+        OH_metrics: True
+        ops_budget_table: False
+        sanity_check_table: True
+        ste_table: True # GCC only
+        summary_table: False
+        timing_table: False
+        #
+        # Comparison plots for selected collections
+        # (not normally used for benchmarks)
+        #
+        plot_budget: False
+        plot_2d_met: False
+        plot_3d_met: False
+        plot_uvflux: False
 
    |br|
 
@@ -257,8 +273,7 @@ tables from GEOS-Chem benchmark simulations.
 
       .. code-block:: console
 
-         (gcpy_env) $ python -m gcpy.benchmark.run_benchmark
-	 1yr_fullchem_benchmark.yml
+         (gcpy_env) $ python -m gcpy.benchmark.run_benchmark 1yr_fullchem_benchmark.yml
 
    #. Batch execution with the SLURM scheduler.  First, copy the
       :file:`benchmark_slurm.sh` script to your current directory:
@@ -278,7 +293,7 @@ tables from GEOS-Chem benchmark simulations.
          #SBATCH -c 8
          #SBATCH -N 1
          #SBATCH -t 0-4:00
-         #SBATCH -p seas_compute,shared
+         #SBATCH -p sapphire,huce_cascade,seas_compute,shared
          #SBATCH --mem=100000
          #SBATCH --mail-type=END
 
@@ -299,8 +314,11 @@ tables from GEOS-Chem benchmark simulations.
          export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
          export OMP_STACKSIZE=500m
 
+         # Use a non-interactive backend for matplotlib (we're printing to file)
+         export MPLBACKEND=agg
+
          # Turn on Python environment (edit for your setup)
-         mamba activate gcpy_env
+         conda activate gcpy_env
 
          # Specify a YAML file with benchmark options
          # Uncomment the file that you wish:
@@ -312,7 +330,7 @@ tables from GEOS-Chem benchmark simulations.
          python -m gcpy.benchmark.run_benchmark "${config}" > "${config/.yml/.log}" 2>&1
 
          # Turn off python environment
-         mamba deactivate
+         conda deactivate
 
          exit 0
 
@@ -340,43 +358,57 @@ plots from GEOS-Chem benchmark simulation output.  The functions to
 create summary tables will be described :ref:`in a separate section
 <bmk-funcs-table>`.
 
-.. note::
-
-   We are working towards moving all benchmark-related source code to
-   the :file:`gcpy/benchmark/` directory tree.  For the time being,
-   the :file:`benchmark_funcs.py` script is located in the
-   :file:`/path/to/GCPy/gcpy/` directory.
-
-.. table:: **Functions creating six-panel comparison plots**
+.. list-table:: **Functions creating six-panel comparison plots**
    :align: center
+   :header-rows: 1
+   :widths: 40 60
 
-   +-------------------------------+----------------------------------------+
-   | Function                      | Plot that it creates                   |
-   +===============================+========================================+
-   | :ref:`bmk-funcs-plot-aod`     | Aerosol optical depth                  |
-   +-------------------------------+----------------------------------------+
-   | :ref:`bmk-funcs-plot-conc`    | Species concentrations                 |
-   +-------------------------------+----------------------------------------+
-   | :ref:`bmk-funcs-plot-dryd`    | Dry deposition velocities              |
-   +-------------------------------+----------------------------------------+
-   | :ref:`bmk-funcs-plot-emis`    | Emissions (by species and catgegory)   |
-   +-------------------------------+----------------------------------------+
-   | :ref:`bmk-funcs-plot-jvalue`  | J-values (photolysis)                  |
-   +-------------------------------+----------------------------------------+
-   | :ref:`bmk-funcs-plot-wetdep`  | Wet deposition of soluble species      |
-   +-------------------------------+----------------------------------------+
+   * - Function
+     - Plot that it creates
+   * - :ref:`bmk-funcs-plot-aod`
+     - Aerosol optical depth
+   * - :ref:`bmk-funcs-plot-conc`
+     - Species concentrations
+   * - :ref:`bmk-funcs-plot-dryd`
+     - Dry deposition velocities
+   * - :ref:`bmk-funcs-plot-emis`
+     - Emissions (by species and category)
+   * - :ref:`bmk-funcs-plot-jvalue`
+     - J-values (photolysis)
+   * - :ref:`bmk-funcs-plot-wetdep`
+     - Wet deposition of soluble species
 
-.. table:: **Functions creating model vs. observation plots**
+.. list-table:: **Functions creating six-panel comparison plots**
    :align: center
+   :header-rows: 1
+   :widths: 40 60
 
-   +-----------------------------+----------------------------------------------+
-   | Function                    | Plot that it creates                         |
-   +=============================+==============================================+
-   | :ref:`bmk-funcs-plot-mvo`   | Modeled ozone vs. surface observations       |
-   +-----------------------------+----------------------------------------------+
-   | :ref:`bmk-funcs-plot-mvs`   | Vertical profiles of modeled ozone vs.       |
-   |                             | ozonesondes                                  |
-   +-----------------------------+----------------------------------------------+
+   * - Function
+     - Plot that it creates
+   * - :ref:`bmk-funcs-plot-aod`
+     - Aerosol optical depth
+   * - :ref:`bmk-funcs-plot-conc`
+     - Species concentrations
+   * - :ref:`bmk-funcs-plot-dryd`
+     - Dry deposition velocities
+   * - :ref:`bmk-funcs-plot-emis`
+     - Emissions (by species and category)
+   * - :ref:`bmk-funcs-plot-jvalue`
+     - J-values (photolysis)
+   * - :ref:`bmk-funcs-plot-wetdep`
+     - Wet deposition of soluble species
+
+.. list-table:: **Functions creating model vs. observation plots**
+   :align: center
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Function
+     - Plot that it creates
+   * - :ref:`bmk-funcs-plot-mvo`
+     - Modeled ozone vs. surface observations
+   * - :ref:`bmk-funcs-plot-mvs`
+     - Vertical profiles of modeled ozone vs. ozonesondes
 
 The functions listed above create comparison plots of most GEOS-Chem
 output variables divided into specific categories, e.g. species
@@ -415,6 +447,7 @@ diagnostic output.
            refstr,
            dev,
            devstr,
+           spcdb_files,
            varlist=None,
            dst="./benchmark",
            subdst=None,
@@ -426,7 +459,6 @@ diagnostic output.
            weightsdir='.',
            n_job=-1,
            time_mean=False,
-           spcdb_dir=os.path.dirname(__file__)
    ):
        """
        Creates PDF files containing plots of column aerosol optical
@@ -443,6 +475,8 @@ diagnostic output.
                data set.
            devstr: str
                A string to describe dev (e.g. version number)
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            varlist: list of str
@@ -490,9 +524,6 @@ diagnostic output.
                Set to 1 to disable parallel plotting. Value of -1 allows the
                application to decide.
                Default value: -1
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
            time_mean : bool
                Determines if we should average the datasets over time
                Default value: False
@@ -535,6 +566,7 @@ diagnostic output by default.  In particular:
            refstr,
            dev,
            devstr,
+           spcdb_files,
            dst="./benchmark",
            subdst=None,
            overwrite=False,
@@ -558,7 +590,6 @@ diagnostic output by default.  In particular:
            second_ref=None,
            second_dev=None,
            time_mean=False,
-           spcdb_dir=os.path.dirname(__file__)
    ):
        """
        Creates PDF files containing plots of species concentration
@@ -575,6 +606,8 @@ diagnostic output by default.  In particular:
                data set.
            devstr: str
                A string to describe dev (e.g. version number)
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            dst: str
@@ -660,9 +693,6 @@ diagnostic output by default.  In particular:
                diff-of-diffs plotting. This dataset should have the same model
                type and grid as ref.
                Default value: None
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
            time_mean : bool
                Determines if we should average the datasets over time
                Default value: False
@@ -685,6 +715,7 @@ Generates plots of dry deposition velocities using the GEOS-Chem
            refstr,
            dev,
            devstr,
+           spcdb_files,
            collection="DryDep",
            dst="./benchmark",
            subdst=None,
@@ -697,7 +728,6 @@ Generates plots of dry deposition velocities using the GEOS-Chem
            n_job=-1,
            time_mean=False,
            varlist=None,
-           spcdb_dir=os.path.join(os.path.dirname(__file__), "..", "..")
    ):
        """
        Creates six-panel comparison plots (PDF format) from GEOS-Chem
@@ -715,6 +745,8 @@ Generates plots of dry deposition velocities using the GEOS-Chem
                data set.
            devstr: str
                A string to describe dev (e.g. version number)
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            collection : str
@@ -746,9 +778,6 @@ Generates plots of dry deposition velocities using the GEOS-Chem
                Set to 1 to disable parallel plotting. Value of -1 allows the
                application to decide.
                Default value: -1
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
            time_mean : bool
                Determines if we should average the datasets over time
                Default value: False
@@ -775,6 +804,7 @@ Generates plots of total emissions using output from
            refstr,
            dev,
            devstr,
+           spcdb_files,
            dst="./benchmark",
            subdst=None,
            plot_by_spc_cat=False,
@@ -790,7 +820,6 @@ Generates plots of total emissions using output from
            weightsdir='.',
            n_job=-1,
            time_mean=False,
-           spcdb_dir=os.path.dirname(__file__)
    ):
        """
        Creates PDF files containing plots of emissions for model
@@ -809,6 +838,8 @@ Generates plots of total emissions using output from
                data set.
            devstr: str
                A string to describe dev (e.g. version number)
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            dst: str
@@ -825,7 +856,7 @@ Generates plots of total emissions using output from
                Set this flag to True to separate plots into PDF files
                according to the benchmark species categories (e.g. Oxidants,
                Aerosols, Nitrogen, etc.)  These categories are specified
-               in the YAML file benchmark_species.yml.
+               in the YAML file benchmark_categories.yml.
                Default value: False
            plot_by_hco_cat: bool
                Set this flag to True to separate plots into PDF files
@@ -874,9 +905,6 @@ Generates plots of total emissions using output from
                Set to 1 to disable parallel plotting.
                Value of -1 allows the application to decide.
                Default value: -1
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
            time_mean : bool
                Determines if we should average the datasets over time
                Default value: False
@@ -888,8 +916,7 @@ Generates plots of total emissions using output from
 
            (2) Emissions that are 3-dimensional will be plotted as
                column sums.
-              column sums.
-   """
+       """
 
 .. _bmk-funcs-plot-jvalue:
 
@@ -908,6 +935,7 @@ diagnostic output.
            refstr,
            dev,
            devstr,
+           spcdb_files,
            varlist=None,
            dst="./benchmark",
            subdst=None,
@@ -923,7 +951,6 @@ diagnostic output.
            weightsdir='.',
            n_job=-1,
            time_mean=False,
-           spcdb_dir=os.path.dirname(__file__)
    ):
        """
        Creates PDF files containing plots of J-values for model
@@ -940,6 +967,8 @@ diagnostic output.
                data set.
            devstr: str
                A string to describe dev (e.g. version number)
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            varlist: list of str
@@ -1007,9 +1036,6 @@ diagnostic output.
                Set to 1 to disable parallel plotting. Value of -1 allows the
                application to decide.
                Default value: -1
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
            time_mean : bool
                Determines if we should average the datasets over time
                Default value: False
@@ -1052,6 +1078,7 @@ plotting values for the following species as defined in
            dev,
            devstr,
            collection,
+           spcdb_files,
            dst="./benchmark",
            cmpres=None,
            datestr=None,
@@ -1067,7 +1094,6 @@ plotting values for the following species as defined in
            weightsdir='.',
            n_job=-1,
            time_mean=False,
-           spcdb_dir=os.path.dirname(__file__)
    ):
        """
        Creates PDF files containing plots of species concentration
@@ -1086,6 +1112,8 @@ plotting values for the following species as defined in
                A string to describe dev (e.g. version number)
            collection: str
                String name of collection to plot comparisons for.
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            dst: str
@@ -1129,9 +1157,6 @@ plotting values for the following species as defined in
                Set to 1 to disable parallel plotting. Value of -1 allows the
                application to decide.
                Default value: -1
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
            time_mean : bool
                Determines if we should average the datasets over time
                Default value: False
@@ -1238,34 +1263,35 @@ observations.
 Benchmark tabling functions
 ===========================
 
-.. table:: **Functions creating summary tables**
+.. list-table:: **Functions creating summary tables**
    :align: center
+   :header-rows: 1
+   :widths: 40 60
 
-   +--------------------------------------+------------------------------------------------+
-   | Function                             | Table that it creates                          |
-   +======================================+================================================+
-   | :ref:`bmk-funcs-table-oxbdg`         | Ox budget (1yr benchmarks only)                |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-aer`           | Global aerosol burdens (1yr benchmarks only)   |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-emis`          | Emissions (by species & inventory)             |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-gcc-timers`    | GEOS-Chem Classic timers output                |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-gchp-timers`   | GCHP timers output                             |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-mass`          | Total mass of each species                     |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-accum`         | Mass accumulation for each species             |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-cons`          | Timeseries of the PassiveTracer species        |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-oh`            | Global OH metrics                              |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-ops`           | Species mass after each operation              |
-   +--------------------------------------+------------------------------------------------+
-   | :ref:`bmk-funcs-table-ttbdg`         | Rn222, Pb210, Be7 budgets (1yr benchmarks only |
-   +--------------------------------------+------------------------------------------------+
+   * - Function
+     - Table that it creates
+   * - :ref:`bmk-funcs-table-oxbdg`
+     - Ox budget (1yr benchmarks only)
+   * - :ref:`bmk-funcs-table-aer`
+     - Global aerosol burdens (1yr benchmarks only)
+   * - :ref:`bmk-funcs-table-emis`
+     - Emissions (by species & inventory)
+   * - :ref:`bmk-funcs-table-gcc-timers`
+     - GEOS-Chem Classic timers output
+   * - :ref:`bmk-funcs-table-gchp-timers`
+     - GCHP timers output
+   * - :ref:`bmk-funcs-table-mass`
+     - Total mass of each species
+   * - :ref:`bmk-funcs-table-accum`
+     - Mass accumulation for each species
+   * - :ref:`bmk-funcs-table-cons`
+     - Timeseries of the PassiveTracer species
+   * - :ref:`bmk-funcs-table-oh`
+     - Global OH metrics
+   * - :ref:`bmk-funcs-table-ops`
+     - Species mass after each operation
+   * - :ref:`bmk-funcs-table-ttbdg`
+     - Rn222, Pb210, Be7 budgets (1yr benchmarks only)
 
 The functions listed above create summary tables for quantities such as
 total mass of species, total mass of emissions, and OH metrics.
@@ -1292,44 +1318,30 @@ full-chemistry benchmark output.
            devdir,
            devrstdir,
            year,
+           spcdb_file,
            dst='./1yr_benchmark',
            overwrite=True,
-           spcdb_dir=None,
            is_gchp=False,
            gchp_res="c24",
            gchp_is_pre_14_0=False
    ):
        """
-       Main program to compute Ox budgets
+       Main program to compute Ox budgets from GEOS-Chem Classic or
+       GCHP benchmark simulations.
 
-       Arguments:
-           maindir: str
-               Top-level benchmark folder
-           devstr: str
-               Denotes the "Dev" benchmark version.
-           year: int
-               The year of the benchmark simulation (e.g. 2016).
+       Args
+       devstr           : str  : Label for the Dev version
+       devdir           : str  : Path to the Dev data directory
+       devrstdir        : str  : Path to the Dev restart file directory
+       year             : int  : Year of the benchmark simulation
+       spcdb_file       : str  : Path to the Dev species_database.yml file
 
-       Keyword Args (optional):
-           dst: str
-               Directory where budget tables will be created.
-               Default value: './1yr_benchmark'
-           overwrite: bool
-               Denotes whether to ovewrite existing budget tables.
-               Default value: True
-           spcdb_dir: str
-               Directory where species_database.yml is stored.
-               Default value: GCPy directory
-           is_gchp: bool
-               Denotes if data is from GCHP (True) or GCC (false).
-               Default value: False
-           gchp_res: str
-               GCHP resolution string (e.g. "c24", "c48", etc.)
-               Default value: None
-           gchp_is_pre_14_0: bool
-               Denotes if the version is prior to GCHP 14.0.0 (True)
-               or not (False).
-               Default value: False
+       Keyword Args
+       dst              : str  : Directory where tables will be written
+       overwrite        : bool : Should existing tables should be overwritten?
+       is_gchp          : bool : Is Dev from a GCHP benchmark simulation?
+       gchp_res         : str  : GCHP resolution string (e.g. "c24")
+       gchp_is_pre_14_0 : bool : Is Dev from a GCHP version prior to 14.0.0?
        """
 
 .. _bmk-funcs-table-aer:
@@ -1352,10 +1364,10 @@ Generates a table of global aerosol budgets and burdens from GEOS-Chem
            devstr,
            year,
            days_per_mon,
+           spcdb_files,
            dst='./benchmark',
            overwrite=False,
            is_gchp=False,
-           spcdb_dir=os.path.dirname(__file__)
    ):
        """
        Compute FullChemBenchmark aerosol budgets & burdens
@@ -1375,6 +1387,8 @@ Generates a table of global aerosol budgets and burdens from GEOS-Chem
                The year of the benchmark simulation (e.g. '2016').
            days_per_month: list of int
                List of number of days per month for all months
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            dst: str
@@ -1386,9 +1400,6 @@ Generates a table of global aerosol budgets and burdens from GEOS-Chem
            is_gchp: bool
                Whether datasets are for GCHP
                Default value: False
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
 
        """
 
@@ -1409,6 +1420,7 @@ the :literal:`HEMCO_diagnostics*` outputs.
            refstr,
            devlist,
            devstr,
+           spcdb_files,
            dst="./benchmark",
            benchmark_type="FullChemBenchmark",
            refmet=None,
@@ -1416,7 +1428,6 @@ the :literal:`HEMCO_diagnostics*` outputs.
            overwrite=False,
            ref_interval=[2678400.0],
            dev_interval=[2678400.0],
-           spcdb_dir=os.path.dirname(__file__)
    ):
        """
        Creates a text file containing emission totals by species and
@@ -1435,6 +1446,8 @@ the :literal:`HEMCO_diagnostics*` outputs.
                 (aka "Development") data set
            devstr: str
                A string to describe dev (e.g. version number)
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            dst: str
@@ -1465,9 +1478,6 @@ the :literal:`HEMCO_diagnostics*` outputs.
                is set to [2678400.0], which is the number of seconds in July
                (our 1-month benchmarking month).
                Default value: [2678400.0]
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
 
        """
 
@@ -1563,13 +1573,13 @@ using the GEOS-Chem restart file output.
            refstr,
            dev,
            devstr,
+           spcdb_files,
            varlist=None,
            dst="./benchmark",
            subdst=None,
            overwrite=False,
            verbose=False,
            label="at end of simulation",
-           spcdb_dir=os.path.dirname(__file__),
            ref_met_extra=None,
            dev_met_extra=None
    ):
@@ -1589,6 +1599,8 @@ using the GEOS-Chem restart file output.
                data set will be compared against the "Ref" data set.
            devstr: str
                A string to describe dev (e.g. version number)
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            varlist: list of str
@@ -1616,9 +1628,6 @@ using the GEOS-Chem restart file output.
            verbose: bool
                Set this flag to True to print extra informational output.
                Default value: False.
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
            ref_met_extra: str
                Path to ref Met file containing area data for use with restart files
                which do not contain the Area variable.
@@ -1642,80 +1651,79 @@ GEOS-Chem restart files.
 
 .. code-block:: python
 
-   def create_mass_accumulation_table(
-           refdatastart,
-           refdataend,
+   def make_benchmark_mass_accumulation_tables(
+           ref_start,
+           ref_end,
            refstr,
            refperiodstr,
-           devdatastart,
-           devdataend,
+           dev_start,
+           dev_end,
            devstr,
            devperiodstr,
-           varlist,
-           met_and_masks,
-           label,
-           trop_only=False,
-           outfilename="GlobalMassAccum_TropStrat.txt",
+           spcdb_files,
+           varlist=None,
+           dst="./benchmark",
+           subdst=None,
+           overwrite=False,
            verbose=False,
-           spcdb_dir=os.path.dirname(__file__)
+           label="at end of simulation",
    ):
        """
-       Creates a table of global mass accumulation for a list of species in
-       two data sets.  The data sets, which typically represent output from two
-       different model versions, are usually contained in netCDF data files.
+       Creates a text file containing global mass totals by species and
+       category for benchmarking purposes.
 
        Args:
-           refdatastart: xarray Dataset
-               The first data set to be compared (aka "Reference").
-           refdataend: xarray Dataset
-               The first data set to be compared (aka "Reference").
+           ref_start: list of str
+               Pathname that will constitute
+               the "Ref" (aka "Reference") data set.
+           ref_end: list of str
+               Pathname that will constitute
+               the "Ref" (aka "Reference") data set.
            refstr: str
-               A string that can be used to identify refdata
-               (e.g. a model version number or other identifier).
+               A string to describe ref (e.g. version number)
            refperiodstr: str
                Ref simulation period start and end
-           devdatastart: xarray Dataset
-               The second data set to be compared (aka "Development").
-           devdataend: xarray Dataset
-               The second data set to be compared (aka "Development").
+           dev_start: list of str
+               Pathname that will constitute
+               the "Dev" (aka "Development") data set.  The "Dev"
+               data set will be compared against the "Ref" data set.
+           dev_end: list of str
+               Pathname that will constitute
+               the "Dev" (aka "Development") data set.  The "Dev"
+               data set will be compared against the "Ref" data set.
            devstr: str
-               A string that can be used to identify the data set specified
-               by devfile (e.g. a model version number or other identifier).
+               A string to describe dev (e.g. version number)
            devperiodstr: str
-               Ref simulation period start and end
-           varlist: list of strings
-               List of species concentation variable names to include
-               in the list of global totals.
-           met_and_masks: dict of xarray DataArray
-               Dictionary containing the meterological variables and
-               masks for the Ref and Dev datasets.
-           label: str
-               Label to go in the header string.  Can be used to
-               pass the month & year.
+               Dev simulation period start and end
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
-           trop_only: bool
-               Set this switch to True if you wish to print totals
-               only for the troposphere.
-               Default value: False (i.e. print whole-atmosphere totals).
-           outfilename: str
-               Name of the text file which will contain the table of
-               emissions totals.
-               Default value: "GlobalMass_TropStrat.txt"
-           verbose: bool
-               Set this switch to True if you wish to print out extra
-               informational messages.
+           varlist: list of str
+               List of variables to include in the list of totals.
+               If omitted, then all variables that are found in either
+               "Ref" or "Dev" will be included.  The varlist argument
+               can be a useful way of reducing the number of
+               variables during debugging and testing.
+               Default value: None
+           dst: str
+               A string denoting the destination folder where the file
+               containing emissions totals will be written.
+               Default value: ./benchmark
+           subdst: str
+               A string denoting the sub-directory of dst where PDF
+               files containing plots will be written.  In practice,
+               subdst is only needed for the 1-year benchmark output,
+               and denotes a date string (such as "Jan2016") that
+               corresponds to the month that is being plotted.
+               Default value: None
+           overwrite: bool
+               Set this flag to True to overwrite files in the
+               destination folder (specified by the dst argument).
                Default value: False
-           spcdb_dir: str
-               Directory of species_datbase.yml file
-               Default value: Directory of GCPy code repository
-
-       Remarks:
-           This method is mainly intended for model benchmarking purposes,
-           rather than as a general-purpose tool.
-
-           Species properties (such as molecular weights) are read from a
-           YAML file called "species_database.yml".
+           verbose: bool
+               Set this flag to True to print extra informational output.
+               Default value: False.
        """
 
 .. _bmk-funcs-table-cons:
@@ -1733,47 +1741,30 @@ check for mass conservation in GEOS-Chem Classic and GCHP.
 .. code-block:: python
 
    def make_benchmark_mass_conservation_table(
-           datafiles,
-           runstr,
+           ref_files,
+           ref_label,
+           dev_files,
+           dev_label,
+           spcdb_files,
            dst="./benchmark",
            overwrite=False,
-           areapath=None,
-           spcdb_dir=os.path.dirname(__file__)
+           ref_areapath=None,
+           dev_areapath=None,
    ):
        """
-       Creates a text file containing global mass of the PassiveTracer
-       from Transport Tracer simulations across a series of restart files.
+       Creates a text file containing global mass of passive species
+       contained in GEOS-Chem Classic and/or GCHP restart files.
 
-       Args:
-           datafiles: list of str
-               Path names of restart files.
-           runstr: str
-               Name to put in the filename and header of the output file
-           refstr: str
-               A string to describe ref (e.g. version number)
-           dev: str
-               Path name of "Dev" (aka "Development") data set file.
-               The "Dev" data set will be compared against the "Ref" data set.
-           devmet: list of str
-               Path name of dev meteorology data set.
-           devstr: str
-               A string to describe dev (e.g. version number)
-
-       Keyword Args (optional):
-           dst: str
-               A string denoting the destination folder where the file
-               containing emissions totals will be written.
-               Default value: "./benchmark"
-           overwrite: bool
-               Set this flag to True to overwrite files in the
-               destination folder (specified by the dst argument).
-               Default value: False
-           areapath: str
-               Path to a restart file containing surface area data.
-               Default value: None
-           spcdb_dir: str
-               Path to the species_database.yml
-               Default value: points to gcpy/gcpy folder
+       Args
+       ref_files    : list|str : List of files from the Ref model
+       ref_label    : str      : Ref version label
+       dev_files    : list|str : List of files from the Dev model
+       dev_label    : str      : Dev version label
+       spcdb_files  : list     : Paths to Ref & Dev species_database.yml files
+       dst          : str      : Destination folder for file output
+       overwrite    : bool     : Overwrite pre-existing files?
+       ref_areapath : list|str : Path to file w/ Ref area data (optional)
+       dev_areapath : list|str : Path to file w/ Dev area data (optional)
        """
 
 .. _bmk-funcs-table-oh:
@@ -1791,42 +1782,27 @@ methyl chloroform lifetime, CH4 lifetime) from the GEOS-Chem
 
    def make_benchmark_oh_metrics(
            ref,
-           refmet,
            refstr,
            dev,
-           devmet,
            devstr,
+           spcdb_files,
            dst="./benchmark",
-           overwrite=False,
+           overwrite=True,
    ):
        """
        Creates a text file containing metrics of global mean OH, MCF lifetime,
        and CH4 lifetime for benchmarking purposes.
 
-       Args:
-           ref: str
-               Path name of "Ref" (aka "Reference") data set file.
-           refmet: str
-               Path name of ref meteorology data set.
-           refstr: str
-               A string to describe ref (e.g. version number)
-           dev: str
-               Path name of "Dev" (aka "Development") data set file.
-               The "Dev" data set will be compared against the "Ref" data set.
-           devmet: list of str
-               Path name of dev meteorology data set.
-           devstr: str
-               A string to describe dev (e.g. version number)
+       Args
+       ref         : str  : Path name of "Ref" (aka "Reference") data file
+       refstr      : str  : Label to describe Ref
+       dev         : str  : Path name of "Dev" (aka "Development") data file
+       devstr      : str  : Label to describe Dev
+       spcdb_files : list : Paths to Ref & Dev species_database.yml files
 
-       Keyword Args (optional):
-           dst: str
-               A string denoting the destination folder where the file
-               containing emissions totals will be written.
-               Default value: "./benchmark"
-           overwrite: bool
-               Set this flag to True to overwrite files in the
-               destination folder (specified by the dst argument).
-               Default value: False
+       Keyword Args
+       dst         : str  : Folder where OH Metrics output will be written
+       overwrite   : bool : Overwrite previously-generated files? (T/F)
        """
 
 .. _bmk-funcs-table-ops:
@@ -1849,13 +1825,12 @@ simulations.
            devfiles,
            ref_interval,
            dev_interval,
+           spcdb_files,
            benchmark_type=None,
            label=None,
-           col_sections=["Full", "Trop", "PBL", "Strat"],
-           operations=[
-		"Chemistry", "Convection", "EmisDryDep",
-                "Mixing", "Transport", "WetDep"
-	   ],
+           col_sections=["Full", "Trop", "PBL", "FixedLevs", "Strat"],
+           operations=["Chemistry", "Convection", "EmisDryDep",
+                       "Mixing", "Transport", "WetDep"],
            compute_accum=True,
            compute_restart=False,
            require_overlap=False,
@@ -1863,7 +1838,6 @@ simulations.
            species=None,
            overwrite=True,
            verbose=False,
-           spcdb_dir=os.path.dirname(__file__)
    ):
        """
        Prints the "operations budget" (i.e. change in mass after
@@ -1880,6 +1854,8 @@ simulations.
                Lists of files to read from "Dev" version.
            interval: float
                Number of seconds in the diagnostic interval.
+           spcdb_files : list
+               Paths to species_database.yml files in Ref & Dev rundirs
 
        Keyword Args (optional):
            benchmark_type: str
@@ -1893,7 +1869,7 @@ simulations.
                List of column sections to calculate global budgets for. May
                include Strat eventhough not calculated in GEOS-Chem, but Full
                and Trop must also be present to calculate Strat.
-               Default value: ["Full", "Trop", "PBL", "Strat"]
+               Default value: ["Full", "Trop", "PBL", "FixedLevs", "Strat"]
            operations: list of str
                List of operations to calculate global budgets for. Accumulation
                should not be included. It will automatically be calculated if
@@ -1952,12 +1928,16 @@ GEOS-Chem benchmark simulation output.
 
 .. code-block:: python
 
-   def make_benchmark_ste_table(devstr, files, year,
-                                dst='./1yr_benchmark',
-                                bmk_type="FullChemBenchmark",
-                                species=["O3"],
-                                overwrite=True,
-                                month=None):
+   def make_benchmark_ste_table(
+           devstr,
+           files,
+           year,
+           dst='./1yr_benchmark',
+           bmk_type="FullChemBenchmark",
+           species=None,
+           overwrite=True,
+           month=None
+   ):
        """
        Driver program.  Computes and prints strat-trop exchange for
        the selected species and benchmark year.
@@ -2001,41 +1981,28 @@ TransportTracers benchmark output.
            devdir,
            devrstdir,
            year,
+           spcdb_file,
            dst='./1yr_benchmark',
            is_gchp=False,
            gchp_res="c00",
            gchp_is_pre_14_0=False,
            overwrite=True,
-           spcdb_dir=os.path.dirname(__file__)):
+   ):
        """
-       Main program to compute TransportTracersBenchmark budgets
+       Main program to compute TransportTracers budgets from
+       GEOS-Chem Classic or GCHP benchmark simulations.
 
-       Args:
-           maindir: str
-               Top-level benchmark folder
-           devstr: str
-               Denotes the "Dev" benchmark version.
-           year: int
-               The year of the benchmark simulation (e.g. 2016).
+       Args
+       devstr           : str  : Label for the Dev version
+       devdir           : str  : Path to the Dev data directory
+       devrstdir        : str  : Path to the Dev restart file directory
+       year             : int  : Year of the benchmark simulation
+       spcdb_file       : str  : Path to the Dev species_database.yml file
 
-       Keyword Args (optional):
-           dst: str
-               Directory where budget tables will be created.
-               Default value: './1yr_benchmark'
-           is_gchp: bool
-               Denotes if data is from GCHP (True) or GCC (false).
-               Default value: False
-           gchp_res: str
-               A string (e.g. "c24") denoting GCHP grid resolution.
-               Default value: "c00".
-           gchp_is_pre_14_0: bool
-               Logical to indicate whether or not the GCHP data is prior
-               to GCHP 14.0.0.  Needed for restart files only.
-               Default value: False
-           overwrite: bool
-               Denotes whether to ovewrite existing budget tables.
-               Default value: True
-           spcdb_dir: str
-               Directory where species_database.yml is stored.
-               Default value: GCPy directory
+       Keyword Args
+       dst              : str  : Directory where tables will be written
+       overwrite        : bool : Should existing tables should be overwritten?
+       is_gchp          : bool : Is Dev from a GCHP benchmark simulation?
+       gchp_res         : str  : GCHP resolution string (e.g. "c24")
+       gchp_is_pre_14_0 : bool : Is Dev from a GCHP version prior to 14.0.0?
        """
