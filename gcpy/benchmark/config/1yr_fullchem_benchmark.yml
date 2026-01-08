@@ -138,15 +138,18 @@ options:
     plot_drydep: True
     plot_emis: True
     plot_jvalues: True
+    plot_models_vs_obs: True
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
     #
     # Benchmark tables
     #
+    aer_budget_table: True
     emis_table: True
     mass_accum_table: False
     mass_table: True
+    Ox_budget_table: True
     OH_metrics: True
     ops_budget_table: False
     sanity_check_table: True
