@@ -4628,7 +4628,7 @@ def make_benchmark_aerosol_tables(
     # Molecular weights [g mol-1], as taken from the species database
     mw = {}
     for v in species_list:
-        mw[v] = spcdb[v]["MW_g"]
+        mw[v] = properties[v]["MW_g"]
     mw["Air"] = MW_AIR_g
 
     # Get the list of relevant AOD diagnostics from a YAML file
