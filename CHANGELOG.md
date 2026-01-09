@@ -44,12 +44,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Replaced `get_species_database_dir` with `get_species_database_files` in `gcpy/benchmark/modules/benchmark_funcs.py`
 - Replaced `spcdb_dir` YAML tag with directory-specific `species_metadata` tags to specify paths to `species_database.yml` files
 - Updated `gcpy/benchmark/modules/benchmark_scrape_gchp_timers.py` to look for GCHP timers in `allPEs.log` if not found in the log file
+- Updated routine `make_benchmark_aerosol_tables` to include all dust species in the aerosol burdens table
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
 - Fixed various security issues in GitHub Actions workflows
 - Fixed colorbar bounds for case of comparing cubed-sphere grids
 - Fixed the restart regridding for stretched GCHP when target lat/lon is exactly 0.0 in `gcpy/regrid_restart_file.py`
+- Fixed computation of the global AOD benchmark table caused by hardwired species names
 
 ### Removed
 - Removed `PdfMerger()` from `compare_single_level` and `compare_zonal_mean`, it has been removed in pypdf >= 5.0.0

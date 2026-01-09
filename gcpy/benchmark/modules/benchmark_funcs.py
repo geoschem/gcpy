@@ -4618,18 +4618,16 @@ def make_benchmark_aerosol_tables(
     make_directory(dst, overwrite)
 
     # List of species (and subsets for the trop & strat)
-    species_list = ["BCPI", "OCPI", "SO4", "DST1", "SALA", "SALC"]
+    species_list = [
+        "BCPI", "OCPI", "SO4", "DST1", "DST2", "DST3", "DST4",
+        "DSTbin1", "DSTbin2", "DSTbin3", "DSTbin4", "DSTbin5",
+        "DSTbin6", "DSTbin7", "SALA", "SALC"
+    ]
 
     # Read the species database files in the Ref & Dev rundirs, and
     # return a dict containing metadata for the union of species.
     # We'll need properties such as mol. wt. for unit conversions, etc.
     properties = read_species_metadata(spcdb_files, quiet=True)
-
-    # Molecular weights [g mol-1], as taken from the species database
-    mw = {}
-    for v in species_list:
-        mw[v] = properties[v]["MW_g"]
-    mw["Air"] = MW_AIR_g
 
     # Get the list of relevant AOD diagnostics from a YAML file
     ifile= AOD_SPC
@@ -4640,25 +4638,9 @@ def make_benchmark_aerosol_tables(
         ),
         quiet=True
     )
-
-    aod_list = [v for v in aod.keys() if "Dust" in v or "Hyg" in v]
-    # different names for GCHP
-    if is_gchp:
-        aod_list = [v.replace('550nm', 'WL1') for v in aod_list]
-    # Descriptive names
-    spc2name = {"BCPI": "Black Carbon",
-                "DST1": "Dust",
-                "OCPI": "Organic Carbon",
-                "SO4": "Sulfate",
-                "SALA": "Sea Salt (accum)",
-                "SALC": "Sea Salt (coarse)"
-                }
-
     ds_aer = xr.open_mfdataset(
         devlist_aero,
-        data_vars=aod_list,
-        compat='override',
-        coords='all'
+        drop_variables=SKIP_THESE_VARS
     )
     ds_spc = xr.open_mfdataset(
         devlist_spc,
@@ -4673,16 +4655,29 @@ def make_benchmark_aerosol_tables(
     # naming introduced in GEOS-Chem 14.1.0
     ds_spc = rename_speciesconc_to_speciesconcvv(ds_spc)
 
+    # Trim species_list to the variables that are only in the dataset
+    varlist = [
+        var for var in species_list if f"SpeciesConcVV_{var}" in ds_spc.data_vars
+    ]
+
+    # Molecular weights [g mol-1], as taken from the species database
+    mw = {}
+    full_names = {}
+    for var in varlist:
+        full_names[var] = properties[var]["FullName"].strip()
+        mw[var] = properties[var]["MW_g"]
+    mw["Air"] = MW_AIR_g
+
     # Get troposphere mask
     tropmask = get_troposphere_mask(ds_met)
 
     # Get number of months
     n_mon = len(days_per_mon)
 
-    # --------------------------------
+    # ------------------------------------------------------------------
     # Surface area
     # (kludgey but it works - revisit this)
-    # --------------------------------
+    # ------------------------------------------------------------------
 
     # Get number of vertical levels
     N_LEVS = ds_spc.dims["lev"]
@@ -4704,41 +4699,43 @@ def make_benchmark_aerosol_tables(
                 area_m2[t, k, :, :] = area[t, :, :]
         total_area_m2 = np.sum(area_m2[0, 0, :, :])
 
-    # ------------------------------
+    # ------------------------------------------------------------------
     # Conversion factors and time increments
-    # ------------------------------
+    # ------------------------------------------------------------------
     # v/v dry --> Tg
     vv_to_Tg = {}
-    for spc in species_list:
-        vv_to_Tg[spc] = ds_met["Met_AD"].values * (mw[spc] / mw["Air"]) * 1e-9
+    for var in varlist:
+        if f"SpeciesConcVV_{var}" in ds_spc.data_vars:
+            vv_to_Tg[var] = \
+                ds_met["Met_AD"].values * (mw[var] / mw["Air"]) * 1e-9
 
     # Days in the benchmark duration
     days_per_yr = np.sum(days_per_mon)
 
-    # ------------------------------
+    # ------------------------------------------------------------------
     # Define function to print tables
-    # ------------------------------
-    def print_aerosol_metrics(data, species_list, filename, title, label):
+    # ------------------------------------------------------------------
+    def print_aerosol_metrics(data, varlist, namelist, filename, title, label):
 
-        with open(filename, "w+", encoding=ENCODING) as f:
+        with open(filename, "w+", encoding=ENCODING) as ofile:
 
             # Print top header
-            print("%" * 79, file=f)
-            print(f" {title} for {year} in {devstr}", file=f)
-            print(" (weighted by the number of days per month)", file=f)
-            print("%" * 79, file=f)
-            line = "\n" + " " * 40 + "Strat         Trop         Strat+Trop\n"
-            line += " " * 40 + "-----------   ----------   ----------"
-            print(line, file=f)
+            print("%" * 79, file=ofile)
+            print(f" {title} for {year} in {devstr}", file=ofile)
+            print(" (weighted by the number of days per month)", file=ofile)
+            print("%" * 79, file=ofile)
+            line = "\n" + " " *67 + "Strat         Trop         Strat+Trop\n"
+            line += " " * 67 + "-----------   ----------   ----------"
+            print(line, file=ofile)
 
             # Print data
-            for spc in species_list:
-                line = f"{spc2name[spc] : <17} ({spc : <4}) {label} :  {data[spc + '_s']:11.9f}   {data[spc + '_t']:10.8f}   {data[spc + '_f']:10.8f}\n"
-                print(line, file=f)
+            for var in varlist:
+                line = f"{namelist[var] : <41} ({var : <7}) {label} :  {data[var + '_s']:11.9f}   {data[var + '_t']:10.8f}   {data[var + '_f']:10.8f}\n"
+                print(line, file=ofile)
 
-    # --------------------------------------
+    # ------------------------------------------------------------------
     # Compute aerosol burdens [Tg] and print
-    # --------------------------------------
+    # ------------------------------------------------------------------
 
     # Table info
     filename = f"{dst}/Aerosol_Burdens.txt"
@@ -4762,29 +4759,50 @@ def make_benchmark_aerosol_tables(
         sum_axes = (1, 2, 3)
 
     # Loop over species
-    for spc in species_list:
+    for var in varlist:
 
         # Whole-atmosphere and trop-only quantities [g]
         # NOTE: DryDep is by nature trop-only
-        varname = "SpeciesConcVV_" + spc
-        q[spc + "_f"] = ds_spc[varname].values * vv_to_Tg[spc]
-        q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
+        varname = f"SpeciesConcVV_{var}"
+        q[var + "_f"] = ds_spc[varname].values * vv_to_Tg[var]
+        q[var + "_t"] = np.ma.masked_array(q[var + "_f"], tropmask)
 
         # Compute monthly sums, weighted by the number of days per month
-        q_sum_f = np.sum(q[spc + "_f"], axis=sum_axes) * days_per_mon
-        q_sum_t = np.sum(q[spc + "_t"], axis=sum_axes) * days_per_mon
+        q_sum_f = np.sum(q[var + "_f"], axis=sum_axes) * days_per_mon
+        q_sum_t = np.sum(q[var + "_t"], axis=sum_axes) * days_per_mon
         q_sum_s = q_sum_f - q_sum_t
 
         # Compute annual averages
-        burdens[spc + "_f"] = np.sum(q_sum_f) / days_per_yr
-        burdens[spc + "_t"] = np.sum(q_sum_t) / days_per_yr
-        burdens[spc + "_s"] = np.sum(q_sum_s) / days_per_yr
+        burdens[var + "_f"] = np.sum(q_sum_f) / days_per_yr
+        burdens[var + "_t"] = np.sum(q_sum_t) / days_per_yr
+        burdens[var + "_s"] = np.sum(q_sum_s) / days_per_yr
 
-    print_aerosol_metrics(burdens, species_list, filename, title, label)
+    print_aerosol_metrics(burdens, varlist, full_names, filename, title, label)
 
-    # -------------------------------------------
+    # ------------------------------------------------------------------
+    # Define function to print tables
+    # ------------------------------------------------------------------
+    def print_aods(data, varlist, filename, title):
+
+        with open(filename, "w+", encoding=ENCODING) as ofile:
+
+            # Print top header
+            print("%" * 79, file=ofile)
+            print(f" {title} for {year} in {devstr}", file=ofile)
+            print(" (weighted by the number of days per month)", file=ofile)
+            print("%" * 79, file=ofile)
+            line = "\n" + " " *32 + "Strat         Trop         Strat+Trop\n"
+            line += " " * 32 + "-----------   ----------   ----------"
+            print(line, file=ofile)
+
+            # Print data
+            for var in varlist:
+                line = f"{var : <4} column optical depth [1]:  {data[var + '_s']:11.9f}   {data[var + '_t']:10.8f}   {data[var + '_f']:10.8f}\n"
+                print(line, file=ofile)
+
+    # ------------------------------------------------------------------
     # Compute average AOD's [Tg] and print
-    # -------------------------------------------
+    # ------------------------------------------------------------------
 
     # Table info
     filename = f"{dst}/Global_Mean_AOD.txt"
@@ -4807,36 +4825,45 @@ def make_benchmark_aerosol_tables(
     else:
         sum_axes = (1, 2, 3)
 
-    # Loop over AOD variables
-    for varname in aod_list:
+    # List of AOD species to plot
+    varlist = [var for var in aod.keys() if "Dust" in var or "Hyg" in var]
+    if is_gchp:
+        varlist = [var.replace('550nm', 'WL1') for var in varlist]
 
-        # Get the corresponding species name
+    # Loop over AOD variables
+    aod_list = []
+    for varname in varlist:
+
+        # Extract the s
         if "Dust" in varname:
-            spc = "DST1"
+            var = "Dust"
+        elif "Total" in varname:
+            continue
         else:
-            spc = varname.split("_")[1]
+            var = varname.split("_")[1]
+        aod_list.append(var)
 
         # Whole-atmosphere AOD [1]
-        q[spc + "_f"] = ds_aer[varname].values
+        q[var + "_f"] = ds_aer[varname].values
 
         # Tropospheric-only AOD [1]
-        q[spc + "_t"] = np.ma.masked_array(q[spc + "_f"], tropmask)
+        q[var + "_t"] = np.ma.masked_array(q[var + "_f"], tropmask)
 
         # Create monthly sums, weighted by the number of days per month
-        q_sum_f = np.sum(q[spc + "_f"] * area_m2, axis=sum_axes) * days_per_mon
-        q_sum_t = np.sum(q[spc + "_t"] * area_m2, axis=sum_axes) * days_per_mon
+        q_sum_f = np.sum(q[var + "_f"] * area_m2, axis=sum_axes) * days_per_mon
+        q_sum_t = np.sum(q[var + "_t"] * area_m2, axis=sum_axes) * days_per_mon
         q_sum_s = q_sum_f - q_sum_t
 
         # Take annual averages
-        aods[spc + "_f"] = np.sum(q_sum_f) / total_area_m2 / days_per_yr
-        aods[spc + "_t"] = np.sum(q_sum_t) / total_area_m2 / days_per_yr
-        aods[spc + "_s"] = np.sum(q_sum_s) / total_area_m2 / days_per_yr
+        aods[var + "_f"] = np.sum(q_sum_f) / total_area_m2 / days_per_yr
+        aods[var + "_t"] = np.sum(q_sum_t) / total_area_m2 / days_per_yr
+        aods[var + "_s"] = np.sum(q_sum_s) / total_area_m2 / days_per_yr
 
-    print_aerosol_metrics(aods, species_list, filename, title, label)
+    print_aods(aods, aod_list, filename, title)
 
-    # -------------------------------------------
+    # ------------------------------------------------------------------
     # Clean up
-    # -------------------------------------------
+    # ------------------------------------------------------------------
     del ds_aer
     del ds_spc
     del ds_met
