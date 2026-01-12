@@ -2288,25 +2288,55 @@ def read_species_metadata(files, quiet=True):
     containing metadata for the union of species.
 
     Args
-    files : str|list : Species database file(s) to read
+    files     : str|list : Species database file(s) to read
 
     Keyword Args
-    quiet : bool     : Quiet (true) or verbose (false) printout
+    quiet     : bool     : Quiet (true) or verbose (false) printout
 
     Returns
-    spcdb : dict     : Metadata for the union of species
+    ref_spcdb : dict     : Species metadata for the Ref model
+    dev_spcdb : dict     : Species metadata for the Dev model
     """
-    if isinstance(files, str):
-        return read_config_file(files, quiet=quiet)
 
+    # 1 file is passed, return the same metadata for Ref & Dev
+    if isinstance(files, str):
+        dev_spcdb = read_config_file(files, quiet=quiet)
+        ref_spcdb = dev_spcdb
+        return ref_spcdb, dev_spcdb
+
+    # 2 files are passed, return Ref & Dev metadata separately
     if isinstance(files, list):
-        count = 0
-        n_files = len(files)
-        spcdb = read_config_file(files[0], quiet=quiet)
-        while count < n_files:
-            tmp_spcdb = read_config_file(files[count], quiet=quiet)
-            spcdb = spcdb | tmp_spcdb
-            count += 1
-        return spcdb
+        dev_spcdb = read_config_file(files[0], quiet=quiet)
+        ref_spcdb = read_config_file(files[1], quiet=quiet)
+        return ref_spcdb, dev_spcdb
 
     raise ValueError("Argument 'files' must be of type 'str' or 'list'!")
+
+
+def get_molwt_from_metadata(metadata, spc_name):
+    """
+    Extracts molecular weight [g/mol] from a dictionary
+    containing species metadata.
+
+    Args
+    metadata : dict       : Metadata for GEOS-Chem species
+    spc_name : str        : Name of the desired species
+
+    Returns
+    spc_mw_g : float|None : Species molecular weight [g/mol]
+    """
+    # Extract the metadata for the given species
+    species_metadata = metadata.get(spc_name)
+
+    # If no properties are found, check if this is one of the SOA
+    # species.  If so, return 150 g/mol, otherwise exit w/ error.
+    if species_metadata is None:
+        if spc_name not in ["Simple_SOA", "Complex_SOA"]:
+            return None
+        return 150.0
+
+    # Otherwise return the mol. wt. as listed in the species metadata
+    spc_mw_g = species_metadata.get("MW_g")
+    if spc_mw_g is None:
+        return None
+    return spc_mw_g

@@ -189,7 +189,7 @@ def init_common_vars(ref, refstr, dev, devstr, spcdb_files):
     # Read the species database files in the Ref & Dev rundirs, and
     # return a dict containing metadata for the union of species.
     # We'll need properties such as mol. wt. for unit conversions, etc.
-    spcdb = read_species_metadata(spcdb_files, quiet=True)
+    _, spcdb = read_species_metadata(spcdb_files, quiet=True)
 
     # Define common_vars dictionary
     common_vars = {

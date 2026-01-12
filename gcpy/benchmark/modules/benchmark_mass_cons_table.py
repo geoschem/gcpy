@@ -84,7 +84,7 @@ def get_passive_tracer_metadata(
 
     # Read the species database files in the Ref & Dev rundirs, and
     # return a dict containing metadata for the union of species.
-    properties = read_species_metadata(spcdb_files, quiet=True)
+    _, properties = read_species_metadata(spcdb_files, quiet=True)
 
     return properties.get(SPC_NAME)
 

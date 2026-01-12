@@ -16,9 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added new constants for default lon/lat and stretched-grid settings in `gcpy/constants.py`
 - Added PyDoc headers in routines where they were missing
 - Added `examples/grids/display_gcclassic_grid_info.py`  to display info about a GEOS-Chem Classic horizontal grid
-- Added function `read_species_metadata` to `gcpy/util.py`
+- Added functions `get_molwt_from_metadata` and `read_species_metadata` to `gcpy/util.py`
 - Added function `get_species_database_files` to `gcpy/benchmark/modules/benchmark_utils.py`
-- Added `species_metadata` YAML tags under `ref:gcc`, `ref:gchp`, `dev:gcc`, `dev:gchp` sections in benchmark configuration files
+- Added constant `SPECIES_DATABASE` to `gcpy/benchmark/modules/benchmark_utils.py`
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -42,7 +42,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated default GCPy Python environment to use Python 3.13 (instead of 3.12)
 - Benchmark routines now look for `species_database.yml` in the `Ref` and `Dev` run directories
 - Replaced `get_species_database_dir` with `get_species_database_files` in `gcpy/benchmark/modules/benchmark_funcs.py`
-- Replaced `spcdb_dir` YAML tag with directory-specific `species_metadata` tags to specify paths to `species_database.yml` files
 - Updated `gcpy/benchmark/modules/benchmark_scrape_gchp_timers.py` to look for GCHP timers in `allPEs.log` if not found in the log file
 - Updated routine `make_benchmark_aerosol_tables` to include all dust species in the aerosol burdens table
 

@@ -118,7 +118,7 @@ def create_total_emissions_table(
         This method is mainly intended for model benchmarking purposes,
         rather than as a general-purpose tool.
 
-        Species properties (such as molecular weights) are read from a
+        Species metadata (such as molecular weights) are read from a
         YAML file called "species_database.yml".
     """
 
@@ -153,10 +153,12 @@ def create_total_emissions_table(
               "dataset containing Met_AREAM2 is not passed!"
         raise ValueError(msg)
 
-    # Read the species database files in the Ref & Dev rundirs, and
-    # return a dict containing metadata for the union of species.
-    # We'll need properties such as mol. wt. for unit conversions, etc.
-    properties = read_species_metadata(spcdb_files, quiet=True)
+    # Read the species database files in the Ref & Dev rundirs,
+    # and return a dict for each containing the species metadata.
+    ref_metadata, dev_metadata = read_species_metadata(
+        spcdb_files,
+        quiet=True
+    )
 
     # Replace whitespace in the ref and dev labels
     refstr = replace_whitespace(refstr)
@@ -263,12 +265,11 @@ def create_total_emissions_table(
             else:
                 spc_name = species_name
 
-            # Get a list of properties for the given species
-            species_properties = properties.get(spc_name)
-
-            # If no properties are found, then skip to next species
-            if species_properties is None:
-                print(f"No properties found for {spc_name} ... skippping")
+            # Get metadata for the given species
+            ref_species_metadata = ref_metadata.get(spc_name)
+            dev_species_metadata = dev_metadata.get(spc_name)
+            if ref_species_metadata is None and dev_species_metadata is None:
+                print(f"No metadata found for {spc_name} ... skipping")
                 continue
 
             # Convert units of Ref and Dev and save to numpy ndarray objects
@@ -279,7 +280,7 @@ def create_total_emissions_table(
                 refarray = convert_units(
                     refdata[v],
                     spc_name,
-                    species_properties,
+                    ref_species_metadata,
                     target_units,
                     interval=ref_interval,
                     area_m2=refarea,
@@ -299,7 +300,7 @@ def create_total_emissions_table(
                 devarray = convert_units(
                     devdata[v],
                     spc_name,
-                    species_properties,
+                    dev_species_metadata,
                     target_units,
                     interval=dev_interval,
                     area_m2=devarea,
@@ -319,7 +320,7 @@ def create_total_emissions_table(
                 refarray = convert_units(
                     refdata[v],
                     spc_name,
-                    species_properties,
+                    ref_species_metadata,
                     target_units,
                     interval=ref_interval,
                     area_m2=refarea,
@@ -327,7 +328,7 @@ def create_total_emissions_table(
                 devarray = convert_units(
                     devdata[v],
                     spc_name,
-                    species_properties,
+                    dev_species_metadata,
                     target_units,
                     interval=dev_interval,
                     area_m2=devarea,
@@ -424,7 +425,7 @@ def create_global_mass_table(
         This method is mainly intended for model benchmarking purposes,
         rather than as a general-purpose tool.
 
-        Species properties (such as molecular weights) are read from a
+        Species metadata (such as molecular weights) are read from a
         YAML file called "species_database.yml".
     """
 
@@ -441,9 +442,11 @@ def create_global_mass_table(
         raise ValueError('The "met_and_masks" argument was not passed!')
 
     # Read the species database files in the Ref & Dev rundirs, and
-    # return a dict containing metadata for the union of species.
-    # We'll need properties such as mol. wt. for unit conversions, etc.
-    properties = read_species_metadata(spcdb_files, quiet=True)
+    # return a dict containing metadata for each.
+    ref_metadata, dev_metadata = read_species_metadata(
+        spcdb_files,
+        quiet=True
+    )
 
     # Replace whitespace in the ref and dev labels
     refstr = replace_whitespace(refstr)
@@ -497,25 +500,17 @@ def create_global_mass_table(
         # Get the species name
         spc_name = v.split("_")[1]
 
-        # Get a list of properties for the given species
-        species_properties = properties.get(spc_name)
-
-        # If no properties are found, then skip to next species
-        if species_properties is None:
+        # Get metadta for the given species
+        ref_species_metadata = ref_metadata.get(spc_name)
+        dev_species_metadata = dev_metadata.get(spc_name)
+        if ref_species_metadata is None and dev_species_metadata is None:
             if verbose:
-                msg = f"No properties found for {spc_name} ... skippping"
+                msg = f"No metadata found for {spc_name} ... skippping"
                 print(msg)
             continue
 
         # Specify target units
         target_units = "Gg"
-        mol_wt_g = species_properties.get("MW_g")
-        if mol_wt_g is None:
-            if verbose:
-                msg = \
-                  f"No molecular weight found for {spc_name} ... skippping"
-                print(msg)
-            continue
 
         # ==============================================================
         # Convert units of Ref and save to a DataArray
@@ -526,7 +521,7 @@ def create_global_mass_table(
             refarray = convert_units(
                 refarray,
                 spc_name,
-                species_properties,
+                ref_species_metadata,
                 target_units,
                 area_m2=met_and_masks["Ref_Area"],
                 delta_p=met_and_masks["Ref_Delta_P"],
@@ -542,7 +537,7 @@ def create_global_mass_table(
             devarray = convert_units(
                 devarray,
                 spc_name,
-                species_properties,
+                dev_species_metadata,
                 target_units,
                 area_m2=met_and_masks["Dev_Area"],
                 delta_p=met_and_masks["Dev_Delta_P"],
@@ -661,7 +656,7 @@ def create_mass_accumulation_table(
         This method is mainly intended for model benchmarking purposes,
         rather than as a general-purpose tool.
 
-        Species properties (such as molecular weights) are read from a
+        Species metadata (such as molecular weights) are read from a
         YAML file called "species_database.yml".
     """
 
@@ -680,9 +675,11 @@ def create_mass_accumulation_table(
         raise ValueError('The "met_and_masks" argument was not passed!')
 
     # Read the species database files in the Ref & Dev rundirs, and
-    # return a dict containing metadata for the union of species.
-    # We'll need properties such as mol. wt. for unit conversions, etc.
-    properties = read_species_metadata(spcdb_files, quiet=True)
+    # return a dict containing metadata for each.
+    ref_metadata, dev_metadata = read_species_metadata(
+        spcdb_files,
+        quiet=True
+    )
 
     # Replace whitespace in the ref and dev labels
     refstr = replace_whitespace(refstr)
@@ -744,11 +741,10 @@ def create_mass_accumulation_table(
         # Get the species name
         spc_name = v.split("_")[1]
 
-        # Get a list of properties for the given species
-        species_properties = properties.get(spc_name)
-
-        # If no properties are found, then skip to next species
-        if species_properties is None:
+        # Get a list of metadata for the given species
+        ref_species_metadata = ref_metadata.get(spc_name)
+        dev_species_metadata = dev_metadata.get(spc_name)
+        if ref_species_metadata is None and dev_species_metadata is None:
             if verbose:
                 msg = f"No properties found for {spc_name} ... skippping"
                 print(msg)
@@ -756,13 +752,6 @@ def create_mass_accumulation_table(
 
         # Specify target units
         target_units = "Gg"
-        mol_wt_g = species_properties.get("MW_g")
-        if mol_wt_g is None:
-            if verbose:
-                msg = \
-                  f"No molecular weight found for {spc_name} ... skippping"
-                print(msg)
-            continue
 
         # ==============================================================
         # Convert units of Ref and save to a DataArray
@@ -773,7 +762,7 @@ def create_mass_accumulation_table(
             refarrays = convert_units(
                 refarrays,
                 spc_name,
-                species_properties,
+                ref_species_metadata,
                 target_units,
                 area_m2=met_and_masks["Refs_Area"],
                 delta_p=met_and_masks["Refs_Delta_P"],
@@ -785,7 +774,7 @@ def create_mass_accumulation_table(
             refarraye = convert_units(
                 refarraye,
                 spc_name,
-                species_properties,
+                ref_species_metadata,
                 target_units,
                 area_m2=met_and_masks["Refe_Area"],
                 delta_p=met_and_masks["Refe_Delta_P"],
@@ -804,7 +793,7 @@ def create_mass_accumulation_table(
             devarrays = convert_units(
                 devarrays,
                 spc_name,
-                species_properties,
+                dev_species_metadata,
                 target_units,
                 area_m2=met_and_masks["Devs_Area"],
                 delta_p=met_and_masks["Devs_Delta_P"],
@@ -817,7 +806,7 @@ def create_mass_accumulation_table(
             devarraye = convert_units(
                 devarraye,
                 spc_name,
-                species_properties,
+                dev_species_metadata,
                 target_units,
                 area_m2=met_and_masks["Deve_Area"],
                 delta_p=met_and_masks["Deve_Delta_P"],
@@ -4627,7 +4616,7 @@ def make_benchmark_aerosol_tables(
     # Read the species database files in the Ref & Dev rundirs, and
     # return a dict containing metadata for the union of species.
     # We'll need properties such as mol. wt. for unit conversions, etc.
-    properties = read_species_metadata(spcdb_files, quiet=True)
+    _, dev_metadata = read_species_metadata(spcdb_files, quiet=True)
 
     # Get the list of relevant AOD diagnostics from a YAML file
     ifile= AOD_SPC
@@ -4664,8 +4653,8 @@ def make_benchmark_aerosol_tables(
     mw = {}
     full_names = {}
     for var in varlist:
-        full_names[var] = properties[var]["FullName"].strip()
-        mw[var] = properties[var]["MW_g"]
+        full_names[var] = dev_metadata[var]["FullName"].strip()
+        mw[var] = dev_metadata[var]["MW_g"]
     mw["Air"] = MW_AIR_g
 
     # Get troposphere mask
@@ -5109,11 +5098,8 @@ def make_benchmark_operations_budget(
     # ------------------------------------------
 
     # Load a YAML file containing species properties
-    spc_properties = read_config_file(
-        os.path.join(
-            os.path.dirname(__file__),
-            "species_database.yml"
-        ),
+    ref_metadata, dev_metadata = read_species_metadata(
+        spcdb_files,
         quiet=True
     )
 
@@ -5127,9 +5113,13 @@ def make_benchmark_operations_budget(
 
         # Identify wetdep species
         is_wetdep[spc] = None
-        properties = spc_properties.get(spc)
-        if properties is not None:
-            is_wetdep[spc] = properties.get("Is_WetDep")
+        ref_species_metadata = ref_metadata.get(spc)
+        dev_species_metadata = dev_metadata.get(spc)
+        if ref_species_metadata is not None and \
+           dev_species_metadata is not None:
+            is_wetdep[spc] = \
+                ref_species_metadata.get("Is_WetDep") or \
+                dev_species_metadata.get("Is_WetDep")
 
         # Unit conversion factors and units
         ref_conv_fac[spc] = ref_interval * 1e-6
@@ -5362,10 +5352,12 @@ def make_benchmark_operations_budget(
     if compute_restart:
         print('Computing RESTART operation budgets...')
 
-        # Read the species database files in the Ref & Dev rundirs, and
-        # return a dict containing metadata for the union of species.
-        # We'll need properties such as mol. wt. for unit conversions, etc.
-        properties = read_species_metadata(spcdb_files, quiet=True)
+        # Read the species database files in the Ref & Dev rundirs,
+        # and return a dict containing metadata for each.
+        ref_metadata, dev_metadata = read_species_metadata(
+            spcdb_files,
+            quiet=True
+        )
 
         # Loop over all column sections
         for col_section in col_sections:
@@ -5387,13 +5379,22 @@ def make_benchmark_operations_budget(
 
                 # Get ref and dev mass
 
-                # Get species properties for unit conversion. If none, skip.
-                species_properties = properties.get(spc)
-                if species_properties is None:
+                # Get species metadata for unit conversion. If none, skip.
+                ref_species_metadata = ref_metadata.get(spc)
+                dev_species_metadata = dev_metadata.get(spc)
+                if ref_species_metadata is None and \
+                   dev_species_metadata is None:
                     continue
-                mol_wt_g = species_properties.get("MW_g")
-                if mol_wt_g is None:
-                    continue
+
+                # Get molecular weights
+                #ref_mol_wt_g = get_molwt_from_metadata(
+                #    ref_species_metadata,
+                #    spc
+                #)
+                #dev_mol_wt_g = get_molwt_from_metadata(
+                #    ref_species_metadata,
+                #    spc
+                #)
 
                 # Specify target units
                 target_units = "Gg"
@@ -5407,7 +5408,7 @@ def make_benchmark_operations_budget(
                     refarray = convert_units(
                         refarray,
                         spc,
-                        species_properties,
+                        ref_species_metadata,
                         target_units,
                         area_m2=met_and_masks["Ref_Area"],
                         delta_p=met_and_masks["Ref_Delta_P"],
@@ -5423,7 +5424,7 @@ def make_benchmark_operations_budget(
                     devarray = convert_units(
                         devarray,
                         spc_name,
-                        species_properties,
+                        dev_species_metadata,
                         target_units,
                         area_m2=met_and_masks["Dev_Area"],
                         delta_p=met_and_masks["Dev_Delta_P"],

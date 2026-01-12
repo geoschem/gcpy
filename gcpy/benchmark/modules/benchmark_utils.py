@@ -19,7 +19,7 @@ BENCHMARK_CAT = "benchmark_categories.yml"
 EMISSION_SPC = "emission_species.yml"
 EMISSION_INV = "emission_inventories.yml"
 LUMPED_SPC = "lumped_species.yml"
-
+SPECIES_DATABASE = "species_database.yml"
 
 def make_output_dir(
         dst,
@@ -729,7 +729,7 @@ def get_species_database_files(config, ref_model, dev_model):
     ref_spcdb_file = os.path.join(
         config["paths"]["main_dir"],
         config["data"][ref_or_dev][ref_model]["dir"],
-        config["data"][ref_or_dev][ref_model]["species_metadata"]
+        SPECIES_DATABASE,
      )
     if not os.path.exists(ref_spcdb_file):
         msg = f"Could not find {ref_spcdb_file}!"
@@ -741,7 +741,7 @@ def get_species_database_files(config, ref_model, dev_model):
     dev_spcdb_file = os.path.join(
         config["paths"]["main_dir"],
         config["data"]["dev"][dev_model]["dir"],
-        config["data"]["dev"][dev_model]["species_metadata"]
+        SPECIES_DATABASE,
     )
     if not os.path.exists(dev_spcdb_file):
         msg = f"Could not find {dev_spcdb_file}!"

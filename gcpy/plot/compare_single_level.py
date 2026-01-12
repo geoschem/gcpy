@@ -20,7 +20,8 @@ from joblib import Parallel, delayed
 from pypdf import PdfReader, PdfWriter
 from gcpy.grid import get_grid_extents, call_make_grid
 from gcpy.regrid import regrid_comparison_data, create_regridders
-from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
+from gcpy.util import \
+    reshape_MAPL_CS, get_diff_of_diffs, get_molwt_from_metadata, \
     all_zero_or_nan, slice_by_lev_and_time, compare_varnames, \
     read_species_metadata, verify_variable_type
 from gcpy.units import check_units, data_unit_is_mol_per_mol
@@ -233,15 +234,16 @@ def compare_single_level(
         savepdf = False
 
     # If converting to ug/m3, read species database file(s) to obtain
-    # molecular weights.  If more than one file is given, return
-    # metadata for the union of species.
+    # molecular weights.
     if convert_to_ugm3:
         if spcdb_files is None:
-            msg = "You must pass a value for 'spcdb_files' when "
-            msg += "convert_to_ugm3=True!"
+            msg = "You must pass 'spcdb_files' when convert_to_ugm3=True!"
             raise ValueError(msg)
-        properties = read_species_metadata(spcdb_files, quiet=True)
-
+        ref_metadata, dev_metadata = read_species_metadata(
+            spcdb_files,
+            quiet= True
+        )
+            
     # Get stretched grid info, if any.
     # Parameter order is stretch factor, target longitude, target latitude.
     # Stretch factor 1 corresponds with no stretch.
@@ -428,35 +430,23 @@ def compare_single_level(
                 False
             )
 
-            # Get a list of properties for the given species
+            # Get the species molecular weights from Ref & Dev metadata
             spc_name = varname.replace(varname.split("_")[0] + "_", "")
-            species_properties = properties.get(spc_name)
-
-            # If no properties are found, then exit with an error.
-            # Otherwise, get the molecular weight in g/mol.
-            if species_properties is None:
-                # Hack lumped species until we implement a solution
-                if spc_name in ["Simple_SOA", "Complex_SOA"]:
-                    spc_mw_g = 150.0
-                else:
-                    msg = f"No properties found for {spc_name}. Cannot convert" \
-                          + " to ug/m3."
-                    raise ValueError(msg)
-            else:
-                spc_mw_g = species_properties.get("MW_g")
-                if spc_mw_g is None:
-                    msg = f"Molecular weight not found for species {spc_name}!" \
-                          + " Cannot convert to ug/m3."
-                    raise ValueError(msg)
+            ref_spc_mw_g = get_molwt_from_metadata(ref_metadata, spc_name)
+            dev_spc_mw_g = get_molwt_from_metadata(dev_metadata, spc_name)
+            if ref_spc_mw_g is None or dev_spc_mw_g is None:
+                msg = f"Molecular weight not found for species {spc_name}!"
+                msg += " Cannot convert to ug/m3!"
+                raise ValueError(msg)
 
             # Convert values from ppb to ug/m3:
             # ug/m3 = mol/mol * mol/g air * kg/m3 air * 1e3g/kg
             #         * g/mol spc * 1e6ug/g
             #       = ppb * air density * (spc MW / air MW)
             ds_refs[i].values = ds_refs[i].values * ref_airden.values \
-                * (spc_mw_g / MW_AIR_g)
+                * (ref_spc_mw_g / MW_AIR_g)
             ds_devs[i].values = ds_devs[i].values * dev_airden.values \
-                * (spc_mw_g / MW_AIR_g)
+                * (dev_spc_mw_g / MW_AIR_g)
 
             # Update units string
             ds_refs[i].attrs["units"] = "\u03BCg/m3"  # ug/m3 using mu

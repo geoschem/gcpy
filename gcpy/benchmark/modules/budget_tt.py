@@ -300,7 +300,7 @@ class _GlobVars:
         self.species_list = ["Pb210", "Be7", "Be10"]
 
         # Read the species database files in the Dev rundirs
-        spcdb = read_species_metadata(spcdb_file, quiet=True)
+        _, spcdb = read_species_metadata(spcdb_file, quiet=True)
 
         # Molecular weights [g mol-1], as taken from the species database
         self.mw = {}
