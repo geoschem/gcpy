@@ -30,7 +30,6 @@ paths:
 # data: Contains configurations for ref and dev runs
 #   version:          Version string (must not contain spaces)
 #   dir:              Path to run directory
-#   species_metadata: Path to species_database.yml file (in dir)
 #   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
 #   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
 #   logs_subdir:      Subdirectory w/ GEOS-Chem log files

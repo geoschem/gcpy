@@ -42,7 +42,6 @@ paths:
 # data: Contains configurations for ref and dev runs
 #   version:          Version string (must not contain spaces)
 #   dir:              Path to run directory
-#   species_metadata: Path to species_database.yml file (in dir)
 #   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
 #   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
 #   logs_subdir:      Subdirectory w/ GEOS-Chem log files
@@ -57,7 +56,6 @@ data:
     gcc:
       version: GCC_ref
       dir: GCC_ref
-      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: Logs
@@ -67,7 +65,6 @@ data:
     gchp:
       version: GCHP_ref
       dir: GCHP_ref
-      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: Logs
@@ -80,7 +77,6 @@ data:
     gcc:
       version: GCC_dev 
       dir: GCC_dev
-      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: Logs
@@ -90,7 +86,6 @@ data:
     gchp:
       version: GCHP_dev
       dir: GCHP_dev
-      species_metadata: species_database.yml
       outputs_subdir: OutputDir
       restarts_subdir: Restarts
       logs_subdir: Logs
