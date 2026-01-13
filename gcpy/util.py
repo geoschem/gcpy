@@ -2306,8 +2306,8 @@ def read_species_metadata(files, quiet=True):
 
     # 2 files are passed, return Ref & Dev metadata separately
     if isinstance(files, list):
-        dev_spcdb = read_config_file(files[0], quiet=quiet)
-        ref_spcdb = read_config_file(files[1], quiet=quiet)
+        ref_spcdb = read_config_file(files[0], quiet=quiet)
+        dev_spcdb = read_config_file(files[1], quiet=quiet)
         return ref_spcdb, dev_spcdb
 
     raise ValueError("Argument 'files' must be of type 'str' or 'list'!")
