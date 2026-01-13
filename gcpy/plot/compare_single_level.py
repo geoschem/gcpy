@@ -434,20 +434,38 @@ def compare_single_level(
             spc_name = varname.replace(varname.split("_")[0] + "_", "")
             ref_spc_mw_g = get_molwt_from_metadata(ref_metadata, spc_name)
             dev_spc_mw_g = get_molwt_from_metadata(dev_metadata, spc_name)
+
+            # Skip if the species has no molecular weight in
+            # both Ref & Dev species metadata
+            if ref_spc_mw_g is None and dev_spc_mw_g is None:
+                msg = f"Cannot convert {spc_name} to ug/m3! "
+                msg +="no molecular weight found in Ref & Dev metadata!"
+                continue
+
+            # If only one of the species has no molecular weight
+            # print a warning message but allow comparison to proceed
             if ref_spc_mw_g is None or dev_spc_mw_g is None:
-                msg = f"Molecular weight not found for species {spc_name}!"
-                msg += " Cannot convert to ug/m3!"
-                raise ValueError(msg)
+                msg = f"Cannot convert {spc_name} to ug/m3!, "
+                msg +="no molecular weight was found!"
+                print(msg)
 
             # Convert values from ppb to ug/m3:
-            # ug/m3 = mol/mol * mol/g air * kg/m3 air * 1e3g/kg
+            # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
             #         * g/mol spc * 1e6ug/g
             #       = ppb * air density * (spc MW / air MW)
-            ds_refs[i].values = ds_refs[i].values * ref_airden.values \
-                * (ref_spc_mw_g / MW_AIR_g)
-            ds_devs[i].values = ds_devs[i].values * dev_airden.values \
-                * (dev_spc_mw_g / MW_AIR_g)
-
+            #
+            # If mol. wt. is missing, then set data to NaN
+            if ref_spc_mw_g is not None:
+                ds_refs[i].values *= \
+                    ref_airden.values * (ref_spc_mw_g / MW_AIR_g)
+            else:
+                ds_refs[i].values *= np.nan
+            if dev_spc_mw_g is not None:
+                ds_devs[i].values *= \
+                    dev_airden.values * (dev_spc_mw_g / MW_AIR_g)
+            else:
+                ds_devs[i].values *= np.nan
+            
             # Update units string
             ds_refs[i].attrs["units"] = "\u03BCg/m3"  # ug/m3 using mu
             ds_devs[i].attrs["units"] = "\u03BCg/m3"
