@@ -168,17 +168,17 @@ def create_total_emissions_table(
     # Get the list of emission variables for which we will print totals
     # ==================================================================
 
-    # Make sure that Ref and Dev datasets have the same variables.
-    # Variables that are in Ref but not in Dev will be added to Dev
-    # with all missing values (NaNs). And vice-versa.
-    [refdata, devdata] = add_missing_variables(refdata, devdata)
-
     # Find all common variables between the two datasets
     # and get the lists of variables only in Ref and only in Dev,
     vardict = compare_varnames(refdata, devdata, quiet=True)
     cvars = vardict["commonvars"]
     refonly = vardict["refonly"]
     devonly = vardict["devonly"]
+
+    # Make sure that Ref and Dev datasets have the same variables.
+    # Variables that are in Ref but not in Dev will be added to Dev
+    # with all missing values (NaNs). And vice-versa.
+    [refdata, devdata] = add_missing_variables(refdata, devdata)
 
     # =================================================================
     # Open the file for output
