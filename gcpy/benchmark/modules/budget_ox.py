@@ -43,7 +43,7 @@ class _GlobVars:
             year,
             dst,
             overwrite,
-            spcdb_file,
+            spcdb_files,
             is_gchp,
             gchp_res,
             gchp_is_pre_14_0
@@ -82,7 +82,7 @@ class _GlobVars:
         self.devrstdir = devrstdir
         self.dst = dst
         self.overwrite = overwrite
-        self.spcdb_file = spcdb_file
+        self.spcdb_files = spcdb_files
         self.is_gchp = is_gchp
         self.gchp_res = gchp_res
         self.gchp_is_pre_14_0 = gchp_is_pre_14_0
@@ -127,7 +127,7 @@ class _GlobVars:
         self.get_area_and_volume()
         self.tropmask = get_troposphere_mask(self.ds_met)
         self.get_time_info()
-        self.get_conv_factors(spcdb_file)
+        self.get_conv_factors(spcdb_files)
 
 
     # ==================================================================
@@ -303,16 +303,16 @@ class _GlobVars:
             self.frac_of_a[t] = self.d_per_m[t] / self.d_per_a
 
 
-    def get_conv_factors(self, spcdb_file):
+    def get_conv_factors(self, spcdb_files):
         """
         Gets conversion factors used in budget computations
 
         Arguments:
-            spcdb_file : str
-                Paths to the species_database.yml file
+            spcdb_files : str
+                Paths to the species_database.yml file in Ref & Dev
         """
-        # Read the species database files Dev rundir.
-        spcdb = read_species_metadata(spcdb_file, quiet=True)
+        # Read the species database file from the Dev model
+        _, spcdb = read_species_metadata(spcdb_files, quiet=True)
 
         # Molecular weights [kg mol-1], as taken from the species database
         self.mw = {}
