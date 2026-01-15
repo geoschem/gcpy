@@ -44,7 +44,7 @@ def get_area(
     # Otherwise read the data from the supplied area_path)
     reader = dataset_reader(multi_files=False, verbose=False)
     return get_area_from_dataset(
-        reader(area_path, drop_variables=SKIP_THESE_VARS).load()
+        reader(area_path, drop_variables=SKIP_THESE_VARS)
     )
 
 
@@ -371,11 +371,11 @@ def make_benchmark_mass_conservation_table(
             ref_data = reader(
                 ref_files[t_idx],
                 drop_variables=SKIP_THESE_VARS
-            ).load()
+            )
             dev_data = reader(
                 dev_files[t_idx],
                 drop_variables=SKIP_THESE_VARS
-            ).load()
+            )
             ref_area = get_area(ref_areapath, ref_data)
             dev_area = get_area(dev_areapath, dev_data)
             ref_delta_prs = get_delta_pressure(ref_data)

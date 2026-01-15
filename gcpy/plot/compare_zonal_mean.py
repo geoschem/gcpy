@@ -209,8 +209,6 @@ def compare_zonal_mean(
 
     # Prepare diff-of-diffs datasets if needed
     if diff_of_diffs:
-        refdata, devdata = refdata.load(), devdata.load()
-        second_ref, second_dev = second_ref.load(), second_dev.load()
 
 #        # If needed, use fake time dim in case dates are different in datasets.
 #        # This needs more work for case of single versus multiple times.
