@@ -46,7 +46,6 @@ if __name__ == '__main__':
     })
 
     # Write to netCDF
-    ds.load()
     ds.close()
     ds.to_netcdf(args.filein)
 

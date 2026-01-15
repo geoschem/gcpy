@@ -117,7 +117,7 @@ def file_regrid(
         filein,
         decode_cf=False,
         engine="netcdf4"
-    ).load()
+    )
     cs_res_in = get_cubed_sphere_res(dset)
 
     # Verbose printout of inputs

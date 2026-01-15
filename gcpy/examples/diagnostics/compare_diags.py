@@ -91,7 +91,7 @@ def read_data(config):
         refdata = reader(
             ref_file,
             drop_variables=SKIP_THESE_VARS
-        ).load()
+        )
     except FileNotFoundError as exc:
         msg = "Error reading " + ref_file
         raise FileNotFoundError(msg) from exc
@@ -101,7 +101,7 @@ def read_data(config):
         devdata = reader(
             dev_file,
             drop_variables=SKIP_THESE_VARS
-        ).load()
+        )
     except FileNotFoundError as exc:
         msg = "Error reading " + dev_file
         raise FileNotFoundError(msg) from exc

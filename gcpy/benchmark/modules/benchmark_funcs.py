@@ -1054,8 +1054,8 @@ def make_benchmark_conc_plots(
     reader = util.dataset_reader(time_mean, verbose=verbose)
 
     # Open datasets
-    refds = reader(ref, drop_variables=SKIP_THESE_VARS).load()
-    devds = reader(dev, drop_variables=SKIP_THESE_VARS).load()
+    refds = reader(ref, drop_variables=SKIP_THESE_VARS)
+    devds = reader(dev, drop_variables=SKIP_THESE_VARS)
 
     # Rename SpeciesConc_ to SpeciesConcVV_ for consistency with new
     # naming introduced in GEOS-Chem 14.1.0
@@ -1080,9 +1080,9 @@ def make_benchmark_conc_plots(
     refmetds = None
     devmetds = None
     if refmet:
-        refmetds = reader(refmet, drop_variables=SKIP_THESE_VARS).load()
+        refmetds = reader(refmet, drop_variables=SKIP_THESE_VARS)
     if devmet:
-        devmetds = reader(devmet, drop_variables=SKIP_THESE_VARS).load()
+        devmetds = reader(devmet, drop_variables=SKIP_THESE_VARS)
 
     # Determine if doing diff-of-diffs
     diff_of_diffs = False
@@ -1093,8 +1093,8 @@ def make_benchmark_conc_plots(
     # Open second datasets if passed as arguments (used for diff of diffs)
     # Regrid to same horz grid resolution if two refs or two devs do not match.
     if diff_of_diffs:
-        second_refds = reader(second_ref, drop_variables=SKIP_THESE_VARS).load()
-        second_devds = reader(second_dev, drop_variables=SKIP_THESE_VARS).load()
+        second_refds = reader(second_ref, drop_variables=SKIP_THESE_VARS)
+        second_devds = reader(second_dev, drop_variables=SKIP_THESE_VARS)
 
         print('\nPrinting second_refds (dev of ref for diff-of-diffs)\n')
         print(second_refds)
@@ -5695,7 +5695,7 @@ def create_benchmark_summary_table(
                 is_gchp=ref_gchp
             ),
             drop_variables=skip_vars
-        ).load()
+        )
 
         # Get Dev data
         devdata = reader(
@@ -5706,7 +5706,7 @@ def create_benchmark_summary_table(
                 is_gchp=dev_gchp
             ),
             drop_variables=skip_vars
-        ).load()
+        )
 
         # Make sure that Ref and Dev datasets have the same variables.
         # Variables that are in Ref but not in Dev will be added to Dev
@@ -5962,7 +5962,7 @@ def create_benchmark_sanity_check_table(
             dset = reader(
                 file_name,
                 drop_variables=skip_vars
-            ).load()
+            )
 
             # Determine which variables are all zeroes or NaN
             all_zeros_or_nans = []

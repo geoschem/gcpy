@@ -208,7 +208,7 @@ def read_model_data(
 
     # Read data and rename SpeciesConc_ to SpeciesConcVV_, if necessary
     # (needed for backwards compatibility with older versions.)
-    dataset = reader(filepaths,drop_variables=SKIP_THESE_VARS).load()
+    dataset = reader(filepaths,drop_variables=SKIP_THESE_VARS)
     dataset = rename_speciesconc_to_speciesconcvv(dataset)
 
     # Create a DataArray object and convert to ppbv (if necessary)

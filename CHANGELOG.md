@@ -49,6 +49,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Removed
 - Removed `PdfMerger()` from `compare_single_level` and `compare_zonal_mean`, it has been removed in pypdf >= 5.0.0
+- Removed `.load()` statements from xarray Datasets to improve performance
 
 ## [1.6.2] - 2025-06-12
 ### Added
