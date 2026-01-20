@@ -414,10 +414,10 @@ def create_regridders(
     Originally code from compare_single_level and compare_zonal_mean.
 
     Args:
-        refds: xarray Dataset
-            Input dataset
-        devds: xarray Dataset
-            Output dataset
+        refds: xarray.Dataset or xarray.DataArray
+            Input data
+        devds: xarray.Dataset or xarray.DataArray
+            Output data
 
     Keyword Args (optional):
         weightsdir: str
@@ -462,8 +462,8 @@ def create_regridders(
                  or devgrid and cmpgrid (will be None if input grid is
                  not cubed-sphere)
     """
-    verify_variable_type(refds, xr.Dataset)
-    verify_variable_type(devds, xr.Dataset)
+    verify_variable_type(refds, (xr.Dataset, xr.DataArray))
+    verify_variable_type(devds, (xr.Dataset, xr.DataArray))
 
     # Default settings for keyword arguments
     if sg_ref_params is None:
