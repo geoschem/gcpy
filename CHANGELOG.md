@@ -59,6 +59,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed `.load()` statements from xarray Datasets to improve performance
 - Removed `paths:spcdb_dir` YAML tag in benchmark configuration files
 - Removed `st_Ox` from `benchmark_categories.yml`; this species is no longer used in TransportTracers simulations
+- Removed special data handling for files generated with MAPL versions prior to 1.0.0 in function `get_diff_of_diffs` (located in `gcpy/util.py`)
 
 ## [1.6.2] - 2025-06-12
 ### Added

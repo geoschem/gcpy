@@ -634,70 +634,61 @@ def get_diff_of_diffs(
         dev
 ):
     """
-    Generate datasets containing differences between two datasets
+    Generate datasets containing differences between two datasets.
 
     Args:
-        ref: xarray Dataset
-            The "Reference" (aka "Ref") dataset.
-        dev: xarray Dataset
-            The "Development" (aka "Dev") dataset
+    ref       : xr.Dataset : The Ref (aka "Reference") dataset
+    dev       : xr.Dataset : The Dev" (aka "Development") dataset
 
-    Returns:
-         absdiffs: xarray Dataset
-            Dataset containing dev-ref values
-         fracdiffs: xarray Dataset
-            Dataset containing dev/ref values
+    Returns
+    absdiffs  : xr.Dataset : Absolute differences (Dev - Ref)
+    fracdiffs : xr.Dataset : Fractional differences (Dev / Ref)
     """
+    # ------------------------------------------------------------------
+    # Throw an error unless Ref and Dev are on the same grid
+    # ------------------------------------------------------------------
+    if not ref.sizes == dev.sizes:
+        msg = "Diff-of-diffs plot supports only identical grid types "
+        msg += "(lat/lon or cubed-sphere) within each Ref & Dev pair!"
+        raise ValueError(msg)
 
-    # get diff of diffs datasets for 2 datasets
-    # limit each pair to be the same type of output (GEOS-Chem Classic or GCHP)
-    # and same resolution / extent
+    # ------------------------------------------------------------------
+    # Include only the common fields in Ref and Dev
+    # ------------------------------------------------------------------
     vardict = compare_varnames(ref, dev, quiet=True)
     varlist = vardict["commonvars"]
-    # Select only common fields between the Ref and Dev datasets
     ref = ref[varlist]
     dev = dev[varlist]
-    if 'nf' not in ref.dims and 'nf' not in dev.dims:
+
+    # ------------------------------------------------------------------
+    # Compute absolute (Dev-Ref) and fractional (Dev/Ref) differences
+    # ------------------------------------------------------------------
+    with xr.set_options(keep_attrs=True):
+
         # if the coords do not align then set time dimensions equal
         try:
             xr.align(dev, ref, join='exact')
         except BaseException:
             ref.coords["time"] = dev.coords["time"]
-        with xr.set_options(keep_attrs=True):
-            absdiffs = dev - ref
-            fracdiffs = dev / ref
-            for var in dev.data_vars.keys():
-                # Ensure the diffs Dataset includes attributes
-                absdiffs[var].attrs = dev[var].attrs
-                fracdiffs[var].attrs = dev[var].attrs
-    elif 'nf' in ref.dims and 'nf' in dev.dims:
 
-        # Include special handling if cubed sphere grid dimension names are different
-        # since they changed in MAPL v1.0.0.
-        if "lat" in ref.dims and "Xdim" in dev.dims:
-            ref_newdimnames = dev.copy()
-            for var in dev.data_vars.keys():
-                if "Xdim" in dev[var].dims:
-                    ref_newdimnames[var].values = ref[var].values.reshape(
-                        dev[var].values.shape)
-                # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose(
-                # "time","lev","lat","Xdim").values
+        # Compute absolute and fractional differences
+        # Also make sure to preserve variable attributes
+        absdiffs = dev.copy()
+        fracdiffs = dev.copy()
+        for var in varlist:
+            absdiffs[var].values = dev[var].values - ref[var].values
+            fracdiffs[var].values = dev[var].values / ref[var].values
+            absdiffs[var].attrs = dev[var].attrs
+            fracdiffs[var].attrs = dev[var].attrs
 
-        with xr.set_options(keep_attrs=True):
-            absdiffs = dev.copy()
-            fracdiffs = dev.copy()
-            for var in dev.data_vars.keys():
-                if "Xdim" in dev[var].dims or "lat" in dev[var].dims:
-                    absdiffs[var].values = dev[var].values - ref[var].values
-                    fracdiffs[var].values = dev[var].values / ref[var].values
-                    # NOTE: The diffs Datasets are created without variable
-                    # attributes; we have to reattach them
-                    absdiffs[var].attrs = dev[var].attrs
-                    fracdiffs[var].attrs = dev[var].attrs
-    else:
-        print('Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere)' + \
-              ' within each dataset pair')
-        raise ValueError
+        # If there are more than one time point, then take the
+        # time mean (e.g. Annual Mean) of differences
+        if "time" in absdiffs.coords:
+            if len(absdiffs.coords["time"]) > 1:
+                absdiffs = dataset_mean(absdiffs)
+        if "time" in fracdiffs.coords:
+            if len(fracdiffs.coords["time"]) > 1:
+                fracdiffs = dataset_mean(fracdiffs)
 
     return absdiffs, fracdiffs
 
