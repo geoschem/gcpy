@@ -19,8 +19,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added functions `get_molwt_from_metadata` and `read_species_metadata` to `gcpy/util.py`
 - Added function `get_species_database_files` to `gcpy/benchmark/modules/benchmark_utils.py`
 - Added constant `SPECIES_DATABASE` to `gcpy/benchmark/modules/benchmark_utils.py`
+<<<<<<< HEAD
 - Added manual garbage collection in `create_regridders`, `compare_single_level`, and `compare_zonal_mean` functions.
 - Added helpful tips to the `gcpy/benchmark/benchmark.slurm.sh` script
+=======
+- Added function `datetime64_to_str` to `gcpy/date_time.py`
+>>>>>>> 7a535df (Allow Ref & Dev to have different dates in global mass tables)
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -48,8 +52,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated routine `make_benchmark_aerosol_tables` to include all dust species in the aerosol burdens table
 - Optimized function `get_diff_of_diffs` (in `gcpy/util.py`) for performance
 - Optimized function `add_lumped_species_to_dataset` (in `gcpy/benchmark/modules/benchmark_utils.py`) for performance
-- Optimized the algorithm to generate `varlist` in `make_benchmark_conc_plots`.  Also truncated datasets to only contain varibales in `varlist`.
-
+- Optimized the algorithm to generate `varlist` in `make_benchmark_conc_plots`.  Also truncated datasets to only contain variables in `varlist`.
+- Updated `make_benchmark_mass_tables` and `create_global_mass_table` to allow Ref and Dev to have different dates if so chosen
+- Updated `run_benchmark.py` to generate mass tables at start and end of the simulation
+  
+>>>>>>> 7a535df (Allow Ref & Dev to have different dates in global mass tables)
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
 - Fixed various security issues in GitHub Actions workflows
