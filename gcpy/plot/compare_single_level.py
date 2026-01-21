@@ -20,9 +20,10 @@ from joblib import Parallel, delayed
 from pypdf import PdfReader, PdfWriter
 from gcpy.grid import get_grid_extents, call_make_grid
 from gcpy.regrid import regrid_comparison_data, create_regridders
-from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
+from gcpy.util import \
+    reshape_MAPL_CS, get_diff_of_diffs, get_molwt_from_metadata, \
     all_zero_or_nan, slice_by_lev_and_time, compare_varnames, \
-    read_config_file, verify_variable_type
+    read_species_metadata, verify_variable_type
 from gcpy.units import check_units, data_unit_is_mol_per_mol
 from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
@@ -64,7 +65,7 @@ def compare_single_level(
         sigdiff_list=None,
         second_ref=None,
         second_dev=None,
-        spcdb_dir=os.path.dirname(__file__),
+        spcdb_files=None,
         ll_plot_func='imshow',
         **extra_plot_args
 ):
@@ -127,6 +128,10 @@ def compare_single_level(
         convert_to_ugm3: bool
             Whether to convert data units to ug/m3 for plotting.
             Default value: False
+        spcdb_files: str | list
+            A single species_database.yml file or a list of files
+            (e.g. for Ref & Dev).  Only used when convert_ugm3=True.
+            Default value: None
         flip_ref: bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
@@ -172,9 +177,6 @@ def compare_single_level(
             A dataset of the same model type / grid as devdata,
             to be used in diff-of-diffs plotting.
             Default value: None
-        spcdb_dir: str
-            Directory containing species_database.yml file.
-            Default value: Path of GCPy code repository
         ll_plot_func: str
             Function to use for lat/lon single level plotting with
             possible values 'imshow' and 'pcolormesh'. imshow is much
@@ -228,15 +230,18 @@ def compare_single_level(
     savepdf = True
     if pdfname == "":
         savepdf = False
-    if convert_to_ugm3:
-        properties = read_config_file(
-            os.path.join(
-                spcdb_dir,
-                "species_database.yml"
-            ),
-            quiet=True
-        )
 
+    # If converting to ug/m3, read species database file(s) to obtain
+    # molecular weights.
+    if convert_to_ugm3:
+        if spcdb_files is None:
+            msg = "You must pass 'spcdb_files' when convert_to_ugm3=True!"
+            raise ValueError(msg)
+        ref_metadata, dev_metadata = read_species_metadata(
+            spcdb_files,
+            quiet= True
+        )
+            
     # Get stretched grid info, if any.
     # Parameter order is stretch factor, target longitude, target latitude.
     # Stretch factor 1 corresponds with no stretch.
@@ -423,36 +428,42 @@ def compare_single_level(
                 False
             )
 
-            # Get a list of properties for the given species
+            # Get the species molecular weights from Ref & Dev metadata
             spc_name = varname.replace(varname.split("_")[0] + "_", "")
-            species_properties = properties.get(spc_name)
+            ref_spc_mw_g = get_molwt_from_metadata(ref_metadata, spc_name)
+            dev_spc_mw_g = get_molwt_from_metadata(dev_metadata, spc_name)
 
-            # If no properties are found, then exit with an error.
-            # Otherwise, get the molecular weight in g/mol.
-            if species_properties is None:
-                # Hack lumped species until we implement a solution
-                if spc_name in ["Simple_SOA", "Complex_SOA"]:
-                    spc_mw_g = 150.0
-                else:
-                    msg = f"No properties found for {spc_name}. Cannot convert" \
-                          + " to ug/m3."
-                    raise ValueError(msg)
-            else:
-                spc_mw_g = species_properties.get("MW_g")
-                if spc_mw_g is None:
-                    msg = f"Molecular weight not found for species {spc_name}!" \
-                          + " Cannot convert to ug/m3."
-                    raise ValueError(msg)
+            # Skip if the species has no molecular weight in
+            # both Ref & Dev species metadata
+            if ref_spc_mw_g is None and dev_spc_mw_g is None:
+                msg = f"Cannot convert {spc_name} to ug/m3! "
+                msg +="no molecular weight found in Ref & Dev metadata!"
+                continue
+
+            # If only one of the species has no molecular weight
+            # print a warning message but allow comparison to proceed
+            if ref_spc_mw_g is None or dev_spc_mw_g is None:
+                msg = f"Cannot convert {spc_name} to ug/m3!, "
+                msg +="no molecular weight was found!"
+                print(msg)
 
             # Convert values from ppb to ug/m3:
-            # ug/m3 = mol/mol * mol/g air * kg/m3 air * 1e3g/kg
+            # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
             #         * g/mol spc * 1e6ug/g
             #       = ppb * air density * (spc MW / air MW)
-            ds_refs[i].values = ds_refs[i].values * ref_airden.values \
-                * (spc_mw_g / MW_AIR_g)
-            ds_devs[i].values = ds_devs[i].values * dev_airden.values \
-                * (spc_mw_g / MW_AIR_g)
-
+            #
+            # If mol. wt. is missing, then set data to NaN
+            if ref_spc_mw_g is not None:
+                ds_refs[i].values *= \
+                    ref_airden.values * (ref_spc_mw_g / MW_AIR_g)
+            else:
+                ds_refs[i].values *= np.nan
+            if dev_spc_mw_g is not None:
+                ds_devs[i].values *= \
+                    dev_airden.values * (dev_spc_mw_g / MW_AIR_g)
+            else:
+                ds_devs[i].values *= np.nan
+            
             # Update units string
             ds_refs[i].attrs["units"] = "\u03BCg/m3"  # ug/m3 using mu
             ds_devs[i].attrs["units"] = "\u03BCg/m3"

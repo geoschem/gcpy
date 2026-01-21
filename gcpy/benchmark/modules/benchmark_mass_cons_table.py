@@ -10,7 +10,7 @@ from gcpy.constants import SKIP_THESE_VARS
 from gcpy.units import convert_units
 from gcpy.util import \
     dataset_reader, get_area_from_dataset, make_directory, \
-    read_config_file, replace_whitespace, verify_variable_type
+    read_species_metadata, replace_whitespace, verify_variable_type
 from gcpy.benchmark.modules.benchmark_utils import \
     get_datetimes_from_filenames
 
@@ -69,29 +69,24 @@ def get_delta_pressure(
 
 
 def get_passive_tracer_metadata(
-        spcdb_dir
+        spcdb_files
 ):
     """
     Returns a dictionary with metadata for the passive tracer.
 
     Args
-    spcdb_dir  : str  : Directory containing species_database.yml
+    spcdb_files : list  : Paths to Ref & Dev species_database.yml files
 
     Returns
-    properties : dict : Dictionary with species metadata
+    properties  : dict : Dictionary with species metadata
     """
-    verify_variable_type(spcdb_dir, str)
+    verify_variable_type(spcdb_files, list)
 
-    spc_name = SPC_NAME
-    properties = read_config_file(
-        os.path.join(
-            spcdb_dir,
-            "species_database.yml"
-        ),
-        quiet=True
-    )
+    # Read the species database files in the Ref & Dev rundirs, and
+    # return a dict containing metadata for the union of species.
+    _, properties = read_species_metadata(spcdb_files, quiet=True)
 
-    return properties.get(spc_name)
+    return properties.get(SPC_NAME)
 
 
 def get_passive_tracer_varname(
@@ -279,11 +274,11 @@ def make_benchmark_mass_conservation_table(
         ref_label,
         dev_files,
         dev_label,
+        spcdb_files,
         dst="./benchmark",
         overwrite=False,
         ref_areapath=None,
         dev_areapath=None,
-        spcdb_dir=None
 ):
     """
     Creates a text file containing global mass of passive species
@@ -294,21 +289,21 @@ def make_benchmark_mass_conservation_table(
     ref_label    : str      : Ref version label
     dev_files    : list|str : List of files from the Dev model
     dev_label    : str      : Dev version label
+    spcdb_files  : list     : Paths to Ref & Dev species_database.yml files
     dst          : str      : Destination folder for file output
     overwrite    : bool     : Overwrite pre-existing files?
     ref_areapath : list|str : Path to file w/ Ref area data (optional)
     dev_areapath : list|str : Path to file w/ Dev area data (optional)
-    spcdb_dir    : str      : Path to species database file
     """
     verify_variable_type(ref_files, (list, str))
     verify_variable_type(ref_label, str)
     verify_variable_type(dev_files, (list, str))
     verify_variable_type(dev_label, str)
+    verify_variable_type(spcdb_files, list)
     verify_variable_type(dst, (str, type(None)))
     verify_variable_type(overwrite, bool)
     verify_variable_type(ref_areapath, (str, type(None)))
     verify_variable_type(ref_areapath, (str, type(None)))
-    verify_variable_type(spcdb_dir, str)
 
     # ==================================================================
     # Initialize
@@ -322,7 +317,7 @@ def make_benchmark_mass_conservation_table(
     dev_label = replace_whitespace(dev_label)
 
     # Get a list of properties for the given species
-    metadata = get_passive_tracer_metadata(spcdb_dir)
+    metadata = get_passive_tracer_metadata(spcdb_files)
 
     # Replace whitespace with underscores in version labels
     ref_label = replace_whitespace(ref_label)

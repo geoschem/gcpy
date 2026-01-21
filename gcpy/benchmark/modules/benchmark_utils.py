@@ -1,6 +1,6 @@
+#!/usr/bin/env python3
 """
 Utility functions specific to the benchmark plotting/tabling scripts.
-TODO: Migrate other benchmark-specific utilities from gcpy/benchmark.py to here.
 """
 import os
 import numpy as np
@@ -8,6 +8,7 @@ import xarray as xr
 import pandas as pd
 from gcpy import util
 from gcpy.constants import SKIP_THESE_VARS
+from gcpy.util import verify_variable_type
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -18,7 +19,7 @@ BENCHMARK_CAT = "benchmark_categories.yml"
 EMISSION_SPC = "emission_species.yml"
 EMISSION_INV = "emission_inventories.yml"
 LUMPED_SPC = "lumped_species.yml"
-
+SPECIES_DATABASE = "species_database.yml"
 
 def make_output_dir(
         dst,
@@ -688,3 +689,64 @@ def get_datetimes_from_filenames(
         datetimes[idx] = np.datetime64(dt_str)
 
     return datetimes
+
+
+def get_species_database_files(config, ref_model, dev_model):
+    """
+    Returns the paths to the species_database.yml files in the
+    Ref and Dev benchmark run directories.
+
+    Args:
+    config      : dict : Benchmark configuration information
+    ref_model   : str  : Either "gcc" or "gchp"
+    dev_model   : str  : Either "gcc" or "gchp"
+
+    Returns:
+    spcdb_files : list : Paths to the species database files
+                         corresponding to Ref & Dev simulations
+    """
+    verify_variable_type(config, dict)
+    verify_variable_type(ref_model, str)
+    verify_variable_type(dev_model, str)
+
+    # "gcc" and "gchp" are the only allowable values for ref_model
+    if ref_model not in ("gcc", "gchp"):
+        msg = "Argument 'ref_model' must be either 'gcc' or 'gchp'!"
+        raise ValueError(msg)
+
+    # "gcc" and "gchp" are the only allowable values for dev_model
+    if dev_model not in ("gcc", "gchp"):
+        msg = "Argument 'dev_model' must be either 'gcc' or 'gchp'!"
+        raise ValueError(msg)
+
+    # For GCHP vs GCC comparisons, "Ref" is actually the "Dev" of GCC
+    if ref_model == "gcc" and dev_model == "gchp":
+        ref_or_dev = "dev"
+    else:
+        ref_or_dev = "ref"
+
+    # Species database in the "Ref" simulation folder
+    ref_spcdb_file = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"][ref_or_dev][ref_model]["dir"],
+        SPECIES_DATABASE,
+     )
+    if not os.path.exists(ref_spcdb_file):
+        msg = f"Could not find {ref_spcdb_file}!"
+        raise FileNotFoundError(msg)
+    msg = f"Ref species database: {ref_spcdb_file}"
+    print(msg)
+
+    # Species database in the "Dev" simulation folder
+    dev_spcdb_file = os.path.join(
+        config["paths"]["main_dir"],
+        config["data"]["dev"][dev_model]["dir"],
+        SPECIES_DATABASE,
+    )
+    if not os.path.exists(dev_spcdb_file):
+        msg = f"Could not find {dev_spcdb_file}!"
+        raise FileNotFoundError(msg)
+    msg = f"Dev species database: {dev_spcdb_file}"
+    print(msg)
+
+    return [ref_spcdb_file, dev_spcdb_file]

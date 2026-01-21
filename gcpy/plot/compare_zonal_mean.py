@@ -20,9 +20,10 @@ from gcpy.grid import get_vert_grid, get_pressure_indices, \
     pad_pressure_edges, convert_lev_to_pres
 from gcpy.regrid import regrid_comparison_data, create_regridders, gen_xmat, \
     regrid_vertical
-from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
+from gcpy.util import \
+    get_molwt_from_metadata, reshape_MAPL_CS, get_diff_of_diffs, \
     all_zero_or_nan, compare_varnames, \
-    read_config_file, verify_variable_type
+    read_species_metadata, verify_variable_type
 from gcpy.units import check_units, data_unit_is_mol_per_mol
 from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
@@ -53,6 +54,7 @@ def compare_zonal_mean(
         normalize_by_area=False,
         enforce_units=True,
         convert_to_ugm3=False,
+        spcdb_files=None,
         flip_ref=False,
         flip_dev=False,
         use_cmap_RdBu=False,
@@ -64,7 +66,6 @@ def compare_zonal_mean(
         sigdiff_list=None,
         second_ref=None,
         second_dev=None,
-        spcdb_dir=os.path.dirname(__file__),
         ref_vert_params=None,
         dev_vert_params=None,
         **extra_plot_args
@@ -130,6 +131,10 @@ def compare_zonal_mean(
         convert_to_ugm3: str
             Whether to convert data units to ug/m3 for plotting.
             Default value: False
+        spcdb_files: str | list
+            A single species_database.yml file or a list of files
+            (e.g. for Ref & Dev).  Only used when convert_to_ugm3=True.
+            Default value: None
         flip_ref: bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
@@ -174,9 +179,6 @@ def compare_zonal_mean(
             A dataset of the same model type / grid as devdata,
             to be used in diff-of-diffs plotting.
             Default value: None
-        spcdb_dir: str
-            Directory containing species_database.yml file.
-            Default value: Path of GCPy code repository
         ref_vert_params: list(AP, BP) of list-like types
             Hybrid grid parameter A in hPa and B (unitless).
             Needed if ref grid is not 47 or 72 levels.
@@ -241,14 +243,16 @@ def compare_zonal_mean(
     savepdf = True
     if pdfname == "":
         savepdf = False
-    # If converting to ug/m3, load the species database
+
+    # If converting to ug/m3, read species database file(s) so that
+    # we can obtain molecular weights.
     if convert_to_ugm3:
-        properties = read_config_file(
-            os.path.join(
-                spcdb_dir,
-                "species_database.yml"
-            ),
-            quiet=True
+        if spcdb_files is None:
+            msg = "You must pass 'spcdb_files' when convert_to_ugm3=True!"
+            raise ValueError(msg)
+        ref_metadata, dev_metadata = read_species_metadata(
+            spcdb_files,
+            quiet= True
         )
 
     # Get mid-point pressure and edge pressures for this grid
@@ -451,36 +455,41 @@ def compare_zonal_mean(
             else:
                 dev_airden = devmet["Met_AIRDEN"].isel(lev=dev_pmid_ind)
 
-            # Get a list of properties for the given species
+            # Get the species molecular weights from Ref & Dev metadata
             spc_name = varname.replace(varname.split("_")[0] + "_", "")
-            species_properties = properties.get(spc_name)
+            ref_spc_mw_g = get_molwt_from_metadata(ref_metadata, spc_name)
+            dev_spc_mw_g = get_molwt_from_metadata(dev_metadata, spc_name)
 
-            # If no properties are found, then exit with an error.
-            # Otherwise, get the molecular weight in g/mol.
-            if species_properties is None:
-                # Hack lumped species until we implement a solution
-                if spc_name in ["Simple_SOA", "Complex_SOA"]:
-                    spc_mw_g = 150.0
-                else:
-                    msg = f"No properties found for {spc_name}. Cannot convert" \
-                          + " to ug/m3."
-                    raise ValueError(msg)
-            else:
-                # Get the species molecular weight in g/mol
-                spc_mw_g = species_properties.get("MW_g")
-                if spc_mw_g is None:
-                    msg = f"Molecular weight not found for for species {spc_name}!" \
-                          + " Cannot convert to ug/m3."
-                    raise ValueError(msg)
+            # Skip if the species has no molecular weight in
+            # both Ref & Dev species metadata
+            if ref_spc_mw_g is None and dev_spc_mw_g is None:
+                msg = f"Cannot convert {spc_name} to ug/m3! "
+                msg +="no molecular weight found in Ref & Dev metadata!"
+                continue
+
+            # If only one of the species has no molecular weight
+            # print a warning message but allow comparison to proceed
+            if ref_spc_mw_g is None or dev_spc_mw_g is None:
+                msg = f"Cannot convert {spc_name} to ug/m3!, "
+                msg +="no molecular weight was found!"
+                print(msg)
 
             # Convert values from ppb to ug/m3:
             # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
             #         * g/mol spc * 1e6ug/g
             #       = ppb * air density * (spc MW / air MW)
-            ds_refs[i].values = ds_refs[i].values * ref_airden.values \
-                * (spc_mw_g / MW_AIR_g)
-            ds_devs[i].values = ds_devs[i].values * dev_airden.values \
-                * (spc_mw_g / MW_AIR_g)
+            #
+            # If mol. wt. is missing, then set data to NaN
+            if ref_spc_mw_g is not None:
+                ds_refs[i].values *= \
+                    ref_airden.values * (ref_spc_mw_g / MW_AIR_g)
+            else:
+                ds_refs[i].values *= np.nan
+            if dev_spc_mw_g is not None:
+                ds_devs[i].values *= \
+                    dev_airden.values * (dev_spc_mw_g / MW_AIR_g)
+            else:
+                ds_devs[i].values *= np.nan
 
             # Update units string
             ds_refs[i].attrs["units"] = "\u03BCg/m3"  # ug/m3 using mu

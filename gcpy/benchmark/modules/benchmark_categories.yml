@@ -256,7 +256,6 @@ TransportTracersBenchmark:
       - e90_n
       - e90_s
       - st80_25
-      - stOX
   WetLossConv:
     WetLossConv:
       - Pb210

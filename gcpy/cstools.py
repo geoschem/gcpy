@@ -174,7 +174,7 @@ def face_area(
             xyz_corner = np.zeros((4,3))
             for i_vert in range(4):
                 x_lon = i_lon + (i_vert > 1)
-                x_lat = i_lat + i_vert in (0, 3)
+                x_lat = i_lat + (i_vert in (0, 3))
                 lon_corner[i_vert] = lon_b_rad[x_lon,x_lat]
                 lat_corner[i_vert] = lat_b_rad[x_lon,x_lat]
             for i_vert in range(4):
