@@ -75,7 +75,7 @@ def get_passive_tracer_metadata(
     Returns a dictionary with metadata for the passive tracer.
 
     Args
-    spcdb_files : list  : Paths to Ref & Dev species_datbase.yml files
+    spcdb_files : list  : Paths to Ref & Dev species_database.yml files
 
     Returns
     properties  : dict : Dictionary with species metadata
