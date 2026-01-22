@@ -2078,16 +2078,14 @@ def make_benchmark_emis_tables(
     category for benchmarking purposes.
 
     Args:
-        reflist: list of str
-             List with the path names of the emissions file or files
-             (multiple months) that will constitute the "Ref"
-             (aka "Reference") data set.
+        reflist: str | list of str
+             Path name(s) of the emissions file(s) that constitute
+             the "Ref" (aka "Reference") data set.
         refstr: str
             A string to describe ref (e.g. version number)
-        devlist: list of str
-             List with the path names of the emissions file or files
-             (multiple months) that will constitute the "Dev"
-             (aka "Development") data set
+        devlist: str | list of str
+             Path name(s) of the emissions file(s) that constitute
+             the "Dev" (aka "Development") data set.
         devstr: str
             A string to describe dev (e.g. version number)
         spcdb_files : list
@@ -2128,9 +2126,9 @@ def make_benchmark_emis_tables(
     # ==================================================================
     # Initialization
     # ==================================================================
-    verify_variable_type(reflist, list)
+    verify_variable_type(reflist, (str,list))
     verify_variable_type(refstr, str)
-    verify_variable_type(devlist, list)
+    verify_variable_type(devlist, (str,list))
     verify_variable_type(devstr, str)
     verify_variable_type(spcdb_files, list)
 
@@ -2151,12 +2149,12 @@ def make_benchmark_emis_tables(
     # ==================================================================
 
     # Read the input datasets
-    # Also read the meteorology datasets if passed. These are optional since it
-    # the refds and devds have variable AREA already (always true) and
-    # unit conversions do not require any meteorology.
-    if len(reflist) == 1:
+    # Also read the meteorology datasets if passed. These are optional
+    # since the refds and devds have variable AREA already (always true)
+    # and unit conversions do not require any meteorology.
+    if isinstance(reflist, str):
         reflist = [reflist]
-    if len(devlist) == 1:
+    if isinstance(devlist, str):
         devlist = [devlist]
     refmetds = None
     devmetds = None
