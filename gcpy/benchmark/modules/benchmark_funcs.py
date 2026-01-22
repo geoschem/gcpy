@@ -5885,8 +5885,9 @@ def create_benchmark_sanity_check_table(
     )
 
     # Variables to skip
-    skip_vars = [SKIP_THESE_VARS, "AREA"]
-
+    skip_vars = SKIP_THESE_VARS
+    skip_vars.append("AREA")
+    
     # ==================================================================
     # Open output file and write header
     # ==================================================================
