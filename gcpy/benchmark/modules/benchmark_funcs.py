@@ -260,6 +260,10 @@ def create_total_emissions_table(
         # =============================================================
         for v in varnames:
 
+            # KLUDGE, skip InvAFCID due to a file error in GCHP
+            if "InvAFCID" in v:
+                continue
+
             if "Inv" in template:
                 spc_name = v.split("_")[1]
             else:
@@ -5887,7 +5891,7 @@ def create_benchmark_sanity_check_table(
     # Variables to skip
     skip_vars = SKIP_THESE_VARS
     skip_vars.append("AREA")
-    
+
     # ==================================================================
     # Open output file and write header
     # ==================================================================
