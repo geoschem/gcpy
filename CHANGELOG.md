@@ -52,12 +52,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed the restart regridding for stretched GCHP when target lat/lon is exactly 0.0 in `gcpy/regrid_restart_file.py`
 - Fixed computation of the global AOD benchmark table caused by hardwired species names
 - Fixed error in `create_benchmark_emissions_table` where all species were assumed to be in Ref and Dev even if they were not
+- Fixed error that caused the GCHP vs GCC diff-of-diffs AnnualMean plots to be computed as a difference of means instead of a mean of differences
 
 ### Removed
 - Removed `PdfMerger()` from `compare_single_level` and `compare_zonal_mean`, it has been removed in pypdf >= 5.0.0
 - Removed `.load()` statements from xarray Datasets to improve performance
 - Removed `paths:spcdb_dir` YAML tag in benchmark configuration files
 - Removed `st_Ox` from `benchmark_categories.yml`; this species is no longer used in TransportTracers simulations
+- Removed special data handling for files generated with MAPL versions prior to 1.0.0 in function `get_diff_of_diffs` (located in `gcpy/util.py`)
 
 ## [1.6.2] - 2025-06-12
 ### Added

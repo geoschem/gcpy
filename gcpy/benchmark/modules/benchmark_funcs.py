@@ -1060,21 +1060,33 @@ def make_benchmark_conc_plots(
         devmetds = reader(devmet, drop_variables=SKIP_THESE_VARS)
 
     # Determine if doing diff-of-diffs
-    diff_of_diffs = False
-    if second_ref is not None and second_dev is not None:
-        diff_of_diffs = True
+    diff_of_diffs = second_ref is not None and second_dev is not None
 
-
-    # Open second datasets if passed as arguments (used for diff of diffs)
-    # Regrid to same horz grid resolution if two refs or two devs do not match.
     if diff_of_diffs:
+
+        # --------------------------------------------------------------
+        # %%%%% We are plotting diff-of-diffs %%%%%
+        #
+        # Open the second Ref and Dev datasets, if they have been
+        # passed as keyword arguments, as these are needed for the
+        # diff-of-diffs plots.  Regrid to the same # horizontal grid
+        # resolution if the two Refs or two Devs are not on the same
+        # grid.
+        #
+        # Also, do not take the time mean (e.g. Annual Mean) of the
+        # datasets, as this will compute the the difference of means.
+        # Instead, we need to compute the mean of differences.  This
+        # will be done in the plotting functions compare_single_level
+        # and compare_zonal_mean.
+        # --------------------------------------------------------------
         second_refds = reader(second_ref, drop_variables=SKIP_THESE_VARS)
         second_devds = reader(second_dev, drop_variables=SKIP_THESE_VARS)
-
-        print('\nPrinting second_refds (dev of ref for diff-of-diffs)\n')
-        print(second_refds)
-        print('\nPrinting second_devds (dev of dev for diff-of-diffs)\n')
-        print(second_devds)
+        
+        if verbose:
+            print('\nPrinting second_refds (dev of ref for diff-of-diffs)\n')
+            print(second_refds)
+            print('\nPrinting second_devds (dev of dev for diff-of-diffs)\n')
+            print(second_devds)
 
         # Only regrid if ref grid resolutions differ.
         # Assume only may differ if both cubed-sphere.
@@ -1088,6 +1100,7 @@ def make_benchmark_conc_plots(
         if "Xdim" in devds.dims and "Xdim" in second_devds.dims:
             if devds['Xdim'].size != second_devds['Xdim'].size:
                 regrid_dev = True
+
         if regrid_ref or regrid_dev:
             # Assume regridding C24 to C48 to compute the difference at C48
             regridfile=os.path.join(weightsdir,'regrid_weights_c24_to_c48.nc')
@@ -1118,17 +1131,20 @@ def make_benchmark_conc_plots(
                 print('\nRegrid complete\n')
 
     else:
+
+        # --------------------------------------------------------------
+        # %%%%% We are not plotting diff-of-diffs %%%%%
+        #
+        # We do not need the second Ref and Dev data.
+        # We can also compute the time mean (e.g. Annual Mean) here.
+        # --------------------------------------------------------------
         second_refds = None
         second_devds = None
-
-    # Compute the annual mean of datasets (if necessary)
-    if time_mean:
-        refds = dataset_mean(refds)
-        devds = dataset_mean(devds)
-        refmetds = dataset_mean(refmetds)
-        devmetds = dataset_mean(devmetds)
-        second_ref = dataset_mean(second_refds)
-        second_dev = dataset_mean(second_devds)
+        if time_mean:
+            refds = dataset_mean(refds)
+            devds = dataset_mean(devds)
+            refmetds = dataset_mean(refmetds)
+            devmetds = dataset_mean(devmetds)
 
     # Create regridding files if necessary while not in parallel loop
     [_ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
