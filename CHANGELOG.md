@@ -27,7 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Expanded possible stretched grid attribute names to include `STRETCH_FACTOR`, `TARGET_LAT`, and `TARGET_LON`
 - Changed regridding for plots to always compare stretched-grid to uniform CS grid on the uniform CS grid rather than whatever grid is ref
 - Updated PDF writing algorithm in `compare_single_level` and `compare_zonal_mean` to use `PdfReader` and `PdfWriter` instead of `PdfMerger`
-- Bumped `pypdf` from version 4.2.0 to 6.6.0 in `setup.py` and environment files
+- Bumped `pypdf` from version 4.2.0 to 6.6.2 in `setup.py` and environment files
 - Moved `Ap` and `Bp` parameters that define vertical grids from `grid.py` to `vgrid_defs.py`
 - Replaced hardwired default lon/lat and stretched-grid settings with new constants from `gcpy/constants.py`
 - Modified code in several modules as directed by Pylint to better conform to the Python style guide
