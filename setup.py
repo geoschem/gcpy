@@ -109,7 +109,7 @@ setup(
         "pylint==3.3.4",
         "pyproj==3.7.1",
         "python==3.13",
-        "pypdf==6.6.0",
+        "pypdf==6.6.2",
         "requests==2.32.4",
         "scipy==1.15.2",
         "sparselt==0.1.3",
