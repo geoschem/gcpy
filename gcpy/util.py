@@ -12,7 +12,7 @@ from pandas import Series
 import xarray as xr
 from pypdf import PdfWriter, PdfReader
 from gcpy.constants import ENCODING, TABLE_WIDTH
-from gcpy.cstools import is_cubed_sphere_rst_grid
+from gcpy.cstools import is_cubed_sphere, is_cubed_sphere_rst_grid
 
 # ======================================================================
 # %%%%% METHODS %%%%%
@@ -644,24 +644,35 @@ def get_diff_of_diffs(
     absdiffs  : xr.Dataset : Absolute differences (Dev - Ref)
     fracdiffs : xr.Dataset : Fractional differences (Dev / Ref)
     """
-    # ------------------------------------------------------------------
-    # Throw an error unless Ref and Dev are on the same grid
-    # ------------------------------------------------------------------
-    if not ref.sizes == dev.sizes:
-        msg = "Diff-of-diffs plot supports only identical grid types "
-        msg += "(lat/lon or cubed-sphere) within each Ref & Dev pair!"
-        raise ValueError(msg)
-
-    # ------------------------------------------------------------------
-    # Include only the common fields in Ref and Dev
-    # ------------------------------------------------------------------
-    vardict = compare_varnames(ref, dev, quiet=True)
-    varlist = vardict["commonvars"]
-    ref = ref[varlist]
-    dev = dev[varlist]
-
-    # Preseve xarray attributes
     with xr.set_options(keep_attrs=True):
+
+        # ------------------------------------------------------------------
+        # Throw an error unless Ref and Dev are on the same grid
+        # ------------------------------------------------------------------
+        if not ref.sizes == dev.sizes:
+            msg = "Diff-of-diffs plot supports only identical grid types "
+            msg += "(lat/lon or cubed-sphere) within each Ref & Dev pair!"
+            raise ValueError(msg)
+
+        # ---------------------------------------------------------------
+        # Include only the common fields in Ref and Dev
+        # ---------------------------------------------------------------
+        vardict = compare_varnames(ref, dev, quiet=True)
+        varlist = vardict["commonvars"]
+        ref = ref[varlist]
+        dev = dev[varlist]
+
+        # ---------------------------------------------------------------
+        # For cubed-sphere grids, align coordinates to avoid mismatch,
+        # which will generate a "regridder not found" error.
+        # ---------------------------------------------------------------
+        if is_cubed_sphere(ref) and is_cubed_sphere(dev):
+            ref = ref.assign_coords({
+                'Xdim': dev.coords['Xdim'],
+                'Ydim': dev.coords['Ydim'],
+                'lons': dev.coords['lons'],
+                'lats': dev.coords['lats']
+            })
 
         # --------------------------------------------------------------
         # Align time coords if needed

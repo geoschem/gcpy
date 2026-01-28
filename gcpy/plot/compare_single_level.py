@@ -219,6 +219,7 @@ def compare_single_level(
 
         frac_refstr = 'GCC_dev / GCC_ref'
         frac_devstr = 'GCHP_dev / GCHP_ref'
+
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist is None:
         quiet = not verbose
