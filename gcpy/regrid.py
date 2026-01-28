@@ -3,6 +3,7 @@
 Module containing functions for creating xESMF regridder objects.
 """
 import os
+import gc
 import warnings
 import hashlib
 import xesmf as xe
@@ -644,6 +645,9 @@ def create_regridders(
                     weightsdir=weightsdir,
                     reuse_weights=reuse_weights,
                     sg_params=sg_dev_params)
+
+    # Force garbage collection manually (frees memory)
+    gc.collect()
 
     return [
         refres,

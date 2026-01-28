@@ -6,6 +6,7 @@ Called from the GEOS-Chem benchmarking scripts and from the
 compare_diags.py example script.
 """
 import os
+import gc
 import copy
 import warnings
 from multiprocessing import current_process
@@ -243,7 +244,7 @@ def compare_single_level(
             spcdb_files,
             quiet= True
         )
-            
+
     # Get stretched grid info, if any.
     # Parameter order is stretch factor, target longitude, target latitude.
     # Stretch factor 1 corresponds with no stretch.
@@ -465,7 +466,7 @@ def compare_single_level(
                     dev_airden.values * (dev_spc_mw_g / MW_AIR_g)
             else:
                 ds_devs[i].values *= np.nan
-            
+
             # Update units string
             ds_refs[i].attrs["units"] = "\u03BCg/m3"  # ug/m3 using mu
             ds_devs[i].attrs["units"] = "\u03BCg/m3"
@@ -640,6 +641,11 @@ def compare_single_level(
                 cmpminlon_ind,
                 cmpmaxlon_ind
             )
+
+    # Force garbage collection manually (frees memory)
+    del refregridder, refregridder_list, devregridder, devregridder_list
+    gc.collect()
+
     # =================================================================
     # Define function to create a single page figure to be called
     # in a parallel loop

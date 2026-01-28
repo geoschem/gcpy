@@ -5,6 +5,7 @@ GEOS-Chem model versions.  Called from the GEOS-Chem benchmarking scripts
 and from the compare_diags.py example script.
 """
 import os
+import gc
 import copy
 import warnings
 from multiprocessing import current_process
@@ -675,6 +676,11 @@ def compare_zonal_mean(
         if diff_of_diffs:
             frac_ds_ref_cmps[i] = frac_ds_ref
             frac_ds_dev_cmps[i] = frac_ds_dev
+
+    # Force garbage collection manually (frees memory)
+    del refregridder, refregridder_list, devregridder, devregridder_list
+    gc.collect()
+
     # Universal plot setup
     xtick_positions = np.arange(-90, 91, 30)
     xticklabels = [rf"{x}$\degree$" for x in xtick_positions]

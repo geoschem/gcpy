@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added functions `get_molwt_from_metadata` and `read_species_metadata` to `gcpy/util.py`
 - Added function `get_species_database_files` to `gcpy/benchmark/modules/benchmark_utils.py`
 - Added constant `SPECIES_DATABASE` to `gcpy/benchmark/modules/benchmark_utils.py`
+- Added manual garbage collection in `create_regridders`, `compare_single_level`, and compare_zonal_mean` functions.
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
