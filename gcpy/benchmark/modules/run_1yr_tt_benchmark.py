@@ -57,6 +57,7 @@ import warnings
 from calendar import monthrange
 import numpy as np
 from joblib import Parallel, delayed
+from gcpy.date_time import datetime64_to_str
 from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
 from gcpy.benchmark.modules.benchmark_funcs import \
     make_benchmark_conc_plots, make_benchmark_wetdep_plots, \
@@ -202,7 +203,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         dtype="datetime64[M]"
     )
     all_months_gchp_ref = all_months_ref
-
+    mass_table_dates_ref = np.append(all_months_ref, bmk_end_ref)
+   
     # Get subset of month datetimes and seconds per month
     # for only benchmark months
     bmk_mons_ref = all_months_ref[bmk_mon_inds]
@@ -237,6 +239,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
         dtype="datetime64[M]"
     )
     all_months_gchp_dev = all_months_dev
+    mass_table_dates_dev = np.append(all_months_dev, bmk_end_dev)
 
     bmk_mons_dev = all_months_dev[bmk_mon_inds]
 
@@ -455,12 +458,22 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 refpath = get_filepath(
                     gcc_vs_gcc_refrstdir,
                     "Restart",
-                    bmk_mons_ref[mon]
+                    mass_table_dates_ref[mon]
                 )
                 devpath = get_filepath(
                     gcc_vs_gcc_devrstdir,
                     "Restart",
-                    bmk_mons_dev[mon]
+                    mass_table_dates_dev[mon]
+                )
+
+                # Date strings
+                date_str_ref = datetime64_to_str(
+                    mass_table_dates_ref[mon],
+                    format_str="%Y%m%dT%H"
+                )
+                date_str_dev = datetime64_to_str(
+                    mass_table_dates_dev[mon],
+                    format_str="%Y%m%dT%H"
                 )
 
                 # Create tables
@@ -471,9 +484,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gcc_vs_gcc_devstr,
                     spcdb_files,
                     dst=gcc_vs_gcc_tablesdir,
-                    subdst=bmk_mon_yr_strs_dev[mon],
-                    label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
                     overwrite=True,
+                    subdst=date_str_dev,
+                    ref_hdr_label=f"at {date_str_ref}",
+                    dev_hdr_label=f"at {date_str_dev}",
                 )
 
             # Create tables in parallel
@@ -481,11 +495,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             if config["options"]["n_cores"] != 1:
                 results = Parallel(n_jobs=config["options"]["n_cores"])(
                     delayed(gcc_vs_gcc_mass_table)(mon) \
-                    for mon in range(bmk_n_months)
+                    for mon in range(len(mass_table_dates_dev))
                 )
             else:
                 results = []
-                for mon in range(bmk_n_months):
+                for mon in range(len(mass_table_dates_dev)):
                     results.append(gcc_vs_gcc_mass_table(mon))
 
         # ==================================================================
@@ -811,12 +825,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 refpath = get_filepath(
                     gchp_vs_gcc_refrstdir,
                     "Restart",
-                    bmk_mons_dev[mon]
+                    mass_table_dates_dev[mon]
                 )
                 devpath = get_filepath(
                     gchp_vs_gcc_devrstdir,
                     "Restart",
-                    bmk_mons_dev[mon],
+                    mass_table_dates_dev[mon],
                     is_gchp=True,
                     gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                     gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
@@ -835,6 +849,12 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "is_pre_14.0"]
                 )
 
+                # Date string (GCHP and GCC use the same date)
+                date_str = datetime64_to_str(
+                    mass_table_dates_dev[mon],
+                    format_str="%Y%m%dT%H"
+                )
+
                 # Create tables
                 make_benchmark_mass_tables(
                     refpath,
@@ -843,9 +863,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gcc_devstr,
                     spcdb_files,
                     dst=gchp_vs_gcc_tablesdir,
-                    subdst=bmk_mon_yr_strs_dev[mon],
-                    label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
+                    subdst=date_str,
                     overwrite=True,
+                    ref_hdr_label=f"at {date_str}",
+                    dev_hdr_label=f"at {date_str}",
                     dev_met_extra=devareapath
                 )
 
@@ -854,11 +875,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             if config["options"]["n_cores"] != 1:
                 results = Parallel(n_jobs=config["options"]["n_cores"])(
                     delayed(gchp_vs_gcc_mass_table)(mon) \
-                    for mon in range(bmk_n_months)
+                    for mon in range(len(mass_table_dates_dev))
                 )
             else:
                 results = []
-                for mon in range(bmk_n_months):
+                for mon in range(len(mass_table_dates_dev)):
                     results.append(gchp_vs_gcc_mass_table(mon))
 
         # ==================================================================
@@ -1128,7 +1149,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 refpath = get_filepath(
                     gchp_vs_gchp_refrstdir,
                     "Restart",
-                    bmk_mons_ref[mon],
+                    mass_table_dates_ref[mon],
                     is_gchp=True,
                     gchp_res=config["data"]["ref"]["gchp"]["resolution"],
                     gchp_is_pre_14_0=config["data"]["ref"]["gchp"][
@@ -1139,7 +1160,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 devpath = get_filepath(
                     gchp_vs_gchp_devrstdir,
                     "Restarts",
-                    bmk_mons_dev[mon],
+                    mass_table_dates_dev[mon],
                     is_gchp=True,
                     gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                     gchp_is_pre_14_0=config["data"]["dev"]["gchp"][
@@ -1167,6 +1188,16 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "is_pre_14.0"]
                 )
 
+                # Date strings
+                date_str_ref = datetime64_to_str(
+                    mass_table_dates_ref[mon],
+                    format_str="%Y%m%dT%H"
+                )
+                date_str_dev = datetime64_to_str(
+                    mass_table_dates_dev[mon],
+                    format_str="%Y%m%dT%H"
+                )
+
                 # Create tables
                 make_benchmark_mass_tables(
                     refpath,
@@ -1175,9 +1206,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     gchp_vs_gchp_devstr,
                     spcdb_files,
                     dst=gchp_vs_gchp_tablesdir,
-                    subdst=bmk_mon_yr_strs_dev[mon],
-                    label=f"at 01{bmk_mon_yr_strs_dev[mon]}",
                     overwrite=True,
+                    subdst=date_str_dev,
+                    ref_hdr_label=f"at {date_str_ref}",
+                    dev_hdr_label=f"at {date_str_dev}",
                     ref_met_extra=refareapath,
                     dev_met_extra=devareapath
                 )
@@ -1187,11 +1219,11 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             if config["options"]["n_cores"] != 1:
                 results = Parallel(n_jobs=config["options"]["n_cores"])(
                     delayed(gchp_vs_gchp_mass_table)(mon) \
-                    for mon in range(bmk_n_months)
+                    for mon in range(len(mass_table_dates_dev))
                 )
             else:
                 results = []
-                for mon in range(bmk_n_months):
+                for mon in range(len(mass_table_dates_dev)):
                     results.append(gchp_vs_gchp_mass_table(mon))
 
         # ==================================================================

@@ -50,7 +50,8 @@ from datetime import datetime
 import numpy as np
 from gcpy.util import \
     copy_file_to_dir, get_filepath, read_config_file
-from gcpy.date_time import add_months, is_full_year
+from gcpy.date_time import \
+    add_months, datetime64_to_str, is_full_year
 from gcpy.benchmark.modules.benchmark_funcs import \
     diff_of_diffs_toprow_title, create_benchmark_summary_table, \
     create_benchmark_sanity_check_table, \
@@ -608,11 +609,27 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["mass_table"]:
             print("\n%%% Creating GCC vs. GCC global mass tables %%%")
 
-            # Filepaths
-            ref = get_filepath(gcc_vs_gcc_refrstdir, "Restart", gcc_end_ref_date)
-            dev = get_filepath(gcc_vs_gcc_devrstdir, "Restart", gcc_end_dev_date)
+            # Filepaths & date strings for start of run
+            ref = get_filepath(
+                gcc_vs_gcc_refrstdir,
+                "Restart",
+                gcc_ref_date
+            )
+            dev = get_filepath(
+                gcc_vs_gcc_devrstdir,
+                "Restart",
+                gcc_dev_date
+            )
+            ref_date_str = datetime64_to_str(
+                gcc_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gcc_dev_date,
+                format_str="%Y%m%dT%H"
+            )
 
-            # Create tables
+            # Create tables for start of month
             make_benchmark_mass_tables(
                 ref,
                 config["data"]["ref"]["gcc"]["version"],
@@ -621,6 +638,43 @@ def run_benchmark_default(config):
                 spcdb_files,
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
+            )
+
+            # Filepaths & date string for end of run
+            ref = get_filepath(
+                gcc_vs_gcc_refrstdir,
+                "Restart",
+                gcc_end_ref_date
+            )
+            dev = get_filepath(
+                gcc_vs_gcc_devrstdir,
+                "Restart",
+                gcc_end_dev_date
+            )
+            ref_date_str = datetime64_to_str(
+                gcc_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gcc_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+
+            # Create tables for end of month
+            make_benchmark_mass_tables(
+                ref,
+                config["data"]["ref"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gcc"]["version"],
+                spcdb_files,
+                dst=gcc_vs_gcc_tablesdir,
+                overwrite=True,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
             )
 
         # ==================================================================
@@ -1168,7 +1222,44 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["mass_table"]:
             print("\n%%% Creating GCHP vs. GCC global mass tables %%%")
 
-            # Filepaths
+            # Filepaths and date strings for start of run
+            ref = get_filepath(
+                gchp_vs_gcc_refrstdir,
+                "Restart",
+                gcc_dev_date
+            )
+            dev = get_filepath(
+                gchp_vs_gcc_devrstdir,
+                "Restart",
+                gchp_dev_date,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
+            )
+            ref_date_str = datetime64_to_str(
+                gcc_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gchp_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+
+            # Create tables for start of run
+            make_benchmark_mass_tables(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                spcdb_files,
+                dst=gchp_vs_gcc_tablesdir,
+                overwrite=True,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
+            )
+
+            # Filepaths and date strings for end of run
             ref = get_filepath(
                 gchp_vs_gcc_refrstdir,
                 "Restart",
@@ -1182,8 +1273,16 @@ def run_benchmark_default(config):
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
+            ref_date_str = datetime64_to_str(
+                gcc_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gchp_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
 
-            # Create tables
+            # Create tables for end of run
             make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gcc_refstr,
@@ -1192,6 +1291,9 @@ def run_benchmark_default(config):
                 spcdb_files,
                 dst=gchp_vs_gcc_tablesdir,
                 overwrite=True,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
             )
 
         # ==================================================================
@@ -1747,7 +1849,47 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["mass_table"]:
             print("\n%%% Creating GCHP vs. GCHP global mass tables %%%")
 
-            # Filepaths
+            # Filepaths and date strings for start of run
+            ref = get_filepath(
+                gchp_vs_gchp_refrstdir,
+                "Restart",
+                gchp_ref_date,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
+            )
+            dev = get_filepath(
+                gchp_vs_gchp_devrstdir,
+                "Restart",
+                gchp_dev_date,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
+            )
+            ref_date_str = datetime64_to_str(
+                gchp_ref_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gchp_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+
+            # Create tables for start of run
+            make_benchmark_mass_tables(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                spcdb_files,
+                dst=gchp_vs_gchp_tablesdir,
+                overwrite=True,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
+            )
+
+            # Filepaths and date string for end of run
             ref = get_filepath(
                 gchp_vs_gchp_refrstdir,
                 "Restart",
@@ -1764,8 +1906,16 @@ def run_benchmark_default(config):
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
+            ref_date_str = datetime64_to_str(
+                gchp_end_ref_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gchp_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
 
-            # Create tables
+            # Create tables for end of run
             make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gchp_refstr,
@@ -1774,6 +1924,9 @@ def run_benchmark_default(config):
                 spcdb_files,
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
             )
 
         # ==================================================================

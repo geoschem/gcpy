@@ -4,16 +4,19 @@ Internal utilities for managing datetime objects and strings
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 import numpy as np
+from gcpy.util import verify_variable_type
 
 
 def get_timestamp_string(date_array):
     """
-    Convenience function returning the datetime timestamp based on the given input
+    Convenience function returning the datetime timestamp based on
+    the given input.
 
     Args:
         date_array: array
-            Array of integers corresponding to [year, month, day, hour, minute, second].
-            Any integers not provided will be padded accordingly
+            Array of integers corresponding to [year, month, day, hour,
+            minute, second]. Any integers not provided will be padded
+            accordingly
     Returns:
         date_str: string
             string in datetime format (eg. 2019-01-01T00:00:00Z)
@@ -65,3 +68,20 @@ def is_full_year(start_date, end_date):
         and start_date.astype(datetime).month == 1
         and start_date.astype(datetime).day == 1
     )
+
+
+def datetime64_to_str(timestamp, format_str="%Y-%m-%d"):
+    """
+    Convenience routine to convert a numpy.datetime64 object
+    to a date/time string.
+
+    Args
+    timestamp  : np.datetime64 : Date and time
+
+    Keyword args:
+    format_str : str           : Format for the output
+    """
+    verify_variable_type(timestamp, np.datetime64)
+
+    return timestamp.astype(
+        'datetime64[s]').astype(datetime).strftime(format_str)

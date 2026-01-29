@@ -377,8 +377,9 @@ def create_global_mass_table(
         devstr,
         varlist,
         met_and_masks,
-        label,
         spcdb_files,
+        ref_hdr_label="",
+        dev_hdr_label="",
         trop_only=False,
         outfilename="GlobalMass_TropStrat.txt",
         verbose=False,
@@ -405,13 +406,16 @@ def create_global_mass_table(
         met_and_masks: dict of xarray DataArray
             Dictionary containing the meterological variables and
             masks for the Ref and Dev datasets.
-        label: str
-            Label to go in the header string.  Can be used to
-            pass the month & year.
         spcdb_files : list
             Paths to species_database.yml files in Ref & Dev rundirs
 
     Keyword Args (optional):
+        ref_hdr_label : str
+            Label for Ref, placed after refstr in the file header
+            Default value: ""
+        dev_hdr_label : str
+            Label for Dev, placed after devstr in the file header
+            Default value: ""
         trop_only: bool
             Set this switch to True if you wish to print totals
             only for the troposphere.
@@ -470,11 +474,11 @@ def create_global_mass_table(
     diff_list = []
 
     # Title strings
-    title1 = f"### Global mass (Gg) {label} (Trop + Strat)"
+    title1 = f"### Global mass (Gg) (Trop + Strat)"
     if trop_only:
-        title1 = f"### Global mass (Gg) {label} (Trop only)"
-    title2 = f"### Ref = {refstr}"
-    title3 = f"### Dev = {devstr}"
+        title1 = f"### Global mass (Gg) (Trop only)"
+    title2 = f"### Ref = {refstr} {ref_hdr_label}"
+    title3 = f"### Dev = {devstr} {dev_hdr_label}"
 
     # Write a placeholder to the file that denotes where
     # the list of species with differences will be written
@@ -3533,9 +3537,10 @@ def make_benchmark_mass_tables(
         subdst=None,
         overwrite=False,
         verbose=False,
-        label="at end of simulation",
+        ref_hdr_label="",
+        dev_hdr_label="",
         ref_met_extra=None,
-        dev_met_extra=None
+        dev_met_extra=None,
 ):
     """
     Creates a text file containing global mass totals by species and
@@ -3582,6 +3587,12 @@ def make_benchmark_mass_tables(
         verbose: bool
             Set this flag to True to print extra informational output.
             Default value: False.
+        ref_hdr_label : str
+            Label for Ref, placed after refstr in the file header
+            Default value: ""
+        dev_hdr_label : str
+            Label for Dev, placed after devstr in the file header
+            Default value: ""
         ref_met_extra: str
             Path to ref Met file containing area data for use with restart files
             which do not contain the Area variable.
@@ -3749,15 +3760,19 @@ def make_benchmark_mass_tables(
         devstr,
         varlist,
         met_and_masks,
-        label,
+        spcdb_files,
+        ref_hdr_label=ref_hdr_label,
+        dev_hdr_label=dev_hdr_label,
         outfilename=mass_file,
         verbose=verbose,
-        spcdb_files=spcdb_files,
     )
 
     # ==================================================================
     # Create tropospheric mass table
     # ==================================================================
+
+    # If a file name has not been specified, then use the "filename"
+    # keyword argument.  Otherwise generate a default filename.
     if subdst is not None:
         mass_filename = f"GlobalMass_Trop_{subdst}.txt"
     else:
@@ -3770,11 +3785,12 @@ def make_benchmark_mass_tables(
         devstr,
         varlist,
         met_and_masks,
-        label,
+        spcdb_files,
+        ref_hdr_label=ref_hdr_label,
+        dev_hdr_label=dev_hdr_label,
         outfilename=mass_file,
         trop_only=True,
         verbose=verbose,
-        spcdb_files=spcdb_files,
     )
 
     # -------------------------------------------
