@@ -44,7 +44,7 @@ Remarks:
 
         $ export MPLBACKEND=agg
 
-This script corresponds with GCPy 1.6.2. Edit this version ID if releasing
+This script corresponds with GCPy 1.7.0. Edit this version ID if releasing
 a new version of GCPy.
 """
 
