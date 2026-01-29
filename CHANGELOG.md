@@ -23,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added helpful tips to the `gcpy/benchmark/benchmark.slurm.sh` script
 - Added function `datetime64_to_str` to `gcpy/date_time.py`
 - Added keyword arguments `ref_hdr_label` and `dev_hdr_label` to `make_benchmark_mass_tables`
+- Added "HEMCO Examples" chapter to ReadTheDocs documentation
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -43,6 +44,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Changed offline restart regridding to preserve source restart file precision
 - Changed `mamba` to `conda` in `benchmarks/benchmark_slurm.sh`
 - Separated plot and table options for clarity in  `benchmarks/config/*yml` and  `benchmarks/cloud/*.yml`
+- Clarified the GCPy installation process in ReadTheDocs documentation
+- Updated the instructions in the "Create a Test Plot" example in ReadTheDocs documentation
 - Updated default GCPy Python environment to use Python 3.13 (instead of 3.12)
 - Benchmark routines now look for `species_database.yml` in the `Ref` and `Dev` run directories
 - Replaced `get_species_database_dir` with `get_species_database_files` in `gcpy/benchmark/modules/benchmark_funcs.py`
@@ -87,6 +90,8 @@ n
 
 ### Changed
 - Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
+- Updated ReadTheDocs to instruct users to install Conda via the Miniforge distribution, as MambaForge is deprecated
+- Updated `geos-chem-shared-docs/editing_these_docs.rst` with instructions for using a Conda environment to build RTD doc
 
 ### Fixed
 - Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
