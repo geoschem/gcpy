@@ -83,29 +83,29 @@ tables from GEOS-Chem benchmark simulations.
 
    .. code-block:: yaml
 
-   # Configuration for 1-year FullChemBenchmark
-   #
-   # paths:
-   #   main_dir:     High-level directory containing ref & dev rundirs
-   #   results_dir:  Directory where plots/tables will be created
-   #   weights_dir:  Path to regridding weights
-   #   obs_data:     Paths to observations (for models vs. obs plots)
-   #
-   paths:
-     main_dir: /n/home09/ryantosca/T/BM/1yr/
-     results_dir: /n/home09/ryantosca/T/BM/1yr/14.7.0-rc.0/GCClassic/FullChem/BenchmarkResults
-     weights_dir: /n/holylfs06/LABS/jacob_lab/Shared/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
-     #
-     # Observational data dirs are on Harvard Cannon, edit if necessary
-     #
-     obs_data:
-       ebas_o3:
-         data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/ebas_sfc_o3_2019
-         data_label: "O3 (EBAS, 2019)"
-       sondes:
-         data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
-         data_file: allozonesondes_2010-2019.csv
-         site_file: allozonesondes_site_elev.csv
+      # Configuration for 1-year FullChemBenchmark
+      #
+      # paths:
+      #   main_dir:     High-level directory containing ref & dev rundirs
+      #   results_dir:  Directory where plots/tables will be created
+      #   weights_dir:  Path to regridding weights
+      #   obs_data:     Paths to observations (for models vs. obs plots)
+      #
+      paths:
+        main_dir: /path/to/benchmark/main/dir
+        results_dir: /path/to/BenchmarkResults
+        weights_dir: /n/holylfs06/LABS/jacob_lab/Shared/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
+        #
+        # Observational data dirs are on Harvard Cannon, edit if necessary
+        #
+        obs_data:
+          ebas_o3:
+            data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/ebas_sfc_o3_2019
+            data_label: "O3 (EBAS, 2019)"
+          sondes:
+            data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
+            data_file: allozonesondes_2010-2019.csv
+            site_file: allozonesondes_site_elev.csv
 
    |br|
 
@@ -114,67 +114,62 @@ tables from GEOS-Chem benchmark simulations.
 
    .. code-block:: yaml
 
-   #
-   # data: Contains configurations for ref and dev runs
-   #   version:          Version string (must not contain spaces)
-   #   dir:              Path to run directory
-   #   species_metadata: Path to species_database.yml file (in dir)
-   #   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
-   #   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
-   #   logs_subdir:      Subdirectory w/ GEOS-Chem log files
-   #   logs_template:    Template for log file names (may include tokens)
-   #   bmk_start:        Simulation start date (YYYY-MM-DDThh:mm:ss)
-   #   bmk_end:          Simulation end date (YYYY-MM-DDThh:mm:ss)
-   #   resolution:       GCHP resolution string
-   #
-   #
-   data:
-     ref:
-       gcc:
-         version: GCC_ref
-         dir: GCC_ref
-         species_metadata: species_database.yml
-         outputs_subdir: OutputDir
-         restarts_subdir: Restarts
-         logs_subdir: Logs
-         logs_template: "log.%Y%m%d"
-         bmk_start: "2019-01-01T00:00:00"
-         bmk_end: "2020-01-01T00:00:00"
-       gchp:
-         version: GCHP_ref
-         dir: GCHP_ref
-         species_metadata: species_database.yml
-         outputs_subdir: OutputDir
-         restarts_subdir: Restarts
-         logs_subdir: Logs
-         logs_template: "gchp.%Y%m%d_0000z.log"
-         bmk_start: "2019-01-01T00:00:00"
-         bmk_end: "2020-01-01T00:00:00"
-         is_pre_14.0: False
-         resolution: c24
-     dev:
-       gcc:
-         version: GCC_dev
-         dir: GCC_dev
-         species_metadata: species_database.yml
-         outputs_subdir: OutputDir
-         restarts_subdir: Restarts
-         logs_subdir: Logs
-         logs_template: "log.%Y%m%d"
-         bmk_start: "2019-01-01T00:00:00"
-         bmk_end: "2020-01-01T00:00:00"
-       gchp:
-         version: GCHP_dev
-         dir: GCHP_dev
-         species_metadata: species_database.yml
-         outputs_subdir: OutputDir
-         restarts_subdir: Restarts
-         logs_subdir: Logs
-         logs_template: "gchp.%Y%m%d_0000z.log"
-         bmk_start: "2019-01-01T00:00:00"
-         bmk_end: "2020-01-01T00:00:00"
-         is_pre_14.0: False
-         resolution: c24
+      #
+      # data: Contains configurations for ref and dev runs
+      #   version:          Version string (must not contain spaces)
+      #   dir:              Path to run directory
+      #   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
+      #   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
+      #   logs_subdir:      Subdirectory w/ GEOS-Chem log files
+      #   logs_template:    Template for log file names (may include tokens)
+      #   bmk_start:        Simulation start date (YYYY-MM-DDThh:mm:ss)
+      #   bmk_end:          Simulation end date (YYYY-MM-DDThh:mm:ss)
+      #   resolution:       GCHP resolution string
+      #
+      #
+      data:
+        ref:
+          gcc:
+            version: GCC_ref
+            dir: GCC_ref
+            outputs_subdir: OutputDir
+            restarts_subdir: Restarts
+            logs_subdir: Logs
+            logs_template: "log.%Y%m%d"
+            bmk_start: "2019-01-01T00:00:00"
+            bmk_end: "2020-01-01T00:00:00"
+          gchp:
+            version: GCHP_ref
+            dir: GCHP_ref
+            outputs_subdir: OutputDir
+            restarts_subdir: Restarts
+            logs_subdir: Logs
+            logs_template: "gchp.%Y%m%d_0000z.log"
+            bmk_start: "2019-01-01T00:00:00"
+            bmk_end: "2020-01-01T00:00:00"
+            is_pre_14.0: False
+            resolution: c24
+        dev:
+          gcc:
+            version: GCC_dev
+            dir: GCC_dev
+            outputs_subdir: OutputDir
+            restarts_subdir: Restarts
+            logs_subdir: Logs
+            logs_template: "log.%Y%m%d"
+            bmk_start: "2019-01-01T00:00:00"
+            bmk_end: "2020-01-01T00:00:00"
+          gchp:
+            version: GCHP_dev
+            dir: GCHP_dev
+            outputs_subdir: OutputDir
+            restarts_subdir: Restarts
+            logs_subdir: Logs
+            logs_template: "gchp.%Y%m%d_0000z.log"
+            bmk_start: "2019-01-01T00:00:00"
+            bmk_end: "2020-01-01T00:00:00"
+            is_pre_14.0: False
+            resolution: c24
 
    |br|
 
@@ -222,15 +217,18 @@ tables from GEOS-Chem benchmark simulations.
         plot_drydep: True
         plot_emis: True
         plot_jvalues: True
+        plot_models_vs_obs: True
         plot_options:
           by_spc_cat: True
           by_hco_cat: True
         #
         # Benchmark tables
         #
+        aer_budget_table: True
         emis_table: True
         mass_accum_table: False
         mass_table: True
+        Ox_budget_table: True
         OH_metrics: True
         ops_budget_table: False
         sanity_check_table: True
@@ -292,9 +290,9 @@ tables from GEOS-Chem benchmark simulations.
 
          #SBATCH -c 8
          #SBATCH -N 1
-         #SBATCH -t 0-4:00
+         #SBATCH -t 0-6:00
          #SBATCH -p sapphire,huce_cascade,seas_compute,shared
-         #SBATCH --mem=100000
+         #SBATCH --mem=180000
          #SBATCH --mail-type=END
 
          #============================================================================
@@ -303,7 +301,17 @@ tables from GEOS-Chem benchmark simulations.
          #
          # You can modify the SLURM parameters above for your setup.
          #
-         # Tip: Using less cores can reduce the amount of memory required.
+         # Tips:
+         # -----
+         # (1) Use fewer cores to reduce the memory footprint. This may prevent
+         #     your job from running out of memory.  Python under Linux seems
+         #     to have an issue where not all memory is released back to the OS.
+         #
+         # (2) We recommend that you generate only one benchmark comparison
+         #     (GCC vs GCC, GCHP vs GCC, GCHP vs GCC, or diff of diffs)
+         #     at a time.  Otherwise your job will probaly run out of memory.
+         #
+         # (3) For diff-of-diffs plots, we recommend using 6 cores.
          #============================================================================
 
          # Apply all bash initialization settings
@@ -1266,7 +1274,7 @@ Benchmark tabling functions
 .. list-table:: **Functions creating summary tables**
    :align: center
    :header-rows: 1
-   :widths: 40 60
+   :widths: 50 50
 
    * - Function
      - Table that it creates
@@ -1579,9 +1587,10 @@ using the GEOS-Chem restart file output.
            subdst=None,
            overwrite=False,
            verbose=False,
-           label="at end of simulation",
+           ref_hdr_label="",
+           dev_hdr_label="",
            ref_met_extra=None,
-           dev_met_extra=None
+           dev_met_extra=None,
    ):
        """
        Creates a text file containing global mass totals by species and
@@ -1628,6 +1637,12 @@ using the GEOS-Chem restart file output.
            verbose: bool
                Set this flag to True to print extra informational output.
                Default value: False.
+           ref_hdr_label : str
+               Label for Ref, placed after refstr in the file header
+               Default value: ""
+           dev_hdr_label : str
+               Label for Dev, placed after devstr in the file header
+               Default value: ""
            ref_met_extra: str
                Path to ref Met file containing area data for use with restart files
                which do not contain the Area variable.
