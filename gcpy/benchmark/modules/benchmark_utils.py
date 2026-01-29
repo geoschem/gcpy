@@ -743,7 +743,7 @@ def get_species_database_files(config, ref_model, dev_model):
     if not os.path.exists(ref_spcdb_file):
         msg = f"Could not find {ref_spcdb_file}!"
         raise FileNotFoundError(msg)
-    msg = f"Ref species database: {ref_spcdb_file}"
+    msg = f"\nRef species database: {ref_spcdb_file}"
     print(msg)
 
     # Species database in the "Dev" simulation folder

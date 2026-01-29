@@ -19,12 +19,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added functions `get_molwt_from_metadata` and `read_species_metadata` to `gcpy/util.py`
 - Added function `get_species_database_files` to `gcpy/benchmark/modules/benchmark_utils.py`
 - Added constant `SPECIES_DATABASE` to `gcpy/benchmark/modules/benchmark_utils.py`
-<<<<<<< HEAD
 - Added manual garbage collection in `create_regridders`, `compare_single_level`, and `compare_zonal_mean` functions.
 - Added helpful tips to the `gcpy/benchmark/benchmark.slurm.sh` script
-=======
 - Added function `datetime64_to_str` to `gcpy/date_time.py`
->>>>>>> 7a535df (Allow Ref & Dev to have different dates in global mass tables)
+- Added keyword arguments `ref_hdr_label` and `dev_hdr_label` to `make_benchmark_mass_tables`
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -55,8 +53,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Optimized the algorithm to generate `varlist` in `make_benchmark_conc_plots`.  Also truncated datasets to only contain variables in `varlist`.
 - Updated `make_benchmark_mass_tables` and `create_global_mass_table` to allow Ref and Dev to have different dates if so chosen
 - Updated `run_benchmark.py` to generate mass tables at start and end of the simulation
-  
->>>>>>> 7a535df (Allow Ref & Dev to have different dates in global mass tables)
+- Updated `run_1yr_fullchem_benchmark.py` and `run_1yr_tt_benchmark.py` to generate mass tables at the 1st day of each month from Jan 2019 thru Jan 2020
+
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
 - Fixed various security issues in GitHub Actions workflows
@@ -71,6 +69,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed `.load()` statements from xarray Datasets to improve performance
 - Removed `paths:spcdb_dir` YAML tag in benchmark configuration files
 - Removed `st_Ox` from `benchmark_categories.yml`; this species is no longer used in TransportTracers simulations
+- Removed keyword argument `label` from `make_benchmark_mass_tables`
 
 ## [1.6.2] - 2025-06-12
 ### Added
