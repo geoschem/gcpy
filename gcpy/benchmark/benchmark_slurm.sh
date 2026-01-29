@@ -2,9 +2,9 @@
 
 #SBATCH -c 8
 #SBATCH -N 1
-#SBATCH -t 0-4:00
-#SBATCH -p seas_compute,shared
-#SBATCH --mem=100000
+#SBATCH -t 0-6:00
+#SBATCH -p sapphire,huce_cascade,seas_compute,shared
+#SBATCH --mem=180000
 #SBATCH --mail-type=END
 
 #============================================================================
@@ -13,7 +13,17 @@
 #
 # You can modify the SLURM parameters above for your setup.
 #
-# Tip: Using less cores can reduce the amount of memory required.
+# Tips:
+# -----
+# (1) Use fewer cores to reduce the memory footprint. This may prevent
+#     your job from running out of memory.  Python under Linux seems
+#     to have an issue where not all memory is released back to the OS.
+#
+# (2) We recommend that you generate only one benchmark comparison
+#     (GCC vs GCC, GCHP vs GCC, GCHP vs GCC, or diff of diffs)
+#     at a time.  Otherwise your job will probaly run out of memory.
+#
+# (3) For diff-of-diffs plots, we recommend using 6 cores.
 #============================================================================
 
 # Apply all bash initialization settings

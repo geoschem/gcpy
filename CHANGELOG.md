@@ -19,6 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added functions `get_molwt_from_metadata` and `read_species_metadata` to `gcpy/util.py`
 - Added function `get_species_database_files` to `gcpy/benchmark/modules/benchmark_utils.py`
 - Added constant `SPECIES_DATABASE` to `gcpy/benchmark/modules/benchmark_utils.py`
+- Added manual garbage collection in `create_regridders`, `compare_single_level`, and `compare_zonal_mean` functions.
+- Added helpful tips to the `gcpy/benchmark/benchmark.slurm.sh` script
 
 ### Changed
 - Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
@@ -44,6 +46,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Replaced `get_species_database_dir` with `get_species_database_files` in `gcpy/benchmark/modules/benchmark_funcs.py`
 - Updated `gcpy/benchmark/modules/benchmark_scrape_gchp_timers.py` to look for GCHP timers in `allPEs.log` if not found in the log file
 - Updated routine `make_benchmark_aerosol_tables` to include all dust species in the aerosol burdens table
+- Optimized function `get_diff_of_diffs` (in `gcpy/util.py`) for performance
+- Optimized function `add_lumped_species_to_dataset` (in `gcpy/benchmark/modules/benchmark_utils.py`) for performance
+- Optimized the algorithm to generate `varlist` in `make_benchmark_conc_plots`.  Also truncated datasets to only contain varibales in `varlist`.
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
@@ -59,7 +64,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed `.load()` statements from xarray Datasets to improve performance
 - Removed `paths:spcdb_dir` YAML tag in benchmark configuration files
 - Removed `st_Ox` from `benchmark_categories.yml`; this species is no longer used in TransportTracers simulations
-- Removed special data handling for files generated with MAPL versions prior to 1.0.0 in function `get_diff_of_diffs` (located in `gcpy/util.py`)
 
 ## [1.6.2] - 2025-06-12
 ### Added

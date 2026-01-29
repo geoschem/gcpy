@@ -12,7 +12,7 @@ from pandas import Series
 import xarray as xr
 from pypdf import PdfWriter, PdfReader
 from gcpy.constants import ENCODING, TABLE_WIDTH
-from gcpy.cstools import is_cubed_sphere_rst_grid
+from gcpy.cstools import is_cubed_sphere, is_cubed_sphere_rst_grid
 
 # ======================================================================
 # %%%%% METHODS %%%%%
@@ -644,51 +644,64 @@ def get_diff_of_diffs(
     absdiffs  : xr.Dataset : Absolute differences (Dev - Ref)
     fracdiffs : xr.Dataset : Fractional differences (Dev / Ref)
     """
-    # ------------------------------------------------------------------
-    # Throw an error unless Ref and Dev are on the same grid
-    # ------------------------------------------------------------------
-    if not ref.sizes == dev.sizes:
-        msg = "Diff-of-diffs plot supports only identical grid types "
-        msg += "(lat/lon or cubed-sphere) within each Ref & Dev pair!"
-        raise ValueError(msg)
-
-    # ------------------------------------------------------------------
-    # Include only the common fields in Ref and Dev
-    # ------------------------------------------------------------------
-    vardict = compare_varnames(ref, dev, quiet=True)
-    varlist = vardict["commonvars"]
-    ref = ref[varlist]
-    dev = dev[varlist]
-
-    # ------------------------------------------------------------------
-    # Compute absolute (Dev-Ref) and fractional (Dev/Ref) differences
-    # ------------------------------------------------------------------
     with xr.set_options(keep_attrs=True):
 
-        # if the coords do not align then set time dimensions equal
+        # ------------------------------------------------------------------
+        # Throw an error unless Ref and Dev are on the same grid
+        # ------------------------------------------------------------------
+        if not ref.sizes == dev.sizes:
+            msg = "Diff-of-diffs plot supports only identical grid types "
+            msg += "(lat/lon or cubed-sphere) within each Ref & Dev pair!"
+            raise ValueError(msg)
+
+        # ---------------------------------------------------------------
+        # Include only the common fields in Ref and Dev
+        # ---------------------------------------------------------------
+        vardict = compare_varnames(ref, dev, quiet=True)
+        varlist = vardict["commonvars"]
+        ref = ref[varlist]
+        dev = dev[varlist]
+
+        # ---------------------------------------------------------------
+        # For cubed-sphere grids, align coordinates to avoid mismatch,
+        # which will generate a "regridder not found" error.
+        # ---------------------------------------------------------------
+        if is_cubed_sphere(ref) and is_cubed_sphere(dev):
+            ref = ref.assign_coords({
+                'Xdim': dev.coords['Xdim'],
+                'Ydim': dev.coords['Ydim'],
+                'lons': dev.coords['lons'],
+                'lats': dev.coords['lats']
+            })
+
+        # --------------------------------------------------------------
+        # Align time coords if needed
+        # --------------------------------------------------------------
         try:
             xr.align(dev, ref, join='exact')
-        except BaseException:
-            ref.coords["time"] = dev.coords["time"]
+        except ValueError:
+            ref = ref.assign_coords(time=dev.coords["time"])
 
-        # Compute absolute and fractional differences
-        # Also make sure to preserve variable attributes
-        absdiffs = dev.copy()
-        fracdiffs = dev.copy()
-        for var in varlist:
-            absdiffs[var].values = dev[var].values - ref[var].values
-            fracdiffs[var].values = dev[var].values / ref[var].values
-            absdiffs[var].attrs = dev[var].attrs
-            fracdiffs[var].attrs = dev[var].attrs
+        # --------------------------------------------------------------
+        # Compute the absolute and fractional diffs
+        # Use .load() to force read the variable's data into memory,
+        # which should avoid lazy indexing issues.  The per-variable
+        # data size is managaeable so overall performance should be OK.
+        # --------------------------------------------------------------
+        absdiffs = xr.Dataset(
+            {var: dev[var].load() - ref[var].load() for var in varlist}
+        )
+        fracdiffs = xr.Dataset(
+            {var: dev[var].load() / ref[var].load() for var in varlist}
+        )
 
-        # If there are more than one time point, then take the
-        # time mean (e.g. Annual Mean) of differences
-        if "time" in absdiffs.coords:
-            if len(absdiffs.coords["time"]) > 1:
-                absdiffs = dataset_mean(absdiffs)
-        if "time" in fracdiffs.coords:
-            if len(fracdiffs.coords["time"]) > 1:
-                fracdiffs = dataset_mean(fracdiffs)
+        # --------------------------------------------------------------
+        # Take the time mean if there is more than one timestamp
+        # --------------------------------------------------------------
+        if "time" in absdiffs.coords and len(absdiffs.coords["time"]) > 1:
+            absdiffs = dataset_mean(absdiffs)
+        if "time" in fracdiffs.coords and len(fracdiffs.coords["time"]) > 1:
+            fracdiffs = dataset_mean(fracdiffs)
 
     return absdiffs, fracdiffs
 

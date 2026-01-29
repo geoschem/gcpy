@@ -1277,7 +1277,7 @@ def make_benchmark_conc_plots(
         devds = add_lumped_species_to_dataset(devds)
 
         if diff_of_diffs:
-            print("-->Adding lumped species to dev datasets")
+            print("-->Adding lumped species to second ref and dev datasets")
             second_refds = add_lumped_species_to_dataset(second_refds)
             second_devds = add_lumped_species_to_dataset(second_devds)
 
@@ -1340,19 +1340,34 @@ def make_benchmark_conc_plots(
             if not os.path.isdir(catdir):
                 os.mkdir(catdir)
 
-        varlist = []
-        warninglist = []
-        for subcat in catdict[filecat]:
-            for spc in catdict[filecat][subcat]:
-                varname = coll_prefix + spc
-                if varname not in refds.data_vars or \
-                   varname not in devds.data_vars:
-                    warninglist.append(varname)
-                    continue
-                varlist.append(varname)
-        if warninglist:
-            msg = f"\n\nWarning: variables in {filecat} category not in dataset: {warninglist}"
-            print(msg)
+        # Get the list of variables in both Ref and Dev for each category
+        # (this is computationally efficient)
+        ref_vars = set(refds.data_vars)
+        dev_vars = set(devds.data_vars)
+        candidates = [
+            coll_prefix + spc
+            for subcat in catdict[filecat]
+            for spc in catdict[filecat][subcat]
+        ]
+        varlist = \
+            [var for var in candidates \
+             if var in ref_vars and var in dev_vars
+        ]
+        warninglist = \
+            [var for var in candidates \
+             if var not in ref_vars or var not in dev_vars
+        ]
+
+        # Create new datasets containing only the variables for a
+        # given category, as this will optimize performance.
+        refds_cat = refds[varlist]
+        devds_cat = devds[varlist]
+        second_refds_cat = None
+        if second_refds is not None:
+            second_refds_cat = second_refds[varlist]
+        second_devds_cat = None
+        if second_devds is not None:
+            second_devds_cat = second_devds[varlist]
 
         # -----------------------
         # Surface plots
@@ -1373,9 +1388,9 @@ def make_benchmark_conc_plots(
 
             diff_sfc = []
             compare_single_level(
-                refds,
+                refds_cat,
                 refstr,
-                devds,
+                devds_cat,
                 devstr,
                 varlist=varlist,
                 ilev=0,
@@ -1390,8 +1405,8 @@ def make_benchmark_conc_plots(
                 sigdiff_list=diff_sfc,
                 weightsdir=weightsdir,
                 convert_to_ugm3=convert_to_ugm3,
-                second_ref=second_refds,
-                second_dev=second_devds,
+                second_ref=second_refds_cat,
+                second_dev=second_devds_cat,
                 n_job=n_job,
                 spcdb_files=spcdb_files,
             )
@@ -1412,7 +1427,8 @@ def make_benchmark_conc_plots(
 
             if subdst is not None:
                 pdfname = os.path.join(
-                    catdir, f"{filecat}_500hPa_{subdst}.pdf"
+                    catdir,
+                    f"{filecat}_500hPa_{subdst}.pdf"
                 )
             else:
                 pdfname = os.path.join(
@@ -1422,9 +1438,9 @@ def make_benchmark_conc_plots(
 
             diff_500 = []
             compare_single_level(
-                refds,
+                refds_cat,
                 refstr,
-                devds,
+                devds_cat,
                 devstr,
                 varlist=varlist,
                 ilev=22,
@@ -1439,8 +1455,8 @@ def make_benchmark_conc_plots(
                 sigdiff_list=diff_500,
                 weightsdir=weightsdir,
                 convert_to_ugm3=convert_to_ugm3,
-                second_ref=second_refds,
-                second_dev=second_devds,
+                second_ref=second_refds_cat,
+                second_dev=second_devds_cat,
                 n_job=n_job,
                 spcdb_files=spcdb_files
             )
@@ -1473,9 +1489,9 @@ def make_benchmark_conc_plots(
 
             diff_zm = []
             compare_zonal_mean(
-                refds,
+                refds_cat,
                 refstr,
-                devds,
+                devds_cat,
                 devstr,
                 varlist=varlist,
                 refmet=refmetds,
@@ -1488,8 +1504,8 @@ def make_benchmark_conc_plots(
                 sigdiff_list=diff_zm,
                 weightsdir=weightsdir,
                 convert_to_ugm3=convert_to_ugm3,
-                second_ref=second_refds,
-                second_dev=second_devds,
+                second_ref=second_refds_cat,
+                second_dev=second_devds_cat,
                 n_job=n_job,
                 spcdb_files=spcdb_files
             )
@@ -1518,9 +1534,9 @@ def make_benchmark_conc_plots(
                 )
 
             compare_zonal_mean(
-                refds,
+                refds_cat,
                 refstr,
-                devds,
+                devds_cat,
                 devstr,
                 varlist=varlist,
                 refmet=refmetds,
@@ -1534,8 +1550,8 @@ def make_benchmark_conc_plots(
                 normalize_by_area=normalize_by_area,
                 convert_to_ugm3=convert_to_ugm3,
                 weightsdir=weightsdir,
-                second_ref=second_refds,
-                second_dev=second_devds,
+                second_ref=second_refds_cat,
+                second_dev=second_devds_cat,
                 n_job=n_job,
                 spcdb_files=spcdb_files
             )
