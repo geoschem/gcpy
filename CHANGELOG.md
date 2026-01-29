@@ -48,7 +48,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated routine `make_benchmark_aerosol_tables` to include all dust species in the aerosol burdens table
 - Optimized function `get_diff_of_diffs` (in `gcpy/util.py`) for performance
 - Optimized function `add_lumped_species_to_dataset` (in `gcpy/benchmark/modules/benchmark_utils.py`) for performance
-- Optimized the algorithm to generate `varlist` in `make_benchmark_conc_plots`.  Also truncated datasets to only contain varibales in `varlist`.
+- Optimized the algorithm to generate `varlist` in `make_benchmark_conc_plots`.  Also truncated datasets to only contain variables in `varlist`.
+- Updated `make_benchmark_aod_plots` to include column AOD plots for DSTbin1..DSTbin7 species
+- Updated `benchmark/modules/aod_species.py` with metadata for DSTbin1..DSTbin7 species
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`

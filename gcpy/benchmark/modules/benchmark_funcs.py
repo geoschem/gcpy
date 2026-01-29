@@ -3360,7 +3360,7 @@ def make_benchmark_aod_plots(
     if varlist is None:
         vardict = compare_varnames(refds, devds, quiet=not verbose)
         cmn3D = vardict["commonvars3D"]
-        varlist = [v for v in cmn3D if "AOD" in v and "_bin" not in v]
+        varlist = [v for v in cmn3D if "AOD" in v]
 
     # Dictionary and list for new display names
     newvars = read_config_file(
@@ -3405,13 +3405,16 @@ def make_benchmark_aod_plots(
     devattrs = devtot.attrs
 
     # Compute the sum of all AOD variables
-    # Avoid double-counting SOA from aqueous isoprene, which is
-    # already accounted for in AODHyg550nm_OCPI.  Also see
-    # Github issue: https://github.com/geoschem/gcpy/issues/65
+    # Avoid double-counting the following:
+    # (1) Individual dust AODs, use the column AOD total instead
+    # (2) SOA from aqueous isoprene, which is already accounted
+    #     for in AODHyg550nm_OCPI.  Also see Github issue:
+    #     https://github.com/geoschem/gcpy/issues/65
     for v in varlist:
-        if "AODSOAfromAqIsoprene550nm" not in v:
-            reftot = reftot + refds[v]
-            devtot = devtot + devds[v]
+        if "_bin" in v or "AODSOAfromAqIsoprene550nm" in v:
+            continue
+        reftot = reftot + refds[v]
+        devtot = devtot + devds[v]
 
     # Reattach the variable attributes
     reftot.name = "AODTotal"
