@@ -27,7 +27,7 @@ backend "tkagg" in MacOS X operating systems.
 import argparse
 import xarray as xr
 import matplotlib.pyplot as plt
-from gcpy.constants import skip_these_vars
+from gcpy.constants import SKIP_THESE_VARS
 from gcpy.plot.compare_single_level import compare_single_level
 from gcpy.plot.compare_zonal_mean import compare_zonal_mean
 from gcpy.util import rename_and_flip_gchp_rst_vars
@@ -52,15 +52,15 @@ def plot_comparisons(
     # xarray allows us to read in any NetCDF file, the format of
     # GEOS-Chem diagnostics, #as an xarray Dataset
     #
-    # The skip_these_vars list avoids trying to read certain
+    # The SKIP_THESE_VARS list avoids trying to read certain
     # GCHP variables that cause data read issues.
     ref_ds = xr.open_dataset(
         ref,
-        drop_variables=skip_these_vars
+        drop_variables=SKIP_THESE_VARS
     )
     dev_ds = xr.open_dataset(
         dev,
-        drop_variables=skip_these_vars
+        drop_variables=SKIP_THESE_VARS
     )
 
     # If the data is from a GCHP restart file, rename variables and

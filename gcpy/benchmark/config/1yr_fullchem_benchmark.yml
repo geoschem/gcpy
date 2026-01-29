@@ -21,16 +21,12 @@
 #   main_dir:     High-level directory containing ref & dev rundirs
 #   results_dir:  Directory where plots/tables will be created
 #   weights_dir:  Path to regridding weights
-#   spcdb_dir:    Folder in which the species_database.yml file is
-#                  located.  If set to "default", then will look for
-#                  species_database.yml in one of the Dev rundirs.
 #   obs_data:     Paths to observations (for models vs. obs plots)
 #
 paths:
   main_dir: /path/to/benchmark/main/dir
   results_dir: /path/to/BenchmarkResults
   weights_dir: /n/holylfs06/LABS/jacob_lab/Shared/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
-  spcdb_dir: default
   #
   # Observational data dirs are on Harvard Cannon, edit if necessary
   #
@@ -44,13 +40,16 @@ paths:
       site_file: allozonesondes_site_elev.csv
 #
 # data: Contains configurations for ref and dev runs
-#   version:         Version string (must not contain spaces)
-#   dir:             Path to run directory
-#   outputs_subdir:  Subdirectory w/ GEOS-Chem diagnostic files
-#   restarts_subdir: Subdirectory w/ GEOS-Chem restarts
-#   bmk_start:       Simulation start date (YYYY-MM-DDThh:mm:ss)
-#   bmk_end:         Simulation end date (YYYY-MM-DDThh:mm:ss)
-#   resolution:      GCHP resolution string
+#   version:          Version string (must not contain spaces)
+#   dir:              Path to run directory
+#   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
+#   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
+#   logs_subdir:      Subdirectory w/ GEOS-Chem log files
+#   logs_template:    Template for log file names (may include tokens)
+#   bmk_start:        Simulation start date (YYYY-MM-DDThh:mm:ss)
+#   bmk_end:          Simulation end date (YYYY-MM-DDThh:mm:ss)
+#   resolution:       GCHP resolution string
+#
 #
 data:
   ref:
@@ -126,23 +125,40 @@ options:
   # outputs: Specifies the plots and tables to generate
   #
   outputs:
-    plot_conc: True
-    plot_emis: True
-    emis_table: True
-    plot_jvalues: True
+    #
+    # Benchmark plots
+    #
     plot_aod: True
+    plot_conc: True
     plot_drydep: True
-    mass_table: True
-    ops_budget_table: False
-    aer_budget_table: True
-    Ox_budget_table: True
-    ste_table: True # GCC only
-    OH_metrics: True
-    timing_table: True
+    plot_emis: True
+    plot_jvalues: True
     plot_models_vs_obs: True
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
+    #
+    # Benchmark tables
+    #
+    aer_budget_table: True
+    emis_table: True
+    mass_accum_table: False
+    mass_table: True
+    Ox_budget_table: True
+    OH_metrics: True
+    ops_budget_table: False
+    sanity_check_table: True
+    ste_table: True # GCC only
+    summary_table: False
+    timing_table: True
+    #
+    # Comparison plots for selected collections
+    # (not normally used for benchmarks)
+    #
+    plot_budget: False
+    plot_2d_met: False
+    plot_3d_met: False
+    plot_uvflux: False
   #
   # n_cores: Specify the number of cores to use.
   # -1: Use $OMP_NUM_THREADS         cores

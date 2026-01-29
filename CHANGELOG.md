@@ -4,6 +4,75 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+### Added
+- Added `gcpy/profile/vtune_plot_hotspots.py` to plot a bargraph of hotspots from Intel VTune reports
+- Added ReadTheDocs documentation for plotting hotspots from Intel VTune reports
+- Added "Lint" GitHub Action to check other actions for security issues
+- Added `gcpy_environment_py314.ym1` to specify the GCPy environment packages with Python 3.14
+- Added GitHub action `build-gcpy-environment-py314.yml` to test building the GCPy environment with Python 3.14
+- Added call to drop GC-Classic variables when regridding a GC-Classic restart file to cubed-sphere
+- Added `Ap` and `Bp` parameters for GCAP2 vertical grids
+- Added new constants for default lon/lat and stretched-grid settings in `gcpy/constants.py`
+- Added PyDoc headers in routines where they were missing
+- Added `examples/grids/display_gcclassic_grid_info.py`  to display info about a GEOS-Chem Classic horizontal grid
+- Added functions `get_molwt_from_metadata` and `read_species_metadata` to `gcpy/util.py`
+- Added function `get_species_database_files` to `gcpy/benchmark/modules/benchmark_utils.py`
+- Added constant `SPECIES_DATABASE` to `gcpy/benchmark/modules/benchmark_utils.py`
+- Added manual garbage collection in `create_regridders`, `compare_single_level`, and `compare_zonal_mean` functions.
+- Added helpful tips to the `gcpy/benchmark/benchmark.slurm.sh` script
+- Added function `datetime64_to_str` to `gcpy/date_time.py`
+- Added keyword arguments `ref_hdr_label` and `dev_hdr_label` to `make_benchmark_mass_tables`
+
+### Changed
+- Modified criteria for terminating read of log files in `benchmark_scrape_gcclassic_timers.py` to avoid being spoofed by  output that is attached by Intel VTune
+- Moved `gprofng_text_to_data_units` to function `text_to_data_units` in `gcpy/plot/core.py` so that it can be used by `gprofng_functions` and `vtune_plot_hotspots`
+- Updated GitHub badges in `README.md` and `docs/source/index.rst`
+- Expanded possible stretched grid attribute names to include `STRETCH_FACTOR`, `TARGET_LAT`, and `TARGET_LON`
+- Changed regridding for plots to always compare stretched-grid to uniform CS grid on the uniform CS grid rather than whatever grid is ref
+- Updated PDF writing algorithm in `compare_single_level` and `compare_zonal_mean` to use `PdfReader` and `PdfWriter` instead of `PdfMerger`
+- Bumped `pypdf` from version 4.2.0 to 6.6.2 in `setup.py` and environment files
+- Moved `Ap` and `Bp` parameters that define vertical grids from `grid.py` to `vgrid_defs.py`
+- Replaced hardwired default lon/lat and stretched-grid settings with new constants from `gcpy/constants.py`
+- Modified code in several modules as directed by Pylint to better conform to the Python style guide
+- Renamed grid routines to use all lower-case letters in order to conform to Python snake-case convention
+- Remamed `vert_grid` class in `gcpy/grid.py` to `VertGrid` to conform to PascalCase naming convention
+- Replaced `hashlib.sha1` with `hashlib.sha256` in routine `sg_hash` in `gcpy/regrid.py`
+- Bumped `pip` to version 25.2 as suggested by Dependabot
+- Required passing template output file to offline restart regridding that has grid dimensions that do not match target restart grid
+- Changed offline restart regridding to preserve source restart file precision
+- Changed `mamba` to `conda` in `benchmarks/benchmark_slurm.sh`
+- Separated plot and table options for clarity in  `benchmarks/config/*yml` and  `benchmarks/cloud/*.yml`
+- Updated default GCPy Python environment to use Python 3.13 (instead of 3.12)
+- Benchmark routines now look for `species_database.yml` in the `Ref` and `Dev` run directories
+- Replaced `get_species_database_dir` with `get_species_database_files` in `gcpy/benchmark/modules/benchmark_funcs.py`
+- Updated `gcpy/benchmark/modules/benchmark_scrape_gchp_timers.py` to look for GCHP timers in `allPEs.log` if not found in the log file
+- Updated routine `make_benchmark_aerosol_tables` to include all dust species in the aerosol burdens table
+- Optimized function `get_diff_of_diffs` (in `gcpy/util.py`) for performance
+- Optimized function `add_lumped_species_to_dataset` (in `gcpy/benchmark/modules/benchmark_utils.py`) for performance
+- Optimized the algorithm to generate `varlist` in `make_benchmark_conc_plots`.  Also truncated datasets to only contain variables in `varlist`.
+- Updated `make_benchmark_aod_plots` to include column AOD plots for DSTbin1..DSTbin7 species
+- Updated `benchmark/modules/aod_species.py` with metadata for DSTbin1..DSTbin7 species
+- Updated `make_benchmark_mass_tables` and `create_global_mass_table` to allow Ref and Dev to have different dates if so chosen
+- Updated `run_benchmark.py` to generate mass tables at start and end of the simulation
+- Updated `run_1yr_fullchem_benchmark.py` and `run_1yr_tt_benchmark.py` to generate mass tables at the 1st day of each month from Jan 2019 thru Jan 2020
+
+### Fixed
+- Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`
+- Fixed various security issues in GitHub Actions workflows
+- Fixed colorbar bounds for case of comparing cubed-sphere grids
+- Fixed the restart regridding for stretched GCHP when target lat/lon is exactly 0.0 in `gcpy/regrid_restart_file.py`
+- Fixed computation of the global AOD benchmark table caused by hardwired species names
+- Fixed error in `create_benchmark_emissions_table` where all species were assumed to be in Ref and Dev even if they were not
+- Fixed error that caused the GCHP vs GCC diff-of-diffs AnnualMean plots to be computed as a difference of means instead of a mean of differences
+
+### Removed
+- Removed `PdfMerger()` from `compare_single_level` and `compare_zonal_mean`, it has been removed in pypdf >= 5.0.0
+- Removed `.load()` statements from xarray Datasets to improve performance
+- Removed `paths:spcdb_dir` YAML tag in benchmark configuration files
+- Removed `st_Ox` from `benchmark_categories.yml`; this species is no longer used in TransportTracers simulations
+- Removed keyword argument `label` from `make_benchmark_mass_tables`
+
 ## [1.6.2] - 2025-06-12
 ### Added
 - Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN
@@ -23,32 +92,18 @@ n
 - Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
 - Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
 - Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
+
+### Removed
+- Removed `gchp_is_pre_14.0` logical in calls to `get_filepaths` in benchmark modules
 
 ## [1.6.2] - 2025-06-12
 ### Changed
 - Bumped `requests` from 2.32.3 to 2.32.4 in environment files to fix a security issue flagged by Dependabot
 
 ### Fixed
-- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
-
-## [1.6.2] - 2025-06-12
-### Added
-- Added `create_benchmark_sanity_check_table` routine to `gcpy/benchmark/benchmark_funcs.py` to test if variables are all zero or NaN
-- Added a chapter on using code profiling tools in the ReadTheDocs documentatio
-n
-- Added code profiling scripts (in `gcpy/gcpy/profile`) to read and display output from gprofng and Intel VTune profilers
-- Added `check_gchp_emission_diags.py` example script and documentation
-- Added new benchmark functions `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots` which can be used with any GEOS-Chem output collection
-- Added 1-month benchmark comparison plot options for `Budget`, `UVFlux`, and `StateMet` collections (2D and 3D vars separately) which are off by default
-- Added `export MPLBACKEND=agg` to `gcpy/benchmark/modules/benchmark_slurm.sh` to request a non-interactive MatPlotLib backend
-- Added `method` keyword argument to `make_regridder_*` routines in `regrid.py`, with default value `conservative`
-
-### Changed
-- Updated `gcpy_environment_py313.yml` to use `esmf==8.8.1` and `esmpy==8.8.1` to fix package inconsistency issues
-
-### Fixed
 - Fixed logic error in `compare_varnames` that caused 2D data variables to be flagged as 3D (esp. for GCHP vs GCC comparisons)
 - Replaced incorrect collection name `AOD`  with `Aerosols` in the GCC vs. GCC 1-month AOD plots
+- Fix the logic of ravel_1D that creates orbit file for 1D GCHP diagnostic
 
 ## [1.6.1] - 2025-03-24
 ### Added

@@ -1,4 +1,3 @@
-
 ---
 # =====================================================================
 # Benchmark configuration file (**EDIT AS NEEDED**)
@@ -22,24 +21,23 @@
 #   main_dir:    High-level directory containing ref & dev rundirs
 #   results_dir: Directory where plots/tables will be created
 #   weights_dir: Path to regridding weights
-#   spcdb_dir:   Folder in which the species_database.yml file is
-#                located.  If set to "default", then will look for
-#                species_database.yml in one of the Dev rundirs.
 #
 paths:
   main_dir: /path/to/benchmark/main/dir
   results_dir: /path/to/BenchmarkResults
   weights_dir: /n/holylfs06/LABS/jacob_lab/Shared/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
-  spcdb_dir: default
 #
 # data: Contains configurations for ref and dev runs
-#   version:         Version string (must not contain spaces)
-#   dir:             Path to run directory
-#   outputs_subdir:  Subdirectory w/ GEOS-Chem diagnostic files
-#   restarts_subdir: Subdirectory w/ GEOS-Chem restarts
-#   bmk_start:       Simulation start date (YYYY-MM-DDThh:mm:ss)
-#   bmk_end:         Simulation end date (YYYY-MM-DDThh:mm:ss)
-#   resolution:      GCHP resolution string
+#   version:          Version string (must not contain spaces)
+#   dir:              Path to run directory
+#   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
+#   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
+#   logs_subdir:      Subdirectory w/ GEOS-Chem log files
+#   logs_template:    Template for log file names (may include tokens)
+#   bmk_start:        Simulation start date (YYYY-MM-DDThh:mm:ss)
+#   bmk_end:          Simulation end date (YYYY-MM-DDThh:mm:ss)
+#   resolution:       GCHP resolution string
+#
 #
 data:
   ref:
@@ -115,15 +113,28 @@ options:
   # outputs: Specifies the plots and tables to generate
   #
   outputs:
+    #
+    # Benchmark plots
+    #
     plot_conc: True
-    plot_wetdep: True
     plot_drydep: True
-    rnpbbe_budget: True
-    ops_budget_table: False
-    mass_table: True
-    ste_table: True
+    plot_wetdep: True
+    #
+    # Benchmark tables
+    #
     cons_table: True
+    mass_table: True
+    ops_budget_table: False
+    rnpbbe_budget: True
+    ste_table: True
     timing_table: False
+    #
+    # Comparison plots for selected collections
+    # (not normally used for benchmarks)
+    #
+    plot_budget: False
+    plot_2d_met: False
+    plot_3d_met: False
   #
   # n_cores: Specify the number of cores to use.
   # -1: Use $OMP_NUM_THREADS         cores

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Contains tools for working with cubed-sphere data.
 
@@ -173,7 +174,7 @@ def face_area(
             xyz_corner = np.zeros((4,3))
             for i_vert in range(4):
                 x_lon = i_lon + (i_vert > 1)
-                x_lat = i_lat + (i_vert == 0 or i_vert == 3)
+                x_lat = i_lat + (i_vert in (0, 3))
                 lon_corner[i_vert] = lon_b_rad[x_lon,x_lat]
                 lat_corner[i_vert] = lat_b_rad[x_lon,x_lat]
             for i_vert in range(4):
@@ -270,7 +271,10 @@ def sphere_angle(
 
 def grid_area(
         cs_grid=None,
-        cs_res=None
+        cs_res=None,
+        stretch_factor=None,
+        target_lon=None,
+        target_lat=None
 ):
     """
     Return area (m2) for each cell in a cubed-sphere grid
@@ -296,17 +300,16 @@ def grid_area(
     if cs_res is None:
         cs_res = cs_grid['lon_b'].shape[-1] - 1
     elif cs_grid is None:
-        cs_grid = gcpy.csgrid_GMAO(cs_res)
+        cs_grid = gcpy.gen_grid(cs_res, stretch_factor, target_lon, target_lat)
     elif cs_grid is not None and cs_res is not None:
         assert cs_res == cs_grid['lon_b'].shape[-1], \
         'Routine grid_area received inconsistent inputs'
     cs_area = np.zeros((6,cs_res,cs_res))
-    cs_area[0,:,:] = face_area(
-        cs_grid['lon_b'][0,:,:],
-        cs_grid['lat_b'][0,:,:]
-    )
-    for i_face in range(1,6):
-        cs_area[i_face,:,:] = cs_area[0,:,:].copy()
+    for i_face in range(6):
+        cs_area[i_face,:,:] = face_area(
+            cs_grid['lon_b'][i_face,:,:],
+            cs_grid['lat_b'][i_face,:,:]
+        )
 
     return cs_area
 
@@ -345,14 +348,14 @@ def gen_grid(
         where each value has an extra face dimension of length 6.
     """
     if stretch_factor is not None:
-        cs_temp, _ = gcpy.make_grid_SG(
+        cs_temp, _ = gcpy.make_grid_sg(
             n_cs,
             stretch_factor,
             target_lon,
             target_lat
         )
     else:
-        cs_temp = gcpy.csgrid_GMAO(n_cs)
+        cs_temp = gcpy.csgrid_gmao(n_cs)
 
     return xr.Dataset(
         {'nf':     (['nf'], np.array(range(6))),
@@ -748,7 +751,7 @@ def is_cubed_sphere_rst_grid(data):
     # NOTE: in DataArray objects, dims is a tuple but not a dict!
     # Comparing the len of the lat & lon coords will work for both.
     if "lat" in data.coords:
-         return len(data.coords["lat"]) == len(data.coords["lon"]) * 6
+        return len(data.coords["lat"]) == len(data.coords["lon"]) * 6
 
     # Dataset: search data.data_vars for "SPC_"
     # DataArray: search data.name for "SPC_"

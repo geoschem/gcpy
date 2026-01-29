@@ -18,10 +18,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
       - name: Checkout the GCPy repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
       - name: Create "gcpy_env" environment
         uses: mamba-org/setup-micromamba@v1
         with:
@@ -31,9 +35,11 @@ jobs:
           cache-environment: false
           generate-run-shell: true
           post-cleanup: 'all'
+
       - name: Test if "import gcpy" works
         run: python -c "import gcpy"
         shell: micromamba-shell {0}
+
       - name: Test if we can create a plot
         run: python -m gcpy.examples.plotting.create_test_plot
         shell: micromamba-shell {0}

@@ -103,10 +103,10 @@ def six_plot(
         "ll" for lat/lon or "cs" for cubed-sphere.
     vmins: list of float
         list of length 3 of minimum ref value, dev value,
-        and absdiff value.
+        and minimum of both (for use with match_cbar=True).
     vmaxs: list of float
         list of length 3 of maximum ref value, dev value,
-        and absdiff value.
+        and maximum of both (for use with match_cbar=True)
     use_cmap_RdBu: bool
         Set this flag to True to use a blue-white-red colormap
     match_cbar: bool
@@ -425,7 +425,7 @@ def vmin_vmax_for_ref_dev_plots(
     #---------------------------------------------------------------
     if use_cmap_RdBu:
 
-        # Ref supblot, diff-of-diffs
+        # Ref subplot, diff-of-diffs
         if subplot in "ref":
             vmax = max([np.abs(vmins[0]), np.abs(vmaxs[0])])
             if match_cbar and not other_all_nan:

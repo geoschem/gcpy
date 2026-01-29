@@ -48,11 +48,12 @@ import sys
 import warnings
 from datetime import datetime
 import numpy as np
-from gcpy.util import copy_file_to_dir, get_filepath, read_config_file
-from gcpy.date_time import add_months, is_full_year
+from gcpy.util import \
+    copy_file_to_dir, get_filepath, read_config_file
+from gcpy.date_time import \
+    add_months, datetime64_to_str, is_full_year
 from gcpy.benchmark.modules.benchmark_funcs import \
-    diff_of_diffs_toprow_title, get_species_database_dir, \
-    create_benchmark_summary_table, \
+    diff_of_diffs_toprow_title, create_benchmark_summary_table, \
     create_benchmark_sanity_check_table, \
     make_benchmark_conc_plots, make_benchmark_emis_plots, \
     make_benchmark_emis_tables, make_benchmark_jvalue_plots, \
@@ -70,9 +71,9 @@ from gcpy.benchmark.modules.run_1yr_tt_benchmark \
     import run_benchmark as run_1yr_tt_benchmark
 from gcpy.benchmark.modules.benchmark_utils import \
     gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
-    get_log_filepaths, print_benchmark_info
-from gcpy.benchmark.modules.benchmark_drydep \
-    import drydepvel_species, make_benchmark_drydep_plots
+    get_log_filepaths, get_species_database_files, print_benchmark_info
+from gcpy.benchmark.modules.benchmark_drydep import \
+    drydepvel_species, make_benchmark_drydep_plots
 from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
     make_benchmark_gcclassic_timing_table
 from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
@@ -137,9 +138,6 @@ def run_benchmark_default(config):
         config : dict
             Contains configuration for 1mon benchmark from yaml file.
     """
-    # Folder in which the species_database.yml file is found
-    spcdb_dir = get_species_database_dir(config)
-
     # =====================================================================
     # Data directories
     # For gchp_vs_gcc_refdir use config["data"]["dev"]["gcc"]["version"],
@@ -317,8 +315,10 @@ def run_benchmark_default(config):
     if config["options"]["comparisons"]["gcc_vs_gcc"]["run"]:
 
         # ==================================================================
-        # GCC vs GCC error checks
+        # GCC vs GCC initialization & error checks
         # ==================================================================
+        spcdb_files = get_species_database_files(config, "gcc", "gcc")
+
         if not np.equal(gcc_ref_sec_diff, gcc_dev_sec_diff):
             print("Skipping GCC vs GCC emissions tables and operations")
             print("budget tables because months are different lengths")
@@ -369,6 +369,7 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 refmet=refmet,
                 devmet=devmet,
                 dst=gcc_vs_gcc_resultsdir,
@@ -378,7 +379,6 @@ def run_benchmark_default(config):
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -398,6 +398,7 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
@@ -407,7 +408,6 @@ def run_benchmark_default(config):
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -427,12 +427,12 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 dst=gcc_vs_gcc_resultsdir,
                 ref_interval=[gcc_ref_sec_diff],
                 dev_interval=[gcc_dev_sec_diff],
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -451,11 +451,11 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -477,12 +477,12 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 colname=colname,
                 var_prefix=colname,
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -504,11 +504,11 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 colname=colname,
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -524,12 +524,12 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 devmet,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 colname="StateMet",
                 var_prefix='Met',
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -545,12 +545,12 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 devmet,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 colname="StateMet",
                 var_prefix='Met',
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -570,11 +570,11 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -594,11 +594,11 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                spcdb_files,
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
                 varlist=drydepvel_species()
             )
@@ -609,19 +609,72 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["mass_table"]:
             print("\n%%% Creating GCC vs. GCC global mass tables %%%")
 
-            # Filepaths
-            ref = get_filepath(gcc_vs_gcc_refrstdir, "Restart", gcc_end_ref_date)
-            dev = get_filepath(gcc_vs_gcc_devrstdir, "Restart", gcc_end_dev_date)
+            # Filepaths & date strings for start of run
+            ref = get_filepath(
+                gcc_vs_gcc_refrstdir,
+                "Restart",
+                gcc_ref_date
+            )
+            dev = get_filepath(
+                gcc_vs_gcc_devrstdir,
+                "Restart",
+                gcc_dev_date
+            )
+            ref_date_str = datetime64_to_str(
+                gcc_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gcc_dev_date,
+                format_str="%Y%m%dT%H"
+            )
 
-            # Create tables
+            # Create tables for start of month
             make_benchmark_mass_tables(
                 ref,
                 config["data"]["ref"]["gcc"]["version"],
                 dev,
                 config["data"]["dev"]["gcc"]["version"],
+                spcdb_files,
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
+            )
+
+            # Filepaths & date string for end of run
+            ref = get_filepath(
+                gcc_vs_gcc_refrstdir,
+                "Restart",
+                gcc_end_ref_date
+            )
+            dev = get_filepath(
+                gcc_vs_gcc_devrstdir,
+                "Restart",
+                gcc_end_dev_date
+            )
+            ref_date_str = datetime64_to_str(
+                gcc_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gcc_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+
+            # Create tables for end of month
+            make_benchmark_mass_tables(
+                ref,
+                config["data"]["ref"]["gcc"]["version"],
+                dev,
+                config["data"]["dev"]["gcc"]["version"],
+                spcdb_files,
+                dst=gcc_vs_gcc_tablesdir,
+                overwrite=True,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
             )
 
         # ==================================================================
@@ -654,9 +707,9 @@ def run_benchmark_default(config):
                 deve,
                 config["data"]["dev"]["gcc"]["version"],
                 devperiod,
+                spcdb_files,
                 overwrite=True,
                 dst=gcc_vs_gcc_tablesdir,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -698,9 +751,9 @@ def run_benchmark_default(config):
                 config["data"]["ref"]["gcc"]["version"],
                 dev,
                 config["data"]["dev"]["gcc"]["version"],
+                spcdb_files,
                 dst=gcc_vs_gcc_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -822,8 +875,10 @@ def run_benchmark_default(config):
     if config["options"]["comparisons"]["gchp_vs_gcc"]["run"]:
 
         # ==================================================================
-        # GCHP vs GCC error checks
+        # GCHP vs GCC initialization & error checks
         # ==================================================================
+        spcdb_files = get_species_database_files(config, "gcc", "gchp")
+
         if not np.equal(gcc_dev_sec_diff, gchp_dev_sec_diff):
             print("Skipping GCHP vs GCC emissions tables and operations")
             print("budget tables because months are different lengths")
@@ -885,6 +940,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 refmet=refmet,
                 devmet=devmet,
                 dst=gchp_vs_gcc_resultsdir,
@@ -894,7 +950,6 @@ def run_benchmark_default(config):
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -919,6 +974,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
@@ -930,7 +986,6 @@ def run_benchmark_default(config):
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -955,13 +1010,13 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 dst=gchp_vs_gcc_resultsdir,
                 ref_interval=[gcc_dev_sec_diff],
                 dev_interval=[gchp_dev_sec_diff],
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 devmet=devmet,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -985,11 +1040,11 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1016,12 +1071,12 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 colname=colname,
                 var_prefix=colname,
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1048,11 +1103,11 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 colname=colname,
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1068,12 +1123,12 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 devmet,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1089,12 +1144,12 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 devmet,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1105,7 +1160,11 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCHP vs. GCC column AOD plots %%%")
 
             # Filepaths
-            ref = get_filepath(gchp_vs_gcc_refdir, "Aerosols", gcc_dev_date)
+            ref = get_filepath(
+                gchp_vs_gcc_refdir,
+                "Aerosols", 
+                gcc_dev_date
+            )
             dev = get_filepath(
                 gchp_vs_gcc_devdir,
                 "Aerosols",
@@ -1119,11 +1178,11 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1148,11 +1207,11 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
                 varlist=drydepvel_species(),
             )
@@ -1163,7 +1222,44 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["mass_table"]:
             print("\n%%% Creating GCHP vs. GCC global mass tables %%%")
 
-            # Filepaths
+            # Filepaths and date strings for start of run
+            ref = get_filepath(
+                gchp_vs_gcc_refrstdir,
+                "Restart",
+                gcc_dev_date
+            )
+            dev = get_filepath(
+                gchp_vs_gcc_devrstdir,
+                "Restart",
+                gchp_dev_date,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
+            )
+            ref_date_str = datetime64_to_str(
+                gcc_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gchp_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+
+            # Create tables for start of run
+            make_benchmark_mass_tables(
+                ref,
+                gchp_vs_gcc_refstr,
+                dev,
+                gchp_vs_gcc_devstr,
+                spcdb_files,
+                dst=gchp_vs_gcc_tablesdir,
+                overwrite=True,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
+            )
+
+            # Filepaths and date strings for end of run
             ref = get_filepath(
                 gchp_vs_gcc_refrstdir,
                 "Restart",
@@ -1177,16 +1273,27 @@ def run_benchmark_default(config):
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
+            ref_date_str = datetime64_to_str(
+                gcc_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gchp_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
 
-            # Create tables
+            # Create tables for end of run
             make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 dst=gchp_vs_gcc_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
             )
 
         # ==================================================================
@@ -1241,9 +1348,9 @@ def run_benchmark_default(config):
                 deve,
                 config["data"]["dev"]["gchp"]["version"],
                 devperiod,
+                spcdb_files,
                 overwrite=True,
                 dst=gchp_vs_gcc_tablesdir,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -1303,9 +1410,9 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                spcdb_files,
                 dst=gchp_vs_gcc_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -1353,8 +1460,10 @@ def run_benchmark_default(config):
     if config["options"]["comparisons"]["gchp_vs_gchp"]["run"]:
 
         # ==================================================================
-        # GCHP vs GCHP error checks
+        # GCC vs GCC initialization & error checks
         # ==================================================================
+        spcdb_files = get_species_database_files(config, "gchp", "gchp")
+
         if not np.equal(gchp_ref_sec_diff, gchp_dev_sec_diff):
             print("Skipping GCHP vs GCHP emissions tables and operations")
             print("budget tables because months are different lengths")
@@ -1428,6 +1537,7 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 refmet=refmet,
                 devmet=devmet,
                 dst=gchp_vs_gchp_resultsdir,
@@ -1437,7 +1547,6 @@ def run_benchmark_default(config):
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1467,6 +1576,7 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 plot_by_spc_cat=config["options"]["outputs"]["plot_options"][
@@ -1476,7 +1586,6 @@ def run_benchmark_default(config):
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1506,6 +1615,7 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 dst=gchp_vs_gchp_resultsdir,
                 ref_interval=[gchp_ref_sec_diff],
                 dev_interval=[gchp_dev_sec_diff],
@@ -1513,7 +1623,6 @@ def run_benchmark_default(config):
                 overwrite=True,
                 refmet=refmet,
                 devmet=devmet,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -1542,11 +1651,11 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1578,12 +1687,12 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 colname=colname,
                 var_prefix=colname,
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1615,11 +1724,11 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 colname=colname,
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1635,12 +1744,12 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 devmet,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1656,12 +1765,12 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 devmet,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1691,11 +1800,11 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 
@@ -1725,11 +1834,11 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"],
                 varlist=drydepvel_species()
             )
@@ -1740,7 +1849,47 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["mass_table"]:
             print("\n%%% Creating GCHP vs. GCHP global mass tables %%%")
 
-            # Filepaths
+            # Filepaths and date strings for start of run
+            ref = get_filepath(
+                gchp_vs_gchp_refrstdir,
+                "Restart",
+                gchp_ref_date,
+                is_gchp=True,
+                gchp_res=config["data"]["ref"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["ref"]["gchp"]["is_pre_14.0"]
+            )
+            dev = get_filepath(
+                gchp_vs_gchp_devrstdir,
+                "Restart",
+                gchp_dev_date,
+                is_gchp=True,
+                gchp_res=config["data"]["dev"]["gchp"]["resolution"],
+                gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
+            )
+            ref_date_str = datetime64_to_str(
+                gchp_ref_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gchp_dev_date,
+                format_str="%Y%m%dT%H"
+            )
+
+            # Create tables for start of run
+            make_benchmark_mass_tables(
+                ref,
+                gchp_vs_gchp_refstr,
+                dev,
+                gchp_vs_gchp_devstr,
+                spcdb_files,
+                dst=gchp_vs_gchp_tablesdir,
+                overwrite=True,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
+            )
+
+            # Filepaths and date string for end of run
             ref = get_filepath(
                 gchp_vs_gchp_refrstdir,
                 "Restart",
@@ -1757,16 +1906,27 @@ def run_benchmark_default(config):
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
+            ref_date_str = datetime64_to_str(
+                gchp_end_ref_date,
+                format_str="%Y%m%dT%H"
+            )
+            dev_date_str = datetime64_to_str(
+                gchp_end_dev_date,
+                format_str="%Y%m%dT%H"
+            )
 
-            # Create tables
+            # Create tables for end of run
             make_benchmark_mass_tables(
                 ref,
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                spcdb_files,
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
+                ref_hdr_label=f"at {ref_date_str}",
+                dev_hdr_label=f"at {dev_date_str}",
+                subdst=dev_date_str,
             )
 
         # ==================================================================
@@ -1827,9 +1987,9 @@ def run_benchmark_default(config):
                 deve,
                 config["data"]["dev"]["gchp"]["version"],
                 devperiod,
+                spcdb_files,
                 overwrite=True,
                 dst=gchp_vs_gchp_tablesdir,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -1899,9 +2059,9 @@ def run_benchmark_default(config):
                 config["data"]["ref"]["gchp"]["version"],
                 dev,
                 config["data"]["dev"]["gchp"]["version"],
+                spcdb_files,
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
-                spcdb_dir=spcdb_dir,
             )
 
         # ==================================================================
@@ -2008,9 +2168,20 @@ def run_benchmark_default(config):
         if config["options"]["outputs"]["plot_conc"]:
             print("\n%%% Creating GCHP vs. GCC diff-of-diffs conc plots %%%")
 
+            # Species database files (just use the gcc ones)
+            spcdb_files = get_species_database_files(config, "gcc", "gcc")
+            
             # Filepaths
-            gcc_ref = get_filepath(gcc_vs_gcc_refdir, "SpeciesConc", gcc_ref_date)
-            gcc_dev = get_filepath(gcc_vs_gcc_devdir, "SpeciesConc", gcc_dev_date)
+            gcc_ref = get_filepath(
+                gcc_vs_gcc_refdir, 
+                "SpeciesConc", 
+                gcc_ref_date
+            )
+            gcc_dev = get_filepath(
+                gcc_vs_gcc_devdir, 
+                "SpeciesConc", 
+                gcc_dev_date
+            )
             gchp_ref = get_filepath(
                 gchp_vs_gchp_refdir,
                 "SpeciesConc",
@@ -2031,6 +2202,7 @@ def run_benchmark_default(config):
                 diff_of_diffs_refstr,
                 gchp_ref,
                 diff_of_diffs_devstr,
+                spcdb_files,
                 dst=diff_of_diffs_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 benchmark_type=config["options"]["bmk_type"],
@@ -2039,7 +2211,6 @@ def run_benchmark_default(config):
                 second_ref=gcc_dev,
                 second_dev=gchp_dev,
                 cats_in_ugm3=None,
-                spcdb_dir=spcdb_dir,
                 n_job=config["options"]["n_cores"]
             )
 

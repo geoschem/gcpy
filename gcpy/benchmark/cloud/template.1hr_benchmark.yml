@@ -29,16 +29,17 @@ paths:
   main_dir: ${GEOSCHEM_BENCHMARK_WORKING_DIR}
   results_dir: BenchmarkResults
   weights_dir: ${GEOSCHEM_BENCHMARK_WORKING_DIR}/weights
-  spcdb_dir: default
 #
 # data: Contains configurations for ref and dev runs
-#   version:         Version string (must not contain spaces)
-#   dir:             Path to run directory
-#   outputs_subdir:  Subdirectory w/ GEOS-Chem diagnostic files
-#   restarts_subdir: Subdirectory w/ GEOS-Chem restarts
-#   bmk_start:       Simulation start date (YYYY-MM-DDThh:mm:ss)
-#   bmk_end:         Simulation end date (YYYY-MM-DDThh:mm:ss)
-#   resolution:      GCHP resolution string
+#   version:          Version string (must not contain spaces)
+#   dir:              Path to run directory
+#   outputs_subdir:   Subdirectory w/ GEOS-Chem diagnostic files
+#   restarts_subdir:  Subdirectory w/ GEOS-Chem restarts
+#   logs_subdir:      Subdirectory w/ GEOS-Chem log files
+#   logs_template:    Template for log file names (may include tokens)
+#   bmk_start:        Simulation start date (YYYY-MM-DDThh:mm:ss)
+#   bmk_end:          Simulation end date (YYYY-MM-DDThh:mm:ss)
+#   resolution:       GCHP resolution string
 #
 data:
   ref:
@@ -114,24 +115,33 @@ options:
   # outputs: Specifies the plots and tables to generate
   #
   outputs:
-    plot_conc: False
-    plot_emis: False
-    emis_table: True
-    plot_jvalues: False
-    plot_drydep: False
+    #
+    # Benchmark plots
+    #
     plot_aod: False
-    mass_table: True
-    mass_accum_table: False
-    ops_budget_table: False
-    OH_metrics: True
-    ste_table: True # GCC only
-    timing_table: True
-    summary_table: True
-    sanity_check_table: True
+    plot_conc: False
+    plot_drydep: False
+    plot_emis: False
+    plot_jvalues: False
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
-    # Comparison plots for other collections
+    #
+    # Benchmark tables
+    #
+    emis_table: True
+    mass_accum_table: False
+    mass_table: True
+    OH_metrics: True
+    ops_budget_table: False
+    sanity_check_table: True
+    ste_table: True # GCC only
+    summary_table: True
+    timing_table: True
+    #
+    # Comparison plots for selected collections
+    # (not normally used for benchmarks)
+    #
     plot_budget: False
     plot_2d_met: False
     plot_3d_met: False
