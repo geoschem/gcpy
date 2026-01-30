@@ -59,6 +59,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `make_benchmark_mass_tables` and `create_global_mass_table` to allow Ref and Dev to have different dates if so chosen
 - Updated `run_benchmark.py` to generate mass tables at start and end of the simulation
 - Updated `run_1yr_fullchem_benchmark.py` and `run_1yr_tt_benchmark.py` to generate mass tables at the 1st day of each month from Jan 2019 thru Jan 2020
+- Updated `run_benchmark.py` to take the `AREA` field from the GCHP restart file at the end of the month when computing mass tables for 1hr/1mon benchmarks
+- Updated routine `convert_units` to reshape the area variable tomatch input data on the GCHP checkpoint grid
 
 ### Fixed
 - Fixed grid area calculation scripts of `grid_area` in `gcpy/gcpy/cstools.py`

@@ -7,7 +7,8 @@ Mainly used for model benchmarking purposes.
 import numpy as np
 import xarray as xr
 import gcpy.constants as physconsts
-
+from gcpy.cstools import is_cubed_sphere_diag_grid, is_cubed_sphere_rst_grid
+from gcpy.util import reshape_MAPL_CS
 
 def adjust_units(units):
     """
@@ -197,6 +198,13 @@ def convert_units(
         moles_C_per_mole_species = species_properties.get("MolecRatio")
     else:
         moles_C_per_mole_species = 1.0
+        
+    # EDGE CASE: For GCHP vs GCHP mass tables, we often need to multiply
+    # data taken from a GCHP checkpoint file by the surface area taken 
+    # from the StateMet History file.  If this is the case, then reshape
+    # the area array to the GCHP checkpoint grid before multiplication.
+    if is_cubed_sphere_rst_grid(dr) and is_cubed_sphere_diag_grid(area_m2):
+        area_m2 = reshape_MAPL_CS(area_m2)
 
     # ==============================
     # Compute conversion factors
