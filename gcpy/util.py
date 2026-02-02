@@ -12,7 +12,7 @@ from pandas import Series
 import xarray as xr
 from pypdf import PdfWriter, PdfReader
 from gcpy.constants import ENCODING, TABLE_WIDTH
-from gcpy.cstools import is_cubed_sphere_rst_grid
+from gcpy.cstools import is_cubed_sphere, is_cubed_sphere_rst_grid
 
 # ======================================================================
 # %%%%% METHODS %%%%%
@@ -50,6 +50,7 @@ def convert_lon(
     """
     verify_variable_type(data, (xr.DataArray, xr.Dataset))
 
+    roll_len = 0
     data_copy = data.copy()
 
     lon = data_copy[dim].values
@@ -633,70 +634,74 @@ def get_diff_of_diffs(
         dev
 ):
     """
-    Generate datasets containing differences between two datasets
+    Generate datasets containing differences between two datasets.
 
     Args:
-        ref: xarray Dataset
-            The "Reference" (aka "Ref") dataset.
-        dev: xarray Dataset
-            The "Development" (aka "Dev") dataset
+    ref       : xr.Dataset : The Ref (aka "Reference") dataset
+    dev       : xr.Dataset : The Dev" (aka "Development") dataset
 
-    Returns:
-         absdiffs: xarray Dataset
-            Dataset containing dev-ref values
-         fracdiffs: xarray Dataset
-            Dataset containing dev/ref values
+    Returns
+    absdiffs  : xr.Dataset : Absolute differences (Dev - Ref)
+    fracdiffs : xr.Dataset : Fractional differences (Dev / Ref)
     """
+    with xr.set_options(keep_attrs=True):
 
-    # get diff of diffs datasets for 2 datasets
-    # limit each pair to be the same type of output (GEOS-Chem Classic or GCHP)
-    # and same resolution / extent
-    vardict = compare_varnames(ref, dev, quiet=True)
-    varlist = vardict["commonvars"]
-    # Select only common fields between the Ref and Dev datasets
-    ref = ref[varlist]
-    dev = dev[varlist]
-    if 'nf' not in ref.dims and 'nf' not in dev.dims:
-        # if the coords do not align then set time dimensions equal
+        # ------------------------------------------------------------------
+        # Throw an error unless Ref and Dev are on the same grid
+        # ------------------------------------------------------------------
+        if not ref.sizes == dev.sizes:
+            msg = "Diff-of-diffs plot supports only identical grid types "
+            msg += "(lat/lon or cubed-sphere) within each Ref & Dev pair!"
+            raise ValueError(msg)
+
+        # ---------------------------------------------------------------
+        # Include only the common fields in Ref and Dev
+        # ---------------------------------------------------------------
+        vardict = compare_varnames(ref, dev, quiet=True)
+        varlist = vardict["commonvars"]
+        ref = ref[varlist]
+        dev = dev[varlist]
+
+        # ---------------------------------------------------------------
+        # For cubed-sphere grids, align coordinates to avoid mismatch,
+        # which will generate a "regridder not found" error.
+        # ---------------------------------------------------------------
+        if is_cubed_sphere(ref) and is_cubed_sphere(dev):
+            ref = ref.assign_coords({
+                'Xdim': dev.coords['Xdim'],
+                'Ydim': dev.coords['Ydim'],
+                'lons': dev.coords['lons'],
+                'lats': dev.coords['lats']
+            })
+
+        # --------------------------------------------------------------
+        # Align time coords if needed
+        # --------------------------------------------------------------
         try:
             xr.align(dev, ref, join='exact')
-        except BaseException:
-            ref.coords["time"] = dev.coords["time"]
-        with xr.set_options(keep_attrs=True):
-            absdiffs = dev - ref
-            fracdiffs = dev / ref
-            for var in dev.data_vars.keys():
-                # Ensure the diffs Dataset includes attributes
-                absdiffs[var].attrs = dev[var].attrs
-                fracdiffs[var].attrs = dev[var].attrs
-    elif 'nf' in ref.dims and 'nf' in dev.dims:
+        except ValueError:
+            ref = ref.assign_coords(time=dev.coords["time"])
 
-        # Include special handling if cubed sphere grid dimension names are different
-        # since they changed in MAPL v1.0.0.
-        if "lat" in ref.dims and "Xdim" in dev.dims:
-            ref_newdimnames = dev.copy()
-            for var in dev.data_vars.keys():
-                if "Xdim" in dev[var].dims:
-                    ref_newdimnames[var].values = ref[var].values.reshape(
-                        dev[var].values.shape)
-                # NOTE: the reverse conversion is gchp_dev[v].stack(lat=("nf","Ydim")).transpose(
-                # "time","lev","lat","Xdim").values
+        # --------------------------------------------------------------
+        # Compute the absolute and fractional diffs
+        # Use .load() to force read the variable's data into memory,
+        # which should avoid lazy indexing issues.  The per-variable
+        # data size is managaeable so overall performance should be OK.
+        # --------------------------------------------------------------
+        absdiffs = xr.Dataset(
+            {var: dev[var].load() - ref[var].load() for var in varlist}
+        )
+        fracdiffs = xr.Dataset(
+            {var: dev[var].load() / ref[var].load() for var in varlist}
+        )
 
-        with xr.set_options(keep_attrs=True):
-            absdiffs = dev.copy()
-            fracdiffs = dev.copy()
-            for var in dev.data_vars.keys():
-                if "Xdim" in dev[var].dims or "lat" in dev[var].dims:
-                    absdiffs[var].values = dev[var].values - ref[var].values
-                    fracdiffs[var].values = dev[var].values / ref[var].values
-                    # NOTE: The diffs Datasets are created without variable
-                    # attributes; we have to reattach them
-                    absdiffs[var].attrs = dev[var].attrs
-                    fracdiffs[var].attrs = dev[var].attrs
-    else:
-        print('Diff-of-diffs plot supports only identical grid types (lat/lon or cubed-sphere)' + \
-              ' within each dataset pair')
-        raise ValueError
+        # --------------------------------------------------------------
+        # Take the time mean if there is more than one timestamp
+        # --------------------------------------------------------------
+        if "time" in absdiffs.coords and len(absdiffs.coords["time"]) > 1:
+            absdiffs = dataset_mean(absdiffs)
+        if "time" in fracdiffs.coords and len(fracdiffs.coords["time"]) > 1:
+            fracdiffs = dataset_mean(fracdiffs)
 
     return absdiffs, fracdiffs
 
@@ -2269,7 +2274,7 @@ def get_element_of_series(series, element):
     Returns a specified element of a pd.Series object.
 
     Args
-    serie   : pd.Series : A pd.Series object
+    series  : pd.Series : A pd.Series object
     element : int       : Element of the pd.Series object to return
 
     Returns
@@ -2279,3 +2284,63 @@ def get_element_of_series(series, element):
     verify_variable_type(element, int)
 
     return list(series)[element]
+
+
+def read_species_metadata(files, quiet=True):
+    """
+    Reads species metadata from multiple files and returns a dict
+    containing metadata for the union of species.
+
+    Args
+    files     : str|list : Species database file(s) to read
+
+    Keyword Args
+    quiet     : bool     : Quiet (true) or verbose (false) printout
+
+    Returns
+    ref_spcdb : dict     : Species metadata for the Ref model
+    dev_spcdb : dict     : Species metadata for the Dev model
+    """
+
+    # 1 file is passed, return the same metadata for Ref & Dev
+    if isinstance(files, str):
+        dev_spcdb = read_config_file(files, quiet=quiet)
+        ref_spcdb = dev_spcdb
+        return ref_spcdb, dev_spcdb
+
+    # 2 files are passed, return Ref & Dev metadata separately
+    if isinstance(files, list):
+        ref_spcdb = read_config_file(files[0], quiet=quiet)
+        dev_spcdb = read_config_file(files[1], quiet=quiet)
+        return ref_spcdb, dev_spcdb
+
+    raise ValueError("Argument 'files' must be of type 'str' or 'list'!")
+
+
+def get_molwt_from_metadata(metadata, spc_name):
+    """
+    Extracts molecular weight [g/mol] from a dictionary
+    containing species metadata.
+
+    Args
+    metadata : dict       : Metadata for GEOS-Chem species
+    spc_name : str        : Name of the desired species
+
+    Returns
+    spc_mw_g : float|None : Species molecular weight [g/mol]
+    """
+    # Extract the metadata for the given species
+    species_metadata = metadata.get(spc_name)
+
+    # If no properties are found, check if this is one of the SOA
+    # species.  If so, return 150 g/mol, otherwise exit w/ error.
+    if species_metadata is None:
+        if spc_name not in ["Simple_SOA", "Complex_SOA"]:
+            return None
+        return 150.0
+
+    # Otherwise return the mol. wt. as listed in the species metadata
+    spc_mw_g = species_metadata.get("MW_g")
+    if spc_mw_g is None:
+        return None
+    return spc_mw_g

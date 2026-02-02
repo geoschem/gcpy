@@ -6,14 +6,6 @@
 # for GCPy, use this command:
 #
 # $ mamba env create -n gcpy_env --file=/path/to/gcpy/environment.yml
-#
-# NOTE: This combination of packages may produce a warning
-#
-#   VersionWarning: ESMF installation version 8.8.0, ESMPy version 8.8.0b0
-#
-# that you can disable by adding this to your ~/.bashrc
-#
-#   export PYTHONWARNINGS="ignore"
 # =====================================================================
 name: gcpy_env
 channels:
@@ -34,11 +26,11 @@ dependencies:
   - netcdf-fortran ==4.6.1      # Python wrapper for netCDF-Fortran
   - numpy          ==2.1.3      # Optimized mathematical functions
   - pandas         ==2.2.3      # Tables/timeseries manipulation
-  - pip            ==25.0.1     # Install packages from PyPi
+  - pip            ==25.2       # Install packages from PyPi
   - pylint         ==3.3.4      # Python linter
   - pyproj         ==3.7.1      # Python map projections library
   - python         ==3.13       # Python language
-  - pypdf          ==5.3.1      # PDF utilities (bookmarks, etc.)
+  - pypdf          ==6.6.2      # PDF utilities (bookmarks, etc.)
   - requests       ==2.32.4     # HTTP library
   - scipy          ==1.15.2     # Scientific python package
   - sparselt       ==0.1.3      # Regridding earth system model data

@@ -36,7 +36,7 @@ import numpy as np
 import sparselt.esmf
 import sparselt.xr
 import requests
-
+from gcpy.file_regrid import drop_classic_vars
 
 TEMP_FILES = []
 
@@ -377,6 +377,13 @@ def regrid(dataset, output_template, weights_file):
         np.prod(output_template_shape) != weights.dst_grid_dims.item()
     )
     if resize_output_template:
+        error_message = (
+            "GCHP output template grid resolution must be the same size "
+            "as the target grid! For example, if creating restart file "
+            " with parameters c24 and stretch factor 10, the template "
+            " GCHP file must be c24 with any or no stretch factor."
+        )
+        raise ValueError(error_message)
         if is_gchp_restart_file(output_template):
             # This is useful for stretched-grid simulations because they usually
             # don't have a "normal" grid size
@@ -515,12 +522,12 @@ def regrid_restart_file(
     is_conversion = input_is_gchp != output_is_gchp
     if is_conversion:
         to_gchp = output_is_gchp
+        dataset = drop_classic_vars(dataset, to_gchp)
         dataset = rename_variables(dataset, to_gchp)
         dataset = reverse_lev(dataset, to_gchp)
 
     dataset, output_template = drop_variables(dataset, output_template)
     dataset = regrid(dataset, output_template, weights_file=regrid_weights)
-    dataset = update_encoding(dataset)
     check_for_nans(dataset)
 
     if stretch_factor and target_lat and target_lon:
@@ -552,9 +559,9 @@ if __name__ == "__main__":
         logging.info("Creating a stretched-grid restart file")
 
         if (
-            (not COMMAND_LINE.stretch_factor)
-            or (not COMMAND_LINE.target_latitude)
-            or (not COMMAND_LINE.target_longitude)
+            COMMAND_LINE.stretch_factor is None
+            or COMMAND_LINE.target_latitude is None
+            or COMMAND_LINE.target_longitude is None
         ):
             ERROR_MESSAGE = (
                 "--stretched-grid was set but not all stretched-"

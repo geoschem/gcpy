@@ -29,8 +29,8 @@ CLASSIFIERS = [
 ]
 
 MAJOR = 1
-MINOR = 6
-MICRO = 2
+MINOR = 7
+MICRO = 0
 EXTRA = '' # for alpha (aN), beta (bN), rc (rcN) versions
 
 VERSION = f"{MAJOR}.{MINOR}.{MICRO}{EXTRA}"
@@ -91,32 +91,32 @@ setup(
     packages = find_packages(),
     include_package_data=True,
     install_requires=[
-        "cartopy==0.23.0",
-        "cf_xarray==0.9.1",
+        "cartopy==0.24.0",
+        "cf_xarray==0.10.0",
         "dask==2025.3.0",
-        "esmf==8.6.1",
-        "esmpy==8.6.1",
+        "esmf==8.8.1",
+        "esmpy==8.8.1",
         "gridspec==0.1.0",
-        "ipython==8.25.0",
+        "ipython==9.0.0",
         "joblib==1.4.2",
-        "jupyter==1.0.0",
-        "matplotlib==3.8.4",
-        "netcdf4==1.6.5",
+        "jupyter==1.1.1",
+        "matplotlib==3.10.1",
+        "netcdf4==1.7.2",
         "netcdf-fortran==4.6.1",
-        "numpy==1.26.4",
-        "pandas==2.2.2",
-        "pip==24.0",
-        "pylint==3.2.2",
-        "pyproj==3.6.1",
-        "python==3.12.0",
-        "pypdf==4.2.0",
+        "numpy==2.1.3",
+        "pandas==2.2.3",
+        "pip==25.2",
+        "pylint==3.3.4",
+        "pyproj==3.7.1",
+        "python==3.13",
+        "pypdf==6.6.2",
         "requests==2.32.4",
-        "scipy==1.13.1",
+        "scipy==1.15.2",
         "sparselt==0.1.3",
         "tabulate==0.9.0",
         "tk==8.6.13",
-        "xarray==2024.5.0",
-        "xesmf==0.8.5",
+        "xarray==2025.1.2",
+        "xesmf==0.8.8",
     ],
     classifiers = CLASSIFIERS
 )

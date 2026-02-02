@@ -31,9 +31,18 @@ Source code
 Usage
 =====
 
-Make sure that you have :ref:`specified the proper Matplotlib backend
-<mpl-backend>` for your system. Then run the example with:
+.. code-block:: console
+
+   $ conda activate gcpy_env
+
+   (gcpy_env) $ export MPLBACKEND=tkagg   # Or MacOSX if you are on a Mac
+
+   (gcpy_env) $ python -m gcpy.examples.plotting.create_test_plot
+
+At this point you should see the plot above on your screen.  To close
+the plot window you may either :program:`X` button or type
+:command:`q`.  You may then deactivate the Python environment:
 
 .. code-block:: console
 
-   $ python -m gcpy.examples.plotting.create_test_plot
+   (gcpy_env) $ conda deactivate

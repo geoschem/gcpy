@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 compare_single_level.py: Function to create a six-panel plot comparing
 quantities at a single model level for two different model versions.
@@ -5,6 +6,7 @@ Called from the GEOS-Chem benchmarking scripts and from the
 compare_diags.py example script.
 """
 import os
+import gc
 import copy
 import warnings
 from multiprocessing import current_process
@@ -16,14 +18,15 @@ import numpy as np
 import xarray as xr
 import cartopy.crs as ccrs
 from joblib import Parallel, delayed
-from pypdf import PdfMerger
+from pypdf import PdfReader, PdfWriter
 from gcpy.grid import get_grid_extents, call_make_grid
 from gcpy.regrid import regrid_comparison_data, create_regridders
-from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
+from gcpy.util import \
+    reshape_MAPL_CS, get_diff_of_diffs, get_molwt_from_metadata, \
     all_zero_or_nan, slice_by_lev_and_time, compare_varnames, \
-    read_config_file, verify_variable_type
+    read_species_metadata, verify_variable_type
 from gcpy.units import check_units, data_unit_is_mol_per_mol
-from gcpy.constants import MW_AIR_g
+from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
     _warning_format, WhGrYlRd
 from gcpy.plot.six_plot import six_plot
@@ -63,9 +66,7 @@ def compare_single_level(
         sigdiff_list=None,
         second_ref=None,
         second_dev=None,
-        spcdb_dir=os.path.dirname(__file__),
-        sg_ref_path='',
-        sg_dev_path='',
+        spcdb_files=None,
         ll_plot_func='imshow',
         **extra_plot_args
 ):
@@ -128,6 +129,10 @@ def compare_single_level(
         convert_to_ugm3: bool
             Whether to convert data units to ug/m3 for plotting.
             Default value: False
+        spcdb_files: str | list
+            A single species_database.yml file or a list of files
+            (e.g. for Ref & Dev).  Only used when convert_ugm3=True.
+            Default value: None
         flip_ref: bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
@@ -173,17 +178,6 @@ def compare_single_level(
             A dataset of the same model type / grid as devdata,
             to be used in diff-of-diffs plotting.
             Default value: None
-        spcdb_dir: str
-            Directory containing species_database.yml file.
-            Default value: Path of GCPy code repository
-        sg_ref_path: str
-            Path to NetCDF file containing stretched-grid info
-            (in attributes) for the ref dataset
-            Default value: '' (will not be read in)
-        sg_dev_path: str
-            Path to NetCDF file containing stretched-grid info
-            (in attributes) for the dev dataset
-            Default value: '' (will not be read in)
         ll_plot_func: str
             Function to use for lat/lon single level plotting with
             possible values 'imshow' and 'pcolormesh'. imshow is much
@@ -211,22 +205,22 @@ def compare_single_level(
 
     # Prepare diff-of-diffs datasets if needed
     if diff_of_diffs:
-        refdata, devdata = refdata.load(), devdata.load()
-        second_ref, second_dev = second_ref.load(), second_dev.load()
 
-#        # If needed, use fake time dim in case dates are different
-#        # in datasets.  This needs more work for case of single versus
-#        # multiple times.
-#        aligned_time = [np.datetime64('2000-01-01')] * refdata.dims['time']
-#        refdata = refdata.assign_coords({'time': aligned_time})
-#        devdata = devdata.assign_coords({'time': aligned_time})
-#        second_ref = second_ref.assign_coords({'time': aligned_time})
-#        second_dev = second_dev.assign_coords({'time': aligned_time})
+        ## If needed, use fake time dim in case dates are different
+        ## in datasets.  This needs more work for case of single versus
+        ## multiple times.
+        #aligned_time = [np.datetime64('2000-01-01')] * refdata.dims['time']
+        #refdata = refdata.assign_coords({'time': aligned_time})
+        #devdata = devdata.assign_coords({'time': aligned_time})
+        #second_ref = second_ref.assign_coords({'time': aligned_time})
+        #second_dev = second_dev.assign_coords({'time': aligned_time})
 
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
+
         frac_refstr = 'GCC_dev / GCC_ref'
         frac_devstr = 'GCHP_dev / GCHP_ref'
+
     # If no varlist is passed, plot all (surface only for 3D)
     if varlist is None:
         quiet = not verbose
@@ -239,31 +233,49 @@ def compare_single_level(
     savepdf = True
     if pdfname == "":
         savepdf = False
+
+    # If converting to ug/m3, read species database file(s) to obtain
+    # molecular weights.
     if convert_to_ugm3:
-        properties = read_config_file(
-            os.path.join(
-                spcdb_dir,
-                "species_database.yml"
-            ),
-            quiet=True
+        if spcdb_files is None:
+            msg = "You must pass 'spcdb_files' when convert_to_ugm3=True!"
+            raise ValueError(msg)
+        ref_metadata, dev_metadata = read_species_metadata(
+            spcdb_files,
+            quiet= True
         )
 
-    sg_ref_params = [1, 170, -90]
-    sg_dev_params = [1, 170, -90]
-    # Get stretched-grid info if passed
-    if sg_ref_path != '':
-        sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
-        sg_ref_params = [
-            sg_ref_attrs['stretch_factor'],
-            sg_ref_attrs['target_longitude'],
-            sg_ref_attrs['target_latitude']]
+    # Get stretched grid info, if any.
+    # Parameter order is stretch factor, target longitude, target latitude.
+    # Stretch factor 1 corresponds with no stretch.
 
-    if sg_dev_path != '':
-        sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
+    # Ref stretch attributes
+    if 'stretch_factor' in refdata.attrs:
+        sg_ref_params = [
+            refdata.attrs['stretch_factor'],
+            refdata.attrs['target_longitude'],
+            refdata.attrs['target_latitude']]
+    elif 'STRETCH_FACTOR' in refdata.attrs:
+        sg_ref_params = [
+            refdata.attrs['STRETCH_FACTOR'],
+            refdata.attrs['TARGET_LON'],
+            refdata.attrs['TARGET_LAT']]
+    else:
+        sg_ref_params = NO_STRETCH_SG_PARAMS
+
+    # Dev stretch attributes
+    if 'stretch_factor' in devdata.attrs:
         sg_dev_params = [
-            sg_dev_attrs['stretch_factor'],
-            sg_dev_attrs['target_longitude'],
-            sg_dev_attrs['target_latitude']]
+            devdata.attrs['stretch_factor'],
+            devdata.attrs['target_longitude'],
+            devdata.attrs['target_latitude']]
+    elif 'STRETCH_FACTOR' in devdata.attrs:
+        sg_dev_params = [
+            devdata.attrs['STRETCH_FACTOR'],
+            devdata.attrs['TARGET_LON'],
+            devdata.attrs['TARGET_LAT']]
+    else:
+        sg_dev_params = NO_STRETCH_SG_PARAMS
 
     # Get grid info and regrid if necessary
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype, regridref,
@@ -419,35 +431,41 @@ def compare_single_level(
                 False
             )
 
-            # Get a list of properties for the given species
+            # Get the species molecular weights from Ref & Dev metadata
             spc_name = varname.replace(varname.split("_")[0] + "_", "")
-            species_properties = properties.get(spc_name)
+            ref_spc_mw_g = get_molwt_from_metadata(ref_metadata, spc_name)
+            dev_spc_mw_g = get_molwt_from_metadata(dev_metadata, spc_name)
 
-            # If no properties are found, then exit with an error.
-            # Otherwise, get the molecular weight in g/mol.
-            if species_properties is None:
-                # Hack lumped species until we implement a solution
-                if spc_name in ["Simple_SOA", "Complex_SOA"]:
-                    spc_mw_g = 150.0
-                else:
-                    msg = f"No properties found for {spc_name}. Cannot convert" \
-                          + " to ug/m3."
-                    raise ValueError(msg)
-            else:
-                spc_mw_g = species_properties.get("MW_g")
-                if spc_mw_g is None:
-                    msg = f"Molecular weight not found for species {spc_name}!" \
-                          + " Cannot convert to ug/m3."
-                    raise ValueError(msg)
+            # Skip if the species has no molecular weight in
+            # both Ref & Dev species metadata
+            if ref_spc_mw_g is None and dev_spc_mw_g is None:
+                msg = f"Cannot convert {spc_name} to ug/m3! "
+                msg +="no molecular weight found in Ref & Dev metadata!"
+                continue
+
+            # If only one of the species has no molecular weight
+            # print a warning message but allow comparison to proceed
+            if ref_spc_mw_g is None or dev_spc_mw_g is None:
+                msg = f"Cannot convert {spc_name} to ug/m3!, "
+                msg +="no molecular weight was found!"
+                print(msg)
 
             # Convert values from ppb to ug/m3:
-            # ug/m3 = mol/mol * mol/g air * kg/m3 air * 1e3g/kg
+            # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
             #         * g/mol spc * 1e6ug/g
             #       = ppb * air density * (spc MW / air MW)
-            ds_refs[i].values = ds_refs[i].values * ref_airden.values \
-                * (spc_mw_g / MW_AIR_g)
-            ds_devs[i].values = ds_devs[i].values * dev_airden.values \
-                * (spc_mw_g / MW_AIR_g)
+            #
+            # If mol. wt. is missing, then set data to NaN
+            if ref_spc_mw_g is not None:
+                ds_refs[i].values *= \
+                    ref_airden.values * (ref_spc_mw_g / MW_AIR_g)
+            else:
+                ds_refs[i].values *= np.nan
+            if dev_spc_mw_g is not None:
+                ds_devs[i].values *= \
+                    dev_airden.values * (dev_spc_mw_g / MW_AIR_g)
+            else:
+                ds_devs[i].values *= np.nan
 
             # Update units string
             ds_refs[i].attrs["units"] = "\u03BCg/m3"  # ug/m3 using mu
@@ -505,14 +523,9 @@ def compare_single_level(
     for i in range(n_var):
         ds_refs[i] = reshape_MAPL_CS(ds_refs[i])
         ds_devs[i] = reshape_MAPL_CS(ds_devs[i])
-        #ds_ref_cmps[i] = reshape_MAPL_CS(ds_ref_cmps[i])
-        #ds_dev_cmps[i] = reshape_MAPL_CS(ds_dev_cmps[i])
         if diff_of_diffs:
             frac_ds_refs[i] = reshape_MAPL_CS(frac_ds_refs[i])
             frac_ds_devs[i] = reshape_MAPL_CS(frac_ds_devs[i])
-            #frac_ds_ref_cmps[i] = reshape_MAPL_CS(frac_ds_ref_cmps[i])
-            #frac_ds_dev_cmps[i] = reshape_MAPL_CS(frac_ds_dev_cmps[i])
-
 
     # ==================================================================
     # Create arrays for each variable in Ref and Dev datasets
@@ -628,6 +641,11 @@ def compare_single_level(
                 cmpminlon_ind,
                 cmpmaxlon_ind
             )
+
+    # Force garbage collection manually (frees memory)
+    del refregridder, refregridder_list, devregridder, devregridder_list
+    gc.collect()
+
     # =================================================================
     # Define function to create a single page figure to be called
     # in a parallel loop
@@ -667,6 +685,12 @@ def compare_single_level(
         # Get comparison data sets, regridding input slices if needed
         # ==============================================================
 
+        # Initialize objects to avoid Pylint warnings
+        ds_ref_cmp_reshaped = xr.Dataset()
+        ds_dev_cmp_reshaped = xr.Dataset()
+        frac_ds_ref_cmp_reshaped = xr.Dataset()
+        frac_ds_dev_cmp_reshaped = xr.Dataset()
+
         # Reshape ref/dev cubed sphere data, if any
         ds_ref_reshaped = None
         if refgridtype == "cs":
@@ -696,7 +720,8 @@ def compare_single_level(
             frac_ds_dev_cmp_reshaped = call_reshape(frac_ds_dev_cmp)
 
         # ==============================================================
-        # Get min and max values for use in the colorbars
+        # Get min and max values for use in the top-row plot colorbars
+        # and also flag if Ref and/or Dev are all zero or all NaN.
         # ==============================================================
 
         # Choose from values within plot extent
@@ -753,31 +778,25 @@ def compare_single_level(
             min_max_maxlat
         )
 
-        # Ref
-        vmin_ref = float(np.nanmin(ds_ref_reg.data))
-        vmax_ref = float(np.nanmax(ds_ref_reg.data))
+        # Use global data to determine cbar bounds if plotting cubed-sphere
+        if refgridtype == "cs":
+            vmin_ref = float(np.nanmin(ds_ref.data))
+            vmax_ref = float(np.nanmax(ds_ref.data))
+        else:
+            vmin_ref = float(np.nanmin(ds_ref_reg.data))
+            vmax_ref = float(np.nanmax(ds_ref_reg.data))
 
-        # Dev
-        vmin_dev = float(np.nanmin(ds_dev_reg.data))
-        vmax_dev = float(np.nanmax(ds_dev_reg.data))
+        if devgridtype == "cs":
+            vmin_dev = float(np.nanmin(ds_dev.data))
+            vmax_dev = float(np.nanmax(ds_dev.data))
+        else:
+            vmin_dev = float(np.nanmin(ds_dev_reg.data))
+            vmax_dev = float(np.nanmax(ds_dev_reg.data))
 
-# Pylint says that these are unused variables, so comment out
-#  -- Bob Yantosca (15 Aug 2023)
-#        # Comparison
-#        if cmpgridtype == "cs":
-#            vmin_ref_cmp = float(np.nanmin(ds_ref_cmp))
-#            vmax_ref_cmp = float(np.nanmax(ds_ref_cmp))
-#            vmin_dev_cmp = float(np.nanmin(ds_dev_cmp))
-#            vmax_dev_cmp = float(np.nanmax(ds_dev_cmp))
-#            vmin_cmp = np.nanmin([vmin_ref_cmp, vmin_dev_cmp])
-#            vmax_cmp = np.nanmax([vmax_ref_cmp, vmax_dev_cmp])
-#        else:
-#            vmin_cmp = np.nanmin([np.nanmin(ds_ref_cmp), np.nanmin(ds_dev_cmp)])
-#            vmax_cmp = np.nanmax([np.nanmax(ds_ref_cmp), np.nanmax(ds_dev_cmp)])
+        # Set vmin_both and vmax_both to use if match_cbar=True
+        vmin_both = np.nanmin([vmin_ref, vmin_dev])
+        vmax_both = np.nanmax([vmax_ref, vmax_dev])
 
-        # Get overall min & max
-        vmin_abs = np.nanmin([vmin_ref, vmin_dev])#, vmin_cmp])
-        vmax_abs = np.nanmax([vmax_ref, vmax_dev])#, vmax_cmp])
         # ==============================================================
         # Test if Ref and/or Dev contain all zeroes or all NaNs.
         # This will have implications as to how we set min and max
@@ -1064,8 +1083,8 @@ def compare_single_level(
         other_all_nans = [dev_is_all_nan, ref_is_all_nan,
                           False, False, False, False]
 
-        mins = [vmin_ref, vmin_dev, vmin_abs]
-        maxs = [vmax_ref, vmax_dev, vmax_abs]
+        mins = [vmin_ref, vmin_dev, vmin_both]
+        maxs = [vmax_ref, vmax_dev, vmax_both]
 
         ratio_logs = [False, False, False, False, True, True]
 
@@ -1166,22 +1185,32 @@ def compare_single_level(
             # ==========================================================
             # Finish
             # ==========================================================
-            if verbose:
-                print("Closed PDF")
-            merge = PdfMerger()
-            #print(f"Creating {pdfname} for {n_var} variables")
+
+            # Close the PDF object
             pdf = PdfPages(pdfname)
             pdf.close()
+            if verbose:
+                print("Closed PDF")
+
+            # Concatenate individual PDFs together
+            # Now use PdfWriter instead of PdfMerger
+            writer = PdfWriter()
             for i in range(n_var):
                 temp_pdfname = pdfname
-                if pdfname[0] == '/':
+                if pdfname.startswith('/'):
                     temp_pdfname = temp_pdfname[1:]
-                merge.append(
-                    os.path.join(
-                        str(temp_dir),
-                        temp_pdfname +
-                        "BENCHMARKFIGCREATION.pdf" +
-                        str(i)))
-            merge.write(pdfname)
-            merge.close()
+                temp_pdfname = os.path.join(
+                    str(temp_dir),
+                    f"{temp_pdfname}BENCHMARKFIGCREATION.pdf{str(i)}"
+                )
+                reader = PdfReader(temp_pdfname)
+                for page in reader.pages:
+                    writer.add_page(page)
+
+            # Write combined PDF
+            with open(pdfname, "wb") as ofile:
+                writer.write(ofile)
+            if verbose:
+                print(f"Created {pdfname} for {n_var} variables")
+
             warnings.showwarning = _warning_format

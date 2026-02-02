@@ -96,7 +96,7 @@ function main() {
     # Replace version numbers in files
     replace "${pattern}" "\[${version}\] - ${date}" "${file}"
     [[ $? -ne 0 ]] && exitWithError "${file}"
-    echo "GCClassic version updated to ${version} in ${file}"
+    echo "GCPy version updated to ${version} in ${file}"
 
     #========================================================================
     # Update version number in setup.py

@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import xarray as xr
-from gcpy.constants import skip_these_vars
+from gcpy.constants import SKIP_THESE_VARS
 from gcpy.util import \
     dataset_reader, make_directory, replace_whitespace, verify_variable_type
 from gcpy.cstools import extract_grid
@@ -208,7 +208,7 @@ def read_model_data(
 
     # Read data and rename SpeciesConc_ to SpeciesConcVV_, if necessary
     # (needed for backwards compatibility with older versions.)
-    dataset = reader(filepaths,drop_variables=skip_these_vars).load()
+    dataset = reader(filepaths,drop_variables=SKIP_THESE_VARS)
     dataset = rename_speciesconc_to_speciesconcvv(dataset)
 
     # Create a DataArray object and convert to ppbv (if necessary)

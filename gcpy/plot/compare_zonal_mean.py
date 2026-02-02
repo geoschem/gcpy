@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 """
 Creates a six-panel comparison plot of zonal means from two different
 GEOS-Chem model versions.  Called from the GEOS-Chem benchmarking scripts
 and from the compare_diags.py example script.
 """
 import os
+import gc
 import copy
 import warnings
 from multiprocessing import current_process
@@ -14,16 +16,17 @@ from matplotlib.backends.backend_pdf import PdfPages
 import numpy as np
 import xarray as xr
 from joblib import Parallel, delayed
-from pypdf import PdfMerger
+from pypdf import PdfReader, PdfWriter
 from gcpy.grid import get_vert_grid, get_pressure_indices, \
     pad_pressure_edges, convert_lev_to_pres
 from gcpy.regrid import regrid_comparison_data, create_regridders, gen_xmat, \
     regrid_vertical
-from gcpy.util import reshape_MAPL_CS, get_diff_of_diffs, \
+from gcpy.util import \
+    get_molwt_from_metadata, reshape_MAPL_CS, get_diff_of_diffs, \
     all_zero_or_nan, compare_varnames, \
-    read_config_file, verify_variable_type
+    read_species_metadata, verify_variable_type
 from gcpy.units import check_units, data_unit_is_mol_per_mol
-from gcpy.constants import MW_AIR_g
+from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
     _warning_format, WhGrYlRd
 from gcpy.plot.six_plot import six_plot
@@ -52,6 +55,7 @@ def compare_zonal_mean(
         normalize_by_area=False,
         enforce_units=True,
         convert_to_ugm3=False,
+        spcdb_files=None,
         flip_ref=False,
         flip_dev=False,
         use_cmap_RdBu=False,
@@ -63,9 +67,6 @@ def compare_zonal_mean(
         sigdiff_list=None,
         second_ref=None,
         second_dev=None,
-        spcdb_dir=os.path.dirname(__file__),
-        sg_ref_path='',
-        sg_dev_path='',
         ref_vert_params=None,
         dev_vert_params=None,
         **extra_plot_args
@@ -131,6 +132,10 @@ def compare_zonal_mean(
         convert_to_ugm3: str
             Whether to convert data units to ug/m3 for plotting.
             Default value: False
+        spcdb_files: str | list
+            A single species_database.yml file or a list of files
+            (e.g. for Ref & Dev).  Only used when convert_to_ugm3=True.
+            Default value: None
         flip_ref: bool
             Set this flag to True to flip the vertical dimension of
             3D variables in the Ref dataset.
@@ -175,17 +180,6 @@ def compare_zonal_mean(
             A dataset of the same model type / grid as devdata,
             to be used in diff-of-diffs plotting.
             Default value: None
-        spcdb_dir: str
-            Directory containing species_database.yml file.
-            Default value: Path of GCPy code repository
-        sg_ref_path: str
-            Path to NetCDF file containing stretched-grid info
-            (in attributes) for the ref dataset
-            Default value: '' (will not be read in)
-        sg_dev_path: str
-            Path to NetCDF file containing stretched-grid info
-            (in attributes) for the dev dataset
-            Default value: '' (will not be read in)
         ref_vert_params: list(AP, BP) of list-like types
             Hybrid grid parameter A in hPa and B (unitless).
             Needed if ref grid is not 47 or 72 levels.
@@ -218,16 +212,14 @@ def compare_zonal_mean(
 
     # Prepare diff-of-diffs datasets if needed
     if diff_of_diffs:
-        refdata, devdata = refdata.load(), devdata.load()
-        second_ref, second_dev = second_ref.load(), second_dev.load()
 
-#        # If needed, use fake time dim in case dates are different in datasets.
-#        # This needs more work for case of single versus multiple times.
-#        aligned_time = np.datetime64('2000-01-01')
-#        refdata = refdata.assign_coords({'time' : [aligned_time]})
-#        devdata = devdata.assign_coords({'time' : [aligned_time]})
-#        second_ref = second_ref.assign_coords({'time' : [aligned_time]})
-#        second_dev = second_dev.assign_coords({'time' : [aligned_time]})
+        ## If needed, use fake time dim in case dates are different in datasets.
+        ## This needs more work for case of single versus multiple times.
+        #aligned_time = np.datetime64('2000-01-01')
+        #refdata = refdata.assign_coords({'time' : [aligned_time]})
+        #devdata = devdata.assign_coords({'time' : [aligned_time]})
+        #second_ref = second_ref.assign_coords({'time' : [aligned_time]})
+        #second_dev = second_dev.assign_coords({'time' : [aligned_time]})
 
         refdata, fracrefdata = get_diff_of_diffs(refdata, second_ref)
         devdata, fracdevdata = get_diff_of_diffs(devdata, second_dev)
@@ -252,14 +244,16 @@ def compare_zonal_mean(
     savepdf = True
     if pdfname == "":
         savepdf = False
-    # If converting to ug/m3, load the species database
+
+    # If converting to ug/m3, read species database file(s) so that
+    # we can obtain molecular weights.
     if convert_to_ugm3:
-        properties = read_config_file(
-            os.path.join(
-                spcdb_dir,
-                "species_database.yml"
-            ),
-            quiet=True
+        if spcdb_files is None:
+            msg = "You must pass 'spcdb_files' when convert_to_ugm3=True!"
+            raise ValueError(msg)
+        ref_metadata, dev_metadata = read_species_metadata(
+            spcdb_files,
+            quiet= True
         )
 
     # Get mid-point pressure and edge pressures for this grid
@@ -311,22 +305,37 @@ def compare_zonal_mean(
         fracrefdata = fracrefdata.isel(lev=ref_pmid_ind)
         fracdevdata = fracdevdata.isel(lev=dev_pmid_ind)
 
-    sg_ref_params = [1, 170, -90]
-    sg_dev_params = [1, 170, -90]
-    # Get stretched-grid info if passed
-    if sg_ref_path != '':
-        sg_ref_attrs = xr.open_dataset(sg_ref_path).attrs
-        sg_ref_params = [
-            sg_ref_attrs['stretch_factor'],
-            sg_ref_attrs['target_longitude'],
-            sg_ref_attrs['target_latitude']]
+    # Get stretched grid info, if any.
+    # Parameter order is stretch factor, target longitude, target latitude.
+    # Stretch factor 1 corresponds with no stretch.
 
-    if sg_dev_path != '':
-        sg_dev_attrs = xr.open_dataset(sg_dev_path).attrs
+    # Ref stretch attributes
+    if 'stretch_factor' in refdata.attrs:
+        sg_ref_params = [
+            refdata.attrs['stretch_factor'],
+            refdata.attrs['target_longitude'],
+            refdata.attrs['target_latitude']]
+    elif 'STRETCH_FACTOR' in refdata.attrs:
+        sg_ref_params = [
+            refdata.attrs['STRETCH_FACTOR'],
+            refdata.attrs['TARGET_LON'],
+            refdata.attrs['TARGET_LAT']]
+    else:
+        sg_ref_params = NO_STRETCH_SG_PARAMS
+
+    # Dev stretch attributes
+    if 'stretch_factor' in devdata.attrs:
         sg_dev_params = [
-            sg_dev_attrs['stretch_factor'],
-            sg_dev_attrs['target_longitude'],
-            sg_dev_attrs['target_latitude']]
+            devdata.attrs['stretch_factor'],
+            devdata.attrs['target_longitude'],
+            devdata.attrs['target_latitude']]
+    elif 'STRETCH_FACTOR' in devdata.attrs:
+        sg_dev_params = [
+            devdata.attrs['STRETCH_FACTOR'],
+            devdata.attrs['TARGET_LON'],
+            devdata.attrs['TARGET_LAT']]
+    else:
+        sg_dev_params = NO_STRETCH_SG_PARAMS
 
     [refres, refgridtype, devres, devgridtype, cmpres, cmpgridtype,
      regridref, regriddev, regridany, refgrid, devgrid, cmpgrid,
@@ -447,36 +456,41 @@ def compare_zonal_mean(
             else:
                 dev_airden = devmet["Met_AIRDEN"].isel(lev=dev_pmid_ind)
 
-            # Get a list of properties for the given species
+            # Get the species molecular weights from Ref & Dev metadata
             spc_name = varname.replace(varname.split("_")[0] + "_", "")
-            species_properties = properties.get(spc_name)
+            ref_spc_mw_g = get_molwt_from_metadata(ref_metadata, spc_name)
+            dev_spc_mw_g = get_molwt_from_metadata(dev_metadata, spc_name)
 
-            # If no properties are found, then exit with an error.
-            # Otherwise, get the molecular weight in g/mol.
-            if species_properties is None:
-                # Hack lumped species until we implement a solution
-                if spc_name in ["Simple_SOA", "Complex_SOA"]:
-                    spc_mw_g = 150.0
-                else:
-                    msg = f"No properties found for {spc_name}. Cannot convert" \
-                          + " to ug/m3."
-                    raise ValueError(msg)
-            else:
-                # Get the species molecular weight in g/mol
-                spc_mw_g = species_properties.get("MW_g")
-                if spc_mw_g is None:
-                    msg = f"Molecular weight not found for for species {spc_name}!" \
-                          + " Cannot convert to ug/m3."
-                    raise ValueError(msg)
+            # Skip if the species has no molecular weight in
+            # both Ref & Dev species metadata
+            if ref_spc_mw_g is None and dev_spc_mw_g is None:
+                msg = f"Cannot convert {spc_name} to ug/m3! "
+                msg +="no molecular weight found in Ref & Dev metadata!"
+                continue
+
+            # If only one of the species has no molecular weight
+            # print a warning message but allow comparison to proceed
+            if ref_spc_mw_g is None or dev_spc_mw_g is None:
+                msg = f"Cannot convert {spc_name} to ug/m3!, "
+                msg +="no molecular weight was found!"
+                print(msg)
 
             # Convert values from ppb to ug/m3:
             # ug/m3 = 1e-9ppb * mol/g air * kg/m3 air * 1e3g/kg
             #         * g/mol spc * 1e6ug/g
             #       = ppb * air density * (spc MW / air MW)
-            ds_refs[i].values = ds_refs[i].values * ref_airden.values \
-                * (spc_mw_g / MW_AIR_g)
-            ds_devs[i].values = ds_devs[i].values * dev_airden.values \
-                * (spc_mw_g / MW_AIR_g)
+            #
+            # If mol. wt. is missing, then set data to NaN
+            if ref_spc_mw_g is not None:
+                ds_refs[i].values *= \
+                    ref_airden.values * (ref_spc_mw_g / MW_AIR_g)
+            else:
+                ds_refs[i].values *= np.nan
+            if dev_spc_mw_g is not None:
+                ds_devs[i].values *= \
+                    dev_airden.values * (dev_spc_mw_g / MW_AIR_g)
+            else:
+                ds_devs[i].values *= np.nan
 
             # Update units string
             ds_refs[i].attrs["units"] = "\u03BCg/m3"  # ug/m3 using mu
@@ -662,6 +676,11 @@ def compare_zonal_mean(
         if diff_of_diffs:
             frac_ds_ref_cmps[i] = frac_ds_ref
             frac_ds_dev_cmps[i] = frac_ds_dev
+
+    # Force garbage collection manually (frees memory)
+    del refregridder, refregridder_list, devregridder, devregridder_list
+    gc.collect()
+
     # Universal plot setup
     xtick_positions = np.arange(-90, 91, 30)
     xticklabels = [rf"{x}$\degree$" for x in xtick_positions]
@@ -723,15 +742,17 @@ def compare_zonal_mean(
             zm_dev = ds_dev.mean(dim="lon")
         else:
             zm_dev = ds_dev.mean(axis=2)
+
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
         if diff_of_diffs:
             frac_zm_dev_cmp = frac_ds_dev_cmp.mean(axis=2)
             frac_zm_ref_cmp = frac_ds_ref_cmp.mean(axis=2)
+
         # ==============================================================
-        # Get min and max values for use in the colorbars
-        # and also flag if Ref and/or Dev are all zero or all NaN
+        # Get min and max values for use in the top-row plot colorbars
+        # and also flag if Ref and/or Dev are all zero or all NaN.
         # ==============================================================
 
         # Ref
@@ -742,13 +763,9 @@ def compare_zonal_mean(
         vmin_dev = float(zm_dev.min())
         vmax_dev = float(zm_dev.max())
 
-        # Comparison
-        vmin_cmp = np.min([zm_ref_cmp.min(), zm_dev_cmp.min()])
-        vmax_cmp = np.max([zm_ref_cmp.max(), zm_dev_cmp.max()])
-
-        # Take min/max across all grids
-        vmin_abs = np.min([vmin_ref, vmin_dev, vmin_cmp])
-        vmax_abs = np.max([vmax_ref, vmax_dev, vmax_cmp])
+        # Set vmin_both and vmax_both to use if match_cbar=True
+        vmin_both = np.min([vmin_ref, vmin_dev])
+        vmax_both = np.max([vmax_ref, vmax_dev])
 
         # ==============================================================
         # Test if Ref and/or Dev contain all zeroes or all NaNs.
@@ -955,8 +972,8 @@ def compare_zonal_mean(
         pedge_inds = [ref_pedge_ind, dev_pedge_ind, pedge_ind,
                       pedge_ind, pedge_ind, pedge_ind]
 
-        mins = [vmin_ref, vmin_dev, vmin_abs]
-        maxs = [vmax_ref, vmax_dev, vmax_abs]
+        mins = [vmin_ref, vmin_dev, vmin_both]
+        maxs = [vmax_ref, vmax_dev, vmax_both]
 
         ratio_logs = [False, False, False, False, True, True]
         # Plot
@@ -1060,22 +1077,32 @@ def compare_zonal_mean(
             # ==========================================================
             # Finish
             # ==========================================================
-            if verbose:
-                print("Closed PDF")
-            merge = PdfMerger()
-            #print("Creating {} for {} variables".format(pdfname, n_var))
+
+            # Close the PDF object
             pdf = PdfPages(pdfname)
             pdf.close()
+            if verbose:
+                print("Closed PDF")
+
+            # Concatenate individual PDFs together
+            # Now use PdfWriter instead of PdfMerger
+            writer = PdfWriter()
             for i in range(n_var):
                 temp_pdfname = pdfname
                 if pdfname[0] == '/':
                     temp_pdfname = temp_pdfname[1:]
-                merge.append(
-                    os.path.join(
-                        str(temp_dir),
-                        temp_pdfname +
-                        "BENCHMARKFIGCREATION.pdf" +
-                        str(i)))
-            merge.write(pdfname)
-            merge.close()
+                temp_pdfname = os.path.join(
+                    str(temp_dir),
+                    f"{temp_pdfname}BENCHMARKFIGCREATION.pdf{str(i)}"
+                )
+                reader = PdfReader(temp_pdfname)
+                for page in reader.pages:
+                    writer.add_page(page)
+
+            # Write combined PDF
+            with open(pdfname, "wb") as ofile:
+                writer.write(ofile)
+            if verbose:
+                print(f"Created {pdfname} for {n_var} variables")
+
             warnings.showwarning = _warning_format

@@ -12,7 +12,7 @@ import warnings
 import numpy as np
 from gcpy.util import add_missing_variables, compare_varnames, \
     dataset_reader, read_config_file, rename_and_flip_gchp_rst_vars
-from gcpy.constants import skip_these_vars
+from gcpy.constants import SKIP_THESE_VARS
 from gcpy.plot.compare_single_level import compare_single_level
 from gcpy.plot.compare_zonal_mean import compare_zonal_mean
 
@@ -90,8 +90,8 @@ def read_data(config):
     try:
         refdata = reader(
             ref_file,
-            drop_variables=skip_these_vars
-        ).load()
+            drop_variables=SKIP_THESE_VARS
+        )
     except FileNotFoundError as exc:
         msg = "Error reading " + ref_file
         raise FileNotFoundError(msg) from exc
@@ -100,8 +100,8 @@ def read_data(config):
     try:
         devdata = reader(
             dev_file,
-            drop_variables=skip_these_vars
-        ).load()
+            drop_variables=SKIP_THESE_VARS
+        )
     except FileNotFoundError as exc:
         msg = "Error reading " + dev_file
         raise FileNotFoundError(msg) from exc

@@ -26,11 +26,11 @@ dependencies:
   - netcdf-fortran ==4.6.1      # Python wrapper for netCDF-Fortran
   - numpy          ==1.26.4     # Optimized mathematical functions
   - pandas         ==2.2.2      # Tables/timeseries manipulation
-  - pip            ==24.0       # Install packages from PyPi
+  - pip            ==25.2       # Install packages from PyPi
   - pylint         ==3.2.2      # Python linter
   - pyproj         ==3.6.1      # Python map projections library
   - python         ==3.12.0     # Python language
-  - pypdf          ==4.2.0      # PDF utilities (bookmarks, etc.)
+  - pypdf          ==6.6.2      # PDF utilities (bookmarks, etc.)
   - requests       ==2.32.4     # HTTP library
   - scipy          ==1.13.1     # Scientific python package
   - sparselt       ==0.1.3      # Regridding earth system model data

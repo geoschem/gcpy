@@ -13,7 +13,7 @@ add_blank_var.py varname infile outfile
 import numpy as np
 import xarray as xr
 from gcpy.util import create_blank_dataarray
-from gcpy.constants import skip_these_vars
+from gcpy.constants import SKIP_THESE_VARS
 
 
 def add_blank_var_to_ncfile(
@@ -44,7 +44,7 @@ def add_blank_var_to_ncfile(
 
         dset = xr.open_dataset(
             infile,
-            drop_variables=skip_these_vars
+            drop_variables=SKIP_THESE_VARS
         )
 
         if varattrs is None:

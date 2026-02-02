@@ -21,3 +21,4 @@ from .regrid_restart_file import *
 from .units import *
 from .util import *
 from ._version import *
+from .vgrid_defs import *

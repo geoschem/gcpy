@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Module containing variables and functions that define and
 manipulate GEOS-Chem horizontal and vertical grids
@@ -5,10 +6,14 @@ manipulate GEOS-Chem horizontal and vertical grids
 from itertools import product
 import xarray as xr
 import numpy as np
-import scipy.sparse
 from gcpy.util import get_shape_of_data, verify_variable_type
 from gcpy.grid_stretching_transforms import scs_transform
-from gcpy.constants import R_EARTH_m
+from gcpy.constants import \
+    GLOBAL_LL_EXTENT, NO_STRETCH_SG_PARAMS, R_EARTH_m
+from gcpy.vgrid_defs import \
+    _GCAP2_102L_AP, _GCAP2_102L_BP, _GCAP2_74L_AP, _GCAP2_74L_BP, \
+    _GCAP2_40L_AP, _GCAP2_40L_BP, _GEOS_72L_AP, _GEOS_72L_BP, \
+    _GEOS_47L_AP, _GEOS_47L_BP, _CAM_26L_AP, _CAM_26L_BP
 from gcpy.cstools import find_index, is_cubed_sphere
 
 
@@ -105,7 +110,8 @@ def get_troposphere_mask(ds):
 
 def get_input_res(data):
     """
-    Returns resolution of dataset passed to compare_single_level or compare_zonal_means
+    Returns resolution of dataset passed to compare_single_level or
+    compare_zonal_means
 
     Args:
         data: xarray Dataset
@@ -118,32 +124,37 @@ def get_input_res(data):
             'll' for lat/lon or 'cs' for cubed-sphere
 
     """
+
     vdims = data.dims
     if "lat" in vdims and "lon" in vdims:
         lat = data["lat"].values
         lon = data["lon"].values
         if lat.size / 6 == lon.size:
             return lon.size, "cs"
-        else:
-            lat.sort()
-            lon.sort()
-            # use increment of second and third coordinates
-            # to avoid polar mischief
-            lat_res = np.abs(lat[2] - lat[1])
-            lon_res = np.abs(lon[2] - lon[1])
-            return str(lat_res) + "x" + str(lon_res), "ll"
 
-    else:
-        #print("grid is cs: ", vdims)
-        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        if isinstance(data.dims, tuple):
-            return len(data["Xdim"].values), "cs"
-        else:
-            return data.dims["Xdim"], "cs"
+        lat.sort()
+        lon.sort()
+        # use increment of second and third coordinates
+        # to avoid polar mischief
+        lat_res = np.abs(lat[2] - lat[1])
+        lon_res = np.abs(lon[2] - lon[1])
+        return str(lat_res) + "x" + str(lon_res), "ll"
+
+    #print("grid is cs: ", vdims)
+    # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+    if isinstance(data.dims, tuple):
+        return len(data["Xdim"].values), "cs"
+
+    return data.dims["Xdim"], "cs"
 
 
-def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
-                   out_extent=[-180, 180, -90, 90], sg_params=[1, 170, -90]):
+def call_make_grid(
+        res,
+        gridtype,
+        in_extent=None,
+        out_extent=None,
+        sg_params=None
+):
     """
     Create a mask with NaN values removed from an input array
 
@@ -157,31 +168,43 @@ def call_make_grid(res, gridtype, in_extent=[-180, 180, -90, 90],
         in_extent: list[float, float, float, float]
             Describes minimum and maximum latitude and longitude of input data
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value: [-180, 180, -90, 90]
+            Default value: GLOBAL_LL_EXTENT, i.e. [-180, 180, -90, 90]
         out_extent: list[float, float, float, float]
             Desired minimum and maximum latitude and longitude of output grid
             in the format [minlon, maxlon, minlat, maxlat]
-            Default value: [-180, 180, -90, 90]
-        sg_params: list[float, float, float] (stretch_factor, target_longitude, target_latitude)
+            Default value: GLOBAL_LL_EXTENT, i.e. [-180, 180, -90, 90]
+        sg_params: list
             Desired stretched-grid parameters in the format
             [stretch_factor, target_longitude, target_latitude].
             Will trigger stretched-grid creation if not default values.
-            Default value: [1, 170, -90] (no stretching)
+            Default value: NO_STRETCH_SG_PARAMS (no stretching, [1, 170, -90])
 
     Returns:
         [grid, grid_list]: list(dict, list(dict))
             Returns the created grid.
             grid_list is a list of grids if gridtype is 'cs', else it is None
     """
+    verify_variable_type(res, (str, int))
+    verify_variable_type(gridtype, str)
 
-    # call appropriate make_grid function and return new grid
+    # Set defaults for keyword args
+    if in_extent is None:
+        in_extent = GLOBAL_LL_EXTENT
+    if out_extent is None:
+        out_extent = GLOBAL_LL_EXTENT
+    if sg_params is None:
+        sg_params = NO_STRETCH_SG_PARAMS
+
+    # Lat-lon grid
     if gridtype == "ll":
-        return [make_grid_LL(res, in_extent, out_extent), None]
-    elif sg_params == [1, 170, -90]:
-        # standard CS
-        return make_grid_CS(res)
-    else:
-        return make_grid_SG(res, *sg_params)
+        return [make_grid_ll(res, in_extent, out_extent), None]
+
+    # Standard cubed-sphere
+    if sg_params == NO_STRETCH_SG_PARAMS:
+        return make_grid_cs(res)
+
+    # Stretched-grid
+    return make_grid_sg(res, *sg_params)
 
 
 def get_grid_extents(data, edges=True):
@@ -208,44 +231,42 @@ def get_grid_extents(data, edges=True):
 
     if isinstance(data, dict):
         if "lon_b" in data and edges:
-            return np.min(
-                data["lon_b"]), np.max(
-                data["lon_b"]), np.min(
-                data["lat_b"]), np.max(
-                data["lat_b"])
-        elif not edges:
-            return np.min(
-                data["lon"]), np.max(
-                data["lon"]), np.min(
-                data["lat"]), np.max(
-                data["lat"])
-        else:
-            return -180, 180, -90, 90
-    elif "lat" in data.dims and "lon" in data.dims:
+            return \
+                np.min(data["lon_b"]), np.max(data["lon_b"]), \
+                np.min(data["lat_b"]), np.max(data["lat_b"])
+        if not edges:
+            return \
+                np.min(data["lon"]), np.max(data["lon"]), \
+                np.min(data["lat"]), np.max(data["lat"])
+        return \
+            GLOBAL_LL_EXTENT[0], GLOBAL_LL_EXTENT[1], \
+            GLOBAL_LL_EXTENT[2], GLOBAL_LL_EXTENT[3]
+
+    if "lat" in data.dims and "lon" in data.dims:
         lat = data["lat"].values
         lon = data["lon"].values
         if lat.size / 6 == lon.size:
             # No extents for CS plots right now
             return -180, 180, -90, 90
-        else:
-            lat = np.sort(lat)
-            minlat = np.min(lat)
-            if abs(abs(lat[1]) - abs(lat[0])
-                   ) != abs(abs(lat[2]) - abs(lat[1])):
-                #pole is cutoff
-                minlat = minlat - 1
-            maxlat = np.max(lat)
-            if abs(abs(lat[-1]) - abs(lat[-2])
-                   ) != abs(abs(lat[-2]) - abs(lat[-3])):
-                maxlat = maxlat + 1
-            # add longitude res to max longitude
-            lon = np.sort(lon)
-            minlon = np.min(lon)
-            maxlon = np.max(lon) + abs(abs(lon[-1]) - abs(lon[-2]))
-            return minlon, maxlon, minlat, maxlat
-    else:
-        # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
-        return -180, 180, -90, 90
+
+        lat = np.sort(lat)
+        minlat = np.min(lat)
+        if abs(abs(lat[1]) - abs(lat[0])) != abs(abs(lat[2]) - abs(lat[1])):
+            #pole is cutoff
+            minlat = minlat - 1
+        maxlat = np.max(lat)
+        if abs(abs(lat[-1]) - abs(lat[-2])) != abs(abs(lat[-2]) - abs(lat[-3])):
+            maxlat = maxlat + 1
+        # add longitude res to max longitude
+        lon = np.sort(lon)
+        minlon = np.min(lon)
+        maxlon = np.max(lon) + abs(abs(lon[-1]) - abs(lon[-2]))
+        return minlon, maxlon, minlat, maxlat
+
+    # GCHP data using MAPL v1.0.0+ has dims time, lev, nf, Ydim, and Xdim
+    return \
+        GLOBAL_LL_EXTENT[0], GLOBAL_LL_EXTENT[1], \
+        GLOBAL_LL_EXTENT[2], GLOBAL_LL_EXTENT[3]
 
 
 def get_vert_grid(
@@ -262,9 +283,9 @@ def get_vert_grid(
 
     Keyword Args (optional):
     ------------------------
-    AP (list-like) : Hybrid grid parameter A (hPA)
-    BP    (list-like) : Hybrid grid parameter B (unitless)
-    p_sfc (float) :
+    AP    (list-like)  : Hybrid grid parameter A (hPA)
+    BP    (list-like)  : Hybrid grid parameter B (unitless)
+    p_sfc (float)      :
 
     Returns:
     --------
@@ -275,20 +296,20 @@ def get_vert_grid(
 
     # 72L GEOS grid
     if dataset.sizes["lev"] in (72, 73):
-        grid = vert_grid(_GEOS_72L_AP, _GEOS_72L_BP, p_sfc)
+        grid = VertGrid(_GEOS_72L_AP, _GEOS_72L_BP, p_sfc)
         return grid.p_edge(), grid.p_mid(), 72
 
     # 47L GEOS grid
     if dataset.sizes["lev"] in (47, 48):
-        grid = vert_grid(_GEOS_47L_AP, _GEOS_47L_BP, p_sfc)
+        grid = VertGrid(_GEOS_47L_AP, _GEOS_47L_BP, p_sfc)
         return grid.p_edge(), grid.p_mid(), 47
 
     # Grid without specified AP, BP
-    if AP == None or BP == None:
+    if AP is None or BP is None:
         if dataset.sizes["lev"] == 1:
             AP = [1, 1]
             BP = [1]
-            grid = vert_grid(AP, BP, p_sfc)
+            grid = VertGrid(AP, BP, p_sfc)
             return grid.p_edge(), grid.p_mid(), np.size(AP)
 
         raise ValueError(
@@ -298,7 +319,7 @@ def get_vert_grid(
         )
 
     # Grid with specified AP, BP
-    grid = vert_grid(AP, BP, p_sfc)
+    grid = VertGrid(AP, BP, p_sfc)
     return grid.p_edge(), grid.p_mid(), np.size(AP)
 
 
@@ -523,7 +544,16 @@ def convert_lev_to_pres(dataset, pmid, pedge, lev_type='pmid'):
     return dataset
 
 
-class vert_grid:
+class VertGrid:
+    """
+    Class that defines a vertical grid given the Ap and Bp
+    grid parameters and surface pressure.
+    
+    Args
+    AP    : list-like : Hybrid-grid A parameter
+    BP    : list-like : Hybrid-grid B parameter
+    P_sfc : float     : Surface pressure
+    """
     def __init__(self, AP=None, BP=None, p_sfc=1013.25):
         if (len(AP) != len(BP)) or (AP is None):
             # Throw error?
@@ -540,265 +570,16 @@ class vert_grid:
         p_edge = self.p_edge()
         return (p_edge[1:] + p_edge[:-1]) / 2.0
 
-
-# Standard vertical grids
-_GEOS_72L_AP = np.array([0.000000e+00,
-                         4.804826e-02,
-                         6.593752e+00,
-                         1.313480e+01,
-                         1.961311e+01,
-                         2.609201e+01,
-                         3.257081e+01,
-                         3.898201e+01,
-                         4.533901e+01,
-                         5.169611e+01,
-                         5.805321e+01,
-                         6.436264e+01,
-                         7.062198e+01,
-                         7.883422e+01,
-                         8.909992e+01,
-                         9.936521e+01,
-                         1.091817e+02,
-                         1.189586e+02,
-                         1.286959e+02,
-                         1.429100e+02,
-                         1.562600e+02,
-                         1.696090e+02,
-                         1.816190e+02,
-                         1.930970e+02,
-                         2.032590e+02,
-                         2.121500e+02,
-                         2.187760e+02,
-                         2.238980e+02,
-                         2.243630e+02,
-                         2.168650e+02,
-                         2.011920e+02,
-                         1.769300e+02,
-                         1.503930e+02,
-                         1.278370e+02,
-                         1.086630e+02,
-                         9.236572e+01,
-                         7.851231e+01,
-                         6.660341e+01,
-                         5.638791e+01,
-                         4.764391e+01,
-                         4.017541e+01,
-                         3.381001e+01,
-                         2.836781e+01,
-                         2.373041e+01,
-                         1.979160e+01,
-                         1.645710e+01,
-                         1.364340e+01,
-                         1.127690e+01,
-                         9.292942e+00,
-                         7.619842e+00,
-                         6.216801e+00,
-                         5.046801e+00,
-                         4.076571e+00,
-                         3.276431e+00,
-                         2.620211e+00,
-                         2.084970e+00,
-                         1.650790e+00,
-                         1.300510e+00,
-                         1.019440e+00,
-                         7.951341e-01,
-                         6.167791e-01,
-                         4.758061e-01,
-                         3.650411e-01,
-                         2.785261e-01,
-                         2.113490e-01,
-                         1.594950e-01,
-                         1.197030e-01,
-                         8.934502e-02,
-                         6.600001e-02,
-                         4.758501e-02,
-                         3.270000e-02,
-                         2.000000e-02,
-                         1.000000e-02])
-
-_GEOS_72L_BP = np.array([1.000000e+00,
-                         9.849520e-01,
-                         9.634060e-01,
-                         9.418650e-01,
-                         9.203870e-01,
-                         8.989080e-01,
-                         8.774290e-01,
-                         8.560180e-01,
-                         8.346609e-01,
-                         8.133039e-01,
-                         7.919469e-01,
-                         7.706375e-01,
-                         7.493782e-01,
-                         7.211660e-01,
-                         6.858999e-01,
-                         6.506349e-01,
-                         6.158184e-01,
-                         5.810415e-01,
-                         5.463042e-01,
-                         4.945902e-01,
-                         4.437402e-01,
-                         3.928911e-01,
-                         3.433811e-01,
-                         2.944031e-01,
-                         2.467411e-01,
-                         2.003501e-01,
-                         1.562241e-01,
-                         1.136021e-01,
-                         6.372006e-02,
-                         2.801004e-02,
-                         6.960025e-03,
-                         8.175413e-09,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00,
-                         0.000000e+00])
-
-GEOS_72L_grid = vert_grid(_GEOS_72L_AP, _GEOS_72L_BP)
-
-# Reduced grid
-_GEOS_47L_AP = np.zeros(48)
-_GEOS_47L_BP = np.zeros(48)
-
-# Fill in the values for the surface
-_GEOS_47L_AP[0] = _GEOS_72L_AP[0]
-_GEOS_47L_BP[0] = _GEOS_72L_BP[0]
-
-# Build the GEOS 72-layer to 47-layer mapping matrix at the same time
-_xmat_i = np.zeros((72))
-_xmat_j = np.zeros((72))
-_xmat_s = np.zeros((72))
-
-# Index here is the 1-indexed layer number
-for _i_lev in range(1, 37):
-    # Map from 1-indexing to 0-indexing
-    _x_lev = _i_lev - 1
-    # Sparse matrix for regridding
-    # Below layer 37, it's 1:1
-    _xct = _x_lev
-    _xmat_i[_xct] = _x_lev
-    _xmat_j[_xct] = _x_lev
-    _xmat_s[_xct] = 1.0
-    # Copy over the pressure edge for the top of the grid cell
-    _GEOS_47L_AP[_i_lev] = _GEOS_72L_AP[_i_lev]
-    _GEOS_47L_BP[_i_lev] = _GEOS_72L_BP[_i_lev]
-
-# Now deal with the lumped layers
-_skip_size_vec = [2, 4]
-_number_lumped = [4, 7]
-
-# Initialize
-_i_lev = 36
-_i_lev_72 = 36
-for _lump_seg in range(2):
-    _skip_size = _skip_size_vec[_lump_seg]
-    # 1-indexed starting point in the 47-layer grid
-    _first_lev_47 = _i_lev + 1
-    _first_lev_72 = _i_lev_72 + 1
-
-    # Loop over the coarse vertical levels (47-layer grid)
-    for _i_lev_offset in range(_number_lumped[_lump_seg]):
-        # i_lev is the index for the current level on the 47-level grid
-        _i_lev = _first_lev_47 + _i_lev_offset
-        # Map from 1-indexing to 0-indexing
-        _x_lev = _i_lev - 1
-
-        # Get the 1-indexed location of the last layer in the 72-layer grid
-        # which is below the start of the current lumping region
-        _i_lev_72_base = _first_lev_72 + (_i_lev_offset * _skip_size) - 1
-
-        # Get the 1-indexed location of the uppermost level in the 72-layer
-        # grid which is within the target layer on the 47-layer grid
-        _i_lev_72 = _i_lev_72_base + _skip_size
-
-        # Do the pressure edges first
-        # These are the 0-indexed locations of the upper edge for the
-        # target layers in 47- and 72-layer grids
-        _GEOS_47L_AP[_i_lev] = _GEOS_72L_AP[_i_lev_72]
-        _GEOS_47L_BP[_i_lev] = _GEOS_72L_BP[_i_lev_72]
-
-        # Get the total pressure delta across the layer on the lumped grid
-        # We are within the fixed pressure levels so don't need to account
-        # for variations in surface pressure
-        _dp_total = _GEOS_47L_AP[_i_lev - 1] - _GEOS_47L_AP[_i_lev]
-
-        # Now figure out the mapping
-        for _i_lev_offset_72 in range(_skip_size):
-            # Source layer in the 72 layer grid (0-indexed)
-            _x_lev_72 = _i_lev_72_base + _i_lev_offset_72
-            _xct = _x_lev_72
-            _xmat_i[_xct] = _x_lev_72
-            # Target in the 47 layer grid
-            _xmat_j[_xct] = _x_lev
-
-            # Proportion of 72-layer grid cell, by pressure, within expanded
-            # layer
-            _xmat_s[_xct] = (_GEOS_72L_AP[_x_lev_72] -
-                             _GEOS_72L_AP[_x_lev_72 + 1]) / _dp_total
-    _start_pt = _i_lev
-
-# Do last entry separately (no layer to go with it)
-_xmat_72to47 = scipy.sparse.coo_matrix(
-    (_xmat_s, (_xmat_i, _xmat_j)), shape=(72, 47))
-
-GEOS_47L_grid = vert_grid(_GEOS_47L_AP, _GEOS_47L_BP)
-
-# CAM 26-layer grid
-_CAM_26L_AP = np.flip(np.array([219.4067, 489.5209, 988.2418, 1805.201,
-                                2983.724, 4462.334, 6160.587, 7851.243,
-                                7731.271, 7590.131, 7424.086, 7228.744,
-                                6998.933, 6728.574, 6410.509, 6036.322,
-                                5596.111, 5078.225, 4468.96, 3752.191,
-                                2908.949, 2084.739, 1334.443, 708.499,
-                                252.136, 0., 0.]), axis=0) * 0.01
-_CAM_26L_BP = np.flip(np.array([0., 0., 0., 0.,
-                                0., 0., 0., 0.,
-                                0.01505309, 0.03276228, 0.05359622, 0.07810627,
-                                0.1069411, 0.14086370, 0.180772, 0.227722,
-                                0.2829562, 0.3479364, 0.4243822, 0.5143168,
-                                0.6201202, 0.7235355, 0.8176768, 0.8962153,
-                                0.9534761, 0.9851122, 1.]), axis=0)
-
-CAM_26L_grid = vert_grid(_CAM_26L_AP, _CAM_26L_BP)
+# Define commonly-used vertical grids
+GEOS_72L_grid = VertGrid(_GEOS_72L_AP, _GEOS_72L_BP)
+GEOS_47L_grid = VertGrid(_GEOS_47L_AP, _GEOS_47L_BP)
+GCAP2_102L_grid = VertGrid(_GCAP2_102L_AP, _GCAP2_102L_BP)
+GCAP2_74L_grid = VertGrid(_GCAP2_74L_AP, _GCAP2_74L_BP)
+GCAP2_40L_grid = VertGrid(_GCAP2_40L_AP, _GCAP2_40L_BP)
+CAM_26L_grid = VertGrid(_CAM_26L_AP, _CAM_26L_BP)
 
 
-def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
+def make_grid_ll(llres, in_extent=None, out_extent=None):
     """
     Creates a lat/lon grid description.
 
@@ -808,13 +589,13 @@ def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
 
     Keyword Args (optional):
         in_extent: list[float, float, float, float]
-            Describes minimum and maximum latitude and longitude of initial grid
-            in the format [minlon, maxlon, minlat, maxlat]
+            Describes minimum and maximum latitude and longitude of 
+            initial grid in the format [minlon, maxlon, minlat, maxlat]
             Default value: [-180, 180, -90, 90]
         out_extent: list[float, float, float, float]
-            Describes minimum and maximum latitude and longitude of target grid
-            in the format [minlon, maxlon, minlat, maxlat]. Needed when intending
-            to use grid to trim extent of input data
+            Describes minimum and maximum latitude and longitude of 
+            target grid in the format [minlon, maxlon, minlat, maxlat]. 
+            Needed to trim extent of input data.
             Default value: [] (assumes value of in_extent)
 
     Returns:
@@ -824,6 +605,13 @@ def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
                                              'lat_b' : lat edges,
                                              'lon_b' : lon edges}
     """
+    verify_variable_type(llres, str)
+
+    # Default values for keyword args
+    if in_extent is None:
+        in_extent = GLOBAL_LL_EXTENT
+    if out_extent is None:
+        out_extent = in_extent
 
     # get initial bounds of grid
     [minlon, maxlon, minlat, maxlat] = in_extent
@@ -841,8 +629,7 @@ def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
 
     # trim grid bounds when your desired extent is not the same as your
     # initial grid extent
-    if out_extent == []:
-        out_extent = in_extent
+
     if out_extent != in_extent:
         [minlon, maxlon, minlat, maxlat] = out_extent
         minlon_ind = np.nonzero(lon >= minlon)
@@ -868,7 +655,7 @@ def make_grid_LL(llres, in_extent=[-180, 180, -90, 90], out_extent=[]):
     return llgrid
 
 
-def make_grid_CS(csres):
+def make_grid_cs(csres):
     """
     Creates a cubed-sphere grid description.
 
@@ -886,7 +673,7 @@ def make_grid_CS(csres):
             csgrid_list is a list of dicts separated by face index
     """
 
-    csgrid = csgrid_GMAO(csres)
+    csgrid = csgrid_gmao(csres)
     csgrid_list = [None] * 6
     for i in range(6):
         csgrid_list[i] = {'lat': csgrid['lat'][i],
@@ -897,7 +684,7 @@ def make_grid_CS(csres):
     return [csgrid, csgrid_list]
 
 
-def make_grid_SG(csres, stretch_factor, target_lon, target_lat):
+def make_grid_sg(csres, stretch_factor, target_lon, target_lat):
     """
     Creates a stretched-grid grid description.
 
@@ -921,7 +708,7 @@ def make_grid_SG(csres, stretch_factor, target_lon, target_lat):
             csgrid_list is a list of dicts separated by face index
     """
 
-    csgrid = csgrid_GMAO(csres, offset=0)
+    csgrid = csgrid_gmao(csres, offset=0)
     csgrid_list = [None] * 6
     for i in range(6):
         lat = csgrid['lat'][i].flatten()
@@ -945,6 +732,7 @@ def make_grid_SG(csres, stretch_factor, target_lon, target_lat):
         csgrid['lon'][i] = csgrid_list[i]['lon']
         csgrid['lat_b'][i] = csgrid_list[i]['lat_b']
         csgrid['lon_b'][i] = csgrid_list[i]['lon_b']
+
     return [csgrid, csgrid_list]
 
 
@@ -955,12 +743,13 @@ def calc_rectilinear_lon_edge(lon_stride, center_at_180):
     Parameters
     ----------
     lon_stride: float
-        Stride length in degrees. For example, for a standard GEOS-Chem Classic
-        4x5 grid, lon_stride would be 5.
+        Stride length in degrees. For example, for a standard GEOS-Chem 
+        Classic 4x5 grid, lon_stride would be 5.
     center_at_180: bool
-        Whether or not the grid should have a cell center at 180 degrees (i.e.
-        on the date line). If true, the first grid cell is centered on the date
-        line; if false, the first grid edge is on the date line.
+        Whether or not the grid should have a cell center at 180 
+        degrees (i.e. on the date line). If true, the first grid cell 
+        is centered on the date line; if false, the first grid edge is 
+        on the date line.
 
     Returns
     -------
@@ -991,13 +780,13 @@ def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
     Parameters
     ----------
     lat_stride: float
-        Stride length in degrees. For example, for a standard GEOS-Chem Classic
-        4x5 grid, lat_stride would be 4.
+        Stride length in degrees. For example, for a standard GEOS-Chem 
+        Classic 4x5 grid, lat_stride would be 4.
     half_polar_grid: bool
-        Whether or not the grid should be "half-polar" (i.e. bands at poles are
-        half the size). In either case the grid will start and end at -/+ 90,
-        but when half_polar_grid is True, the first and last bands will have a
-        width of 1/2 the normal lat_stride.
+        Whether or not the grid should be "half-polar" (i.e. bands 
+        at poles are half the size). In either case the grid will start
+        and end at -/+ 90, but when half_polar_grid is True, the first 
+        and last bands will have a width of 1/2 the normal lat_stride.
 
     Returns
     -------
@@ -1106,7 +895,7 @@ def calc_delta_lon(lon_edge):
     return lon_delta
 
 
-def csgrid_GMAO(res, offset=-10):
+def csgrid_gmao(res, offset=-10):
     """
     Return cubedsphere coordinates with GMAO face orientation
     Parameters
@@ -1116,12 +905,12 @@ def csgrid_GMAO(res, offset=-10):
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
 
-    CS = CSGrid(res, offset=offset)
+    cs = CSGrid(res, offset=offset)
 
-    lon = CS.lon_center.transpose(2, 0, 1)
-    lon_b = CS.lon_edge.transpose(2, 0, 1)
-    lat = CS.lat_center.transpose(2, 0, 1)
-    lat_b = CS.lat_edge.transpose(2, 0, 1)
+    lon = cs.lon_center.transpose(2, 0, 1)
+    lon_b = cs.lon_edge.transpose(2, 0, 1)
+    lat = cs.lat_center.transpose(2, 0, 1)
+    lat_b = cs.lat_edge.transpose(2, 0, 1)
 
     lon[lon < 0] += 360
     lon_b[lon_b < 0] += 360
@@ -1208,31 +997,31 @@ class CSGrid(object):
         theta_rad[-1, :] = theta_rad[0, :]  # East edge
 
         # Cache the reflection points - our upper-left and lower-right corners
-        lonMir1, lonMir2 = lambda_rad[0, 0], lambda_rad[-1, -1]
-        latMir1, latMir2 = theta_rad[0, 0], theta_rad[-1, -1]
+        lon_mir1, lon_mir2 = lambda_rad[0, 0], lambda_rad[-1, -1]
+        lat_mir1, lat_mir2 = theta_rad[0, 0], theta_rad[-1, -1]
 
-        xyzMir1 = latlon_to_cartesian(lonMir1, latMir1)
-        xyzMir2 = latlon_to_cartesian(lonMir2, latMir2)
+        xyz_mir1 = latlon_to_cartesian(lon_mir1, lat_mir1)
+        xyz_mir2 = latlon_to_cartesian(lon_mir2, lat_mir2)
 
-        xyzCross = np.cross(xyzMir1, xyzMir2)
-        norm = np.sqrt(np.sum(xyzCross**2))
-        xyzCross /= norm
+        xyz_cross = np.cross(xyz_mir1, xyz_mir2)
+        norm = np.sqrt(np.sum(xyz_cross**2))
+        xyz_cross /= norm
 
         for i in range(1, c):
 
-            lonRef, latRef = lambda_rad[0, i], theta_rad[0, i]
-            xyzRef = np.asarray(latlon_to_cartesian(lonRef, latRef, ))
+            lon_ref, lat_ref = lambda_rad[0, i], theta_rad[0, i]
+            xyz_ref = np.asarray(latlon_to_cartesian(lon_ref, lat_ref))
 
-            xyzDot = np.sum(xyzCross * xyzRef)
-            xyzImg = xyzRef - (2. * xyzDot * xyzCross)
+            xyz_dot = np.sum(xyz_cross * xyz_ref)
+            xyz_img = xyz_ref - (2. * xyz_dot * xyz_cross)
 
-            xsImg, ysImg, zsImg = xyzImg
-            lonImg, latImg = cartesian_to_latlon(xsImg, ysImg, zsImg)
+            xs_img, ys_img, zs_img = xyz_img
+            lon_img, lat_img = cartesian_to_latlon(xs_img, ys_img, zs_img)
 
-            lambda_rad[i, 0] = lonImg
-            lambda_rad[i, -1] = lonImg
-            theta_rad[i, 0] = latImg
-            theta_rad[i, -1] = -latImg
+            lambda_rad[i, 0] = lon_img
+            lambda_rad[i, -1] = lon_img
+            theta_rad[i, 0] = lat_img
+            theta_rad[i, -1] = -lat_img
 
         pp = np.zeros([3, c + 1, c + 1])
 
@@ -1283,26 +1072,26 @@ class CSGrid(object):
             for i in range(c // 2):
                 isymm = c - i
                 # print(isymm)
-                avgPt = 0.5 * (lambda_rad[i, j] - lambda_rad[isymm, j])
-                # print(lambda_rad[i, j], lambda_rad[isymm, j], avgPt)
-                lambda_rad[i, j] = avgPt + np.pi
-                lambda_rad[isymm, j] = np.pi - avgPt
+                avg_pt = 0.5 * (lambda_rad[i, j] - lambda_rad[isymm, j])
+                # print(lambda_rad[i, j], lambda_rad[isymm, j], avg_pt)
+                lambda_rad[i, j] = avg_pt + np.pi
+                lambda_rad[isymm, j] = np.pi - avg_pt
 
-                avgPt = 0.5 * (theta_rad[i, j] + theta_rad[isymm, j])
-                theta_rad[i, j] = avgPt
-                theta_rad[isymm, j] = avgPt
+                avg_pt = 0.5 * (theta_rad[i, j] + theta_rad[isymm, j])
+                theta_rad[i, j] = avg_pt
+                theta_rad[isymm, j] = avg_pt
 
         # Make grid symmetrical to j = im/2 + 1
         for j in range(c // 2):
             jsymm = c - j
             for i in range(1, c + 1):
-                avgPt = 0.5 * (lambda_rad[i, j] + lambda_rad[i, jsymm])
-                lambda_rad[i, j] = avgPt
-                lambda_rad[i, jsymm] = avgPt
+                avg_pt = 0.5 * (lambda_rad[i, j] + lambda_rad[i, jsymm])
+                lambda_rad[i, j] = avg_pt
+                lambda_rad[i, jsymm] = avg_pt
 
-                avgPt = 0.5 * (theta_rad[i, j] - theta_rad[i, jsymm])
-                theta_rad[i, j] = avgPt
-                theta_rad[i, jsymm] = -avgPt
+                avg_pt = 0.5 * (theta_rad[i, j] - theta_rad[i, jsymm])
+                theta_rad[i, j] = avg_pt
+                theta_rad[i, jsymm] = -avg_pt
 
         # Final correction
         lambda_rad -= np.pi
@@ -1334,32 +1123,32 @@ class CSGrid(object):
 
                     if face == 1:
                         # Rotate about z only
-                        new_xyz = rotate_sphere_3D(x, y, z, -np.pi / 2., 'z')
+                        new_xyz = rotate_sphere_3d(x, y, z, -np.pi / 2., 'z')
 
                     elif face == 2:
                         # Rotate about z, then x
-                        temp_xyz = rotate_sphere_3D(x, y, z, -np.pi / 2., 'z')
+                        temp_xyz = rotate_sphere_3d(x, y, z, -np.pi / 2., 'z')
                         x, y, z = temp_xyz[:]
-                        new_xyz = rotate_sphere_3D(x, y, z, np.pi / 2., 'x')
+                        new_xyz = rotate_sphere_3d(x, y, z, np.pi / 2., 'x')
 
                     elif face == 3:
-                        temp_xyz = rotate_sphere_3D(x, y, z, np.pi, 'z')
+                        temp_xyz = rotate_sphere_3d(x, y, z, np.pi, 'z')
                         x, y, z = temp_xyz[:]
-                        new_xyz = rotate_sphere_3D(x, y, z, np.pi / 2., 'x')
+                        new_xyz = rotate_sphere_3d(x, y, z, np.pi / 2., 'x')
 
                         if ((c % 2) != 0) and (j == c // 2 - 1):
                             print(i, j, face)
                             new_xyz = (np.pi, *new_xyz)
 
                     elif face == 4:
-                        temp_xyz = rotate_sphere_3D(x, y, z, np.pi / 2., 'z')
+                        temp_xyz = rotate_sphere_3d(x, y, z, np.pi / 2., 'z')
                         x, y, z = temp_xyz[:]
-                        new_xyz = rotate_sphere_3D(x, y, z, np.pi / 2., 'y')
+                        new_xyz = rotate_sphere_3d(x, y, z, np.pi / 2., 'y')
 
                     elif face == 5:
-                        temp_xyz = rotate_sphere_3D(x, y, z, np.pi / 2., 'y')
+                        temp_xyz = rotate_sphere_3d(x, y, z, np.pi / 2., 'y')
                         x, y, z = temp_xyz[:]
-                        new_xyz = rotate_sphere_3D(x, y, z, 0., 'z')
+                        new_xyz = rotate_sphere_3d(x, y, z, 0., 'z')
 
                     # print((x, y, z), "\n", new_xyz, "\n" + "--"*40)
 
@@ -1398,9 +1187,9 @@ class CSGrid(object):
 
         for f in range(6):
             for i in range(c):
-                last_x = (i == (c - 1))
+                last_x = i == (c - 1)
                 for j in range(c):
-                    last_y = (j == (c - 1))
+                    last_y = j == (c - 1)
 
                     # Get the four corners
                     lat_corner = [
@@ -1490,10 +1279,10 @@ def cartesian_to_latlon(x, y, z, ret_xyz=False):
     x, y, z = xyz
 
     if (np.abs(x) + np.abs(y)) < 1e-20:
-        lon = 0.
+        lon = 0.0
     else:
         lon = np.arctan2(y, x)
-    if lon < 0.:
+    if lon < 0.0:
         lon += 2 * np.pi
 
     lat = np.arcsin(z)
@@ -1501,8 +1290,8 @@ def cartesian_to_latlon(x, y, z, ret_xyz=False):
 
     if ret_xyz:
         return lon, lat, xyz
-    else:
-        return lon, lat
+
+    return lon, lat
 
 
 vec_cartesian_to_latlon = np.vectorize(cartesian_to_latlon)
@@ -1546,7 +1335,7 @@ def cartesian_to_spherical(x, y, z):
 vec_cartesian_to_spherical = np.vectorize(cartesian_to_spherical)
 
 
-def rotate_sphere_3D(theta, phi, r, rot_ang, rot_axis='x'):
+def rotate_sphere_3d(theta, phi, r, rot_ang, rot_axis='x'):
     """ Rotate a spherical coordinate in the form (theta, phi[, r])
     about the indicating axis, 'rot_axis'.
     This method accomplishes the rotation by projecting to a
@@ -1571,6 +1360,8 @@ def rotate_sphere_3D(theta, phi, r, rot_ang, rot_axis='x'):
         x_new = cos_ang * x + sin_ang * y
         y_new = -sin_ang * x + cos_ang * y
         z_new = z
+    else:
+        raise ValueError(f"Invalid value for rot_axis: {rot_axis}")
 
     theta_new, phi_new, r_new = cartesian_to_spherical(x_new, y_new, z_new)
 
