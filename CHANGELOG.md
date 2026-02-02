@@ -4,6 +4,10 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+### Changed
+- Bumped `pip` to version 25.3 in `setup.py` and environment files
+
 ## [1.7.0] - 2026-01-29
 ### Added
 - Added `gcpy/profile/vtune_plot_hotspots.py` to plot a bargraph of hotspots from Intel VTune reports
