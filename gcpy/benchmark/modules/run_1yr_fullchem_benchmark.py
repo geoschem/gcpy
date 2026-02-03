@@ -62,16 +62,15 @@ from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
 from gcpy.benchmark.modules.budget_ox import global_ox_budget
 from gcpy.date_time import datetime64_to_str
-#TODO: Peel out routines from benchmark_funcs.py into smaller
-# routines in the gcpy/benchmark/modules folder, such as these:
+from gcpy.benchmark.modules.benchmark_conc import \
+    make_benchmark_conc_plots
+from gcpy.benchmark.modules.benchmark_emissions import \
+    make_benchmark_emis_plots, make_benchmark_emis_tables
 from gcpy.benchmark.modules.benchmark_funcs import \
     diff_of_diffs_toprow_title, \
-    make_benchmark_emis_plots, make_benchmark_emis_tables, \
     make_benchmark_jvalue_plots, make_benchmark_aod_plots, \
     make_benchmark_mass_tables, make_benchmark_operations_budget, \
     make_benchmark_aerosol_tables
-from gcpy.benchmark.modules.benchmark_conc import \
-    make_benchmark_conc_plots
 from gcpy.benchmark.modules.benchmark_utils import \
     gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
     get_log_filepaths, get_species_database_files, print_benchmark_info

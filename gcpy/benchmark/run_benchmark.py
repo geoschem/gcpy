@@ -54,11 +54,12 @@ from gcpy.date_time import \
     add_months, datetime64_to_str, is_full_year
 from gcpy.benchmark.modules.benchmark_conc import \
     make_benchmark_conc_plots
+from gcpy.benchmark.modules.benchmark_emissions import \
+    make_benchmark_emis_plots, make_benchmark_emis_tables
 from gcpy.benchmark.modules.benchmark_funcs import \
     diff_of_diffs_toprow_title, create_benchmark_summary_table, \
     create_benchmark_sanity_check_table, \
-    make_benchmark_emis_plots, \
-    make_benchmark_emis_tables, make_benchmark_jvalue_plots, \
+    make_benchmark_jvalue_plots, \
     make_benchmark_aod_plots, make_benchmark_mass_tables, \
     make_benchmark_mass_accumulation_tables, \
     make_benchmark_operations_budget, \
