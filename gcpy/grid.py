@@ -132,12 +132,17 @@ def get_input_res(data):
         if lat.size / 6 == lon.size:
             return lon.size, "cs"
 
-        lat.sort()
-        lon.sort()
+        # Make writable copies before sorting.
+        # This will avoid an error in numpy 2.x
+        lat_sort = lat.copy()
+        lon_sort = lon.copy()
+        lat_sort.sort()
+        lon_sort.sort()
+
         # use increment of second and third coordinates
         # to avoid polar mischief
-        lat_res = np.abs(lat[2] - lat[1])
-        lon_res = np.abs(lon[2] - lon[1])
+        lat_res = np.abs(lat_sort[2] - lat_sort[1])
+        lon_res = np.abs(lon_sort[2] - lon_sort[1])
         return str(lat_res) + "x" + str(lon_res), "ll"
 
     #print("grid is cs: ", vdims)

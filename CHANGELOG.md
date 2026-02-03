@@ -8,6 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Bumped `pip` to version 26.0 in `setup.py` and environment files
 
+### Fixed
+- Fixed error in `get_input_res` for numpy 2.x versions; we first copy the lon and lat arrays before sorting
+
 ## [1.7.0] - 2026-01-29
 ### Added
 - Added `gcpy/profile/vtune_plot_hotspots.py` to plot a bargraph of hotspots from Intel VTune reports
