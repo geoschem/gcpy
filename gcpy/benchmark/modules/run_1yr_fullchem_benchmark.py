@@ -68,9 +68,11 @@ from gcpy.benchmark.modules.benchmark_emissions import \
     make_benchmark_emis_plots, make_benchmark_emis_tables
 from gcpy.benchmark.modules.benchmark_funcs import \
     diff_of_diffs_toprow_title, \
-    make_benchmark_jvalue_plots, make_benchmark_aod_plots, \
+    make_benchmark_aod_plots, \
     make_benchmark_mass_tables, make_benchmark_operations_budget, \
     make_benchmark_aerosol_tables
+from gcpy.benchmark.modules.benchmark_jvalues import \
+    make_benchmark_jvalue_plots
 from gcpy.benchmark.modules.benchmark_utils import \
     gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
     get_log_filepaths, get_species_database_files, print_benchmark_info
