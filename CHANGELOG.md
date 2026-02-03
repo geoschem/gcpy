@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] - TBD
 ### Changed
-- Bumped `pip` to version 25.3 in `setup.py` and environment files
+- Bumped `pip` to version 26.0 in `setup.py` and environment files
 
 ## [1.7.0] - 2026-01-29
 ### Added
