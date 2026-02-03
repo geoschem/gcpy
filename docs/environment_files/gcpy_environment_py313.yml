@@ -26,7 +26,7 @@ dependencies:
   - netcdf-fortran ==4.6.1      # Python wrapper for netCDF-Fortran
   - numpy          ==2.1.3      # Optimized mathematical functions
   - pandas         ==2.2.3      # Tables/timeseries manipulation
-  - pip            ==25.3       # Install packages from PyPi
+  - pip            ==26.0       # Install packages from PyPi
   - pylint         ==3.3.4      # Python linter
   - pyproj         ==3.7.1      # Python map projections library
   - python         ==3.13       # Python language
