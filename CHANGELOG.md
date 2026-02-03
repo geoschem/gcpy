@@ -11,6 +11,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Moved function `make_benchmark_emis_tables` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_emissions.py`
 - Moved function `create_total_emissions_tables` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_emissions.py`
 - Moved function `make_benchmark_jvalue_plots` from `gcpy/benchmark_modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_jvalues.py`
+- Moved function `make_benchmark_collection_2d_var_plots` from `gcpy/benchmark_modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_collection_varplots.py`
+- Moved function `make_benchmark_collection_3d_var_plotss` from `gcpy/benchmark_modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_collection_varplots`
 
 ### Fixed
 - Passed `spcdb_files` as the 7th argument (following `dev_interval`) to `make_benchmark_operations_budget`, where missing

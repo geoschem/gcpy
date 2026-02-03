@@ -52,6 +52,9 @@ from gcpy.util import \
     copy_file_to_dir, get_filepath, read_config_file
 from gcpy.date_time import \
     add_months, datetime64_to_str, is_full_year
+from gcpy.benchmark.modules.benchmark_collection_varplots import \
+    make_benchmark_collection_2d_var_plots, \
+    make_benchmark_collection_3d_var_plots
 from gcpy.benchmark.modules.benchmark_conc import \
     make_benchmark_conc_plots
 from gcpy.benchmark.modules.benchmark_emissions import \
@@ -62,8 +65,6 @@ from gcpy.benchmark.modules.benchmark_funcs import \
     make_benchmark_aod_plots, make_benchmark_mass_tables, \
     make_benchmark_mass_accumulation_tables, \
     make_benchmark_operations_budget, \
-    make_benchmark_collection_2d_var_plots, \
-    make_benchmark_collection_3d_var_plots, \
     make_benchmark_operations_budget
 from gcpy.benchmark.modules.benchmark_jvalues import \
     make_benchmark_jvalue_plots
