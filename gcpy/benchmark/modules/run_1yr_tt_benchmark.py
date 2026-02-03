@@ -59,8 +59,10 @@ import numpy as np
 from joblib import Parallel, delayed
 from gcpy.date_time import datetime64_to_str
 from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
+from gcpy.benchmark.modules.benchmark_conc import \
+    make_benchmark_conc_plots
 from gcpy.benchmark.modules.benchmark_funcs import \
-    make_benchmark_conc_plots, make_benchmark_wetdep_plots, \
+    make_benchmark_wetdep_plots, \
     make_benchmark_mass_tables, make_benchmark_operations_budget
 from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
