@@ -63,7 +63,9 @@ from gcpy.benchmark.modules.benchmark_conc import \
     make_benchmark_conc_plots
 from gcpy.benchmark.modules.benchmark_funcs import \
     make_benchmark_wetdep_plots, \
-    make_benchmark_mass_tables, make_benchmark_operations_budget
+    make_benchmark_operations_budget
+from gcpy.benchmark.modules.benchmark_mass_tables import \
+    make_benchmark_mass_tables
 from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.benchmark_utils import \

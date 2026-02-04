@@ -13,6 +13,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Moved function `make_benchmark_jvalue_plots` from `gcpy/benchmark_modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_jvalues.py`
 - Moved function `make_benchmark_collection_2d_var_plots` from `gcpy/benchmark_modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_collection_varplots.py`
 - Moved function `make_benchmark_collection_3d_var_plotss` from `gcpy/benchmark_modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_collection_varplots`
+- Moved function `create_global_mass_table` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_mass_tables.py`
+- Moved function `create_mass_accumulation_table` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_mass_tables.py`
+- Moved function `make_benchmark_mass_tables` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_mass_tables.py`
+- Moved function `make_benchmark_mass_accumulation_tables` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_mass_tables.py`
 
 ### Fixed
 - Passed `spcdb_files` as the 7th argument (following `dev_interval`) to `make_benchmark_operations_budget`, where missing

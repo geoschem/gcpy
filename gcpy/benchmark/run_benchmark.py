@@ -61,13 +61,12 @@ from gcpy.benchmark.modules.benchmark_emissions import \
     make_benchmark_emis_plots, make_benchmark_emis_tables
 from gcpy.benchmark.modules.benchmark_funcs import \
     diff_of_diffs_toprow_title, create_benchmark_summary_table, \
-    create_benchmark_sanity_check_table, \
-    make_benchmark_aod_plots, make_benchmark_mass_tables, \
-    make_benchmark_mass_accumulation_tables, \
-    make_benchmark_operations_budget, \
+    create_benchmark_sanity_check_table, make_benchmark_aod_plots,
     make_benchmark_operations_budget
 from gcpy.benchmark.modules.benchmark_jvalues import \
     make_benchmark_jvalue_plots
+from gcpy.benchmark.modules.benchmark_mass_tables import \
+    make_benchmark_mass_tables, make_benchmark_mass_accumulation_tables
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
 from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
