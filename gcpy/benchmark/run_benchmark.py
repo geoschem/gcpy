@@ -62,27 +62,30 @@ from gcpy.benchmark.modules.benchmark_conc import \
 from gcpy.benchmark.modules.benchmark_emissions import \
     make_benchmark_emis_plots, make_benchmark_emis_tables
 from gcpy.benchmark.modules.benchmark_funcs import \
-    diff_of_diffs_toprow_title, create_benchmark_summary_table, \
-    create_benchmark_sanity_check_table, make_benchmark_operations_budget
+    create_benchmark_summary_table, \
+    create_benchmark_sanity_check_table
 from gcpy.benchmark.modules.benchmark_jvalues import \
     make_benchmark_jvalue_plots
 from gcpy.benchmark.modules.benchmark_mass_tables import \
     make_benchmark_mass_tables, make_benchmark_mass_accumulation_tables
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
+from gcpy.benchmark.modules.benchmark_operations_budget import \
+    make_benchmark_operations_budget
 from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
     import run_benchmark as run_1yr_benchmark
 from gcpy.benchmark.modules.run_1yr_tt_benchmark \
     import run_benchmark as run_1yr_tt_benchmark
-from gcpy.benchmark.modules.benchmark_utils import \
-    gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
-    get_log_filepaths, get_species_database_files, print_benchmark_info
 from gcpy.benchmark.modules.benchmark_drydep import \
     drydepvel_species, make_benchmark_drydep_plots
 from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
     make_benchmark_gcclassic_timing_table
 from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
     make_benchmark_gchp_timing_table
+from gcpy.benchmark.modules.benchmark_utils import \
+    diff_of_diffs_toprow_title, gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, \
+    gchp_vs_gchp_dirs, get_log_filepaths, get_species_database_files, \
+    print_benchmark_info
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"

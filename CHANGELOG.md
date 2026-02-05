@@ -21,7 +21,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `make_benchmark_aod_plots` -> `benchmark_aerosols.py`
   - `make_benchmark_aerosol_tables` -> `benchmark_aerosols.py`
   - `make_benchmark_wetdep_plots` -> `benchmark_wetdep.py`
-
+  - `make_benchmark_operations_budget` -> `benchmark_operations_budget.py`
+  - `diff_of_diffs_toprow_title` -> `benchmark_utils.py`
+ 
 ### Fixed
 - Passed `spcdb_files` as the 7th argument (following `dev_interval`) to `make_benchmark_operations_budget`, where missing
 - Passed `colname` as the 5th argument to `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots`

@@ -66,28 +66,28 @@ from gcpy.benchmark.modules.benchmark_aerosols import \
     make_benchmark_aod_plots, make_benchmark_aerosol_tables
 from gcpy.benchmark.modules.benchmark_conc import \
     make_benchmark_conc_plots
+from gcpy.benchmark.modules.benchmark_drydep \
+    import drydepvel_species, make_benchmark_drydep_plots
 from gcpy.benchmark.modules.benchmark_emissions import \
     make_benchmark_emis_plots, make_benchmark_emis_tables
-from gcpy.benchmark.modules.benchmark_funcs import \
-    diff_of_diffs_toprow_title, \
-    make_benchmark_operations_budget
 from gcpy.benchmark.modules.benchmark_jvalues import \
     make_benchmark_jvalue_plots
 from gcpy.benchmark.modules.benchmark_mass_tables import \
     make_benchmark_mass_tables
-from gcpy.benchmark.modules.benchmark_utils import \
-    gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
-    get_log_filepaths, get_species_database_files, print_benchmark_info
-from gcpy.benchmark.modules.benchmark_models_vs_obs \
-    import make_benchmark_models_vs_obs_plots
-from gcpy.benchmark.modules.benchmark_models_vs_sondes \
-    import make_benchmark_models_vs_sondes_plots
-from gcpy.benchmark.modules.benchmark_drydep \
-    import drydepvel_species, make_benchmark_drydep_plots
+from gcpy.benchmark.modules.benchmark_models_vs_obs import \
+    make_benchmark_models_vs_obs_plots
+from gcpy.benchmark.modules.benchmark_models_vs_sondes import \
+    make_benchmark_models_vs_sondes_plots
+from gcpy.benchmark.modules.benchmark_operations_budget import \
+    make_benchmark_operations_budget
 from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
     make_benchmark_gcclassic_timing_table
 from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
     make_benchmark_gchp_timing_table
+from gcpy.benchmark.modules.benchmark_utils import \
+    diff_of_diffs_toprow_title, gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, \
+    gchp_vs_gchp_dirs, get_log_filepaths, get_species_database_files, \
+    print_benchmark_info
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
