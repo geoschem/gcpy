@@ -4,6 +4,14 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+### Fixed
+- Passed `spcdb_files` as the 7th argument (following `dev_interval`) to `make_benchmark_operations_budget`, where missing
+- Passed `colname` as the 5th argument to `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots`
+
+### Removed
+- Removed a duplicate import of `make_benchmark_operations_budget` in `gcpy/benchmark/run_benchmark.py`
+
 ## [1.7.1] - 2026-02-03
 ### Changed
 - Bumped `pip` to version 26.0 in `setup.py` and environment files
