@@ -58,12 +58,14 @@ from calendar import monthrange
 import numpy as np
 from joblib import Parallel, delayed
 from gcpy.date_time import datetime64_to_str
-from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
+from gcpy.util import \
+    copy_file_to_dir, get_filepath, get_filepaths
 from gcpy.benchmark.modules.benchmark_conc import \
     make_benchmark_conc_plots
 from gcpy.benchmark.modules.benchmark_funcs import \
-    make_benchmark_wetdep_plots, \
     make_benchmark_operations_budget
+from gcpy.benchmark.modules.benchmark_mass_cons_table import \
+    make_benchmark_mass_conservation_table
 from gcpy.benchmark.modules.benchmark_mass_tables import \
     make_benchmark_mass_tables
 from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
@@ -75,8 +77,9 @@ from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
     make_benchmark_gcclassic_timing_table
 from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
     make_benchmark_gchp_timing_table
-from gcpy.benchmark.modules.benchmark_mass_cons_table import \
-    make_benchmark_mass_conservation_table
+from gcpy.benchmark.modules.benchmark_wetdep import \
+    make_benchmark_wetdep_plots
+
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -208,7 +211,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     )
     all_months_gchp_ref = all_months_ref
     mass_table_dates_ref = np.append(all_months_ref, bmk_end_ref)
-   
+
     # Get subset of month datetimes and seconds per month
     # for only benchmark months
     bmk_mons_ref = all_months_ref[bmk_mon_inds]

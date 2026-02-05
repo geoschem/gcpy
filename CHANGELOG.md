@@ -6,17 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] - TBD
 ### Changed
-- Moved function `make_benchmark_conc_plots` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_conc.py`
-- Moved function `make_benchmark_emis_plots` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_emissions.py`
-- Moved function `make_benchmark_emis_tables` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_emissions.py`
-- Moved function `create_total_emissions_tables` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_emissions.py`
-- Moved function `make_benchmark_jvalue_plots` from `gcpy/benchmark_modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_jvalues.py`
-- Moved function `make_benchmark_collection_2d_var_plots` from `gcpy/benchmark_modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_collection_varplots.py`
-- Moved function `make_benchmark_collection_3d_var_plotss` from `gcpy/benchmark_modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_collection_varplots`
-- Moved function `create_global_mass_table` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_mass_tables.py`
-- Moved function `create_mass_accumulation_table` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_mass_tables.py`
-- Moved function `make_benchmark_mass_tables` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_mass_tables.py`
-- Moved function `make_benchmark_mass_accumulation_tables` from `gcpy/benchmark/modules/benchmark_funcs.py` to `gcpy/benchmark/modules/benchmark_mass_tables.py`
+- Moved the following functions out of `gcpy/benchmark/modules/benchmark_funcs.py`:
+  - `make_benchmark_conc_plots` -> `benchmark_conc.py`
+  - `make_benchmark_emis_plots` -> `benchmark_emissions.py`
+  - `make_benchmark_emis_tables` -> `benchmark_emissions.py`
+  - `create_total_emissions_tables` -> `benchmark_emissions.py`
+  - `make_benchmark_jvalue_plots` -> `benchmark_jvalues.py`
+  - `make_benchmark_collection_var_2d_plots` -> `benchmark_collection_varplots.py`
+  - `make_benchmark_collection_var_3d_plots` -> `benchmark_collection_varplots.py`
+  - `create_global_mass_table` -> `benchmark_mass_tables.py`
+  - `create_mass_accumulation_table` -> `benchmark_mass_tables.py`
+  - `make_benchmark_mass_tables` -> `benchmark_mass_tables.py`
+  - `make_benchmark_mass_accumulation_table` -> `benchmark_mass_tables.py`
+  - `make_benchmark_aod_plots` -> `benchmark_aerosols.py`
+  - `make_benchmark_aerosol_tables` -> `benchmark_aerosols.py`
+  - `make_benchmark_wetdep_plots` -> `benchmark_wetdep.py`
 
 ### Fixed
 - Passed `spcdb_files` as the 7th argument (following `dev_interval`) to `make_benchmark_operations_budget`, where missing
