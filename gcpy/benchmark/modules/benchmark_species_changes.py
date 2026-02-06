@@ -7,7 +7,7 @@ Example:
 
   python -m gcpy.benchmark.modules.benchmark_species_changes  \
    --ref-label   "14.4.0"                                     \
-   --ref-log     "gcc_14.4.0/14.4.0.log                       \
+   --ref-log     "gcc_14.4.0/14.4.0.log"                      \
    --dev-label   "14.5.0"                                     \
    --dev-log     "gcc_14.5.0/14.5.0.log"                      \
    --spcdb-files ["gcc_14.4.0/species_database.yml",          \
@@ -272,11 +272,11 @@ def make_benchmark_species_changes_wiki_tables(
     # Read the species database files in the Ref & Dev rundirs, and
     # return a dict containing metadata for the union of species.
     # We'll need properties such as mol. wt. for unit conversions, etc.
-    species_database = read_species_metadata(spcdb_files, quiet=True)
+    ref_spcdb, dev_spcdb = read_species_metadata(spcdb_files, quiet=True)
 
     # Get species metadata for the Ref and Dev versions
-    ref = get_species_metadata(ref_log, species_database)
-    dev = get_species_metadata(dev_log, species_database)
+    ref = get_species_metadata(ref_log, ref_spcdb)
+    dev = get_species_metadata(dev_log, dev_spcdb)
 
     # Get list of species in Ref, Dev and both Ref & Dev
     in_ref = set(list(ref.columns))

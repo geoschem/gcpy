@@ -2288,9 +2288,7 @@ def get_element_of_series(series, element):
 
 def read_species_metadata(files, quiet=True):
     """
-    Reads species metadata from multiple files and returns a dict
-    containing metadata for the union of species.
-
+    Reads species metadata from Ref and Dev model versions.
     Args
     files     : str|list : Species database file(s) to read
 

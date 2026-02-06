@@ -7,9 +7,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [1.7.1] - 2026-02-03
 ### Changed
 - Bumped `pip` to version 26.0 in `setup.py` and environment files
+- Updated `gcpy/benchmark/modules/benchmark_species_changes.py` to use separate species database objects for Ref and Dev
 
 ### Fixed
 - Fixed error in `get_input_res` for numpy 2.x versions; we first copy the lon and lat arrays before sorting
+- Fixed incorrect PyDoc header comments in routine `read_species_metadata`
 
 ## [1.7.0] - 2026-01-29
 ### Added
