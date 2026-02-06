@@ -1,23 +1,15 @@
 #!/usr/bin/env python3
 """
-Specific utilities for creating plots from GEOS-Chem benchmark simulations.
+Creates summary tables fron GEOS-Chem benchmark output.
 """
 import os
-import itertools
-import gc
 import numpy as np
-import pandas as pd
-import xarray as xr
-from tabulate import tabulate
 from gcpy.util import \
-    add_missing_variables, \
-    array_equals, compare_varnames, dataset_reader, \
-    get_filepath, make_directory, \
-    read_species_metadata, replace_whitespace, unique_values, \
-    verify_variable_type, wrap_text
-from gcpy.units import convert_units
+    add_missing_variables, array_equals, compare_varnames, dataset_reader, \
+    get_filepath, make_directory, replace_whitespace, \
+    unique_values
 from gcpy.constants import \
-    ENCODING, SKIP_THESE_VARS, TABLE_WIDTH
+    ENCODING, SKIP_THESE_VARS
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -215,59 +207,6 @@ def create_benchmark_summary_table(
     # Close files
     # ==================================================================
     f.close()
-
-
-def diff_list_to_text(
-        refstr,
-        devstr,
-        diff_list,
-        fancy_format=False
-):
-    """
-    Converts a list of species/emissions/inventories/diagnostics that
-    show differences between GEOS-Chem versions ot a printable text
-    string.
-
-    Args:
-    -----
-    diff_list : list
-        List to be converted into text.  "None" values will be dropped.
-    fancy_format: bool
-        Set to True if you wish output text to be bookended with '###'.
-
-    Returns:
-    diff_text : str
-        String with concatenated list values.
-    """
-    verify_variable_type(diff_list, list)
-
-    # Use "Dev" and "Ref" for inserting into a header
-    if fancy_format:
-        refstr = "Ref"
-        devstr = "Dev"
-
-    # Strip out duplicates from diff_list
-    # Prepare a message about species differences (or alternate msg)
-    diff_list = unique_values(diff_list, drop=[None])
-
-    # Print the text
-    n_diff = len(diff_list)
-    if n_diff > 0:
-        diff_text = f"{devstr} and {refstr} show {n_diff} differences"
-    else:
-        diff_text = f"{devstr} and {refstr} are identical"
-
-    # If we are placing the text in a header, trim the length of diff_text
-    # to fit.  NOTE: TABLE_WIDTH-7 leaves room for the '### ' at the start
-    # of the string and the '###' at the end of the string,
-    if fancy_format:
-        diff_text = f"### {diff_text : <{TABLE_WIDTH-7}}{'###'}"
-        diff_text = wrap_text(
-            diff_text,
-            width=TABLE_WIDTH
-        )
-
-    return diff_text.strip()
 
 
 def create_benchmark_sanity_check_table(

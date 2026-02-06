@@ -13,6 +13,8 @@ from gcpy.util import \
     insert_text_into_file, print_totals, read_species_metadata, \
     rename_and_flip_gchp_rst_vars, replace_whitespace, verify_variable_type
 from gcpy.units import convert_units
+from gcpy.benchmark.modules.benchmark_utils import \
+    diff_list_to_text
 from gcpy.constants import \
     COL_WIDTH, ENCODING, SKIP_THESE_VARS, TABLE_WIDTH
 

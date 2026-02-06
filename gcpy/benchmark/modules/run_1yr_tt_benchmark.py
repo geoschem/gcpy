@@ -56,10 +56,13 @@ import os
 import warnings
 from calendar import monthrange
 import numpy as np
-from joblib import Parallel, delayed
+from joblib import \
+    Parallel, delayed
 from gcpy.date_time import datetime64_to_str
 from gcpy.util import \
     copy_file_to_dir, get_filepath, get_filepaths
+from gcpy.benchmark.modules.benchmark_budget_tt import \
+    transport_tracers_budgets
 from gcpy.benchmark.modules.benchmark_conc import \
     make_benchmark_conc_plots
 from gcpy.benchmark.modules.benchmark_mass_cons_table import \
@@ -68,18 +71,17 @@ from gcpy.benchmark.modules.benchmark_mass_tables import \
     make_benchmark_mass_tables
 from gcpy.benchmark.modules.benchmark_operations_budget import \
     make_benchmark_operations_budget
-from gcpy.benchmark.modules.budget_tt import transport_tracers_budgets
-from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
-from gcpy.benchmark.modules.benchmark_utils import \
-    gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
-    get_log_filepaths, get_species_database_files, print_benchmark_info
 from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
     make_benchmark_gcclassic_timing_table
 from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
     make_benchmark_gchp_timing_table
+from gcpy.benchmark.modules.benchmark_ste_flux import \
+    make_benchmark_ste_table
+from gcpy.benchmark.modules.benchmark_utils import \
+    gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
+    get_log_filepaths, get_species_database_files, print_benchmark_info
 from gcpy.benchmark.modules.benchmark_wetdep import \
     make_benchmark_wetdep_plots
-
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"

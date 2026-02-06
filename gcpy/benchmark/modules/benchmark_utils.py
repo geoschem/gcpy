@@ -801,3 +801,56 @@ def diff_of_diffs_toprow_title(config, model):
         )
 
     return title
+
+
+def diff_list_to_text(
+        refstr,
+        devstr,
+        diff_list,
+        fancy_format=False
+):
+    """
+    Converts a list of species/emissions/inventories/diagnostics that
+    show differences between GEOS-Chem versions ot a printable text
+    string.
+
+    Args:
+    -----
+    diff_list : list
+        List to be converted into text.  "None" values will be dropped.
+    fancy_format: bool
+        Set to True if you wish output text to be bookended with '###'.
+
+    Returns:
+    diff_text : str
+        String with concatenated list values.
+    """
+    verify_variable_type(diff_list, list)
+
+    # Use "Dev" and "Ref" for inserting into a header
+    if fancy_format:
+        refstr = "Ref"
+        devstr = "Dev"
+
+    # Strip out duplicates from diff_list
+    # Prepare a message about species differences (or alternate msg)
+    diff_list = unique_values(diff_list, drop=[None])
+
+    # Print the text
+    n_diff = len(diff_list)
+    if n_diff > 0:
+        diff_text = f"{devstr} and {refstr} show {n_diff} differences"
+    else:
+        diff_text = f"{devstr} and {refstr} are identical"
+
+    # If we are placing the text in a header, trim the length of diff_text
+    # to fit.  NOTE: TABLE_WIDTH-7 leaves room for the '### ' at the start
+    # of the string and the '###' at the end of the string,
+    if fancy_format:
+        diff_text = f"### {diff_text : <{TABLE_WIDTH-7}}{'###'}"
+        diff_text = wrap_text(
+            diff_text,
+            width=TABLE_WIDTH
+        )
+
+    return diff_text.strip()
