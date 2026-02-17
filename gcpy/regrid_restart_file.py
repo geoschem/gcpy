@@ -336,7 +336,7 @@ def drop_variables(dataset, output_template):
         )
         logging.debug(debug_message, drop_vars)
 
-        dataset = dataset.drop(drop_vars)
+        dataset = dataset.drop_vars(drop_vars)
     if len(missing_vars) > 0:
         warning_message = (
             "The input restart file is missing %d variables "
@@ -347,7 +347,7 @@ def drop_variables(dataset, output_template):
         debug_message = "Variables missing in the input restart file: %s"
         logging.debug(debug_message, missing_vars)
 
-        output_template = output_template.drop(missing_vars)
+        output_template = output_template.drop_vars(missing_vars)
     return dataset, output_template
 
 
@@ -377,20 +377,13 @@ def regrid(dataset, output_template, weights_file):
         np.prod(output_template_shape) != weights.dst_grid_dims.item()
     )
     if resize_output_template:
-        error_message = (
-            "GCHP output template grid resolution must be the same size "
-            "as the target grid! For example, if creating restart file "
-            " with parameters c24 and stretch factor 10, the template "
-            " GCHP file must be c24 with any or no stretch factor."
-        )
-        raise ValueError(error_message)
         if is_gchp_restart_file(output_template):
             # This is useful for stretched-grid simulations because they usually
             # don't have a "normal" grid size
             cs_res = np.sqrt(weights.dst_grid_dims.item() / 6).astype(int)
 
             info_message = (
-                "Reshaping the output restart file template to grid size C%f"
+                "Reshaping the output restart file template to grid size C%d"
             )
             logging.info(info_message, cs_res)
 
@@ -530,6 +523,9 @@ def regrid_restart_file(
     dataset = regrid(dataset, output_template, weights_file=regrid_weights)
     check_for_nans(dataset)
 
+    # clean global attributes
+    dataset.attrs = {}
+    # Add global attributes for Stretched GCHP
     if stretch_factor and target_lat and target_lon:
         try:
             dataset.attrs["STRETCH_FACTOR"] = np.float32(stretch_factor)
