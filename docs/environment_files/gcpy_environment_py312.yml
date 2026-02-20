@@ -30,7 +30,7 @@ dependencies:
   - pylint         ==3.2.2      # Python linter
   - pyproj         ==3.6.1      # Python map projections library
   - python         ==3.12.0     # Python language
-  - pypdf          ==6.6.2      # PDF utilities (bookmarks, etc.)
+  - pypdf          ==6.7.1      # PDF utilities (bookmarks, etc.)
   - requests       ==2.32.4     # HTTP library
   - scipy          ==1.13.1     # Scientific python package
   - sparselt       ==0.1.3      # Regridding earth system model data
