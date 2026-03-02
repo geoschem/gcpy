@@ -1,6 +1,10 @@
+---
+# emission_species.yml: List the GEOS-Chem species to
+# be included in the emissions benchmark plots & tables
 FullChemBenchmark:
-  ACR: Tg
   ACET: Tg
+  ACR: Tg
+  ACTA: Tg
   ALD2: Tg
   ALK4: Tg
   ALK6: Tg
@@ -22,10 +26,6 @@ FullChemBenchmark:
   CHBr3: Tg
   CO: Tg
   DMS: Tg
-  DST1: Tg
-  DST2: Tg
-  DST3: Tg
-  DST4: Tg
   DSTbin1: Tg
   DSTbin2: Tg
   DSTbin3: Tg
@@ -36,29 +36,29 @@ FullChemBenchmark:
   EOH: Tg
   ETNO3: Tg
   FURA: Tg
-  GLYC: Tg
   GLYX: Tg
-  HAC: Tg
+  H2O: Tg
   HCl: Tg
   HCOOH: Tg
-  HNO2: Tg
   HNO3: Tg
   ISOP: Tg
   LIMO: Tg
   MACR: Tg
   MEK: Tg
-  MVK: Tg
+  MENO3: Tg
   MENO3: Tg
   MGLY: Tg
   MOH: Tg
   MTPA: Tg
   MTPO: Tg
+  MVK: Tg
   NH3: Tg
   'NO': Tg  # Quotes are necessary, otherwise YAML interprets NO as False
   NO2: Tg
   O3: Tg
   OCPI: Tg
   OCPO: Tg
+  pFe: Tg
   PHEN: Tg
   PRPE: Tg
   RCHO: Tg
@@ -76,7 +76,6 @@ FullChemBenchmark:
   TMB: Tg
   TOLU: Tg
   XYLE: Tg
-  pFe: Tg
 CH4Benchmark:
   CH4: Tg
 TransportTracersBenchmark:
