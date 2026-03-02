@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - TBD
 ### Changed
 - Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
+- Updated `benchmark/modules/emission_species.yml` to be consistent w/ the FullChemBenchmark emission diagnostics in GC 14.7.0 and later
 
 ### Fixed
 - Allow using a template at different grid resolutions in `gcpy/regrid_restart_file.py`
