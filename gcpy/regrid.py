@@ -1094,7 +1094,14 @@ def regrid_vertical(src_data_3d, xmat_regrid, target_levs=None):
 
     nlev_out = xmat_renorm.shape[1]
     out_shape = [nlev_out] + list(src_data_3d.shape[1:])
-    n_other = np.product(src_data_3d.shape[1:])
+    # ------------------------------------------------------------------
+    # The np.product function was changed to np.prod in version 2.0,
+    # so implement this workaround for backward compatibility.
+    try:
+        np_other = np.prod(src_data_3d.shape[1:])      # NumPy >= 2.0
+    except AttributeError:
+        np_other = np.product(src_data_3d.shape[1:])   # NumPy < 2.0
+    # ------------------------------------------------------------------
     temp_data = np.zeros((nlev_out, n_other))
     in_data = np.reshape(np.array(src_data_3d), (nlev_in, n_other))
     for ix in range(n_other):
