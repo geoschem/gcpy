@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Fixed
 - Allow using a template at different grid resolutions in `gcpy/regrid_restart_file.py`
+- Implemented a workaround in `gcpy/regrid.py` to allow use of either `np.product` or `np.prod` depending on the Numpy version
 
 ## [1.7.1] - 2026-02-03
 ### Changed
