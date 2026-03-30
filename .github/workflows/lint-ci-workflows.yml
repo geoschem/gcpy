@@ -52,11 +52,11 @@ jobs:
       - name: Checkout code
         with:
           persist-credentials: false
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Installs Python 3.x
       - name: Install Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.x'
 
