@@ -21,16 +21,18 @@ def get_troposphere_mask(ds):
     """
     Returns a mask array for picking out the tropospheric grid boxes.
 
-    Args:
-        ds: xarray Dataset
-            Dataset containing certain met field variables (i.e.
-            Met_TropLev, Met_BXHEIGHT).
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset containing certain met field variables (i.e.
+        Met_TropLev, Met_BXHEIGHT).
 
-    Returns:
-        tropmask: numpy ndarray
-            Tropospheric mask.  False denotes grid boxes that are
-            in the troposphere and True in the stratosphere
-            (as per Python masking logic).
+    Returns
+    -------
+    tropmask : numpy.ndarray
+        Tropospheric mask.  False denotes grid boxes that are
+        in the troposphere and True in the stratosphere
+        (as per Python masking logic).
     """
 
     # ==================================================================
@@ -111,18 +113,19 @@ def get_troposphere_mask(ds):
 def get_input_res(data):
     """
     Returns resolution of dataset passed to compare_single_level or
-    compare_zonal_means
+    compare_zonal_means.
 
-    Args:
-        data: xarray Dataset
-            Input GEOS-Chem dataset
+    Parameters
+    ----------
+    data : xarray.Dataset
+        Input GEOS-Chem dataset.
 
-    Returns:
-        res: str or int
-            Lat/lon res of the form 'latresxlonres' or cubed-sphere resolution
-        gridtype: str
-            'll' for lat/lon or 'cs' for cubed-sphere
-
+    Returns
+    -------
+    res : str or int
+        Lat/lon res of the form 'latresxlonres' or cubed-sphere resolution.
+    gridtype : str
+        'll' for lat/lon or 'cs' for cubed-sphere.
     """
 
     vdims = data.dims
@@ -163,31 +166,32 @@ def call_make_grid(
     """
     Create a mask with NaN values removed from an input array
 
-    Args:
-        res: str or int
-            Resolution of grid (format 'latxlon' or csres)
-        gridtype: str
-            'll' for lat/lon or 'cs' for cubed-sphere
+    Parameters
+    ----------
+    res : str or int
+        Resolution of grid (format 'latxlon' or csres).
+    gridtype : str
+        'll' for lat/lon or 'cs' for cubed-sphere.
+    in_extent : list of float, optional
+        Describes minimum and maximum latitude and longitude of input data
+        in the format [minlon, maxlon, minlat, maxlat].
+        Default value: GLOBAL_LL_EXTENT, i.e. [-180, 180, -90, 90]
+    out_extent : list of float, optional
+        Desired minimum and maximum latitude and longitude of output grid
+        in the format [minlon, maxlon, minlat, maxlat].
+        Default value: GLOBAL_LL_EXTENT, i.e. [-180, 180, -90, 90]
+    sg_params : list, optional
+        Desired stretched-grid parameters in the format
+        [stretch_factor, target_longitude, target_latitude].
+        Will trigger stretched-grid creation if not default values.
+        Default value: NO_STRETCH_SG_PARAMS (no stretching, [1, 170, -90])
 
-    Keyword Args (optional):
-        in_extent: list[float, float, float, float]
-            Describes minimum and maximum latitude and longitude of input data
-            in the format [minlon, maxlon, minlat, maxlat]
-            Default value: GLOBAL_LL_EXTENT, i.e. [-180, 180, -90, 90]
-        out_extent: list[float, float, float, float]
-            Desired minimum and maximum latitude and longitude of output grid
-            in the format [minlon, maxlon, minlat, maxlat]
-            Default value: GLOBAL_LL_EXTENT, i.e. [-180, 180, -90, 90]
-        sg_params: list
-            Desired stretched-grid parameters in the format
-            [stretch_factor, target_longitude, target_latitude].
-            Will trigger stretched-grid creation if not default values.
-            Default value: NO_STRETCH_SG_PARAMS (no stretching, [1, 170, -90])
-
-    Returns:
-        [grid, grid_list]: list(dict, list(dict))
-            Returns the created grid.
-            grid_list is a list of grids if gridtype is 'cs', else it is None
+    Returns
+    -------
+    grid : dict
+        The created grid.
+    grid_list : list of dict or None
+        List of grids if gridtype is 'cs', otherwise None.
     """
     verify_variable_type(res, (str, int))
     verify_variable_type(gridtype, str)
@@ -214,24 +218,27 @@ def call_make_grid(
 
 def get_grid_extents(data, edges=True):
     """
-    Get min and max lat and lon from an input GEOS-Chem xarray dataset or grid dict
+    Get min and max lat and lon from an input GEOS-Chem xarray dataset
+    or grid dict.
 
-    Args:
-        data: xarray Dataset or dict
-            A GEOS-Chem dataset or a grid dict
-        edges (optional): bool
-            Whether grid extents should use cell edges instead of centers
-            Default value: True
+    Parameters
+    ----------
+    data : xarray.Dataset or dict
+        A GEOS-Chem dataset or a grid dict.
+    edges : bool, optional
+        Whether grid extents should use cell edges instead of centers.
+        Default value: True
 
-    Returns:
-        minlon: float
-            Minimum longitude of data grid
-        maxlon: float
-            Maximum longitude of data grid
-        minlat: float
-            Minimum latitude of data grid
-        maxlat: float
-            Maximum latitude of data grid
+    Returns
+    -------
+    minlon : float
+        Minimum longitude of data grid.
+    maxlon : float
+        Maximum longitude of data grid.
+    minlat : float
+        Minimum latitude of data grid.
+    maxlat : float
+        Maximum latitude of data grid.
     """
 
     if isinstance(data, dict):
@@ -280,23 +287,28 @@ def get_vert_grid(
         BP=None,
         p_sfc=1013.25):
     """
-    Determine vertical grid of input dataset
+    Determine vertical grid of input dataset.
 
-    Args:
-    -----
-    dataset (xr.Dataset) : A GEOS-Chem output dataset
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        A GEOS-Chem output dataset.
+    AP : list-like, optional
+        Hybrid grid parameter A (hPa).
+    BP : list-like, optional
+        Hybrid grid parameter B (unitless).
+    p_sfc : float, optional
+        Surface pressure in hPa.
+        Default value: 1013.25
 
-    Keyword Args (optional):
-    ------------------------
-    AP    (list-like)  : Hybrid grid parameter A (hPA)
-    BP    (list-like)  : Hybrid grid parameter B (unitless)
-    p_sfc (float)      :
-
-    Returns:
-    --------
-    pedge (np.ndarray) : Edge pressure values for vertical grid
-    p_mid (np.ndarray) : Midpoint pressure values for vertical grid
-    nlev: (int       ) : Number of levels in vertical grid
+    Returns
+    -------
+    pedge : numpy.ndarray
+        Edge pressure values for vertical grid.
+    p_mid : numpy.ndarray
+        Midpoint pressure values for vertical grid.
+    nlev : int
+        Number of levels in vertical grid.
     """
 
     # 72L GEOS grid
@@ -340,29 +352,32 @@ def get_ilev_coord(
     level edges. These are used to define the "ilev" netCDF
     coordinate variable.
 
-    Keyword Args (optional):
-    ------------------------
-    n_lev : int
-        Number of levels in the grid.  Default = 72
-    AP_edge : list-like
+    Parameters
+    ----------
+    n_lev : int, optional
+        Number of levels in the grid.
+        Default value: 72
+    AP_edge : list-like, optional
         Hybrid grid parameter A (hPa), with values placed on level
         edges.  If not specified, values from the _GEOS_72L_AP array
         in this module will be used.
-    AP_edge : list-like
+    BP_edge : list-like, optional
         Hybrid grid parameter B (unitless), with values placed on level
-        edges.  If not specified, values from the _GEOS_72L_BP array in
-        this module will be used.
-    top_down : bool
+        edges.  If not specified, values from the _GEOS_72L_BP array
+        in this module will be used.
+    top_down : bool, optional
         Set this to True if the eta coordinate will be arranged from
         top-of-atm downward (True) or from the surface upward (False).
-    gchp_indices : bool
+        Default value: False
+    gchp_indices : bool, optional
         Set this to True to return an array of indices (as is used
         in GCHP files).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     ilev : numpy.ndarray
-        List of eta values at vertical grid edges
+        List of eta values at vertical grid edges.
     """
     if n_lev is None:
         n_lev = 72
@@ -397,29 +412,32 @@ def get_lev_coord(
     level midpoints.  These are used to define the "lev"
     netCDF coordinate variable.
 
-    Keyword Args (optional):
-    ------------------------
-    n_lev : int
-        Number of levels in the grid.  Default = 72
-    AP_edge : list-like
+    Parameters
+    ----------
+    n_lev : int, optional
+        Number of levels in the grid.
+        Default value: 72
+    AP_edge : list-like, optional
         Hybrid grid parameter A (hPa), with values placed on level
         edges.  If not specified, values from the _GEOS_72L_AP array
         in this module will be used.
-    AP_edge : list-like
+    BP_edge : list-like, optional
         Hybrid grid parameter B (unitless), with values placed on level
-        edges.  If not specified, values from the _GEOS_72L_BP array in
-        this module will be used.
-    top_down : bool
+        edges.  If not specified, values from the _GEOS_72L_BP array
+        in this module will be used.
+    top_down : bool, optional
         Set this to true if the eta coordinate will be arranged from
         top-of-atm downward (True) or from the surface upward (False).
-    gchp_indices : bool
+        Default value: False
+    gchp_indices : bool, optional
         Set this to True to return an array of indices (as is used
         in GCHP files).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     lev : numpy.ndarray
-        List of eta values at vertical grid midpoints
+        List of eta values at vertical grid midpoints.
     """
     if n_lev is None:
         n_lev = 72
@@ -450,17 +468,20 @@ def get_lev_coord(
 
 def get_pressure_indices(pedge, pres_range):
     """
-    Get indices where edge pressure values are within a given pressure range
+    Get indices where edge pressure values are within a given pressure range.
 
-    Args:
-        pedge: numpy array
-            A GEOS-Chem output dataset
-        pres_range: list(float, float)
-            Contains minimum and maximum pressure
+    Parameters
+    ----------
+    pedge : numpy.ndarray
+        Edge pressure values for the vertical grid.
+    pres_range : list of float
+        Contains minimum and maximum pressure.
 
-    Returns:
-        numpy array
-            Indices where edge pressure values are within a given pressure range
+    Returns
+    -------
+    indices : numpy.ndarray
+        Indices where edge pressure values are within the given
+        pressure range.
     """
 
     return np.where(
@@ -470,19 +491,22 @@ def get_pressure_indices(pedge, pres_range):
 
 def pad_pressure_edges(pedge_ind, max_ind, pmid_len):
     """
-    Add outer indices to edge pressure index list
+    Add outer indices to edge pressure index list.
 
-    Args:
-        pedge_ind: list
-            List of edge pressure indices
-        max_ind: int
-            Maximum index
-        pmid_len: int
-            Length of pmid which should not be exceeded by indices
+    Parameters
+    ----------
+    pedge_ind : list
+        List of edge pressure indices.
+    max_ind : int
+        Maximum index.
+    pmid_len : int
+        Length of pmid which should not be exceeded by indices.
 
-    Returns:
-        pedge_ind: list
-            List of edge pressure indices, possibly with new minimum and maximum indices
+    Returns
+    -------
+    pedge_ind : list
+        List of edge pressure indices, possibly with new minimum
+        and maximum indices.
     """
 
     if max_ind > pmid_len:
@@ -499,16 +523,17 @@ def get_ind_of_pres(dataset, pres):
     """
     Get index of pressure level that contains the requested pressure value.
 
-    Args:
-        dataset: xarray Dataset
-            GEOS-Chem dataset
-        pres: int or float
-            Desired pressure value
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        GEOS-Chem dataset.
+    pres : int or float
+        Desired pressure value.
 
-    Returns:
-        index: int
-            Index of level in dataset that corresponds to requested pressure
-
+    Returns
+    -------
+    index : int
+        Index of level in dataset that corresponds to requested pressure.
     """
     pedge, pmid, _ = get_vert_grid(dataset)
     converted_dataset = convert_lev_to_pres(dataset, pmid, pedge)
@@ -517,22 +542,26 @@ def get_ind_of_pres(dataset, pres):
 
 def convert_lev_to_pres(dataset, pmid, pedge, lev_type='pmid'):
     """
-    Convert lev dimension to pressure in a GEOS-Chem dataset
+    Convert lev dimension to pressure in a GEOS-Chem dataset.
 
-    Args:
-        dataset: xarray Dataset
-            GEOS-Chem dataset
-        pmid: np.array
-            Midpoint pressure values
-        pedge: np.array
-            Edge pressure values
-        lev_type (optional): str
-            Denote whether lev is 'pedge' or 'pmid' if grid is not 72/73 or 47/48 levels
-            Default value: 'pmid'
+    Parameters
+    ----------
+    dataset : xarray.Dataset
+        GEOS-Chem dataset.
+    pmid : numpy.ndarray
+        Midpoint pressure values.
+    pedge : numpy.ndarray
+        Edge pressure values.
+    lev_type : str, optional
+        Denote whether lev is 'pedge' or 'pmid' if grid is not
+        72/73 or 47/48 levels.
+        Default value: 'pmid'
 
-    Returns:
-        dataset: xarray Dataset
-            Input dataset with "lev" dimension values replaced with pressure values
+    Returns
+    -------
+    dataset : xarray.Dataset
+        Input dataset with "lev" dimension values replaced with
+        pressure values.
     """
 
     if dataset.sizes["lev"] in (72, 47):
@@ -553,11 +582,16 @@ class VertGrid:
     """
     Class that defines a vertical grid given the Ap and Bp
     grid parameters and surface pressure.
-    
-    Args
-    AP    : list-like : Hybrid-grid A parameter
-    BP    : list-like : Hybrid-grid B parameter
-    P_sfc : float     : Surface pressure
+
+    Parameters
+    ----------
+    AP : list-like
+        Hybrid-grid A parameter (hPa).
+    BP : list-like
+        Hybrid-grid B parameter (unitless).
+    p_sfc : float, optional
+        Surface pressure in hPa.
+        Default value: 1013.25
     """
     def __init__(self, AP=None, BP=None, p_sfc=1013.25):
         if (len(AP) != len(BP)) or (AP is None):
@@ -568,10 +602,27 @@ class VertGrid:
         self.p_sfc = p_sfc
 
     def p_edge(self):
+        """
+        Compute pressure at grid cell edges.
+
+        Returns
+        -------
+        p_edge : numpy.ndarray
+            Edge pressure values (hPa) computed as AP + BP * p_sfc.
+        """
         # Calculate pressure edges using eta coordinate
         return self.AP + self.BP * self.p_sfc
 
     def p_mid(self):
+        """
+        Compute pressure at grid cell midpoints.
+
+        Returns
+        -------
+        p_mid : numpy.ndarray
+            Midpoint pressure values (hPa) computed as the average
+            of adjacent edge pressure values.
+        """
         p_edge = self.p_edge()
         return (p_edge[1:] + p_edge[:-1]) / 2.0
 
@@ -588,27 +639,27 @@ def make_grid_ll(llres, in_extent=None, out_extent=None):
     """
     Creates a lat/lon grid description.
 
-    Args:
-        llres: str
-            lat/lon resolution in 'latxlon' format (e.g. '4x5')
+    Parameters
+    ----------
+    llres : str
+        Lat/lon resolution in 'latxlon' format (e.g. '4x5').
+    in_extent : list of float, optional
+        Describes minimum and maximum latitude and longitude of
+        initial grid in the format [minlon, maxlon, minlat, maxlat].
+        Default value: [-180, 180, -90, 90]
+    out_extent : list of float, optional
+        Describes minimum and maximum latitude and longitude of
+        target grid in the format [minlon, maxlon, minlat, maxlat].
+        Needed to trim extent of input data.
+        Default value: [] (assumes value of in_extent)
 
-    Keyword Args (optional):
-        in_extent: list[float, float, float, float]
-            Describes minimum and maximum latitude and longitude of 
-            initial grid in the format [minlon, maxlon, minlat, maxlat]
-            Default value: [-180, 180, -90, 90]
-        out_extent: list[float, float, float, float]
-            Describes minimum and maximum latitude and longitude of 
-            target grid in the format [minlon, maxlon, minlat, maxlat]. 
-            Needed to trim extent of input data.
-            Default value: [] (assumes value of in_extent)
-
-    Returns:
-        llgrid: dict
-            dict grid description of format {'lat'   : lat midpoints,
-                                             'lon'   : lon midpoints,
-                                             'lat_b' : lat edges,
-                                             'lon_b' : lon edges}
+    Returns
+    -------
+    llgrid : dict
+        Dict grid description of format {'lat'   : lat midpoints,
+                                         'lon'   : lon midpoints,
+                                         'lat_b' : lat edges,
+                                         'lon_b' : lon edges}.
     """
     verify_variable_type(llres, str)
 
@@ -664,18 +715,19 @@ def make_grid_cs(csres):
     """
     Creates a cubed-sphere grid description.
 
-    Args:
-        csres: int
-            cubed-sphere resolution of target grid
+    Parameters
+    ----------
+    csres : int
+        Cubed-sphere resolution of target grid.
 
-    Returns:
-        [csgrid, csgrid_list]: list[dict, list[dict]]
-            csgrid is a dict of format {'lat'   : lat midpoints,
-                                        'lon'   : lon midpoints,
-                                        'lat_b' : lat edges,
-                                        'lon_b' : lon edges}
-            where each value has an extra face dimension of length 6.
-            csgrid_list is a list of dicts separated by face index
+    Returns
+    -------
+    csgrid : dict
+        Dict of format {'lat': lat midpoints, 'lon': lon midpoints,
+        'lat_b': lat edges, 'lon_b': lon edges} where each value has
+        an extra face dimension of length 6.
+    csgrid_list : list of dict
+        List of dicts separated by face index.
     """
 
     csgrid = csgrid_gmao(csres)
@@ -693,24 +745,25 @@ def make_grid_sg(csres, stretch_factor, target_lon, target_lat):
     """
     Creates a stretched-grid grid description.
 
-    Args:
-        csres: int
-            cubed-sphere resolution of target grid
-        stretch_factor: float
-            stretch factor of target grid
-        target_lon: float
-            target stretching longitude of target grid
-        target_lon: float
-            target stretching latitude of target grid
+    Parameters
+    ----------
+    csres : int
+        Cubed-sphere resolution of target grid.
+    stretch_factor : float
+        Stretch factor of target grid.
+    target_lon : float
+        Target stretching longitude of target grid.
+    target_lat : float
+        Target stretching latitude of target grid.
 
-    Returns:
-        [csgrid, csgrid_list]: list[dict, list[dict]]
-            csgrid is a dict of format {'lat'   : lat midpoints,
-                                        'lon'   : lon midpoints,
-                                        'lat_b' : lat edges,
-                                        'lon_b' : lon edges}
-            where each value has an extra face dimension of length 6.
-            csgrid_list is a list of dicts separated by face index
+    Returns
+    -------
+    csgrid : dict
+        Dict of format {'lat': lat midpoints, 'lon': lon midpoints,
+        'lat_b': lat edges, 'lon_b': lon edges} where each value has
+        an extra face dimension of length 6.
+    csgrid_list : list of dict
+        List of dicts separated by face index.
     """
 
     csgrid = csgrid_gmao(csres, offset=0)
@@ -747,24 +800,25 @@ def calc_rectilinear_lon_edge(lon_stride, center_at_180):
 
     Parameters
     ----------
-    lon_stride: float
-        Stride length in degrees. For example, for a standard GEOS-Chem 
+    lon_stride : float
+        Stride length in degrees. For example, for a standard GEOS-Chem
         Classic 4x5 grid, lon_stride would be 5.
-    center_at_180: bool
-        Whether or not the grid should have a cell center at 180 
-        degrees (i.e. on the date line). If true, the first grid cell 
-        is centered on the date line; if false, the first grid edge is 
+    center_at_180 : bool
+        Whether or not the grid should have a cell center at 180
+        degrees (i.e. on the date line). If true, the first grid cell
+        is centered on the date line; if false, the first grid edge is
         on the date line.
 
     Returns
     -------
-    Longitudes of cell edges in degrees East.
+    lon_edge : numpy.ndarray
+        Longitudes of cell edges in degrees East.
 
     Notes
     -----
-    All values are forced to be between [-180,180]. For a grid with N cells in
-    each band, N+1 edges will be returned, with the first and last value being
-    duplicates.
+    All values are forced to be between [-180,180]. For a grid with N
+    cells in each band, N+1 edges will be returned, with the first and
+    last value being duplicates.
     """
 
     n_lon_edge = int(np.round(360.0 / lon_stride)) + 1
@@ -784,24 +838,25 @@ def calc_rectilinear_lat_edge(lat_stride, half_polar_grid):
 
     Parameters
     ----------
-    lat_stride: float
-        Stride length in degrees. For example, for a standard GEOS-Chem 
+    lat_stride : float
+        Stride length in degrees. For example, for a standard GEOS-Chem
         Classic 4x5 grid, lat_stride would be 4.
-    half_polar_grid: bool
-        Whether or not the grid should be "half-polar" (i.e. bands 
+    half_polar_grid : bool
+        Whether or not the grid should be "half-polar" (i.e. bands
         at poles are half the size). In either case the grid will start
-        and end at -/+ 90, but when half_polar_grid is True, the first 
+        and end at -/+ 90, but when half_polar_grid is True, the first
         and last bands will have a width of 1/2 the normal lat_stride.
 
     Returns
     -------
-    Latitudes of cell edges in degrees North.
+    lat_edge : numpy.ndarray
+        Latitudes of cell edges in degrees North.
 
     Notes
     -----
-    All values are forced to be between [-90,90]. For a grid with N cells in
-    each band, N+1 edges will be returned, with the first and last value being
-    duplicates.
+    All values are forced to be between [-90,90]. For a grid with N
+    cells in each band, N+1 edges will be returned, with the first and
+    last value being duplicates.
     """
 
     if half_polar_grid:
@@ -826,12 +881,15 @@ def calc_rectilinear_grid_area(lon_edge, lat_edge):
 
     Parameters
     ----------
-    lon_edge : float : Grid box longitude edges (in degrees north)
-    lat_edge : float : Grid box latitude edges (in degrees east)
+    lon_edge : numpy.ndarray
+        Grid box longitude edges (in degrees east).
+    lat_edge : numpy.ndarray
+        Grid box latitude edges (in degrees north).
 
     Returns
     -------
-    area     : float : Array of grid box areas in m2.
+    grid_area : numpy.ndarray
+        Array of grid box areas in m2.
     """
 
     # Convert from km to m
@@ -864,17 +922,23 @@ def calc_rectilinear_grid_area(lon_edge, lat_edge):
 
 
 def calc_delta_lon(lon_edge):
-    """ Compute grid cell longitude widths from an edge vector.
+    """
+    Compute grid cell longitude widths from an edge vector.
+
     Parameters
     ----------
-    lon_edge: float
+    lon_edge : numpy.ndarray
         Vector of longitude edges, in degrees East.
+
     Returns
     -------
-    Width of each cell, degrees East
+    lon_delta : numpy.ndarray
+        Width of each cell in degrees East.
+
     Notes
     -----
     Accounts for looping over the domain.
+
     Examples
     --------
     #TODO
@@ -902,10 +966,24 @@ def calc_delta_lon(lon_edge):
 
 def csgrid_gmao(res, offset=-10):
     """
-    Return cubedsphere coordinates with GMAO face orientation
+    Return cubed-sphere coordinates with GMAO face orientation.
+
     Parameters
     ----------
-    res: cubed-sphere Resolution
+    res : int
+        Cubed-sphere resolution.
+    offset : float, optional
+        Degrees to offset grid in the longitudinal direction.
+        Default value: -10
+
+    Returns
+    -------
+    grid : dict
+        Dictionary with keys 'lon', 'lat', 'lon_b', 'lat_b' containing
+        the cubed-sphere grid coordinates.
+
+    Notes
+    -----
     This function was originally written by Jiawei Zhuange and included
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
@@ -939,21 +1017,28 @@ _ASIN_INV_SQRT_3 = np.arcsin(_INV_SQRT_3)
 
 
 class CSGrid(object):
-    """Generator for cubed-sphere grid geometries.
-    CSGrid computes the latitutde and longitudes of cell centers and edges
-    on a cubed-sphere grid, providing a way to retrieve these geometries
-    on-the-fly if your model output data does not include them.
+    """
+    Generator for cubed-sphere grid geometries.
+
+    CSGrid computes the latitutde and longitudes of cell centers and
+    edges on a cubed-sphere grid, providing a way to retrieve these
+    geometries on-the-fly if your model output data does not include them.
+
     Attributes
     ----------
-    {lon,lat}_center: np.ndarray
-        lat/lon coordinates for each cell center along the cubed-sphere mesh
-    {lon,lat}_edge: np.ndarray
-        lat/lon coordinates for the midpoint of the edges separating each
+    lon_center, lat_center : numpy.ndarray
+        Lat/lon coordinates for each cell center along the cubed-sphere
+        mesh.
+    lon_edge, lat_edge : numpy.ndarray
+        Lat/lon coordinates for the midpoint of the edges separating each
         element on the cubed-sphere mesh.
-    xyz_{center,edge}: np.ndarray
-        As above, except coordinates are projected into a 3D cartesian space
-        with common origin to the original lat/lon coordinate system, assuming
-        a unit sphere.
+    xyz_center, xyz_edge : numpy.ndarray
+        As above, except coordinates are projected into a 3D cartesian
+        space with common origin to the original lat/lon coordinate
+        system, assuming a unit sphere.
+
+    Notes
+    -----
     This class was originally written by Jiawei Zhuange and included
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
@@ -962,8 +1047,9 @@ class CSGrid(object):
         """
         Parameters
         ----------
-        c: int
-            Number edges along each cubed-sphere edge.
+        c : int
+            Number of edges along each cubed-sphere edge.
+
             ======= ====================
                C    Lat/Lon Resolution
             ------- --------------------
@@ -972,13 +1058,18 @@ class CSGrid(object):
              96,90   1 deg x 1.25 deg
             192,180  0.5 deg x 0.625 deg
             384,360  0.25 deg x 0.3125 deg
-              720    0.12g deg x 0.15625 deg
-        offset: float (optional)
+              720    0.125 deg x 0.15625 deg
+            ======= ====================
+
+        offset : float, optional
             Degrees to offset the first faces' edge in the latitudinal
-            direction. If not passed, then the western edge of the first face
-            will align with the prime meridian.
-       This function was originally written by Jiawei Zhuange and included
-       in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
+            direction. If not passed, then the western edge of the first
+            face will align with the prime meridian.
+
+        Notes
+        -----
+        This function was originally written by Jiawei Zhuange and included
+        in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
         """
         self.c = c
         self.delta_y = 2. * _ASIN_INV_SQRT_3 / c
@@ -1254,9 +1345,25 @@ class CSGrid(object):
 
 
 def latlon_to_cartesian(lon, lat):
-    """ Convert latitude/longitude coordinates along the unit sphere to cartesian
-    coordinates defined by a vector pointing from the sphere's center to its
-    surface.
+    """
+    Convert latitude/longitude coordinates along the unit sphere to
+    cartesian coordinates defined by a vector pointing from the sphere's
+    center to its surface.
+
+    Parameters
+    ----------
+    lon : float
+        Longitude coordinate in radians.
+    lat : float
+        Latitude coordinate in radians.
+
+    Returns
+    -------
+    x, y, z : float
+        Cartesian coordinates on the unit sphere.
+
+    Notes
+    -----
     This function was originally written by Jiawei Zhuange and included
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
@@ -1272,8 +1379,34 @@ vec_latlon_to_cartesian = np.vectorize(latlon_to_cartesian)
 
 
 def cartesian_to_latlon(x, y, z, ret_xyz=False):
-    """ Convert a cartesian coordinate to latitude/longitude coordinates.
+    """
+    Convert a cartesian coordinate to latitude/longitude coordinates.
     Optionally return the original cartesian coordinate as a tuple.
+
+    Parameters
+    ----------
+    x : float
+        Cartesian x-coordinate.
+    y : float
+        Cartesian y-coordinate.
+    z : float
+        Cartesian z-coordinate.
+    ret_xyz : bool, optional
+        If True, also return the normalized cartesian coordinate vector.
+        Default value: False
+
+    Returns
+    -------
+    lon : float
+        Longitude in radians.
+    lat : float
+        Latitude in radians.
+    xyz : numpy.ndarray, optional
+        Normalized cartesian coordinate vector. Only returned if
+        ret_xyz is True.
+
+    Notes
+    -----
     This function was originally written by Jiawei Zhuange and included
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
@@ -1303,9 +1436,28 @@ vec_cartesian_to_latlon = np.vectorize(cartesian_to_latlon)
 
 
 def spherical_to_cartesian(theta, phi, r=1):
-    """ Convert spherical coordinates in the form (theta, phi[, r]) to
+    """
+    Convert spherical coordinates in the form (theta, phi[, r]) to
     cartesian, with the origin at the center of the original spherical
     coordinate system.
+
+    Parameters
+    ----------
+    theta : float
+        Azimuthal angle in radians.
+    phi : float
+        Polar angle in radians.
+    r : float, optional
+        Radius.
+        Default value: 1
+
+    Returns
+    -------
+    x, y, z : float
+        Cartesian coordinates.
+
+    Notes
+    -----
     This function was originally written by Jiawei Zhuange and included
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
@@ -1319,9 +1471,31 @@ vec_spherical_to_cartesian = np.vectorize(spherical_to_cartesian)
 
 
 def cartesian_to_spherical(x, y, z):
-    """ Convert cartesian coordinates to spherical in the form
+    """
+    Convert cartesian coordinates to spherical in the form
     (theta, phi[, r]) with the origin remaining at the center of the
     original spherical coordinate system.
+
+    Parameters
+    ----------
+    x : float
+        Cartesian x-coordinate.
+    y : float
+        Cartesian y-coordinate.
+    z : float
+        Cartesian z-coordinate.
+
+    Returns
+    -------
+    theta : float
+        Azimuthal angle in radians.
+    phi : float
+        Polar angle in radians.
+    r : float
+        Radius.
+
+    Notes
+    -----
     This function was originally written by Jiawei Zhuange and included
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
@@ -1341,11 +1515,39 @@ vec_cartesian_to_spherical = np.vectorize(cartesian_to_spherical)
 
 
 def rotate_sphere_3d(theta, phi, r, rot_ang, rot_axis='x'):
-    """ Rotate a spherical coordinate in the form (theta, phi[, r])
-    about the indicating axis, 'rot_axis'.
+    """
+    Rotate a spherical coordinate in the form (theta, phi[, r])
+    about the indicated axis, rot_axis.
+
     This method accomplishes the rotation by projecting to a
     cartesian coordinate system and performing a solid body rotation
     around the requested axis.
+
+    Parameters
+    ----------
+    theta : float
+        Azimuthal angle in radians.
+    phi : float
+        Polar angle in radians.
+    r : float
+        Radius.
+    rot_ang : float
+        Rotation angle in radians.
+    rot_axis : str, optional
+        Axis about which to rotate ('x', 'y', or 'z').
+        Default value: 'x'
+
+    Returns
+    -------
+    theta_new : float
+        New azimuthal angle in radians after rotation.
+    phi_new : float
+        New polar angle in radians after rotation.
+    r_new : float
+        New radius after rotation.
+
+    Notes
+    -----
     This function was originally written by Jiawei Zhuange and included
     in package cubedsphere: https://github.com/JiaweiZhuang/cubedsphere
     """
@@ -1384,29 +1586,22 @@ def get_nearest_model_data_cs(
     Returns GEOS-Chem model data (on a cubed-sphere grid) at the
     grid box closest to a given (lat, lon) location.
 
-    Args:
-    -----
+    Parameters
+    ----------
     gc_data : xarray.DataArray or xarray.Dataset
-        GEOS-Chem model data for a single variable
-
-    gc_cs_grid: xarray Dataset
+        GEOS-Chem model data for a single variable.
+    gc_cs_grid : xarray.Dataset
         Coordinate arrays defining the cubed-sphere grid.
-
     lon_value : float
-        Longitude at the location of interest
-
+        Longitude at the location of interest.
     lat_value : float
-        Latitude at the location of interest
+        Latitude at the location of interest.
+    varlist : list of str, optional
+        List of data variables to include in the output.
 
-
-    Keyword Args (optional):
-    ------------------------
-    varlist : list of str
-        List of data variables to include in the output
-
-    Returns:
-    --------
-    dataframe: pandas.DataFrame
+    Returns
+    -------
+    dataframe : pandas.DataFrame
         Model data closest to the observation site.
     """
     verify_variable_type(gc_data, (xr.DataArray, xr.Dataset))
@@ -1444,28 +1639,23 @@ def get_nearest_model_data_ll(
 
 ):
     """
-    Returns GEOS-Chem model data (on a cubed-sphere grid) at the
+    Returns GEOS-Chem model data (on a lat/lon grid) at the
     grid box closest to a given (lat, lon) location.
 
-    Args:
-    -----
+    Parameters
+    ----------
     gc_data : xarray.DataArray or xarray.Dataset
-        GEOS-Chem model data
-
+        GEOS-Chem model data.
     lon_value : float
-        Longitude at the location of interest
-
+        Longitude at the location of interest.
     lat_value : float
-        Latitude at the location of interest
+        Latitude at the location of interest.
+    varlist : list of str, optional
+        List of data variables to include in the output.
 
-    Keyword Args (optional):
-    ------------------------
-    varlist : list of str
-        List of data variables to include in the output
-
-    Returns:
-    --------
-    dataframe: pandas.DataFrame
+    Returns
+    -------
+    dataframe : pandas.DataFrame
         Model data closest to the observation site.
     """
     verify_variable_type(gc_data, (xr.DataArray, xr.Dataset))
@@ -1502,32 +1692,27 @@ def get_nearest_model_data(
         varlist=None
 ):
     """
-    Args:
-    -----
+    Returns GEOS-Chem model data at the grid box closest to a given
+    (lat, lon) location, dispatching to the appropriate function
+    depending on the grid type.
+
+    Parameters
+    ----------
     gc_data : xarray.DataArray or xarray.Dataset
-        GEOS-Chem data for a single variable
-
-    gc_cs_grid: xarray.Dataset or NoneType
-        Coordinate arrays defining the cubed-sphere grid.
-
+        GEOS-Chem data for a single variable.
     lon_value : float
-        Longitude at the location of interest
-
+        Longitude at the location of interest.
     lat_value : float
-        Latitude at the location of interest
-
-    Keyword Args (optional):
-    ------------------------
-    gc_cs_grid : xarray.Dataset
-        Datasaet with cubed-sphere grid definition.  This can be
+        Latitude at the location of interest.
+    gc_cs_grid : xarray.Dataset, optional
+        Coordinate arrays defining the cubed-sphere grid.  This can be
         obtained as the output of function gcpy.util.extract_data().
+    varlist : list of str, optional
+        List of data variables to include in the output.
 
-    varlist : list of str
-        List of data variables to include in the output
-
-    Returns:
-    --------
-    dataframe: pandas.DataFrame
+    Returns
+    -------
+    dataframe : pandas.DataFrame
         Model data closest to the observation site.
     """
     verify_variable_type(gc_data, (xr.DataArray, xr.Dataset))

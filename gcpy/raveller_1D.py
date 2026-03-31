@@ -12,7 +12,31 @@ from gcpy.grid import make_grid_cs
 
 def create_track_func(args):
     """
-    Creates the satellite track file
+    Creates a satellite track file for a cubed-sphere grid.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments with the following attributes:
+
+        cs_res : int
+            Cubed-sphere grid resolution.
+        sg_params : list of float
+            Grid stretching parameters
+            [stretch-factor, target longitude, target latitude].
+        overpass_time : str
+            Satellite overpass time in "HH:MM" format.
+        orbits_per_day : int
+            Number of satellite orbits per day.
+        direction : str
+            Direction of orbit ("ascending" or "descending").
+        o : str
+            Output filename.
+
+    Notes
+    -----
+    Writes a NETCDF4_CLASSIC file containing longitude, latitude,
+    and time coordinates sorted along the satellite track dimension.
     """
     nf = np.linspace(1, 6, 6)
     Ydim = np.linspace(1, args.cs_res, args.cs_res)
@@ -97,8 +121,45 @@ def create_track_func(args):
 def unravel_func(args):
     """
     Unpacks a satellite track file onto a cubed-sphere grid.
+
+    Parameters
+    ----------
+    args : argparse.Namespace
+        Parsed command-line arguments with the following attributes:
+
+        track : str
+            Path to the satellite track file.
+        i : str
+            Path to the input 1D diagnostic file.
+        o : str
+            Output filename.
+
+    Notes
+    -----
+    Aligns the 1D diagnostic output with the satellite track by finding
+    the optimal time shift, then unstacks the track index back onto
+    the cubed-sphere (nf, Ydim, Xdim) grid dimensions.
     """
     def time_to_time_of_day(ds, numpy_time_unit='ns'):
+        """
+        Converts the time coordinate of a dataset to time-of-day.
+
+        Parameters
+        ----------
+        ds : xarray.Dataset
+            Input dataset with a datetime-like time coordinate.
+        numpy_time_unit : str, optional
+            NumPy time unit for the timedelta conversion.
+            Default value: 'ns'
+
+        Returns
+        -------
+        ds : xarray.Dataset
+            Dataset with the time coordinate replaced by time-of-day
+            timedeltas relative to the modal date.
+        mode_date : numpy.datetime64
+            The most frequently occurring date in the time coordinate.
+        """
         # Get mode date
         (unique_dates, date_counts) = \
             np.unique(ds.time.astype('datetime64[D]'), return_counts=True)
@@ -108,6 +169,23 @@ def unravel_func(args):
         return ds.assign_coords(time=time_of_day), mode_date
 
     def find_shift(tracked_output, track_file):
+        """
+        Finds the optimal time shift to align tracked output with the
+        track file.
+
+        Parameters
+        ----------
+        tracked_output : xarray.Dataset
+            The 1D diagnostic output dataset with a time coordinate.
+        track_file : xarray.Dataset
+            The satellite track file dataset with a time coordinate.
+
+        Returns
+        -------
+        shift : int
+            The index shift that minimizes the summed absolute time
+            difference between tracked_output and track_file.
+        """
         output_time = tracked_output.time.values.astype(float) / 1e9 / 3600 % 24
         track_time = track_file.time.values.astype(float) / 1e9 / 3600 % 24
 
@@ -168,8 +246,6 @@ def unravel_func(args):
     tracked_output.assign_coords({'time': [tracked_output_date]})
 
     tracked_output.to_netcdf(args.o)
-
-
 
 
 if __name__ == '__main__':

@@ -30,33 +30,36 @@ def make_regridder_ll2ll(
         method="conservative",
 ):
     """
-    Create an xESMF regridder between two lat/lon grids
+    Create an xESMF regridder between two lat/lon grids.
 
-    Args:
-        llres_in: str
-            Resolution of input grid in format 'latxlon', e.g. '4x5'
-        llres_out: str
-            Resolution of output grid in format 'latxlon', e.g. '4x5'
+    Parameters
+    ----------
+    llres_in : str
+        Resolution of input grid in format 'latxlon', e.g. '4x5'.
+    llres_out : str
+        Resolution of output grid in format 'latxlon', e.g. '4x5'.
+    weightsdir : str, optional
+        Directory in which to create xESMF regridder NetCDF files.
+        Default value: '.'
+    reuse_weights : bool, optional
+        Set this flag to True to reuse existing xESMF regridder NetCDF files.
+        Default value: False
+    in_extent : list of float, optional
+        Describes minimum and maximum latitude and longitude of input grid
+        in the format [minlon, maxlon, minlat, maxlat].
+        Default value: GLOBAL_LL_EXTENT (i.e. [-180, 180, -90, 90])
+    out_extent : list of float, optional
+        Desired minimum and maximum latitude and longitude of output grid
+        in the format [minlon, maxlon, minlat, maxlat].
+        Default value: GLOBAL_LL_EXTENT (i.e. [-180, 180, -90, 90])
+    method : str, optional
+        Regridding method to pass to xESMF.
+        Default value: "conservative"
 
-    Keyword Args (optional):
-        weightsdir: str
-            Directory in which to create xESMF regridder NetCDF files
-            Default value: '.'
-        reuse_weights: bool
-            Set this flag to True to reuse existing xESMF regridder NetCDF files
-            Default value: False
-        in_extent: list
-            Describes minimum and maximum latitude and longitude of input grid
-            in the format [minlon, maxlon, minlat, maxlat]
-            Default value: GLOBAL_LL_EXTENT (i.e. [-180, 180, -90, 90])
-        out_extent: list
-            Desired minimum and maximum latitude and longitude of output grid
-            in the format [minlon, maxlon, minlat, maxlat]
-            Default value:  GLOBAL_LL_EXTENT (i.e. [-180, 180, -90, 90])
-
-    Returns:
-        regridder: xesmf.Regridder
-            Regridder object between the two specified grids
+    Returns
+    -------
+    regridder : xesmf.Regridder
+        Regridder object between the two specified grids.
     """
     verify_variable_type(llres_in, str)
     verify_variable_type(llres_out, str)
@@ -118,31 +121,34 @@ def make_regridder_cs2ll(
         method="conservative",
 ):
     """
-    Create an xESMF regridder from a cubed-sphere to lat/lon grid
+    Create an xESMF regridder from a cubed-sphere to lat/lon grid.
 
-    Args:
-        csres_in: int
-            Cubed-sphere resolution of input grid
-        llres_out: str
-            Resolution of output grid in format 'latxlon', e.g. '4x5'
+    Parameters
+    ----------
+    csres_in : int
+        Cubed-sphere resolution of input grid.
+    llres_out : str
+        Resolution of output grid in format 'latxlon', e.g. '4x5'.
+    weightsdir : str, optional
+        Directory in which to create xESMF regridder NetCDF files.
+        Default value: '.'
+    reuse_weights : bool, optional
+        Set this flag to True to reuse existing xESMF regridder NetCDF files.
+        Default value: True
+    sg_params : list of float, optional
+        Input grid stretched-grid parameters in the format
+        [stretch_factor, target_longitude, target_latitude].
+        Will trigger stretched-grid creation if not default values.
+        Default value: [1, 170, -90] (no stretching)
+    method : str, optional
+        Regridding method to pass to xESMF.
+        Default value: "conservative"
 
-    Keyword Args (optional):
-        weightsdir: str
-            Directory in which to create xESMF regridder NetCDF files
-            Default value: '.'
-        reuse_weights: bool
-            Set this flag to True to reuse existing xESMF regridder NetCDF files
-            Default value: False
-        sg_params: list
-            Input grid stretched-grid parameters in the format
-            [stretch_factor, target_longitude, target_latitude].
-            Will trigger stretched-grid creation if not default values.
-            Default value: [1, 170, -90] (no stretching)
-
-    Returns:
-        regridder_list: list[6 xESMF regridders]
-            list of regridder objects (one per cubed-sphere face)
-            between the two specified grids
+    Returns
+    -------
+    regridder_list : list of xesmf.Regridder
+        List of regridder objects (one per cubed-sphere face)
+        between the two specified grids.
     """
     verify_variable_type(csres_in, int)
     verify_variable_type(llres_out, str)
@@ -217,43 +223,46 @@ def make_regridder_sg2sg(
     to another cubed-sphere / stretched-grid grid.
     Stretched-grid params of 1, 170, -90 indicate no stretching.
 
-    Args:
-        csres_in: int
-            Cubed-sphere resolution of input grid
-        csres_out: int
-            Cubed-sphere resolution of output grid
+    Parameters
+    ----------
+    csres_in : int
+        Cubed-sphere resolution of input grid.
+    csres_out : int
+        Cubed-sphere resolution of output grid.
+    sf_in : float, optional
+        Stretched-grid factor of input grid.
+        Default value: 1
+    tlon_in : float, optional
+        Target longitude for stretching in input grid.
+        Default value: 170
+    tlat_in : float, optional
+        Target longitude for stretching in input grid.
+        Default value: -90
+    sf_out : float, optional
+        Stretched-grid factor of output grid.
+        Default value: 1
+    tlon_out : float, optional
+        Target longitude for stretchingg in output grid.
+        Default value: 170
+    tlat_out : float, optional
+        Target longitude for stretching in output grid.
+        Default value: -90
+    weightsdir : str, optional
+        Directory in which to create xESMF regridder NetCDF files.
+        Default value: '.'
+    verbose : bool, optional
+        Set this flag to True to enable printing when output faces do not
+        intersect input faces when regridding.
+        Default value: True
+    method : str, optional
+        Regridding method to pass to xESMF.
+        Default value: "conservative"
 
-    Keyword Args (optional):
-        sf_in: float
-            Stretched-grid factor of input grid
-            Default value: 1
-        tlon_in: float
-            Target longitude for stretching in input grid
-            Default value: 170
-        tlat_in: float
-            Target longitude for stretching in input grid
-            Default value: -90
-        sf_out: float
-            Stretched-grid factor of output grid
-            Default value: 1
-        tlon_out: float
-            Target longitude for stretchingg in output grid
-            Default value: 170
-        tlat_out: float
-            Target longitude for stretching in output grid
-            Default value: -90
-        weightsdir: str
-            Directory in which to create xESMF regridder NetCDF files
-            Default value: '.'
-        verbose: bool
-            Set this flag to True to enable printing when output faces do not
-            intersect input faces when regridding
-            Default value: True
-
-    Returns:
-        regridder_list: list[6 xESMF regridders]
-            list of regridder objects (one per cubed-sphere face)
-            between the two specified grids
+    Returns
+    -------
+    regridder_list : list of xesmf.Regridder
+        List of regridder objects (one per cubed-sphere face)
+        between the two specified grids.
     """
     verify_variable_type(csres_in, int)
     verify_variable_type(csres_out, int)
@@ -317,31 +326,34 @@ def make_regridder_ll2sg(
         method="conservative"
 ):
     """
-    Create an xESMF regridder from a lat/lon to a cubed-sphere grid
+    Create an xESMF regridder from a lat/lon to a cubed-sphere grid.
 
-    Args:
-        llres_in: str
-            Resolution of input grid in format 'latxlon', e.g. '4x5'
-        csres_out: int
-            Cubed-sphere resolution of output grid
+    Parameters
+    ----------
+    llres_in : str
+        Resolution of input grid in format 'latxlon', e.g. '4x5'.
+    csres_out : int
+        Cubed-sphere resolution of output grid.
+    weightsdir : str, optional
+        Directory in which to create xESMF regridder NetCDF files.
+        Default value: '.'
+    reuse_weights : bool, optional
+        Set this flag to True to reuse existing xESMF regridder NetCDF files.
+        Default value: True
+    sg_params : list of float, optional
+        Output grid stretched-grid parameters in the format
+        [stretch_factor, target_longitude, target_latitude].
+        Will trigger stretched-grid creation if not default values.
+        Default value: NO_STRETCH_SG_PARAMS (i.e. [1, 170, -90])
+    method : str, optional
+        Regridding method to pass to xESMF.
+        Default value: "conservative"
 
-    Keyword Args (optional):
-        weightsdir: str
-            Directory in which to create xESMF regridder NetCDF files
-            Default value: '.'
-        reuse_weights: bool
-            Set this flag to True to reuse existing xESMF regridder NetCDF files
-            Default value: False
-        sg_params: list
-            Output grid stretched-grid parameters in the format
-            [stretch_factor, target_longitude, target_latitude].
-            Will trigger stretched-grid creation if not default values.
-            Default value: NO_STRETCH_SG_PARAMS (i.e. [1, 170, -90])
-
-    Returns:
-        regridder_list: list[6 xESMF regridders]
-            list of regridder objects (one per cubed-sphere face)
-            between the two specified grids
+    Returns
+    -------
+    regridder_list : list of xesmf.Regridder
+        List of regridder objects (one per cubed-sphere face)
+        between the two specified grids.
     """
     verify_variable_type(llres_in, str)
     verify_variable_type(csres_out, int)
@@ -414,54 +426,76 @@ def create_regridders(
     Follows decision logic needed for plotting functions.
     Originally code from compare_single_level and compare_zonal_mean.
 
-    Args:
-        refds: xarray.Dataset or xarray.DataArray
-            Input data
-        devds: xarray.Dataset or xarray.DataArray
-            Output data
+    Parameters
+    ----------
+    refds : xarray.Dataset or xarray.DataArray
+        Input (reference) data.
+    devds : xarray.Dataset or xarray.DataArray
+        Output (development) data.
+    weightsdir : str, optional
+        Directory in which to create xESMF regridder NetCDF files.
+        Default value: '.'
+    reuse_weights : bool, optional
+        Set this flag to True to reuse existing xESMF regridder NetCDF files.
+        Default value: True
+    cmpres : int or str, optional
+        Specific target resolution for comparison grid used in difference
+        and ratio plots.
+        Default value: None (will follow logic chain below)
+    zm : bool, optional
+        Set this flag to True if regridders will be used in zonal mean
+        plotting.
+        Default value: False
+    sg_ref_params : list of float, optional
+        Ref grid stretched-grid parameters in the format
+        [stretch_factor, target_longitude, target_latitude].
+        Default value: NO_STRETCH_SG_PARAMS (no stretching)
+    sg_dev_params : list of float, optional
+        Dev grid stretched-grid parameters in the format
+        [stretch_factor, target_longitude, target_latitude].
+        Default value: NO_STRETCH_SG_PARAMS (no stretching)
 
-    Keyword Args (optional):
-        weightsdir: str
-            Directory in which to create xESMF regridder NetCDF files
-            Default value: '.'
-        reuse_weights: bool
-            Set this flag to True to reuse existing xESMF regridder
-            NetCDF files.  Default value: False
-        cmpres: int or str
-            Specific target resolution for comparison grid used in
-            difference and ratio plots.  Default value: None (will
-            follow logic chain below)
-        zm: bool
-            Set this flag to True if regridders will be used in zonal mean
-            plotting.  Default value: False
-        sg_ref_params: list[float, float, float]
-            (stretch_factor, target_longitude, target_latitude)
-            Ref grid stretched-grid parameters in the format
-            [stretch_factor, target_longitude, target_latitude].
-            Default value: NO_STRETCH_SG_PARAMS (no stretching)
-        sg_dev_params: list[float, float, float]
-            (stretch_factor, target_longitude, target_latitude)
-            Dev grid stretched-grid parameters in the format
-            [stretch_factor, target_longitude, target_latitude].
-            Default value: NO_STRETCH_SG_PARAMS (no stretching)
+    Returns
+    -------
+    list
+        A list containing the following elements, in order:
 
-    Returns:
-        list of many different quantities needed for regridding in plotting functions
-            refres, devres, cmpres: bool
-                 Resolution of a dataset grid
-            refgridtype, devgridtype, cmpgridtype: str
-                 Gridtype of a dataset ('ll' or 'cs')
-            regridref, regriddev, regridany: bool
-                 Whether to regrid a dataset
-            refgrid, devgrid, cmpgrid: dict
-                 Grid definition of a dataset
-            refregridder, devregridder: xESMF regridder
-                 Regridder object between refgrid or devgrid and cmpgrid
-                 (will be None if input grid is not lat/lon)
-            refregridder_list, devregridder_list: list[6 xESMF regridders]
-                 List of regridder objects for each face between refgrid
-                 or devgrid and cmpgrid (will be None if input grid is
-                 not cubed-sphere)
+        refres : bool
+            Resolution of the ref dataset grid.
+        refgridtype : str
+            Grid type of the ref dataset ('ll' or 'cs').
+        devres : bool
+            Resolution of the dev dataset grid.
+        devgridtype : str
+            Grid type of the dev dataset ('ll' or 'cs').
+        cmpres : bool
+            Resolution of the comparison grid.
+        cmpgridtype : str
+            Grid type of the comparison grid ('ll' or 'cs').
+        regridref : bool
+            Whether the ref dataset needs regridding.
+        regriddev : bool
+            Whether the dev dataset needs regridding.
+        regridany : bool
+            Whether any dataset needs regridding.
+        refgrid : dict
+            Grid definition of the ref dataset.
+        devgrid : dict
+            Grid definition of the dev dataset.
+        cmpgrid : dict
+            Grid definition of the comparison grid.
+        refregridder : xesmf.Regridder or None
+            Regridder between refgrid and cmpgrid (None if ref grid
+            is not lat/lon).
+        devregridder : xesmf.Regridder or None
+            Regridder between devgrid and cmpgrid (None if dev grid
+            is not lat/lon).
+        refregridder_list : list of xesmf.Regridder or None
+            List of regridder objects for each face between refgrid and
+            cmpgrid (None if ref grid is not cubed-sphere).
+        devregridder_list : list of xesmf.Regridder or None
+            List of regridder objects for each face between devgrid and
+            cmpgrid (None if dev grid is not cubed-sphere).
     """
     verify_variable_type(refds, (xr.Dataset, xr.DataArray))
     verify_variable_type(devds, (xr.Dataset, xr.DataArray))
@@ -683,47 +717,48 @@ def regrid_comparison_data(
         cmpmaxlon_ind=-2,
         nlev=1):
     """
-    Regrid comparison datasets to cubed-sphere (including stretched-grid) or lat/lon format.
+    Regrid comparison datasets to cubed-sphere (including
+    stretched-grid) or lat/lon format.
 
-    Args:
-        data: xarray DataArray
-            DataArray containing a GEOS-Chem data variable
-        res: int
-            Cubed-sphere resolution for comparison grid
-        regrid: bool
-            Set to true to regrid dataset
-        regridder: xESMF regridder
-            Regridder between the original data grid and the comparison grid
-        regridder_list: list(xESMF regridder)
-            List of regridders for cubed-sphere data
-        global_cmp_grid: xarray DataArray
-            Comparison grid
-        gridtype: str
-            Type of input data grid (either 'll' or 'cs')
-        cmpgridtype: str
-            Type of input data grid (either 'll' or 'cs')
+    Parameters
+    ----------
+    data : xarray.DataArray
+        DataArray containing a GEOS-Chem data variable.
+    res : int
+        Cubed-sphere resolution for comparison grid.
+    regrid : bool
+        Set to True to regrid dataset.
+    regridder : xesmf.Regridder
+        Regridder between the original data grid and the comparison grid.
+    regridder_list : list of xesmf.Regridder
+        List of regridders for cubed-sphere data.
+    global_cmp_grid : xarray.DataArray
+        Comparison grid.
+    gridtype : str
+        Type of input data grid (either 'll' or 'cs').
+    cmpgridtype : str
+        Type of comparison data grid (either 'll' or 'cs').
+    cmpminlat_ind : int, optional
+        Index of minimum latitude extent for comparison grid.
+        Default value: 0
+    cmpmaxlat_ind : int, optional
+        Index (minus 1) of maximum latitude extent for comparison grid.
+        Default value: -2
+    cmpminlon_ind : int, optional
+        Index of minimum longitude extent for comparison grid.
+        Default value: 0
+    cmpmaxlon_ind : int, optional
+        Index (minus 1) of maximum longitude extent for comparison grid.
+        Default value: -2
+    nlev : int, optional
+        Number of levels of input grid and comparison grid.
+        Default value: 1
 
-    Keyword Args (optional):
-        cmpminlat_ind: int
-            Index of minimum latitude extent for comparison grid
-            Default value: 0
-        cmpmaxlat_ind: int
-            Index (minus 1) of maximum latitude extent for comparison grid
-            Default value: -2
-        cmpminlon_ind: int
-            Index of minimum longitude extent for comparison grid
-            Default value: 0
-        cmpmaxlon_ind: int
-            Index (minus 1) of maximum longitude extent for comparison grid
-            Default value: -2
-        nlev: int
-            Number of levels of input grid and comparison grid
-            Default value: 1
-
-    Returns:
-        data: xarray DataArray
-            Original DataArray regridded to comparison grid
-            (including resolution and extent changes)
+    Returns
+    -------
+    data : xarray.DataArray
+        Original DataArray regridded to comparison grid
+        (including resolution and extent changes).
     """
 
     if regrid:
@@ -816,19 +851,21 @@ def reformat_dims(
 ):
     """
     Reformat dimensions of a cubed-sphere / stretched-grid grid
-    between different GCHP formats
+    between different GCHP formats.
 
-    Args:
-        ds: xarray Dataset
-             Dataset to be reformatted
-        format: str
-             Format from or to which to reformat ('checkpoint' or 'diagnostic')
-        towards_common: bool
-             Set this flag to True to move towards a common dimension format
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset to be reformatted.
+    format : str
+        Format from or to which to reformat ('checkpoint' or 'diagnostic').
+    towards_common : bool
+        Set this flag to True to move towards a common dimension format.
 
-    Returns:
-        ds: xarray Dataset
-             Original dataset with reformatted dimensions
+    Returns
+    -------
+    ds : xarray.Dataset
+        Original dataset with reformatted dimensions.
     """
     def unravel_checkpoint_lat(ds_in):
         if isinstance(ds_in, xr.Dataset):
@@ -924,11 +961,22 @@ def sg_hash(
     """
     Creates a SHA-1 hash based on stretched-grid parameters.
 
-    Args:
-    cs_res         : int   : Number of cells along one stretched grid face
-    stretch_factor : float : Stretch factor (unitless)
-    target_lat     : float : Target latitude (degrees)
-    target_lon     : float : Target longitude (degrees)
+    Parameters
+    ----------
+    cs_res : int
+        Number of cells along one stretched grid face.
+    stretch_factor : float
+        Stretch factor (unitless).
+    target_lat : float
+        Target latitude (degrees).
+    target_lon : float
+        Target longitude (degrees).
+
+    Returns
+    -------
+    hash_str : str
+        7-character hexadecimal hash string derived from the
+        stretched-grid parameters.
     """
     return hashlib.sha256(
         f'cs={cs_res},sf={stretch_factor:.5f},tx={target_lon:.5f},ty={target_lat:.5f}'.encode()
@@ -948,32 +996,35 @@ def regrid_vertical_datasets(
     the vertical grid of one of the datasets or an entirely different
     vertical grid.
 
-    Args:
-        ref: xarray.Dataset
-            First dataset
-        dev: xarray.Dataset
-            Second dataset
-        target_grid_choice (optional): str
-            Will regrid to the chosen dataset among the two datasets
-            unless target_vert_params is provided
-            Default value: 'ref'
-        ref_vert_params (optional): list(list, list) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
-            Needed if ref grid is not 47 or 72 levels
-            Default value: None
-        dev_vert_params (optional): list(list, list) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
-            Needed if dev grid is not 47 or 72 levels
-            Default value: None
-        target_vert_params (optional): list(list, list) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
-            Will override target_grid_choice as target grid
-            Default value: None
-    Returns:
-        new_ref: xarray.Dataset
-            First dataset, possibly regridded to a new vertical grid
-        new_dev: xarray.Dataset
-            Second dataset, possibly regridded to a new vertical grid
+    Parameters
+    ----------
+    ref : xarray.Dataset
+        First dataset.
+    dev : xarray.Dataset
+        Second dataset.
+    target_grid_choice : str, optional
+        Will regrid to the chosen dataset among the two datasets
+        unless target_vert_params is provided.
+        Default value: 'ref'
+    ref_vert_params : list of list-like, optional
+        Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
+        Needed if ref grid is not 47 or 72 levels.
+        Default value: None
+    dev_vert_params : list of list-like, optional
+        Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
+        Needed if dev grid is not 47 or 72 levels.
+        Default value: None
+    target_vert_params : list of list-like, optional
+        Hybrid grid parameter A in hPa and B (unitless) in [AP, BP] format.
+        Will override target_grid_choice as target grid.
+        Default value: None
+
+    Returns
+    -------
+    new_ref : xarray.Dataset
+        First dataset, possibly regridded to a new vertical grid.
+    new_dev : xarray.Dataset
+        Second dataset, possibly regridded to a new vertical grid.
     """
 
     # Get mid-point pressure and edge pressures for this grid
@@ -1050,23 +1101,28 @@ def regrid_vertical_datasets(
 
 def regrid_vertical(src_data_3d, xmat_regrid, target_levs=None):
     """
-    Performs vertical regridding using a sparse regridding matrix
+    Performs vertical regridding using a sparse regridding matrix.
+
+    Parameters
+    ----------
+    src_data_3d : xarray.DataArray or numpy.ndarray
+        Data to be regridded. The first dimension is assumed to be vertical.
+    xmat_regrid : scipy.sparse.coo_matrix
+        Regridding matrix from input data grid to target grid.
+    target_levs : list, optional
+        Values for Z coordinate of returned data (if returned data
+        is of type xr.DataArray).
+        Default value: None
+
+    Returns
+    -------
+    out_data : xarray.DataArray or numpy.ndarray
+        Data regridded to target grid.
+
+    Notes
+    -----
     This function was originally written by Sebastian Eastham and included
     in package gcgridobj: https://github.com/sdeastham/gcgridobj
-
-    Args:
-        src_data_3d: xarray DataArray or numpy array
-            Data to be regridded
-        xmat_regrid: sparse scipy coordinate matrix
-            Regridding matrix from input data grid to target grid
-        target_levs (optional): list
-            Values for Z coordinate of returned data (if returned data
-            is of type xr.DataArray)
-            Default value: None
-
-    Returns:
-        out_data: xarray DataArray or numpy array
-            Data regridded to target grid
     """
 
     # Assumes that the FIRST dimension of the input data is vertical
@@ -1138,18 +1194,23 @@ def regrid_vertical(src_data_3d, xmat_regrid, target_levs=None):
 def gen_xmat(p_edge_from, p_edge_to):
     """
     Generates regridding matrix from one vertical grid to another.
+
+    Parameters
+    ----------
+    p_edge_from : numpy.ndarray
+        Edge pressures of the input grid.
+    p_edge_to : numpy.ndarray
+        Edge pressures of the target grid.
+
+    Returns
+    -------
+    xmat : scipy.sparse.coo_matrix
+        Regridding matrix from input grid to target grid.
+
+    Notes
+    -----
     This function was originally written by Sebastian Eastham and included
     in package gcgridobj: https://github.com/sdeastham/gcgridobj
-
-    Args:
-        p_edge_from: numpy array
-            Edge pressures of the input grid
-        p_edge_to: numpy array
-            Edge pressures of the target grid
-
-    Returns:
-        xmat: sparse scipy coordinate matrix
-            Regridding matrix from input grid to target grid
     """
     n_from = len(p_edge_from) - 1
     n_to = len(p_edge_to) - 1
