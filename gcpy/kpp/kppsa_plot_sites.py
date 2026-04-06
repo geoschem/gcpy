@@ -9,7 +9,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 import matplotlib.pyplot as plt
 from gcpy.util import verify_variable_type
 from gcpy.kpp.kppsa_utils import \
-    kppsa_get_file_list,  kppsa_get_unique_site_names,\
+    kppsa_get_file_list, kppsa_get_unique_site_names, \
     kppsa_plot_one_page, kppsa_read_csv_files
 
 
@@ -22,16 +22,33 @@ def kppsa_plot_species_at_sites(
         pdfname,
 ):
     """
-    Creates vertical profile plots of a given species
-    from KPP-Standalone box model output.
+    Creates vertical profile plots of a given species from
+    KPP-Standalone box model output.
 
-    Args
-    ref_file_list : list : KPP-Standalone log files for "Ref" version
-    ref_label     : str  : Label for the "Ref" version
-    dev_file_list : list : KPP-Standalone log files for "Dev" version
-    dev_label     : str  : Label for the "Dev" version
-    species       : str  : Name of the species to plot
-    pdfname       : str  : Name of the output PDF file
+    Parameters
+    ----------
+    ref_file_list : list of str
+        Paths to KPP-Standalone log files for the ``Ref`` version.
+    ref_label : str
+        Descriptive label for the ``Ref`` version, used in plot
+        titles and legends.
+    dev_file_list : list of str
+        Paths to KPP-Standalone log files for the ``Dev`` version.
+    dev_label : str
+        Descriptive label for the ``Dev`` version, used in plot
+        titles and legends.
+    species : str
+        Name of the species to plot.
+    pdfname : str
+        Path and name of the output PDF file. A ``.pdf`` extension
+        will be appended if not already present.
+
+    Notes
+    -----
+    Sites are sorted from north to south. Plots are arranged
+    ``3 rows × 2 columns`` per page. The seaborn ``darkgrid`` style
+    is applied during plotting and reset to ``default`` afterwards
+    to avoid affecting other plotting scripts.
     """
     verify_variable_type(ref_file_list, list)
     verify_variable_type(ref_label, str)
@@ -49,8 +66,8 @@ def kppsa_plot_species_at_sites(
 
     # Figure setup
     plt.style.use("seaborn-v0_8-darkgrid")
-    rows_per_page = 3
-    cols_per_page = 2
+    rows_per_page  = 3
+    cols_per_page  = 2
     plots_per_page = rows_per_page * cols_per_page
 
     # Open the plot as a PDF document
@@ -84,17 +101,37 @@ def kppsa_plot_species_at_sites(
 
 def main():
     """
-    Parses arguments from the command line and calls
-    kppsa_plot_species_at_sites.
+    Parses command-line arguments and calls
+    :func:`kppsa_plot_species_at_sites`.
 
-    Command-line arguments
-    --refdir   : Folder with KPP-Standalone output from Ref model
-    --reflabel : Plot label for the Ref model
-    --devdir   : Folder with KPP-Standalone output from Dev model
-    --devlabel : Plot label for the Dev model
-    --pattern  : Look for filenames matching this pattern
-    --species  : Species to plot
-    --pdfname  : Name of the PDF file to be created
+    Command-line Arguments
+    ----------------------
+    --refdir : str
+        Folder containing KPP-Standalone output from the Ref model.
+    --reflabel : str, optional
+        Plot label for the Ref model.
+        Default: ``"Ref"``
+    --devdir : str
+        Folder containing KPP-Standalone output from the Dev model.
+    --devlabel : str, optional
+        Plot label for the Dev model.
+        Default: ``"Dev"``
+    --pattern : str, optional
+        Glob pattern used to match KPP-Standalone log filenames.
+    --species : str
+        Name of the species to plot.
+    --pdfname : str, optional
+        Name of the PDF file to be created.
+        Default: ``"kppsa_output.pdf"``
+
+    Raises
+    ------
+    ValueError
+        If no Ref files matching ``--pattern`` are found in
+        ``--refdir``.
+    ValueError
+        If no Dev files matching ``--pattern`` are found in
+        ``--devdir``.
     """
     # Tell the parser which arguments to look for
     parser = argparse.ArgumentParser(
@@ -127,7 +164,7 @@ def main():
         metavar="DEVLABEL",
         type=str,
         required=False,
-        help="Descriptive label for the Ref data",
+        help="Descriptive label for the Dev data",
         default="Dev"
     )
     parser.add_argument(
@@ -169,7 +206,7 @@ def main():
         args.devdir,
         args.pattern,
     )
-    if len(ref_file_list) == 0:
+    if len(dev_file_list) == 0:
         msg = "Could not find any files matching {pattern} for Dev!"
         raise ValueError(msg)
 
@@ -182,6 +219,7 @@ def main():
         args.species,
         args.pdfname,
     )
+
 
 if __name__ == '__main__':
     main()

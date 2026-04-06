@@ -27,26 +27,27 @@ def convert_lon(
     """
     Convert longitudes from -180..180 to 0..360, or vice-versa.
 
-    Args:
-        data: DataArray or Dataset
-             The container holding the data to be converted; the dimension
-             indicated by 'dim' must be associated with this container
+    Parameters
+    ----------
+    data : xarray DataArray or Dataset
+        The container holding the data to be converted; the dimension
+        indicated by 'dim' must be associated with this container.
+    dim : str, optional
+        Name of dimension holding the longitude coordinates.
+        Default value: 'lon'
+    fmt : str, optional
+        Control whether or not to shift from -180..180 to 0..360
+        ('pacific') or from 0..360 to -180..180 ('atlantic').
+        Default value: 'atlantic'
+    neg_dateline : bool, optional
+        If True, then the international dateline is set to -180
+        instead of 180.
+        Default value: True
 
-    Keyword Args (optional):
-        dim: str
-             Name of dimension holding the longitude coordinates
-             Default value: 'lon'
-        format: str
-             Control whether or not to shift from -180..180 to 0..360 (
-             ('pacific') or from 0..360 to -180..180 ('atlantic')
-             Default value: 'atlantic'
-        neg_dateline: logical
-             If True, then the international dateline is set to -180
-             instead of 180.
-             Default value: True
-
-    Returns:
-        data, with dimension 'dim' altered according to conversion rule
+    Returns
+    -------
+    data : xarray DataArray or Dataset
+        Data with dimension 'dim' altered according to conversion rule.
     """
     verify_variable_type(data, (xr.DataArray, xr.Dataset))
 
@@ -96,18 +97,21 @@ def get_emissions_varnames(
     Will return a list of emissions diagnostic variable names that
     contain a particular search string.
 
-    Args:
-        commonvars: list of strs
-            A list of commmon variable names from two data sets.
-            (This can be obtained with method gcpy.util.compare_varnames)
-        template: str
-            String template for matching variable names corresponding
-            to emission diagnostics by sector
-            Default Value: None
-    Returns:
-        varnames: list of strs
-            A list of variable names corresponding to emission
-            diagnostics for a given species and sector
+    Parameters
+    ----------
+    commonvars : list of str
+        A list of common variable names from two data sets.
+        (This can be obtained with method gcpy.util.compare_varnames)
+    template : str, optional
+        String template for matching variable names corresponding
+        to emission diagnostics by sector.
+        Default value: None
+
+    Returns
+    -------
+    varnames : list of str
+        A list of variable names corresponding to emission
+        diagnostics for a given species and sector.
     """
 
     # Make sure the commonvars list has at least one element
@@ -131,20 +135,23 @@ def create_display_name(
     Converts a diagnostic name to a more easily digestible name
     that can be used as a plot title or in a table of totals.
 
-    Args:
-        diagnostic_name: str
-            Name of the diagnostic to be formatted
+    Parameters
+    ----------
+    diagnostic_name : str
+        Name of the diagnostic to be formatted.
 
-    Returns:
-        display_name: str
-            Formatted name that can be used as plot titles or in tables
-            of emissions totals.
+    Returns
+    -------
+    display_name : str
+        Formatted name that can be used as plot titles or in tables
+        of emissions totals.
 
-    Remarks:
-        Assumes that diagnostic names will start with either "Emis"
-        (for emissions by category) or "Inv" (for emissions by inventory).
-        This should be an OK assumption to make since this routine is
-        specifically geared towards model benchmarking.
+    Notes
+    -----
+    Assumes that diagnostic names will start with either "Emis"
+    (for emissions by category) or "Inv" (for emissions by inventory).
+    This should be an OK assumption to make since this routine is
+    specifically geared towards model benchmarking.
     """
 
     # Initialize
@@ -181,26 +188,29 @@ def format_number_for_table(
     Returns a format string for use in the "print_totals" routine.
     If the number is greater than a maximum threshold or smaller
     than a minimum threshold, then use scientific notation format.
-    Otherwise use floating-piont format.
+    Otherwise use floating-point format.
 
     Special case: do not convert 0.0 to exponential notation.
 
-    Args:
-    -----
+    Parameters
+    ----------
     number : float
-        Number to be printed
-
-    max_thresh, min_thresh: float
+        Number to be printed.
+    max_thresh : float, optional
         If |number| > max_thresh, use scientific notation.
-        If |number| < min_thresh, use scientific notation
+        Default value: 1.0e8
+    min_thresh : float, optional
+        If |number| < min_thresh, use scientific notation.
+        Default value: 1.0e-6
+    f_fmt : str, optional
+        The default floating point format string.
+        Default value: '18.6f'
+    e_fmt : str, optional
+        The default scientific notation format string.
+        Default value: '18.8e'
 
-    f_fmt, e_fmt : str
-        The default floating point string and default scientific
-        notation string.
-        Default values: 18.6f, 18.6e
-
-    Returns:
-    --------
+    Returns
+    -------
     fmt_str : str
         Formatted string that can be inserted into the print
         statement in print_totals.
@@ -226,25 +236,34 @@ def print_totals(
     Computes and prints Ref and Dev totals (as well as the difference
     Dev - Ref) for two xarray DataArray objects.
 
-    Args:
-        ref: xarray DataArray
-            The first DataArray to be compared (aka "Reference")
-        dev: xarray DataArray
-            The second DataArray to be compared (aka "Development")
-        ofile: file
-            File object denoting a text file where output will be directed.
+    Parameters
+    ----------
+    ref : xarray DataArray
+        The first DataArray to be compared (aka "Reference").
+    dev : xarray DataArray
+        The second DataArray to be compared (aka "Development").
+    ofile : file
+        File object denoting a text file where output will be directed.
+    diff_list : list
+        List to which species names with nonzero differences will
+        be appended.
+    masks : dict of xarray DataArray, optional
+        Dictionary containing the tropospheric mask arrays for Ref
+        and Dev.  If this keyword argument is passed, then
+        print_totals will print tropospheric totals.
+        Default value: None (i.e. print whole-atmosphere totals)
 
-    Keyword Args (optional):
-        masks: dict of xarray DataArray
-            Dictionary containing the tropospheric mask arrays
-            for Ref and Dev.  If this keyword argument is passed,
-            then print_totals will print tropospheric totals.
-            Default value: None (i.e. print whole-atmosphere totals)
+    Returns
+    -------
+    diff_list : list
+        Updated list with species names appended where differences
+        were found.
 
-    Remarks:
-        This is an internal method.  It is meant to be called from method
-        create_total_emissions_table or create_global_mass_table instead of
-        being called directly.
+    Notes
+    -----
+    This is an internal method.  It is meant to be called from method
+    create_total_emissions_table or create_global_mass_table instead of
+    being called directly.
     """
 
     # ==================================================================
@@ -358,24 +377,23 @@ def add_bookmarks_to_pdf(
     """
     Adds bookmarks to an existing PDF file.
 
-    Args:
-        pdfname: str
-            Name of an existing PDF file of species or emission plots
-            to which bookmarks will be attached.
-        varlist: list
-            List of variables, which will be used to create the
-            PDF bookmark names.
-
-    Keyword Args (optional):
-        remove_prefix: str
-            Specifies a prefix to remove from each entry in varlist
-            when creating bookmarks.  For example, if varlist has
-            a variable name "SpeciesConcVV_NO", and you specify
-            remove_prefix="SpeciesConcVV_", then the bookmark for
-            that variable will be just "NO", etc.
-         verbose: bool
-            Set this flag to True to print extra informational output.
-            Default value: False
+    Parameters
+    ----------
+    pdfname : str
+        Name of an existing PDF file of species or emission plots
+        to which bookmarks will be attached.
+    varlist : list
+        List of variables, which will be used to create the
+        PDF bookmark names.
+    remove_prefix : str, optional
+        Specifies a prefix to remove from each entry in varlist
+        when creating bookmarks.  For example, if varlist has
+        a variable name "SpeciesConcVV_NO", and you specify
+        remove_prefix="SpeciesConcVV_", then the bookmark for
+        that variable will be just "NO", etc.
+    verbose : bool, optional
+        Set this flag to True to print extra informational output.
+        Default value: False
     """
 
     # Setup
@@ -413,27 +431,26 @@ def add_nested_bookmarks_to_pdf(
     """
     Add nested bookmarks to PDF.
 
-    Args:
-        pdfname: str
-            Path of PDF to add bookmarks to
-        category: str
-            Top-level key name in catdict that maps to contents of PDF
-        catdict: dictionary
-            Dictionary containing key-value pairs where one top-level
-            key matches category and has value fully describing pages
-            in PDF. The value is a dictionary where keys are level 1
-            bookmark names, and values are lists of level 2 bookmark
-            names, with one level 2 name per PDF page.  Level 2 names
-            must appear in catdict in the same order as in the PDF.
-        warninglist: list of strings
-            Level 2 bookmark names to skip since not present in PDF.
-
-    Keyword Args (optional):
-        remove_prefix: str
-            Prefix to be remove from warninglist names before comparing with
-            level 2 bookmark names in catdict.
-            Default value: empty string (warninglist names match names
-            in catdict)
+    Parameters
+    ----------
+    pdfname : str
+        Path of PDF to add bookmarks to.
+    category : str
+        Top-level key name in catdict that maps to contents of PDF.
+    catdict : dict
+        Dictionary containing key-value pairs where one top-level
+        key matches category and has value fully describing pages
+        in PDF. The value is a dictionary where keys are level 1
+        bookmark names, and values are lists of level 2 bookmark
+        names, with one level 2 name per PDF page.  Level 2 names
+        must appear in catdict in the same order as in the PDF.
+    warninglist : list of str
+        Level 2 bookmark names to skip since not present in PDF.
+    remove_prefix : str, optional
+        Prefix to be removed from warninglist names before comparing
+        with level 2 bookmark names in catdict.
+        Default value: empty string (warninglist names match names
+        in catdict)
     """
 
     # ==================================================================
@@ -516,21 +533,24 @@ def add_missing_variables(
     dimensions, which is not true if comparing datasets with different grid
     resolutions or types.
 
-    Args:
-        refdata: xarray Dataset
-            The "Reference" (aka "Ref") dataset
-        devdata: xarray Dataset
-            The "Development" (aka "Dev") dataset
+    Parameters
+    ----------
+    refdata : xarray Dataset
+        The "Reference" (aka "Ref") dataset.
+    devdata : xarray Dataset
+        The "Development" (aka "Dev") dataset.
+    verbose : bool, optional
+        Toggles extra debug print output.
+        Default value: False
 
-    Keyword Args (optional):
-        verbose: bool
-            Toggles extra debug print output
-            Default value: False
-
-    Returns:
-        refdata, devdata: xarray Datasets
-            The returned "Ref" and "Dev" datasets, with
-            placeholder missing value variables added
+    Returns
+    -------
+    refdata : xarray Dataset
+        The returned "Ref" dataset, with placeholder missing value
+        variables added.
+    devdata : xarray Dataset
+        The returned "Dev" dataset, with placeholder missing value
+        variables added.
     """
     # ==================================================================
     # Initialize
@@ -593,18 +613,18 @@ def reshape_MAPL_CS(darr):
     Reshapes data if contains dimensions indicate MAPL v1.0.0+ output
     (i.e. reshapes from "diagnostic" to "checkpoint" dimension format.)
 
-    Args:
-    -----
-    darr: xarray DataArray
+    Parameters
+    ----------
+    darr : xarray DataArray
         The input data array.
 
-    Returns:
-    --------
-    darr: xarray DataArray
+    Returns
+    -------
+    darr : xarray DataArray
         The modified data array (w/ dimensions renamed & transposed).
 
-    Remarks:
-    --------
+    Notes
+    -----
     Currently only used for GCPy plotting code.
     """
     # Suppress annoying future warnings for now
@@ -636,13 +656,19 @@ def get_diff_of_diffs(
     """
     Generate datasets containing differences between two datasets.
 
-    Args:
-    ref       : xr.Dataset : The Ref (aka "Reference") dataset
-    dev       : xr.Dataset : The Dev" (aka "Development") dataset
+    Parameters
+    ----------
+    ref : xarray Dataset
+        The Ref (aka "Reference") dataset.
+    dev : xarray Dataset
+        The Dev (aka "Development") dataset.
 
     Returns
-    absdiffs  : xr.Dataset : Absolute differences (Dev - Ref)
-    fracdiffs : xr.Dataset : Fractional differences (Dev / Ref)
+    -------
+    absdiffs : xarray Dataset
+        Absolute differences (Dev - Ref).
+    fracdiffs : xarray Dataset
+        Fractional differences (Dev / Ref).
     """
     with xr.set_options(keep_attrs=True):
 
@@ -716,21 +742,24 @@ def slice_by_lev_and_time(
     """
     Given a Dataset, returns a DataArray sliced by desired time and level.
 
-    Args:
-        dset: xarray Dataset
-            Dataset containing GEOS-Chem data.
-        varname: str
-            Variable name for data variable to be sliced
-        itime: int
-            Index of time by which to slice
-        ilev: int
-            Index of level by which to slice
-        flip: bool
-            Whether to flip ilev to be indexed from ground or top of atmosphere
+    Parameters
+    ----------
+    dset : xarray Dataset
+        Dataset containing GEOS-Chem data.
+    varname : str
+        Variable name for data variable to be sliced.
+    itime : int
+        Index of time by which to slice.
+    ilev : int
+        Index of level by which to slice.
+    flip : bool
+        Whether to flip ilev to be indexed from ground or top of
+        atmosphere.
 
-    Returns:
-        darr: xarray DataArray
-            DataArray of data variable sliced according to ilev and itime
+    Returns
+    -------
+    darr : xarray DataArray
+        DataArray of data variable sliced according to ilev and itime.
     """
     # used in compare_single_level and compare_zonal_mean to get dataset slices
     verify_variable_type(dset, xr.Dataset)
@@ -766,17 +795,19 @@ def rename_and_flip_gchp_rst_vars(
     Transforms a GCHP restart dataset to match GCClassic names
     and level conventions.
 
-    Args:
-        dset: xarray Dataset
-            The input dataset.
+    Parameters
+    ----------
+    dset : xarray Dataset
+        The input dataset.
 
-    Returns:
-        dset: xarray Dataset
-            If the input dataset is from a GCHP restart file, then
-            dset will contain the original data with variables renamed
-            to match the GEOS-Chem Classic naming conventions, and
-            with levels indexed as lev:positive="up".  Otherwise, the
-            original data will be returned.
+    Returns
+    -------
+    dset : xarray Dataset
+        If the input dataset is from a GCHP restart file, then
+        dset will contain the original data with variables renamed
+        to match the GEOS-Chem Classic naming conventions, and
+        with levels indexed as lev:positive="up".  Otherwise, the
+        original data will be returned.
     '''
     verify_variable_type(dset, xr.Dataset)
 
@@ -819,13 +850,17 @@ def dict_diff(
     Function to take the difference of two dict objects.
     Assumes that both objects have the same keys.
 
-    Args:
-        dict0, dict1: dict
-            Dictionaries to be subtracted (dict1 - dict0)
+    Parameters
+    ----------
+    dict0 : dict
+        The first dictionary (to be subtracted from dict1).
+    dict1 : dict
+        The second dictionary (dict1 - dict0).
 
-    Returns:
-        result: dict
-            Key-by-key difference of dict1 - dict0
+    Returns
+    -------
+    result : dict
+        Key-by-key difference of dict1 - dict0.
     """
     verify_variable_type(dict0, dict)
     verify_variable_type(dict1, dict)
@@ -846,44 +881,43 @@ def compare_varnames(
     """
     Finds variables that are common to two xarray Dataset objects.
 
-    Args:
-        refdata: xarray Dataset
-            The first Dataset to be compared.
-            (This is often referred to as the "Reference" Dataset.)
-        devdata: xarray Dataset
-            The second Dataset to be compared.
-            (This is often referred to as the "Development" Dataset.)
+    Parameters
+    ----------
+    refdata : xarray Dataset
+        The first Dataset to be compared.
+        (This is often referred to as the "Reference" Dataset.)
+    devdata : xarray Dataset
+        The second Dataset to be compared.
+        (This is often referred to as the "Development" Dataset.)
+    quiet : bool, optional
+        Set this flag to True if you wish to suppress printing
+        informational output to stdout.
+        Default value: False
 
-    Keyword Args (optional):
-        quiet: bool
-            Set this flag to True if you wish to suppress printing
-            informational output to stdout.
-            Default value: False
+    Returns
+    -------
+    vardict : dict of lists of str
+        Dictionary containing several lists of variable names:
 
-    Returns:
-        vardict: dict of lists of str
-            Dictionary containing several lists of variable names:
-            Key              Value
-            -----            -----
-            commonvars       List of variables that are common to
-                             both refdata and devdata
-            commonvarsOther  List of variables that are common
-                             to both refdata and devdata, but do
-                             not have lat, lon, and/or level
-                             dimensions (e.g. index variables).
-            commonvars2D     List of variables that are common to
-                             common to refdata and devdata, and that
-                             have lat and lon dimensions, but not level.
-            commonvars3D     List of variables that are common to
-                             refdata and devdata, and that have lat,
-                             lon, and level dimensions.
-            commonvarsData   List of all commmon 2D or 3D data variables,
-                             excluding index variables.  This is the
-                             list of "plottable" variables.
-            refonly          List of 2D or 3D variables that are only
-                             present in refdata.
-            devonly          List of 2D or 3D variables that are only
-                             present in devdata
+        commonvars : list of str
+            List of variables that are common to both refdata and devdata.
+        commonvarsOther : list of str
+            List of variables that are common to both refdata and devdata,
+            but do not have lat, lon, and/or level dimensions
+            (e.g. index variables).
+        commonvars2D : list of str
+            List of variables that are common to both refdata and devdata,
+            and that have lat and lon dimensions, but not level.
+        commonvars3D : list of str
+            List of variables that are common to refdata and devdata,
+            and that have lat, lon, and level dimensions.
+        commonvarsData : list of str
+            List of all common 2D or 3D data variables, excluding index
+            variables.  This is the list of "plottable" variables.
+        refonly : list of str
+            List of 2D or 3D variables that are only present in refdata.
+        devonly : list of str
+            List of 2D or 3D variables that are only present in devdata.
     """
     verify_variable_type(refdata, xr.Dataset)
     verify_variable_type(devdata, xr.Dataset)
@@ -967,19 +1001,20 @@ def compare_stats(refdata, refstr, devdata, devstr, varname):
     Prints out global statistics (array sizes, mean, min, max, sum)
     from two xarray Dataset objects.
 
-    Args:
-        refdata: xarray Dataset
-            The first Dataset to be compared.
-            (This is often referred to as the "Reference" Dataset.)
-        refstr: str
-            Label for refdata to be used in the printout
-        devdata: xarray Dataset
-            The second Dataset to be compared.
-            (This is often referred to as the "Development" Dataset.)
-        devstr: str
-            Label for devdata to be used in the printout
-        varname: str
-            Variable name for which global statistics will be printed out.
+    Parameters
+    ----------
+    refdata : xarray Dataset
+        The first Dataset to be compared.
+        (This is often referred to as the "Reference" Dataset.)
+    refstr : str
+        Label for refdata to be used in the printout.
+    devdata : xarray Dataset
+        The second Dataset to be compared.
+        (This is often referred to as the "Development" Dataset.)
+    devstr : str
+        Label for devdata to be used in the printout.
+    varname : str
+        Variable name for which global statistics will be printed out.
     """
 
     refvar = refdata[varname]
@@ -1014,23 +1049,24 @@ def convert_bpch_names_to_netcdf_names(
     Function to convert the non-standard bpch diagnostic names
     to names used in the GEOS-Chem netCDF diagnostic outputs.
 
-    Args:
-        ds: xarray Dataset
-            The xarray Dataset object whose names are to be replaced.
+    Parameters
+    ----------
+    dset : xarray Dataset
+        The xarray Dataset object whose names are to be replaced.
+    verbose : bool, optional
+        Set this flag to True to print informational output.
+        Default value: False
 
-    Keyword Args (optional):
-        verbose: bool
-            Set this flag to True to print informational output.
-            Default value: False
+    Returns
+    -------
+    ds_new : xarray Dataset
+        A new xarray Dataset object with all of the bpch-style
+        diagnostic names replaced by GEOS-Chem netCDF names.
 
-    Returns:
-        ds_new: xarray Dataset
-            A new xarray Dataset object all of the bpch-style
-            diagnostic names replaced by GEOS-Chem netCDF names.
-
-    Remarks:
-        To add more diagnostic names, edit the dictionary contained
-        in the bpch_to_nc_names.yml.
+    Notes
+    -----
+    To add more diagnostic names, edit the dictionary contained
+    in the bpch_to_nc_names.yml.
     """
 
     # Names dictionary (key = bpch id, value[0] = netcdf id,
@@ -1215,20 +1251,23 @@ def filter_names(
         text=""):
     """
     Returns elements in a list that match a given substring.
-    Can be used in conjnction with compare_varnames to return a subset
+    Can be used in conjunction with compare_varnames to return a subset
     of variable names pertaining to a given diagnostic type or species.
 
-    Args:
-        names: list of str
-            Input list of names.
-        text: str
-            Target text string for restricting the search.
+    Parameters
+    ----------
+    names : list of str
+        Input list of names.
+    text : str, optional
+        Target text string for restricting the search.
+        Default value: ''
 
-    Returns:
-        filtered_names: list of str
-            Returns all elements of names that contains the substring
-            specified by the "text" argument.  If "text" is omitted,
-            then the original contents of names will be returned.
+    Returns
+    -------
+    filtered_names : list of str
+        Returns all elements of names that contain the substring
+        specified by the 'text' argument.  If 'text' is omitted,
+        then the original contents of names will be returned.
     """
 
     if text != "":
@@ -1250,23 +1289,23 @@ def divide_dataset_by_dataarray(
     noontime J-value variables in a Dataset can be divided by the
     fraction of time it was local noon in each grid box, etc.
 
-    Args:
-        dset: xarray Dataset
-            The Dataset object containing variables to be divided.
-        darr: xarray DataArray
-            The DataArray object that will be used to divide the
-            variables of ds.
+    Parameters
+    ----------
+    dset : xarray Dataset
+        The Dataset object containing variables to be divided.
+    darr : xarray DataArray
+        The DataArray object that will be used to divide the
+        variables of dset.
+    varlist : list of str, optional
+        If passed, then only those variables of dset that are listed
+        in varlist will be divided by darr.  Otherwise, all variables
+        of dset will be divided by darr.
+        Default value: None
 
-    Keyword Args (optional):
-        varlist: list of str
-            If passed, then only those variables of ds that are listed
-            in varlist will be divided by dr.  Otherwise, all variables
-            of ds will be divided by dr.
-            Default value: None
-    Returns:
-        dset_new: xarray Dataset
-            A new xarray Dataset object with its variables divided
-            by darr.
+    Returns
+    -------
+    dset : xarray Dataset
+        A new xarray Dataset object with its variables divided by darr.
     """
 
     # -----------------------------
@@ -1299,34 +1338,34 @@ def get_shape_of_data(
         return_dims=False
 ):
     """
-    Convenience routine to return a the shape (and dimensions, if
+    Convenience routine to return the shape (and dimensions, if
     requested) of an xarray Dataset, or xarray DataArray.  Can also
-    also take as input a dictionary of sizes (i.e. {'time': 1,
-    'lev': 72, ...} from an xarray Dataset or xarray Datarray object.
+    take as input a dictionary of sizes (i.e. {'time': 1,
+    'lev': 72, ...}) from an xarray Dataset or xarray DataArray object.
 
-    Args:
-        data: xarray Dataset, xarray DataArray, or dict
-            The data for which the size is requested.
+    Parameters
+    ----------
+    data : xarray Dataset, xarray DataArray, or dict
+        The data for which the size is requested.
+    vertical_dim : str, optional
+        Specify the vertical dimension that you wish to
+        return: 'lev' or 'ilev'.
+        Default value: 'lev'
+    return_dims : bool, optional
+        Set this switch to True if you also wish to return a list of
+        dimensions in the same order as the tuple of dimension sizes.
+        Default value: False
 
-    Keyword Args (optional):
-        vertical_dim: str
-            Specify the vertical dimension that you wish to
-            return: lev or ilev.
-            Default value: 'lev'
-        return_dims: bool
-            Set this switch to True if you also wish to return a list of
-            dimensions in the same order as the tuple of dimension sizes.
-            Default value: False
-
-    Returns:
-        shape: tuple of int
-            Tuple containing the sizes of each dimension of dr in order:
-            (time, lev|ilev, nf, lat|YDim, lon|XDim).
-        dims: list of str
-            If return_dims is True, then dims will contain a list of
-            dimension names in the same order as shape
-            (['time', 'lev', 'lat', 'lon'] for GEOS-Chem "Classic",
-             or ['time', 'lev', 'nf', 'Ydim', 'Xdim'] for GCHP.
+    Returns
+    -------
+    shape : tuple of int
+        Tuple containing the sizes of each dimension of data in order:
+        (time, lev|ilev, nf, lat|YDim, lon|XDim).
+    dims : list of str
+        List of dimension names in the same order as shape
+        (['time', 'lev', 'lat', 'lon'] for GEOS-Chem "Classic", or
+        ['time', 'lev', 'nf', 'Ydim', 'Xdim'] for GCHP).
+        Only returned if return_dims is True.
     """
     # Validate the data argument
     if isinstance(data, (xr.Dataset, xr.DataArray)):
@@ -1365,12 +1404,15 @@ def get_area_from_dataset(
     usually called "AREA" for GEOS-Chem "Classic" or "Met_AREAM2"
     for GCHP) from an xarray Dataset object.
 
-    Args:
-        dset: xarray Dataset
-            The input dataset.
-    Returns:
-        area_m2: xarray DataArray
-            The surface area in m2, as found in ds.
+    Parameters
+    ----------
+    dset : xarray Dataset
+        The input dataset.
+
+    Returns
+    -------
+    area_m2 : xarray DataArray
+        The surface area in m2, as found in dset.
     """
     verify_variable_type(dset, xr.Dataset)
 
@@ -1394,20 +1436,22 @@ def get_variables_from_dataset(
     variables from an xarray Dataset.  All variables must be
     found in the Dataset, or else an error will be raised.
 
-    Args:
-        dset: xarray Dataset
-            The input dataset.
-        varlist: list of str
-            List of DataArray variables to extract from ds.
+    Parameters
+    ----------
+    dset : xarray Dataset
+        The input dataset.
+    varlist : list of str
+        List of DataArray variables to extract from dset.
 
-    Returns:
-        dset_subset: xarray Dataset
-            A new data set containing only the variables
-            that were requested.
+    Returns
+    -------
+    dset_subset : xarray Dataset
+        A new dataset containing only the variables that were requested.
 
-    Remarks:
+    Notes
+    -----
     Use this routine if you absolutely need all of the requested
-    variables to be returned.  Otherwise
+    variables to be returned.  Otherwise use standard Dataset indexing.
     """
     verify_variable_type(dset, xr.Dataset)
 
@@ -1438,34 +1482,36 @@ def create_blank_dataarray(
     This is useful if you need to plot or compare two DataArray
     variables, and need to represent one as missing or undefined.
 
-    Args:
-    name: str
+    Parameters
+    ----------
+    name : str
         The name for the DataArray object that will contain NaNs.
-    sizes: dict of int
+    sizes : dict of int
         Dictionary of the dimension names and their sizes (e.g.
-        {'time': 1 ', 'lev': 72, ...} that will be used to create
+        {'time': 1, 'lev': 72, ...}) that will be used to create
         the DataArray of NaNs.  This can be obtained from an
         xarray Dataset as ds.sizes.
-    coords: dict of lists of float
+    coords : dict of lists of float
         Dictionary containing the coordinate variables that will
         be used to create the DataArray of NaNs.  This can be obtained
         from an xarray Dataset with ds.coords.
-    attrs: dict of str
+    attrs : dict of str
         Dictionary containing the DataArray variable attributes
         (such as "units", "long_name", etc.).  This can be obtained
-        from an xarray Dataset with dr.attrs.
-    fill_value: np.nan or numeric type
+        from an xarray DataArray with dr.attrs.
+    fill_value : float or NaN, optional
         Value with which the DataArray object will be filled.
         Default value: np.nan
-    fill_type: numeric type
+    fill_type : numeric type, optional
         Specifies the numeric type of the DataArray object.
         Default value: np.float64 (aka "double")
-    vertical_dim: str
-        Specifies the name of the vertical dimension (e.g. "lev", "ilev")
-        Default: "lev"
+    vertical_dim : str, optional
+        Specifies the name of the vertical dimension (e.g. "lev", "ilev").
+        Default value: "lev"
 
-    Returns:
-    dr: xarray DataArray
+    Returns
+    -------
+    dr : xarray DataArray
         The output DataArray object, which will be set to the value
         specified by the fill_value argument everywhere.
     """
@@ -1520,22 +1566,22 @@ def check_for_area(
     the GCHP area name will be appended to the dataset under the
     GEOS-Chem "Classic" area name if it is present.
 
-    Args:
-        dset: xarray Dataset
-            The Dataset object that will be checked.
+    Parameters
+    ----------
+    dset : xarray Dataset
+        The Dataset object that will be checked.
+    gcc_area_name : str, optional
+        Specifies the name of the GEOS-Chem "Classic" surface
+        area variable.
+        Default value: "AREA"
+    gchp_area_name : str, optional
+        Specifies the name of the GCHP surface area variable.
+        Default value: "Met_AREAM2"
 
-    Keyword Args (optional):
-        gcc_area_name: str
-            Specifies the name of the GEOS-Chem "Classic" surface
-            area varaible
-            Default value: "AREA"
-        gchp_area_name: str
-            Specifies the name of the GCHP surface area variable.
-            Default value: "Met_AREAM2"
-
-    Returns:
-        ds: xarray Dataset
-            The modified Dataset object
+    Returns
+    -------
+    dset : xarray Dataset
+        The modified Dataset object.
     """
     verify_variable_type(dset, xr.Dataset)
 
@@ -1565,32 +1611,32 @@ def get_filepath(
     Routine to return file path for a given GEOS-Chem "Classic"
     (aka "GCC") or GCHP diagnostic collection and date.
 
-    Args:
-        datadir: str
-            Path name of the directory containing GCC or GCHP data files.
-        col: str
-            Name of collection (e.g. Emissions, SpeciesConc, etc.)
-            for which file path will be returned.
-        date: numpy.datetime64
-            Date for which file paths are requested.
+    Parameters
+    ----------
+    datadir : str
+        Path name of the directory containing GCC or GCHP data files.
+    col : str
+        Name of collection (e.g. Emissions, SpeciesConc, etc.)
+        for which file path will be returned.
+    date : numpy.datetime64
+        Date for which file paths are requested.
+    is_gchp : bool, optional
+        Set this switch to True to obtain file pathnames to GCHP
+        diagnostic data files. If False, assumes GEOS-Chem "Classic".
+        Default value: False
+    gchp_res : str, optional
+        Cubed-sphere resolution of GCHP data grid.
+        Only needed for restart files.
+        Default value: "c00"
+    gchp_is_pre_14_0 : bool, optional
+        Set this switch to True to obtain GCHP file pathnames used in
+        versions before 14.0. Only needed for restart files.
+        Default value: False
 
-    Keyword Args (optional):
-        is_gchp: bool
-            Set this switch to True to obtain file pathnames to
-            GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
-
-        gchp_res: str
-            Cubed-sphere resolution of GCHP data grid.
-            Only needed for restart files.
-            Default value: "c00".
-
-        gchp_is_pre_14_0: bool
-            Set this switch to True to obtain GCHP file pathnames used in
-            versions before 14.0. Only needed for restart files.
-
-    Returns:
-        path: str
-            Pathname for the specified collection and date.
+    Returns
+    -------
+    path : str
+        Pathname for the specified collection and date.
     """
 
     # Set filename template, extension, separator, and date string from
@@ -1650,33 +1696,33 @@ def get_filepaths(
     Routine to return filepaths for a given GEOS-Chem "Classic"
     (aka "GCC") or GCHP diagnostic collection.
 
-    Args:
-        datadir: str
-            Path name of the directory containing GCC or GCHP data files.
-        collections: list of str
-            Names of collections (e.g. Emissions, SpeciesConc, etc.)
-            for which file paths will be returned.
-        dates: array of numpy.datetime64
-            Array of dates for which file paths are requested.
+    Parameters
+    ----------
+    datadir : str
+        Path name of the directory containing GCC or GCHP data files.
+    collections : list of str
+        Names of collections (e.g. Emissions, SpeciesConc, etc.)
+        for which file paths will be returned.
+    dates : array of numpy.datetime64
+        Array of dates for which file paths are requested.
+    is_gchp : bool, optional
+        Set this switch to True to obtain file pathnames to GCHP
+        diagnostic data files. If False, assumes GEOS-Chem "Classic".
+        Default value: False
+    gchp_res : str, optional
+        Cubed-sphere resolution of GCHP data grid.
+        Only needed for restart files.
+        Default value: "c00"
+    gchp_is_pre_14_0 : bool, optional
+        Set this switch to True to obtain GCHP file pathnames used in
+        versions before 14.0. Only needed for diagnostic files.
+        Default value: False
 
-    Keyword Args (optional):
-        is_gchp: bool
-            Set this switch to True to obtain file pathnames to
-            GCHP diagnostic data files. If False, assumes GEOS-Chem "Classic"
-
-        gchp_res: str
-            Cubed-sphere resolution of GCHP data grid.
-            Only needed for restart files.
-            Default value: "c00".
-
-        gchp_is_pre_14_0: bool
-            Set this switch to True to obtain GCHP file pathnames used in
-            versions before 14.0. Only needed for diagnostic files.
-
-    Returns:
-        paths: 2D list of str
-            A list of pathnames for each specified collection and date.
-            First dimension is collection, and second is date.
+    Returns
+    -------
+    paths : 2D list of str
+        A list of pathnames for each specified collection and date.
+        First dimension is collection, and second is date.
     """
 
     # ==================================================================
@@ -1774,19 +1820,23 @@ def extract_pathnames_from_log(
     This can be used to get a list of files that should be
     downloaded from gcgrid or from Amazon S3.
 
-    Args:
-        filename: str
-            GEOS-Chem standard log file
-        prefix_filter (optional): str
-            Restricts the output to file paths starting with
-            this prefix (e.g. "/home/ubuntu/ExtData/HEMCO/")
-            Default value: ''
-    Returns:
-        data list: list of str
-            List of full pathnames of data files found in
-            the log file.
-    Author:
-        Jiawei Zhuang (jiaweizhuang@g.harvard.edu)
+    Parameters
+    ----------
+    filename : str
+        GEOS-Chem standard log file.
+    prefix_filter : str, optional
+        Restricts the output to file paths starting with this prefix
+        (e.g. "/home/ubuntu/ExtData/HEMCO/").
+        Default value: ''
+
+    Returns
+    -------
+    data_list : list of str
+        List of full pathnames of data files found in the log file.
+
+    Notes
+    -----
+    Author: Jiawei Zhuang (jiaweizhuang@g.harvard.edu)
     """
 
     # Initialization
@@ -1825,21 +1875,23 @@ def get_gcc_filepath(
         time
 ):
     '''
-    Routine for getting filepath of GEOS-Chem Classic output
+    Routine for getting filepath of GEOS-Chem Classic output.
 
-    Args:
-        outputdir: str
-             Path of the OutputDir directory
-        collection: str
-             Name of output collection, e.g. Emissions or SpeciesConc
-        day: str
-             Number day of output, e.g. 31
-        time: str
-             Z time of output, e.g. 1200z
+    Parameters
+    ----------
+    outputdir : str
+        Path of the OutputDir directory.
+    collection : str
+        Name of output collection, e.g. Emissions or SpeciesConc.
+    day : str
+        Number day of output, e.g. 31.
+    time : str
+        Z time of output, e.g. 1200z.
 
-    Returns:
-        filepath: str
-             Path of requested file
+    Returns
+    -------
+    filepath : str
+        Path of requested file.
     '''
     if collection == "Emissions":
         filepath = os.path.join(
@@ -1861,21 +1913,23 @@ def get_gchp_filepath(
         time
 ):
     '''
-    Routine for getting filepath of GCHP output
+    Routine for getting filepath of GCHP output.
 
-    Args:
-        outputdir: str
-             Path of the OutputDir directory
-        collection: str
-             Name of output collection, e.g. Emissions or SpeciesConc
-        day: str
-             Number day of output, e.g. 31
-        time: str
-             Z time of output, e.g. 1200z
+    Parameters
+    ----------
+    outputdir : str
+        Path of the OutputDir directory.
+    collection : str
+        Name of output collection, e.g. Emissions or SpeciesConc.
+    day : str
+        Number day of output, e.g. 31.
+    time : str
+        Z time of output, e.g. 1200z.
 
-    Returns:
-        filepath: str
-             Path of requested file
+    Returns
+    -------
+    filepath : str
+        Path of requested file.
     '''
 
     filepath = os.path.join(
@@ -1889,15 +1943,17 @@ def get_nan_mask(
         data
 ):
     """
-    Create a mask with NaN values removed from an input array
+    Create a mask with NaN values removed from an input array.
 
-    Args:
-        data: numpy array
-            Input array possibly containing NaNs
+    Parameters
+    ----------
+    data : numpy array
+        Input array possibly containing NaNs.
 
-    Returns:
-        new_data: numpy array
-            Original array with NaN values removed
+    Returns
+    -------
+    new_data : numpy array
+        Original array with NaN values removed.
     """
 
     # remove NaNs
@@ -1911,15 +1967,19 @@ def all_zero_or_nan(
         dset
 ):
     """
-    Return whether ds is all zeros, or all nans
+    Return whether dset is all zeros, or all NaNs.
 
-    Args:
-        dset: numpy array
-            Input GEOS-Chem data
-    Returns:
-        all_zero, all_nan: bool, bool
-            all_zero is whether ds is all zeros,
-            all_nan  is whether ds is all NaNs
+    Parameters
+    ----------
+    dset : numpy array
+        Input GEOS-Chem data.
+
+    Returns
+    -------
+    all_zero : bool
+        Whether dset is all zeros.
+    all_nan : bool
+        Whether dset is all NaNs.
     """
 
     return not np.any(dset), np.isnan(dset).all()
@@ -1933,22 +1993,22 @@ def dataset_mean(
     """
     Convenience wrapper for taking the mean of an xarray Dataset.
 
-    Args:
-       dset : xarray Dataset
-           Input data
+    Parameters
+    ----------
+    dset : xarray Dataset or None
+        Input data.
+    dim : str, optional
+        Dimension over which the mean will be taken.
+        Default value: "time"
+    skipna : bool, optional
+        Flag to omit missing values from the mean.
+        Default value: True
 
-    Keyword Args:
-       dim : str
-           Dimension over which the mean will be taken.
-           Default: "time"
-       skipna : bool
-           Flag to omit missing values from the mean.
-           Default: True
-
-    Returns:
-       ds_mean : xarray Dataset or None
-           Dataset containing mean values
-           Will return None if ds is not defined
+    Returns
+    -------
+    ds_mean : xarray Dataset or None
+        Dataset containing mean values.
+        Will return None if dset is not defined.
     """
     verify_variable_type(dset, (xr.Dataset, type(None)))
 
@@ -1966,14 +2026,19 @@ def dataset_reader(
     """
     Returns a function to read an xarray Dataset.
 
-    Args:
-        multi_files : bool
-            Denotes whether we will be reading multiple files into
-            an xarray Dataset.
-            Default value: False
+    Parameters
+    ----------
+    multi_files : bool
+        Denotes whether we will be reading multiple files into
+        an xarray Dataset.
+    verbose : bool, optional
+        Set this flag to True to print extra informational output.
+        Default value: False
 
-    Returns:
-         reader : either xr.open_mfdataset or xr.open_dataset
+    Returns
+    -------
+    reader : callable
+        Either xr.open_mfdataset or xr.open_dataset.
     """
     if multi_files:
         reader = xr.open_mfdataset
@@ -2008,18 +2073,18 @@ def unique_values(
     """
     Given a list, returns a sorted list of unique values.
 
-    Args:
-    -----
+    Parameters
+    ----------
     this_list : list
-        Input list (may contain duplicate values)
+        Input list (may contain duplicate values).
+    drop : list of str, optional
+        List of variable names to exclude.
+        Default value: None
 
-    drop: list of str
-        List of variable names to exclude
-
-    Returns:
-    --------
-    unique: list
-        List of unique values from this_list
+    Returns
+    -------
+    unique : list
+        List of unique values from this_list.
     """
     verify_variable_type(this_list, list)
     verify_variable_type(drop, list)
@@ -2043,18 +2108,19 @@ def wrap_text(
     """
     Wraps text so that it fits within a certain line width.
 
-    Args:
-    -----
-    text: str or list of str
+    Parameters
+    ----------
+    text : str or list of str
         Input text to be word-wrapped.
-    width: int
+    width : int, optional
         Line width, in characters.
         Default value: 80
 
-    Returns:
-    --------
-    Original text reformatted so that it fits within lines
-    of 'width' characters or less.
+    Returns
+    -------
+    text : str
+        Original text reformatted so that it fits within lines
+        of 'width' characters or less.
     """
     if not isinstance(text, str):
         if isinstance(text, list):
@@ -2079,16 +2145,17 @@ def insert_text_into_file(
     to do this is to read the contents of the file, manipulate the
     text, and then overwrite the file.
 
-    Args:
-    -----
-    filename: str
+    Parameters
+    ----------
+    filename : str
         The file with text to be replaced.
-    search_text: str
+    search_text : str
         Text string in the file that will be replaced.
-    replace_text: str or list of str
-        Text that will replace 'search_text'
-    width: int
-        Will "word-wrap" the text in 'replace_text' to this width
+    replace_text : str or list of str
+        Text that will replace 'search_text'.
+    width : int, optional
+        Will "word-wrap" the text in 'replace_text' to this width.
+        Default value: 80
     """
     verify_variable_type(filename, str)
     verify_variable_type(search_text, str)
@@ -2124,19 +2191,20 @@ def array_equals(
     Tests two arrays for equality.  Useful for checking which
     species have nonzero differences in benchmark output.
 
-    Args:
-    -----
-    refdata: xarray DataArray or numpy ndarray
+    Parameters
+    ----------
+    refdata : xarray DataArray or numpy ndarray
         The first array to be checked.
-    devdata: xarray DataArray or numpy ndarray
+    devdata : xarray DataArray or numpy ndarray
         The second array to be checked.
-    dtype : np.float32 or np.float64
+    dtype : numpy dtype, optional
         The precision that will be used to make the evaluation.
-        Default: np.float64
+        Default value: np.float64
 
-    Returns:
-    --------
-    True if both arrays are equal; False if not
+    Returns
+    -------
+    result : bool
+        True if both arrays are equal; False if not.
     """
     if not isinstance(refdata, np.ndarray):
         if isinstance(refdata, xr.DataArray):
@@ -2167,13 +2235,13 @@ def make_directory(
     """
     Creates a directory where benchmark plots/tables will be placed.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dir_name : str
         Name of the directory to be created.
     overwrite : bool
         Set to True if you wish to overwrite prior contents in
-        the directory 'dir_name'
+        the directory 'dir_name'.
     """
     verify_variable_type(dir_name, str)
     verify_variable_type(overwrite, bool)
@@ -2216,11 +2284,10 @@ def verify_variable_type(
     Convenience routine that will raise a TypeError if a variable's
     type does not match a list of expected types.
 
-    Args:
-    -----
-    var : variable of any type
+    Parameters
+    ----------
+    var : any
         The variable to check.
-
     var_type : type or tuple of types
         A single type definition (list, str, pandas.Series, etc.)
         or a tuple of type definitions.
@@ -2238,9 +2305,12 @@ def copy_file_to_dir(
     Convenience wrapper for shutil.copyfile, used to copy a file to
     a directory.
 
-    Args
-    ifile : str : Input file in original location
-    dest  : str : Destination folder where ifile will be copied.
+    Parameters
+    ----------
+    ifile : str
+        Input file in original location.
+    dest : str
+        Destination folder where ifile will be copied.
     """
     ifile = os.path.realpath(ifile)
     ofile = os.path.join(dest, os.path.basename(ifile))
@@ -2256,12 +2326,18 @@ def replace_whitespace(
     Replaces whitespace in a string with underscores.
     Useful for removing spaces in filename strings.
 
-    Args
-    string    : str : The input string
-    repl_char : str : Replacement character (default is "_")
+    Parameters
+    ----------
+    string : str
+        The input string.
+    repl_char : str, optional
+        Replacement character.
+        Default value: "_"
 
     Returns
-    string    : str : String with whitespace replaced
+    -------
+    string : str
+        String with whitespace replaced.
     """
     verify_variable_type(string, str)
     verify_variable_type(repl_char, str)
@@ -2273,12 +2349,17 @@ def get_element_of_series(series, element):
     """
     Returns a specified element of a pd.Series object.
 
-    Args
-    series  : pd.Series : A pd.Series object
-    element : int       : Element of the pd.Series object to return
+    Parameters
+    ----------
+    series : pd.Series
+        A pd.Series object.
+    element : int
+        Element of the pd.Series object to return.
 
     Returns
-    value   : various   : The returned element
+    -------
+    value : various
+        The returned element.
     """
     verify_variable_type(series, Series)
     verify_variable_type(element, int)
@@ -2291,15 +2372,20 @@ def read_species_metadata(files, quiet=True):
     Reads species metadata from multiple files and returns a dict
     containing metadata for the union of species.
 
-    Args
-    files     : str|list : Species database file(s) to read
-
-    Keyword Args
-    quiet     : bool     : Quiet (true) or verbose (false) printout
+    Parameters
+    ----------
+    files : str or list
+        Species database file(s) to read.
+    quiet : bool, optional
+        Quiet (True) or verbose (False) printout.
+        Default value: True
 
     Returns
-    ref_spcdb : dict     : Species metadata for the Ref model
-    dev_spcdb : dict     : Species metadata for the Dev model
+    -------
+    ref_spcdb : dict
+        Species metadata for the Ref model.
+    dev_spcdb : dict
+        Species metadata for the Dev model.
     """
 
     # 1 file is passed, return the same metadata for Ref & Dev
@@ -2322,12 +2408,17 @@ def get_molwt_from_metadata(metadata, spc_name):
     Extracts molecular weight [g/mol] from a dictionary
     containing species metadata.
 
-    Args
-    metadata : dict       : Metadata for GEOS-Chem species
-    spc_name : str        : Name of the desired species
+    Parameters
+    ----------
+    metadata : dict
+        Metadata for GEOS-Chem species.
+    spc_name : str
+        Name of the desired species.
 
     Returns
-    spc_mw_g : float|None : Species molecular weight [g/mol]
+    -------
+    spc_mw_g : float or None
+        Species molecular weight [g/mol].
     """
     # Extract the metadata for the given species
     species_metadata = metadata.get(spc_name)
