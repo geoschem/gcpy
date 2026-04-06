@@ -117,6 +117,13 @@ setup(
         "tk==8.6.13",
         "xarray==2025.1.2",
         "xesmf==0.8.8",
+        "sphinx==8.2.3",
+        "sphinx_rtd_theme==3.1.0",
+        "sphinxcontrib-bibtex==2.6.5",
+        "sphinx-autobuild==2025.8.25",
+        "myst-parser==5.0.0",
+        "docutils==0.21.2",
+        "jinja2==3.1.6",
     ],
     classifiers = CLASSIFIERS
 )

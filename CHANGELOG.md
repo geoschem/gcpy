@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Added HONO and NAP to `gcpy/benchmark/modules/emission_species.yml`
 - Added MGLY to `gcpy/benchmark/modules/benchmark_categories.yml`
+- Added Sphinx ReadTheDocs packages into `gcpy_environment_py312.yml` and `gcpy_environment_py313.yml`
 
 ### Changed
 - Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
@@ -15,6 +16,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bumped `requests` to version 2.33.0 (suggested by @dependabot)
 - Updated GitHub Actions to the latest versions
 - Bumped `pip` to version 26.1.1 in `setup.py` and environment files
+- Updated Sphinx ReadTheDocs packages to the latest versions in environment files and `requirements.txt`
+- Replaced ReadTheDocs dependency `recommonmark` with `myst-parser`
 
 ### Fixed
 - Allow using a template at different grid resolutions in `gcpy/regrid_restart_file.py`
