@@ -55,121 +55,124 @@ def single_panel(
         return_list_of_plots=False,
         **extra_plot_args
 ):
-    """
+"""
     Core plotting routine -- creates a single plot panel.
 
-    Args:
-        plot_vals: xarray.DataArray, numpy.ndarray, or dask.array.Array
-            Single data variable GEOS-Chem output to plot
+    Parameters
+    ----------
+    plot_vals : xarray.DataArray or numpy.ndarray or dask.array.Array
+        Single data variable GEOS-Chem output to plot.
+    ax : matplotlib.axes.Axes, optional
+        Axes object to plot information.
+        Default value: None (will create a new axes)
+    plot_type : str, optional
+        Either "single_level" or "zonal_mean".
+        Default value: "single_level"
+    grid : dict, optional
+        Dictionary mapping plot_vals to plottable coordinates.
+        Default value: {} (will attempt to read grid from plot_vals)
+    gridtype : str, optional
+        "ll" for lat/lon or "cs" for cubed-sphere.
+        Default value: "" (will automatically determine from grid)
+    title : str, optional
+        Title to put at top of plot.
+        Default value: "fill" (will use name attribute of plot_vals
+        if available)
+    comap : matplotlib.colors.Colormap, optional
+        Colormap for plotting data values.
+        Default value: WhGrYlRd
+    norm : list, optional
+        List with range [0..1] normalizing color range for matplotlib
+        methods.
+        Default value: None (will determine from plot_vals)
+    unit : str, optional
+        Units of plotted data.
+        Default value: "" (will use units attribute of plot_vals
+        if available)
+    extent : tuple of float, optional
+        Describes minimum and maximum latitude and longitude of input
+        data in the form (minlon, maxlon, minlat, maxlat).
+        Default value: None (will use full extent of plot_vals
+        if plot is single level)
+    masked_data : numpy.ndarray, optional
+        Masked area for avoiding near-dateline cubed-sphere plotting
+        issues.
+        Default value: None (will attempt to determine from plot_vals)
+    use_cmap_RdBu : bool, optional
+        Set this flag to True to use a blue-white-red colormap.
+        Default value: False
+    log_color_scale : bool, optional
+        Set this flag to True to use a log-scale colormap.
+        Default value: False
+    add_cb : bool, optional
+        Set this flag to True to add a colorbar to the plot.
+        Default value: True
+    pres_range : list of int, optional
+        Range from minimum to maximum pressure for zonal mean
+        plotting.
+        Default value: [0, 2000] (will plot entire atmosphere)
+    pedge : numpy.ndarray, optional
+        Edge pressures of vertical grid cells in plot_vals
+        for zonal mean plotting.
+        Default value: np.full((1, 1), -1) (will determine automatically)
+    pedge_ind : numpy.ndarray, optional
+        Index of edge pressure values within pressure range in
+        plot_vals for zonal mean plotting.
+        Default value: np.full((1, 1), -1) (will determine automatically)
+    log_yaxis : bool, optional
+        Set this flag to True to enable log scaling of pressure in
+        zonal mean plots.
+        Default value: False
+    xtick_positions : list of float, optional
+        Locations of lat/lon or lon ticks on plot.
+        Default value: None (will place automatically for zonal mean plots)
+    xticklabels : list of str, optional
+        Labels for lat/lon ticks.
+        Default value: None (will determine automatically from
+        xtick_positions)
+    proj : cartopy.crs.Projection, optional
+        Projection for plotting data.
+        Default value: ccrs.PlateCarree()
+    sg_path : str, optional
+        Path to NetCDF file containing stretched-grid info
+        (in attributes) for plot_vals.
+        Default value: '' (will not be read in)
+    ll_plot_func : str, optional
+        Function to use for lat/lon single level plotting with
+        possible values 'imshow' and 'pcolormesh'. imshow is much
+        faster but is slightly displaced when plotting from dateline
+        to dateline and/or pole to pole.
+        Default value: 'imshow'
+    vert_params : list of array-like, optional
+        Hybrid grid parameter A in hPa and B (unitless). Needed if
+        grid is not 47 or 72 levels.
+        Default value: None
+    pdfname : str, optional
+        File path to save plots as PDF.
+        Default value: "" (will not create PDF)
+    weightsdir : str, optional
+        Directory path for storing regridding weights.
+        Default value: "." (will store regridding files in
+        current directory)
+    vmin : float, optional
+        Minimum for colorbars.
+        Default value: None (will use plot value minimum)
+    vmax : float, optional
+        Maximum for colorbars.
+        Default value: None (will use plot value maximum)
+    return_list_of_plots : bool, optional
+        Return plots as a list. This is helpful if you are using
+        a cubed-sphere grid and would like access to all 6 plots.
+        Default value: False
+    **extra_plot_args
+        Any extra keyword arguments are passed to calls to
+        pcolormesh() (CS) or imshow() (Lat/Lon).
 
-    Keyword Args (Optional):
-        ax: matplotlib axes
-            Axes object to plot information
-            Default value: None (Will create a new axes)
-        plot_type: str
-            Either "single_level" or "zonal_mean"
-            Default value: "single_level"
-        grid: dict
-            Dictionary mapping plot_vals to plottable coordinates
-            Default value: {} (will attempt to read grid from plot_vals)
-        gridtype: str
-            "ll" for lat/lon or "cs" for cubed-sphere
-            Default value: "" (will automatically determine from grid)
-        title: str
-            Title to put at top of plot
-            Default value: "fill" (will use name attribute of plot_vals
-            if available)
-        comap: matplotlib Colormap
-            Colormap for plotting data values
-            Default value: WhGrYlRd
-        norm: list
-            List with range [0..1] normalizing color range for matplotlib
-            methods. Default value: None (will determine from plot_vals)
-        unit: str
-            Units of plotted data
-            Default value: "" (will use units attribute of plot_vals
-            if available)
-        extent: tuple (minlon, maxlon, minlat, maxlat)
-            Describes minimum and maximum latitude and longitude of input
-            data.  Default value: None (Will use full extent of plot_vals
-            if plot is single level).
-        masked_data: numpy array
-            Masked area for avoiding near-dateline cubed-sphere plotting
-            issues  Default value: None (will attempt to determine from
-            plot_vals)
-        use_cmap_RdBu: bool
-            Set this flag to True to use a blue-white-red colormap
-            Default value: False
-        log_color_scale: bool
-            Set this flag to True to use a log-scale colormap
-            Default value: False
-        add_cb: bool
-            Set this flag to True to add a colorbar to the plot
-            Default value: True
-        pres_range: list(int)
-            Range from minimum to maximum pressure for zonal mean
-            plotting. Default value: [0, 2000] (will plot entire
-            atmosphere)
-        pedge: numpy array
-            Edge pressures of vertical grid cells in plot_vals
-            for zonal mean plotting.  Default value: np.full((1, 1), -1)
-            (will determine automatically)
-        pedge_ind: numpy array
-            Index of edge pressure values within pressure range in
-            plot_vals for zonal mean plotting.
-            Default value: np.full((1, 1), -1) (will determine
-            automatically)
-        log_yaxis: bool
-            Set this flag to True to enable log scaling of pressure in
-            zonal mean plots.  Default value: False
-        xtick_positions: list(float)
-            Locations of lat/lon or lon ticks on plot
-            Default value: None (will place automatically for
-            zonal mean plots)
-        xticklabels: list(str)
-            Labels for lat/lon ticks
-            Default value: None (will determine automatically from
-            xtick_positions)
-        proj: cartopy projection
-            Projection for plotting data
-            Default value: ccrs.PlateCarree()
-        sg_path: str
-            Path to NetCDF file containing stretched-grid info
-            (in attributes) for plot_vals.
-            Default value: '' (will not be read in)
-        ll_plot_func: str
-            Function to use for lat/lon single level plotting with
-            possible values 'imshow' and 'pcolormesh'. imshow is much
-            faster but is slightly displaced when plotting from dateline
-            to dateline and/or pole to pole.  Default value: 'imshow'
-        vert_params: list(AP, BP) of list-like types
-            Hybrid grid parameter A in hPa and B (unitless). Needed if
-            grid is not 47 or 72 levels.  Default value: None
-        pdfname: str
-            File path to save plots as PDF
-            Default value: "" (will not create PDF)
-        weightsdir: str
-            Directory path for storing regridding weights
-            Default value: "." (will store regridding files in
-            current directory)
-        vmin: float
-            minimum for colorbars
-            Default value: None (will use plot value minimum)
-        vmax: float
-            maximum for colorbars
-            Default value: None (will use plot value maximum)
-        return_list_of_plots: bool
-            Return plots as a list. This is helpful if you are using
-            a cubedsphere grid and would like access to all 6 plots
-            Default value: False
-        extra_plot_args: various
-            Any extra keyword arguments are passed to calls to
-            pcolormesh() (CS) or imshow() (Lat/Lon).
-
-    Returns:
-        plot: matplotlib plot
-            Plot object created from input
-    """
+    Returns
+    -------
+    plot : matplotlib.artist.Artist
+        Plot object created from input.
+    """    
     verify_variable_type(plot_vals, (xr.DataArray, np.ndarray, DaskArray))
 
     # Create empty lists for keyword arguments
