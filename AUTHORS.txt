@@ -1,57 +1,3 @@
-List of Developers for GEOS-Chem, HEMCO, and Related Software
-(12 Feb 2026)
-===============================================================================
-
-ADAMS, Peter
-AKINJOLE, Samuel
-ALEXANDER, Becky
-ALVARADO, Matthew
-AMOS, Helen
-ANGOT, Helene
-AUSMEEL, Stina
-AUVRAY, Marion
-BALASUS, Nicholas
-BARAY, Sabour
-BARKLEY, Michael
-BARRET, Steven
-BARRET, Brice
-BATES, Kelvin
-BERTOLACCI, Michael
-BEY, Isabelle
-BINDLE, Liam
-BOERSMA, Folkert
-BOJJAGANI, Sreekanth
-BONILLA, Eimy
-BOVY, Benoit
-BOWMAN, Kevin
-BOYS, Brian
-BRANFORD, Simon
-BRATTICH, Erika
-BREIDER, Tom
-BREWER, Jared
-BROWNE, Ellie
-BROWN-STEINER, Benjamin
-BUKOSA, Beata
-BUTENHOFF, Christopher
-CADY-PEREIRA, Karen
-CAMERON-SMITH, Philip
-CAMPBELL, Patrick
-CAO, Guofeng
-CAO, Hansen
-CAO, Liangzhong
-CAO, Yi
-CAPPS, Shannon
-CAROUGE, Claire
-CARTER, Therese (Tess)
-CAZORLA, Maria
-CHALIYAKUNNEL, Sreelekha
-CHAN, Yuk Chun
-CHAN MILLER, Christopher
-CHEN, Han
-CHEN, Jing
-CHEN, Long
-CHEN, Qi
-CHEN, Qianjie
 CHEN, Xin
 CHEN, Yang
 CHOI, Yunsoo
@@ -167,6 +113,7 @@ LE SAGER, Philippe
 LEE, Chulkyu
 LEE, Colin
 LEE, Meemong
+LEE, Tabitha
 LEHMANN, Ralph
 LEIBENSPERGER, Eric
 LERICHE, Maud
@@ -230,6 +177,7 @@ MURPHY, Killian
 MURRAY, Lee
 NAM, Jun
 NASSAR, Ray
+NASSAU, Racine
 NATHAN, Brian
 NENES, Athanasios
 NESSER, Hannah
@@ -299,6 +247,7 @@ STRODE, Sarah
 STURM, Obin
 SU, Flora
 SULPRIZIO, Melissa
+SUN, Jordan
 SUN, Minmin
 SUNDERLAND, Elsie
 SUNTHARALINGAM, Parvada
@@ -335,12 +284,13 @@ VOHRA, Karn
 WAGSTROM, Kristina
 WALKER, Thomas
 WALLWORK, Joe
+WANG, Daisy
 WANG, James
 WANG, Jun
 WANG, Qiaoqiao
-WANG, Xuan
 WANG, Xiaoli
 WANG, Xiaolin
+WANG, Xuan
 WANG, Yi
 WANG, Yuhang
 WANG, Yuting
@@ -390,7 +340,3 @@ ZHU, Liye
 ZHUANG, Jiawei
 ZHUANG, Quanlai
 ZOOGMAN, Peter
-
-
-
-
