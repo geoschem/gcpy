@@ -31,9 +31,10 @@ def create_dirs(config):
     """
     Create directories for plots and weights if they do not exist.
 
-    Arguments:
-        config : dict
-            Configuration information read from a YAML file
+    Parameters
+    ----------
+    config : dict
+        Configuration information read from a YAML file.
     """
 
     # Extract fields from the config object
@@ -52,15 +53,17 @@ def create_dirs(config):
 
 def read_data(config):
     """
-    Read data from the Ref and Dev datasets
+    Read data from the Ref and Dev datasets.
 
-    Arguments:
-        config : dict
-            Configuration information read from a YAML file
+    Parameters
+    ----------
+    config : dict
+        Configuration information read from a YAML file.
 
-    Returns:
-        data : dict
-            Contains Ref and Dev data as xarray Dataset fields.
+    Returns
+    -------
+    data : dict
+        Contains Ref and Dev data as xarray Dataset fields.
     """
 
     # Root data path
@@ -127,15 +130,16 @@ def print_totals_and_diffs(config, refdata, devdata, varlist):
     to see if there are nonzero differences between Ref and Dev
     datasets.
 
-    Arguments:
-        config : dict
-            Configuration information read from a YAML file
-        refdata : xarray Dataset
-            Contains data from the Ref model run
-        devdata : xarray Dataset
-            Contains data from the Dev model run
-        varlist : list of str
-            Contains a list of data variables.
+    Parameters
+    ----------
+    config : dict
+        Configuration information read from a YAML file.
+    refdata : xarray.Dataset
+        Contains data from the Ref model run.
+    devdata : xarray.Dataset
+        Contains data from the Dev model run.
+    varlist : list of str
+        Contains a list of data variables.
     """
 
     # Get quantities from the config object
@@ -244,9 +248,12 @@ def compare_data(config, data):
     """
     Compares data from two different xarray datasets.
 
-    Args:
-        data : dict
-            Contains Ref and Dev data as xarray Dataset fields.
+    Parameters
+    ----------
+    config : dict
+        Configuration information read from a YAML file.
+    data : dict
+        Contains Ref and Dev data as xarray Dataset fields.
     """
 
     # Get xarray datasets from the data object
