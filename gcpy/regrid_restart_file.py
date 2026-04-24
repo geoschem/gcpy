@@ -4,26 +4,26 @@ ESMF_RegridWeightGen, a template file, and optional stretched-grid parameters,
 to produce a regridded GCHP restart file.
 
 Example:
-    First create source and target grid specifications using `gridspec`
-    (https://github.com/liambindle/gridspec), then create regridding weights
-    from source to target grid using ESMF_RegridWeightGen from ESMF, then:
 
-        $ python -m gcpy.regrid_restart_file \
-                GEOSChem.Restart.fullchem.20190701_0000z.nc4 \
-                4x5_to_c24_weights.nc \
-                GCHP.Restart.fullchem.20190701_0000z.c24.nc4
+First create source and target grid specifications using `gridspec`
+(https://github.com/liambindle/gridspec), then create regridding weights
+from source to target grid using ESMF_RegridWeightGen from ESMF, then:
 
-    Or, for a stretched-grid:
+$ python -m gcpy.regrid_restart_file \
+  GEOSChem.Restart.fullchem.20190701_0000z.nc4 \
+  4x5_to_c24_weights.nc \
+  GCHP.Restart.fullchem.20190701_0000z.c24.nc4
 
-        $ python -m gcpy.regrid_restart_file \
-                --stretched-grid \
-                --stretch-factor=2.0 \
-                --target-latitude=32.0 \
-                --target-longitude=-64.0 \
-                GEOSChem.Restart.fullchem.20190701_0000z.nc4 \
-                4x5_to_c24_weights.nc \
-                GCHP.Restart.fullchem.20190701_0000z.c24.nc4
+Or, for a stretched-grid:
 
+$ python -m gcpy.regrid_restart_file \
+  --stretched-grid \
+  --stretch-factor=2.0 \
+  --target-latitude=32.0 \
+  --target-longitude=-64.0 \
+  GEOSChem.Restart.fullchem.20190701_0000z.nc4 \
+  4x5_to_c24_weights.nc \
+  GCHP.Restart.fullchem.20190701_0000z.c24.nc4
 """
 import argparse
 import logging
@@ -42,15 +42,20 @@ TEMP_FILES = []
 
 
 def file_path(path):
-    """
+    """ 
     Checks whether or not a regular file exists at the passed path.
 
-    Args:
-        file_path (str): A path to a file.
+    Parameters
+    ----------
 
-    Returns:
-        bool: True if a regular file exists at `file_path`.
+    file_path : str
+        A path to a file.
 
+    Returns
+    -------
+
+    file_exists : bool
+        True if a regular file exists at `file_path`.
     """
     if not os.path.isfile(path):
         error_message = (
@@ -65,9 +70,12 @@ def parse_command_line():
     """
     Parses command line arguments and options into a useful data structure.
 
-    Returns:
-        argparse.Namespace: A dict-like object containing command line
-                            argument and option values.
+    Returns
+    -------
+
+    argparse.Namespace:
+        A dict-like object containing command line argument
+        and option values.
     """
     description_text = (
         "regrid_restart_file - Regrid GCHP restart files"

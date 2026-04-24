@@ -159,7 +159,6 @@ html_theme = 'sphinx_rtd_theme'
 
 html_theme_options = {
     'logo_only':                       False,
-    'display_version':                 False,
     'style_nav_header_background':     '#FCFCFC',
     'navigation_depth':                4,
     'collapse_navigation':             False,

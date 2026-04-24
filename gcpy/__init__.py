@@ -1,11 +1,10 @@
 """
-GCPy import script
+GCPy: The GEOS-Chem Python Toolkit
 """
 
 from .benchmark import *
 from .community import *
 from .examples import *
-
 from .append_grid_corners import *
 from .constants import *
 from .cstools import *

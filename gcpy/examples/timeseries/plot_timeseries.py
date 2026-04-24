@@ -6,21 +6,21 @@ diagnostic output.  This also contains a good overview of
 
 This example script creates a PDF file with 2 pages.
 
-   Page 1:
-   -------
-       O3 from the first model layer (from the "SpeciesConc"
-       diagnostic collection is) plotted in blue.
+Page 1:
 
-       O3 at 10 meter height (from the "SpeciesConc_10m"
-       diagnostic collection) is plotted in red.
+   O3 from the first model layer (from the "SpeciesConc"
+   diagnostic collection is) plotted in blue.
 
-   Page 2:
-   -------
-       HNO3 from the first model layer (from the SpeciesConc
-       diagnostic collection is) plotted in blue.
+   O3 at 10 meter height (from the "SpeciesConc_10m"
+   diagnostic collection) is plotted in red.
 
-       HNO3 at 10 meter height (from the SpeciesConc_10m
-       diagnostic collection) is plotted in red.
+Page 2:
+
+   HNO3 from the first model layer (from the SpeciesConc
+   diagnostic collection is) plotted in blue.
+
+   HNO3 at 10 meter height (from the SpeciesConc_10m
+   diagnostic collection) is plotted in red.
 
 You can of course modify this for your own particular applications.
 

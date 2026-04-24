@@ -1743,12 +1743,11 @@ def make_benchmark_emis_plots(
 
     Notes
     -----
-    (1) If both plot_by_spc_cat and plot_by_hco_cat are
-        False, then all emission plots will be placed into the
-        same PDF file.
-
-    (2) Emissions that are 3-dimensional will be plotted as
-        column sums.
+    1. If both plot_by_spc_cat and plot_by_hco_cat are
+       False, then all emission plots will be placed into the
+       same PDF file.
+    2. Emissions that are 3-dimensional will be plotted as
+       column sums.
     """
     # =================================================================
     # Initialization and data read
@@ -2391,10 +2390,11 @@ def make_benchmark_jvalue_plots(
     Notes
     -----
     Will create 4 files containing J-value plots:
-        (1 ) Surface values
-        (2 ) 500 hPa values
-        (3a) Full-column zonal mean values.
-        (3b) Stratospheric zonal mean values
+    1. Surface values
+    2. 500 hPa values
+    3a. Full-column zonal mean values.
+    3b. Stratospheric zonal mean values
+
     These can be toggled on/off with the plots keyword argument.
 
     At present, we do not yet have the capability to split the
@@ -2985,10 +2985,11 @@ def make_benchmark_collection_3d_var_plots(
     Notes
     -----
     Will create 4 files containing J-value plots:
-        (1 ) Surface values
-        (2 ) 500 hPa values
-        (3a) Full-column zonal mean values.
-        (3b) Stratospheric zonal mean values
+    1. Surface values
+    2. 500 hPa values
+    3a. Full-column zonal mean values.
+    3b. Stratospheric zonal mean values
+
     These can be toggled on/off with the plots keyword argument.
 
     At present, we do not yet have the capability to split the

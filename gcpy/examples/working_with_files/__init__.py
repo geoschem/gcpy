@@ -1,5 +1,5 @@
 """
-GCPy import script
+GCPy example scripts for working with data files (e.g. netCDF).
 """
 from .add_blank_var_to_restart_file import *
 from .concatenate_files import *

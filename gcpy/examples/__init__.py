@@ -1,11 +1,10 @@
 """
-GCPy import script
+User examples that demonstrate the capabilities of GCPy.
 """
-# NOTE: Will fail due to xbpch not being in the library
-#from .bpch_to_nc import *
 from .diagnostics import *
 from .dry_run import *
 from .grids import *
+from .hemco import *
 from .plotting import *
 from .timeseries import *
 from .working_with_files import *

@@ -1,5 +1,4 @@
 """
-GCPy import script
+Community-created utilities.
 """
 
-from .format_hemco_data import *
