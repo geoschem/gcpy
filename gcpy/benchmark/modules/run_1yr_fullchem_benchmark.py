@@ -96,9 +96,14 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     """
     Runs 1 year benchmark with the given configuration settings.
 
-    Args:
-        config : dict
-            Contains configuration for 1yr benchmark from yaml file.
+    Parameters
+    ----------
+    config : dict
+        Contains configuration for 1yr benchmark from yaml file.
+    bmk_year_ref : str
+        Benchmark year (YYYY) for the Ref model.
+    bmk_year_dev : str
+        Benchmark year (YYYY) for the Dev model.
     """
 
     # This script has a fixed benchmark type

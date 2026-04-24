@@ -84,7 +84,18 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 
 def run_benchmark(config, bmk_year_ref, bmk_year_dev):
-    """Routine to create benchmark plots and tables"""
+    """
+    Runs 1 year benchmark with the given configuration settings.
+
+    Parameters
+    ----------
+    config : dict
+        Contains configuration for 1yr benchmark from yaml file.
+    bmk_year_ref : str
+        Benchmark year (YYYY) for the Ref model.
+    bmk_year_dev : str
+        Benchmark year (YYYY) for the Dev model.
+    """
     # This script has a fixed benchmark type, year, and months
     bmk_type = config["options"]["bmk_type"]
     bmk_mon_strs = ["Jan", "Apr", "Jul", "Oct"]

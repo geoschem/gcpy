@@ -42,12 +42,16 @@ def plot_comparisons(
     """
     Example function to create six-panel comparison plots.
 
-    Args:
-    -----
-    ref     (str) : Path to the "Ref" data file.
-    dev     (str) : Path to the "Dev" data file.
-    varname (str) : Variable to plot
-    level   (int) : Level to plot (for single-level comparisons only).
+    Parameters
+    ----------
+    ref : str
+        Path to the "Ref" data file.
+    dev : str
+        Path to the "Dev" data file.
+    varname : str
+        Variable to plot.
+    level : int
+        Level to plot (for single-level comparisons only).
     """
     # xarray allows us to read in any NetCDF file, the format of
     # GEOS-Chem diagnostics, #as an xarray Dataset

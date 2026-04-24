@@ -36,12 +36,15 @@ def plot_single_panel(infile, varname, level):
     """
     Example routine to create single panel plots.
 
-    Args:
-    -----
-    infile  (str) : Name of netCDF file to read.
-    varname (str) : Name of variable to plot
-    level   (int) : Model level for single-panel plots
-                    in Python notation (starting from 0)
+    Parameters
+    ----------
+    infile : str
+        Name of netCDF file to read.
+    varname : str
+        Name of variable to plot.
+    level : int
+        Model level for single-panel plots
+        in Python notation (starting from 0).
     """
 
     # xarray allows us to read in any NetCDF file

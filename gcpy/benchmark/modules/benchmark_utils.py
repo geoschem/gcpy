@@ -31,15 +31,21 @@ def make_output_dir(
     Creates a subdirectory for the given collection type
     in the destination directory.
 
-    Args:
-    ----
-    dst        (str     ) : Destination directory
-    collection (str|None) : e.g. "Aerosols", "DryDep", "Oxidants", ...
-    subdst     (str     ) : e.g. "AnnualMean", "Apr2019", ...
+    Parameters
+    ----------
+    dst : str
+        Destination directory.
+    collection : str
+        e.g. "Aerosols", "DryDep", "Oxidants", ...
+    subdst : str or None
+        e.g. "AnnualMean", "Apr2019", ...
+    overwrite : bool, optional
+        Overwrite existing directory contents?
 
-    Returns:
-    --------
-    dst        (str     ) : Path of the directory that was created
+    Returns
+    -------
+    dst : str
+        Path of the directory that was created.
     """
     util.verify_variable_type(dst, str)
     util.verify_variable_type(collection, str)
@@ -72,20 +78,25 @@ def read_ref_and_dev(
     """
     Reads files from the Ref and Dev models into xarray.Dataset objects.
 
-    Args:
-    -----
-    ref (str|list) : Ref data file(s)
-    def (str|list) : Dev data file(s)
+    Parameters
+    ----------
+    ref : str or list
+        Ref data file(s).
+    dev : str or list
+        Dev data file(s).
+    time_mean : bool, optional
+        Return the average over the time dimension?
+    multi_file : bool, optional
+        Read multiple files w/o taking avg over time.
+    verbose : bool, optional
+        Enable verbose output.
 
-    Keyword Args (optional)
-    -----------------------
-    multi_file (bool) : Read multiple files w/o taking avg over time
-    time_mean  (bool) : Return the average over the time dimension?
-    verbose    (bool) : Enable verbose output
-
-    Returns:
-    ref_data : xr.Dataset : Data from the Ref model
-    dev_data : xr.Dataset : Data from the Dev model
+    Returns
+    -------
+    ref_data : xr.Dataset
+        Data from the Ref model.
+    dev_data : xr.Dataset
+        Data from the Dev model.
     """
     util.verify_variable_type(ref, (str, list))
     util.verify_variable_type(dev, (str, list))
@@ -118,14 +129,21 @@ def get_common_varnames(
     Returns an alphabetically-sorted list of common variables two
     xr.Dataset objects matching a given prefix.
 
-    Args
-    refdata : xr.Dataset : Data from the Ref model.
-    devdata : xr.Dataset : Data from the Dev model.
-    prefix  : str        : Variable prefix to match.
-    verbose : bool       : Toggle verbose printout on/off.
+    Parameters
+    ----------
+    refdata : xr.Dataset
+        Data from the Ref model.
+    devdata : xr.Dataset
+        Data from the Dev model.
+    prefix : str
+        Variable prefix to match.
+    verbose : bool, optional
+        Toggle verbose printout on/off.
 
     Returns
-    varlist : list       : Sorted list of common variable names.
+    -------
+    varlist : list
+        Sorted list of common variable names.
     """
     vardict = util.compare_varnames(refdata, devdata, quiet=not verbose)
     varlist = [var for var in vardict["commonvars"] if prefix in var]
@@ -140,15 +158,19 @@ def print_sigdiffs(
         sigdiff_cat
 ):
     """
-    Write
     Appends a list of species showing significant differences in a
     benchmark plotting category to a file.
 
-    Args
-    sigdiff_files : list|None : List of files for signficant diffs output
-    sigdiff_list  : list      : List of significant differences to print
-    sigdiff_type  : str       : e.g. "sfc", "500hPa", "zm"
-    sigdiff_cat   : str       : e.g. "Oxidants", "Aerosols", "DryDep", etc.
+    Parameters
+    ----------
+    sigdiff_files : list or None
+        List of files for significant diffs output.
+    sigdiff_list : list
+        List of significant differences to print.
+    sigdiff_type : str
+        e.g. "sfc", "500hPa", "zm".
+    sigdiff_cat : str
+        e.g. "Oxidants", "Aerosols", "DryDep", etc.
     """
     util.verify_variable_type(sigdiff_files, (list, type(None)))
     util.verify_variable_type(sigdiff_list, list)
@@ -170,10 +192,14 @@ def write_sigdiff(
     Appends a list of species showing significant differences in a
     benchmark plotting category to a file.
 
-    Args
-    sigdiff_list : list : List of significant differences.
-    sigdiff_cat  : str  : e.g. "Oxidants", "Aerosols", "DryDep", etc.
-    sigdiff_file : str  : Filename to which the list will be appended
+    Parameters
+    ----------
+    sigdiff_list : list
+        List of significant differences.
+    sigdiff_cat : str
+        e.g. "Oxidants", "Aerosols", "DryDep", etc.
+    sigdiff_file : str
+        Filename to which the list will be appended.
     """
     util.verify_variable_type(sigdiff_list, list)
     util.verify_variable_type(sigdiff_cat, str)
@@ -196,14 +222,21 @@ def pdf_filename(
     """
     Creates the absolute path for a PDF file containing benchmark plots.
 
-    Args
-    dst        : str      : Root folder for benchmark output plots
-    collection : str      : e.g. "Aerosols", "DryDep", etc.
-    subdst     : str|None : e.g. "AnnualMean", "Apr2019", etc.
-    plot_type  : str      : e.g. "Surface", "FullColumnZonalMean", etc.
+    Parameters
+    ----------
+    dst : str
+        Root folder for benchmark output plots.
+    collection : str
+        e.g. "Aerosols", "DryDep", etc.
+    subdst : str or None
+        e.g. "AnnualMean", "Apr2019", etc.
+    plot_type : str
+        e.g. "Surface", "FullColumnZonalMean", etc.
 
     Returns
-    pdf_path   : str      : Absolute path for the PDF file containing plots
+    -------
+    pdf_path : str
+        Absolute path for the PDF file containing plots.
     """
     util.verify_variable_type(dst, str)
     util.verify_variable_type(collection, str)
@@ -222,8 +255,10 @@ def print_benchmark_info(
     """
     Prints which benchmark plots and tables will be generated.
 
-    Args
-    config : dict : Inputs from the benchmark config YAML file.
+    Parameters
+    ----------
+    config : dict
+        Inputs from the benchmark config YAML file.
     """
     util.verify_variable_type(config, dict)
 
@@ -294,13 +329,19 @@ def get_geoschem_level_metadata(
     Reads a comma-separated variable (.csv) file with GEOS-Chem vertical
     level metadata and returns it in a pandas.DataFrame object.
 
-    Args
-    filename   : str          : Name of the comma-separated variable to read
-    search_key : str|None     : Returns metadata that matches this value
-    verbose    : bool         : Toggles verbose printout on or off
+    Parameters
+    ----------
+    filename : str, optional
+        Name of the comma-separated variable file to read.
+    search_key : str or None, optional
+        Returns metadata that matches this value.
+    verbose : bool, optional
+        Toggles verbose printout on or off.
 
     Returns
-    metadata   : pd.DataFrame : Metadata for GEOS-Chem vertical levels
+    -------
+    metadata : pd.DataFrame
+        Metadata for GEOS-Chem vertical levels.
     """
     if filename is None:
         filename = os.path.join(
@@ -326,7 +367,9 @@ def get_lumped_species_definitions():
     Returns lumped species definitions from a YAML file.
 
     Returns
-    lumped_spc_dict : dict : Dictionary of lumped species
+    -------
+    lumped_spc_dict : dict
+        Dictionary of lumped species.
     """
     ifile = LUMPED_SPC
     return util.read_config_file(
@@ -344,8 +387,10 @@ def archive_lumped_species_definitions(
     """
     Archives lumped species definitions to a YAML file.
 
-    Args:
-    dst : str : Destination folder for YAML file output.
+    Parameters
+    ----------
+    dst : str
+        Destination folder for YAML file output.
     """
     ofile = LUMPED_SPC
     src = os.path.join(os.path.dirname(__file__), ofile)
@@ -365,32 +410,43 @@ def add_lumped_species_to_dataset(
     them to an xarray Dataset. Lumped species definitions may be passed
     as a dictionary or a path to a yaml file. If neither is passed then
     the lumped species yaml file stored in gcpy is used. This file is
-    customized for use with benchmark simuation SpeciesConc diagnostic
+    customized for use with benchmark simulation SpeciesConc diagnostic
     collection output.  The algorithm has been optimized by AI to
     improve performance.
 
-    Args
-    dset      : xr.Dataset : Data prior to adding lumped species
-    lspc_dict : dict       : Species & scale factors for each lumped species
-    lspc_yaml : str        : YAML file w/ lumped species definitions
-    verbose   : bool       : Toggles verbose printout on or off.
-    overwrite : bool       : Overwrite existing species or raise an error
-    prefix    : str        : Prefix to prepend to lumped species names
+    Parameters
+    ----------
+    dset : xr.Dataset
+        Data prior to adding lumped species.
+    lspc_dict : dict, optional
+        Species & scale factors for each lumped species.
+    lspc_yaml : str, optional
+        YAML file w/ lumped species definitions.
+    verbose : bool, optional
+        Toggles verbose printout on or off.
+    overwrite : bool, optional
+        Overwrite existing species or raise an error.
+    prefix : str, optional
+        Prefix to prepend to lumped species names.
 
     Returns
-    dset      : xr.Dataset : Original species plus added lumped species
-
-    Remarks
     -------
+    dset : xr.Dataset
+        Original species plus added lumped species.
+
+    Notes
+    -----
     Key Improvements:
+
     1. Vectorized summation: Uses sum(to_sum) instead of incremental +=
     2. Lazy evaluation: Operations remain lazy until actual computation
     3. Single merge: Uses .assign() instead of merging many DataArrays
     4. Cleaner logic: More Pythonic dictionary iteration
 
     Performance Impact:
-    Original: O(n_lumped × n_constituents) individual array operations
-    Optimized: O(n_lumped) vectorized operations
+
+    - Original: O(n_lumped × n_constituents) individual array operations
+    - Optimized: O(n_lumped) vectorized operations
     """
 
     # Default is to add all benchmark lumped species.  Can overwrite
@@ -476,11 +532,15 @@ def get_species_categories(
     belongs to.  This determines which PDF files will contain the
     plots for the various species.
 
-    Args
-    benchmark_type : str  : Specifies the type of the benchmark
+    Parameters
+    ----------
+    benchmark_type : str, optional
+        Specifies the type of the benchmark.
 
-    Returns:
-    spc_cat_dict   : dict : Dictionary of categories and sub-categories
+    Returns
+    -------
+    spc_cat_dict : dict
+        Dictionary of categories and sub-categories.
     """
     ifile = BENCHMARK_CAT
     spc_cat_dict = util.read_config_file(
@@ -499,8 +559,10 @@ def archive_species_categories(
     Writes the list of benchmark categories to a YAML file
     for archival purposes.
 
-    Args:
-    dst  : str : Destination folder for YAML file output.
+    Parameters
+    ----------
+    dst : str
+        Destination folder for YAML file output.
     """
     ofile = BENCHMARK_CAT
     src = os.path.join(os.path.dirname(__file__), ofile)
@@ -511,15 +573,19 @@ def rename_speciesconc_to_speciesconcvv(
         dset
 ):
     """
-    Renames netCDF variables starting with "SpeciesConc_" (whcih was
+    Renames netCDF variables starting with "SpeciesConc_" (which was
     used prior to GEOS-Chem 14.1.0) to start with "SpeciesConcVV_".
     This is needed for backwards compatibility with older versions.
 
-    Args
-    dset : xr.Dataset : The input dataset
+    Parameters
+    ----------
+    dset : xr.Dataset
+        The input dataset.
 
     Returns
-    dset : xr.Dataset : The modified dataset
+    -------
+    dset : xr.Dataset
+        The modified dataset.
     """
     rename_dict = {}
     for var in dset.data_vars.keys():
@@ -537,12 +603,19 @@ def gcc_vs_gcc_dirs(
     Convenience function to return GCC vs. GCC file paths
     for use in the benchmarking modules.
 
-    Args
-    config         : dict : Info read from config file
-    subdir         : str  : Subdirectory
+    Parameters
+    ----------
+    config : dict
+        Info read from config file.
+    subdir : str
+        Subdirectory.
 
     Returns
-    refdir, devdir : str : Fike paths
+    -------
+    refdir : str
+        File path for the Ref model.
+    devdir : str
+        File path for the Dev model.
     """
     util.verify_variable_type(config, dict)
     util.verify_variable_type(subdir, str)
@@ -570,13 +643,19 @@ def gchp_vs_gcc_dirs(
     Convenience function to return GCHP vs. GCC file paths
     for use in the benchmarking modules.
 
-
-    Args
-    config         : dict : Info read from config file
-    subdir         : str  : Subdirectory
+    Parameters
+    ----------
+    config : dict
+        Info read from config file.
+    subdir : str
+        Subdirectory.
 
     Returns
-    refdir, devdir : str : Fike paths
+    -------
+    refdir : str
+        File path for the Ref model.
+    devdir : str
+        File path for the Dev model.
     """
     util.verify_variable_type(config, dict)
     util.verify_variable_type(subdir, str)
@@ -603,12 +682,19 @@ def gchp_vs_gchp_dirs(
     Convenience function to return GCHP vs. GCHP file paths
     for use in the benchmarking modules.
 
-    Args
-    config         : dict : Info read from config file
-    subdir         : str  : Subdirectory
+    Parameters
+    ----------
+    config : dict
+        Info read from config file.
+    subdir : str
+        Subdirectory.
 
     Returns
-    refdir, devdir : str : Fike paths
+    -------
+    refdir : str
+        File path for the Ref model.
+    devdir : str
+        File path for the Dev model.
     """
     util.verify_variable_type(config, dict)
     util.verify_variable_type(subdir, str)
@@ -636,10 +722,19 @@ def get_log_filepaths(
     Returns a list of paths for GEOS-Chem log files.
     These are needed to compute the benchmark timing tables.
 
-    Args
-    logs_dir   : str  : Path to directory w/ log files
-    template   : str  : Log file template w/ "%DATE%" token
-    timestamps : list : List of datetimes
+    Parameters
+    ----------
+    logs_dir : str
+        Path to directory w/ log files.
+    template : str
+        Log file template w/ "%DATE%" token.
+    timestamps : list
+        List of datetimes.
+
+    Returns
+    -------
+    result : list
+        List of log file paths.
     """
     util.verify_variable_type(logs_dir, str)
     util.verify_variable_type(template, str)
@@ -679,11 +774,15 @@ def get_datetimes_from_filenames(
     Returns datetimes obtained from GEOS-Chem diagnostic or
     restart file names.
 
-    Args
-    files     : list       : GEOS-CHem diagnostic/restart file names
+    Parameters
+    ----------
+    files : list
+        GEOS-Chem diagnostic/restart file names.
 
     Returns
-    datetimes : np.ndarray : Array of np.datetime64 values
+    -------
+    datetimes : np.ndarray
+        Array of np.datetime64 values.
     """
     datetimes = np.zeros(
         len(files),
@@ -705,14 +804,20 @@ def get_species_database_files(config, ref_model, dev_model):
     Returns the paths to the species_database.yml files in the
     Ref and Dev benchmark run directories.
 
-    Args:
-    config      : dict : Benchmark configuration information
-    ref_model   : str  : Either "gcc" or "gchp"
-    dev_model   : str  : Either "gcc" or "gchp"
+    Parameters
+    ----------
+    config : dict
+        Benchmark configuration information.
+    ref_model : str
+        Either "gcc" or "gchp".
+    dev_model : str
+        Either "gcc" or "gchp".
 
-    Returns:
-    spcdb_files : list : Paths to the species database files
-                         corresponding to Ref & Dev simulations
+    Returns
+    -------
+    spcdb_files : list
+        Paths to the species database files
+        corresponding to Ref & Dev simulations.
     """
     verify_variable_type(config, dict)
     verify_variable_type(ref_model, str)

@@ -26,11 +26,15 @@ def read_one_log_file(log_file):
     Parses the GEOS-Chem Classic log file (plain text) with
     timing information and returns a dictionary with the results.
 
-    Args
-    text_file : str  : GEOS-Chem log file
+    Parameters
+    ----------
+    log_file : str
+        GEOS-Chem log file.
 
     Returns
-    species   : dict : Dictionary with species metadata
+    -------
+    species : dict
+        Dictionary with species metadata.
     """
     keep_line = False
     species = {}
@@ -79,13 +83,21 @@ def read_one_log_file(log_file):
 def append_keys(species, species_database, keys):
     """
     Copies dictionary keys from the species database
-    to the existing dictionary
+    to the existing dictionary.
 
-    Args
-    species          : dict : Dictionary w/ GEOS-Chem metadata
-    species_database : dict : GEOS-Chem species database
-    keys             : list : Keys in species_database to append
-                              to species
+    Parameters
+    ----------
+    species : dict
+        Dictionary w/ GEOS-Chem metadata.
+    species_database : dict
+        GEOS-Chem species database.
+    keys : list
+        Keys in species_database to append to species.
+
+    Returns
+    -------
+    species : dict
+        Updated dictionary with appended keys.
     """
     for key in keys:
         if key in species_database:
@@ -104,12 +116,17 @@ def get_species_metadata(log_file, species_database):
     Returns the relevant metadata for a given species, taken from a
     GEOS-Chem log file as well as from the species database.
 
-    Args
-    log_file         : str          : GEOS-Chem log file
-    species_database : dict         : GEOS-Chem species database
+    Parameters
+    ----------
+    log_file : str
+        GEOS-Chem log file.
+    species_database : dict
+        GEOS-Chem species database.
 
     Returns
-    species_df       : pd.DataFrame : GEOS-Chem species metadata
+    -------
+    species_df : pd.DataFrame
+        GEOS-Chem species metadata.
     """
 
     # Read the list of species from the log file
@@ -135,8 +152,10 @@ def bool_to_str(val):
     Converts a boolean True value to an "X" for printing
     in the wiki table.
 
-    Args
-    val : bool : Boolean value to test.
+    Parameters
+    ----------
+    val : bool
+        Boolean value to test.
     """
     string = ""
     if val:
@@ -148,8 +167,10 @@ def write_wiki_table_header(ofile):
     """
     Writes the header of a wiki table.
 
-    Args
-    ofile   : _.io.TextIOWrapper : Output file handle
+    Parameters
+    ----------
+    ofile : io.TextIOWrapper
+        Output file handle.
     """
     line = "{| border=1 cellspacing=0 cellpadding=5\n"
     line += "!width='100px' bgcolor='#CCCCCC'|Name\n"
@@ -166,11 +187,14 @@ def write_wiki_table_header(ofile):
 
 def write_wiki_row(species, ofile):
     """
-    Prints metadata for a given GEOS-Chem species
+    Prints metadata for a given GEOS-Chem species.
 
-    Args
-    series : pd.Series : GEOS-Chem species metadata
-    ofile  : File      : File object for output file
+    Parameters
+    ----------
+    species : pd.Series
+        GEOS-Chem species metadata.
+    ofile : file
+        File object for output file.
     """
     line = "|-valign='top'\n"
     line += f"|{species.name}\n"
@@ -190,8 +214,10 @@ def write_wiki_table_footer(ofile):
     """
     Writes the footer for a wiki table.
 
-    Args
-    ofile   : _.io.TextIOWrapper : Output file handle
+    Parameters
+    ----------
+    ofile : io.TextIOWrapper
+        Output file handle.
     """
     print("|}\n", file=ofile)
 
@@ -200,10 +226,14 @@ def create_table(keys, species, ofile):
     """
     Creates a wiki table containing selected species.
 
-    Args
-    keys    : list               : Names of species to include in table
-    species : pd.DataFrame       : Species metadata
-    ofile   : _.io.TextIOWrapper : Output file handle
+    Parameters
+    ----------
+    keys : list
+        Names of species to include in table.
+    species : pd.DataFrame
+        Species metadata.
+    ofile : io.TextIOWrapper
+        Output file handle.
     """
     write_wiki_table_header(ofile)
 
@@ -220,9 +250,14 @@ def check_for_species_changes(species, ref, dev):
     Prints a list of species with attributes that have changed
     between the Ref and Dev versions.
 
-    species : list         : List of species in both Ref and Dev
-    ref     : pd.DataFrame : Species metadata for the Ref version
-    ref     : pd.DataFrame : Species metadata for the Dev version
+    Parameters
+    ----------
+    species : list
+        List of species in both Ref and Dev.
+    ref : pd.DataFrame
+        Species metadata for the Ref version.
+    dev : pd.DataFrame
+        Species metadata for the Dev version.
     """
     changed = {}
     keys = dev.index.tolist()
@@ -252,16 +287,23 @@ def make_benchmark_species_changes_wiki_tables(
         output_file,
 ):
     """
-    Creates tablees of species that have been added and removed
+    Creates tables of species that have been added and removed
     between Ref and Dev versions.
 
-    Args
-    ref_label   : str  : Label for the Ref version
-    ref_log     : str  : Path to log file for the Ref version
-    dev_label   : str  : Label for the Dev version
-    dev_log     : str  : Path to log file for the Dev version
-    spcdb_files : list : Paths to Ref & Dev species_database.yml files
-    output_file : str  : Path to file with generated wiki tables
+    Parameters
+    ----------
+    ref_label : str
+        Label for the Ref version.
+    ref_log : str
+        Path to log file for the Ref version.
+    dev_label : str
+        Label for the Dev version.
+    dev_log : str
+        Path to log file for the Dev version.
+    spcdb_files : list
+        Paths to Ref & Dev species_database.yml files.
+    output_file : str
+        Path to file with generated wiki tables.
     """
     verify_variable_type(ref_label, str)
     verify_variable_type(ref_log, str)

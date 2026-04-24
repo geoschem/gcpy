@@ -23,20 +23,17 @@ def add_blank_var_to_ncfile(
         varattrs=None
 ):
     """
-    Adds a variable containing all zeroes to a netCDF file
+    Adds a variable containing all zeroes to a netCDF file.
 
-    Args:
-    -----
+    Parameters
+    ----------
     varname : str
         Name of the variable to add.
-    infile: str
+    infile : str
         Name of the input netCDF file (will not be overwritten).
-    outfile: str
+    outfile : str
         Name of the output netCDF file containing varname.
-
-    Keyword Args:
-    -------------
-    varattrs: dict
+    varattrs : dict, optional
         A dictionary containing netCDF variable attributes to be written
         to outfile.
     """

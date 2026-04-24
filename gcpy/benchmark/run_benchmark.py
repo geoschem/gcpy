@@ -91,9 +91,10 @@ def choose_benchmark_type(config):
     """
     Decides which benchmark to run (default, 1yr, or 1yr_tt)
 
-    Args:
-        config : dict
-            Contains configuration for 1mon benchmark from yaml file.
+    Parameters
+    ----------
+    config : dict
+        Contains configuration for 1mon benchmark from yaml file.
     """
     if not (
         config["options"]["bmk_type"] == "FullChemBenchmark"
@@ -134,9 +135,10 @@ def run_benchmark_default(config):
     """
     Runs flexible date benchmark with the given configuration settings.
 
-    Args:
-        config : dict
-            Contains configuration for 1mon benchmark from yaml file.
+    Parameters
+    ----------
+    config : dict
+        Contains configuration for 1mon benchmark from yaml file.
     """
     # =====================================================================
     # Data directories

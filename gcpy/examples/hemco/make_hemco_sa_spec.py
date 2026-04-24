@@ -14,8 +14,13 @@ from gcpy.util import read_config_file, verify_variable_type
 def write_to_file(metadata):
     """
     Writes species metadata to the "HEMCO_sa_Spec.rc" file for the
-    HEMCO standaone mode.  Output includes species index, name, MW (g),
+    HEMCO standalone mode.  Output includes species index, name, MW (g),
     and Henry's law K0, CR, PKA parameters.
+
+    Parameters
+    ----------
+    metadata : dict
+        Species metadata read from the geoschem_species_metadata.yml file.
     """
     verify_variable_type(metadata, dict)
 
@@ -63,6 +68,18 @@ def make_hemco_sa_spec(argv):
     Reads metadata from the "geoschem_species_metadata.yml" file
     and then calls the "write_to_file" routine to create the
     "HEMCO_sa_Spec.rc" configuration file.
+
+    Parameters
+    ----------
+    argv : list
+        Command-line arguments; argv[1] must be the path to the
+        geoschem_species_metadata.yml file.
+
+    Raises
+    ------
+    FileNotFoundError
+        If argv does not contain exactly 2 elements, or if the
+        geoschem_species_metadata.yml file cannot be found.
     """
     if len(argv) != 2:
         msg = "The path to geoschem_species_metadata.yml was not passed!"

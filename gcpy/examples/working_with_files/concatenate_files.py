@@ -35,19 +35,18 @@ def find_files_in_dir(path, substrs):
     Returns a list of all files in a directory that match one or more
     substrings.
 
-    Args:
-    -----
-        path : str
-            Path to the directory in which to search for files.
+    Parameters
+    ----------
+    path : str
+        Path to the directory in which to search for files.
+    substrs : list of str
+        List of substrings used in the search for files.
 
-        substrs : list of str
-            List of substrings used in the search for files.
-
-    Returns:
-    --------
-        file_list : list of str
-            List of files in the directory (specified by path)
-            that match all substrings (specified in substrs).
+    Returns
+    -------
+    file_list : list of str
+        List of files in the directory (specified by path)
+        that match all substrings (specified in substrs).
     '''
 
     # Initialize
@@ -71,17 +70,14 @@ def replace_nans_with_zeroes(dset, verbose=True):
     Replaces NaN values with zeroes for each variable
     within an an xarray Dataset.
 
-    Args:
-    ----
-        dset : xarray Dataset
-            The input dataset, containing one or more data variables.
-
-    Keyword Args (optional):
-    ------------------------
-        verbose : boolean
-            Set this switch to print out the variable name, as well
-            as the min and max of the variable.  This will illustrate
-            the replacement of NaNs with zeroes.
+    Parameters
+    ----------
+    dset : xarray Dataset
+        The input dataset, containing one or more data variables.
+    verbose : bool, optional
+        Set this switch to print out the variable name, as well
+        as the min and max of the variable.  This will illustrate
+        the replacement of NaNs with zeroes.
     '''
 
     # Keep all netCDF attributes

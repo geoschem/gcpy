@@ -44,11 +44,16 @@ def make_mask(
     """
     Creates a netCDF mask file for a given country.
 
-    Args
-    filein     : str  : File with country ID values
-    country_id : int  : ID of the country that you want masked
-    fileout    : str  : Output mask file
-    mirror     : bool : Return a mirrored (i.e. inverted) mask?
+    Parameters
+    ----------
+    filein : str
+        File with country ID values.
+    country_id : int
+        ID of the country that you want masked.
+    fileout : str
+        Output mask file.
+    mirror : bool, optional
+        Return a mirrored (i.e. inverted) mask. Default value: False.
     """
     with xr.set_options(keep_attrs=True):
 
