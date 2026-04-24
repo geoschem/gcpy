@@ -55,7 +55,7 @@ def single_panel(
         return_list_of_plots=False,
         **extra_plot_args
 ):
-"""
+    """
     Core plotting routine -- creates a single plot panel.
 
     Parameters

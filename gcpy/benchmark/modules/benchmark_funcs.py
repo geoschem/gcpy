@@ -5861,7 +5861,7 @@ def diff_of_diffs_toprow_title(config, model):
             + config["data"]["ref"][model]["version"]
         )
 
-<    return title
+    return title
 
 
 def create_benchmark_sanity_check_table(

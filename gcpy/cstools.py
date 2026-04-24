@@ -148,7 +148,7 @@ def face_area(lon_b, lat_b, r_sphere=6.375e6):
     Returns
     -------
     cs_area : numpy.ndarray
-        Surface area in m\ :sup:`2` for each grid box of a
+        Surface area in m^2 for each grid box of a
         cubed-sphere grid face.
     """
     lon_b_rad = lon_b * DEG_TO_RAD
@@ -269,7 +269,7 @@ def grid_area(
         target_lat=None
 ):
     """
-    Returns the surface area in m\ :sup:`2` for each cell of a
+    Returns the surface area in m^2 for each cell of a
     cubed-sphere grid.
 
     Parameters
