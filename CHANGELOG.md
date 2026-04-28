@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Moved Sphinx ReadTheDocs packages into the GCPy environment files (needed for automatic API generation)
 - Updated Sphinx ReadTheDocs packages to the latest versions in environment files and `requirements.txt`
 - Replaced ReadTheDocs dependency `recommonmark` with `myst-parser`
+- Updated `__init__.py` files to ensure that each folder has its own file
 
 ### Fixed
 - Allow using a template at different grid resolutions in `gcpy/regrid_restart_file.py`
@@ -26,10 +27,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed `DeprecationWarning` in `single_panel.py` that occurs with numpy >=2.0
 
 ### Removed
-- Removed Python 3.9 from the GitHub Actions that try to build a Python environment; This version is now de-supported
+- Removed Python 3.9 from the GitHub Actions that try to build a Python environment; This version is now de-supported.
 - Removed emission inventories no longer used in benchmark simulations from `gcpy/benchmark/modules/emission_inventories.yml`
 - Removed the hotfix to skip `InvAFCID` emission diagnostics in routine `create_total_emissions_table`
 - Removed `docs/environment-files/read_the_docs_requirements.yml`
+- Removed `gcpy/examples/__init__.py`, it's not needed
 
 ## [1.7.1] - 2026-02-03
 ### Changed
