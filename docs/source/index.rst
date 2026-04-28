@@ -79,7 +79,7 @@ For documentation on setting up and running GEOS-Chem please see our
 
 .. toctree::
    :maxdepth: 1
-   :caption: API
+   :caption: GCPy API
 
    api
 
