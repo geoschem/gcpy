@@ -32,7 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed emission inventories no longer used in benchmark simulations from `gcpy/benchmark/modules/emission_inventories.yml`
 - Removed the hotfix to skip `InvAFCID` emission diagnostics in routine `create_total_emissions_table`
 - Removed `docs/environment-files/read_the_docs_requirements.yml`
-- Removed `gcpy/examples/__init__.py`, it's not needed
+- Removed `gcpy/examples/bpch_to_nc` folder as these examples require the de-supported xbpch package
 
 ## [1.7.1] - 2026-02-03
 ### Changed
