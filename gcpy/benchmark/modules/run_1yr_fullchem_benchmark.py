@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-run_1yr_fullchem_benchmark.py:
-    Driver script for creating benchmark plots and testing gcpy
-    1-year full-chemistry benchmark capability.
+Driver script for creating benchmark plots and tables from
+1-year GEOS-Chem full-chemistry benchmark simulations.
 
 Run this script to generate benchmark comparisons between:
 

@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""Plots ozone sonde data vs. GEOS-Chem data for 1-yr benchmarks"""
+"""
+Plots ozone sonde data versus data from GEOS-Chem 1 year
+benchmark simulations.
+"""
 
 import os
 import numpy as np
@@ -25,7 +28,7 @@ def get_ref_and_dev_model_data(
         varname="SpeciesConcVV_O3",
 ):
     """
-    Returns GEOS-Chem model ozone data as a Pandas Dataframe object.
+    Returns GEOS-Chem model ozone data.
 
     Parameters
     ----------

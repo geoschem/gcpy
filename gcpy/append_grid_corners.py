@@ -2,6 +2,18 @@
 """
 Program to append corner longitudes and latitudes to an xarray dataset
 contianing cubed-sphere "stretched-grid" data.
+
+Command-line Arguments
+----------------------
+
+.. option:: filein <filename>
+
+      Name of a cubed-sphere data file
+
+.. option:: --sg_params: <list>
+
+      Stretched-grid parameters: stretch factor, target longitude,
+      and target latitude.
 """
 import argparse
 import xarray as xr

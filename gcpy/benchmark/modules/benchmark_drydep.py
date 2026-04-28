@@ -1,5 +1,6 @@
 """
-Specific utilities for creating plots from GEOS-Chem benchmark simulations.
+Creates dry deposition velocity plots from GEOS-Chem benchmark
+simulation output.
 """
 import gc
 import numpy as np

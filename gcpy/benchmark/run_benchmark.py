@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """
-run_benchmark.py: Driver script for creating benchmark plots.
+Driver script for creating plots and tables from GEOS-Chem
+benchmark simulations.
 
 Run this script to generate benchmark comparisons between:
 

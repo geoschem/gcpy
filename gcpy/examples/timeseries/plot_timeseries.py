@@ -24,8 +24,8 @@ Page 2:
 
 You can of course modify this for your own particular applications.
 
-Author:
--------
+Author
+------
 Bob Yantosca
 yantosca@seas.harvard.edu
 23 Aug 2019

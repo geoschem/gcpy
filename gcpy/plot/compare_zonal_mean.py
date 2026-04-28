@@ -71,7 +71,7 @@ def compare_zonal_mean(
         dev_vert_params=None,
         **extra_plot_args
 ):
-    """
+    r"""
     Creates 3x2 comparison zonal-mean plots for variables
     common in two xarray Datasets. Optionally save to PDF.
 
@@ -169,7 +169,7 @@ def compare_zonal_mean(
         Default value: -1
     sigdiff_list : list of str, optional
         Returns a list of all quantities having significant
-        differences (where |max(fractional difference)| > 0.1).
+        differences (where \|max(fractional difference)\| > 0.1).
         Default value: None
     second_ref : xarray.Dataset, optional
         A dataset of the same model type / grid as refdata,

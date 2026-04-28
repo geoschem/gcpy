@@ -70,7 +70,7 @@ def compare_single_level(
         ll_plot_func='imshow',
         **extra_plot_args
 ):
-    """
+    r"""
     Create single-level 3x2 comparison map plots for variables common
     in two xarray Datasets. Optionally save to PDF.
 
@@ -167,7 +167,7 @@ def compare_single_level(
         Default value: -1
     sigdiff_list : list of str, optional
         Returns a list of all quantities having significant
-        differences (where |max(fractional difference)| > 0.1).
+        differences (where \|max(fractional difference)\| > 0.1).
         Default value: None
     second_ref : xarray.Dataset, optional
         A dataset of the same model type / grid as refdata,

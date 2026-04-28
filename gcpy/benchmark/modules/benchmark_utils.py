@@ -572,7 +572,7 @@ def archive_species_categories(
 def rename_speciesconc_to_speciesconcvv(
         dset
 ):
-    """
+    r"""
     Renames netCDF variables starting with "SpeciesConc\_" (which was
     used prior to GEOS-Chem 14.1.0) to start with "SpeciesConcVV\_".
     This is needed for backwards compatibility with older versions.

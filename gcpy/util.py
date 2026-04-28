@@ -184,7 +184,7 @@ def format_number_for_table(
         f_fmt="18.6f",
         e_fmt="18.8e"
 ):
-    """
+    r"""
     Returns a format string for use in the "print_totals" routine.
     If the number is greater than a maximum threshold or smaller
     than a minimum threshold, then use scientific notation format.
@@ -197,10 +197,10 @@ def format_number_for_table(
     number : float
         Number to be printed.
     max_thresh : float, optional
-        If |number| > max_thresh, use scientific notation.
+        If \|number\| > max_thresh, use scientific notation.
         Default value: 1.0e8
     min_thresh : float, optional
-        If |number| < min_thresh, use scientific notation.
+        If \|number\| < min_thresh, use scientific notation.
         Default value: 1.0e-6
     f_fmt : str, optional
         The default floating point format string.
@@ -374,7 +374,7 @@ def add_bookmarks_to_pdf(
         remove_prefix="",
         verbose=False
 ):
-    """
+    r"""
     Adds bookmarks to an existing PDF file.
 
     Parameters
@@ -388,8 +388,8 @@ def add_bookmarks_to_pdf(
     remove_prefix : str, optional
         Specifies a prefix to remove from each entry in varlist
         when creating bookmarks.  For example, if varlist has
-        a variable name "SpeciesConcVV_NO", and you specify
-        remove_prefix="SpeciesConcVV_", then the bookmark for
+        a variable name "SpeciesConcVV\_NO", and you specify
+        remove_prefix="SpeciesConcVV\_", then the bookmark for
         that variable will be just "NO", etc.
     verbose : bool, optional
         Set this flag to True to print extra informational output.

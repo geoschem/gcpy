@@ -29,7 +29,7 @@ def make_regridder_ll2ll(
         out_extent=None,
         method="conservative",
 ):
-    """
+    r"""
     Create an xESMF regridder between two lat/lon grids.
 
     Parameters
@@ -120,7 +120,7 @@ def make_regridder_cs2ll(
         sg_params=None,
         method="conservative",
 ):
-    """
+    r"""
     Create an xESMF regridder from a cubed-sphere to lat/lon grid.
 
     Parameters
@@ -218,7 +218,7 @@ def make_regridder_sg2sg(
         verbose=True,
         method="conservative",
 ):
-    """
+    r"""
     Create an xESMF regridder from a cubed-sphere / stretched-grid grid
     to another cubed-sphere / stretched-grid grid.
     Stretched-grid params of 1, 170, -90 indicate no stretching.
@@ -325,7 +325,7 @@ def make_regridder_ll2sg(
         sg_params=None,
         method="conservative"
 ):
-    """
+    r"""
     Create an xESMF regridder from a lat/lon to a cubed-sphere grid.
 
     Parameters

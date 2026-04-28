@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-run_1yr_tt_benchmark.py:
-    Script containing code for creating benchmark plots and testing
-    gcpy 1-year TransportTracers benchmark capability.
+Driver script for creating benchmark plots and tables from
+1-year GEOS-Chem TransportTracers benchmark simulations.
 
 Run this script to generate benchmark comparisons between:
 

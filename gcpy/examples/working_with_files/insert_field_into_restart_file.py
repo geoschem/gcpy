@@ -1,10 +1,18 @@
 #!/usr/bin/env python
-
 """
-Adds an extra DataArray for into restart files.
+Adds an extra DataArray into restart files.
 
-Calling sequence:
-    ./insert_species_into_restart.py
+Usage
+-----
+
+1. Activate the GCPy environment (gcpy_env).
+2. Copy this file to a different folder.
+3. In your copy, edit file names for your use case.
+4. Issue the following command:
+
+.. code-block:: console
+  
+   $ ./insert_field_into_restart_file.py
 """
 
 # Imports

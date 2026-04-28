@@ -4,8 +4,12 @@ Creates the "HEMCO_sa_Spec.rc" file (needed for the HEMCO
 standalone model) from a "geoschem_species_metadata.yml" file taken
 from a GEOS-Chem simulation.
 
-Calling sequence:
-$ ./make_hemco_sa_spec.py geoschem_species_metadata.yml
+Usage
+-----
+
+.. code-block:: console
+
+   $ ./make_hemco_sa_spec.py geoschem_species_metadata.yml
 """
 import sys
 from gcpy.util import read_config_file, verify_variable_type

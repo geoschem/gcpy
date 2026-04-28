@@ -1,34 +1,52 @@
 #!/usr/bin/env python3
 """
-Create a mask file (for emissions) from a netCDF file of country IDs:
+Create a mask file (for emissions) from a netCDF file of country IDs.
+
 Download this file before using:
 https://gcgrid.s3.amazonaws.com/HEMCO/MASKS/v2014-07/countrymask_0.1x0.1.nc
 
 Usage:
 ------
-./make_mask_file.py [-i filein] -o fileout -c country_id -m true|false
 
-where
+.. code-block:: console
 
--i filein     : File of country IDs (download from link above).
-                Default value: "countrymask_0.1x0.1.nc"
+   $ ./make_mask_file.py [-i filein] -o fileout -c country_id -m true|false
 
--o fileout    : Output file for the mask
+Command-line arguments
+----------------------
+.. option:: -i <filein>
 
--c country_id : ID of your desired country.
-                Use a netcdf file viewer to determine this value.
+    File of country IDs (download from link above).
+    Default value: ``countrymask_0.1x0.1.nc``
 
--m true|false : Create a mirrored (i.e. inverted) mask.
-                Default value: False/
+.. option:: -o <fileout>
+
+    Output file for the mask.
+
+.. option:: -c <country_id>
+
+    ID of your desired country. Use a netcdf file viewer
+    to determine this value.
+
+.. option:: -m <true|false>
+
+    Create a mirrored (i.e. inverted) mask.
+    Default value: ``False``
 
 Examples:
 ---------
 
-# Create a mask for Canada
-./make_mask_file.py -o Canada_Mask.01x01.nc -c 124
+Create a mask for Canada
 
-# Create a mirrored mask for Mexico
-./make_mask_file.py -o Mexico_Mask_Mirror.01x01.nc -c 484 -m true
+.. code-block:: console
+
+   $ ./make_mask_file.py -o Canada_Mask.01x01.nc -c 124
+
+Create a mirrored mask for Mexico
+
+.. code-block:: console
+
+   $ ./make_mask_file.py -o Mexico_Mask_Mirror.01x01.nc -c 484 -m true
 
 """
 import argparse

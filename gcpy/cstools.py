@@ -129,7 +129,7 @@ def read_gridspec(gs_obj):
 
 
 def face_area(lon_b, lat_b, r_sphere=6.375e6):
-    """
+    r"""
     Calculates the area of cubed-sphere grid cells on one face.
 
     Inputs must be in degrees. Edge arrays must be shaped
@@ -148,7 +148,7 @@ def face_area(lon_b, lat_b, r_sphere=6.375e6):
     Returns
     -------
     cs_area : numpy.ndarray
-        Surface area in m^2 for each grid box of a
+        Surface area in m\ :sup`2` for each grid box of a
         cubed-sphere grid face.
     """
     lon_b_rad = lon_b * DEG_TO_RAD
@@ -268,8 +268,8 @@ def grid_area(
         target_lon=None,
         target_lat=None
 ):
-    """
-    Returns the surface area in m^2 for each cell of a
+    r"""
+    Returns the surface area in m\ :sup:`2` for each cell of a
     cubed-sphere grid.
 
     Parameters
@@ -295,10 +295,9 @@ def grid_area(
     Returns
     -------
     cs_area : numpy.ndarray
-        Surface area in m\ :sup:`2` for each cell of the
-        cubed-sphere grid. Array shape is ``(6, n, n)`` following
-        the GMAO convention, where ``n`` is the number of cells
-        along a face edge.
+        Surface area in m\ :sup:`2` for each cell of the cubed-sphere
+        grid. Array shape is ``(6, n, n)`` following the GMAO convention, 
+        where ``n`` is the number of cells along a face edge.
     """
     if cs_res is None:
         cs_res = cs_grid['lon_b'].shape[-1] - 1

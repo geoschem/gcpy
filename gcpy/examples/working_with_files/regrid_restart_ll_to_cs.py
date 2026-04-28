@@ -1,6 +1,19 @@
 #!/usr/bin/env python
 """
 Regrids a 4x5 GEOS-Chem Classic restart file to cubed-sphere resolutions.
+
+Usage
+-----
+
+1. Activate the GCPy environment (gcpy_env).
+2. Copy this file to a different folder.
+3. In your copy, edit the weights_dir, simulation_list, month_list,
+   and cubed_sphere_grid_list for your use case.
+4. Issue the following command:
+
+.. code-block:: console
+
+   $ ./regrid_restart_ll_to_cs.py
 """
 
 # Imports
@@ -16,7 +29,7 @@ def main():
     weights_dir="/path/to/regridding/weights/"
 
     # List of simulation types (EDIT AS NEEDED)
-    simulation_list = ["carboncycle"]
+    simulation_list = ["carbon"]
 
     # List of months (EDIT AS NEEDED)
     month_list = ["01", "07"]

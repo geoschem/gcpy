@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-gcpy/benchmark/modules/benchmark_model_vs_obs.py
-
 Python functions to plot modeled data from 1-year fullchem benchmark
 simulations against observations for the year 2019.  At present, only
 O3 plots are supported, but this can be extended in the future.

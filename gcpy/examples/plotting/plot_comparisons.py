@@ -12,11 +12,34 @@ points in one run that are stored in separate xarray datasets.
 The example data described here is in lat/lon format, but the same
 code works equally well for cubed-sphere (GCHP) data.
 
-NOTE: If you are using GCPy from a Mac, set the environment variable:
+Command-line arguments
+----------------------
+
+.. option:: --ref </path/to/ref/file>
+
+      Path to NetCDF file from the Ref model.
+   
+.. option:: --dev </path/to/dev/file>
+
+      Path to NetCDF output file from the Dev model.
+
+.. option:: --varname <variable name>
+ 
+      Variable name to plot.
+  
+.. option:: --level <model level>
+
+      Level to plot (single-level plots only), starting at 0.
+
+Notes
+-----
+If you are using GCPy from a Mac, set the environment variable:
+
+.. code-block:: bash
 
    export MPLBACKEND="MacOSX"
 
-Otherwise set:
+.. code-block:: bash
 
    export MPLBACKEND="tkagg"
 

@@ -4966,7 +4966,7 @@ def make_benchmark_operations_budget(
         all GEOS-Chem budget operations are passed and optional arg
         compute_accum is True.
         Default value: ["Chemistry","Convection","EmisDryDep",
-                        "Mixing","Transport","WetDep"]
+        "Mixing","Transport","WetDep"]
     compute_accum : bool, optional
         Optionally turn on/off accumulation calculation. If True, will
         only compute accumulation if all six GEOS-Chem operations budgets
