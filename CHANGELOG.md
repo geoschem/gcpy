@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `benchmark/modules/emission_species.yml` to be consistent w/ the FullChemBenchmark emission diagnostics in GC 14.7.0 and later
 - Bumped `requests` to version 2.33.0 (suggested by @dependabot)
 - Updated GitHub Actions to the latest versions
+- Bumped `pip` to version 26.1.1 in `setup.py` and environment files
 
 ### Fixed
 - Allow using a template at different grid resolutions in `gcpy/regrid_restart_file.py`
@@ -20,7 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.7.1] - 2026-02-03
 ### Changed
-- Bumped `pip` to version 26.1 in `setup.py` and environment files
+- Bumped `pip` to version 26.0 in `setup.py` and environment files
 
 ### Fixed
 - Fixed error in `get_input_res` for numpy 2.x versions; we first copy the lon and lat arrays before sorting
