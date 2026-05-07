@@ -20,7 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.7.1] - 2026-02-03
 ### Changed
-- Bumped `pip` to version 26.0 in `setup.py` and environment files
+- Bumped `pip` to version 26.1 in `setup.py` and environment files
 
 ### Fixed
 - Fixed error in `get_input_res` for numpy 2.x versions; we first copy the lon and lat arrays before sorting
