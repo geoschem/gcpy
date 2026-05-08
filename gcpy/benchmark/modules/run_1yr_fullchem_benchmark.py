@@ -3,48 +3,50 @@
 Driver script for creating benchmark plots and tables from
 1-year GEOS-Chem full-chemistry benchmark simulations.
 
+This script corresponds with GCPy 1.7.1. Edit this version ID if releasing
+a new version of GCPy.
+
 Run this script to generate benchmark comparisons between:
 
-    (1) GCC (aka GEOS-Chem "Classic") vs. GCC
-    (2) GCHP vs GCC
-    (3) GCHP vs GCHP
+1. GCC (aka GEOS-Chem "Classic") vs. GCC
+2. GCHP vs GCC
+3. GCHP vs GCHP
 
 You can customize this by editing the settings in the corresponding yaml
 config file (eg. 1yr_fullchem_benchmark.yml).
 
-To generate benchmark output:
+Examples
+--------
 
-    (1) Copy the file gcpy/benchmark/config/1yr_fullchem_benchmark.yml
-        to a folder of your choice.
+This script will be called from the gcpy.benchmark.run_benchmark routine:
 
-    (2) Edit the 1yr_fullchem_benchmark.yml to select the desired options
-        and to point to the proper file paths on your system.
+.. code-block:: console
 
-    (3) Run the command:
+    $ conda activate gcpy_env
+    $ python -m gcpy.benchmark.run_benchmark <path-to-configuration-file>
 
-        $ python -m gcpy.benchmark.run_benchmark.py 1yr_fullchem_benchmark.yml
+Notes
+-----
 
-Remarks:
+By default, matplotlib will try to open an X window for plotting.
+If you are running this script in an environment where you do not have
+an active X display (such as in a computational queue), then you will
+need to use these commands to disable the X-window functionality.
 
-    By default, matplotlib will try to open an X window for plotting.
-    If you are running this script in an environment where you do not have
-    an active X display (such as in a computational queue), then you will
-    need to use these commands to disable the X-window functionality.
+.. code-block:: python
 
-        import os
-        os.environ["QT_QPA_PLATFORM"]="offscreen"
+    import os
+    os.environ["QT_QPA_PLATFORM"]="offscreen"
 
-    For more information, please see this issue posted at the ipython site:
+For more information, please see this issue posted at the ipython site:
+https://github.com/ipython/ipython/issues/10627
 
-        https://github.com/ipython/ipython/issues/10627
+Also, to disable matplotlib from trying to open X windows, you may
+need to set the following environment variable in your shell:
 
-    Also, to disable matplotlib from trying to open X windows, you may
-    need to set the following environment variable in your shell:
+.. code-block:: console
 
-        $ export MPLBACKEND=agg
-
-This script corresponds with GCPy 1.7.1. Edit this version ID if releasing
-a new version of GCPy.
+   $ export MPLBACKEND=agg
 """
 
 # =====================================================================

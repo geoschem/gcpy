@@ -558,7 +558,7 @@ def annual_metrics(
 
     1. "dyn": Ox subsiding from the stratosphere
 
-    2  "net": Net Ox = (POx-LOx) + Dyn - Drydep - Wetdep
+    2. "net": Net Ox = (POx-LOx) + Dyn - Drydep - Wetdep
 
     3. "life": Ox lifetime (d) = Ox burden / (LOx + Drydep + Wetdep)
 

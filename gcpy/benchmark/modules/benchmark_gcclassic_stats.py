@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-"""
+r"""
 Script to scrape statistics from a 1-month GEOS-Chem Classic benchmark run,
 which can then be placed in the "GEOS-Chem 1-month Benchmark Stats"
 Google spreadsheet.
 
-Calling sequence:
-$ python -m gcpy.benchmark.modules.benchmark_scrape_gcclassic_stats 14.5.0-alpha.5 14.5.0-alpha.6
+Examples
+--------
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ python -m gcpy.benchmark.modules.benchmark_scrape_gcclassic_stats \
+     14.5.0-alpha.5 \
+     14.5.0-alpha.6
 """
 import sys
 import requests

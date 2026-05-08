@@ -1,18 +1,22 @@
 #!/usr/bin/env python3
-"""
+r"""
 Generates a list of species that differ between versions, that
 can be printed on the GEOS-Chem wiki.
 
-Example:
+Example
+-------
 
-  python -m gcpy.benchmark.modules.benchmark_species_changes  \
-   --ref-label   "14.4.0"                                     \
-   --ref-log     "gcc_14.4.0/14.4.0.log                       \
-   --dev-label   "14.5.0"                                     \
-   --dev-log     "gcc_14.5.0/14.5.0.log"                      \
-   --spcdb-files ["gcc_14.4.0/species_database.yml",          \
-                  "gcc_14.5.0/species_database.yml"],         \
-   --output-file "wiki_tables.txt"
+.. code-block:: bash
+
+   $ conda activate gcpy_env
+   $ python gcpy.benchmark.modules.benchmark_species_changes \
+     --ref-label   "14.4.0"                                  \
+     --ref-log     "gcc_14.4.0/14.4.0.log"                   \
+     --dev-label   "14.5.0"                                  \
+     --dev-log     "gcc_14.5.0/14.5.0.log"                   \
+     --spcdb-files ["gcc_14.4.0/species_database.yml",       \
+                    "gcc_14.5.0/species_database.yml"],      \
+     --output-file "wiki_tables.txt"
 """
 
 from os.path import exists

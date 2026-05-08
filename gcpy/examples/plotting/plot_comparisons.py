@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-"""
+r"""
 Six Panel Comparison Plots
---------------------------------------
+--------------------------
+
 This example script demonstrates the comparitive plotting
 capabilities of GCPy, including single level plots as well as
 global zonal mean plots. These comparison plots are frequently
@@ -15,21 +16,38 @@ code works equally well for cubed-sphere (GCHP) data.
 Command-line arguments
 ----------------------
 
-.. option:: --ref </path/to/ref/file>
+.. option:: -r <str>, --ref <str>
 
-      Path to NetCDF file from the Ref model.
+   Path to NetCDF file from the Ref model.
    
-.. option:: --dev </path/to/dev/file>
+.. option:: -d <str>, --dev <str>
 
-      Path to NetCDF output file from the Dev model.
+   Path to NetCDF output file from the Dev model.
 
-.. option:: --varname <variable name>
+.. option:: -v <str>, --varname <str>
  
-      Variable name to plot.
+   Variable name to plot.
   
-.. option:: --level <model level>
+.. option:: [-l <int>, --level <int>]
 
-      Level to plot (single-level plots only), starting at 0.
+   Level to plot (single-level plots only), starting at 0.
+   Default: ``0``
+
+Examples
+--------
+
+Run plot comparisons for ozone from the GEOS-Chem SpeciesConc diagnostic
+output.  Use the 500 hPa level (level 22, starting from 0) for the
+single-level plots.
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ python -m gcpy.examples.plotting.plot_comparisons \
+     --ref /path/to/ref/GEOSChem.SpeciesConc.20190701_0000z.nc4 \
+     --dev /path/to/dev/GEOSChem.SpeciesConc.20190701_0000z.nc4 \
+     --varname SpeciesConcVV_O3 \
+     --level 22
 
 Notes
 -----
@@ -56,7 +74,7 @@ from gcpy.plot.compare_zonal_mean import compare_zonal_mean
 from gcpy.util import rename_and_flip_gchp_rst_vars
 
 
-def plot_comparisons(
+def plot_comparisons_examples(
         ref,
         dev,
         varname,
@@ -205,7 +223,7 @@ def main():
     args = parser.parse_args()
 
     # Call the plot_single_panel routine
-    plot_comparisons(
+    plot_comparisons_examples(
         args.ref,
         args.dev,
         args.varname,

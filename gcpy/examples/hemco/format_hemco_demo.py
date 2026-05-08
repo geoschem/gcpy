@@ -2,16 +2,24 @@
 """
 Example script using gcpy.community.format_hemco_data.py.
 
-NOTE: Before starting this demo, please download the file
+Examples
+--------
 
-https://gcgrid.s3.amazonaws.com/HEMCO/GCClassic_Output/14.0.0/2019/GEOSChem.ProdLoss.20190101_0000z.nc4
+1. Copy this file to a different folder and navigate to that folder.
 
-to this folder and rename it to HEMCO_demonstration_file.nc.
+2. Also download the file https://gcgrid.s3.amazonaws.com/HEMCO/GCClassic_Output/14.0.0/2019/GEOSChem.ProdLoss.20190101_0000z.nc4 to the same folder and rename it to :file:`HEMCO_demonstration_file.rc.`
+
+3. Run the following commands:
+
+   .. code-block:: console
+
+      $ conda activate gcpy_env
+      (gcpy_env) $ ./format_hemco_demo.py
 """
 import xarray as xr
 from copy import deepcopy as dc
 
-def format_hemco_demo():
+def run_the_demo():
     """
     Demonstrates the use of gcpy.community.format_hemco_data.
     """
@@ -148,4 +156,4 @@ def format_hemco_demo():
     )
 
 if __name__ == '__main__':
-    format_hemco_demo()
+    run_the_demo()

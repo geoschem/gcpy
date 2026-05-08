@@ -5,10 +5,12 @@ Python functions to plot modeled data from 1-year fullchem benchmark
 simulations against observations for the year 2019.  At present, only
 O3 plots are supported, but this can be extended in the future.
 
-Author: Matt Rowlinson <matthew.rowlinson@york.ac.uk>
+References
+----------
+Author: Matt Rowlinson (York University)
 
-Linted with PyLint and incorporated into GCPy
-by Bob Yantosca <yantosca@seas.harvard.edu>
+Linted with PyLint and incorporated into GCPy by Bob Yantosca
+(GitHub: @yantosca)
 """
 import glob
 from datetime import datetime, timedelta

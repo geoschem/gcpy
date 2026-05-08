@@ -1,6 +1,63 @@
 #!/usr/bin/env python3
-"""
+r"""
 Script to visualize output from the KPP standalone box model.
+
+Command-line Arguments
+----------------------
+
+.. option:: --refdir <str>
+
+   Folder containing KPP-Standalone output from the Ref model.
+
+.. option:: [--reflabel <str>]
+
+   Plot label for the Ref model.
+   Default: ``"Ref"``
+
+.. option:: --devdir <str>
+
+   Folder containing KPP-Standalone output from the Dev model.
+
+.. option:: [--devlabel <str>]
+
+   Plot label for the Dev model.
+   Default: ``"Dev"``
+
+.. option:: [--pattern <str>]
+
+   Glob pattern used to match KPP-Standalone log filenames.
+
+.. option:: --species <str>
+
+   Name of the species to plot.
+
+.. option:: [--pdfname <str>]
+
+   Name of the PDF file to be created.
+   Default: ``"kppsa_output.pdf"``
+
+Raises
+------
+
+ValueError
+    If no Ref files matching ``--pattern`` are found in ``--refdir``.
+ValueError
+    If no Dev files matching ``--pattern`` are found in ``--devdir``.
+
+Example
+-------
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.kpp.kppsa_plot_sites             \
+               --refdir   /path/to/KPP-Standalone/Ref/log/files \
+               --reflabel Rosenbrock                            \
+               --devdir   /path/to/KPP-Standalone/Dev/log/files \
+               --devlabel Backwards Euler                       \
+               --pattern  20190701_0040.log                     \
+               --species  O3                                    \
+               --pdfname  KPP-Standalone-O3-20190701-0040.pdf
 """
 
 # Imports
@@ -103,35 +160,6 @@ def main():
     """
     Parses command-line arguments and calls
     :func:`kppsa_plot_species_at_sites`.
-
-    Command-line Arguments
-    ----------------------
-    --refdir : str
-        Folder containing KPP-Standalone output from the Ref model.
-    --reflabel : str, optional
-        Plot label for the Ref model.
-        Default: ``"Ref"``
-    --devdir : str
-        Folder containing KPP-Standalone output from the Dev model.
-    --devlabel : str, optional
-        Plot label for the Dev model.
-        Default: ``"Dev"``
-    --pattern : str, optional
-        Glob pattern used to match KPP-Standalone log filenames.
-    --species : str
-        Name of the species to plot.
-    --pdfname : str, optional
-        Name of the PDF file to be created.
-        Default: ``"kppsa_output.pdf"``
-
-    Raises
-    ------
-    ValueError
-        If no Ref files matching ``--pattern`` are found in
-        ``--refdir``.
-    ValueError
-        If no Dev files matching ``--pattern`` are found in
-        ``--devdir``.
     """
     # Tell the parser which arguments to look for
     parser = argparse.ArgumentParser(

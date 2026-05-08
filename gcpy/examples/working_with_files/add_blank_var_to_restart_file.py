@@ -5,17 +5,17 @@ Example program to add a variable containing all zeroes to an
 xarray Dataset object.  Useful when you have to insert new
 species into GEOS-Chem diagnostic or restart files.
 
-Usage
------
+Examples
+--------
 
-1. Activate the GCPy environment (gcpy_env).
-2. Copy this file to a different folder.
-3. In your copy, edit atttributes and file names for your use case.
-4. Issue the following command:
+1. Copy this file to a different folder and navigate to that folder.
+2. In your copy, edit atttributes and file names for your use case.
+3. Run the following commands:
 
 .. code-block:: console
 
-   $ ./regrid_restart_ll_to_cs.py
+   $ conda activate gcpy_env
+   (gcpy_env) $ ./regrid_restart_ll_to_cs.py
 """
 
 import numpy as np

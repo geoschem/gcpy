@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
-"""
+r"""
 Compares GCHP emission diagnostic entries in HISTORY.rc
 and in HEMCO_Diagn.rc configuration files for consistency.
+
+Examples
+--------
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.diagnostics.check_gchp_emission_diags \
+                /path/to/GCHP/run/directory                                   \
+                SIMULATION-NAME
+
 """
 from os.path import join, realpath
 from sys import argv

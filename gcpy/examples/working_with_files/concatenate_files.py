@@ -1,30 +1,30 @@
 #!/usr/bin/env python
-
-'''
+"""
 This Python script concatenates several individual netCDF files
 into a single netCDF file using xarray.
 
-Usage
------
+Examples
+--------
 
-1. Activate the GCPy environment (gcpy_env).
-2. Copy this file to a different folder.
-3. In your copy, edit the file names for your use case.
-4. Issue the following command:
+1. Copy this file to a different folder and navigate to that folder.
+2. In your copy, edit the file names for your use case.
+3. Run the following commands:
 
 .. code-block:: console
- 
-   $ ./concatentate_files.py
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ ./concatentate_files.py
 
 Notes
-----
+-----
+
 If you have several individual files with one variable per file,
 you should consider concatenating them into a single file.
 This is often more efficient, as opening each netCDF file incurs
 computational overhead.  It is usually faster to read data from
 a file with multiple variables than to having to open several
 files with one variable each.
-'''
+"""
 
 # Imports
 import os

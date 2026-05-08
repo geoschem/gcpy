@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-'''
+"""
 Example of plotting timeseries data from GEOS-Chem and saving
 the output to a PDF file.  You can modify this for your particular
 diagnostic output.  This also contains a good overview of
@@ -24,12 +24,24 @@ Page 2:
 
 You can of course modify this for your own particular applications.
 
-Author
-------
-Bob Yantosca
-yantosca@seas.harvard.edu
-23 Aug 2019
-'''
+Examples
+--------
+
+1. Copy this file to a different folder and navigate to that folder.
+2. Edit file paths, collection names, and coordinates in the main() routine.
+3. Run the following commands.
+
+   .. code-block:: console
+
+      $ conda activate gcpy_env
+      (gcpy_env) $ ./plot_timeseries.py
+
+
+References
+----------
+
+Author: Bob Yantosca (GitHub: @yantosca), 23 Aug 2019
+"""
 
 # Imports
 import os

@@ -1,36 +1,50 @@
 #!/usr/bin/env python3
-
 """
-Description
------------
 This Python script (assumes Python3) reads a GEOS-Chem or
 HEMCO-standalone log file containing dry-run output and does
 the following:
 
-    (1) Creates a list of unique files that are required for the
-        GEOS-Chem or HEMCO-standalone simulation;
+1. Creates a list of unique files that are required for the
+   GEOS-Chem or HEMCO-standalone simulation;
 
-    (2) Creates a bash script to download missing files from either
-        the ComputeCanada server (default) or the AWS s3://gcgrid
-        bucket;
+2. Creates a bash script to download missing files from either
+   the ComputeCanada server (default) or the AWS s3://gcgrid
+   bucket;
 
-    (3) Executes the bash script to download the necessary data;
+3. Executes the bash script to download the necessary data;
 
-    (4) Removes the bash script upon successful download.
+4. Removes the bash script upon successful download.
 
+Examples
+--------
 
-Remarks
--------
-    (1) This script only requires the "os", "sys", and "subprocess"
-        packages, which are core Python.  Therefore, this script can
-        be shipped with GEOS-Chem run directories.  It only requires
-        Python 3 and not a full Anaconda/Miniconda environment (but
-        you can run in an Anaconda environment if you have one).
+Downloads data from a GEOS-Chem dry run simulation.
 
-    (2) Jiawei Zhuang found that it is much faster to issue aws s3 cp
-        commands from a bash script than a Python script.  Therefore,
-        in this routine we create a bash script with all of the
-        download commands that will be executed by the main routine.
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.dry_run.download_data log MIRROR-NAME
+
+Prints the unique log file name and exits.
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.dry_run.download_data log MIRROR-NAME
+
+Notes
+-----
+
+1. This script only requires the "os", "sys", and "subprocess"
+   packages, which are core Python.  Therefore, this script can
+   be shipped with GEOS-Chem run directories.  It only requires
+   Python 3 and not a full Anaconda/Miniconda environment (but
+   you can run in an Anaconda environment if you have one).
+
+2. Jiawei Zhuang found that it is much faster to issue aws s3 cp
+   commands from a bash script than a Python script.  Therefore,
+   in this routine we create a bash script with all of the
+   download commands that will be executed by the main routine.
 """
 
 # Imports
@@ -643,11 +657,6 @@ def main():
     """
     Main program.  Gets command-line arguments and calls function
     download_the_data to initiate a data-downloading process.
-
-    Calling sequence
-    ----------------
-        ./download_data.py log MIRROR-NAME
-        ./download_data.py log -skip-download  # Print unique log & exit
     """
 
     # Download the data files from the remote server

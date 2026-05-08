@@ -1,6 +1,38 @@
 #!/usr/bin/env python3
-"""
+r"""
 Creates a "quick-look" plot from KPP-Standalone box model output.
+
+Command-line arguments
+----------------------
+
+.. option:: -d <str>, --dirname <str>
+
+   Folder containing KPP-Standalone output files.
+
+.. option:: [-l <str>, --label <str>]
+
+   Descriptive label used in the plot legend.
+   Default: ``"KPP-Standalone output"``
+
+.. option:: [-p <str>, --pattern <str>]
+
+   Glob pattern used to match KPP-Standalone log filenames.
+
+.. option:: [-s <str>, --species <str>]
+
+   Name of the species to plot.
+
+Examples
+--------
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.kpp.kppsa_quick_look    \
+              --dirname /path/to/KPP-Standalone/output \
+              --label   Rosenbrock                     \
+              --pattern Beijing*20190701_0040.log      \
+              --species O3
 """
 
 # Imports
@@ -94,18 +126,6 @@ def main():
     Parses command-line arguments and calls
     :func:`kppsa_make_quick_look_plot` to generate a quick-look
     plot from KPP-Standalone box model output.
-
-    Command-line Arguments
-    ----------------------
-    -d, --dirname : str
-        Folder containing KPP-Standalone output files.
-    -l, --label : str, optional
-        Descriptive label used in the plot legend.
-        Default: ``"KPP-Standalone output"``
-    -p, --pattern : str, optional
-        Glob pattern used to match KPP-Standalone log filenames.
-    -s, --species : str
-        Name of the species to plot.
     """
     # Tell the parser which arguments to look for
     parser = argparse.ArgumentParser(

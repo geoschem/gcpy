@@ -1,10 +1,25 @@
 #!/usr/bin/env python
-"""
+r"""
 Example script that can compare diagnostics from two different netCDF
 collections.  Similar to compute_diagnostics.ipynb, but can be used
 without having to open a Jupyter notebook.  The parameters for the
 configuration are specified in a YAML file whose name is passed
 as an argument.
+
+Examples
+--------
+
+#. Copy the :file:`compare_diags.yml` file to a different folder
+#. In your copy of :file:`compare_diags.yml`, edit labels, file paths,
+   etc. for the Ref and Dev versions.  Also select the types
+   of output that you desire.
+#. Run the following commands:
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.diagnostics.compare_diags \
+                /path/to/yaml/file
 """
 import os
 import sys

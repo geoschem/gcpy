@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 """
-Prints information about a GEOS-Chem Classic horizontal grid
+Prints information about a GEOS-Chem Classic horizontal grid.
+
+Examples
+--------
+
+Run the following commands:
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.grids/display_gcclassic_grid_info
+
+And select your desired grid from the menu.
 """
 from gcpy.grid import make_grid_ll
 

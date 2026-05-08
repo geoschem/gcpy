@@ -2390,10 +2390,11 @@ def make_benchmark_jvalue_plots(
     Notes
     -----
     Will create 4 files containing J-value plots:
+
     1. Surface values
     2. 500 hPa values
-    3a. Full-column zonal mean values.
-    3b. Stratospheric zonal mean values
+    3. Full-column zonal mean values
+    4. Stratospheric zonal mean values
 
     These can be toggled on/off with the plots keyword argument.
 
@@ -2788,7 +2789,14 @@ def make_benchmark_collection_2d_var_plots(
 
     Notes
     -----
-    Will create 1 file containing Budget plots.
+    Will create 4 files containing the following plots:
+
+    1. Surface values
+    2. 500 hPa values
+    3. Full-column zonal mean values.
+    4. Stratospheric zonal mean values
+
+    These can be toggled on/off with the plots keyword argument.
     """
 
     # ==================================================================
@@ -2984,20 +2992,14 @@ def make_benchmark_collection_3d_var_plots(
 
     Notes
     -----
-    Will create 4 files containing J-value plots:
+    Will create 4 files containing the following plots:
+
     1. Surface values
     2. 500 hPa values
-    3a. Full-column zonal mean values.
-    3b. Stratospheric zonal mean values
+    3. Full-column zonal mean values.
+    4. Stratospheric zonal mean values
 
     These can be toggled on/off with the plots keyword argument.
-
-    At present, we do not yet have the capability to split the
-    plots up into separate files per category (e.g. Oxidants,
-    Aerosols, etc.).  This is primarily due to the fact that
-    we archive J-values from GEOS-Chem for individual species
-    but not family species.  We could attempt to add this
-    functionality later if there is sufficient demand.
     """
 
     # ==================================================================

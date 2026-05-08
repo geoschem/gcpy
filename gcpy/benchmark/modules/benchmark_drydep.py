@@ -169,8 +169,8 @@ def drydepvel_species():
     Returns a list of species for the dry deposition velocity
     (DryDepVel) benchmark plots:
 
-    Returns:
-    --------
+    Returns
+    -------
     varnames (list of str): Variable names to plot
     """
     # These are key dry deposition species (as per Mat Evans)

@@ -938,10 +938,6 @@ def calc_delta_lon(lon_edge):
     Notes
     -----
     Accounts for looping over the domain.
-
-    Examples
-    --------
-    #TODO
     """
 
     n_lon = (lon_edge.size) - 1
