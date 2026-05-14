@@ -5,6 +5,10 @@ All notable changes to GCPy will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased] - TBD
+### Added
+- Added HONO and NAP to `gcpy/benchmark/modules/emission_species.yml`
+- Added MGLY to `gcpy/benchmark/modules/benchmark_categories.yml`
+
 ### Changed
 - Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
 - Updated `benchmark/modules/emission_species.yml` to be consistent w/ the FullChemBenchmark emission diagnostics in GC 14.7.0 and later
@@ -18,6 +22,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### Removed
 - Removed Python 3.9 from the GitHub Actions that try to build a Python environment; This version is now de-supported
+- Removed emission inventories no longer used in benchmark simulations from `gcpy/benchmark/modules/emission_inventories.yml`
+- Removed the hotfix to skip `InvAFCID` emission diagnostics in routine `create_total_emissions_table`
 
 ## [1.7.1] - 2026-02-03
 ### Changed

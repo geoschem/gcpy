@@ -260,10 +260,6 @@ def create_total_emissions_table(
         # =============================================================
         for v in varnames:
 
-            # KLUDGE, skip InvAFCID due to a file error in GCHP
-            if "InvAFCID" in v:
-                continue
-
             if "Inv" in template:
                 spc_name = v.split("_")[1]
             else:

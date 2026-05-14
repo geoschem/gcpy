@@ -204,6 +204,7 @@ FullChemBenchmark:
       - CH2O
       - GLYC
       - GLYX
+      - MGLY
       - HPALDs
       - MACR
       - RCHO
