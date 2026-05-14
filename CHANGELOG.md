@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - TBD
 ### Added
 - Added HONO and NAP to `gcpy/benchmark/modules/emission_species.yml`
+- Added MGLY to `gcpy/benchmark/modules/benchmark_categories.yml`
 
 ### Changed
 - Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
