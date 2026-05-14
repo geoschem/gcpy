@@ -41,6 +41,7 @@ FullChemBenchmark:
   HCl: Tg
   HCOOH: Tg
   HNO3: Tg
+  HONO: Tg
   ISOP: Tg
   LIMO: Tg
   MACR: Tg
@@ -52,6 +53,7 @@ FullChemBenchmark:
   MTPA: Tg
   MTPO: Tg
   MVK: Tg
+  NAP: Tg
   NH3: Tg
   'NO': Tg  # Quotes are necessary, otherwise YAML interprets NO as False
   NO2: Tg
