@@ -23,7 +23,13 @@ properly onto your system.
 Source code
 ===========
 
-**Script location:** `gcpy/examples/plotting/create_test_plot.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/create_test_plot.py>`_
+.. list-table::
+   :header-rows: 1
+
+   * - Description
+     - Script location
+   * - :func:`gcpy.examples.plotting.create_test_plot`
+     - `gcpy/examples/plotting/create_test_plot.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/create_test_plot.py>`_
 
 .. _test-plot-usage:
 

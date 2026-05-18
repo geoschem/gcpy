@@ -30,7 +30,13 @@ and this zonal mean plot:
 Source code
 ===========
 
-**Script location:** `gcpy/examples/plotting/plot_single_panel.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_single_panel.py>`_
+.. list-table::
+   :header-rows: 1
+
+   * - Description
+     - Script location
+   * - :func:`gcpy.examples.plotting.plot_single_panel`
+     - `gcpy/examples/plotting/plot_single_panel.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_single_panel.py>`_
 
 .. _single-panel-usage:
 

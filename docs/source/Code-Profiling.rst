@@ -31,7 +31,13 @@ by the :program:`gprofng` performance profiler.
 Source code
 -----------
 
-**Script location:** `gcpy/profile/gprofng_functions.py <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/gprofng_functions.py>`_
+.. list-table::
+   :header-rows: 1
+
+   * - Description
+     - Script location
+   * - :func:`gcpy.profile.gprofng_functions`
+     - `gcpy/profile/gprofng_functions.py <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/gprofng_functions.py>`_
 
 .. _code-profiling-gprofng-usage:
 
@@ -87,12 +93,18 @@ time spent in a subroutine, excluding time spent in any subroutines
 called by the subroutine.
 
 Make sure that you have :ref:`specified the proper Matplotlib backend
-<mpl-backend>` for your system. Then run the example script with the
-following command:
+<mpl-backend>` for your system.  Also activate your GCPy Python
+environment with:
 
 .. code-block:: console
 
-   $ python -m gcpy.profile.gprofng_functions functions_profile.txt 1 40
+   $ conda activate gcpy_env
+
+Then run the example script with the following command:
+
+.. code-block:: console
+
+   (gcpy_env) $ python -m gcpy.profile.gprofng_functions functions_profile.txt 1 40
 
 This will create a plot similar to that shown above, which shows the
 top 40 functions sorted by exclusive time. To see the next 40
@@ -100,10 +112,16 @@ functions sorted by exclusive time, use this command:
 
 .. code-block:: console
 
-   $ python -m gcpy.profile.gprofng_functions functions_profile.txt 41 80
+   (gcpy_env) $ python -m gcpy.profile.gprofng_functions functions_profile.txt 41 80
 
 etc.  You should display fewer than 50 functions in order to prevent
 the time and percent labels from overlapping.
+
+You may now deactivate the Python environment.
+
+.. code-block:: console
+
+   $ conda deactivate
 
 .. _code-profiling-vtune:
 
@@ -119,19 +137,23 @@ VTune profiler in an easy-to-read format.
 Source code
 -----------
 
-**Script locations**
+.. list-table::
+   :header-rows: 1	
 
-- `gcpy/profile/vtune_utils.py
-  <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_utils.py>`_
-
-- `gcpy/profile/vtune_list_hotspots.py
-  <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_list_hotspots.py>`_
-
-- `gcpy/profile/vtune_compare_hotspots.py
-  <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_compare_hotspots.py>`_
-
-- `gcpy/profile/vtune_plot_hotspots.py
-  <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_plot_hotspots.py>`_
+   * - Description
+     - Script location		 
+   * - :func:`gcpy.profile.vtune_utils`
+     - `gcpy/profile/vtune_utils.py
+       <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_utils.py>`_
+   * - :func:`gcpy.profile.vtune_list_hotspots`
+     - `gcpy/profile/vtune_list_hotspots.py
+       <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_list_hotspots.py>`_
+   * - :func:`gcpy.profile.vtune_compare_hotspots`
+     - `gcpy/profile/vtune_compare_hotspots.py
+       <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_compare_hotspots.py>`_
+   * - :func:`gcpy.profile.vtune_plot_hotspots`
+     - `gcpy/profile/vtune_plot_hotspots.py
+       <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_plot_hotspots.py>`_
 
 .. _code-profiling-vtune-usage:
 
@@ -174,10 +196,15 @@ The report will be in comma-separated-variable (CSV) format, using the
 horizontal tab (:literal:`\\t`) character as the separator.  Use this
 command to display the list:
 
+Activate your GCPy python environmetn
+
+
 .. code-block:: console
 
-   $ python -m gcpy.profile.vtune_list_hotspots -f hotspots.by-function.csv
-
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.profile.vtune_list_hotspots -f hotspots.by-function.csv
+   $ conda deactivate
+   
 You will see output similar to this:
 
 .. code-block:: text
@@ -223,7 +250,7 @@ You will see output similar to this:
 
    .. code-block:: console
 
-      $  $ python -m gcpy.profile.vtune_list_hotspots -f hotspots.by-function.csv -l 40
+      $ python -m gcpy.profile.vtune_list_hotspots -f hotspots.by-function.csv -l 40
 
    will display 40 lines per screen, etc.
 
@@ -298,11 +325,12 @@ both runs.  Use the following command:
 
 .. code-block:: console
 
-   python -m gcpy.profile.vtune_compare_hotspots       \
-     --ref-file     "hotspots.by-function.before.csv"  \
-     --ref-label    "Before"                           \
-     --dev-file     "hotspots.by-function.after.csv"   \
-     --dev-label    "After"                            \
+   $ conda activate gcpy_env		
+   (gcpy_env) $ python -m gcpy.profile.vtune_compare_hotspots \
+     --ref-file     "hotspots.by-function.before.csv"         \
+     --ref-label    "Before"                                  \
+     --dev-file     "hotspots.by-function.after.csv"          \
+     --dev-label    "After"                                   \
      --hotspot-name "get_current_emissions"
 
 You will then see output similar to this:
