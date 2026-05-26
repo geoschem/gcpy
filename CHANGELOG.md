@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Fixed
 - Allow using a template at different grid resolutions in `gcpy/regrid_restart_file.py`
 - Implemented a workaround in `gcpy/regrid.py` to allow use of either `np.product` or `np.prod` depending on the Numpy version
+- Fixed `DeprecationWarning` in `single_panel.py` that occurs with numpy >=2.0
 
 ### Removed
 - Removed Python 3.9 from the GitHub Actions that try to build a Python environment; This version is now de-supported
