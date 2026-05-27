@@ -456,22 +456,22 @@ def single_panel(
                 if len(minlon_i) == 0:
                     minlon_i = 0
                 else:
-                    minlon_i = int(minlon_i)
+                    minlon_i = int(minlon_i[0])
                 maxlon_i = np.where(grid['lon_b']==closest_maxlon)[0]
                 if len(maxlon_i) == 0:
                     maxlon_i = -1
                 else:
-                    maxlon_i = int(maxlon_i)
+                    maxlon_i = int(maxlon_i[0])
                 minlat_i = np.where(grid['lat_b']==closest_minlat)[0]
                 if len(minlat_i) == 0:
                     minlat_i = 0
                 else:
-                    minlat_i = int(minlat_i)
+                    minlat_i = int(minlat_i[0])
                 maxlat_i = np.where(grid['lat_b']==closest_maxlat)[0]
                 if len(maxlat_i) == 0:
                     maxlat_i = -1
                 else:
-                    maxlat_i = int(maxlat_i)
+                    maxlat_i = int(maxlat_i[0])
                 plot_vals = plot_vals[minlat_i:maxlat_i+1,
                                       minlon_i:maxlon_i+1]
             # Create a lon/lat plot
