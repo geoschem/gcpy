@@ -526,6 +526,7 @@ def find_index_single(
         f'+proj=gnom +lat_0={y_find} +lon_0={x_find}'
     )
 
+    # Generate all distances
     distances = central_angle(
         x_find, y_find, x_centers_flat, y_centers_flat
     )
@@ -539,6 +540,7 @@ def find_index_single(
         for polygon_xy in four_nearest_xy
     ]
 
+    # Transform to gnomonic projection
     gno_transform = pyproj.Transformer.from_proj(
         latlon_crs, gnomonic_crs, always_xy=True
     ).transform
@@ -547,6 +549,7 @@ def find_index_single(
         for polygon in four_nearest_polygons
     ]
 
+    # Figure out which polygon contains the point
     xy_find     = shapely.geometry.Point(x_find, y_find)
     xy_find_gno = shapely.ops.transform(gno_transform, xy_find)
     polygon_contains_point = [
@@ -554,6 +557,8 @@ def find_index_single(
         for polygon in four_nearest_polygons_gno
     ]
 
+    # If the point cannot be matched (such as can happen near the poles),
+    # move the longitude by the jitter_size (in meters) and try again.
     if np.count_nonzero(polygon_contains_point) == 0:
         if jitter_size > 0.0:
             nf_cs, ydim_cs, xdim_cs = find_index_single(
@@ -571,6 +576,7 @@ def find_index_single(
             msg += 'could not be matched'
             raise ValueError(msg)
 
+    # The first will be selected, if more than one
     polygon_with_point = np.argmax(polygon_contains_point)
     nf_cs   = four_nearest_indexes[0][polygon_with_point]
     ydim_cs = four_nearest_indexes[1][polygon_with_point]
