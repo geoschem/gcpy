@@ -21,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated Sphinx ReadTheDocs packages to the latest versions in environment files and `requirements.txt`
 - Replaced ReadTheDocs dependency `recommonmark` with `myst-parser`
 - Updated `__init__.py` files to ensure that each folder has its own file
+- Updated `.readthedocs.yaml` to build the Python environment with conda instead of pip
 
 ### Fixed
 - Allow using a template at different grid resolutions in `gcpy/regrid_restart_file.py`
