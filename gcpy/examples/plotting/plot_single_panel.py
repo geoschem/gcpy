@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-"""
+r"""
 Global and Regional Single Panel Plots
 --------------------------------------
+
 This example script demonstrates the core single panel plotting
 capabilities of GCPy, including global and regional single level plots
 as well as global zonal mean plots.
@@ -13,11 +14,49 @@ For full documentation on the plotting capabilities of GCPy
 (including full argument lists), please see the GCPy documentation
 at https://gcpy.readthedocs.io.
 
-NOTE: If you are using GCPy from a Mac, set the environment variable:
+Command-line arguments
+----------------------
+
+.. option:: -i <str>, --infile <str>
+
+   Path to a NetCDF file.
+
+.. option:: -v <str>, --varname <str>
+
+   Variable name to plot.
+
+.. option:: [-l <int>, --level <int>]
+
+   Level to plot (single-level plots only), starting at 0.
+   Default: ``0``
+
+Examples
+--------
+
+Run plot comparisons for ozone from the GEOS-Chem SpeciesConc diagnostic
+output.  Use the 500 hPa level (level 22, starting from 0) for the
+single-level plots.
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.plotting.plot_comparisons \
+                --infile GEOSChem.SpeciesConc.20190701_0000z.nc4  \
+                --varname SpeciesConcVV_O3                        \
+                --level 22
+
+Notes
+-----
+
+If you are using GCPy from a Mac, set the environment variable:
+
+.. code-block:: bash
 
    export MPLBACKEND="MacOSX"
 
 Otherwise set:
+
+.. code-block:: bash
 
    export MPLBACKEND="tkagg"
 
@@ -32,16 +71,19 @@ from gcpy.plot.single_panel import single_panel
 from gcpy.util import rename_and_flip_gchp_rst_vars
 
 
-def plot_single_panel(infile, varname, level):
+def single_panel_examples(infile, varname, level):
     """
     Example routine to create single panel plots.
 
-    Args:
-    -----
-    infile  (str) : Name of netCDF file to read.
-    varname (str) : Name of variable to plot
-    level   (int) : Model level for single-panel plots
-                    in Python notation (starting from 0)
+    Parameters
+    ----------
+    infile : str
+        Name of netCDF file to read.
+    varname : str
+        Name of variable to plot.
+    level : int
+        Model level for single-panel plots
+        in Python notation (starting from 0).
     """
 
     # xarray allows us to read in any NetCDF file
@@ -172,7 +214,7 @@ def main():
     args = parser.parse_args()
 
     # Call the plot_single_panel routine
-    plot_single_panel(
+    plot_single_panel_examples(
         args.infile,
         args.varname,
         args.level

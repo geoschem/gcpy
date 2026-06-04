@@ -1,42 +1,51 @@
 #!/usr/bin/env python
-"""
-run_benchmark.py: Driver script for creating benchmark plots.
+r"""
+Driver script for creating plots and tables from GEOS-Chem
+benchmark simulations.
+
+This script corresponds with GCPy 1.7.1. Edit this version ID if releasing
+a new version of GCPy.
 
 Run this script to generate benchmark comparisons between:
 
-    (1) GCC (aka GEOS-Chem "Classic") vs. GCC
-    (2) GCHP vs GCC
-    (3) GCHP vs GCHP
-    (4) GCHP vs GCC diff-of-diffs
+1. GCC (aka GEOS-Chem "Classic") vs. GCC
+2. GCHP vs GCC
+3. GCHP vs GCHP
+4. GCHP vs GCC diff-of-diffs
 
 You can customize this by editing the settings in the corresponding yaml
 configuration file.
 
-Calling sequence:
+Examples
+--------
 
+.. code-block:: console
+
+    $ conda activate gcpy_env
     $ python -m gcpy.benchmark.run_benchmark <path-to-configuration-file>
 
-Remarks:
+Notes
+-----
 
-    By default, matplotlib will try to open an X window for plotting.
-    If you are running this script in an environment where you do not have
-    an active X display (such as in a computational queue), then you will
-    need to use these commands to disable the X-window functionality.
+By default, matplotlib will try to open an X window for plotting.
+If you are running this script in an environment where you do not have
+an active X display (such as in a computational queue), then you will
+need to use these commands to disable the X-window functionality.
 
-        import os
-        os.environ["QT_QPA_PLATFORM"]="offscreen"
+.. code-block:: python
 
-    For more information, please see this issue posted at the ipython site:
+   import os
+   os.environ["QT_QPA_PLATFORM"]="offscreen"
 
-        https://github.com/ipython/ipython/issues/10627
+For more information, please see this issue posted at the ipython site:
+https://github.com/ipython/ipython/issues/10627
 
-    Also, to disable matplotlib from trying to open X windows, you may
-    need to set the following environment variable in your shell:
+Also, to disable matplotlib from trying to open X windows, you may
+need to set the following environment variable in your shell:
 
-        $ export MPLBACKEND=agg
+.. code-block:: console
 
-This script corresponds with GCPy 1.7.1. Edit this version ID if releasing
-a new version of GCPy.
+   $ export MPLBACKEND=agg
 """
 
 # ======================================================================
@@ -91,9 +100,10 @@ def choose_benchmark_type(config):
     """
     Decides which benchmark to run (default, 1yr, or 1yr_tt)
 
-    Args:
-        config : dict
-            Contains configuration for 1mon benchmark from yaml file.
+    Parameters
+    ----------
+    config : dict
+        Contains configuration for 1mon benchmark from yaml file.
     """
     if not (
         config["options"]["bmk_type"] == "FullChemBenchmark"
@@ -134,9 +144,10 @@ def run_benchmark_default(config):
     """
     Runs flexible date benchmark with the given configuration settings.
 
-    Args:
-        config : dict
-            Contains configuration for 1mon benchmark from yaml file.
+    Parameters
+    ----------
+    config : dict
+        Contains configuration for 1mon benchmark from yaml file.
     """
     # =====================================================================
     # Data directories

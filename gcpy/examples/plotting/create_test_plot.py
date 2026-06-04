@@ -4,6 +4,14 @@
 Creates a dummy xarray DataArray object for testing the single_panel
 plotting routine.  This script can be a useful check to see whether the
 GCPy mamba/conda environment has been successfully installed.
+
+Examples
+--------
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.plotting.create_test_plot
 """
 
 import numpy as np

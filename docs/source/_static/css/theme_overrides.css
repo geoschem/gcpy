@@ -2,3 +2,22 @@
     white-space: inherit;
     vertical-align: top;
 }
+
+
+/* docs/source/_static/css/theme_overrides.css */
+
+/* Tighten up parameter list spacing */
+dl.field-list > dt {
+    min-width: 120px;
+}
+
+/* Make return type stand out */
+.field-list .field-body p.rubric {
+    font-weight: bold;
+    color: #2980b9;
+}
+
+/* Monospace for type annotations */
+.sig-param .n {
+    font-family: "SFMono-Regular", Consolas, monospace;
+}

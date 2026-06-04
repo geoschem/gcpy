@@ -27,12 +27,17 @@ def get_area(
     Returns the area variable from a dataset (if present),
     or reads it from the supplied file path.
 
-    Args
-    area_path : str|None    : Full file path of area data
-    dset      : xr.Dataset  : Input data
+    Parameters
+    ----------
+    area_path : str or None
+        Full file path of area data.
+    dset : xr.Dataset
+        Input data.
 
     Returns
-    area      : xr.DataArray : Grid box areas [m2]
+    -------
+    area : xr.DataArray
+        Grid box areas [m2].
     """
     verify_variable_type(area_path, (str, type(None)))
     verify_variable_type(dset, xr.Dataset)
@@ -55,8 +60,10 @@ def get_delta_pressure(
     Returns the delta-pressure variable from GEOS-Chem Classic
     or GCHP data files.
 
-    Args:
-    dset : xr.Dataset|xr.DataArray : Input data
+    Parameters
+    ----------
+    dset : xr.Dataset or xr.DataArray
+        Input data.
     """
     verify_variable_type(dset, (xr.Dataset, xr.DataArray))
 
@@ -74,11 +81,15 @@ def get_passive_tracer_metadata(
     """
     Returns a dictionary with metadata for the passive tracer.
 
-    Args
-    spcdb_files : list  : Paths to Ref & Dev species_database.yml files
+    Parameters
+    ----------
+    spcdb_files : list
+        Paths to Ref & Dev species_database.yml files.
 
     Returns
-    properties  : dict : Dictionary with species metadata
+    -------
+    properties : dict
+        Dictionary with species metadata.
     """
     verify_variable_type(spcdb_files, list)
 
@@ -96,11 +107,15 @@ def get_passive_tracer_varname(
     Returns the variable name under which the passive tracer
     is stored GEOS-Chem Classic or GCHP restart files.
 
-    Args
-    dset    : xr.Dataset : The input data
+    Parameters
+    ----------
+    dset : xr.Dataset
+        The input data.
 
     Returns
-    varname : str        : Variable name for passive tracer
+    -------
+    varname : str
+        Variable name for passive tracer.
     """
     verify_variable_type(dset, xr.Dataset)
 
@@ -124,15 +139,23 @@ def compute_total_mass(
     """
     Computes the total mass (in Tg) for the passive tracer.
 
-    Args
-    t_idx      : int          : Time index
-    dset       : xr.Dataset   : Data [mol/mol dry air]
-    area       : xr.DataArray : Grid box areas [m2]
-    delta_p    : xr.Dataset   : Pressure thicknesses [hPa]
-    metadata   : dict         : Dictionary w/ species metdata
+    Parameters
+    ----------
+    t_idx : int
+        Time index.
+    dset : xr.Dataset
+        Data [mol/mol dry air].
+    area : xr.DataArray
+        Grid box areas [m2].
+    delta_p : xr.Dataset
+        Pressure thicknesses [hPa].
+    metadata : dict
+        Dictionary w/ species metadata.
 
     Returns
-    total_mass : np.float64   : Total mass [Tg] of species.
+    -------
+    total_mass : np.float64
+        Total mass [Tg] of species.
     """
     # Keep xarray attributes and allow large chunks in Dask slicing
     with xr.set_options(keep_attrs=True):
@@ -162,11 +185,15 @@ def compute_statistics(masses):
     """
     Returns a dictionary with statistics for total masses.
 
-    Args
-    masses     : np.ndarray : Total masses in Tg
+    Parameters
+    ----------
+    masses : np.ndarray
+        Total masses in Tg.
 
     Returns
-    statistics : dict       : Dictionary with statistics
+    -------
+    statistics : dict
+        Dictionary with statistics.
     """
     verify_variable_type(masses, (np.ndarray, list))
 
@@ -198,12 +225,19 @@ def compute_diff(
     Computes the difference in two dictionaries (Dev - Ref) for
     a given search key.
 
-    key    : str   : Search key
-    ref    : dict  : Dictionary of values from Ref model
-    dev    : dict  : Dictionary of values from Dev model
+    Parameters
+    ----------
+    key : str
+        Search key.
+    ref : dict
+        Dictionary of values from Ref model.
+    dev : dict
+        Dictionary of values from Dev model.
 
     Returns
-    diffs  : dict : Absolute & percent differences btw Dev & Ref for key
+    -------
+    diffs : dict
+        Absolute & percent differences btw Dev & Ref for key.
     """
     verify_variable_type(key, str)
     verify_variable_type(ref, dict)
@@ -222,12 +256,17 @@ def compute_diff_statistics(
     """
     Computes difference statistics between the Ref and Dev versions.
 
-    Args
-    ref_masses : dict : Statistics for Ref model
-    dev_masses : dict : Statistics for Dev model
+    Parameters
+    ----------
+    ref_masses : dict
+        Statistics for Ref model.
+    dev_masses : dict
+        Statistics for Dev model.
 
     Returns
-    diff_stats : dict : Difference statistics between Dev and Ref
+    -------
+    diff_stats : dict
+        Difference statistics between Dev and Ref.
     """
     verify_variable_type(ref, dict)
     verify_variable_type(dev, dict)
@@ -284,16 +323,26 @@ def make_benchmark_mass_conservation_table(
     Creates a text file containing global mass of passive species
     contained in GEOS-Chem Classic and/or GCHP restart files.
 
-    Args
-    ref_files    : list|str : List of files from the Ref model
-    ref_label    : str      : Ref version label
-    dev_files    : list|str : List of files from the Dev model
-    dev_label    : str      : Dev version label
-    spcdb_files  : list     : Paths to Ref & Dev species_database.yml files
-    dst          : str      : Destination folder for file output
-    overwrite    : bool     : Overwrite pre-existing files?
-    ref_areapath : list|str : Path to file w/ Ref area data (optional)
-    dev_areapath : list|str : Path to file w/ Dev area data (optional)
+    Parameters
+    ----------
+    ref_files : list or str
+        List of files from the Ref model.
+    ref_label : str
+        Ref version label.
+    dev_files : list or str
+        List of files from the Dev model.
+    dev_label : str
+        Dev version label.
+    spcdb_files : list
+        Paths to Ref & Dev species_database.yml files.
+    dst : str, optional
+        Destination folder for file output.
+    overwrite : bool, optional
+        Overwrite pre-existing files?
+    ref_areapath : list or str, optional
+        Path to file w/ Ref area data.
+    dev_areapath : list or str, optional
+        Path to file w/ Dev area data.
     """
     verify_variable_type(ref_files, (list, str))
     verify_variable_type(ref_label, str)

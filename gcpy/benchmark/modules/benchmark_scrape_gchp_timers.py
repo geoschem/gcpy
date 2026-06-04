@@ -15,11 +15,15 @@ def read_timing_data(input_files):
     Parses the GEOS-Chem Classic timing information in JSON format
     and returns a dictionary with the results.
 
-    Args
-    input files : str|list     : Text file(s) to parse
+    Parameters
+    ----------
+    input_files : str or list
+        Text file(s) to parse.
 
     Returns
-    timing      : list of dict : Dictionary with timing information
+    -------
+    timing : list of dict
+        Dictionary with timing information.
     """
     # Return value
     timing = []
@@ -46,16 +50,20 @@ def count_characters(text, char_to_match="."):
     """
     Returns the number of characters in a string of text.
 
-    Args
-    text          : str : The text to parse
-
-    Kwargs
-    char_to_match : str : The character to look for in "text"
+    Parameters
+    ----------
+    text : str
+        The text to parse.
+    char_to_match : str, optional
+        The character to look for in ``text``.
 
     Returns
-    result        : int : Number of underscores in "text"
+    -------
+    result : int
+        Number of occurrences of ``char_to_match`` in ``text``.
 
-    Reference
+    References
+    ----------
     https://stackoverflow.com/questions/991350/counting-repeated-characters-in-a-string-in-python
     """
     # Create a dictionary where each character of "text"
@@ -82,12 +90,16 @@ def check_file_for_timing_info(text_file):
     allow backwards compatibility with output from GCHP simulations
     that use older MAPL versions.
 
-    Args
-    text_file : str : Name of the text file to check
+    Parameters
+    ----------
+    text_file : str
+        Name of the text file to check.
 
     Returns
-    text_file : str : Name of the text file containing GCHP timers
-                      output (either the input file or "allPEs.log")
+    -------
+    text_file : str
+        Name of the text file containing GCHP timers output
+        (either the input file or "allPEs.log").
     """
     result = subprocess.run(
         ['grep', 'Times for component <GCHPchem>', text_file],
@@ -109,11 +121,15 @@ def read_one_text_file(text_file):
     Parses the GCHP log file (plain text) with timing information
     and returns a dictionary with the results.
 
-    Args
-    text_file : str  : Text file with timing information
+    Parameters
+    ----------
+    text_file : str
+        Text file with timing information.
 
     Returns
-    result    : dict : Dictionary with timing information
+    -------
+    timers : dict
+        Dictionary with timing information.
     """
 
     # Make sure file exists
@@ -250,12 +266,16 @@ def sum_timers(timers):
     Sums the time in seconds for each GEOS-Chem timer.  Input may be
     a single dict with timing information or a list of dicts.
 
-    Args
-    timers : dict|list : GHCP timing information from one or more
-                         log files in plain text format
+    Parameters
+    ----------
+    timers : dict or list
+        GCHP timing information from one or more log files in
+        plain text format.
 
     Returns
-    result : dict      : Sum of timing information
+    -------
+    result : dict
+        Sum of timing information.
     """
 
     # If timers is of type dict, no summing is needed.
@@ -286,11 +306,16 @@ def print_timer(key, ref, dev, ofile):
     """
     Prints timing info for a single timer to a log file.
 
-    Args
-    key   : str  : Dictionary key to print
-    ref   : dict : Timing information from the "Ref" model
-    dev   : dict : Timing information from the "Dev" model
-    ofile : file : File object where info will be written
+    Parameters
+    ----------
+    key : str
+        Dictionary key to print.
+    ref : dict
+        Timing information from the "Ref" model.
+    dev : dict
+        Timing information from the "Dev" model.
+    ofile : file
+        File object where info will be written.
     """
     # Denote the level of the dictionary key by counting "." chars
     depth = count_characters(key, ".")
@@ -314,12 +339,18 @@ def display_timers(ref, ref_label, dev, dev_label, table_file):
     """
     Prints the GCHP timer information to a table.
 
-    Args
-    ref        : dict : Timing information from the "Ref" model
-    ref_label  : str  : Version string for the "Ref" model
-    dev        : dict : Timing information from the "Dev" model
-    dev_label  : str  : Version string for the "Dev" model
-    table_file : str  : File name for the timing table output
+    Parameters
+    ----------
+    ref : dict
+        Timing information from the "Ref" model.
+    ref_label : str
+        Version string for the "Ref" model.
+    dev : dict
+        Timing information from the "Dev" model.
+    dev_label : str
+        Version string for the "Dev" model.
+    table_file : str
+        File name for the timing table output.
     """
     with open(table_file, "w", encoding=ENCODING) as ofile:
 
@@ -360,15 +391,20 @@ def make_benchmark_gchp_timing_table(
     Creates a table of timing information for GCHP benchmark
     simulations given one or more text files as input.
 
-    Args
-    ref_files : str|list : File(s) with timing info from the "Ref" model
-    ref_label : str      : Version string for the "Ref" model
-    dev_files : str|list : File(s) with timing info from the "Ref" model
-    dev_label : str      : Version string for the "Dev" model
-
-    Kwargs
-    dst       : str      : Directory where output will be written
-    overwrite : bool     : Overwrite existing files? (default: False)
+    Parameters
+    ----------
+    ref_files : str or list
+        File(s) with timing info from the "Ref" model.
+    ref_label : str
+        Version string for the "Ref" model.
+    dev_files : str or list
+        File(s) with timing info from the "Dev" model.
+    dev_label : str
+        Version string for the "Dev" model.
+    dst : str, optional
+        Directory where output will be written.
+    overwrite : bool, optional
+        Overwrite existing files? Default: False.
     """
     verify_variable_type(ref_files, (str, list))
     verify_variable_type(ref_label, str)

@@ -1,11 +1,18 @@
 #!/usr/bin/env python3
-"""
+r"""
 Script to scrape statistics from a 1-month GEOS-Chem Classic benchmark run,
 which can then be placed in the "GEOS-Chem 1-month Benchmark Stats"
 Google spreadsheet.
 
-Calling sequence:
-$ python -m gcpy.benchmark.modules.benchmark_scrape_gcclassic_stats 14.5.0-alpha.5 14.5.0-alpha.6
+Examples
+--------
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ python -m gcpy.benchmark.modules.benchmark_scrape_gcclassic_stats \
+     14.5.0-alpha.5 \
+     14.5.0-alpha.6
 """
 import sys
 import requests
@@ -45,8 +52,10 @@ def print_stats(stats):
     """
     Prints OH metrics and timing statistics.
 
-    Args
-    stats (dict) : Dictionary with statistics to print
+    Parameters
+    ----------
+    stats : dict
+        Dictionary with statistics to print.
     """
     # Time and memory
     line = f"{stats['Wall Time']},,,{stats['Memory']},"
@@ -75,8 +84,10 @@ def parse_timer(timer):
     """
     Extracts the timer name and time in seconds from the given text.
 
-    Args
-    timer (str) : Line of text with GEOS-Chem Classic timing output
+    Parameters
+    ----------
+    timer : str
+        Line of text with GEOS-Chem Classic timing output.
     """
     sub_strings = timer.split(":")
     timer = format_timer(sub_strings[0])
@@ -88,8 +99,10 @@ def scrape_stats(text):
     """
     Extracts timing statistics and OH metrics from the given text.
 
-    Args
-    text (str) : Text scraped from the log file and metrics file.
+    Parameters
+    ----------
+    text : str
+        Text scraped from the log file and metrics file.
     """
     # Copy global variable to local for efficiency
     timers = TIMERS
@@ -143,8 +156,10 @@ def get_text_from_web(url):
     """
     Returns the text from a file located on the web.
 
-    Args
-    url (str) : URL of the file to be parsed.
+    Parameters
+    ----------
+    url : str
+        URL of the file to be parsed.
     """
     try:
         text = requests.get(url, timeout=10).text
@@ -161,9 +176,12 @@ def main(ref_label, dev_label):
     (ref and dev), downloads the relevant files from AWS and passes
     the text to function "scrape_info" where it will be analyzed.
 
-    Args
-    ref_label (str) : Label for the Ref version
-    dev_label (str) : Label for the Dev version
+    Parameters
+    ----------
+    ref_label : str
+        Label for the Ref version.
+    dev_label : str
+        Label for the Dev version.
     """
     verify_variable_type(ref_label, str)
     verify_variable_type(dev_label, str)

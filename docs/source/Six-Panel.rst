@@ -16,7 +16,13 @@ Following the example below will generate a plot similar to this:
 Source code
 ===========
 
-**Script location:** `gcpy/examples/plotting/plot_comparisons.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_comparisons.py>`_
+.. list-table::
+   :header-rows: 1
+
+   * - Description
+     - Script location
+   * - :func:`gcpy.examples.plotting.plot_comparisons`
+     - `gcpy/examples/plotting/plot_comparisons.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_comparisons.py>`_
 
 .. _six-panel-call:
 

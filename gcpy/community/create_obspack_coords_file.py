@@ -1,10 +1,27 @@
 #!/usr/bin/env python3
-"""
+r"""
 Example to create an ObsPack input file with lon, lat, alt, etc coordinates
 to specify the locations where GEOS-Chem should archive output.
 
+Examples
+--------
+
+#. Copy this file to a different folder.
+#. In your copy, edit the configurable settings listed below.
+#. Run the following commands:
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ ./create_obspack_coords_file.py
+
+References
+----------
+
 Authors:
-Alli Moon (GitHub: @alli-moon) and Yuk Chun Chan (GitHub: @yc-chan)
+
+1. Alli Moon (GitHub: @alli-moon)
+2. Yuk Chun Chan (GitHub: @yc-chan)
 """
 
 import datetime as dt

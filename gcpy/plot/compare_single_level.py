@@ -70,124 +70,123 @@ def compare_single_level(
         ll_plot_func='imshow',
         **extra_plot_args
 ):
-    """
+    r"""
     Create single-level 3x2 comparison map plots for variables common
     in two xarray Datasets. Optionally save to PDF.
 
-    Args:
-        refdata: xarray dataset
-            Dataset used as reference in comparison
-        refstr: str
-            String description for reference data to be used in plots
-        devdata: xarray dataset
-            Dataset used as development in comparison
-        devstr: str
-            String description for development data to be used in plots
-
-    Keyword Args (optional):
-        varlist: list of strings
-            List of xarray dataset variable names to make plots for
-            Default value: None (will compare all common variables)
-        ilev: integer
-            Dataset level dimension index using 0-based system.
-            Indexing is ambiguous when plotting differing vertical grids
-            Default value: 0
-        itime: integer
-            Dataset time dimension index using 0-based system
-            Default value: 0
-        refmet: xarray dataset
-            Dataset containing ref meteorology
-            Default value: None
-        devmet: xarray dataset
-            Dataset containing dev meteorology
-            Default value: None
-        weightsdir: str
-            Directory path for storing regridding weights
-            Default value: None (will create/store weights in
-            current directory)
-        pdfname: str
-            File path to save plots as PDF
-            Default value: Empty string (will not create PDF)
-        cmpres: str
-            String description of grid resolution at which
-            to compare datasets
-            Default value: None (will compare at highest resolution
-            of ref and dev)
-        match_cbar: bool
-            Set this flag to True if you wish to use the same colorbar
-            bounds for the Ref and Dev plots.
-            Default value: True
-        normalize_by_area: bool
-            Set this flag to True if you wish to normalize the Ref
-            and Dev raw data by grid area. Input ref and dev datasets
-            must include AREA variable in m2 if normalizing by area.
-            Default value: False
-        enforce_units: bool
-            Set this flag to True to force an error if Ref and Dev
-            variables have different units.
-            Default value: True
-        convert_to_ugm3: bool
-            Whether to convert data units to ug/m3 for plotting.
-            Default value: False
-        spcdb_files: str | list
-            A single species_database.yml file or a list of files
-            (e.g. for Ref & Dev).  Only used when convert_ugm3=True.
-            Default value: None
-        flip_ref: bool
-            Set this flag to True to flip the vertical dimension of
-            3D variables in the Ref dataset.
-            Default value: False
-        flip_dev: bool
-            Set this flag to True to flip the vertical dimension of
-            3D variables in the Dev dataset.
-            Default value: False
-        use_cmap_RdBu: bool
-            Set this flag to True to use a blue-white-red colormap
-            for plotting the raw data in both the Ref and Dev datasets.
-            Default value: False
-        verbose: bool
-            Set this flag to True to enable informative printout.
-            Default value: False
-        log_color_scale: bool
-            Set this flag to True to plot data (not diffs)
-            on a log color scale.
-            Default value: False
-        extra_title_txt: str
-            Specifies extra text (e.g. a date string such as "Jan2016")
-            for the top-of-plot title.
-            Default value: None
-        extent: list
-            Defines the extent of the region to be plotted in form
-            [minlon, maxlon, minlat, maxlat].
-            Default value plots extent of input grids.
-            Default value: [-1000, -1000, -1000, -1000]
-        n_job: int
-            Defines the number of simultaneous workers for parallel
-            plotting.  Set to 1 to disable parallel plotting.
-            Value of -1 allows the application to decide.
-            Default value: -1
-        sigdiff_list: list of str
-            Returns a list of all quantities having significant
-            differences (where |max(fractional difference)| > 0.1).
-            Default value: None
-        second_ref: xarray Dataset
-            A dataset of the same model type / grid as refdata,
-            to be used in diff-of-diffs plotting.
-            Default value: None
-        second_dev: xarray Dataset
-            A dataset of the same model type / grid as devdata,
-            to be used in diff-of-diffs plotting.
-            Default value: None
-        ll_plot_func: str
-            Function to use for lat/lon single level plotting with
-            possible values 'imshow' and 'pcolormesh'. imshow is much
-            faster but is slightly displaced when plotting from
-            dateline to dateline and/or pole to pole.
-            Default value: 'imshow'
-        extra_plot_args: various
-            Any extra keyword arguments are passed through the
-            plotting functions to be used in calls to pcolormesh() (CS)
-            or imshow() (Lat/Lon).
+    Parameters
+    ----------
+    refdata : xarray.Dataset
+        Dataset used as reference in comparison.
+    refstr : str
+        String description for reference data to be used in plots.
+    devdata : xarray.Dataset
+        Dataset used as development in comparison.
+    devstr : str
+        String description for development data to be used in plots.
+    varlist : list of str, optional
+        List of xarray dataset variable names to make plots for.
+        Default value: None (will compare all common variables)
+    ilev : int, optional
+        Dataset level dimension index using 0-based system.
+        Indexing is ambiguous when plotting differing vertical grids.
+        Default value: 0
+    itime : int, optional
+        Dataset time dimension index using 0-based system.
+        Default value: 0
+    refmet : xarray.Dataset, optional
+        Dataset containing ref meteorology.
+        Default value: None
+    devmet : xarray.Dataset, optional
+        Dataset containing dev meteorology.
+        Default value: None
+    weightsdir : str, optional
+        Directory path for storing regridding weights.
+        Default value: None (will create/store weights in
+        current directory)
+    pdfname : str, optional
+        File path to save plots as PDF.
+        Default value: Empty string (will not create PDF)
+    cmpres : str, optional
+        String description of grid resolution at which
+        to compare datasets.
+        Default value: None (will compare at highest resolution
+        of ref and dev)
+    match_cbar : bool, optional
+        Set this flag to True if you wish to use the same colorbar
+        bounds for the Ref and Dev plots.
+        Default value: True
+    normalize_by_area : bool, optional
+        Set this flag to True if you wish to normalize the Ref
+        and Dev raw data by grid area. Input ref and dev datasets
+        must include AREA variable in m2 if normalizing by area.
+        Default value: False
+    enforce_units : bool, optional
+        Set this flag to True to force an error if Ref and Dev
+        variables have different units.
+        Default value: True
+    convert_to_ugm3 : bool, optional
+        Whether to convert data units to ug/m3 for plotting.
+        Default value: False
+    spcdb_files : str or list, optional
+        A single species_database.yml file or a list of files
+        (e.g. for Ref & Dev).  Only used when convert_ugm3=True.
+        Default value: None
+    flip_ref : bool, optional
+        Set this flag to True to flip the vertical dimension of
+        3D variables in the Ref dataset.
+        Default value: False
+    flip_dev : bool, optional
+        Set this flag to True to flip the vertical dimension of
+        3D variables in the Dev dataset.
+        Default value: False
+    use_cmap_RdBu : bool, optional
+        Set this flag to True to use a blue-white-red colormap
+        for plotting the raw data in both the Ref and Dev datasets.
+        Default value: False
+    verbose : bool, optional
+        Set this flag to True to enable informative printout.
+        Default value: False
+    log_color_scale : bool, optional
+        Set this flag to True to plot data (not diffs)
+        on a log color scale.
+        Default value: False
+    extra_title_txt : str, optional
+        Specifies extra text (e.g. a date string such as "Jan2016")
+        for the top-of-plot title.
+        Default value: None
+    extent : list, optional
+        Defines the extent of the region to be plotted in form
+        [minlon, maxlon, minlat, maxlat].
+        Default value plots extent of input grids.
+        Default value: [-1000, -1000, -1000, -1000]
+    n_job : int, optional
+        Defines the number of simultaneous workers for parallel
+        plotting.  Set to 1 to disable parallel plotting.
+        Value of -1 allows the application to decide.
+        Default value: -1
+    sigdiff_list : list of str, optional
+        Returns a list of all quantities having significant
+        differences (where \|max(fractional difference)\| > 0.1).
+        Default value: None
+    second_ref : xarray.Dataset, optional
+        A dataset of the same model type / grid as refdata,
+        to be used in diff-of-diffs plotting.
+        Default value: None
+    second_dev : xarray.Dataset, optional
+        A dataset of the same model type / grid as devdata,
+        to be used in diff-of-diffs plotting.
+        Default value: None
+    ll_plot_func : str, optional
+        Function to use for lat/lon single level plotting with
+        possible values 'imshow' and 'pcolormesh'. imshow is much
+        faster but is slightly displaced when plotting from
+        dateline to dateline and/or pole to pole.
+        Default value: 'imshow'
+    **extra_plot_args
+        Any extra keyword arguments are passed through the
+        plotting functions to be used in calls to pcolormesh() (CS)
+        or imshow() (Lat/Lon).
     """
     warnings.showwarning = _warning_format
     # Error check arguments

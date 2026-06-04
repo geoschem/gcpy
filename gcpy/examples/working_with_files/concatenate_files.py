@@ -1,20 +1,30 @@
 #!/usr/bin/env python
-
-'''
+"""
 This Python script concatenates several individual netCDF files
 into a single netCDF file using xarray.
 
-Calling sequence:
-    ./concatentate_files.py
+Examples
+--------
 
-Remarks:
-    If you have several individual files with one variable per file,
-    you should consider concatenating them into a single file.
-    This is often more efficient, as opening each netCDF file incurs
-    computational overhead.  It is usually faster to read data from
-    a file with multiple variables than to having to open several
-    files with one variable each.
-'''
+1. Copy this file to a different folder and navigate to that folder.
+2. In your copy, edit the file names for your use case.
+3. Run the following commands:
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ ./concatentate_files.py
+
+Notes
+-----
+
+If you have several individual files with one variable per file,
+you should consider concatenating them into a single file.
+This is often more efficient, as opening each netCDF file incurs
+computational overhead.  It is usually faster to read data from
+a file with multiple variables than to having to open several
+files with one variable each.
+"""
 
 # Imports
 import os
@@ -35,19 +45,18 @@ def find_files_in_dir(path, substrs):
     Returns a list of all files in a directory that match one or more
     substrings.
 
-    Args:
-    -----
-        path : str
-            Path to the directory in which to search for files.
+    Parameters
+    ----------
+    path : str
+        Path to the directory in which to search for files.
+    substrs : list of str
+        List of substrings used in the search for files.
 
-        substrs : list of str
-            List of substrings used in the search for files.
-
-    Returns:
-    --------
-        file_list : list of str
-            List of files in the directory (specified by path)
-            that match all substrings (specified in substrs).
+    Returns
+    -------
+    file_list : list of str
+        List of files in the directory (specified by path)
+        that match all substrings (specified in substrs).
     '''
 
     # Initialize
@@ -71,17 +80,14 @@ def replace_nans_with_zeroes(dset, verbose=True):
     Replaces NaN values with zeroes for each variable
     within an an xarray Dataset.
 
-    Args:
-    ----
-        dset : xarray Dataset
-            The input dataset, containing one or more data variables.
-
-    Keyword Args (optional):
-    ------------------------
-        verbose : boolean
-            Set this switch to print out the variable name, as well
-            as the min and max of the variable.  This will illustrate
-            the replacement of NaNs with zeroes.
+    Parameters
+    ----------
+    dset : xarray Dataset
+        The input dataset, containing one or more data variables.
+    verbose : bool, optional
+        Set this switch to print out the variable name, as well
+        as the min and max of the variable.  This will illustrate
+        the replacement of NaNs with zeroes.
     '''
 
     # Keep all netCDF attributes

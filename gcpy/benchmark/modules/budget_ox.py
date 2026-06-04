@@ -51,28 +51,29 @@ class _GlobVars:
         """
         Initializes the _GlobVars class.
 
-        Arguments:
-            devstr: str
-                Label denoting the "Dev" version.
-            devdir: str
-                Directory where diagnostic files are found.
-            devrstdir: str
-                Directory where restart files are found.
-            dst: str
-                Directory where plots & tables will be created.
-            year: int
-                Year of the benchmark simulation.
-            overwrite: bool
-                Denotes whether to ovewrite existing budget tables.
-            spcdb_files : list 
-                Paths to species_database.yml files in Ref & Dev rundirs
-            is_gchp: bool
-                Denotes if this is GCHP (True) or GCC (False) data.
-            gchp_res: str
-                GCHP resolution string (e.g. "c24", "c48", etc.)
-            gchp_is_pre_14_0: bool
-                Denotes if the GCHP version is prior to 14.0.0 (True)
-                or not (False).
+        Parameters
+        ----------
+        devstr : str
+            Label denoting the "Dev" version.
+        devdir : str
+            Directory where diagnostic files are found.
+        devrstdir : str
+            Directory where restart files are found.
+        dst : str
+            Directory where plots & tables will be created.
+        year : int
+            Year of the benchmark simulation.
+        overwrite : bool
+            Denotes whether to overwrite existing budget tables.
+        spcdb_files : list
+            Paths to species_database.yml files in Ref & Dev rundirs.
+        is_gchp : bool
+            Denotes if this is GCHP (True) or GCC (False) data.
+        gchp_res : str
+            GCHP resolution string (e.g. "c24", "c48", etc.)
+        gchp_is_pre_14_0 : bool
+            Denotes if the GCHP version is prior to 14.0.0 (True)
+            or not (False).
         """
         # --------------------------------------------------------------
         # Arguments from outside
@@ -138,7 +139,9 @@ class _GlobVars:
         Returns a dictionary of lumped species definitions.
 
         Returns
-           lspc_dict : dict
+        -------
+        lspc_dict : dict
+            Dictionary of lumped species definitions.
         """
         # First look in the current folder
         lspc_path = "lumped_species.yml"
@@ -159,10 +162,12 @@ class _GlobVars:
 
     def rst_file_path(self, ystr):
         """
-        Returns the restart file path
+        Returns the restart file path.
 
-        Arguments:
-            ystr : Year string (YYYY) format
+        Parameters
+        ----------
+        ystr : str
+            Year string in YYYY format.
         """
         return get_filepath(
             self.devrstdir,
@@ -199,13 +204,17 @@ class _GlobVars:
 
     def read_rst(self, ystr):
         """
-        Reads a restart file into an xarray Dataset
+        Reads a restart file into an xarray Dataset.
 
-        Arguments:
-           ystr: String containing the year (YYYY format)
+        Parameters
+        ----------
+        ystr : str
+            String containing the year (YYYY format).
 
-        Returns:
-           ds : xarray Dataset
+        Returns
+        -------
+        ds : xr.Dataset
+            The restart dataset.
         """
         ds = xr.open_dataset(
             self.rst_file_path(ystr),
@@ -231,12 +240,15 @@ class _GlobVars:
         """
         Reads a restart file into an xarray Dataset.
 
-        Arguments:
-           collection : str
-               Name of the collection to read
+        Parameters
+        ----------
+        collection : str
+            Name of the collection to read.
 
-        Returns:
-           ds : xarray Dataset
+        Returns
+        -------
+        ds : xr.Dataset
+            The diagnostic dataset.
         """
         ds = xr.open_mfdataset(
             self.pathlist[collection],
@@ -305,11 +317,12 @@ class _GlobVars:
 
     def get_conv_factors(self, spcdb_files):
         """
-        Gets conversion factors used in budget computations
+        Gets conversion factors used in budget computations.
 
-        Arguments:
-            spcdb_files : str
-                Paths to the species_database.yml file in Ref & Dev
+        Parameters
+        ----------
+        spcdb_files : str
+            Paths to the species_database.yml file in Ref & Dev.
         """
         # Read the species database file from the Dev model
         _, spcdb = read_species_metadata(spcdb_files, quiet=True)
@@ -336,13 +349,17 @@ def init_and_final_mass(
     """
     Computes global species mass from the initial & final restart files.
 
-    Arguments:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
+    species : list
+        List of species names to compute mass for.
 
-    Returns:
-        result: dict
-            Contains initial & final tropospheric mass of O3.
+    Returns
+    -------
+    result : dict
+        Contains initial & final tropospheric mass of O3.
     """
     # Error checks
     if species is None:
@@ -405,14 +422,16 @@ def annual_average_prodloss(
         globvars
 ):
     """
-    Arguments:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
 
-    Returns:
-        result: dict
-            Contains annual monthly-weighted average of Prod_Ox
-            and Loss_Ox.
+    Returns
+    -------
+    result : dict
+        Contains annual monthly-weighted average of Prod_Ox
+        and Loss_Ox.
     """
 
     # Conversion factors
@@ -451,13 +470,15 @@ def annual_average_drydep(
         globvars
 ):
     """
-    Arguments:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
 
-    Returns:
-        result : float
-            Annual average dry deposition [Tg Ox]
+    Returns
+    -------
+    result : float
+        Annual average dry deposition [Tg Ox].
     """
 
     # Conversion factors and area
@@ -479,13 +500,16 @@ def annual_average_drydep(
 
 def annual_average_wetdep(globvars):
     """
-    Arguments:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
 
-    Returns:
-        result : float
-            Annual average wet deposition [Tg Ox]
+    Returns
+    -------
+    result : dict
+        Annual average wet deposition [Tg Ox], with keys "CV"
+        (convective), "LS" (large-scale), and "Total".
     """
 
     # Conversion factors
@@ -534,21 +558,27 @@ def annual_metrics(
 
     1. "dyn": Ox subsiding from the stratosphere
 
-    2  "net": Net Ox = (POx-LOx) + Dyn - Drydep - Wetdep
+    2. "net": Net Ox = (POx-LOx) + Dyn - Drydep - Wetdep
 
     3. "life": Ox lifetime (d) = Ox burden / (LOx + Drydep + Wetdep)
 
-    Args:
-        globvars: _GlobVars
-            Global variables needed for budget computations.
-        mass : dict
-        prodloss : dict
-        wetdep : dict
-        drydep : numpy float64
-            Mass, prod/loss, and deposition terms
-    Returns:
-        result : dict
-            Contains dyn, net, and life terms.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
+    mass : dict
+        Mass terms.
+    prodloss : dict
+        Production and loss terms.
+    wetdep : dict
+        Wet deposition terms.
+    drydep : numpy.float64
+        Dry deposition term.
+
+    Returns
+    -------
+    result : dict
+        Contains dyn, net, and life terms.
     """
     result = {}
     acc = mass["Ox_acc"]
@@ -574,15 +604,20 @@ def print_budget(
     """
     Prints the trop+strat budget file.
 
-    Arguments:
-        globvars: _GlobVars
-            Global variables needed for budget computations.
-        mass : dict
-        prodloss : dict
-        wetdep : dict
-        drydep : numpy float64
-        metrics : dict
-            Mass, prod/loss and deposition terms.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
+    mass : dict
+        Mass terms.
+    prodloss : dict
+        Production and loss terms.
+    wetdep : dict
+        Wet deposition terms.
+    drydep : numpy.float64
+        Dry deposition term.
+    metrics : dict
+        Metrics terms (dyn, net, life).
     """
     # Create the plot directory hierarchy if it doesn't already exist
     if os.path.isdir(globvars.dst) and not globvars.overwrite:
@@ -668,19 +703,28 @@ def global_ox_budget(
     Main program to compute Ox budgets from GEOS-Chem Classic or
     GCHP benchmark simulations.
 
-    Args
-    devstr           : str  : Label for the Dev version
-    devdir           : str  : Path to the Dev data directory 
-    devrstdir        : str  : Path to the Dev restart file directory
-    year             : int  : Year of the benchmark simulation
-    spcdb_file       : str  : Path to the Dev species_database.yml file
-
-    Keyword Args
-    dst              : str  : Directory where tables will be written
-    overwrite        : bool : Should existing tables should be overwritten?
-    is_gchp          : bool : Is Dev from a GCHP benchmark simulation?
-    gchp_res         : str  : GCHP resolution string (e.g. "c24")
-    gchp_is_pre_14_0 : bool : Is Dev from a GCHP version prior to 14.0.0?
+    Parameters
+    ----------
+    devstr : str
+        Label for the Dev version.
+    devdir : str
+        Path to the Dev data directory.
+    devrstdir : str
+        Path to the Dev restart file directory.
+    year : int
+        Year of the benchmark simulation.
+    spcdb_file : str
+        Path to the Dev species_database.yml file.
+    dst : str, optional
+        Directory where tables will be written.
+    overwrite : bool, optional
+        Should existing tables be overwritten?
+    is_gchp : bool, optional
+        Is Dev from a GCHP benchmark simulation?
+    gchp_res : str, optional
+        GCHP resolution string (e.g. "c24").
+    gchp_is_pre_14_0 : bool, optional
+        Is Dev from a GCHP version prior to 14.0.0?
     """
 
     # Store global variables in a private class

@@ -76,7 +76,13 @@ For documentation on setting up and running GEOS-Chem please see our
    :caption: Supplemental Guides
 
    Install-Conda
-   
+
+.. toctree::
+   :maxdepth: 1
+   :caption: GCPy API
+
+   api
+
 .. toctree::
    :maxdepth: 1
    :caption: Help & Reference
