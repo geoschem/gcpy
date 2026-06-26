@@ -372,27 +372,30 @@ def generate_report(exec_data: dict, diff_data: dict, ref_label: str) -> str:
     out.append('')
 
     # Header block verbatim from the log (commit hashes, SLURM ID, etc.)
+    out.append("```console")
     out.extend(exec_data['header_block'])
     out.append('')
 
-    # Test-result table verbatim from the log (preserves dot-padding alignment)
-    out.append('Execution tests:')
-    out.append(_SEP_LIGHT)
-    out.extend(exec_data['test_lines_raw'])
-    out.append('')
+    # Only print failed tests from the log
+    failures = [var for var in exec_data['test_lines_raw'] if 'FAIL' in var]
+    if len(failures) > 0:
+        out.extend(failures)
+        out.append('')
 
     # Summary counts
     out.append('Summary of test results:')
     out.append(_SEP_LIGHT)
-    out.append(f'Execution tests passed:            {exec_data["n_passed"]}')
-    out.append(f'Execution tests failed:            {exec_data["n_failed"]}')
-    out.append(f'Execution tests not yet completed: {exec_data["n_pending"]}')
+    out.append(f'Execution tests passed:   {exec_data["n_passed"]}')
+    out.append(f'Execution tests failed:   {exec_data["n_failed"]}')
 
     # Show banner when execution is clean but diffs remain (common case after
     # an intentional science change that does not break any simulations).
     if all_exec_passed:
         out.append('')
         out.extend(_BANNER_LINES)
+
+    # Close GitHub markdown console block
+    out.append("```")
 
     # Explicit list of failed / not-yet-completed tests
     if failed_tests:
@@ -411,9 +414,6 @@ def generate_report(exec_data: dict, diff_data: dict, ref_label: str) -> str:
     # Section 2 – Diff results
     # ------------------------------------------------------------------
     out.append('')
-    out.append(_SEP_HEAVY)
-    out.append(f'Diff results w/r/t {ref_label}:')
-    out.append(_SEP_LIGHT)
 
     if not any_diffs:
         out.append(
