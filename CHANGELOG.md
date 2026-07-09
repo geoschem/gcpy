@@ -24,9 +24,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `yaxis_units: pressure` to the following YAML files:
   - `gcpy/benchmark/config/*.yml`
   - `gcpy/benchmark/cloud/*.yml`
-  - `gcpy/examples/diagnostics/compare_diags.yml`
+  - `gcpy/examples/diagnostics/compare_diags.yml
 - Added `docs/environment_files/gcpy_environment_py314.yml`
 - Added GitHub Action `build-gcpy-environment-py314.yml` to build and test the GCPy environment with Python 3.14
+- Added `.gitattributes`, `CLAUDE.md` and `SECURITY.md` files 
+- Added `.pylintrc` which will ignore harmless warnings based on GCPy's code style
 
 ### Changed
 - Bumped pytest to 9.0.3 and updated documentation accordingly
