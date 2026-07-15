@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `benchmark/modules/emission_species.yml` to be consistent w/ the FullChemBenchmark emission diagnostics in GC 14.7.0 and later
 - Bumped `requests` to version 2.33.0 (suggested by @dependabot)
 - Updated GitHub Actions to the latest versions
-- Bumped `pip` to version 26.1.1 in `setup.py` and environment files
+- Bumped `pip` to version 26.1.2 in `setup.py` and environment files
 - Moved Sphinx ReadTheDocs packages into the GCPy environment files (needed for automatic API generation)
 - Updated Sphinx ReadTheDocs packages to the latest versions in environment files and `requirements.txt`
 - Replaced ReadTheDocs dependency `recommonmark` with `myst-parser`
