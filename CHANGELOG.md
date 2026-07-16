@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added MGLY to `gcpy/benchmark/modules/benchmark_categories.yml`
 - Added Sphinx ReadTheDocs packages into `gcpy_environment_py312.yml` and `gcpy_environment_py313.yml`
 - Added `docs/source/api.rst` configuration file for auto-building the  GCPy API reference section
+- Added `gcpy/examples/gcst/generate_inttest_report.py` script to produce a summary of integration test results
 
 ### Changed
 - Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
