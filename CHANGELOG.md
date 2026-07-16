@@ -27,6 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Allow using a template at different grid resolutions in `gcpy/regrid_restart_file.py`
 - Implemented a workaround in `gcpy/regrid.py` to allow use of either `np.product` or `np.prod` depending on the Numpy version
 - Fixed `DeprecationWarning` in `single_panel.py` that occurs with numpy >=2.0
+- Passed `spcdb_files` as the 7th argument (following `dev_interval`) to `make_benchmark_operations_budget`, where missing
+- Passed `colname` as the 5th argument to `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots`
 
 ### Removed
 - Removed Python 3.9 from the GitHub Actions that try to build a Python environment; This version is now de-supported.
@@ -35,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Removed `docs/environment-files/read_the_docs_requirements.yml`
 - Removed `gcpy/examples/bpch_to_nc` folder as these examples require the de-supported xbpch package
 - Removed GitHub Action `build-rtd-environment` workflow
+- Removed a duplicate import of `make_benchmark_operations_budget` in `gcpy/benchmark/run_benchmark.py`
 
 ## [1.7.1] - 2026-02-03
 ### Changed
