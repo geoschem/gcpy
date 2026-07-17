@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
 """
 Reads a GEOS-Chem classic log file listing species names and writes
-out the corresponding SpeciesConcVV_* entries for use in a GCHP
-HISTORY.rc collection.
+out the corresponding :literal:`SpeciesConcVV_*` entries for use in a
+GCHP :file:`HISTORY.rc` collection.
+
+Examples
+--------
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ python generate_gchp_speciesconcvv_list.py  /path/to/log/file  /path/to/output/file
 """
 from sys import argv
 from gcpy.constants import ENCODING
@@ -90,16 +98,13 @@ def main(input_file, output_file):
         Path to the file where the SpeciesConcVV_* entries will be
         written.
     """
-
-    # Read the species list from a GEOS-CHem run
     varlist = read_file(input_file)
-
     write_file(varlist, output_file)
 
     
 if __name__ == '__main__':
 
     if len(argv) != 3:
-        raise ValueError("Usage: python -m generate_gchp_speciesconcvv_list log_file output file")
+        raise ValueError("Usage: python generate_gchp_speciesconcvv_list.py log_file output file")
 
     main(argv[1], argv[2])

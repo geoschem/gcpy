@@ -62,6 +62,7 @@ For documentation on setting up and running GEOS-Chem please see our
    Check-GCHP-Emission-Diags
    KPP-Standalone
    Hemco-Examples
+   GCST-Examples
 
 .. toctree::
    :maxdepth: 3

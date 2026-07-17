@@ -15,24 +15,26 @@ Any annotation of *why* tests differ (e.g. "due to GFAS changes") or
 flagging of known issues is intentionally left to the user; this script
 reports facts only.
 
-Usage
------
+Examples
+--------
 .. code-block:: console
 
-    python generate_inttest_report.py \\
-        --exec-log  <execution_log.txt>  \\
-        --diff-log  <diff_log.txt>        \\
-        --ref-label <gcc.14.8.0-alpha.11> \\
-        [--output   <report.txt>]
+    $ conda activate gcpy_env
+    (gcpy_env) $ python generate_inttest_report.py --exec-log <execution_log.txt> --diff-log <diff_log.txt> --ref-label <name> [--output <report.txt>]
 
-Arguments
----------
---exec-log    Path to the execution test log produced by the integration
-              test suite (GCClassic or GCHP format both accepted).
---diff-log    Path to the diff log produced by diffTest.sh.
---ref-label   Human-readable reference-version label that appears in
-              diff-log file paths (e.g. gcc.14.8.0-alpha.11).
---output      Optional output file.  Default: stdout.
+Parameters
+----------
+--exec-log : str
+    Path to the execution test log produced by the integration
+    test suite (GCClassic or GCHP format both accepted).
+--diff-log : str
+    Path to the diff log produced by diffTest.sh.
+--ref-label : str
+    Human-readable reference-version label that appears in
+    diff-log file paths (e.g. gcc.14.8.0-alpha.11,
+    gchp.14.8.0-alpha.11).
+--output : str, optional
+    Output file. Default: stdout.
 
 Notes
 -----

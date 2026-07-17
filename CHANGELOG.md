@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added several unit tests in `gcpy/tests` as well as a GitHub Action to run them on pushes and pull requests
 - Added `is_nearly_constant` function to `gcpy/util.py`
 - Added `pytest.ini` to filter benign warnings (numpy/ESMF ABI notice, xesmf array-contiguity notices) out of the test suite output
+- Added `gcpy/examples/gcst/generate_gchp_speciesconcvv_list.py` script to generate the `SpeciesConcVV_` entries for the GCHP  `HISTORY.rc` file
+- Added "GEOS-Chem Support Team (GCST) utility scripts" page to the ReadTheDocs documentation
 
 ### Changed
 - Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
