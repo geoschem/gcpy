@@ -37,8 +37,9 @@ Notes
 * A test is flagged as "differing" if any non-zero number of differences
   is reported for either its OutputDir or Restarts, or if a raw ``diff``
   invocation produced output within that test's section of the diff log.
-* A "perfect" run (all execution tests passed AND all zero-diff) produces
-  only the banner and a single confirmation line.
+* A "perfect" run (all execution tests passed AND all zero-diff) still
+  prints the full header block and pass/fail counts, plus the
+  "All tests passed" banner and a single zero-diff confirmation line.
 * Only standard-library modules are used (argparse, pathlib, re, sys),
   so this script is compatible with any Python >= 3.9 environment,
   including the GCPy conda environment.
@@ -353,15 +354,6 @@ def generate_report(exec_data: dict, diff_data: dict, ref_label: str) -> str:
     diffing_tests   = sorted(k for k, v in diff_data.items() if v)
 
     out: list[str] = []
-
-    # ------------------------------------------------------------------
-    # Perfect run – compact output only
-    # ------------------------------------------------------------------
-    if all_exec_passed and not any_diffs:
-        out.extend(_BANNER_LINES)
-        out.append('')
-        out.append(f'All {model_long} tests were zero-diff w/r/t {ref_label}.')
-        return '\n'.join(out) + '\n'
 
     # ------------------------------------------------------------------
     # Section 1 – Execution test results
