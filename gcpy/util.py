@@ -1987,8 +1987,8 @@ def all_zero_or_nan(
 
 def is_nearly_constant(
         values,
-        rtol=1e-5,
-        atol=1e-10,
+        rtol=1.0e-5,
+        atol=1.0e-7,
         target=None
 ):
     """
@@ -2009,7 +2009,7 @@ def is_nearly_constant(
         Default value: 1e-5
     atol : float, optional
         Absolute tolerance.
-        Default value: 1e-10
+        Default value: 1.0e-7
     target : float, optional
         If given, test that all finite values are close to this
         target rather than close to each other.
