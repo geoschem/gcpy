@@ -1985,6 +1985,53 @@ def all_zero_or_nan(
     return not np.any(dset), np.isnan(dset).all()
 
 
+def is_nearly_constant(
+        values,
+        rtol=1e-5,
+        atol=1e-10,
+        target=None
+):
+    """
+    Return whether the finite values in an array are all within a
+    relative and absolute tolerance of each other (or of a target
+    value, if given).
+
+    This generalizes exact-equality "is this field constant" checks
+    to tolerate small numerical noise, e.g. from regridding (see
+    https://github.com/geoschem/gcpy/issues/330).
+
+    Parameters
+    ----------
+    values : numpy array
+        Input data (may contain NaNs).
+    rtol : float, optional
+        Relative tolerance.
+        Default value: 1e-5
+    atol : float, optional
+        Absolute tolerance.
+        Default value: 1e-10
+    target : float, optional
+        If given, test that all finite values are close to this
+        target rather than close to each other.
+        Default value: None
+
+    Returns
+    -------
+    is_constant : bool
+        Whether the finite values are all within tolerance of each
+        other (or of target).  An array with no finite values
+        (e.g. all-NaN) is treated as trivially constant.
+    """
+
+    arr = np.asarray(values, dtype=float)
+    finite = arr[np.isfinite(arr)]
+    if finite.size == 0:
+        return True
+    if target is not None:
+        return bool(np.allclose(finite, target, rtol=rtol, atol=atol))
+    return bool(np.isclose(finite.min(), finite.max(), rtol=rtol, atol=atol))
+
+
 def dataset_mean(
         dset,
         dim="time",

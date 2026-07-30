@@ -110,6 +110,7 @@ setup(
         "pyproj==3.7.1",
         "python==3.13",
         "pypdf==6.7.1",
+        "pytest==8.3.4",
         "requests==2.33.0",
         "scipy==1.15.2",
         "sparselt==0.1.3",

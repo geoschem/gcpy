@@ -787,9 +787,26 @@ def regrid_comparison_data(
                                      global_cmp_grid['lon'].size])
                 data_reshaped = data.data.reshape(
                     nlev, 6, res, res).swapaxes(0, 1)
+
+            # Renormalize by the summed conservative-regridding weight
+            # per target cell.  Each face's weights individually sum to
+            # 1 only to within ESMF's area-overlap floating-point
+            # precision (~1e-6 to 1e-8 relative), so summing 6 faces
+            # unnormalized leaves that noise visible in the result,
+            # e.g. as latitude-banded "striping" when regridding a
+            # constant field (see GitHub issue #330).
+            ones = np.ones((res, res))
+            weight_sum = np.zeros(
+                [global_cmp_grid['lat'].size, global_cmp_grid['lon'].size])
             for j in range(6):
                 regridder = regridder_list[j]
                 new_data = new_data + regridder(data_reshaped[j])
+                weight_sum = weight_sum + regridder(ones)
+
+            with np.errstate(invalid="ignore", divide="ignore"):
+                new_data = np.where(weight_sum > 1.0e-10,
+                                     new_data / weight_sum, new_data)
+
             if nlev == 1:
                 # limit to extent of cmpgrid
                 new_data=new_data[cmpminlat_ind:cmpmaxlat_ind +

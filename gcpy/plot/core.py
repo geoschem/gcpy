@@ -6,6 +6,8 @@ import warnings
 from matplotlib import colors
 import numpy as np
 
+from gcpy.util import is_nearly_constant
+
 # Save warnings format to undo overwriting built into pypdf
 _warning_format = warnings.showwarning
 
@@ -122,17 +124,15 @@ def normalize_colors(
                 copy=False
             )
 
-    # Absolute value of v
-    abs_vmin = abs(vmin)
-    abs_vmax = abs(vmax)
-
-    if (abs_vmin == 0 and abs_vmax == 0) or \
-       (np.isnan(vmin) and np.isnan(vmax)):
-        # If the data is zero everywhere (vmin=vmax=0) or undefined
-        # everywhere (vmin=vmax=NaN), then normalize the data range
-        # so that the color corresponding to zero (white) will be
-        # placed in the middle of the colorbar, where we will
-        # add a single tick.
+    if is_nearly_constant([vmin, vmax]):
+        # If the data is zero (or nearly constant) everywhere, or
+        # undefined everywhere (vmin=vmax=NaN), then normalize the
+        # data range so that the color corresponding to zero (white)
+        # will be placed in the middle of the colorbar, where we will
+        # add a single tick.  Using a tolerance here (rather than
+        # exact equality) avoids visible color "striping" when a
+        # nominally-constant field carries tiny numerical noise, e.g.
+        # from regridding (see GitHub issue #330).
         if is_difference:
             return colors.Normalize(vmin=-1.0, vmax=1.0)
         return colors.Normalize(vmin=0.0, vmax=1.0)
