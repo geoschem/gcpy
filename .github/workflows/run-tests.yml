@@ -38,6 +38,17 @@ jobs:
           generate-run-shell: true
           post-cleanup: 'all'
 
+      - name: Swap in the nompi ESMF build for this CI job
+        # The shipped environment pins an MPI-enabled ESMF build
+        # (mpi_mpich), which some GitHub-hosted runners cannot
+        # properly initialize (ESMF's MPI singleton-init crashes
+        # with no Python traceback, e.g. when building an
+        # xesmf.Regridder). Test-only swap; the user-facing
+        # environment.yml is left as mpi_mpich for real users who
+        # rely on MPI-parallel regridding at scale.
+        run: micromamba install -y -n gcpy_env -c conda-forge "esmf=8.8.1=nompi_*"
+        shell: micromamba-shell {0}
+
       - name: Run pytest test suite
         run: python -m pytest gcpy/tests -v
         shell: micromamba-shell {0}
