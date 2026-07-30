@@ -1,0 +1,43 @@
+---
+#
+# GitHub action to run the GCPy pytest test suite (gcpy/tests)
+# See: https://github.com/marketplace/actions/setup-micromamba
+#
+name: run-tests
+
+on:
+  push:
+    branches: [ "main", "dev", "dependabot/*" ]
+  pull_request:
+    # These must be a subset of the branches above
+    branches: [ "main", "dev", "dependabot/*" ]
+
+# Cancel jobs running if new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the GCPy repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Create "gcpy_env" environment
+        uses: mamba-org/setup-micromamba@v3
+        with:
+          micromamba-version: 'latest'
+          environment-file: docs/environment_files/gcpy_environment_py313.yml
+          init-shell: bash
+          cache-environment: false
+          generate-run-shell: true
+          post-cleanup: 'all'
+
+      - name: Run pytest test suite
+        run: python -m pytest gcpy/tests -v
+        shell: micromamba-shell {0}
