@@ -630,7 +630,8 @@ def compute_norm_for_plot(
         vmax,
         is_difference=True,
         log_color_scale=True,
-        ratio_log=ratio_log
+        ratio_log=ratio_log,
+        is_ratio=True,
     )
 
 

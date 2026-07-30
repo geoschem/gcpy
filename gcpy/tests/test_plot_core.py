@@ -58,3 +58,18 @@ def test_ref_equals_dev_tolerant_to_noise():
 def test_ref_equals_dev_false_for_real_difference():
     real_ratio = np.array([1.0, 1.5, np.nan])
     assert not ref_equals_dev(real_ratio)
+
+
+def test_normalize_colors_collapses_near_constant_ratio_range_around_one():
+    # Regression test: a near-constant ratio range (Ref ~= Dev) used
+    # to fall through to the 0-centered difference collapse, which
+    # placed the real data value (~1.0) at the extreme edge of the
+    # colorbar instead of the middle, and displaced the "Ref and Dev
+    # equal" ticklabel (always positioned at data value 1.0) to the
+    # far right instead of the center.
+    norm = normalize_colors(
+        0.9999999, 1.0000001,
+        is_difference=True, log_color_scale=True, ratio_log=True,
+        is_ratio=True,
+    )
+    assert np.isclose(norm(1.0), 0.5)

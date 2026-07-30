@@ -57,7 +57,8 @@ def normalize_colors(
         vmax,
         is_difference=False,
         log_color_scale=False,
-        ratio_log=False
+        ratio_log=False,
+        is_ratio=False,
 ):
     """
     Normalizes a data range to the colormap range used by matplotlib
@@ -81,6 +82,10 @@ def normalize_colors(
     ratio_log : bool, optional
         Indicates whether we are using log scaling for ratio plots
         (True) or not (False).
+        Default value: False
+    is_ratio : bool, optional
+        Set this switch to denote that we are using a ratio color
+        scale (i.e. with 1, not 0, in the middle of the range).
         Default value: False
 
     Returns
@@ -133,6 +138,13 @@ def normalize_colors(
         # exact equality) avoids visible color "striping" when a
         # nominally-constant field carries tiny numerical noise, e.g.
         # from regridding (see GitHub issue #330).
+        #
+        # Ratio data is centered on 1, not 0, so it needs its own
+        # branch: using the 0-centered Normalize below would place
+        # the near-1 "Ref and Dev are equal" data at the extreme edge
+        # of the colorbar instead of in the middle.
+        if is_ratio:
+            return MidpointLogNorm(vmin=0.5, vmax=2.0, midpoint=1.0)
         if is_difference:
             return colors.Normalize(vmin=-1.0, vmax=1.0)
         return colors.Normalize(vmin=0.0, vmax=1.0)
