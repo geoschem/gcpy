@@ -29,29 +29,26 @@ def test_constant_cs_field_regrids_to_constant(tmp_path):
     as ~1e-6 relative, which produced visible "striping" once
     plotted (GitHub issue #330).
     """
-    # Comment out while we fix on GitHub Actions
-    #  -- Bob Yantosca (30 Jul 2026)
-    #llgrid = make_grid_ll(LLRES)
-    #regridder_list = make_regridder_cs2ll(
-    #    CSRES,
-    #    LLRES,
-    #    weightsdir=str(tmp_path),
-    #    reuse_weights=False,
-    #)
-    #
-    #data = xr.DataArray(np.full((6 * CSRES, CSRES), CONST_VALUE))
-    #result = regrid_comparison_data(
-    #    data,
-    #    CSRES,
-    #    True,
-    #    None,
-    #    regridder_list,
-    #    llgrid,
-    #    "cs",
-    #    "ll",
-    #    nlev=1,
-    #)
-    #
-    #finite = result[np.isfinite(result)]
-    #assert np.allclose(finite, CONST_VALUE, rtol=1e-14, atol=1e-13)
-    return True
+    llgrid = make_grid_ll(LLRES)
+    regridder_list = make_regridder_cs2ll(
+        CSRES,
+        LLRES,
+        weightsdir=str(tmp_path),
+        reuse_weights=False,
+    )
+    
+    data = xr.DataArray(np.full((6 * CSRES, CSRES), CONST_VALUE))
+    result = regrid_comparison_data(
+        data,
+        CSRES,
+        True,
+        None,
+        regridder_list,
+        llgrid,
+        "cs",
+        "ll",
+        nlev=1,
+    )
+    
+    finite = result[np.isfinite(result)]
+    assert np.allclose(finite, CONST_VALUE, rtol=1e-14, atol=1e-13)
