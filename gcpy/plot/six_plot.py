@@ -17,7 +17,7 @@ import numpy as np
 from dask.array import Array as DaskArray
 import xarray as xr
 import cartopy.crs as ccrs
-from gcpy.util import get_nan_mask, verify_variable_type
+from gcpy.util import get_nan_mask, is_nearly_constant, verify_variable_type
 from gcpy.plot.core import gcpy_style, normalize_colors
 from gcpy.plot.single_panel import single_panel
 
@@ -630,8 +630,40 @@ def compute_norm_for_plot(
         vmax,
         is_difference=True,
         log_color_scale=True,
-        ratio_log=ratio_log
+        ratio_log=ratio_log,
+        is_ratio=True,
     )
+
+
+def ref_equals_dev(array, rtol=1e-5, atol=1e-10):
+    """
+    Returns True if all finite elements of a Ref/Dev ratio array are
+    within tolerance of 1.0 (i.e. Ref is essentially equal to Dev
+    throughout the domain).  This is needed to be able to add a
+    ticklabel stating that Ref & Dev are equal throughout the domain.
+
+    A tolerance (rather than exact equality) is used so that tiny
+    numerical noise (e.g. from regridding, see GitHub issue #330)
+    does not prevent this special case from being detected.
+
+    Parameters
+    ----------
+    array : numpy array
+        Ref/Dev ratio data (may contain NaNs).
+    rtol : float, optional
+        Relative tolerance.
+        Default value: 1e-5
+    atol : float, optional
+        Absolute tolerance.
+        Default value: 1e-10
+
+    Returns
+    -------
+    is_equal : bool
+        Whether Ref and Dev are essentially equal throughout the
+        domain.
+    """
+    return is_nearly_constant(array, rtol=rtol, atol=atol, target=1.0)
 
 
 def colorbar_ticks_and_format(
@@ -709,18 +741,6 @@ def colorbar_ticks_and_format(
     # Ratio (dynamic and restricted range) subplots):
     #-------------------------------------------------------------------
     if subplot in ("dyn_ratio", "res_ratio"):
-
-        def ref_equals_dev(array):
-            """
-            Internal routine to check that returns true if all elements
-            of Ref/Dev are equal to 1 or NaN (aka missing value).
-            This is needed to be able to add a ticklabel stating
-            that Ref & Dev are equal throughout the domain.
-            """
-            uniq = np.unique(array)
-            if len(uniq) == 2:
-                return np.any(np.isin(uniq, [1.0])) and np.any(np.isnan(uniq))
-            return np.all(np.isin(uniq, [1.0]))
 
         # When Ref == Dev
         if ref_equals_dev(plot_val):

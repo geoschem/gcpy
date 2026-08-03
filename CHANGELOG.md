@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added Sphinx ReadTheDocs packages into `gcpy_environment_py312.yml` and `gcpy_environment_py313.yml`
 - Added `docs/source/api.rst` configuration file for auto-building the  GCPy API reference section
 - Added `gcpy/examples/gcst/generate_inttest_report.py` script to produce a summary of integration test results
+- Added `pytest=8.3.4` as a dependency to environment files
+- Added several unit tests in `gcpy/tests` as well as a GitHub Action to run them on pushes and pull requests
+- Added `is_nearly_constant` function to `gcpy/util.py`
 
 ### Changed
 - Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
@@ -30,6 +33,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed `DeprecationWarning` in `single_panel.py` that occurs with numpy >=2.0
 - Passed `spcdb_files` as the 7th argument (following `dev_interval`) to `make_benchmark_operations_budget`, where missing
 - Passed `colname` as the 5th argument to `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots`
+- Fixed an issue that caused striping when plotting zonal mean fields that are are nearly constant
 
 ### Removed
 - Removed Python 3.9 from the GitHub Actions that try to build a Python environment; This version is now de-supported.

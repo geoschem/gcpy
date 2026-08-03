@@ -40,6 +40,10 @@ GCPy requires several other Python packages, which are listed below.
    :header-rows: 1
    :align: center
 
+.. list-table:: GCPy dependencies
+   :header-rows: 1
+   :align: center
+
    * - Package
      - Version (Python 3.12)
      - Version (Python 3.13)
@@ -91,15 +95,18 @@ GCPy requires several other Python packages, which are listed below.
    * - pylint
      - 3.2.2
      - 3.3.4
-   * - pyproj
-     - 3.6.1
-     - 3.7.1
-   * - `python <https://www.python.org/>`_
-     - 3.12.0
-     - 3.13.0
    * - pypdf
      - 6.4.0
      - 6.4.0
+   * - pyproj
+     - 3.6.1
+     - 3.7.1
+   * - pytest
+     - 3.8.4
+     - 3.8.4
+   * - `python <https://www.python.org/>`_
+     - 3.12.0
+     - 3.13.0
    * - requests
      - 2.32.3
      - 2.32.3
