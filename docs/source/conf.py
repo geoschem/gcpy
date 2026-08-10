@@ -23,7 +23,7 @@ copyright = '2023, GEOS-Chem Support Team'
 author = 'GEOS-Chem Support Team'
 
 # The full version, including alpha/beta/rc tags
-release = '1.7.1'
+release = '1.8.0'
 
 
 # -- General configuration ---------------------------------------------------

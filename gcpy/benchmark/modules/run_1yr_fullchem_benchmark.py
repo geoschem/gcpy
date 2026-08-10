@@ -3,7 +3,7 @@
 Driver script for creating benchmark plots and tables from
 1-year GEOS-Chem full-chemistry benchmark simulations.
 
-This script corresponds with GCPy 1.7.1. Edit this version ID if releasing
+This script corresponds with GCPy 1.8.0. Edit this version ID if releasing
 a new version of GCPy.
 
 Run this script to generate benchmark comparisons between:
