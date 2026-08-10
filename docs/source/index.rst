@@ -7,7 +7,7 @@ GCPy: The GEOS-Chem Python toolkit
    <p>
       <a href="https://github.com/geoschem/gcpy/releases"><img src="https://img.shields.io/github/v/release/geoschem/gcpy?label=Latest%20Stable%20Release" alt="Latest release" /></a>
       <a href="https://anaconda.org/conda-forge/geoschem-gcpy"> <img src="https://anaconda.org/conda-forge/geoschem-gcpy/badges/version.svg" alt="Anaconda version" /> </a>
-      <a href="https://img.shields.io/pypi/v/geoschem-gcpy"><img src="https://img.shields.io/pypi/v/geoschem-gcpy" alt="PyPI version" /></a>
+      <a href="https://pypi.org/project/geoschem-gcpy/"><img src="https://img.shields.io/pypi/v/geoschem-gcpy" alt="PyPI version" /></a>
       <a href="https://github.com/geoschem/gcpy/releases/"><img src="https://img.shields.io/github/release-date/geoschem/gcpy" alt="Release date" /></a>
       <br />
       <a href="https://anaconda.org/conda-forge/geoschem-gcpy"> <img src="https://anaconda.org/conda-forge/geoschem-gcpy/badges/platforms.svg" alt="Platforms" /> </a> 
@@ -18,8 +18,7 @@ GCPy: The GEOS-Chem Python toolkit
       <a href="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py312.yml"><img src="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py312.yml/badge.svg" alt="build-gcpy-environment-py312" /></a>
       <a href="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py313.yml"><img src="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py313.yml/badge.svg" alt="build-gcpy-environment-py313" /></a>
       <br />
-      <a href="https://github.com/geoschem/gcpy/actions/workflows/build-rtd-environment.yml"><img src="https://github.com/geoschem/gcpy/actions/workflows/build-rtd-environment.yml/badge.svg" alt="build-rtd-environment" /></a>
-     <a href="https://anaconda.org/conda-forge/geoschem-gcpy"><img src="https://anaconda.org/conda-forge/geoschem-gcpy/badges/downloads.svg" alt="Downloads" /> </a>  
+     <a href="https://anaconda.org/conda-forge/geoschem-gcpy"><img src="https://anaconda.org/conda-forge/geoschem-gcpy/badges/downloads.svg" alt="Downloads" /> </a>
    </p>
 
 Welcome to the GCPy ReadTheDocs documentation! This site provides documentation
