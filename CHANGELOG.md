@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `pytest=8.3.4` as a dependency to environment files
 - Added several unit tests in `gcpy/tests` as well as a GitHub Action to run them on pushes and pull requests
 - Added `is_nearly_constant` function to `gcpy/util.py`
+- Added `pytest.ini` to filter benign warnings (numpy/ESMF ABI notice, xesmf array-contiguity notices) out of the test suite output
 
 ### Changed
 - Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
@@ -34,6 +35,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Passed `spcdb_files` as the 7th argument (following `dev_interval`) to `make_benchmark_operations_budget`, where missing
 - Passed `colname` as the 5th argument to `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots`
 - Fixed an issue that caused striping when plotting zonal mean fields that are are nearly constant
+- Fixed `get_grid_extents` in `gcpy/grid.py` to snap pole-cutoff latitude grids to +/-90 degrees instead of an arbitrary 1-degree offset, which caused zonal mean plots of sub-1-degree-resolution grids (e.g. HEMCO diagnostics) to fail
 
 ### Removed
 - Removed Python 3.9 from the GitHub Actions that try to build a Python environment; This version is now de-supported.
