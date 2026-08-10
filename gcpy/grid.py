@@ -263,12 +263,19 @@ def get_grid_extents(data, edges=True):
 
         lat = np.sort(lat)
         minlat = np.min(lat)
-        if abs(abs(lat[1]) - abs(lat[0])) != abs(abs(lat[2]) - abs(lat[1])):
-            #pole is cutoff
-            minlat = minlat - 1
+        if not np.isclose(
+                abs(abs(lat[1]) - abs(lat[0])),
+                abs(abs(lat[2]) - abs(lat[1]))):
+            # pole is cutoff (half-polar boundary cell): snap to the
+            # true pole rather than padding by an arbitrary constant,
+            # which breaks for any resolution other than the one it
+            # was tuned for (see GitHub issue #425)
+            minlat = -90
         maxlat = np.max(lat)
-        if abs(abs(lat[-1]) - abs(lat[-2])) != abs(abs(lat[-2]) - abs(lat[-3])):
-            maxlat = maxlat + 1
+        if not np.isclose(
+                abs(abs(lat[-1]) - abs(lat[-2])),
+                abs(abs(lat[-2]) - abs(lat[-3]))):
+            maxlat = 90
         # add longitude res to max longitude
         lon = np.sort(lon)
         minlon = np.min(lon)
