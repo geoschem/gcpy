@@ -35,46 +35,45 @@ def file_regrid(
     Regrids an input file to a new horizontal grid specification
     and saves it as a new file.
 
-    Args:
-    -----
-    filein: str
-        The input filename
-    fileout: str
-        The output filename (file will be overwritten if it already exists)
-    dim_format_in: str
+    Parameters
+    ----------
+    filein : str
+        The input filename.
+    fileout : str
+        The output filename (file will be overwritten if it already exists).
+    dim_format_in : str
         Format of the input file's dimensions (choose from: classic,
         checkpoint, diagnostic), where classic denotes lat/lon and
-        checkpoint / diagnostic are cubed-sphere formats
-    dim_format_out: str
+        checkpoint / diagnostic are cubed-sphere formats.
+    dim_format_out : str
         Format of the output file's dimensions (choose from: classic,
         checkpoint, diagnostic), where classic denotes lat/lon
-        and checkpoint / diagnostic are cubed-sphere formats
-
-    Keyword Args (optional):
-    ------------------------
-    cs_res_out: int
+        and checkpoint / diagnostic are cubed-sphere formats.
+    cs_res_out : int, optional
         The cubed-sphere resolution of the output dataset.
-        Not used if dim_format_out is classic
+        Not used if dim_format_out is classic.
         Default value: 0
-    ll_res_out: str
+    ll_res_out : str, optional
         The lat/lon resolution of the output dataset.
-        Not used if dim_format_out is not classic
+        Not used if dim_format_out is not classic.
         Default value: "0x0"
-    sg_params_in: list[float, float, float]
+    sg_params_in : list of float, optional
         Input grid stretching parameters
         [stretch-factor, target longitude, target latitude].
         Not used if dim_format_in is classic.
         Default value: [1.0, 170.0, -90.0] (No stretching)
-    sg_params_out: list[float, float, float]
+    sg_params_out : list of float, optional
         Output grid stretching parameters
         [stretch-factor, target longitude, target latitude].
-        Not used if dim_format_out is classic
+        Not used if dim_format_out is classic.
         Default value: [1.0, 170.0, -90.0] (No stretching)
-    verbose : bool
+    verbose : bool, optional
         Toggles verbose output on (True) or off (False).
-    weightsdir : str
+        Default value: False
+    weightsdir : str, optional
         Path to the directory containing regridding weights (or
-        where weights will be created).  Default value: "."
+        where weights will be created).
+        Default value: "."
     """
     verify_variable_type(filein, str)
     verify_variable_type(fileout, str)
@@ -247,20 +246,20 @@ def prepare_cssg_input_grid(
     Reformats cubed-sphere/stretched grid data to the universal
     format and drops non-regriddable fields.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xr.Dataset
-        Input grid (cubed-sphere or stretched grid)
+        Input grid (cubed-sphere or stretched grid).
     dim_format_in : str
         Either "checkpoint" (for restart files)
-        or "diagnostic" (for History diagnostic files)
+        or "diagnostic" (for History diagnostic files).
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xr.Dataset
-        Data with reformatted dimensions and dropped fields
+        Data with reformatted dimensions and dropped fields.
     cs_res_in : int
-        Cubed-sphere/stretched grid resolution
+        Cubed-sphere/stretched grid resolution.
     """
 
     # Reformat dimensions to "common dimensions (T, Z, F, Y, X)
@@ -302,32 +301,36 @@ def regrid_cssg_to_cssg(
     Regrids from the cubed-sphere/stretched grid to a different
     cubed-sphere/stretched grid resolution.
 
-    Args:
-    -----
+    Parameters
+    ----------
     fileout : str
-        File name template
+        File name template.
     dset : xarray.Dataset
-        Data on a cubed-sphere/stretched grid
-    dim_format_in, dim_format_out : str
-        Input & output grid format ("checkpoint", "diagnostic")
-    cs_res_out : int
-        Cubed-sphere grid resolution
-    sg_params_in, sg_params_out: list[float, float, float]
-        Input & output grid stretching parameters
+        Data on a cubed-sphere/stretched grid.
+    dim_format_in : str
+        Input grid format ("checkpoint", "diagnostic").
+    sg_params_in : list of float
+        Input grid stretching parameters
         [stretch-factor, target longitude, target latitude].
-
-    Keyword Args (optional):
-    ------------------------
-    verbose : bool
+    cs_res_out : int
+        Cubed-sphere grid resolution.
+    dim_format_out : str
+        Output grid format ("checkpoint", "diagnostic").
+    sg_params_out : list of float
+        Output grid stretching parameters
+        [stretch-factor, target longitude, target latitude].
+    verbose : bool, optional
         Toggles verbose output on (True) or off (False).
-    weightsdir : str
+        Default value: False
+    weightsdir : str, optional
         Path to the directory containing regridding weights (or
-        where weights will be created).  Default value: "."
+        where weights will be created).
+        Default value: "."
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
-        Data regridded to the output lat-lon grid
+        Data regridded to the output lat-lon grid.
     """
     if verbose:
         print("file_regrid.py: Regridding from CS/SG to CS/SG")
@@ -483,32 +486,31 @@ def regrid_cssg_to_ll(
     """
     Regrids from the cubed-sphere/stretched grid to the lat-lon grid.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
-        Data on a cubed-sphere/stretched grid
+        Data on a cubed-sphere/stretched grid.
     cs_res_in : int
-        Cubed-sphere grid resolution
+        Cubed-sphere grid resolution.
     dim_format_in : str
-        Input grid format ("checkpoint", "diagnostic")
-    sg_params_in: list[float, float, float]
+        Input grid format ("checkpoint", "diagnostic").
+    sg_params_in : list of float
         Input grid stretching parameters
         [stretch-factor, target longitude, target latitude].
     ll_res_out : str
-        Output grid lat/lon resolution (e.g. "4x5")
-
-    Keyword Args (optional):
-    ------------------------
-    verbose: bool
-        Toggles verbose printout on (True) or off (False)
-    weightsdir : str
+        Output grid lat/lon resolution (e.g. "4x5").
+    verbose : bool, optional
+        Toggles verbose printout on (True) or off (False).
+        Default value: False
+    weightsdir : str, optional
         Path to the directory containing regridding weights (or
-        where weights will be created).  Default value: "."
+        where weights will be created).
+        Default value: "."
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
-        Data regridded to the output lat-lon grid
+        Data regridded to the output lat-lon grid.
     """
     if verbose:
         print("file_regrid.py: Regridding from CS/SG to LL")
@@ -589,31 +591,30 @@ def regrid_ll_to_cssg(
     """
     Regrids from the lat-lon grid to the cubed-sphere/stretched grid.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
-        Data on a lat/lon grid
+        Data on a lat/lon grid.
     cs_res_in : int
-        Cubed-sphere grid resolution
+        Cubed-sphere grid resolution.
     dim_format_out : str
         Either "checkpoint" (for restart files) or
         "diagnostic" (for History diagnostic files).
-    sg_params_out: list[float, float, float]
+    sg_params_out : list of float
         Output grid stretching parameters
         [stretch-factor, target longitude, target latitude].
-
-    Keyword Args (optional):
-    ------------------------
-    verbose : bool
+    verbose : bool, optional
         Toggles verbose output on (True) or off (False).
-    weightsdir : str
+        Default value: False
+    weightsdir : str, optional
         Path to the directory containing regridding weights (or
-        where weights will be created).  Default value: "."
+        where weights will be created).
+        Default value: "."
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
-        Data regridded to the output cubed-sphere/stretched-grid
+        Data regridded to the output cubed-sphere/stretched-grid.
     """
     if verbose:
         print("file_regrid.py: Regridding from LL to CS/SG")
@@ -703,23 +704,22 @@ def regrid_ll_to_ll(
     """
     Regrid from the lat/lon grid to the cubed-sphere/stretched grid.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
-        Data on a lat/lon grid
+        Data on a lat/lon grid.
     ll_res_out : str
-        Output grid lat-lon grid resolution (e.g. "4x5")
-
-    Keyword Args (optional):
-    ------------------------
-    verbose : bool
+        Output grid lat-lon grid resolution (e.g. "4x5").
+    verbose : bool, optional
         Toggles verbose output on (True) or off (False).
-    weightsdir : str
+        Default value: False
+    weightsdir : str, optional
         Path to the directory containing regridding weights (or
-        where weights will be created).  Default value: "."
+        where weights will be created).
+        Default value: "."
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
         Data regridded to the output lat-lon grid.
     """
@@ -809,8 +809,8 @@ def flip_lev_coord_if_necessary(
     dim_format_out.  Also sets the attributes "lev:positive" and
     "ilev:positive" accordingly.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
         The input dataset.
     dim_format_in : str
@@ -818,13 +818,13 @@ def flip_lev_coord_if_necessary(
     dim_format_out : str
         Output grid format ("classic", "checkpoint", "diagnostic").
 
-    Args:
-    -----
+    Returns
+    -------
     dset : xarray.Dataset
         The modified dataset.
 
-    Remarks:
-    --------
+    Notes
+    -----
     (1) classic    : lev is in ascending order  (lev:positive="up"  )
     (2) diagnostic : lev is in ascending order* (lev:positive="up"  )
     (3) checkpoint : lev is in descending order (lev:positive="down")
@@ -929,18 +929,16 @@ def save_ll_metadata(
     """
     Updates the lat-lon coordinate metadata in an xarray.Dataset object.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
         The input data (on lat-lon grid).
+    verbose : bool, optional
+        Toggles verbose printout on (True) or off (False).
+        Default value: False
 
-    Keyword Arguments:
-    ------------------
-    verbose : bool
-        Toggles verbose printout on (True) or off (False)
-
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
         Original data plus updated coordinate metadata.
     """
@@ -992,8 +990,8 @@ def save_cssg_metadata(
     Saves the stretched-grid metadata to an xarray.Dataset object
     containing cubed-sphere/stretched grid data.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
         Data on the stretched grid.
     cs_res_out : int
@@ -1001,14 +999,15 @@ def save_cssg_metadata(
     dim_format_out : str
         Either "checkpoint" (for restart files) or
         "diagnostic" (for History diagnostic files).
-    sg_params_out: list[float, float, float]
+    sg_params_out : list of float
         Output grid stretching parameters
         [stretch-factor, target longitude, target latitude].
-    verbose : bool
+    verbose : bool, optional
         Toggles verbose printout on (True) or off (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
         The original data, plus stretched grid metadata.
     """
@@ -1082,21 +1081,18 @@ def rename_restart_variables(
     Renames restart variables according to GEOS-Chem Classic
     and GCHP conventions.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
         The input dataset.
-
-    Keyword Args (optional):
-    ------------------------
-    towards_gchp: bool
-        Whether renaming to (True) or from (False) GCHP format
+    towards_gchp : bool, optional
+        Whether renaming to (True) or from (False) GCHP format.
         Default value: True
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
-       The modified dataset.
+        The modified dataset.
     """
     verify_variable_type(dset, xr.Dataset)
 
@@ -1167,21 +1163,24 @@ def adjust_cssg_grid_and_coords(
     """
     Adjusts cubed-sphere/stretched-grid coordinate names and attributes.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
-        The input data
-    dim_format_in, dim_format_out: str
+        The input data.
+    dim_format_in : str
+        Either "checkpoint" (for checkpoint/restart files) or
+        "diagnostic" (for History diagnostic files).
+    dim_format_out : str
         Either "checkpoint" (for checkpoint/restart files) or
         "diagnostic" (for History diagnostic files).
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
-       The input data with updated coordinate names & attributes.
+        The input data with updated coordinate names & attributes.
 
-    Remarks:
-    --------
+    Notes
+    -----
     "diagnostic" dimension format: (time, lev, nf, Ydim, Xdim)
     "checkpoint" dimension format: (time, lev, lat, lon); lat = 6*lon
     """
@@ -1277,19 +1276,16 @@ def drop_classic_vars(
     Renames and drops certain restart variables according to
     GEOS-Chem Classic and GCHP conventions.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
         The input dataset.
-
-    Keyword Args (optional):
-    ------------------------
-    towards_gchp: bool
+    towards_gchp : bool, optional
         Whether going to (True) or from (False) GCHP format.
         Default value: True
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
         The modified dataset.
     """
@@ -1322,14 +1318,13 @@ def order_dims_time_lev_lat_lon(dset):
     Transposes dims of an Dataset to be in (time, lev, lat, lon) order.
     This corresponds to Fortran column-major ordering.
 
-
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
         The input dataset.
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
         The modified dataset.
     """
@@ -1354,20 +1349,18 @@ def reshape_cssg_diag_to_chkpt(
     """
     Reshapes a dataset from diagnostic to checkpoint dimension format.
 
-    Args:
-    -----
+    Parameters
+    ----------
     dset : xarray.Dataset
         Dataset with dimensions (time, lev, nf, Xdim, Ydim).
-
-    Keyword Args (optional)
-    -----------------------
-    verbose : bool
+    verbose : bool, optional
         Toggles verbose output on (True) or off (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     dset : xarray.Dataset
-        Dataset wtih dimensions (time, lev, lat, lon), where lat/lon=6.
+        Dataset with dimensions (time, lev, lat, lon), where lat/lon=6.
     """
     verify_variable_type(dset, xr.Dataset)
 
@@ -1437,8 +1430,10 @@ def main():
     Main program for file_regrid.  Parses command-line arguments and
     calls the file_regrid routine.
 
-    Command-line arguments:
-    -----------------------
+    Notes
+    -----
+    Accepted command-line arguments:
+
     -i, --filein
         Input file, contains original data.
 

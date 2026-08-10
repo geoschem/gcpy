@@ -1,7 +1,8 @@
 #!/usr/bin/env python
-"""
+r"""
 Six Panel Comparison Plots
---------------------------------------
+--------------------------
+
 This example script demonstrates the comparitive plotting
 capabilities of GCPy, including single level plots as well as
 global zonal mean plots. These comparison plots are frequently
@@ -12,11 +13,51 @@ points in one run that are stored in separate xarray datasets.
 The example data described here is in lat/lon format, but the same
 code works equally well for cubed-sphere (GCHP) data.
 
-NOTE: If you are using GCPy from a Mac, set the environment variable:
+Command-line arguments
+----------------------
+
+.. option:: -r <str>, --ref <str>
+
+   Path to NetCDF file from the Ref model.
+   
+.. option:: -d <str>, --dev <str>
+
+   Path to NetCDF output file from the Dev model.
+
+.. option:: -v <str>, --varname <str>
+ 
+   Variable name to plot.
+  
+.. option:: [-l <int>, --level <int>]
+
+   Level to plot (single-level plots only), starting at 0.
+   Default: ``0``
+
+Examples
+--------
+
+Run plot comparisons for ozone from the GEOS-Chem SpeciesConc diagnostic
+output.  Use the 500 hPa level (level 22, starting from 0) for the
+single-level plots.
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ python -m gcpy.examples.plotting.plot_comparisons \
+     --ref /path/to/ref/GEOSChem.SpeciesConc.20190701_0000z.nc4 \
+     --dev /path/to/dev/GEOSChem.SpeciesConc.20190701_0000z.nc4 \
+     --varname SpeciesConcVV_O3 \
+     --level 22
+
+Notes
+-----
+If you are using GCPy from a Mac, set the environment variable:
+
+.. code-block:: bash
 
    export MPLBACKEND="MacOSX"
 
-Otherwise set:
+.. code-block:: bash
 
    export MPLBACKEND="tkagg"
 
@@ -33,7 +74,7 @@ from gcpy.plot.compare_zonal_mean import compare_zonal_mean
 from gcpy.util import rename_and_flip_gchp_rst_vars
 
 
-def plot_comparisons(
+def plot_comparisons_examples(
         ref,
         dev,
         varname,
@@ -42,12 +83,16 @@ def plot_comparisons(
     """
     Example function to create six-panel comparison plots.
 
-    Args:
-    -----
-    ref     (str) : Path to the "Ref" data file.
-    dev     (str) : Path to the "Dev" data file.
-    varname (str) : Variable to plot
-    level   (int) : Level to plot (for single-level comparisons only).
+    Parameters
+    ----------
+    ref : str
+        Path to the "Ref" data file.
+    dev : str
+        Path to the "Dev" data file.
+    varname : str
+        Variable to plot.
+    level : int
+        Level to plot (for single-level comparisons only).
     """
     # xarray allows us to read in any NetCDF file, the format of
     # GEOS-Chem diagnostics, #as an xarray Dataset
@@ -178,7 +223,7 @@ def main():
     args = parser.parse_args()
 
     # Call the plot_single_panel routine
-    plot_comparisons(
+    plot_comparisons_examples(
         args.ref,
         args.dev,
         args.varname,

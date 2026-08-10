@@ -37,23 +37,25 @@ class _GlobVars:
         """
         Initializes the _GlobVars class.
 
-        Args:
-            devstr: str
-                Label denoting the "Dev" version.
-            devdir: str
-                Directory where benchmark diagnostic files are found.
-            year: int
-                Year of the benchmark simulation.
-
-        Keyword Args (optional):
-            dst: str
-                Directory where plots & tables will be created.
-            bmk_type: str
-                FullChemBenchmark or TransportTracersBenchmark.
-            species: list of str
-                Species for which STE fluxes are desired.
-            overwrite: bool
-                Denotes whether to ovewrite existing budget tables.
+        Parameters
+        ----------
+        devstr : str
+            Label denoting the "Dev" version.
+        files : list
+            List of files containing vertical fluxes.
+        dst : str
+            Directory where plots & tables will be created.
+        year : int
+            Year of the benchmark simulation.
+        bmk_type : str
+            FullChemBenchmark or TransportTracersBenchmark.
+        species : list of str
+            Species for which STE fluxes are desired.
+        overwrite : bool
+            Denotes whether to overwrite existing budget tables.
+        month : int or None
+            If passed, specifies the month of a 1-month benchmark.
+            Pass None to denote a 1-year benchmark.
         """
         # ------------------------------
         # Arguments from outside
@@ -171,13 +173,15 @@ def compute_ste(globvars):
     Computes the strat-trop-exchange, taken as species flux
     across the 100hPa pressure level.
 
-    Args:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
 
-    Returns:
-        result: Pandas DataFrame
-            Strat-trop fluxes
+    Returns
+    -------
+    result : pd.DataFrame
+        Strat-trop fluxes.
     """
 
     # 100 hPa level index (convert to Python array notation)
@@ -222,11 +226,12 @@ def print_ste(globvars, df):
     """
     Prints the strat-trop exchange table.
 
-    Args:
-        globvars: _GlobVars
-            Global variables
-        df: pandas DataFrame
-            Strat-trop exchange table
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables.
+    df : pd.DataFrame
+        Strat-trop exchange table.
     """
     # Create plot directory hierarchy if necessary
     make_directory(globvars.dst, globvars.overwrite)
@@ -275,26 +280,25 @@ def make_benchmark_ste_table(
     Driver program.  Computes and prints strat-trop exchange for
     the selected species and benchmark year.
 
-    Args:
-        devstr: str
-            Label denoting the "Dev" version.
-        files: str
-            List of files containing vertical fluxes.
-        year: str
-            Year of the benchmark simulation.
-
-    Keyword Args (optional):
-        dst: str
-            Directory where plots & tables will be created.
-        bmk_type: str
-            FullChemBenchmark or TransportTracersBenchmark.
-        species: list of str
-            Species for which STE fluxes are desired.
-        overwrite: bool
-            Denotes whether to ovewrite existing budget tables.
-        month: float
-            If passed, specifies the month of a 1-month benchmark.
-            Default: None (denotes a 1-year benchmark)
+    Parameters
+    ----------
+    devstr : str
+        Label denoting the "Dev" version.
+    files : str
+        List of files containing vertical fluxes.
+    year : str
+        Year of the benchmark simulation.
+    dst : str, optional
+        Directory where plots & tables will be created.
+    bmk_type : str, optional
+        FullChemBenchmark or TransportTracersBenchmark.
+    species : list of str, optional
+        Species for which STE fluxes are desired.
+    overwrite : bool, optional
+        Denotes whether to overwrite existing budget tables.
+    month : float, optional
+        If passed, specifies the month of a 1-month benchmark.
+        Default: None (denotes a 1-year benchmark).
     """
 
     if species is None:

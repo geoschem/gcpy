@@ -12,15 +12,25 @@ def main():
     This will compare timing information for a given hotspot listed in
     two Intel VTune hotspot reports.
 
-    Command-line arguments
-    --ref-file              : VTune hotspot report for the Ref model
-    --ref-label             : Descriptive label for the Ref model
-    --dev-file              : VTune hotspot report for the Dev model
-    --dev-label             : Descriptive label for the Dev model
-    --hotspot          (-h) : Name of the hotspot to look up
-    --delimiter        (-d) : Separator between columns (Default: "\t" = tab)
-    --ref-line-number       : Line where hotspot occurs in the Ref report
-    --dev-line-number       : Line where hotspot occurs in the Dev report
+    Command-line Arguments
+    ----------------------
+    --ref-file : str
+        VTune hotspot report for the Ref model.
+    --ref-label : str
+        Descriptive label for the Ref model.
+    --dev-file : str
+        VTune hotspot report for the Dev model.
+    --dev-label : str
+        Descriptive label for the Dev model.
+    --hotspot, -h : str
+        Name of the hotspot to look up.
+    --delimiter, -d : str, optional
+        Separator between columns.
+        Default value: "\\t" (tab)
+    --ref-line-number : int
+        Line where hotspot occurs in the Ref report.
+    --dev-line-number : int
+        Line where hotspot occurs in the Dev report.
     """
 
     # Tell the parser which arguments to look for

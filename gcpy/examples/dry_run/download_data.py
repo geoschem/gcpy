@@ -1,36 +1,50 @@
 #!/usr/bin/env python3
-
 """
-Description:
-------------
 This Python script (assumes Python3) reads a GEOS-Chem or
 HEMCO-standalone log file containing dry-run output and does
 the following:
 
-    (1) Creates a list of unique files that are required for the
-        GEOS-Chem or HEMCO-standalone simulation;
+1. Creates a list of unique files that are required for the
+   GEOS-Chem or HEMCO-standalone simulation;
 
-    (2) Creates a bash script to download missing files from either
-        the ComputeCanada server (default) or the AWS s3://gcgrid
-        bucket;
+2. Creates a bash script to download missing files from either
+   the ComputeCanada server (default) or the AWS s3://gcgrid
+   bucket;
 
-    (3) Executes the bash script to download the necessary data;
+3. Executes the bash script to download the necessary data;
 
-    (4) Removes the bash script upon successful download.
+4. Removes the bash script upon successful download.
 
-
-Remarks:
+Examples
 --------
-    (1) This script only requires the "os", "sys", and "subprocess"
-        packages, which are core Python.  Therefore, this script can
-        be shipped with GEOS-Chem run directories.  It only requires
-        Python 3 and not a full Anaconda/Miniconda environment (but
-        you can run in an Anaconda environment if you have one).
 
-    (2) Jiawei Zhuang found that it is much faster to issue aws s3 cp
-        commands from a bash script than a Python script.  Therefore,
-        in this routine we create a bash script with all of the
-        download commands that will be executed by the main routine.
+Downloads data from a GEOS-Chem dry run simulation.
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.dry_run.download_data log MIRROR-NAME
+
+Prints the unique log file name and exits.
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.dry_run.download_data log MIRROR-NAME
+
+Notes
+-----
+
+1. This script only requires the "os", "sys", and "subprocess"
+   packages, which are core Python.  Therefore, this script can
+   be shipped with GEOS-Chem run directories.  It only requires
+   Python 3 and not a full Anaconda/Miniconda environment (but
+   you can run in an Anaconda environment if you have one).
+
+2. Jiawei Zhuang found that it is much faster to issue aws s3 cp
+   commands from a bash script than a Python script.  Therefore,
+   in this routine we create a bash script with all of the
+   download commands that will be executed by the main routine.
 """
 
 # Imports
@@ -52,21 +66,21 @@ def extract_pathnames_from_log(args):
     """
     Returns a list of pathnames from a GEOS-Chem log file.
 
-    Args:
-    -----
+    Parameters
+    ----------
     args : dict
         Contains output from function parse_args.
 
-    Returns:
-    --------
+    Returns
+    -------
     paths : dict
         paths["comments"]: Dry-run comment lines.
         paths["found"] : List of file paths found on disk.
         paths["missing"]: List of file paths that are missing.
         paths["local_prefix"]: Local data directory root.
 
-    Author:
-    -------
+    Author
+    ------
     Jiawei Zhuang (jiaweizhuang@g.harvard.edu)
     Modified by Bob Yantosca (yantosca@seas.harvard.edu)
     """
@@ -152,7 +166,7 @@ def get_run_info():
     """
     Searches through the input.geos file for GEOS-Chem run parameters.
 
-    Returns:
+    Returns
     -------
     run_info : dict
         Contains the GEOS-Chem run parameters: start_date,
@@ -215,8 +229,8 @@ def expand_restart_file_names(paths, args, run_info):
     ExtData.  If so, will append the link to the remote file
     to the line in which the restart file name is found.
 
-    Args:
-    ----
+    Parameters
+    ----------
     paths : dict
         Contains output from function extract_pathnames_from_log.
     args : dict
@@ -288,13 +302,13 @@ def write_unique_paths(paths, unique_log):
     """
     Writes unique data paths from dry-run output to a file.
 
-    Args:
-    -----
-        paths : dict
-            Contains output from function extract_pathnames_from_log.
+    Parameters
+    ----------
+    paths : dict
+        Contains output from function extract_pathnames_from_log.
 
-        unique_log : str
-            Log file that will hold unique data paths.
+    unique_log : str
+        Log file that will hold unique data paths.
     """
     combined_paths = paths["found"] + paths["missing"]
     combined_paths.sort()
@@ -319,8 +333,8 @@ def create_download_script(paths, args):
     from the ComputeCanada data archive (default), or the
     GEOS-Chem s3://gcgrid bucket on the AWS cloud,
 
-    Args:
-    -----
+    Parameters
+    ----------
     paths : dict
         Contains output from function extract_pathnames_from_log.
     args : dict
@@ -519,8 +533,8 @@ def download_the_data(args):
     Downloads GEOS-Chem data files from the ComputeCanada server
     or the AWS s3://gcgrid bucket.
 
-    Args:
-    -----
+    Parameters
+    ----------
     args : dict
         Output of runction parse_args.
     """
@@ -568,8 +582,8 @@ def parse_args():
     Also parses command-line arguments and returns a dictionary
     containing all of these settings.
 
-    Returns:
-    --------
+    Returns
+    -------
     args : dict
         args["config"] : Dict with global settings from download_data.yml
         args["dryrun_log"] Name of the GEOS-Chem dry-run log file
@@ -643,11 +657,6 @@ def main():
     """
     Main program.  Gets command-line arguments and calls function
     download_the_data to initiate a data-downloading process.
-
-    Calling sequence:
-    -----------------
-        ./download_data.py log MIRROR-NAME
-        ./download_data.py log -skip-download  # Print unique log & exit
     """
 
     # Download the data files from the remote server

@@ -12,14 +12,17 @@ def get_timestamp_string(date_array):
     Convenience function returning the datetime timestamp based on
     the given input.
 
-    Args:
-        date_array: array
-            Array of integers corresponding to [year, month, day, hour,
-            minute, second]. Any integers not provided will be padded
-            accordingly
-    Returns:
-        date_str: string
-            string in datetime format (eg. 2019-01-01T00:00:00Z)
+    Parameters
+    ----------
+    date_array : array of int
+        Array of integers corresponding to [year, month, day, hour,
+        minute, second]. Any integers not provided will be padded
+        accordingly.
+
+    Returns
+    -------
+    date_str : str
+        String in datetime format (e.g. '2019-01-01T00:00:00Z').
     """
     # converts single integer to array for cases when only year is given
     date_array = [date_array] if isinstance(date_array, int) else date_array
@@ -39,14 +42,19 @@ def get_timestamp_string(date_array):
 
 def add_months(start_date, n_months):
     """
+    Adds a given number of months to a numpy.datetime64 date.
 
-    Args:
-        start_date: numpy.datetime64
-            numpy datetime64 object
-        n_months: integer
-    Returns:
-        new_date: numpy.datetime64
-            numpy datetime64 object with exactly n_months added to the date
+    Parameters
+    ----------
+    start_date : numpy.datetime64
+        The starting date.
+    n_months : int
+        Number of months to add to start_date.
+
+    Returns
+    -------
+    new_date : numpy.datetime64
+        Date with exactly n_months added to start_date.
     """
     new_date = start_date.astype(datetime) + relativedelta(months=n_months)
     return np.datetime64(new_date)
@@ -54,14 +62,20 @@ def add_months(start_date, n_months):
 
 def is_full_year(start_date, end_date):
     """
-    Verifies if two dates are a full year starting Jan 1.
+    Verifies if two dates span a full year starting on January 1st.
 
-    Args:
-        start_date: numpy.datetime64
-            numpy datetime64 object
-        end_date: numpy.datetime64
-            numpy datetime64 object
-    Returns: boolean
+    Parameters
+    ----------
+    start_date : numpy.datetime64
+        The starting date.
+    end_date : numpy.datetime64
+        The ending date.
+
+    Returns
+    -------
+    result : bool
+        True if end_date is exactly 12 months after start_date and
+        start_date falls on January 1st; False otherwise.
     """
     return (
         add_months(start_date, 12) == end_date
@@ -75,11 +89,19 @@ def datetime64_to_str(timestamp, format_str="%Y-%m-%d"):
     Convenience routine to convert a numpy.datetime64 object
     to a date/time string.
 
-    Args
-    timestamp  : np.datetime64 : Date and time
+    Parameters
+    ----------
+    timestamp : numpy.datetime64
+        Date and time to be converted.
+    format_str : str, optional
+        Format string for the output date/time string.
+        Default value: '%Y-%m-%d'
 
-    Keyword args:
-    format_str : str           : Format for the output
+    Returns
+    -------
+    date_str : str
+        String representation of timestamp formatted according to
+        format_str.
     """
     verify_variable_type(timestamp, np.datetime64)
 

@@ -40,6 +40,10 @@ GCPy requires several other Python packages, which are listed below.
    :header-rows: 1
    :align: center
 
+.. list-table:: GCPy dependencies
+   :header-rows: 1
+   :align: center
+
    * - Package
      - Version (Python 3.12)
      - Version (Python 3.13)
@@ -52,10 +56,10 @@ GCPy requires several other Python packages, which are listed below.
    * - dask
      - 2025.3.0
      - 2025.3.0
-   * - esmf [#A]_
+   * - esmf [#A]_ [#B]_
      - 8.6.1
      - 8.8.1
-   * - `esmpy <https://www.earthsystemcog.org/projects/esmpy/>`_ [#A]_
+   * - `esmpy <https://www.earthsystemcog.org/projects/esmpy/>`_ [#A]_ [#B]_
      - 8.6.1
      - 8.8.1
    * - gridspec
@@ -91,15 +95,18 @@ GCPy requires several other Python packages, which are listed below.
    * - pylint
      - 3.2.2
      - 3.3.4
-   * - pyproj
-     - 3.6.1
-     - 3.7.1
-   * - `python <https://www.python.org/>`_
-     - 3.12.0
-     - 3.13.0
    * - pypdf
      - 6.4.0
      - 6.4.0
+   * - pyproj
+     - 3.6.1
+     - 3.7.1
+   * - pytest
+     - 3.8.4
+     - 3.8.4
+   * - `python <https://www.python.org/>`_
+     - 3.12.0
+     - 3.13.0
    * - requests
      - 2.32.3
      - 2.32.3
@@ -129,6 +136,12 @@ GCPy requires several other Python packages, which are listed below.
 	the only way to use GCPy on a Windows PC is from within a
 	Windows Subsystem for Linux (WSL) instance.
 
+.. [#B] The :program:`esmf` and :program:`esmpy` packages are
+	published on `conda-forge <https://conda-forge.org/>`_ but not
+	on the `Python Package Index (PyPI) <https://pypi.org>`_.
+	Thus they cannot be installed with the :program:`pip` package
+	manager but only with :program:`conda`.
+
 The default GCPy environment uses Python 3.13.  In the root folder you
 will find a symbolic link :file:`environment.yml`, which points to the
 file :file:`docs/environment_files/gcpy_environment_py313.yml` file.
@@ -149,7 +162,17 @@ near future.
 Methods for installing GCPy
 ===========================
 
-You can choose among the following installation methods:
+.. attention::
+
+   The `Earth System Modeling Framework (esmf)
+   <https://earthsystemmodeling.org>`_ package (upon which GCPy relies
+   for regridding functionality) is not available on `PyPI
+   <https://pypi.org>`_ but only on `conda-forge
+   <https://conda-forge.org>`_.  Because of this, you will not be able
+   to install GCPy from PyPI, but must use one of the two installation
+   methods described below.
+
+You may install GCPy usine one of the following methods:
 
 .. list-table:: GCPy installation methods
    :header-rows: 1
@@ -162,9 +185,6 @@ You can choose among the following installation methods:
    * - :ref:`install-conda-forge` (Recommended)
      - Simple
      - Most GCPy users
-   * - :ref:`install-pip`
-     - Simple
-     - Those who do not wish to install a Conda environment
    * - :ref:`install-dev`
      - Complex
      - GCPy developers
@@ -172,7 +192,7 @@ You can choose among the following installation methods:
 Unless you are going to be actively developing GCPy, you should
 :ref:`install from conda-forge <install-conda-forge>`.
 
-.. _install-conda-forge:
+..  _install-conda-forge:
 
 =============================
 Install GCPy from conda-forge
@@ -240,59 +260,6 @@ Next, deactivate the :literal:`gcpy_env` environment:
 
 This also removes the :literal:`(gcpy_env)` prefix from the command
 prompt.
-
-You may now skip ahead to the :ref:`next chapter <mpl-backend>`.
-
-.. _install-pip:
-
-======================
-Install GCPy from PyPI
-======================
-
-If you do not wish to create a Python virtual environment, you may
-install GCPy from the :program:`Python Package Index (PyPi)` using the
-`Pip installer <https://pypi.org/project/pip/>`_.  If your system does
-not already have Pip installed, you may install it with the
-`get-pip.py
-<https://pip.pypa.io/en/stable/installation/#get-pip-py>`_ script.
-
-.. attention::
-
-   If you install GCPy from PyPI, you will lose the ability to keep
-   the Python packages needed for GCPy separate from other Python
-   packages. This can potentially lead to package conflicts.  For this
-   reason we recommend :ref:`installing GCPy from conda-forge
-   <install-conda-forge>`.
-
-.. _install-pip-first:
-
-1. Install GCPy with Pip
-------------------------
-
-Once you are sure that Pip is installed, you may proceed to download
-GCPy with this command:
-
-.. code-block:: console
-
-   $ pip install geoschem-gcpy
-
-2. Validate the installation
-----------------------------
-
-Run the :ref:`test-plot` example script to validate the installation.
-If you see a plot created on your screen, GCPy has been installed
-successfully.
-
-.. _install-pip-update:
-
-(Optional) Update to a newer GCPy version
------------------------------------------
-
-Use this command to update an existing GCPy installation to a newer version:
-
-.. code-block:: console
-
-   $ pip install -U geoschem-gcpy
 
 You may now skip ahead to the :ref:`next chapter <mpl-backend>`.
 

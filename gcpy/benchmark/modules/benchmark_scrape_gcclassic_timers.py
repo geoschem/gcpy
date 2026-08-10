@@ -14,11 +14,15 @@ def read_gcclassic(input_files):
     Determines whether we should call a function to parse the given
     input file(s) as JSON or plain text.
 
-    Args
-    input_files : str|list     : File or list of files to parse
+    Parameters
+    ----------
+    input_files : str or list
+        File or list of files to parse.
 
     Returns
-    result      : list of dict : List of dicts with timing info
+    -------
+    result : list of dict
+        List of dicts with timing info.
     """
     try:
         result = read_timing_data(input_files, read_one_json_file)
@@ -32,12 +36,17 @@ def read_timing_data(input_files, reader):
     Parses the GEOS-Chem Classic timing information in JSON format
     and returns a dictionary with the results.
 
-    Args
-    input files : str|list     : JSON or text file(s) to parse
-    reader      : function     : Function that will parse the file(s)
+    Parameters
+    ----------
+    input_files : str or list
+        JSON or text file(s) to parse.
+    reader : function
+        Function that will parse the file(s).
 
     Returns
-    timing      : list of dict : Dictionary with timing information
+    -------
+    timing : list of dict
+        Dictionary with timing information.
     """
     # Return value
     timing = []
@@ -65,11 +74,15 @@ def read_one_json_file(json_file):
     Parses a GEOS-Chem JSON file with timing information
     and returns a dictionary with the results.
 
-    Args
-    json_file : str  : JSON file with timing information
+    Parameters
+    ----------
+    json_file : str
+        JSON file with timing information.
 
     Returns
-    result    : dict : Dictionary with timing information
+    -------
+    result : dict
+        Dictionary with timing information.
     """
 
     # Make sure file exists
@@ -91,11 +104,15 @@ def read_one_text_file(text_file):
     Parses the GEOS-Chem Classic log file (plain text) with
     timing information and returns a dictionary with the results.
 
-    Args
-    text_file : str  : Text file with timing information
+    Parameters
+    ----------
+    text_file : str
+        Text file with timing information.
 
     Returns
-    result    : dict : Dictionary with timing information
+    -------
+    result : dict
+        Dictionary with timing information.
     """
     keep_line = False
     timers = {}
@@ -135,12 +152,15 @@ def sum_timers(timers):
     Sums the time in seconds for each GEOS-Chem timer.  Input may be
     a single dict with timing information or a list of dicts.
 
-    Args
-    timers : dict|list : GEOS-Chem timing information from one or more
-                         JSON or log files.
+    Parameters
+    ----------
+    timers : dict or list
+        GEOS-Chem timing information from one or more JSON or log files.
 
     Returns
-    result : dict      : Sum of timing information
+    -------
+    result : dict
+        Sum of timing information.
     """
 
     # If timers is of type dict, no summing is needed.
@@ -171,11 +191,16 @@ def print_timer(key, ref, dev, ofile):
     """
     Prints timing info for a single timer to a log file.
 
-    Args
-    key   : str  : Dictionary key to print
-    ref   : dict : Timing information from the "Ref" model
-    dev   : dict : Timing information from the "Dev" model
-    ofile : file : File object where info will be written
+    Parameters
+    ----------
+    key : str
+        Dictionary key to print.
+    ref : dict
+        Timing information from the "Ref" model.
+    dev : dict
+        Timing information from the "Dev" model.
+    ofile : file
+        File object where info will be written.
     """
     pctdiff = np.nan
     if np.abs(ref[key] > 0.0):
@@ -190,12 +215,18 @@ def display_timers(ref, ref_label, dev, dev_label, table_file):
     """
     Prints the GEOS-Chem timer information to a table.
 
-    Args
-    ref        : dict : Timing information from the "Ref" model
-    ref_label  : str  : Version string for the "Ref" model
-    dev        : dict : Timing information from the "Dev" model
-    dev_label  : str  : Version string for the "Dev" model
-    table_file : str  : File name for the timing table output
+    Parameters
+    ----------
+    ref : dict
+        Timing information from the "Ref" model.
+    ref_label : str
+        Version string for the "Ref" model.
+    dev : dict
+        Timing information from the "Dev" model.
+    dev_label : str
+        Version string for the "Dev" model.
+    table_file : str
+        File name for the timing table output.
     """
     with open(table_file, "w", encoding="utf-8") as ofile:
 
@@ -241,16 +272,20 @@ def make_benchmark_gcclassic_timing_table(
     benchmark simulations given one or more JSON and/or text files
     as input.
 
-    Args
-    ref_files : str|list : File(s) with timing info from the "Ref" model
-    ref_label : str      : Version string for the "Ref" model
-    dev_files : str|list : File(s) with timing info from the "Ref" model
-    dev_label : str      : Version string for the "Dev" model
-
-    Kwargs
-    dst       : str      : Directory where output will be written
-    overwrite : bool     : Overwrite existing files? (default: False)
-
+    Parameters
+    ----------
+    ref_files : str or list
+        File(s) with timing info from the "Ref" model.
+    ref_label : str
+        Version string for the "Ref" model.
+    dev_files : str or list
+        File(s) with timing info from the "Dev" model.
+    dev_label : str
+        Version string for the "Dev" model.
+    dst : str, optional
+        Directory where output will be written.
+    overwrite : bool, optional
+        Overwrite existing files? Default: False.
     """
     verify_variable_type(ref_files, (str, list))
     verify_variable_type(ref_label, str)

@@ -1,0 +1,57 @@
+---
+#
+# GitHub action to run the GCPy pytest test suite (gcpy/tests)
+# See: https://github.com/marketplace/actions/setup-micromamba
+#
+name: run-tests
+
+on:
+  push:
+    branches: [ "main", "dev", "dependabot/*" ]
+  pull_request:
+    # These must be a subset of the branches above
+    branches: [ "main", "dev", "dependabot/*" ]
+
+# Cancel jobs running if new commits are pushed
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the GCPy repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Create "gcpy_env" environment with nompi ESMF/ESMPy
+        # The shipped environment file pins MPI-enabled ESMF/ESMPy
+        # builds (mpi_mpich), which some GitHub-hosted runners cannot
+        # properly initialize (ESMF's MPI singleton-init crashes
+        # with no Python traceback, e.g. when building an
+        # xesmf.Regridder). We swap to nompi builds via create-args
+        # so the solver picks them in the *same* solve as the
+        # environment file, rather than re-solving a second time
+        # against an already mpi-locked environment (which caused
+        # the solver to hang for hours and abort). Test-only swap;
+        # the user-facing environment.yml is left as mpi_mpich for
+        # real users who rely on MPI-parallel regridding at scale.
+        uses: mamba-org/setup-micromamba@v3
+        with:
+          micromamba-version: 'latest'
+          environment-file: docs/environment_files/gcpy_environment_py313.yml
+          create-args: >-
+            esmf=8.8.1=nompi_*
+            esmpy=8.8.1
+          init-shell: bash
+          cache-environment: false
+          generate-run-shell: true
+          post-cleanup: 'all'
+
+      - name: Run pytest test suite
+        run: python -m pytest gcpy/tests -v
+        shell: micromamba-shell {0}

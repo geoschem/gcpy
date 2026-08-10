@@ -5,9 +5,17 @@ Example program to add a variable containing all zeroes to an
 xarray Dataset object.  Useful when you have to insert new
 species into GEOS-Chem diagnostic or restart files.
 
-Calling sequence:
------------------
-add_blank_var.py varname infile outfile
+Examples
+--------
+
+1. Copy this file to a different folder and navigate to that folder.
+2. In your copy, edit atttributes and file names for your use case.
+3. Run the following commands:
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ ./regrid_restart_ll_to_cs.py
 """
 
 import numpy as np
@@ -23,20 +31,17 @@ def add_blank_var_to_ncfile(
         varattrs=None
 ):
     """
-    Adds a variable containing all zeroes to a netCDF file
+    Adds a variable containing all zeroes to a netCDF file.
 
-    Args:
-    -----
+    Parameters
+    ----------
     varname : str
         Name of the variable to add.
-    infile: str
+    infile : str
         Name of the input netCDF file (will not be overwritten).
-    outfile: str
+    outfile : str
         Name of the output netCDF file containing varname.
-
-    Keyword Args:
-    -------------
-    varattrs: dict
+    varattrs : dict, optional
         A dictionary containing netCDF variable attributes to be written
         to outfile.
     """

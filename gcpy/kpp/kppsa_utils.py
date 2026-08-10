@@ -14,43 +14,58 @@ from gcpy.constants import ENCODING
 from gcpy.util import get_element_of_series, verify_variable_type
 
 
-def kppsa_get_file_list(
-        input_dir,
-        pattern=""
-):
+def kppsa_get_file_list(input_dir, pattern=""):
     """
-    Returns a list of KPP-Standalone log files matching
-    a search criteria.
+    Returns a list of KPP-Standalone log files matching a search
+    pattern.
 
-    Args
-    input_dir : str  : Directory with KPP-Standalone log files
-    pattern   : str  : Read files matching this pattern (Default = "")
+    Parameters
+    ----------
+    input_dir : str
+        Directory containing KPP-Standalone log files.
+    pattern : str, optional
+        Glob pattern used to filter filenames. All files containing
+        this string will be returned.
+        Default: ``""`` (matches all files)
 
     Returns
-    file_list : list : List of files matching the criteria
+    -------
+    file_list : list of str
+        List of file paths matching the search criteria.
     """
     return glob(join(expanduser(input_dir), f"*{pattern}*"))
 
 
 def kppsa_read_one_csv_file(file_name):
     """
-    Reads a single log file (in CSV format) from the KPP
-    standalone box model into a pandas.DataFrame object.
+    Reads a single KPP-Standalone log file in CSV format into a
+    pandas DataFrame.
 
-    Args
-    file_name : str          : File to be read
+    Metadata fields (location, timestamp, longitude, latitude,
+    vertical level, and pressure) are extracted from the file
+    header and appended as additional columns.
+
+    Parameters
+    ----------
+    file_name : str
+        Path to the CSV-format KPP-Standalone log file to be read.
 
     Returns
-    dframe    : pd.DataFrame : DataFrame with the results
+    -------
+    dframe : pandas.DataFrame
+        DataFrame containing species concentrations and associated
+        metadata extracted from the file header. Added columns are:
+        ``Location``, ``DateTime``, ``Longitude``, ``Latitude``,
+        ``Level``, and ``Pressure``.
     """
     verify_variable_type(file_name, str)
 
     # Initialize variables
-    latitude = ""
-    level = ""
+    latitude  = ""
+    level     = ""
     longitude = ""
-    location = ""
-    pressure = ""
+    location  = ""
+    pressure  = ""
     timestamp = ""
 
     # Read file header contents
@@ -79,7 +94,7 @@ def kppsa_read_one_csv_file(file_name):
             if "Pressure (hPa)" in line:
                 pressure = line.split(":")[1].strip()
 
-            # Exit the loop
+            # Exit the loop once the column header row is reached
             if "Species Name" in line:
                 break
 
@@ -108,16 +123,19 @@ def kppsa_read_one_csv_file(file_name):
 
 def kppsa_read_csv_files(file_list):
     """
-    Reads all KPP standalone log files for a given site
-    in a given directory.
+    Reads multiple KPP-Standalone log files and concatenates them
+    into a single pandas DataFrame.
 
-    Args
-    input_dir  : str          : Directory to search
-    site       : str          : KPP standalone site name
+    Parameters
+    ----------
+    file_list : list of str
+        Paths to KPP-Standalone CSV log files to be read.
 
     Returns
-    dframe_all : pd.DataFrame : Observations at all levels
-
+    -------
+    dframe_all : pandas.DataFrame
+        Concatenated DataFrame containing data from all files in
+        ``file_list``.
     """
     dframe_all = pd.DataFrame()
     for file_name in file_list:
@@ -128,26 +146,37 @@ def kppsa_read_csv_files(file_list):
     return dframe_all
 
 
-def kppsa_prepare_site_data(
-        dframe,
-        site_name,
-        species,
-):
+def kppsa_prepare_site_data(dframe, site_name, species):
     """
-    Returns a pd.DataFrame object containing data for a given species,
-    and observation site, as well as the corresponding top-of-plot
-    title.  Species data is limited from the surface to 500 hPa.
+    Returns a DataFrame and plot title for a given species and
+    observation site.
 
-    Args
-    dframe     : pd.DataFrame : KPP-Standalone output data
-    site_name  : str          : Name of site to plot
-    species    : species      : Name of species to plot
-    
+    Data is filtered to include only observations at or below
+    500 hPa (surface to lower stratosphere) and sorted by
+    descending pressure.
+
+    Parameters
+    ----------
+    dframe : pandas.DataFrame
+        KPP-Standalone output data as returned by
+        :func:`kppsa_read_csv_files`.
+    site_name : str
+        Name of the observation site to extract data for.
+    species : str
+        Name of the species to extract data for.
+
     Returns
-    site_data  : pd.DataFrame : Data for the given site & species
-    site_title : str          : Corresponding plot title string
+    -------
+    site_data : pandas.DataFrame or None
+        DataFrame filtered to the given site and species, sorted by
+        descending pressure, and limited to pressures >= 500 hPa.
+        Returns ``None`` if ``dframe`` is ``None``.
+    site_title : str or None
+        Plot title string including the site name, cardinal
+        coordinates, and timestamp (e.g.
+        ``"Mace Head (53°N,10°W) at 2019-07-01T00:00"``).
+        Returns ``None`` if ``dframe`` is ``None``.
     """
-
     # Exit if the data frame is set to None
     if dframe is None:
         return None, None
@@ -160,17 +189,13 @@ def kppsa_prepare_site_data(
 
     # Create the top title for the subplot for this observation site
     # (use integer lon & lat values and N/S lat and E/W lon notation)
-    lat = int(round(get_element_of_series(site_data["Latitude"], 0)))
-    lon = int(round(get_element_of_series(site_data["Longitude"], 0)))
+    lat  = int(round(get_element_of_series(site_data["Latitude"],  0)))
+    lon  = int(round(get_element_of_series(site_data["Longitude"], 0)))
     time = get_element_of_series(site_data["DateTime"], 0)
-    ystr = "S"
-    if lat >= 0:
-        ystr = "N"
-    xstr = "W"
-    if lon >= 0:
-        xstr = "E"
-    lon = abs(lon)
-    lat = abs(lat)
+    ystr = "S" if lat < 0 else "N"
+    xstr = "W" if lon < 0 else "E"
+    lon  = abs(lon)
+    lat  = abs(lat)
     site_title = \
         f"{site_name.strip()} ({lat}$^\\circ${ystr},{lon}$^\\circ${xstr})"
     site_title += f" at {time}"
@@ -192,23 +217,54 @@ def kppsa_plot_single_site(
         font_scale,
 ):
     """
-    Plots observation data vs. model data at a single station site.
+    Plots initial and final species concentrations as vertical
+    profiles at a single observation site.
 
-    Args:
-    fig            : mpl.figure.Figure : Figure object for the plot
-    rows_per_page  : int               : # of rows to plot on a page
-    cols_per_page  : int               : # of columns to plot on a page
-    subplot_index  : int               : Index of each subplot
-    subplot_title  : str               : Title for each subplot
-    ref_data       : pd.DataFrame      : Observations at each station site
-    ref_label      : str               : Label for the Ref model data
-    dev_data       : pd.DataFrame      :
-    dev_label      : str               : Label for the Dev model data
-    site_name      : str               : Name of the station site
-    species        : pd.Series         : Data from the Ref model version
-    font_scale     : float             : Scale fac to increase font size
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        Figure object into which the subplot will be added.
+    rows_per_page : int
+        Number of subplot rows on the page.
+    cols_per_page : int
+        Number of subplot columns on the page.
+    subplot_index : int
+        Zero-based index of this subplot within the page grid.
+    subplot_title : str
+        Title string displayed above this subplot.
+    ref_data : pandas.DataFrame
+        KPP-Standalone output for the ``Ref`` model version at this
+        site, as returned by :func:`kppsa_prepare_site_data`.
+    ref_label : str
+        Legend label for the ``Ref`` model final concentration.
+    dev_data : pandas.DataFrame or None
+        KPP-Standalone output for the ``Dev`` model version at this
+        site. Pass ``None`` to omit the Dev profile.
+    dev_label : str or None
+        Legend label for the ``Dev`` model final concentration.
+        Ignored if ``dev_data`` is ``None``.
+    species : str
+        Name of the species being plotted, used for axis labels
+        and error checking.
+    font_scale : float
+        Multiplicative scale factor applied to all font sizes,
+        allowing text to be enlarged or reduced uniformly.
+
+    Raises
+    ------
+    ValueError
+        If ``species`` is not found in ``ref_data``.
+    ValueError
+        If ``dev_data`` is not ``None`` and ``species`` is not
+        found in ``dev_data``.
+
+    Notes
+    -----
+    The Y-axis (pressure) is plotted from 1020 hPa at the bottom
+    to 500 hPa at the top. The Y-axis label is only applied to
+    leftmost panels (``subplot_index`` is 0 or a multiple of
+    ``cols_per_page``).
     """
-
     # Error checks
     if species not in list(ref_data["Species Name"]):
         raise ValueError("Species not found in Ref model output!")
@@ -217,7 +273,6 @@ def kppsa_plot_single_site(
             raise ValueError("Species not found in Dev model output!")
 
     # Create matplotlib axes object for this subplot
-    # axes_subplot is of type matplotlib.axes_.subplots.AxesSubplot
     axes_subplot = fig.add_subplot(
         rows_per_page,
         cols_per_page,
@@ -265,7 +320,6 @@ def kppsa_plot_single_site(
             label=f"{dev_label}",
         )
 
-
     # Set X and Y axis labels
     axes_subplot.set_xlabel(
         f"{species} (molec/cm3)",
@@ -279,14 +333,9 @@ def kppsa_plot_single_site(
             fontsize=8*font_scale,
         )
 
-    # Set Y-axis range
-    axes_subplot.set_ylim(
-        1020.0,
-        500.0
-    )
-    axes_subplot.set_yticks(
-        [1000, 900, 800, 700, 600, 500]
-    )
+    # Set Y-axis range and ticks
+    axes_subplot.set_ylim(1020.0, 500.0)
+    axes_subplot.set_yticks([1000, 900, 800, 700, 600, 500])
     axes_subplot.tick_params(
         axis='both',
         which='major',
@@ -307,24 +356,44 @@ def kppsa_plot_one_page(
         font_scale=1.0,
 ):
     """
-    Plots a single page of models vs. observations.
+    Plots a single page of Ref vs. Dev vertical profiles for a
+    list of observation sites and saves it to a PDF file.
 
-    Args:
-    pdf             : pdf          : PDF object
-    ref_dframe      : pd.DataFrame : Observations at each station site.
-    ref_label       : str          : Label for the observational data
-    dev_dframe      : pd.DataFrame : Data from the Ref model version
-    dev_label       : str          : Label for the Ref model data
-    species         : str          : Name of the species to plot
-    dev_dataarray   : xr.DataArray : Data from the Dev model version
-    dev_label       : str          : Label for the Dev model data
-    dev_cs_grid     : str|None     : Metadata for Dev cubed-sphere grid
-    gc_levels       : pd.DataFrame : Metadata for model vertical levels
-    rows_per_page   : int          : Number of rows to plot on a page
-    cols_per_page   : int          : Number of cols to plot on a page
-    font_scale      : float        : PDF output file name
+    Parameters
+    ----------
+    pdf : matplotlib.backends.backend_pdf.PdfPages
+        Open PDF file object to which the page will be saved.
+    site_names : list of str
+        Names of the observation sites to plot on this page.
+    ref_dframe : pandas.DataFrame
+        KPP-Standalone output for the ``Ref`` model version, as
+        returned by :func:`kppsa_read_csv_files`.
+    ref_label : str
+        Legend label for the ``Ref`` model data.
+    dev_dframe : pandas.DataFrame
+        KPP-Standalone output for the ``Dev`` model version, as
+        returned by :func:`kppsa_read_csv_files`.
+    dev_label : str
+        Legend label for the ``Dev`` model data.
+    species : str, optional
+        Name of the species to plot.
+        Default: ``"O3"``
+    rows_per_page : int, optional
+        Number of subplot rows on the page.
+        Default: ``3``
+    cols_per_page : int, optional
+        Number of subplot columns on the page.
+        Default: ``3``
+    font_scale : float, optional
+        Multiplicative scale factor applied to all font sizes.
+        Default: ``1.0``
+
+    Notes
+    -----
+    The page is landscape-oriented (11" × 8"). A shared legend is
+    placed at the top of the page. Vertical spacing between subplots
+    is adjusted automatically.
     """
-
     # Define a new matplotlib.figure.Figure object for this page
     # Landscape width: 11" x 8"
     fig = plt.figure(figsize=(11, 8))
@@ -361,10 +430,7 @@ def kppsa_plot_one_page(
         )
 
     # Add extra spacing around plots
-    plt.subplots_adjust(
-        hspace=0.4,
-        top=0.9
-    )
+    plt.subplots_adjust(hspace=0.4, top=0.9)
 
     # Add top-of-page legend
     plt.legend(
@@ -380,16 +446,21 @@ def kppsa_plot_one_page(
 
 def kppsa_get_unique_site_names(dframe):
     """
-    Returns a list of unique sites where KPP-Standalone box model
-    output has been archived.
+    Returns a list of unique observation site names from
+    KPP-Standalone output, ordered from north to south.
 
-    Args
-    dframe     : pd.DataFrame : Object containing KPP-Standalone output
+    Parameters
+    ----------
+    dframe : pandas.DataFrame
+        KPP-Standalone output data as returned by
+        :func:`kppsa_read_csv_files`.
 
     Returns
-    site_names : list of str  : List of unique site names
+    -------
+    unique_site_names : list of str
+        Unique site names sorted by descending latitude
+        (north to south).
     """
-
     # Sort the sites from north to south
     site_names = dframe[["Location", "Latitude"]].sort_values(
         by="Latitude",

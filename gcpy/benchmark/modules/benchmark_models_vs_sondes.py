@@ -1,7 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""Plots ozone sonde data vs. GEOS-Chem data for 1-yr benchmarks"""
+"""
+Plots ozone sonde data versus data from GEOS-Chem 1 year
+benchmark simulations.
+"""
 
 import os
 import numpy as np
@@ -25,13 +28,23 @@ def get_ref_and_dev_model_data(
         varname="SpeciesConcVV_O3",
 ):
     """
-    Returns GEOS-Chem model ozone data as a Pandas Dataframe object
+    Returns GEOS-Chem model ozone data.
 
-    Args
-    file_path : str          : Path to the data files
+    Parameters
+    ----------
+    ref_filepaths : str or list
+        Path(s) to the Ref model data files.
+    dev_filepaths : str or list
+        Path(s) to the Dev model data files.
+    varname : str, optional
+        Variable name to read.
 
     Returns
-    data      : xr.DataArray : Ozone data [ppbv]
+    -------
+    ref_data : xr.DataArray
+        Ozone data from the Ref model [ppbv].
+    dev_data : xr.DataArray
+        Ozone data from the Dev model [ppbv].
     """
     verify_variable_type(ref_filepaths, (str,list))
     verify_variable_type(dev_filepaths, (str,list))
@@ -56,11 +69,15 @@ def get_obs_ozone_data(file_path):
     """
     Returns the ozone sonde observations as a pandas DataFrame object.
 
-    Args
-    file_path : str          : Path to ozone sonde file
+    Parameters
+    ----------
+    file_path : str
+        Path to ozone sonde file.
 
     Returns
-    data      : pd.DataFrame : Sonde observations (ppbv)
+    -------
+    data : pd.DataFrame
+        Sonde observations (ppbv).
     """
     verify_variable_type(file_path, str)
 
@@ -78,15 +95,23 @@ def get_site_coords(
     """
     Returns the lon, lat, and surface pressure at each sonde site.
 
-    Args
-    obs_data          : pd.DataFrame : Observational data
-    obs_site_metadata : pd.DataFrame : Surface pressure at observation sites
-    site_name         : str          : Observation site name
+    Parameters
+    ----------
+    obs_data : pd.DataFrame
+        Observational data.
+    obs_site_metadata : pd.DataFrame
+        Surface pressure at observation sites.
+    site_name : str
+        Observation site name.
 
     Returns
-    lat               : float        : Latitude at observation site
-    lon               : float        : Longitude at observation site
-    p_sfc             : float        : Surface pressure (hPa) at obs site
+    -------
+    lat : float
+        Latitude at observation site.
+    lon : float
+        Longitude at observation site.
+    p_sfc : float
+        Surface pressure (hPa) at obs site.
     """
     search = obs_data['Site'] == site_name
     lat = obs_data[search]['lat'].iloc[0]
@@ -109,20 +134,29 @@ def get_seasonal_means(
     Returns seasonally averaged data for the observations
     and models.
 
-    Args
-    obs_data      : pd.DataFrame : O3 observations (ppbv)
-    ref_data      : pd.DataFrame : O3 from Ref model (ppbv)
-    dev_data      : pd.DataFrame : O3 from Dev model (ppbv)
-    months        : list         : Months in each season
-
-    Keyword Args
-    varname       : str          : GEOS-Chem diagnostic variable name
+    Parameters
+    ----------
+    obs_data : pd.DataFrame
+        O3 observations (ppbv).
+    ref_data : pd.DataFrame
+        O3 from Ref model (ppbv).
+    dev_data : pd.DataFrame
+        O3 from Dev model (ppbv).
+    months : list
+        Months in each season.
+    varname : str, optional
+        GEOS-Chem diagnostic variable name.
 
     Returns
-    obs_seas_mean : pd.DataFrame : Seasonal mean O3 observations (ppbv)
-    std_dev       : pd.DataFrame : Standard deviation in mean_obs (ppbv)
-    ref_seas_mean : pd.DataFrame ; Seasonal mean O3 from Ref (ppbv)
-    dev_seas_mean : pd.DataFrame : Seasonal mean O3 from Dev (ppbv)
+    -------
+    obs_seas_mean : pd.DataFrame
+        Seasonal mean O3 observations (ppbv).
+    std_dev : pd.DataFrame
+        Standard deviation in mean_obs (ppbv).
+    ref_seas_mean : pd.DataFrame
+        Seasonal mean O3 from Ref (ppbv).
+    dev_seas_mean : pd.DataFrame
+        Seasonal mean O3 from Dev (ppbv).
     """
     verify_variable_type(obs_data, pd.DataFrame)
     verify_variable_type(ref_data, pd.DataFrame)
@@ -154,14 +188,24 @@ def get_nearest_model_data_to_obs(
     Returns the nearest GEOS-Chem data to an observation.  Also
     inserts the GEOS-Chem pressure levels into the dataset.
 
-    Args
-    data    : xr.DataArray    : GEOS-Chem data
-    lon     : float           : Longitude at obs site
-    lat     : float           : Latitude at obs site
-    p_sfc   : float           : Sfc pressure at obs site
+    Parameters
+    ----------
+    data : xr.DataArray
+        GEOS-Chem data.
+    lon : float
+        Longitude at obs site.
+    lat : float
+        Latitude at obs site.
+    p_sfc : float
+        Surface pressure at obs site.
+    cs_grid : xr.Dataset or None, optional
+        Cubed-sphere grid metadata.
 
-    Keyword Args
-    cs_grid : xr.Dataset|None : Cubed-sphere grid metadata
+    Returns
+    -------
+    nearest : pd.DataFrame
+        GEOS-Chem data nearest to the observation site, with pressure
+        and month columns added.
     """
     verify_variable_type(data, xr.DataArray)
     verify_variable_type(cs_grid, (xr.Dataset, type(None)))
@@ -203,17 +247,28 @@ def plot_one_site(
     Plots ozonesonde vs. model data for all seasons at a single site
     (i.e. one column of a page).
 
-    Args
-    axes_supblot  : mpl.Axes  : The current subplot
-    season        : str       : Name of the season
-    season_idx    : int       : Index of the current season
-    site_idx      : int       : Index of the current site
-    obs_seas_mean : pd.Series : Seasonal mean O3 obs (ppbv)
-    std_dev       : pd.Series : Std dev of mean_obs (ppbv)
-    ref_label     : str       : Label for the Ref version
-    ref_seas_mean : pd.Series ; Seasonal mean O3 from Ref (ppbv)
-    dev_label     : str       : Label for the Dev version
-    dev_seas_mean : pd.Series ; Seasonal mean O3 from Dev (ppbv)
+    Parameters
+    ----------
+    axes_subplot : matplotlib.axes.Axes
+        The current subplot.
+    season : str
+        Name of the season.
+    season_idx : int
+        Index of the current season.
+    site_idx : int
+        Index of the current site.
+    obs_seas_mean : pd.Series
+        Seasonal mean O3 obs (ppbv).
+    std_dev : pd.Series
+        Std dev of mean_obs (ppbv).
+    ref_label : str
+        Label for the Ref version.
+    ref_seas_mean : pd.Series
+        Seasonal mean O3 from Ref (ppbv).
+    dev_label : str
+        Label for the Dev version.
+    dev_seas_mean : pd.Series
+        Seasonal mean O3 from Dev (ppbv).
     """
     verify_variable_type(season, str)
     verify_variable_type(season_idx, int)
@@ -300,8 +355,10 @@ def page_adjustments(fig):
     """
     Adjusts the page settings after all the subplots have been made.
 
-    Args
-    fig : mpl.Figure : Figure object
+    Parameters
+    ----------
+    fig : matplotlib.figure.Figure
+        Figure object.
     """
 
     # Eliminating space between subplots completely
@@ -334,11 +391,15 @@ def sort_sites_by_lat(
     """
     Returns a list of sonde sites sorted from N to S in latitude.
 
-    Args
-    obs_data   : pd.DataFrame : Observations from sondes (all sites)
+    Parameters
+    ----------
+    obs_data : pd.DataFrame
+        Observations from sondes (all sites).
 
     Returns
-    site_names : list         : Sorted list of site names N to S
+    -------
+    site_names : list
+        Sorted list of site names N to S.
     """
     sites = obs_data[['Site', "lat"]].sort_values(by=["lat"], ascending=False)
 
@@ -356,20 +417,26 @@ def plot_the_data(
         varname="SpeciesConcVV_O3",
 ):
     """
-    Creates plots of model data vs. ozonesonde data
+    Creates plots of model data vs. ozonesonde data.
 
-    Args
-    obs_data          : pd.DataFrame : Observational data
-    obs_site_metadata : pd.DataFrame : Sfs pressure at observation sites
-    ref_label         : str          : Label for Ref model data
-    ref_data          : xr.DataArray : Ref model data
-    dev_label         : str          : Label for Dev model data
-    data_dev          : xr.DataArray : Dev model data
-    pdf_path          : str          : Path to PDF output file
-
-    Keyword Args
-    dst               : str          : Destination folder
-    varname           : str          : Name of variable to plot
+    Parameters
+    ----------
+    obs_data : pd.DataFrame
+        Observational data.
+    obs_site_metadata : pd.DataFrame
+        Surface pressure at observation sites.
+    ref_label : str
+        Label for Ref model data.
+    ref_data : xr.DataArray
+        Ref model data.
+    dev_label : str
+        Label for Dev model data.
+    dev_data : xr.DataArray
+        Dev model data.
+    dst : str, optional
+        Destination folder.
+    varname : str, optional
+        Name of variable to plot.
     """
     # ==================================================================
     # Initialization
@@ -500,20 +567,26 @@ def make_benchmark_models_vs_sondes_plots(
     Creates plots of sonde data vs. GEOS-Chem output.  For use in the
     1-year benchmark plotting workflow.
 
-    Args
-    obs_data_file : str      : File containing sonde data
-    obs_site_file : str      : File containing sonde site metadata
-    ref_filepaths : str|list : Files for the GEOS-Chem Ref version
-    ref_label     : str      : GEOS-Chem Ref version label
-    dev_filepaths : str|list : Files for the GEOS-Chem Dev version
-    dev_label     : str      : GEOS-Chem Dev version label
-
-    Keyword Args
-    dst           : str      : Folder where PDF w/ plots will be created
-    overwrite     : bool     : Overwrite contents of dst folder?
-    varname       : str      : GEOS-Chem diagnostic variable name
-    verbose       : bool     : Activate verbose printout?
-
+    Parameters
+    ----------
+    obs_data_file : str
+        File containing sonde data.
+    obs_site_file : str
+        File containing sonde site metadata.
+    ref_filepaths : str or list
+        Files for the GEOS-Chem Ref version.
+    ref_label : str
+        GEOS-Chem Ref version label.
+    dev_filepaths : str or list
+        Files for the GEOS-Chem Dev version.
+    dev_label : str
+        GEOS-Chem Dev version label.
+    dst : str, optional
+        Folder where PDF w/ plots will be created.
+    overwrite : bool, optional
+        Overwrite contents of dst folder?
+    varname : str, optional
+        GEOS-Chem diagnostic variable name.
     """
     verify_variable_type(obs_data_file, str)
     verify_variable_type(obs_site_file, str)

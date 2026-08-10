@@ -43,28 +43,29 @@ class _GlobVars:
         """
         Initializes the _GlobVars class.
 
-        Args:
-            devstr: str
-                Label denoting the "Dev" version.
-            devdir: str
-                Directory where diagnostic files are found.
-            devrstdir: str
-                Directory where restart files are found.
-            dst: str
-                Directory where plots & tables will be created.
-            year: int
-                Year of the benchmark simulation.
-            is_gchp: bool
-                Denotes if this is GCHP (True) or GCC (False) data.
-            gchp_res: str
-                A string (e.g. "c24") denoting GCHP grid resolution.
-            gchp_is_pre_14_0: bool
-                Logical to indicate whether or not the GCHP data is prior
-                to GCHP 14.0.0.  Needed for restart files only.
-            overwrite: bool
-                Denotes whether to ovewrite existing budget tables.
-            spcdb_file : str
-                Paths to species_database.yml files in the Dev rundir
+        Parameters
+        ----------
+        devstr : str
+            Label denoting the "Dev" version.
+        devdir : str
+            Directory where diagnostic files are found.
+        devrstdir : str
+            Directory where restart files are found.
+        dst : str
+            Directory where plots & tables will be created.
+        year : int
+            Year of the benchmark simulation.
+        is_gchp : bool
+            Denotes if this is GCHP (True) or GCC (False) data.
+        gchp_res : str
+            A string (e.g. "c24") denoting GCHP grid resolution.
+        gchp_is_pre_14_0 : bool
+            Logical to indicate whether or not the GCHP data is prior
+            to GCHP 14.0.0.  Needed for restart files only.
+        overwrite : bool
+            Denotes whether to overwrite existing budget tables.
+        spcdb_file : str
+            Paths to species_database.yml files in the Dev rundir.
         """
         # ------------------------------
         # Arguments from outside
@@ -344,15 +345,17 @@ def total(globvars, dict_list):
     Function to take the difference of two dict objects.
     Assumes that all objects have the same keys.
 
-    Args:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
-        dict_list: list of dict
-            Dictionaries to be summed.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
+    dict_list : list of dict
+        Dictionaries to be summed.
 
-    Returns:
-        result: dict
-            Key-by-key sum of all dicts in dict_list.
+    Returns
+    -------
+    result : dict
+        Key-by-key sum of all dicts in dict_list.
     """
     # Initialize
     result = {}
@@ -373,17 +376,19 @@ def mass_from_rst(globvars, ds, tropmask):
     """
     Computes global species mass from a restart file.
 
-    Args:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
-        ds: xarray Dataset
-            Data containing species mass to be summed.
-        tropmask: numpy ndarray
-            Mask to denote tropospheric grid boxes.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
+    ds : xr.Dataset
+        Data containing species mass to be summed.
+    tropmask : numpy.ndarray
+        Mask to denote tropospheric grid boxes.
 
-    Returns:
-        result: dict
-            Species mass in strat, trop, and strat+trop regimes.
+    Returns
+    -------
+    result : dict
+        Species mass in strat, trop, and strat+trop regimes.
     """
     # Initialize
     vv_to_g = {}
@@ -440,20 +445,22 @@ def annual_average(globvars, ds, collection, conv_factor):
     """
     Computes the annual average of budgets or fluxes.
 
-    Args:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
-        ds: xarray Dataset
-            Data to be averaged
-        collection: str
-            Name of the diagnostic collection.
-        conv_factor: str
-            Conversion factor to be applied.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
+    ds : xr.Dataset
+        Data to be averaged.
+    collection : str
+        Name of the diagnostic collection.
+    conv_factor : dict
+        Conversion factor to be applied.
 
-     Returns:
-        result: dict
-            Annual-average budgets or fluxes in
-            in strat, trop, and strat+trop regimes.
+    Returns
+    -------
+    result : dict
+        Annual-average budgets or fluxes in
+        strat, trop, and strat+trop regimes.
     """
 
     # Initialize
@@ -521,13 +528,15 @@ def annual_average_sources(globvars):
     """
     Computes the annual average of radionuclide sources.
 
-    Args:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
 
-     Returns:
-        result: dict
-            Source totals in strat, trop, and strat+trop regimes.
+    Returns
+    -------
+    result : dict
+        Source totals in strat, trop, and strat+trop regimes.
     """
 
     # Initialize
@@ -614,13 +623,15 @@ def trop_residence_time(globvars):
     """
     Computes the tropospheric residence time of radionuclides.
 
-    Args:
-        globvars: obj of type _GlobVars
-            Global variables needed for budget computations.
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
 
-    Returns:
-        result: dict
-            Tropopsheric residence time for all species.
+    Returns
+    -------
+    result : dict
+        Tropospheric residence time for all species.
     """
 
     # Initialize
@@ -683,14 +694,15 @@ def print_budgets(globvars, data, key):
     """
     Prints the trop+strat budget file.
 
-    Args:
-        globvars: object of type _GlobVars
-            Global variables needed for budget computations.
-        data: dict
-            Nested dictionary containing budget info.
-        key: list of str
-            One of "_f", (full-atmosphere) "_t" (trop-only),
-            or "_s" (strat-only).
+    Parameters
+    ----------
+    globvars : _GlobVars
+        Global variables needed for budget computations.
+    data : dict
+        Nested dictionary containing budget info.
+    key : list of str
+        One of "_f" (full-atmosphere), "_t" (trop-only),
+        or "_s" (strat-only).
     """
     # Create the plot directory hierarchy if it doesn't already exist
     if os.path.isdir(globvars.dst) and not globvars.overwrite:
@@ -798,19 +810,28 @@ def transport_tracers_budgets(
     Main program to compute TransportTracers budgets from
     GEOS-Chem Classic or GCHP benchmark simulations.
 
-    Args
-    devstr           : str  : Label for the Dev version
-    devdir           : str  : Path to the Dev data directory
-    devrstdir        : str  : Path to the Dev restart file directory
-    year             : int  : Year of the benchmark simulation
-    spcdb_file       : str  : Path to the Dev species_database.yml file
-
-    Keyword Args
-    dst              : str  : Directory where tables will be written
-    overwrite        : bool : Should existing tables should be overwritten?
-    is_gchp          : bool : Is Dev from a GCHP benchmark simulation?
-    gchp_res         : str  : GCHP resolution string (e.g. "c24")
-    gchp_is_pre_14_0 : bool : Is Dev from a GCHP version prior to 14.0.0?
+    Parameters
+    ----------
+    devstr : str
+        Label for the Dev version.
+    devdir : str
+        Path to the Dev data directory.
+    devrstdir : str
+        Path to the Dev restart file directory.
+    year : int
+        Year of the benchmark simulation.
+    spcdb_file : str
+        Path to the Dev species_database.yml file.
+    dst : str, optional
+        Directory where tables will be written.
+    is_gchp : bool, optional
+        Is Dev from a GCHP benchmark simulation?
+    gchp_res : str, optional
+        GCHP resolution string (e.g. "c24").
+    gchp_is_pre_14_0 : bool, optional
+        Is Dev from a GCHP version prior to 14.0.0?
+    overwrite : bool, optional
+        Should existing tables be overwritten?
     """
 
     # Store global variables in a private class

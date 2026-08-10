@@ -4,6 +4,48 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+### Added
+- Added HONO and NAP to `gcpy/benchmark/modules/emission_species.yml`
+- Added MGLY to `gcpy/benchmark/modules/benchmark_categories.yml`
+- Added Sphinx ReadTheDocs packages into `gcpy_environment_py312.yml` and `gcpy_environment_py313.yml`
+- Added `docs/source/api.rst` configuration file for auto-building the  GCPy API reference section
+- Added `gcpy/examples/gcst/generate_inttest_report.py` script to produce a summary of integration test results
+- Added `pytest=8.3.4` as a dependency to environment files
+- Added several unit tests in `gcpy/tests` as well as a GitHub Action to run them on pushes and pull requests
+- Added `is_nearly_constant` function to `gcpy/util.py`
+- Added `pytest.ini` to filter benign warnings (numpy/ESMF ABI notice, xesmf array-contiguity notices) out of the test suite output
+
+### Changed
+- Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
+- Updated `benchmark/modules/emission_species.yml` to be consistent w/ the FullChemBenchmark emission diagnostics in GC 14.7.0 and later
+- Bumped `requests` to version 2.33.0 (suggested by @dependabot)
+- Updated GitHub Actions to the latest versions
+- Bumped `pip` to version 26.1.2 in `setup.py` and environment files
+- Moved Sphinx ReadTheDocs packages into the GCPy environment files (needed for automatic API generation)
+- Updated Sphinx ReadTheDocs packages to the latest versions in environment files and `requirements.txt`
+- Replaced ReadTheDocs dependency `recommonmark` with `myst-parser`
+- Updated `__init__.py` files to ensure that each folder has its own file
+- Updated `.readthedocs.yaml` to build the Python environment with conda instead of pip
+
+### Fixed
+- Allow using a template at different grid resolutions in `gcpy/regrid_restart_file.py`
+- Implemented a workaround in `gcpy/regrid.py` to allow use of either `np.product` or `np.prod` depending on the Numpy version
+- Fixed `DeprecationWarning` in `single_panel.py` that occurs with numpy >=2.0
+- Passed `spcdb_files` as the 7th argument (following `dev_interval`) to `make_benchmark_operations_budget`, where missing
+- Passed `colname` as the 5th argument to `make_benchmark_collection_2d_var_plots` and `make_benchmark_collection_3d_var_plots`
+- Fixed an issue that caused striping when plotting zonal mean fields that are are nearly constant
+- Fixed `get_grid_extents` in `gcpy/grid.py` to snap pole-cutoff latitude grids to +/-90 degrees instead of an arbitrary 1-degree offset, which caused zonal mean plots of sub-1-degree-resolution grids (e.g. HEMCO diagnostics) to fail
+
+### Removed
+- Removed Python 3.9 from the GitHub Actions that try to build a Python environment; This version is now de-supported.
+- Removed emission inventories no longer used in benchmark simulations from `gcpy/benchmark/modules/emission_inventories.yml`
+- Removed the hotfix to skip `InvAFCID` emission diagnostics in routine `create_total_emissions_table`
+- Removed `docs/environment-files/read_the_docs_requirements.yml`
+- Removed `gcpy/examples/bpch_to_nc` folder as these examples require the de-supported xbpch package
+- Removed GitHub Action `build-rtd-environment` workflow
+- Removed a duplicate import of `make_benchmark_operations_budget` in `gcpy/benchmark/run_benchmark.py`
+
 ## [1.7.1] - 2026-02-03
 ### Changed
 - Bumped `pip` to version 26.0 in `setup.py` and environment files

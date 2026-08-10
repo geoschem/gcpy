@@ -25,8 +25,13 @@ or the other).
 Source code
 ===========
 
-**Script location:** `gcpy/examples/diagnostics/check_gchp_emission_diags.py
-<https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/check_gchp_emission_diags.py>`_
+.. list-table::
+   :header-rows: 1
+
+   * - Description
+     - Script location
+   * - :func:`gcpy.examples.diagnostics.check_gchp_emission_diags`
+     - `gcpy/examples/diagnostics/check_gchp_emission_diags.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/check_gchp_emission_diags.py>`_
 
 .. _check-gchp-usage:
 

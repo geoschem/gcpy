@@ -14,11 +14,15 @@ def gprofng_read_functions(filename):
     """
     Reads function profiling information from gprofng output.
 
-    Args
-    filename : str          : Name of file w/ profiling information
+    Parameters
+    ----------
+    filename : str
+        Name of file with profiling information.
 
     Returns
-    data     : pd.DataFrame : Profiling information read from filename
+    -------
+    data : pandas.DataFrame
+        Profiling information read from filename.
     """
     results = {}
 
@@ -53,11 +57,16 @@ def gprofng_plot_functions(dframe, filename, n_min, n_max):
     Plots functions having the largest exclusive time from
     gprofng profiling output.
 
-    Args
-    dframe   : pd.DataFrame : Profiling information
-    filename : str          : Name of the file
-    n_min    : int          : Display functions starting with this index
-    n_max    : int          : Display functions ending with this index
+    Parameters
+    ----------
+    dframe : pandas.DataFrame
+        Profiling information.
+    filename : str
+        Name of the file.
+    n_min : int
+        Display functions starting with this index.
+    n_max : int
+        Display functions ending with this index.
     """
     # ------------------------------------------------------------------
     # Prepare the data

@@ -1,35 +1,47 @@
 #!/usr/bin/env python
-'''
+"""
 Example of plotting timeseries data from GEOS-Chem and saving
 the output to a PDF file.  You can modify this for your particular
 diagnostic output.  This also contains a good overview of
 
 This example script creates a PDF file with 2 pages.
 
-   Page 1:
-   -------
-       O3 from the first model layer (from the "SpeciesConc"
-       diagnostic collection is) plotted in blue.
+Page 1:
 
-       O3 at 10 meter height (from the "SpeciesConc_10m"
-       diagnostic collection) is plotted in red.
+   O3 from the first model layer (from the "SpeciesConc"
+   diagnostic collection is) plotted in blue.
 
-   Page 2:
-   -------
-       HNO3 from the first model layer (from the SpeciesConc
-       diagnostic collection is) plotted in blue.
+   O3 at 10 meter height (from the "SpeciesConc_10m"
+   diagnostic collection) is plotted in red.
 
-       HNO3 at 10 meter height (from the SpeciesConc_10m
-       diagnostic collection) is plotted in red.
+Page 2:
+
+   HNO3 from the first model layer (from the SpeciesConc
+   diagnostic collection is) plotted in blue.
+
+   HNO3 at 10 meter height (from the SpeciesConc_10m
+   diagnostic collection) is plotted in red.
 
 You can of course modify this for your own particular applications.
 
-Author:
--------
-Bob Yantosca
-yantosca@seas.harvard.edu
-23 Aug 2019
-'''
+Examples
+--------
+
+1. Copy this file to a different folder and navigate to that folder.
+2. Edit file paths, collection names, and coordinates in the main() routine.
+3. Run the following commands.
+
+   .. code-block:: console
+
+      $ conda activate gcpy_env
+      (gcpy_env) $ ./plot_timeseries.py
+
+
+References
+----------
+
+Author: Bob Yantosca (GitHub: @yantosca), 23 Aug 2019
+"""
 
 # Imports
 import os
@@ -57,19 +69,18 @@ def find_files_in_dir(path, substrs):
     Returns a list of all files in a directory that match one or more
     substrings.
 
-    Args:
-    -----
-        path : str
-            Path to the directory in which to search for files.
+    Parameters
+    ----------
+    path : str
+        Path to the directory in which to search for files.
+    substrs : list of str
+        List of substrings used in the search for files.
 
-        substrs : list of str
-            List of substrings used in the search for files.
-
-    Returns:
-    --------
-        file_list : list of str
-            List of files in the directory (specified by path)
-            that match all substrings (specified in substrs).
+    Returns
+    -------
+    file_list : list of str
+        List of files in the directory (specified by path)
+        that match all substrings (specified in substrs).
     '''
 
     # Initialize
@@ -92,21 +103,20 @@ def find_value_index(seq, val):
     '''
     Finds the index of a numpy array that is close to a value.
 
-    Args:
+    Parameters
+    ----------
+    seq : numpy ndarray
+        An array of numeric values.
+    val : number
+        The value to search for in seq.
+
+    Returns
+    -------
+    result : integer
+        The index of seq that has a value closest to val.
+
+    Notes
     -----
-        seq : numpy ndarray
-            An array of numeric values.
-
-        val : number
-            The value to search for in seq.
-
-    Returns:
-    --------
-        result : integer
-            The index of seq that has a value closest to val.
-
-    Remarks:
-    --------
     This algorithm was found on this page:
     https://stackoverflow.com/questions/48900977/find-all-indexes-of-a-numpy-array-closest-to-a-value
     '''
@@ -124,22 +134,21 @@ def read_geoschem_data(path, collections):
     '''
     Returns an xarray Dataset containing timeseries data.
 
-    Args:
-    -----
-        path : str
-            Directory path where GEOS-Chem diagnostic output
-            files may be found.
+    Parameters
+    ----------
+    path : str
+        Directory path where GEOS-Chem diagnostic output
+        files may be found.
+    collections : list of str
+        List of GEOS-Chem collections.  Files for these
+        collections will be read into the xarray Dataset.
 
-        collections: list of str
-            List of GEOS-Chem collections.  Files for these
-            collections will be read into the xarray Dataset.
-
-    Returns:
-    --------
-        ds : xarray Dataset
-            A Dataset object containing the GEOS-Chem diagnostic
-            output corresponding to the collections that were
-            specified.
+    Returns
+    -------
+    ds : xarray Dataset
+        A Dataset object containing the GEOS-Chem diagnostic
+        output corresponding to the collections that were
+        specified.
     '''
 
     # Get a list of variables that GCPy should not read.
@@ -168,14 +177,13 @@ def plot_timeseries_data(ds, site_coords):
     '''
     Plots a timseries of data at a given (lat,lon) location.
 
-    Args:
-    -----
-        ds : xarray Dataset
-            Dataset containing GEOS-Chem timeseries data.
-
-        site_coords : tuple
-            Contains the coordinate (lat, lon) of a site location
-            at which the timeseries data will be plotted.
+    Parameters
+    ----------
+    ds : xarray Dataset
+        Dataset containing GEOS-Chem timeseries data.
+    site_coords : tuple
+        Contains the coordinate (lat, lon) of a site location
+        at which the timeseries data will be plotted.
     '''
 
     # ----------------------------------------------------------------------

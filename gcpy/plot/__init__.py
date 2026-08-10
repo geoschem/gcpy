@@ -1,5 +1,5 @@
 """
-GCPy import script
+Modules containing core plotting functionality.
 """
 from .compare_single_level import *
 from .compare_zonal_mean import *

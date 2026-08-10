@@ -6,14 +6,15 @@
 
 # -- Path setup --------------------------------------------------------------
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+import sys
 
+# Point Sphinx to the root of the GCPy repository so that autodoc
+# can import gcpy modules directly.
+_REPO_ROOT = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..")
+)
+sys.path.insert(0, _REPO_ROOT)
 
 # -- Project information -----------------------------------------------------
 
@@ -24,16 +25,27 @@ author = 'GEOS-Chem Support Team'
 # The full version, including alpha/beta/rc tags
 release = '1.7.1'
 
+
 # -- General configuration ---------------------------------------------------
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
 extensions = [
-    "sphinx_rtd_theme",   
+    # --- Core Sphinx extensions ---
+    "sphinx.ext.autodoc",        # Pulls docstrings from source code
+    "sphinx.ext.autosummary",    # Generates summary tables + per-item pages
+    "sphinx.ext.napoleon",       # Parses NumPy & Google style docstrings
+    "sphinx.ext.viewcode",       # Adds [source] links to each function/class
+    "sphinx.ext.intersphinx",    # Cross-links to numpy, xarray, etc.
+    "sphinx.ext.todo",           # Support for .. todo:: directives
+    "sphinx.ext.coverage",       # Reports docstring coverage
+
+    # --- Third-party extensions ---
+    "sphinx_rtd_theme",
     "sphinxcontrib.bibtex",
-    "recommonmark",
 ]
+
+
+# -- BibTeX configuration ----------------------------------------------------
+
 bibtex_default_style = 'gcrefstyle'
 bibtex_reference_style = "author_year"
 
@@ -56,44 +68,114 @@ class GCRefStyle(AlphaStyle):
     default_label_style = GCLabelStyle
 
     def __init__(self):
-       super().__init__()
-       self.abbreviate_names = True
-      #  self.label_style = KeyLabelStyle()
-      #  self.format_labels = self.label_style.format_labels
+        super().__init__()
+        self.abbreviate_names = True
 
     def format_web_refs(self, e):
-       return sentence[ optional[ self.format_doi(e) ], ]
+        return sentence[ optional[ self.format_doi(e) ], ]
 
 from pybtex.plugin import register_plugin
 register_plugin('pybtex.style.formatting', 'gcrefstyle', GCRefStyle)
 
-
 bibtex_bibliography_header = ".. rubric:: References"
 bibtex_footbibliography_header = bibtex_bibliography_header
-
 bibtex_bibfiles = []
 
-# This pattern also affects html_static_path and html_extra_path.
+
+# -- autodoc configuration ---------------------------------------------------
+
+# Show type hints in the description body, not in the signature line
+autodoc_typehints = "description"
+
+# Include both class docstring and __init__ docstring
+autoclass_content = "both"
+
+# List members in the order they appear in the source file
+autodoc_member_order = "bysource"
+
+# Default options applied to every autodoc directive
+autodoc_default_options = {
+    "members":           True,   # Document all public members
+    "undoc-members":     True,   # Include members without docstrings
+    "private-members":   False,  # Exclude _private members
+    "special-members":   False,  # Exclude __dunder__ members
+    "inherited-members": False,  # Exclude inherited members
+    "show-inheritance":  True,   # Show base classes in class pages
+}
+
+
+# -- autosummary configuration -----------------------------------------------
+
+# Automatically generate stub .rst pages for each module/class/function
+autosummary_generate = True
+
+# Overwrite existing stub files on each build
+autosummary_generate_overwrite = True
+
+# Do not document names that were imported from other modules
+autosummary_imported_members = False
+
+
+# -- napoleon configuration ---------------------------------------------------
+
+# We use NumPy-style docstrings throughout GCPy
+napoleon_google_docstring            = False
+napoleon_numpy_docstring             = True
+napoleon_include_init_with_doc       = True
+napoleon_include_private_with_doc    = False
+napoleon_include_special_with_doc    = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes    = True
+napoleon_use_admonition_for_references = False
+napoleon_use_ivar                    = False
+napoleon_use_param                   = True
+napoleon_use_rtype                   = True
+napoleon_preprocess_types            = True
+napoleon_attr_annotations            = True
+
+
+# -- intersphinx configuration -----------------------------------------------
+
+# Cross-link to the API docs of packages that GCPy depends on
+intersphinx_mapping = {
+    "python":     ("https://docs.python.org/3",             None),
+    "numpy":      ("https://numpy.org/doc/stable",          None),
+    "xarray":     ("https://docs.xarray.dev/en/stable",     None),
+    "pandas":     ("https://pandas.pydata.org/docs",        None),
+    "scipy":      ("https://docs.scipy.org/doc/scipy",      None),
+    "matplotlib": ("https://matplotlib.org/stable",         None),
+}
+
+
+# -- General build options ---------------------------------------------------
+
+# Patterns to ignore when looking for source files
 exclude_patterns = []
 
 
 # -- Options for HTML output -------------------------------------------------
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-#html_theme = 'alabaster'
 html_theme = 'sphinx_rtd_theme'
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
+html_theme_options = {
+    'logo_only':                       False,
+    'style_nav_header_background':     '#FCFCFC',
+    'navigation_depth':                4,
+    'collapse_navigation':             False,
+    'sticky_navigation':               True,
+    'includehidden':                   True,
+    'titles_only':                     False,
+    'prev_next_buttons_location':      'bottom',
+    'style_external_links':            True,
+}
+
+# Paths containing custom static files (relative to this directory)
 html_static_path = [
     '_static',
 ]
 
-# CSS files that will override sphinx-rtd-theme default settings
-# (paths are relative to _static, which is specified above)
+# CSS files that override sphinx-rtd-theme defaults
+# (paths are relative to _static, specified above)
 html_css_files = [
     'css/icon_home.css',
     'css/theme_overrides.css',
@@ -101,11 +183,4 @@ html_css_files = [
 
 # Display GEOS-Chem favicon and logo
 html_favicon = '_static/images/gc-o-logo-favicon.ico'
-html_logo = "_static/images/GEOS-Chem_Logo_Light_Background.png"
-
-# More theme settings
-html_theme_options = {
-    'logo_only': False,                        # Show logo & top text
-    'display_version': False,                  # Don't show version number
-    'style_nav_header_background': '#FCFCFC',  # 99% white for top left bkgrnd
-}
+html_logo    = '_static/images/GEOS-Chem_Logo_Light_Background.png'

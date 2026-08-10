@@ -15,13 +15,17 @@ from gcpy.profile.vtune_utils import vtune_read_hotspots_csv
 def vtune_read_hotspots(filename):
     """
     Reads an Intel VTune hotspot data report and returns a
-    pd.DataFrame object with the results.
+    pandas.DataFrame object with the results.
 
-    Args
-    filename : str          : CSV file containing hotspot data
+    Parameters
+    ----------
+    filename : str
+        CSV file containing hotspot data.
 
     Returns
-    dframe   : pd.DataFrame : DataFrame w/ hotspot data
+    -------
+    dframe : pandas.DataFrame
+        DataFrame with hotspot data.
     """
 
     # Read the profiling data
@@ -57,11 +61,16 @@ def vtune_plot_functions(dframe, filename, n_min, n_max):
     Plots functions having the largest CPU time as listed in
     an Intel Vtune hotspots report.
 
-    Args
-    dframe   : pd.DataFrame : Profiling information
-    filename : str          : Name of the file
-    n_min    : int          : Display functions starting with this index
-    n_max    : int          : Display functions ending with this index
+    Parameters
+    ----------
+    dframe : pandas.DataFrame
+        Profiling information.
+    filename : str
+        Name of the file.
+    n_min : int
+        Display functions starting with this index.
+    n_max : int
+        Display functions ending with this index.
     """
     verify_variable_type(dframe, pd.DataFrame)
     verify_variable_type(filename, str)
