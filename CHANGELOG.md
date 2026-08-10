@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `pytest=8.3.4` as a dependency to environment files
 - Added several unit tests in `gcpy/tests` as well as a GitHub Action to run them on pushes and pull requests
 - Added `is_nearly_constant` function to `gcpy/util.py`
+- Added `pytest.ini` to filter benign warnings (numpy/ESMF ABI notice, xesmf array-contiguity notices) out of the test suite output
 
 ### Changed
 - Bumped `pypdf` to version 6.7.1 in `setup.py` and environment files
