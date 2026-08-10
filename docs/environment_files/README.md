@@ -22,15 +22,11 @@ $ conda env create -n gcpy_env --file=gcpy_environment_py313.yml   # If you wish
 
 ### With Mamba or Conda
 
-Use one of these commands to build a Mamba/Conda environment with the dependencies for building the GCPy ReadTheDocs documentation:
-
-```console
-$ mamba env create -n rtd_env --file=read_the_docs_environment.yml
-```
-or
-```console
-$ conda env create -n rtd_env --file=read_the_docs_environment.yml
-```
+The Sphinx/ReadTheDocs packages are now bundled into the GCPy environment
+files, so there is no separate environment to create. Just build the
+`gcpy_env` environment as described above
+(`gcpy_environment_py312.yml`/`gcpy_environment_py313.yml`) and it will
+already contain everything needed to build the documentation.
 
 ### With pip
 Or use this command to install the dependencies from PyPi:

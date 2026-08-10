@@ -60,15 +60,16 @@ Sphinx and its dependencies, which are listed in the table below.
      - Replaces tokenized strings with text
      - 3.1.6
 
-We recommend that you create a standalone :program:`Conda` environment
-to install Sphinx and its dependencies.  The YAML file
-:file:`docs/environment_files/read_the_docs_environment.yaml` contains the proper package
-specifications.  Use these commands:
+Sphinx and its dependencies are now bundled into the standard GCPy
+Conda/Mamba environment files, so no separate environment is needed.
+The YAML files :file:`docs/environment_files/gcpy_environment_py312.yml`
+and :file:`docs/environment_files/gcpy_environment_py313.yml` contain the
+proper package specifications.  Use one of these commands:
 
 .. code-block:: console
 
-   $ cd docs
-   $ conda env create -n rtd_env --file=environment_files/read_the_docs_environment.yml
+   $ conda env create -n gcpy_env --file=docs/environment_files/gcpy_environment_py312.yml   # Python 3.12
+   $ conda env create -n gcpy_env --file=docs/environment_files/gcpy_environment_py313.yml   # Python 3.13
 
 This step only needs to be done once.
 
@@ -80,13 +81,13 @@ Build the documentation
 
    .. code-block:: console
 
-      $ conda activate rtd_env
+      $ conda activate gcpy_env
 
 #. Navigate to the :file:`docs/` folder:
 
    .. code-block:: console
 
-      (rtd_env) $ cd docs     # Skip if you are already in the docs folder
+      (gcpy_env) $ cd docs     # Skip if you are already in the docs folder
 
 #. Check out the :file:`docs/dev` branch of this repository, as this
    is the branch from which the :program:`latest` ReadTheDocs version
@@ -94,20 +95,20 @@ Build the documentation
 
    .. code-block:: console
 
-      (rtd_env) $ git checkout docs/dev   # Skip if you are already on the docs/dev branch
+      (gcpy_env) $ git checkout docs/dev   # Skip if you are already on the docs/dev branch
 
 #. Start the :command:`sphinx-autobuild` server:
 
    .. code-block:: console
 
-      (rtd_env) $ sphinx-autobuild source build/html
+      (gcpy_env) $ sphinx-autobuild source build/html
 
 #. Remove any HTML files (in :file:`docs/build/html`) that might be
    left behind from a previous build:
 
    .. code-block:: console
 
-      (rtd_env) $ make clean
+      (gcpy_env) $ make clean
 
    This will parse the reST-format files in the :file:`docs/source/`
    directory tree and generate new HTML files in
@@ -133,7 +134,7 @@ Build the documentation
 
    .. code-block:: console
 
-      (rtd_env) $ make clean
+      (gcpy_env) $ make clean
 
 #. Halt the :program:`sphinx-autobuild` server by typing
    :program:`CTRL-C`. |br|
@@ -143,7 +144,7 @@ Build the documentation
 
    .. code-block:: console
 
-      (rtd_env) $ conda deactivate
+      (gcpy_env) $ conda deactivate
 
 .. _editing_this_user_guide_rest:
 
