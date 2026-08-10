@@ -86,9 +86,9 @@ For documentation on setting up and running GEOS-Chem please see our
    :maxdepth: 1
    :caption: Help & Reference
 
-   Known-Bugs	     
-   reference/CONTRIBUTING.md
-   reference/SUPPORT.md
+   Known-Bugs
+   reference/CONTRIBUTING
+   reference/SUPPORT
    editing_these_docs
    Release-Guide
 

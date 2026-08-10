@@ -48,7 +48,7 @@ Using Online Regridding Weights
 You can regrid existing GEOS-Chem restart or diagnostic files using
 GCPy function :func:`gcpy.file_regrid`. This function can called
 directly from the command line or from within a Python script,
-as shown in the (:ref:`examples`) below.
+as shown in the (:ref:`examples <regrid-classic-example>`) below.
 
 .. note::
 

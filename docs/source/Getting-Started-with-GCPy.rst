@@ -40,10 +40,6 @@ GCPy requires several other Python packages, which are listed below.
    :header-rows: 1
    :align: center
 
-.. list-table:: GCPy dependencies
-   :header-rows: 1
-   :align: center
-
    * - Package
      - Version (Python 3.12)
      - Version (Python 3.13)
@@ -168,7 +164,7 @@ Methods for installing GCPy
    <https://earthsystemmodeling.org>`_ package (upon which GCPy relies
    for regridding functionality) is not available on `PyPI
    <https://pypi.org>`_ but only on `conda-forge
-   <https://conda-forge.org>`_.  Because of this, you will not be able
+   <https://conda-forge.org>`__.  Because of this, you will not be able
    to install GCPy from PyPI, but must use one of the two installation
    methods described below.
 

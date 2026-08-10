@@ -17,6 +17,8 @@ reports facts only.
 
 Usage
 -----
+.. code-block:: console
+
     python generate_inttest_report.py \\
         --exec-log  <execution_log.txt>  \\
         --diff-log  <diff_log.txt>        \\

@@ -164,8 +164,8 @@ The `GEOS-Chem Support Team
 plotting functions (see :func:`gcpy.benchmark.modules`) to generate
 plots and tables from of diagnostic output of GEOS-Chem benchmark
 simulations. Functions like
-:ref:`gcpy.benchmark.modules.make_benchmark_conc_plots` generate plots
-for every variable in  a given collection
+:func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_conc_plots`
+generate plots for every variable in  a given collection
 (e.g. :literal:`SpeciesConc`) at multiple vertical levels (surface,
 500hPa, zonal mean) and divide plots into separate folders based on
 category (e.g. Chlorine, Aerosols). For more information about the

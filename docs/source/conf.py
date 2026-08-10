@@ -41,7 +41,13 @@ extensions = [
     # --- Third-party extensions ---
     "sphinx_rtd_theme",
     "sphinxcontrib.bibtex",
+    "myst_parser",               # Parses Markdown (.md) source files
 ]
+
+source_suffix = {
+    ".rst": "restructuredtext",
+    ".md": "markdown",
+}
 
 
 # -- BibTeX configuration ----------------------------------------------------
