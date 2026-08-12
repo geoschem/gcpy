@@ -13,11 +13,13 @@ Component (HEMCO) <https://hemco.readthedocs.io>`_.
 Please reach out to the author directly if you have questions about
 using this script:
 
-   +-----------------+-----------------+
-   | Author          | GitHub Handle   |
-   +=================+=================+
-   | Hannah Nesser   | @hannahnesser   |
-   +-----------------+-----------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Author
+     - GitHub
+   * - Hannah Nesser
+     - @hannahnesser
 
 .. _hco-fmt-code:
 
@@ -25,10 +27,15 @@ using this script:
 Source code
 ===========
 
-**Script location:** `gcpy/community/format_hemco_data.py <https://github.com/geoschem/gcpy/blob/main/gcpy/community/format_hemco_data.py>`_
+.. list-table::
+   :header-rows: 1
 
-**Related example script:**  `gcpy/examples/hemco/format_hemco_demo.py
-<https://github.com/geoschem/gcpy/blob/main/gcpy/community/format_hemco_demo.py>`_
+   * - Description
+     - Script location
+   * - :func:`gcpy.community.format_hemco_data`
+     - `gcpy/community/format_hemco_data.py
+       <https://github.com/geoschem/gcpy/blob/main/gcpy/community/format_hemco_data.py>`_
+       `gcpy/examples/hemco/format_hemco_demo.py <https://github.com/geoschem/gcpy/blob/main/gcpy/community/format_hemco_demo.py>`_
 
 .. _hco-fmt-usage:
 

@@ -6,6 +6,8 @@ import warnings
 from matplotlib import colors
 import numpy as np
 
+from gcpy.util import is_nearly_constant
+
 # Save warnings format to undo overwriting built into pypdf
 _warning_format = warnings.showwarning
 
@@ -27,15 +29,15 @@ def six_panel_subplot_names(diff_of_diffs):
     """
     Returns the names of the subplots for the 6-panel plots.
 
-    Args:
-    -----
+    Parameters
+    ----------
     diff_of_diffs : bool
         Indicates if this is a diff-of-diffs benchmark (True)
-        or not (False),  Ratio plots are only included if
+        or not (False).  Ratio plots are only included if
         diff_of_diffs is False.
 
-    Returns:
-    --------
+    Returns
+    -------
     subplots : list of str
         List of names of each of the subplots in the 6-panel plot.
     """
@@ -55,41 +57,47 @@ def normalize_colors(
         vmax,
         is_difference=False,
         log_color_scale=False,
-        ratio_log=False
+        ratio_log=False,
+        is_ratio=False,
 ):
     """
     Normalizes a data range to the colormap range used by matplotlib
     functions. For log-color scales, special handling is done to prevent
     taking the log of data that is all zeroes.
 
-    Args:
-        vmin: float
-            Minimum value of the data range.
-        vmax: float
-            Maximum value of the data range.
+    Parameters
+    ----------
+    vmin : float
+        Minimum value of the data range.
+    vmax : float
+        Maximum value of the data range.
+    is_difference : bool, optional
+        Set this switch to denote that we are using a difference
+        color scale (i.e. with zero in the middle of the range).
+        Default value: False
+    log_color_scale : bool, optional
+        Logical flag to denote that we are using a logarithmic
+        color scale instead of a linear color scale.
+        Default value: False
+    ratio_log : bool, optional
+        Indicates whether we are using log scaling for ratio plots
+        (True) or not (False).
+        Default value: False
+    is_ratio : bool, optional
+        Set this switch to denote that we are using a ratio color
+        scale (i.e. with 1, not 0, in the middle of the range).
+        Default value: False
 
-    Keyword Args (optional):
-        is_difference: bool
-            Set this switch to denote that we are using a difference
-            color scale (i.e. with zero in the middle of the range).
-            Default value: False
-        log_color_scale: bool
-            Logical flag to denote that we are using a logarithmic
-            color scale instead of a linear color scale.
-            Default value: False
-        ratio_log : bool
-            Indicates whether we are using log scaling for ratio plots
-            (True) or not (False).
-            Default value: False
+    Returns
+    -------
+    norm : matplotlib.colors.Normalize
+        The normalized matplotlib color range, stored in
+        a matplotlib Normalize object.
 
-    Returns:
-        norm: matplotlib Norm
-            The normalized matplotlib color range, stored in
-            a matplotlib Norm object.
-
-    Remarks:
-         For log color scales, we will use a range of 3 orders of
-         magnitude (i.e. from vmax/1e3 to vmax).
+    Notes
+    -----
+    For log color scales, we will use a range of 3 orders of
+    magnitude (i.e. from vmax/1e3 to vmax).
     """
 
     # Define class for logarithmic non-symmetric color scheme
@@ -121,17 +129,22 @@ def normalize_colors(
                 copy=False
             )
 
-    # Absolute value of v
-    abs_vmin = abs(vmin)
-    abs_vmax = abs(vmax)
-
-    if (abs_vmin == 0 and abs_vmax == 0) or \
-       (np.isnan(vmin) and np.isnan(vmax)):
-        # If the data is zero everywhere (vmin=vmax=0) or undefined
-        # everywhere (vmin=vmax=NaN), then normalize the data range
-        # so that the color corresponding to zero (white) will be
-        # placed in the middle of the colorbar, where we will
-        # add a single tick.
+    if is_nearly_constant([vmin, vmax]):
+        # If the data is zero (or nearly constant) everywhere, or
+        # undefined everywhere (vmin=vmax=NaN), then normalize the
+        # data range so that the color corresponding to zero (white)
+        # will be placed in the middle of the colorbar, where we will
+        # add a single tick.  Using a tolerance here (rather than
+        # exact equality) avoids visible color "striping" when a
+        # nominally-constant field carries tiny numerical noise, e.g.
+        # from regridding (see GitHub issue #330).
+        #
+        # Ratio data is centered on 1, not 0, so it needs its own
+        # branch: using the 0-centered Normalize below would place
+        # the near-1 "Ref and Dev are equal" data at the extreme edge
+        # of the colorbar instead of in the middle.
+        if is_ratio:
+            return MidpointLogNorm(vmin=0.5, vmax=2.0, midpoint=1.0)
         if is_difference:
             return colors.Normalize(vmin=-1.0, vmax=1.0)
         return colors.Normalize(vmin=0.0, vmax=1.0)
@@ -151,12 +164,17 @@ def text_to_data_units(ax, text):
     """
     Computes the width of a label in data units.
 
-    Args
-    ax     : mpl.Axes.Subplot : MatPlotLib Axes.Subplot object
-    text   : ax.text          : Text that is being plotted
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes
+        Matplotlib Axes object.
+    text : matplotlib.text.Text
+        Text object that is being plotted.
 
     Returns
-    length : float            : Length in data units
+    -------
+    width_in_data_units : float
+        Length of the text label in data units.
     """
 
     # Get the extent of the text as a Bbox object

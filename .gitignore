@@ -163,3 +163,6 @@ ENV/
 
 # VSCode settings file
 .vscode/settings.json
+
+# Automatically-generated API reference
+**/_autosummary/*

@@ -13,13 +13,15 @@ will be archived.
 Please reach out to the author directly if you have questions about
 using this script:
 
-   +-----------------+---------------+
-   | Author          | GitHub Handle |
-   +=================+===============+
-   | Alli Moon       | @alli-moon    |
-   +-----------------+---------------+
-   | Yuk Yun Chan    | @yc-chan      |
-   +-----------------+---------------+
+.. list-table::
+   :header-rows: 1
+
+   * - Author
+     - GitHub
+   * - Alli Moon
+     - @alli-moon
+   * - Yuk Yun Chan
+     - yc-chan
 
 .. _obspack-code:
 
@@ -27,7 +29,13 @@ using this script:
 Source code
 ===========
 
-**Script location:** `gcpy/community/create_obspack_coords_file.py <https://github.com/geoschem/gcpy/blob/main/gcpy/community/create_obspack_coords_file.py>`_
+.. list-table::
+   :header-rows: 1
+
+   * - Description
+     - Script location
+   * - :func:`gcpy.community.create_obspack_coords_file`
+     - `gcpy/community/create_obspack_coords_file.py <https://github.com/geoschem/gcpy/blob/main/gcpy/community/create_obspack_coords_file.py>`_
 
 .. _obspack-usage:
 

@@ -22,13 +22,17 @@ from gcpy.util import \
 
 def combine_dataset(file_list=None):
     """
-    Wrapper for xarray.open_mfdataset
+    Wrapper for xarray.open_mfdataset.
 
-    Args:
-    file_list : list       : List of files to read
+    Parameters
+    ----------
+    file_list : list, optional
+        List of files to read.
 
-    REturns
-    data      : xr.Dataset : Object w/ "Metrics" collection data
+    Returns
+    -------
+    data : xr.Dataset
+        Object w/ "Metrics" collection data.
     """
 
     # Return a single Dataset containing data from all MeanOH files.
@@ -49,11 +53,15 @@ def validate_metrics_collection(ds):
     Determines if a Dataset contains variables for computing
     metrics from a CH4 simulation or a fullchem simulation.
 
-    Args:
-        ds: xarray Dataset
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset to validate.
 
-    Returns:
-        is_ch4_sim: bool
+    Returns
+    -------
+    is_ch4_sim : bool
+        True if the dataset contains all required variables.
     """
 
     # CH4 and fullchem simulations have these variables
@@ -80,11 +88,15 @@ def read_metrics_collection(files):
     Reads data from all "Metrics" collection netCDF files
     into a single xarray Dataset.
 
-    Args:
-    files : list       : List of "Metrics" collection netCDF files
+    Parameters
+    ----------
+    files : list
+        List of "Metrics" collection netCDF files.
 
     Returns
-    data  : xr.Dataset : Object containing "Metrics" collection data
+    -------
+    data : xr.Dataset
+        Object containing "Metrics" collection data.
     """
 
     # If files a scalar, promote it to a list
@@ -107,12 +119,17 @@ def total_airmass(data):
     """
     Computes the total airmass (in both kg and molec).
 
-    Args
-    data       : xr.DataSet : Object w/ "Metrics" collection data
+    Parameters
+    ----------
+    data : xr.Dataset
+        Object w/ "Metrics" collection data.
 
     Returns
-    airmass_kg : np.float64 : Total atmospheric air mass [kg]
-    airmass_m  : np.float64 : Total atmospheric air mass [molecules]
+    -------
+    airmass_kg : np.float64
+        Total atmospheric air mass [kg].
+    airmass_m : np.float64
+        Total atmospheric air mass [molecules].
     """
 
     airmass_kg = np.nansum(data["AirMassColumnFull"].values)
@@ -123,15 +140,21 @@ def total_airmass(data):
 
 def global_mean_oh(data, airmass_kg, mw_oh_kg):
     """
-    Computes the global mean OH concentration (1e5 molec cm-3)
+    Computes the global mean OH concentration (1e5 molec cm-3).
 
-    Args
-    data        : xr.DataSet : Object w/ "Metrics" collection data
-    airmass_kg  : np.float64 : Total atmospheric air mass [kg]
-    mw_oh_kg    : np.flaot64 : Mol. wt. of OH [kg]
+    Parameters
+    ----------
+    data : xr.Dataset
+        Object w/ "Metrics" collection data.
+    airmass_kg : np.float64
+        Total atmospheric air mass [kg].
+    mw_oh_kg : np.float64
+        Mol. wt. of OH [kg].
 
     Returns
-    sum_mean_oh : np.float64 : Sum of Mean OH [1e5 molec/cm3]
+    -------
+    mean_oh : np.float64
+        Mean OH [1e5 molec/cm3].
     """
     # Divide out total airmass to get total mean OH concentration [kg m-3]
     # Then convert mean OH from [kg m-3] to [1e5 molec cm-3]
@@ -147,14 +170,19 @@ def lifetimes_wrt_oh(data, airmass_m):
     Computes the lifetimes (in years) of CH4 and CH3CCl3 (aka MCF)
     against tropospheric OH.
 
-    Args
-    data            : xr.DataSet : Object w/ "Metrics" collection data
-    airmass_m       : np.float64 : Total airmass [molecules]
-    s_per_yr        : np.float64 : Seconds in this year
+    Parameters
+    ----------
+    data : xr.Dataset
+        Object w/ "Metrics" collection data.
+    airmass_m : np.float64
+        Total airmass [molecules].
 
     Returns
-    ch4_life_wrt_oh : np.float64 : CH4 lifetime w/r/t OH [years]
-    mcf_life_wrt_oh : np.float64 : MCF lifetime w/r/t OH [years]
+    -------
+    ch4_life_wrt_oh : np.float64
+        CH4 lifetime w/r/t OH [years].
+    mcf_life_wrt_oh : np.float64
+        MCF lifetime w/r/t OH [years].
     """
 
     # Seconds per year
@@ -176,15 +204,23 @@ def init_common_vars(ref, refstr, dev, devstr, spcdb_files):
     Returns a dictionary containing various quantities that
     need to be passed between methods.
 
-    Args
-    ref         : str  : Path name of "Ref" (aka "Reference") data file
-    refstr      : str  : Label to describe Ref
-    dev         : str  : Path name of "Dev" (aka "Development") data file
-    devstr      : str  : Label to describe Dev
-    spcdb_files : list : Paths to Ref & Dev species_database.yml files
+    Parameters
+    ----------
+    ref : str
+        Path name of "Ref" (aka "Reference") data file.
+    refstr : str
+        Label to describe Ref.
+    dev : str
+        Path name of "Dev" (aka "Development") data file.
+    devstr : str
+        Label to describe Dev.
+    spcdb_files : list
+        Paths to Ref & Dev species_database.yml files.
 
     Returns
-    common_vars : dict : OH Metrics data
+    -------
+    common_vars : dict
+        OH Metrics data.
     """
     # Read the species database files in the Ref & Dev rundirs, and
     # return a dict containing metadata for the union of species.
@@ -224,11 +260,15 @@ def compute_oh_metrics(common_vars):
     Computes the mass-weighted mean OH concentration, CH3CCl3 (aka MCF)
     lifetime w/r/t OH, and CH4 lifetime w/r/t OH.
 
-    Args
-    common_vars : dict : OH Metrics data
+    Parameters
+    ----------
+    common_vars : dict
+        OH Metrics data.
 
     Returns
-    common_vars : dict : Updated OH Metrics data
+    -------
+    common_vars : dict
+        Updated OH Metrics data.
     """
 
     # ==================================================================
@@ -285,16 +325,22 @@ def write_to_file(f, title, ref, dev, absdiff, pctdiff, is_mean_oh=False):
     Internal routine used by print_metrics to write a specific
     quantity (mean OH, MCF lifetime, CH4 lifetime) to a file.
 
-    Args
-    f          : file       : File object
-    title      : str        : Title for the data
-    ref        : np.float64 : Ref data value
-    dev        : np.float64 : Dev data value
-    absdiff    : np.float64 : Absolute difference
-    pctdiff    : np.float64 : Percent difference
-
-    Keyword Args
-    is_mean_oh : bool       : Denotes if this data is Mean OH or not
+    Parameters
+    ----------
+    f : file
+        File object.
+    title : str
+        Title for the data.
+    ref : np.float64
+        Ref data value.
+    dev : np.float64
+        Dev data value.
+    absdiff : np.float64
+        Absolute difference.
+    pctdiff : np.float64
+        Percent difference.
+    is_mean_oh : bool, optional
+        Denotes if this data is Mean OH or not.
     """
     print(file=f)
     print("-" * 60, file=f)
@@ -318,9 +364,12 @@ def print_metrics(common_vars, dst):
     Prints the mass-weighted mean OH (full atmospheric column)
     from a GEOS-Chem simulation.
 
-    Args
-    common_vars : dict : Data containing OH Metrics data
-    dst         : str  : Folder where OH Metrics output will be written
+    Parameters
+    ----------
+    common_vars : dict
+        Data containing OH Metrics data.
+    dst : str
+        Folder where OH Metrics output will be written.
     """
 
     # Create file
@@ -401,16 +450,22 @@ def make_benchmark_oh_metrics(
     Creates a text file containing metrics of global mean OH, MCF lifetime,
     and CH4 lifetime for benchmarking purposes.
 
-    Args
-    ref         : str  : Path name of "Ref" (aka "Reference") data file
-    refstr      : str  : Label to describe Ref
-    dev         : str  : Path name of "Dev" (aka "Development") data file
-    devstr      : str  : Label to describe Dev
-    spcdb_files : list : Paths to Ref & Dev species_database.yml files
-
-    Keyword Args
-    dst         : str  : Folder where OH Metrics output will be written
-    overwrite   : bool : Overwrite previously-generated files? (T/F)
+    Parameters
+    ----------
+    ref : str
+        Path name of "Ref" (aka "Reference") data file.
+    refstr : str
+        Label to describe Ref.
+    dev : str
+        Path name of "Dev" (aka "Development") data file.
+    devstr : str
+        Label to describe Dev.
+    spcdb_files : list
+        Paths to Ref & Dev species_database.yml files.
+    dst : str, optional
+        Folder where OH Metrics output will be written.
+    overwrite : bool, optional
+        Overwrite previously-generated files?
     """
     # Replace whitespace in the ref and dev labels
     refstr = replace_whitespace(refstr)

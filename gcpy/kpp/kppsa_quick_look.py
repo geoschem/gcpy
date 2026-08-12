@@ -1,6 +1,38 @@
 #!/usr/bin/env python3
-"""
+r"""
 Creates a "quick-look" plot from KPP-Standalone box model output.
+
+Command-line arguments
+----------------------
+
+.. option:: -d <str>, --dirname <str>
+
+   Folder containing KPP-Standalone output files.
+
+.. option:: [-l <str>, --label <str>]
+
+   Descriptive label used in the plot legend.
+   Default: ``"KPP-Standalone output"``
+
+.. option:: [-p <str>, --pattern <str>]
+
+   Glob pattern used to match KPP-Standalone log filenames.
+
+.. option:: [-s <str>, --species <str>]
+
+   Name of the species to plot.
+
+Examples
+--------
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.kpp.kppsa_quick_look    \
+              --dirname /path/to/KPP-Standalone/output \
+              --label   Rosenbrock                     \
+              --pattern Beijing*20190701_0040.log      \
+              --species O3
 """
 
 # Imports
@@ -17,11 +49,24 @@ def kppsa_make_quick_look_plot(file_list, label, species):
     """
     Creates a quick-look plot from KPP-Standalone box model output.
 
-    Args
-    file_list : list : List of KPP-Standalone log files
-    site_name : str  : Name of the site that you wish to plot
-    label     : str  : Descriptive label for the data
-    species   : str  : Name of the species that you wish to plot
+    The site name is determined automatically from the first unique
+    site found in the data files. Only a single site is plotted.
+
+    Parameters
+    ----------
+    file_list : list of str
+        Paths to KPP-Standalone log files to be read.
+    label : str
+        Descriptive label for the data, used in the plot legend.
+    species : str
+        Name of the species to plot.
+
+    Notes
+    -----
+    The plot is displayed interactively via :func:`matplotlib.pyplot.show`.
+    The seaborn ``darkgrid`` style is applied during plotting and reset
+    to ``default`` afterwards to avoid affecting other plotting scripts.
+    The figure is landscape-oriented (11" × 8").
     """
     verify_variable_type(file_list, list)
     verify_variable_type(label, str)
@@ -40,18 +85,12 @@ def kppsa_make_quick_look_plot(file_list, label, species):
         species,
     )
 
-    # Figure setup
+    # Figure setup — landscape width: 11" x 8"
     plt.style.use("seaborn-v0_8-darkgrid")
-
-    # Define a new matplotlib.figure.Figure object for this page
-    # Landscape width: 11" x 8"
     fig = plt.figure(figsize=(11, 8))
     fig.tight_layout()
 
-    # Figure setup
-    plt.style.use("seaborn-v0_8-darkgrid")
-
-    # Plot species vertical profile at a given site
+    # Plot species vertical profile at the site
     kppsa_plot_single_site(
         fig,
         rows_per_page=1,
@@ -84,17 +123,10 @@ def kppsa_make_quick_look_plot(file_list, label, species):
 
 def main():
     """
-    Parses arguments and calls function kppsa_make_quick_look_plot
-    to generate a "quick-look" plot from KPP-Standalone box model
-    output.
-
-    Command-line arguments
-    --dirname (or -d) : Folder containing KPP-Standalone output
-    --label   (or -l) : Label for top-of-plot
-    --pattern (or -p) : Look for files matching this pattern
-    --species (or -s) : Name of the species to plot
+    Parses command-line arguments and calls
+    :func:`kppsa_make_quick_look_plot` to generate a quick-look
+    plot from KPP-Standalone box model output.
     """
-
     # Tell the parser which arguments to look for
     parser = argparse.ArgumentParser(
         description="Single-panel plotting example program"

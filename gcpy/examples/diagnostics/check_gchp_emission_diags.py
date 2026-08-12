@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
-"""
+r"""
 Compares GCHP emission diagnostic entries in HISTORY.rc
 and in HEMCO_Diagn.rc configuration files for consistency.
+
+Examples
+--------
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.diagnostics.check_gchp_emission_diags \
+                /path/to/GCHP/run/directory                                   \
+                SIMULATION-NAME
+
 """
 from os.path import join, realpath
 from sys import argv
@@ -15,11 +26,15 @@ def read_history(filename):
     Reads the HISTORY_Diagn.rc file and returns a list of
     diagnostic container names containing "Emis" or "Inv".
 
-    Args
-    filename : str  : Path to the HISTORY.rc file
+    Parameters
+    ----------
+    filename : str
+        Path to the HISTORY.rc file.
 
     Returns
-    result   : list : List of diagnostic entries
+    -------
+    result : list
+        List of diagnostic entries.
     """
     verify_variable_type(filename, str)
 
@@ -57,11 +72,15 @@ def read_hemco_diagn(filename):
     Reads the HEMCO_Diagn.rc file and returns a list of
     diagnostic container names containing "Emis" or "Inv".
 
-    Args
-    filename : str  : Path to the HEMCO_Diagn.rc file
+    Parameters
+    ----------
+    filename : str
+        Path to the HEMCO_Diagn.rc file.
 
     Returns
-    result   : list : List of diagnostic entries
+    -------
+    result : list
+        List of diagnostic entries.
     """
     verify_variable_type(filename, str)
 
@@ -95,16 +114,21 @@ def read_hemco_diagn(filename):
 
 def compare_containers(history_entries, hco_diagn_entries):
     """
-    Compares the list of GCHP emission entries in HISTORY.rc 
-    and HEMCO_Diagn.rc.  Returns the list of entries common to 
+    Compares the list of GCHP emission entries in HISTORY.rc
+    and HEMCO_Diagn.rc.  Returns the list of entries common to
     both, and in one file but not the other.
 
-    Args
-    history_containers   : list : Emission entries in HISTORY.rc
-    hco_diagn_containers : list : Emission entries in HEMCO_Diagn.rc
+    Parameters
+    ----------
+    history_entries : list
+        Emission entries in HISTORY.rc.
+    hco_diagn_entries : list
+        Emission entries in HEMCO_Diagn.rc.
 
     Returns
-    result               : dict : Results of the comparison
+    -------
+    result : dict
+        Results of the comparison.
     """
     verify_variable_type(history_entries, list)
     verify_variable_type(hco_diagn_entries, list)
@@ -127,10 +151,12 @@ def compare_containers(history_entries, hco_diagn_entries):
 def print_results(result):
     """
     Prints the results of the comparison between HISTORY.rc
-    and HEMCO_Diagn.rc
+    and HEMCO_Diagn.rc.
 
-    Args
-    result : dict : Dictionary with results of the comparison
+    Parameters
+    ----------
+    result : dict
+        Dictionary with results of the comparison.
     """
     verify_variable_type(result, dict)
 
@@ -161,9 +187,12 @@ def main(path_to_rundir, simulation):
     HEMCO_Diagn.rc files, to compare emission diagnostics, and
     to print the results.
 
-    Args
-    path_to_rundir : str : Path to the run/GCHP folder
-    simulation     : str : Simulation name (e.g. fullchem)
+    Parameters
+    ----------
+    path_to_rundir : str
+        Path to the run/GCHP folder.
+    simulation : str
+        Simulation name (e.g. fullchem).
     """
     verify_variable_type(path_to_rundir, str)
     verify_variable_type(simulation, str)

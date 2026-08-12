@@ -17,7 +17,7 @@ import numpy as np
 from dask.array import Array as DaskArray
 import xarray as xr
 import cartopy.crs as ccrs
-from gcpy.util import get_nan_mask, verify_variable_type
+from gcpy.util import get_nan_mask, is_nearly_constant, verify_variable_type
 from gcpy.plot.core import gcpy_style, normalize_colors
 from gcpy.plot.single_panel import single_panel
 
@@ -65,96 +65,93 @@ def six_plot(
     compare_zonal_mean. Primarily exists to eliminate code redundancy
     in the prior listed functions and has not been tested separately.
 
-    Args:
-    -----
-    subplot: str
+    Parameters
+    ----------
+    subplot : str
         Type of plot to create (ref, dev, absolute difference or
         fractional difference).
-    all_zero: bool
+    all_zero : bool
         Set this flag to True if the data to be plotted consist
         only of zeros.
-    all_nan: bool
+    all_nan : bool
         Set this flag to True if the data to be plotted consist
         only of NaNs.
-    plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
+    plot_val : xarray.DataArray or numpy.ndarray or dask.array.Array
         Single data variable to plot.
-    grid: dict
-        Dictionary mapping plot_val to plottable coordinates
-    axes: matplotlib.axes
+    grid : dict
+        Dictionary mapping plot_val to plottable coordinates.
+    axes : matplotlib.axes.Axes
         Axes object to plot information. Will create a new axes
         if none is passed.
-    rowcol: tuple
+    rowcol : tuple
         Subplot position in overall Figure.
-    title: str
-        Title to print on axes
-    comap: matplotlib Colormap
+    title : str
+        Title to print on axes.
+    comap : matplotlib.colors.Colormap
         Colormap for plotting data values.
-    unit: str
+    unit : str
         Units of plotted data.
-    extent: tuple (minlon, maxlon, minlat, maxlat)
+    extent : tuple of float
         Describes minimum and maximum latitude and longitude of
-        input data.
-    masked_data: numpy array
+        input data in the form (minlon, maxlon, minlat, maxlat).
+    masked_data : numpy.ndarray
         Masked area for cubed-sphere plotting.
-    other_all_nan: bool
+    other_all_nan : bool
         Set this flag to True if plotting ref/dev and the other
         of ref/dev is all nan.
-    gridtype: str
+    gridtype : str
         "ll" for lat/lon or "cs" for cubed-sphere.
-    vmins: list of float
-        list of length 3 of minimum ref value, dev value,
+    vmins : list of float
+        List of length 3 of minimum ref value, dev value,
         and minimum of both (for use with match_cbar=True).
-    vmaxs: list of float
-        list of length 3 of maximum ref value, dev value,
-        and maximum of both (for use with match_cbar=True)
-    use_cmap_RdBu: bool
-        Set this flag to True to use a blue-white-red colormap
-    match_cbar: bool
+    vmaxs : list of float
+        List of length 3 of maximum ref value, dev value,
+        and maximum of both (for use with match_cbar=True).
+    use_cmap_RdBu : bool
+        Set this flag to True to use a blue-white-red colormap.
+    match_cbar : bool
         Set this flag to True if you are plotting with the
         same colorbar for ref and dev.
-    verbose: bool
+    verbose : bool
         Set this flag to True to enable informative printout.
-    log_color_scale: bool
+    log_color_scale : bool
         Set this flag to True to enable log-scale colormapping.
-
-    Keyword Args (optional):
-    ------------------------
-    pedge: numpy array
+    pedge : numpy.ndarray, optional
         Edge pressures of grid cells in data to be plotted.
         Default value: np.full((1,1), -1)
-    pedge_ind: numpy array
+    pedge_ind : numpy.ndarray, optional
         Indices where edge pressure values are within a given
         pressure range.
         Default value: np.full((1,1), -1)
-    log_yaxis: bool
+    log_yaxis : bool, optional
         Set this flag to True to enable log scaling of pressure
         in zonal mean plots.
         Default value: False
-     xtick_positions: list of float
-         Locations of lat/lon or lon ticks on plot.
-         Default value: None
-     xticklabels: list of str
-         Labels for lat/lon ticks.
-         Default value: None
-     plot_type: str
-         Type of plot, either "single_level" or "zonal"mean".
-         Default value: "single_level"
-     ratio_log: bool
-         Set this flag to True to enable log scaling for ratio plots
-         Default value: False
-     proj: cartopy projection
-         Projection for plotting data.
-         Default value: ccrs.PlateCarree()
-     ll_plot_func: str
-         Function to use for lat/lon single level plotting with
-         possible values 'imshow' and 'pcolormesh'. imshow is much
-         faster but is slightly displaced when plotting from dateline
-         to dateline and/or pole to pole.
-         Default value: 'imshow'
-     extra_plot_args: various
-         Any extra keyword arguments are passed through the
-         plotting functions to be used in calls to pcolormesh() (CS)
-         or imshow() (Lat/Lon).
+    xtick_positions : list of float, optional
+        Locations of lat/lon or lon ticks on plot.
+        Default value: None
+    xticklabels : list of str, optional
+        Labels for lat/lon ticks.
+        Default value: None
+    plot_type : str, optional
+        Type of plot, either "single_level" or "zonal_mean".
+        Default value: "single_level"
+    ratio_log : bool, optional
+        Set this flag to True to enable log scaling for ratio plots.
+        Default value: False
+    proj : cartopy.crs.Projection, optional
+        Projection for plotting data.
+        Default value: ccrs.PlateCarree()
+    ll_plot_func : str, optional
+        Function to use for lat/lon single level plotting with
+        possible values 'imshow' and 'pcolormesh'. imshow is much
+        faster but is slightly displaced when plotting from dateline
+        to dateline and/or pole to pole.
+        Default value: 'imshow'
+    **extra_plot_args
+        Any extra keyword arguments are passed through the
+        plotting functions to be used in calls to pcolormesh() (CS)
+        or imshow() (Lat/Lon).
     """
     verify_variable_type(plot_val, (np.ndarray, xr.DataArray, DaskArray))
 
@@ -243,14 +240,14 @@ def verbose_print(verbose, rowcol, vmin, vmax):
     """
     Routine to print the vmin & vmax values for each subplot.
 
-    Args:
-    -----
+    Parameters
+    ----------
     verbose : bool
-       Toggles informative prrintout on (True) or off (False).
+        Toggles informative prrintout on (True) or off (False).
     rowcol : int
-       Subplot index.
+        Subplot index.
     vmin, vmax : float
-       Minimum and maximum of data range.
+        Minimum and maximum of data range.
     """
     if verbose:
         print(f"Subplot ({rowcol}) vmin, vmax: {vmin}, {vmax}")
@@ -272,40 +269,45 @@ def compute_vmin_vmax_for_plot(
     """
     Computes the min & max values for a subplot of a six-panel plot.
 
-    Args:
-    -----
-    plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
+    Parameters
+    ----------
+    plot_val : xarray.DataArray or numpy.ndarray or dask.array.Array
         Single data variable to plot.
-    subplot: str
-        Subplot name (see routine six_panel_subplot_names)
-    vmins: list of float
-        [minimum ref value, minimum dev value, absdiff value]
-    vmaxs: list of float
-        [maximum ref value, maximum dev value, absdiff value]
-
-    Keyword Arguments (optional):
-    -----------------------------
-    all_zero: bool
+    vmins : list of float
+        [minimum ref value, minimum dev value, absdiff value].
+    vmaxs : list of float
+        [maximum ref value, maximum dev value, absdiff value].
+    subplot : str
+        Subplot name (see routine six_panel_subplot_names).
+    rowcol : int
+        Subplot index.
+    all_zero : bool, optional
         Indicates if the data consists of all zeros (True)
-        or not (False)
-    all_nan: bool
+        or not (False).
+        Default value: False
+    all_nan : bool, optional
         Indicates if the data consists of all NaN values (True)
-        or not (False)
-    other_all_nan: bool
+        or not (False).
+        Default value: False
+    other_all_nan : bool, optional
         Indicates if plotting ref/dev and the other of ref/dev contains
         all NaN values (True) or not (False).
-    match_cbar: bool
+        Default value: False
+    match_cbar : bool, optional
         Toggles using the same colorbar for ref and dev on (True)
         or off (False).
-    use_cmap_RdBu: bool
+        Default value: False
+    use_cmap_RdBu : bool, optional
         Toggles a blue-white-red colormap on (True) or off (False).
-    verbose: bool
+        Default value: False
+    verbose : bool, optional
         Toggles informative printout on (True) or off (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     vmin, vmax : float
-        Min and max values for this subplot of a 6-panel plot
+        Min and max values for this subplot of a 6-panel plot.
     """
     # ==================================================================
     # Get min and max values for Ref or Dev subplots
@@ -375,38 +377,41 @@ def vmin_vmax_for_ref_dev_plots(
     Returns the vmin and vmax values for the "Ref" or "Dev"
     subplots of a six-panel plot.
 
-    Args:
-    -----
-    subplot: str
+    Parameters
+    ----------
+    subplot : str
         Subplot name (see routine six_panel_subplot_names).
     rowcol : int
         Subplot index.
-    vmins: list of float
-        [minimum ref value, minimum dev value, absdiff value]
-    vmaxs: list of float
-        [maximum ref value, maximum dev value, absdiff value]
-
-    Keyword Arguments (optional):
-    -----------------------------
-    all_zero: bool
+    vmins : list of float
+        [minimum ref value, minimum dev value, absdiff value].
+    vmaxs : list of float
+        [maximum ref value, maximum dev value, absdiff value].
+    all_zero : bool, optional
         Indicates if the data consists of all zeros (True)
         or not (False).
-    all_nan: bool
+        Default value: False
+    all_nan : bool, optional
         Indicates if the data consists of all NaN values (True)
         or not (False).
-    other_all_nan: bool
+        Default value: False
+    other_all_nan : bool, optional
         Indicates if plotting ref/dev and the other of ref/dev contains
         all NaN values (True) or not (False).
-    match_cbar: bool
+        Default value: False
+    match_cbar : bool, optional
         Toggles using the same colorbar for ref and dev on (True)
         or off (False).
-    use_cmap_RdBu: bool
+        Default value: False
+    use_cmap_RdBu : bool, optional
         Toggles a blue-white-red colormap on (True) or off (False).
-    verbose: bool
+        Default value: False
+    verbose : bool, optional
         Toggles informative printout on (True) or off (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     vmin, vmax : float
         Min and max values to plot.
     """
@@ -471,22 +476,20 @@ def vmin_vmax_for_absdiff_plots(
     (dynamic range)" or "Absolute Difference (restricted range)"
     subplots of a of a six-panel plot.
 
-    Args:
-    -----
-    plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
+    Parameters
+    ----------
+    plot_val : xarray.DataArray or numpy.ndarray or dask.array.Array
         Single data variable of GEOS-Chem output to plot.
-    subplot: str
+    subplot : str
         Subplot name (see routine six_panel_subplot_names).
     rowcol : int
         Subplot index.
-
-    Keyword Arguments (optional):
-    -----------------------------
-    verbose: bool
+    verbose : bool, optional
         Toggles informative printout on (True) or off (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     vmin, vmax : float
         Min and max values to plot.
     """
@@ -523,22 +526,20 @@ def vmin_vmax_for_ratio_plots(
     Returns the vmin and vmax values for the "Ratio (dynamic range)"
     or "Ratio (restricted range) subplot of a six-panel plot.
 
-    Args:
-    -----
-    plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
+    Parameters
+    ----------
+    plot_val : xarray.DataArray or numpy.ndarray or dask.array.Array
         Single data variable to plot.
-    subplot: str
+    subplot : str
         Subplot name (see routine six_panel_subplot_names).
     rowcol : int
         Subplot index.
-
-    Keyword Arguments (optional):
-    -----------------------------
-    verbose: bool
+    verbose : bool, optional
         Toggles informative printout on (True) or off (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     vmin, vmax : float
         Min and max values to plot.
     """
@@ -574,30 +575,28 @@ def compute_norm_for_plot(
     """
     Normalize colors (put into range [0..1] for matplotlib methods).
 
-    Args:
-    -----
-    plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
-        Single data variable GEOS-Chem output to plot
+    Parameters
+    ----------
+    plot_val : xarray.DataArray or numpy.ndarray or dask.array.Array
+        Single data variable GEOS-Chem output to plot.
     vmin, vmax : float
         Min and max value for this subplot of a 6-panel plot.
-    subplot: str
-        Subplot name (see routine six_panel_subplot_names)
-
-    Keyword Arguments (optional):
-    -----------------------------
-    use_cmap_RdBu: bool
+    subplot : str
+        Subplot name (see routine six_panel_subplot_names).
+    use_cmap_RdBu : bool, optional
         Toggles a blue-white-red colormap on (True) or off (False).
-    log_color_scale : bool
+        Default value: False
+    log_color_scale : bool, optional
         Toggles a logarithmic color scale on (True) or off (False).
-    ratio_log : bool
+        Default value: False
+    ratio_log : bool, optional
         Toggles log scaling for ratio plots on (True) or not (False).
-    verbose: bool
-        Toggles informative printout on (True) or off (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     vmin, vmax : float
-        Min and max values for this subplot of a 6-panel plot
+        Min and max values for this subplot of a 6-panel plot.
     """
     # ==================================================================
     # Ref and Dev subplots
@@ -631,8 +630,40 @@ def compute_norm_for_plot(
         vmax,
         is_difference=True,
         log_color_scale=True,
-        ratio_log=ratio_log
+        ratio_log=ratio_log,
+        is_ratio=True,
     )
+
+
+def ref_equals_dev(array, rtol=1e-5, atol=1e-10):
+    """
+    Returns True if all finite elements of a Ref/Dev ratio array are
+    within tolerance of 1.0 (i.e. Ref is essentially equal to Dev
+    throughout the domain).  This is needed to be able to add a
+    ticklabel stating that Ref & Dev are equal throughout the domain.
+
+    A tolerance (rather than exact equality) is used so that tiny
+    numerical noise (e.g. from regridding, see GitHub issue #330)
+    does not prevent this special case from being detected.
+
+    Parameters
+    ----------
+    array : numpy array
+        Ref/Dev ratio data (may contain NaNs).
+    rtol : float, optional
+        Relative tolerance.
+        Default value: 1e-5
+    atol : float, optional
+        Absolute tolerance.
+        Default value: 1e-10
+
+    Returns
+    -------
+    is_equal : bool
+        Whether Ref and Dev are essentially equal throughout the
+        domain.
+    """
+    return is_nearly_constant(array, rtol=rtol, atol=atol, target=1.0)
 
 
 def colorbar_ticks_and_format(
@@ -650,32 +681,33 @@ def colorbar_ticks_and_format(
     Adjusts colorbar tick placement and label formatting style
     for a subplot of a 6-panel plot.  Called from routine six_plot.
 
-    Args:
-    -----
-    plot_val: xarray.DataArray, numpy.ndarray, or dask.array.Array
+    Parameters
+    ----------
+    plot_val : xarray.DataArray or numpy.ndarray or dask.array.Array
         Single data variable to plot.
     cbar : matplotlib.colorbar.Colorbar
         The input colorbar.
     vmin, vmax : float
         Min and max of the data range to plot.
-    subplot: str
+    subplot : str
         Subplot name (see routine six_panel_subplot_names).
-
-    Keyword Arguments (optional):
-    -----------------------------
-    all_zero: bool
+    all_zero : bool, optional
         Indicates if the data consists of all zeros (True)
         or not (False).
-    all_nan: bool
+        Default value: False
+    all_nan : bool, optional
         Indicates if the data consists of all NaN values (True)
         or not (False).
-    use_cmap_RdBu: bool
+        Default value: False
+    use_cmap_RdBu : bool, optional
         Toggles a blue-white-red colormap on (True) or off (False).
-    log_color_scale : bool
+        Default value: False
+    log_color_scale : bool, optional
         Toggles a logarithmic color scale on (True) or off (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     cbar : matplotlib.colorbar.Colorbar
         The modified colorbar.
     """
@@ -709,18 +741,6 @@ def colorbar_ticks_and_format(
     # Ratio (dynamic and restricted range) subplots):
     #-------------------------------------------------------------------
     if subplot in ("dyn_ratio", "res_ratio"):
-
-        def ref_equals_dev(array):
-            """
-            Internal routine to check that returns true if all elements
-            of Ref/Dev are equal to 1 or NaN (aka missing value).
-            This is needed to be able to add a ticklabel stating
-            that Ref & Dev are equal throughout the domain.
-            """
-            uniq = np.unique(array)
-            if len(uniq) == 2:
-                return np.any(np.isin(uniq, [1.0])) and np.any(np.isnan(uniq))
-            return np.all(np.isin(uniq, [1.0]))
 
         # When Ref == Dev
         if ref_equals_dev(plot_val):
@@ -766,26 +786,25 @@ def colorbar_for_all_zero_or_nan(
     Formats a colorbar object for the case when Ref or Dev
     contains either all zeroes or all NaNs.
 
-    Args:
-    -----
+    Parameters
+    ----------
     cbar : matplotlib.colorbar.Colorbar
         The input colorbar.
     subplot : str
         Name of this subplot of a 6-panel plot.
-
-    Keyword Args (optional):
-    ------------------------
-    all_nan : bool
+    all_nan : bool, optional
         Indicates that the data array contains all NaN values (True)
         or not (False).
-    use_cmap_RdBu : bool
+        Default value: False
+    use_cmap_RdBu : bool, optional
         Indicates that we are using a difference colortable (True)
         or not (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     cbar : matplotlib.colorbar.Colorbar
-        The modified colorbar
+        The modified colorbar.
     """
     pos = [0.0]
     if subplot in ("ref", "dev"):
@@ -804,13 +823,13 @@ def colorbar_for_ref_equals_dev(cbar):
     Formats a colorbar object for the case when Ref and Dev
     are equal throughout the domain.
 
-    Args:
-    -----
+    Parameters
+    ----------
     cbar : matplotlib.colorbar.Colorbar
         The input colorbar.
 
-    Returns:
-    --------
+    Returns
+    -------
     cbar : matplotlib.colorbar.Colorbar
         The modified colorbar.
     """
@@ -832,15 +851,15 @@ def colorbar_for_dyn_ratio_plots(
     Formats a colorbar object for the "dynamic range ratio"
     subplot of a six-panel plot.
 
-    Args:
-    -----
+    Parameters
+    ----------
     cbar : matplotlib.colorbar.Colorbar
         The input colorbar.
     vmin, vmax : float
         Min and max of the data range.
 
-    Returns:
-    --------
+    Returns
+    -------
     cbar : matplotlib.colorbar.Colorbar
         The modified colorbar.
     """
@@ -879,13 +898,13 @@ def colorbar_for_res_ratio_plots(cbar):
     Formats a colorbar object for the "restricted range ratio"
     subplot of a six-panel plot.
 
-    Args:
-    -----
+    Parameters
+    ----------
     cbar : matplotlib.colorbar.Colorbar
         The input colorbar.
 
-    Returns:
-    --------
+    Returns
+    -------
     cbar : matplotlib.colorbar.Colorbar
         The modified colorbar.
     """
@@ -907,18 +926,19 @@ def colorbar_for_small_data_range(
     Formats a colorbar object for data that falls within the range
     of 0.1 .. 100.
 
-    Args:
-    -----
+    Parameters
+    ----------
     cbar : matplotlib.colorbar.Colorbar
         The input colorbar.
     vmin, vmax : float
         Min and max of the data range.
-    diff_cmap : bool
+    diff_cmap : bool, optional
         Indicates that we are using a diverging colortable (True)
         or not (False).
+        Default value: False
 
-    Returns:
-    --------
+    Returns
+    -------
     cbar : matplotlib.colorbar.Colorbar
         The modified colorbar.
     """

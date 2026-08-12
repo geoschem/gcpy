@@ -29,12 +29,13 @@ mean for all layers of the atmosphere.
 Single panel plots
 ------------------
 
-Single panel plots are generated through the :file:`single_panel()`
-function (located in module :file:`gcpy.plot.single_panel`). This
-function uses Matplotlib and Cartopy plotting capabilities while
-handling certain behind the scenes operations that are necessary for
-plotting GEOS-Chem data, particularly for cubed-sphere and/or zonal
-mean data.
+Single panel plots are generated through the
+:func:`gcpy.plot.single_panel` function. This function uses Matplotlib
+and Cartopy plotting capabilities while handling certain behind the
+scenes operations that are necessary for plotting GEOS-Chem data,
+particularly for cubed-sphere and/or zonal mean data.
+
+Single-panel example:
 
 .. code:: python
 
@@ -58,6 +59,10 @@ mean data.
 .. image:: _static/images/single\_panel\_single\_level.png
    :align: center
 
+|br|
+
+Zonal mean example:
+
 .. code:: python
 
     # Plot global zonal mean of Ozone
@@ -72,9 +77,11 @@ mean data.
 .. image:: _static/images/single\_panel\_zonal\_mean.png
    :align: center
 
+
+|br|
+
 :ref:`Click here <single-panel>` for an example single panel plotting script.
-:ref:`Click here <plot-single-panel>` for detailed documentation for
-:code:`single_panel()`.
+For detailed documentation, click on :func:`gcpy.plot.single_panel`.
 
 .. _capabilities-spatial-sixpanel:
 
@@ -85,6 +92,8 @@ Six-panel plots are used to compare results across two different model
 runs. Single level and zonal mean plotting options are both available.
 The two model runs do not need to be the same resolution or even the
 same grid type (GEOS-Chem Classic and GCHP output can be mixed at will).
+
+Single level comparison:
 
 .. code:: python
 
@@ -112,10 +121,15 @@ same grid type (GEOS-Chem Classic and GCHP output can be mixed at will).
     )
     plt.show()
 
+|br|
 
 .. image:: _static/images/six\_panel\_single\_level.png
    :align: center
    :width: 80%
+
+|br|
+
+Zonal mean comparison:
 
 .. code:: python
 
@@ -133,9 +147,12 @@ same grid type (GEOS-Chem Classic and GCHP output can be mixed at will).
    :align: center
    :width: 80%
 
+|br|
+
 :ref:`Click here <six-panel>` for an example six panel plotting
-script. :ref:`Click here <plot-six-panel>` for complete documentation
-for :code:`compare_single_level()` and :code:`compare_zonal_mean()`.
+script.  For complete documentation, click on
+:func:`gcpy.plot.compare_single_level` and
+:func:`gcpy.plot_compare_zonal_mean`.
 
 .. _capabilities-spatial-benchmark:
 
@@ -144,11 +161,11 @@ Comprehensive benchmark plotting
 
 The `GEOS-Chem Support Team
 <https://geoschem.github.io/support-team>`_ uses comprehensive
-plotting functions (stored in modules located in the
-:file:`gcpy/benchmark/modules` folder) to generate plots and tables
-from of diagnostic output of GEOS-Chem benchmark
-simulations. Functions like :ref:`bmk-funcs-plot-conc` generate plots
-for every variable in  a given collection
+plotting functions (see :func:`gcpy.benchmark.modules`) to generate
+plots and tables from of diagnostic output of GEOS-Chem benchmark
+simulations. Functions like
+:func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_conc_plots`
+generate plots for every variable in  a given collection
 (e.g. :literal:`SpeciesConc`) at multiple vertical levels (surface,
 500hPa, zonal mean) and divide plots into separate folders based on
 category (e.g. Chlorine, Aerosols). For more information about the
@@ -176,7 +193,8 @@ the GEOS-Chem :literal:`Budget` diagnostics) or in overall averages for
 different aerosols or the Transport Tracers simulation.
 
 Operations budget tables are created using the
-:ref:`bmk-funcs-table-ops` function and appear as follows:
+:func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_operations_budget`
+function and appear as follows:
 
 .. image:: _static/images/budget\_table.png
    :align: center
@@ -188,10 +206,12 @@ Operations budget tables are created using the
 Mass tables
 -----------
 
-The :ref:`bmk-funcs-table-mass` function uses species concentrations
-and info from meteorology files to generate the total mass of species
-in certain segments of the atmosphere (currently global or only the
-troposphere). An example table is shown below:
+The
+:func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_mass_tables`
+function uses species concentrations and info from meteorology files
+to generate the total mass of species in certain segments of the
+atmosphere (currently global or only the troposphere). An example
+table is shown below:
 
 .. image:: _static/images/mass\_table.png
    :align: center
@@ -203,9 +223,10 @@ troposphere). An example table is shown below:
 Emissions tables
 ----------------
 
-The :ref:`bmk-funcs-table-emis` function creates tables of total
-emissions categorized by species or by inventory. Examples of both
-emissions table types are shown below:
+The
+:func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_mass_tables`
+function creates tables of total emissions categorized by species or by
+inventory. Examples of both emissions table types are shown below:
 
 .. image:: _static/images/emissions\_totals.png
    :align: center
@@ -236,13 +257,13 @@ several horizontal regridding functions built off of xESMF. GCPy
 automatically handles most regridding needs when plotting GEOS-Chem
 data.
 
-:ref:`gcpy.file_regrid() <regrid-classic>` allows you to regrid
-GEOS-Chem Classic and GCHP files between different grid resolutions
-and can be called from the command line or as a function.
+:func:`gcpy.file_regrid` allows you to regrid GEOS-Chem Classic and
+GCHP files between different grid resolutions and can be called from
+the command line or as a function.
 
-:ref:`gcpy.regrid_restart_file <regrid-gchp>` allows you to regrid
-GCHP files between between different grid resolutions and grid
-types (standard and stretched  cubed-sphere grids), and can be
+:func:`gcpy.regrid_restart_file` allows you to regrid GCHP files
+between between different grid resolutions and grid types
+(standard and stretched  cubed-sphere grids), and can be
 called from the command line.
 
 The 72-level and 47-level vertical grids are pre-defined in
@@ -251,8 +272,8 @@ and B coefficients of the hybrid vertical grid
 <wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_vertical_grids>`__.
 
 When plotting data of differing grid types or horizontal resolutions
-using :ref:`compare_single_level <plot-csl>`
-or :ref:`compare_zonal_mean <plot-czm>`, you
+using :func:`gcpy.plot.compare_single_level`
+or :func:`gcpy.plot.compare_zonal_mean`, you
 can specify a comparison resolution using the :literal:`cmpres`
 argument. This resolution will be used for the difference panels in
 each plot (the bottom four panels rather than the top two raw data

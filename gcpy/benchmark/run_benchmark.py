@@ -1,42 +1,51 @@
 #!/usr/bin/env python
-"""
-run_benchmark.py: Driver script for creating benchmark plots.
+r"""
+Driver script for creating plots and tables from GEOS-Chem
+benchmark simulations.
+
+This script corresponds with GCPy 1.8.0. Edit this version ID if releasing
+a new version of GCPy.
 
 Run this script to generate benchmark comparisons between:
 
-    (1) GCC (aka GEOS-Chem "Classic") vs. GCC
-    (2) GCHP vs GCC
-    (3) GCHP vs GCHP
-    (4) GCHP vs GCC diff-of-diffs
+1. GCC (aka GEOS-Chem "Classic") vs. GCC
+2. GCHP vs GCC
+3. GCHP vs GCHP
+4. GCHP vs GCC diff-of-diffs
 
 You can customize this by editing the settings in the corresponding yaml
 configuration file.
 
-Calling sequence:
+Examples
+--------
 
+.. code-block:: console
+
+    $ conda activate gcpy_env
     $ python -m gcpy.benchmark.run_benchmark <path-to-configuration-file>
 
-Remarks:
+Notes
+-----
 
-    By default, matplotlib will try to open an X window for plotting.
-    If you are running this script in an environment where you do not have
-    an active X display (such as in a computational queue), then you will
-    need to use these commands to disable the X-window functionality.
+By default, matplotlib will try to open an X window for plotting.
+If you are running this script in an environment where you do not have
+an active X display (such as in a computational queue), then you will
+need to use these commands to disable the X-window functionality.
 
-        import os
-        os.environ["QT_QPA_PLATFORM"]="offscreen"
+.. code-block:: python
 
-    For more information, please see this issue posted at the ipython site:
+   import os
+   os.environ["QT_QPA_PLATFORM"]="offscreen"
 
-        https://github.com/ipython/ipython/issues/10627
+For more information, please see this issue posted at the ipython site:
+https://github.com/ipython/ipython/issues/10627
 
-    Also, to disable matplotlib from trying to open X windows, you may
-    need to set the following environment variable in your shell:
+Also, to disable matplotlib from trying to open X windows, you may
+need to set the following environment variable in your shell:
 
-        $ export MPLBACKEND=agg
+.. code-block:: console
 
-This script corresponds with GCPy 1.7.1. Edit this version ID if releasing
-a new version of GCPy.
+   $ export MPLBACKEND=agg
 """
 
 # ======================================================================
@@ -61,8 +70,7 @@ from gcpy.benchmark.modules.benchmark_funcs import \
     make_benchmark_mass_accumulation_tables, \
     make_benchmark_operations_budget, \
     make_benchmark_collection_2d_var_plots, \
-    make_benchmark_collection_3d_var_plots, \
-    make_benchmark_operations_budget
+    make_benchmark_collection_3d_var_plots
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
 from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
@@ -91,9 +99,10 @@ def choose_benchmark_type(config):
     """
     Decides which benchmark to run (default, 1yr, or 1yr_tt)
 
-    Args:
-        config : dict
-            Contains configuration for 1mon benchmark from yaml file.
+    Parameters
+    ----------
+    config : dict
+        Contains configuration for 1mon benchmark from yaml file.
     """
     if not (
         config["options"]["bmk_type"] == "FullChemBenchmark"
@@ -134,9 +143,10 @@ def run_benchmark_default(config):
     """
     Runs flexible date benchmark with the given configuration settings.
 
-    Args:
-        config : dict
-            Contains configuration for 1mon benchmark from yaml file.
+    Parameters
+    ----------
+    config : dict
+        Contains configuration for 1mon benchmark from yaml file.
     """
     # =====================================================================
     # Data directories
@@ -477,8 +487,8 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                colname,
                 spcdb_files,
-                colname=colname,
                 var_prefix=colname,
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -504,8 +514,8 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_refstr,
                 dev,
                 gcc_vs_gcc_devstr,
+                colname,
                 spcdb_files,
-                colname=colname,
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
@@ -519,13 +529,14 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCC vs. GCC 2D StateMet plots %%%")
 
             # Create plots
+            colname = "StateMet"
             make_benchmark_collection_2d_var_plots(
                 refmet,
                 gcc_vs_gcc_refstr,
                 devmet,
                 gcc_vs_gcc_devstr,
+                colname,
                 spcdb_files,
-                colname="StateMet",
                 var_prefix='Met',
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -540,13 +551,14 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCC vs. GCC 3D StateMet plots %%%")
 
             # Create plots
+            colname = "StateMet"
             make_benchmark_collection_3d_var_plots(
                 refmet,
                 gcc_vs_gcc_refstr,
                 devmet,
                 gcc_vs_gcc_devstr,
+                colname,
                 spcdb_files,
-                colname="StateMet",
                 var_prefix='Met',
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -730,6 +742,7 @@ def run_benchmark_default(config):
                 dev,
                 gcc_ref_sec_diff,
                 gcc_dev_sec_diff,
+                spcdb_files,
                 benchmark_type=config["options"]["bmk_type"],
                 label=comparison_str,
                 dst=gcc_vs_gcc_tablesdir,
@@ -865,7 +878,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 verbose=False,
             )
-            
+
 
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC benchmark plots and tables
@@ -1071,8 +1084,8 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                colname,
                 spcdb_files,
-                colname=colname,
                 var_prefix=colname,
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1103,8 +1116,8 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_refstr,
                 dev,
                 gchp_vs_gcc_devstr,
+                colname,
                 spcdb_files,
-                colname=colname,
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
@@ -1118,13 +1131,14 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCHP vs. GCC 2D StateMet plots %%%")
 
             # Create plots
+            colname = "StateMet"
             make_benchmark_collection_2d_var_plots(
                 refmet,
                 gchp_vs_gcc_refstr,
                 devmet,
                 gchp_vs_gcc_devstr,
+                colname,
                 spcdb_files,
-                colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1139,13 +1153,14 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCHP vs. GCC 3D StateMet plots %%%")
 
             # Create plots
+            colname = "StateMet"
             make_benchmark_collection_3d_var_plots(
                 refmet,
                 gchp_vs_gcc_refstr,
                 devmet,
                 gchp_vs_gcc_devstr,
+                colname,
                 spcdb_files,
-                colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1386,6 +1401,7 @@ def run_benchmark_default(config):
                 dev,
                 gcc_dev_sec_diff,
                 gchp_dev_sec_diff,
+                spcdb_files,
                 benchmark_type=config["options"]["bmk_type"],
                 label=comparison_str,
                 operations=[
@@ -1463,7 +1479,7 @@ def run_benchmark_default(config):
                 verbose=False,
                 dev_gchp=True
             )
-            
+
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCHP benchmark plots and tables
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1697,8 +1713,8 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                colname,
                 spcdb_files,
-                colname=colname,
                 var_prefix=colname,
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1734,8 +1750,8 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_refstr,
                 dev,
                 gchp_vs_gchp_devstr,
+                colname,
                 spcdb_files,
-                colname=colname,
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
@@ -1749,13 +1765,14 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCHP vs. GCHP 2D StateMet plots %%%")
 
             # Create plots
+            colname = "StateMet"
             make_benchmark_collection_2d_var_plots(
                 refmet,
                 gchp_vs_gchp_refstr,
                 devmet,
                 gchp_vs_gchp_devstr,
+                colname,
                 spcdb_files,
-                colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1770,13 +1787,14 @@ def run_benchmark_default(config):
             print("\n%%% Creating GCHP vs. GCHP 3D StateMet plots %%%")
 
             # Create plots
+            colname = "StateMet"
             make_benchmark_collection_3d_var_plots(
                 refmet,
                 gchp_vs_gchp_refstr,
                 devmet,
                 gchp_vs_gchp_devstr,
+                colname,
                 spcdb_files,
-                colname="StateMet",
                 var_prefix='Met',
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
@@ -1898,7 +1916,7 @@ def run_benchmark_default(config):
                 gchp_res=config["data"]["dev"]["gchp"]["resolution"],
                 gchp_is_pre_14_0=config["data"]["dev"]["gchp"]["is_pre_14.0"]
             )
-            
+
             # Date strings for start of run
             ref_date_str = datetime64_to_str(
                 gchp_ref_date,
@@ -2042,6 +2060,7 @@ def run_benchmark_default(config):
                 dev,
                 gchp_ref_sec_diff,
                 gchp_dev_sec_diff,
+                spcdb_files,
                 benchmark_type=config["options"]["bmk_type"],
                 label=comparison_str,
                 operations=[
@@ -2119,7 +2138,7 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gchp_tablesdir,
                 overwrite=True,
             )
-            
+
         # ==================================================================
         # GCHP vs. GCHP summary table
         # ==================================================================
@@ -2181,7 +2200,7 @@ def run_benchmark_default(config):
                 overwrite=True,
                 verbose=False,
             )
-            
+
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     # Create GCHP vs GCC difference of differences benchmark plots
     # %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -2192,15 +2211,15 @@ def run_benchmark_default(config):
 
             # Species database files (just use the gcc ones)
             spcdb_files = get_species_database_files(config, "gcc", "gcc")
-            
+
             # Filepaths
             gcc_ref = get_filepath(
-                gcc_vs_gcc_refdir, 
+                gcc_vs_gcc_refdir,
                 "SpeciesConc", 
                 gcc_ref_date
             )
             gcc_dev = get_filepath(
-                gcc_vs_gcc_devdir, 
+                gcc_vs_gcc_devdir,
                 "SpeciesConc", 
                 gcc_dev_date
             )

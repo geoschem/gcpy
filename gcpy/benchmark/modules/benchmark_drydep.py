@@ -1,5 +1,6 @@
 """
-Specific utilities for creating plots from GEOS-Chem benchmark simulations.
+Creates dry deposition velocity plots from GEOS-Chem benchmark
+simulation output.
 """
 import gc
 import numpy as np
@@ -34,59 +35,58 @@ def make_benchmark_drydep_plots(
 ):
     """
     Creates six-panel comparison plots (PDF format) from GEOS-Chem
-    benchmark simualtion output.  Can be used with data collections
+    benchmark simulation output.  Can be used with data collections
     that do not require special handling (e.g. concentrations).
 
-    Args:
-        ref: str
-            Path name for the "Ref" (aka "Reference") data set.
-        refstr: str
-            A string to describe ref (e.g. version number)
-        dev: str
-            Path name for the "Dev" (aka "Development") data set.
-            This data set will be compared against the "Reference"
-            data set.
-        devstr: str
-            A string to describe dev (e.g. version number)
-        spcdb_files : list 
-            Paths to species_database.yml files in Ref & Dev rundirs
-
-    Keyword Args (optional):
-        collection : str
-            Name of the diagnostic collection (e.g. "DryDep")
-        dst: str
-            A string denoting the destination folder where a PDF
-            file containing plots will be written.
-            Default value: ./benchmark
-        subdst: str
-            A string denoting the sub-directory of dst where PDF
-            files containing plots will be written.  In practice,
-            subdst is only needed for the 1-year benchmark output,
-            and denotes a date string (such as "Jan2016") that
-            corresponds to the month that is being plotted.
-            Default value: None
-        benchmark_type: str
-            A string denoting the type of benchmark output to plot, options are
-            FullChemBenchmark, TransportTracersBenchmark, or CH4Benchmark.
-            Default value: "FullChemBenchmark"
-        overwrite: bool
-            Set this flag to True to overwrite files in the
-            destination folder (specified by the dst argument).
-            Default value: False.
-        verbose: bool
-            Set this flag to True to print extra informational output.
-            Default value: False.
-        n_job: int
-            Defines the number of simultaneous workers for parallel plotting.
-            Set to 1 to disable parallel plotting. Value of -1 allows the
-            application to decide.
-            Default value: -1
-        time_mean : bool
-            Determines if we should average the datasets over time
-            Default value: False
-        varlist: list of str
-            List of variables to plot.  If varlist is None, then
-            all common variables in Ref & Dev will be plotted.
+    Parameters
+    ----------
+    ref : str
+        Path name for the "Ref" (aka "Reference") data set.
+    refstr : str
+        A string to describe ref (e.g. version number).
+    dev : str
+        Path name for the "Dev" (aka "Development") data set.
+        This data set will be compared against the "Reference"
+        data set.
+    devstr : str
+        A string to describe dev (e.g. version number).
+    spcdb_files : list
+        Paths to species_database.yml files in Ref & Dev rundirs.
+    collection : str, optional
+        Name of the diagnostic collection (e.g. "DryDep").
+    dst : str, optional
+        A string denoting the destination folder where a PDF
+        file containing plots will be written.
+        Default value: ./benchmark
+    subdst : str, optional
+        A string denoting the sub-directory of dst where PDF
+        files containing plots will be written.  In practice,
+        subdst is only needed for the 1-year benchmark output,
+        and denotes a date string (such as "Jan2016") that
+        corresponds to the month that is being plotted.
+        Default value: None
+    benchmark_type : str, optional
+        A string denoting the type of benchmark output to plot, options are
+        FullChemBenchmark, TransportTracersBenchmark, or CH4Benchmark.
+        Default value: "FullChemBenchmark"
+    overwrite : bool, optional
+        Set this flag to True to overwrite files in the
+        destination folder (specified by the dst argument).
+        Default value: False
+    verbose : bool, optional
+        Set this flag to True to print extra informational output.
+        Default value: False
+    n_job : int, optional
+        Defines the number of simultaneous workers for parallel plotting.
+        Set to 1 to disable parallel plotting. Value of -1 allows the
+        application to decide.
+        Default value: -1
+    time_mean : bool, optional
+        Determines if we should average the datasets over time.
+        Default value: False
+    varlist : list of str, optional
+        List of variables to plot.  If varlist is None, then
+        all common variables in Ref & Dev will be plotted.
     """
 
     # Replace whitespace in the ref and dev labels
@@ -169,8 +169,8 @@ def drydepvel_species():
     Returns a list of species for the dry deposition velocity
     (DryDepVel) benchmark plots:
 
-    Returns:
-    --------
+    Returns
+    -------
     varnames (list of str): Variable names to plot
     """
     # These are key dry deposition species (as per Mat Evans)

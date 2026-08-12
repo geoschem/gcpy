@@ -1,6 +1,18 @@
 #!/usr/bin/env python3
 """
-Prints information about a GEOS-Chem Classic horizontal grid
+Prints information about a GEOS-Chem Classic horizontal grid.
+
+Examples
+--------
+
+Run the following commands:
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   (gcpy_env) $ python -m gcpy.examples.grids/display_gcclassic_grid_info
+
+And select your desired grid from the menu.
 """
 from gcpy.grid import make_grid_ll
 
@@ -9,8 +21,10 @@ def print_vals(values):
     """
     Prints a list of numbers 8 columns wide with 5 decimal places.
 
-    Args
-    values : list-like : Values to be displayed
+    Parameters
+    ----------
+    values : list-like
+        Values to be displayed
     """
     cols = 8
     for i in range(0, len(values), cols):
@@ -22,8 +36,10 @@ def create_grid_and_print_info(grid_params):
     """
     Creates a grid object and prints its metadata.
 
-    Args
-    grid_params : tuple : Resolution, lon range, lat range
+    Parameters
+    ----------
+    grid_params : tuple
+        Resolution, lon range, lat range
     """
 
     # Arguments
@@ -56,14 +72,17 @@ def create_grid_and_print_info(grid_params):
 
 def get_grid_parameters(selection):
     """
-    Returns metadata about a given grid
+    Returns metadata about a given grid.
 
-    Args
-    selection   : int   : Number of the selected grid
+    Parameters
+    ----------
+    selection : int
+        Number of the selected grid
 
     Returns
-    grid_params : tuple : Resolution, lon range, lat range
-
+    -------
+    grid_params : tuple
+        Resolution, lon range, lat range
     """
     #    Resolution       # Lon range            # Lat range
     grids = [
@@ -98,7 +117,9 @@ def display_menu():
     Displays a menu of grids to choose from.
 
     Returns
-    selection : int : Number of the grid selected by the user
+    -------
+    selection : int
+        Number of the grid selected by the user
     """
     msg = """\
 Please select a GEOS-Chem Classic horizontal grid:
