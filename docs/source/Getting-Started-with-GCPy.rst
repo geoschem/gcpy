@@ -98,8 +98,8 @@ GCPy requires several other Python packages, which are listed below.
      - 3.6.1
      - 3.7.1
    * - pytest
-     - 3.8.4
-     - 3.8.4
+     - 9.0.3
+     - 9.0.3
    * - `python <https://www.python.org/>`_
      - 3.12.0
      - 3.13.0
