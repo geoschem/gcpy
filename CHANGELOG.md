@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `gcpy/examples/diagnostics/compare_diags.yml`
 - Added `.gitattributes`, `CLAUDE.md` and `SECURITY.md` files 
 - Added `.pylintrc` which will ignore harmless warnings based on GCPy's code style
+- Added "AI disclosure" section to `.github/PULL_REQUEST_TEMPLATE.md`
 
 ### Changed
 - Bumped pytest to 9.0.3 and updated documentation accordingly
