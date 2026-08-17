@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added GitHub Action `build-gcpy-environment-py314.yml` to build and test the GCPy environment with Python 3.14
 - Added `.gitattributes`, `CLAUDE.md` and `SECURITY.md` files 
 - Added `.pylintrc` which will ignore harmless warnings based on GCPy's code style
+- Added "AI disclosure" section to `.github/PULL_REQUEST_TEMPLATE.md`
 
 ### Changed
 - Bumped pytest to 9.0.3 and updated documentation accordingly
