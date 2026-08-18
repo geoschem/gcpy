@@ -11,6 +11,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Bumped pytest to 9.0.3 in `_setup.py` and environment files; Updated documentation accordingly
 
+### Fixed
+- Fixed tuple unpack error in `gcpy/benchmark/modules/benchmark_species_changes.py`
+
+### Removed
+- Removed the Advected column from the wiki tables in `gcpy/benchmark/modules/benchmark_species_changes.py` since `Is_Advected` is no longer a species_database field
+
 ## [1.8.0] - 2026-08-10
 ### Added
 - Added HONO and NAP to `gcpy/benchmark/modules/emission_species.yml`

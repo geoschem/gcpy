@@ -145,7 +145,7 @@ def get_species_metadata(log_file, species_database):
         species[name] = append_keys(
             species[name],
             species_database[name],
-            ["Is_Advected", "Is_Aerosol", "Is_Gas", "Formula", "FullName"]
+            ["Is_Aerosol", "Is_Gas", "Formula", "FullName"]
         )
 
     return pd.DataFrame.from_dict(species).drop("ModelId")
@@ -180,7 +180,6 @@ def write_wiki_table_header(ofile):
     line += "!width='100px' bgcolor='#CCCCCC'|Name\n"
     line += "!width='100px' bgcolor='#CCCCCC'|Formula\n"
     line += "!width='200px' bgcolor='#CCCCCC'|Fullname\n"
-    line += "!width='30px' bgcolor='#CCCCCC'|Advected\n"
     line += "!width='30px' bgcolor='#CCCCCC'|Dry deposited\n"
     line += "!width='30px' bgcolor='#CCCCCC'|Gas\n"
     line += "!width='30px' bgcolor='#CCCCCC'|Photolyzed\n"
@@ -204,7 +203,6 @@ def write_wiki_row(species, ofile):
     line += f"|{species.name}\n"
     line += f"|{species['Formula']}\n"
     line += f"|{species['FullName']}\n"
-    line += f"|{bool_to_str(species['Is_Advected'])}\n"
     line += f"|{bool_to_str(species['DryDepId'])}\n"
     line += f"|{bool_to_str(species['Is_Gas'])}\n"
     line += f"|{bool_to_str(species['PhotolId'])}\n"
@@ -318,11 +316,11 @@ def make_benchmark_species_changes_wiki_tables(
     # Read the species database files in the Ref & Dev rundirs, and
     # return a dict containing metadata for the union of species.
     # We'll need properties such as mol. wt. for unit conversions, etc.
-    species_database = read_species_metadata(spcdb_files, quiet=True)
+    ref_spcdb, dev_spcdb = read_species_metadata(spcdb_files, quiet=True)
 
     # Get species metadata for the Ref and Dev versions
-    ref = get_species_metadata(ref_log, species_database)
-    dev = get_species_metadata(dev_log, species_database)
+    ref = get_species_metadata(ref_log, ref_spcdb)
+    dev = get_species_metadata(dev_log, dev_spcdb)
 
     # Get list of species in Ref, Dev and both Ref & Dev
     in_ref = set(list(ref.columns))
