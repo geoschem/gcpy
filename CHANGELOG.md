@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Bumped pytest to 9.0.3 in `_setup.py` and environment files; Updated documentation accordingly
 
+### Fixed
+- Fixed a float32 overflow in `gcpy/benchmark/modules/oh_metrics.py` that produced `inf` global airmass, CH4 lifetime, and MCF lifetime values
+
 ## [1.8.0] - 2026-08-10
 ### Added
 - Added HONO and NAP to `gcpy/benchmark/modules/emission_species.yml`
