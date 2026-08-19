@@ -7,12 +7,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - TBD
 ### Added
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
+- Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
 
 ### Changed
 - Bumped pytest to 9.0.3 in `_setup.py` and environment files; Updated documentation accordingly
 
 ### Fixed
 - Fixed a float32 overflow in `gcpy/benchmark/modules/oh_metrics.py` that produced `inf` global airmass, CH4 lifetime, and MCF lifetime values
+- Fixed tuple unpack error in `gcpy/benchmark/modules/benchmark_species_changes.py`
+
+### Removed
+- Removed the Advected column from the wiki tables in `gcpy/benchmark/modules/benchmark_species_changes.py`
 
 ## [1.8.0] - 2026-08-10
 ### Added
