@@ -178,6 +178,7 @@ def six_plot(
         vmin,
         vmax,
         subplot,
+        plot_type=plot_type,
         use_cmap_RdBu=use_cmap_RdBu,
         log_color_scale=log_color_scale,
         ratio_log=ratio_log
@@ -568,6 +569,7 @@ def compute_norm_for_plot(
         vmin,
         vmax,
         subplot,
+        plot_type="single_level",
         use_cmap_RdBu=False,
         log_color_scale=False,
         ratio_log=False,
@@ -583,6 +585,17 @@ def compute_norm_for_plot(
         Min and max value for this subplot of a 6-panel plot.
     subplot : str
         Subplot name (see routine six_panel_subplot_names).
+    plot_type : str, optional
+        Either "single_level" or "zonal_mean".  Only zonal-mean plots
+        use a tolerance (rather than exact equality) to decide if
+        vmin/vmax are "nearly constant", since that is the only plot
+        type where CS->LL regridding noise on constant fields has been
+        observed to cause color striping (see GitHub issue #330).
+        Single-level fields (e.g. HEMCO emissions fluxes) can have
+        legitimately tiny absolute magnitudes, so a fixed absolute
+        tolerance would otherwise mistake real small-magnitude signals
+        for noise and collapse the panel to a blank/flat color scale.
+        Default value: "single_level"
     use_cmap_RdBu : bool, optional
         Toggles a blue-white-red colormap on (True) or off (False).
         Default value: False
@@ -598,6 +611,8 @@ def compute_norm_for_plot(
     vmin, vmax : float
         Min and max values for this subplot of a 6-panel plot.
     """
+    use_tolerance = "zonal_mean" in plot_type
+
     # ==================================================================
     # Ref and Dev subplots
     # ==================================================================
@@ -607,7 +622,8 @@ def compute_norm_for_plot(
             vmax,
             is_difference=use_cmap_RdBu,
             log_color_scale=log_color_scale,
-            ratio_log=ratio_log
+            ratio_log=ratio_log,
+            use_tolerance=use_tolerance,
         )
 
     # ==================================================================
@@ -617,7 +633,8 @@ def compute_norm_for_plot(
         return plot_val, normalize_colors(
             vmin,
             vmax,
-            is_difference=True
+            is_difference=True,
+            use_tolerance=use_tolerance,
         )
 
     # ==================================================================
@@ -632,6 +649,7 @@ def compute_norm_for_plot(
         log_color_scale=True,
         ratio_log=ratio_log,
         is_ratio=True,
+        use_tolerance=use_tolerance,
     )
 
 
