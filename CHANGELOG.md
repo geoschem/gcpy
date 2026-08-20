@@ -52,6 +52,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed ratio panels rendering numerical noise as saturated color in both `gcpy/plot/compare_zonal_mean.py` and `gcpy/plot/compare_single_level.py`
 - Fixed the fallback `normalize_colors` call in `gcpy/plot/single_panel.py`, which omitted `use_tolerance`
 - Fixed `gcpy/examples/plotting/create_test_plot.py` to import `gcpy.plot` directly instead of relying on that side effect
+- Silenced benign `findfont: Failed to find font weight ...` messages from Matplotlib's `font_manager` logger in `gcpy/plot/core.py`
 
 ### Removed
 - Removed the Advected column from the wiki tables in `gcpy/benchmark/modules/benchmark_species_changes.py`
