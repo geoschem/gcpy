@@ -32,7 +32,10 @@ dependencies:
   - pip                  =26.2.1     # Install packages from PyPi
   - pylint               =4.0.7      # Python linter
   - pyproj               =3.7.2      # Python map projections library
-  - python               =3.14       # Python language
+  - python               =3.14=*cp314 # Python language (standard, GIL-enabled build;
+                                       # avoids the free-threaded "cp314t" build, since
+                                       # cftime and other C-extension dependencies have
+                                       # not yet declared free-threading support)
   - pypdf                =6.16.1     # PDF utilities (bookmarks, etc.)
   - pytest               =9.1.1      # Testing framework
   - requests             =2.34.2     # HTTP library
