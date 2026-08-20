@@ -34,6 +34,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Passed kwarg `yaxis_units` down from `compare_zonal_mean` to `six_plot` to `single_panel`
 - Updated `run_benchmark*` routines to read `yaxis_units` from YAML files and to pass its value to relevant benchmark routines
 - Updated ReadTheDocs documentation for the GCPy environment with Python 3.14
+- Bumped pypdf to 6.16.1 and updated documentation accordingly
 
 ### Fixed
 - Fixed `NameError` in `gcpy/regrid.py`'s `regrid_vertical` (stale `n_other` references left over from the `np_other` NumPy 2.0 compatibility rename) that broke any Ref vs. Dev zonal-mean comparison on mismatched vertical grids

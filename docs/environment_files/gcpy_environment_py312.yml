@@ -33,7 +33,7 @@ dependencies:
   - pylint               =3.2.2      # Python linter
   - pyproj               =3.6.1      # Python map projections library
   - python               =3.12.0     # Python language
-  - pypdf                =6.7.1      # PDF utilities (bookmarks, etc.)
+  - pypdf                =6.16.1     # PDF utilities (bookmarks, etc.)
   - pytest               =9.0.3      # Testing framework
   - requests             =2.33.0     # HTTP library
   - scipy                =1.13.1     # Scientific python package

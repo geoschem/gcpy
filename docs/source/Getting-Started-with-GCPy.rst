@@ -109,8 +109,8 @@ GCPy requires several other Python packages, which are listed below.
      - 3.3.4
      - 4.0.7
    * - pypdf
-     - 6.4.0
-     - 6.4.0
+     - 6.16.1
+     - 6.16.1
      - 6.16.1
    * - pyproj
      - 3.6.1
