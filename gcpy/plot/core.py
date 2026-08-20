@@ -59,6 +59,7 @@ def normalize_colors(
         log_color_scale=False,
         ratio_log=False,
         is_ratio=False,
+        use_tolerance=True,
 ):
     """
     Normalizes a data range to the colormap range used by matplotlib
@@ -87,6 +88,19 @@ def normalize_colors(
         Set this switch to denote that we are using a ratio color
         scale (i.e. with 1, not 0, in the middle of the range).
         Default value: False
+    use_tolerance : bool, optional
+        Whether to treat vmin/vmax as "nearly constant" using
+        is_nearly_constant()'s relative/absolute tolerance (True),
+        or to require an exact match (vmin == vmax, or both zero, or
+        both NaN) before collapsing to a flat color scale (False).
+        The tolerance-based check exists to avoid color striping on
+        zonal-mean plots of constant fields with tiny CS->LL
+        regridding noise (see GitHub issue #330); it should be
+        disabled for plot types (e.g. single-level maps) where fields
+        can have legitimately tiny absolute magnitudes (e.g. HEMCO
+        emissions fluxes), since a fixed absolute tolerance would
+        otherwise mistake real small-magnitude signals for noise.
+        Default value: True
 
     Returns
     -------
@@ -129,15 +143,25 @@ def normalize_colors(
                 copy=False
             )
 
-    if is_nearly_constant([vmin, vmax]):
+    if use_tolerance:
+        # Using a tolerance here (rather than exact equality) avoids
+        # visible color "striping" when a nominally-constant field
+        # carries tiny numerical noise, e.g. from regridding (see
+        # GitHub issue #330). Only safe for plot types where fields
+        # cannot have legitimately tiny absolute magnitudes.
+        is_constant = is_nearly_constant([vmin, vmax])
+    else:
+        is_constant = (
+            (vmin == 0 and vmax == 0)
+            or (np.isnan(vmin) and np.isnan(vmax))
+        )
+
+    if is_constant:
         # If the data is zero (or nearly constant) everywhere, or
         # undefined everywhere (vmin=vmax=NaN), then normalize the
         # data range so that the color corresponding to zero (white)
         # will be placed in the middle of the colorbar, where we will
-        # add a single tick.  Using a tolerance here (rather than
-        # exact equality) avoids visible color "striping" when a
-        # nominally-constant field carries tiny numerical noise, e.g.
-        # from regridding (see GitHub issue #330).
+        # add a single tick.
         #
         # Ratio data is centered on 1, not 0, so it needs its own
         # branch: using the 0-centered Normalize below would place
