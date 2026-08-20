@@ -31,18 +31,16 @@ Source code
 Usage
 =====
 
-Activate your GCPy environment with mamba or conda:
+Activate your GCPy environment with conda:
 
 .. code-block:: console
 
-   $ mamba activate gcpy_env    # If using mamba, or
-
-   $ conda activate gcpy_env    # If using conda
-
+   $ conda activate gcpy_env
+		
 Then run the script as a module:
 
 .. code-block:: console
-
+   		
    $ python -m gcpy.examples.grids.display_gcclassic_grid_info
 
 You will be prompted to select a grid from a numbered menu of the
