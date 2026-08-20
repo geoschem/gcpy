@@ -507,3 +507,67 @@ Many of these functions use pre-defined lists of variables in YAML
 files. If one dataset includes a variable but the other dataset does
 not, the data for that variable in the latter dataset will be
 considered to be NaN and will be plotted as such.
+
+.. _bmk-standalone-scripts:
+
+====================================
+Standalone benchmark utility scripts
+====================================
+
+Unlike the plotting and tabling functions above, the scripts below are
+run directly from the command line rather than being called from
+:file:`run_benchmark.py`.
+
+benchmark_gchp_stats.py
+-----------------------
+
+:file:`gcpy/benchmark/modules/benchmark_gchp_stats.py` scrapes wall
+clock time, peak memory usage, OH metrics, and timer statistics from
+the public S3 benchmark artifacts of a 1-month GCHP benchmark run, and
+prints them in a format that can be pasted into the "GEOS-Chem 1-month
+Benchmark Stats" Google spreadsheet. Unlike GEOS-Chem Classic, GCHP
+does not wrap its executable in :literal:`/usr/bin/time -v`, so this
+script instead parses the "Mem/Swap Used (MB)" lines that MAPL prints
+to the run log, and reads the
+:file:`Benchmark_Timers_<ref>_vs_<dev>.txt` table already produced by
+:mod:`gcpy.benchmark.modules.benchmark_scrape_gchp_timers`.
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ python -m gcpy.benchmark.modules.benchmark_gchp_stats \
+     14.5.0-alpha.5 \
+     14.5.0-alpha.6
+
+benchmark_species_changes.py
+-----------------------------
+
+:file:`gcpy/benchmark/modules/benchmark_species_changes.py` generates
+GEOS-Chem wiki-formatted tables listing the species that were added
+and removed between two versions (by comparing the species metadata
+read from each version's log file), plus a summary table of species
+counts by category (total species, dry-deposited, wet-deposited, and
+photolyzed) for the Ref and Dev versions, with the change and percent
+change between them.
+
+Because :literal:`spcdb_files` takes a list of paths, call
+:func:`gcpy.benchmark.modules.benchmark_species_changes.make_benchmark_species_changes_wiki_tables`
+directly from Python rather than via the command line:
+
+.. code-block:: python
+
+   from gcpy.benchmark.modules.benchmark_species_changes import (
+       make_benchmark_species_changes_wiki_tables
+   )
+
+   make_benchmark_species_changes_wiki_tables(
+       ref_label="14.4.0",
+       ref_log="gcc_14.4.0/14.4.0.log",
+       dev_label="14.5.0",
+       dev_log="gcc_14.5.0/14.5.0.log",
+       spcdb_files=[
+           "gcc_14.4.0/species_database.yml",
+           "gcc_14.5.0/species_database.yml",
+       ],
+       output_file="wiki_tables.txt",
+   )

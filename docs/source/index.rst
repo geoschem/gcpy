@@ -60,6 +60,7 @@ For documentation on setting up and running GEOS-Chem please see our
    Compare-Diags
    Code-Profiling
    Check-GCHP-Emission-Diags
+   Display-GCClassic-Grid-Info
    KPP-Standalone
    Hemco-Examples
    GCST-Examples

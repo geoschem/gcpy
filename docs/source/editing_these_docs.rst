@@ -38,24 +38,24 @@ Sphinx and its dependencies, which are listed in the table below.
      - Version
    * - sphinx
      - Creates online user manual documentation from markup text files
-     - 7.2.6
+     - 8.2.3
    * - `sphinx-autobuild <https://github.com/sphinx-doc/sphinx-autobuild>`_
      - Dynamically builds Sphinx documentation and displays it in a
        browser
-     - 2021.3.14
+     - 2024.2.4
    * - `sphinx_rtd_theme <https://github.com/readthedocs/sphinx_rtd_theme>`_
      - Sphinx theme for ReadTheDocs
-     - 2.0.0
+     - 3.1.0
    * - `sphinxcontrib-bibtex <https://pypi.org/project/sphinxcontrib-bibtex/>`_
      - Inserts LaTeX-style bibliography citations into ReadTheDocs
        documentation
-     - 2.6.2
+     - 2.6.5
    * - `docutils <https://docutils.sourceforge.io/>`_
      - Processes plaintext documentation into HTML and other formats
-     - 0.20.1
-   * - `recommonmark  <https://github.com/readthedocs/recommonmark>`_
-     - Parses text for docutils
-     - 0.7.1
+     - 0.21.2
+   * - `myst-parser <https://github.com/executablebooks/MyST-Parser>`_
+     - Parses Markdown (.md) source files for docutils
+     - 5.0.0
    * - `jinja2 <https://jinja.palletsprojects.com/en/stable/>`_
      - Replaces tokenized strings with text
      - 3.1.6

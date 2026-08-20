@@ -86,14 +86,14 @@ GCPy requires several other Python packages, which are listed below.
      - 2.2.2
      - 2.2.3
    * - pip
-     - 24.0
-     - 25.0.1
+     - 26.1.2
+     - 26.1.2
    * - pylint
      - 3.2.2
      - 3.3.4
    * - pypdf
-     - 6.4.0
-     - 6.4.0
+     - 6.7.1
+     - 6.7.1
    * - pyproj
      - 3.6.1
      - 3.7.1
@@ -104,8 +104,8 @@ GCPy requires several other Python packages, which are listed below.
      - 3.12.0
      - 3.13.0
    * - requests
-     - 2.32.3
-     - 2.32.3
+     - 2.33.0
+     - 2.33.0
    * - `scipy <http://www.scipy.org/>`_
      - 1.13.1
      - 1.15.2
@@ -123,7 +123,7 @@ GCPy requires several other Python packages, which are listed below.
      - 2025.1.2
    * - `xesmf <https://xesmf.readthedocs.io>`_
      - 0.8.5
-     - 0.8.5
+     - 0.8.8
 
 .. rubric:: Notes
 
