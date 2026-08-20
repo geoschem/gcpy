@@ -22,7 +22,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.grids.display_gcclassic_grid_info`
+   * - :mod:`gcpy.examples.grids.display_gcclassic_grid_info`
      - `gcpy/examples/grids/display_gcclassic_grid_info.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/grids/display_gcclassic_grid_info.py>`_
 
 .. _display-gcc-grid-info-usage:

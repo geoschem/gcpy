@@ -51,7 +51,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.diagnostics.compare_diags`
+   * - :mod:`gcpy.examples.diagnostics.compare_diags`
      - `gcpy/examples/diagnostics/compare_diags.py
        <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/compare_diags.py>`_
        `gcpy/examples/diagnostics/compare_diags.yml <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/compare_diags.yml>`_

@@ -30,7 +30,7 @@ The source code for creating benchmark plots is located in the
    * - File or folder
      - Description
    * - :file:`run_benchmark.py`
-     - Benchmark driver script :func:`gcpy.benchmark.run_benchmark`
+     - Benchmark driver script :mod:`gcpy.benchmark.run_benchmark`
    * - :file:`benchmark_slurm.sh`
      - Bash script to submit :file:`run_benchmark.py` as a SLURM batch job
    * - :file:`cloud/`
@@ -41,9 +41,10 @@ The source code for creating benchmark plots is located in the
        1-month and 1-year benchmark plot jobs.
    * - :file:`__init__.py`
      - Python import script
-   * - :func:`gcpy.benchmark.modules`
+   * - :file:`modules/` 
      - Contains Python modules imported into the
-       :file:`run_benchmark.py` script.
+       :file:`run_benchmark.py` script.  See
+       :mod:`gcpy.benchmark.modules` for a detailed listing.
    * - :file:`README.md`
      - Readme file in Markdown format
 
@@ -256,7 +257,7 @@ tables from GEOS-Chem benchmark simulations.
 
    |br|
 
-#. Run :func:`gcpy.benchmark.run_benchmark`.  You may do this in 2
+#. Run :mod:`gcpy.benchmark.run_benchmark`.  You may do this in 2
    ways:
 
    #. Direct execution from the command line:
@@ -385,9 +386,9 @@ create summary tables will be described :ref:`in a separate section
 
    * - Function
      - Plot that it creates
-   * - :func:`gcpy.benchmark.modules.benchmark_models_vs_obs`
+   * - :mod:`gcpy.benchmark.modules.benchmark_models_vs_obs`
      - Modeled ozone vs. surface observations [#D]_ [#E]_
-   * - :func:`gcpy.benchmark.modules.benchmark_models_vs_sondes`
+   * - :mod:`gcpy.benchmark.modules.benchmark_models_vs_sondes`
      - Vertical profiles of modeled ozone vs. ozonesondes [#D]_
 
 .. rubric:: Notes:
@@ -407,8 +408,8 @@ create summary tables will be described :ref:`in a separate section
 
 .. [#C] In this function, parallelization occurs at the species
 	category level. In all other functions, parallelization occurs
-	within calls to :func:`gcpy.plot.compare_single_level`  and
-	:func:`gcpy.plot.compare_zonal_mean()`.
+	within calls to :mod:`gcpy.plot.compare_single_level`  and
+	:mod:`gcpy.plot.compare_zonal_mean`.
 
 .. [#D] Only available in 1-year fullchem benchmarks.
 
@@ -487,11 +488,11 @@ The following functions generate summary tables from GEOS-Chem benchmark output:
    | |br|                                                                                                         |
    | Global OH metrics                                                                                            |
    +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.module.benchmark_funcs.make_benchmark_operations_budget` |br|                          |
+   | :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_operations_budget` |br|                         |
    | |br|                                                                                                         |
    | Species mass after each operation                                                                            |
    +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.ste_flux/make_benchmark_ste_table` |br|                                        |
+   | :func:`gcpy.benchmark.modules.ste_flux.make_benchmark_ste_table` |br|                                        |
    | |br|                                                                                                         |
    | Stratosphere-troposphere flux of O\ :sub:`3`                                                                 |
    +--------------------------------------------------------------------------------------------------------------+
@@ -518,26 +519,42 @@ Unlike the plotting and tabling functions above, the scripts below are
 run directly from the command line rather than being called from
 :file:`run_benchmark.py`.
 
+benchmark_gcclassic_stats.py
+----------------------------
+
+:mod:`gcpy.benchmark.modules.benchmark_gcclassic_stats` scrapes wall
+clock time, peak memory usage, OH metrics, and timer statistics from
+the public S3 benchmark artifacts of a 1-month GEOS-Chem Classic
+benchmark run, and prints them in a format that can be pasted into the
+"GEOS-Chem 1-month Benchmark Stats" Google spreadsheet.
+
+Example:
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ python -m gcpy.benchmark.modules.benchmark_gchp_stats 14.8.0-alpha.5 14.8.0-alpha.6
+      
 benchmark_gchp_stats.py
 -----------------------
 
-:file:`gcpy/benchmark/modules/benchmark_gchp_stats.py` scrapes wall
-clock time, peak memory usage, OH metrics, and timer statistics from
-the public S3 benchmark artifacts of a 1-month GCHP benchmark run, and
+:mod:`gcpy.benchmark.modules.benchmark_gchp_stats` scrapes wall clock
+time, peak memory usage, OH metrics, and timer statistics from the
+public S3 benchmark artifacts of a 1-month GCHP benchmark run, and
 prints them in a format that can be pasted into the "GEOS-Chem 1-month
-Benchmark Stats" Google spreadsheet. Unlike GEOS-Chem Classic, GCHP
-does not wrap its executable in :literal:`/usr/bin/time -v`, so this
-script instead parses the "Mem/Swap Used (MB)" lines that MAPL prints
-to the run log, and reads the
-:file:`Benchmark_Timers_<ref>_vs_<dev>.txt` table already produced by
+Benchmark Stats" Google spreadsheet.
+
+Unlike GEOS-Chem Classic, GCHP does not wrap its executable in
+:literal:`/usr/bin/time -v`, so this script instead parses the
+:literal:`Mem/Swap Used (MB)` lines that MAPL prints to the run log,
+and reads the :file:`Benchmark_Timers_<ref>_vs_<dev>.txt` table
+already produced by
 :mod:`gcpy.benchmark.modules.benchmark_scrape_gchp_timers`.
 
 .. code-block:: console
 
    $ conda activate gcpy_env
-   $ python -m gcpy.benchmark.modules.benchmark_gchp_stats \
-     14.5.0-alpha.5 \
-     14.5.0-alpha.6
+   $ python -m gcpy.benchmark.modules.benchmark_gchp_stats 14.8.0-alpha.5 14.8.0-alpha.6
 
 benchmark_species_changes.py
 -----------------------------

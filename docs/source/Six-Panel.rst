@@ -21,7 +21,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.plotting.plot_comparisons`
+   * - :mod:`gcpy.examples.plotting.plot_comparisons`
      - `gcpy/examples/plotting/plot_comparisons.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_comparisons.py>`_
 
 .. _six-panel-call:

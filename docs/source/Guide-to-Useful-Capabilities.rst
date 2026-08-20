@@ -30,7 +30,7 @@ Single panel plots
 ------------------
 
 Single panel plots are generated through the
-:func:`gcpy.plot.single_panel` function. This function uses Matplotlib
+:mod:`gcpy.plot.single_panel` function. This function uses Matplotlib
 and Cartopy plotting capabilities while handling certain behind the
 scenes operations that are necessary for plotting GEOS-Chem data,
 particularly for cubed-sphere and/or zonal mean data.
@@ -81,7 +81,7 @@ Zonal mean example:
 |br|
 
 :ref:`Click here <single-panel>` for an example single panel plotting script.
-For detailed documentation, click on :func:`gcpy.plot.single_panel`.
+For detailed documentation, click on :mod:`gcpy.plot.single_panel`.
 
 .. _capabilities-spatial-sixpanel:
 
@@ -151,8 +151,8 @@ Zonal mean comparison:
 
 :ref:`Click here <six-panel>` for an example six panel plotting
 script.  For complete documentation, click on
-:func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot_compare_zonal_mean`.
+:mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean`.
 
 .. _capabilities-spatial-benchmark:
 
@@ -161,7 +161,7 @@ Comprehensive benchmark plotting
 
 The `GEOS-Chem Support Team
 <https://geoschem.github.io/support-team>`_ uses comprehensive
-plotting functions (see :func:`gcpy.benchmark.modules`) to generate
+plotting functions (see :mod:`gcpy.benchmark.modules`) to generate
 plots and tables from of diagnostic output of GEOS-Chem benchmark
 simulations. Functions like
 :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_conc_plots`
@@ -257,11 +257,11 @@ several horizontal regridding functions built off of xESMF. GCPy
 automatically handles most regridding needs when plotting GEOS-Chem
 data.
 
-:func:`gcpy.file_regrid` allows you to regrid GEOS-Chem Classic and
+:mod:`gcpy.file_regrid` allows you to regrid GEOS-Chem Classic and
 GCHP files between different grid resolutions and can be called from
 the command line or as a function.
 
-:func:`gcpy.regrid_restart_file` allows you to regrid GCHP files
+:mod:`gcpy.regrid_restart_file` allows you to regrid GCHP files
 between between different grid resolutions and grid types
 (standard and stretched  cubed-sphere grids), and can be
 called from the command line.
@@ -272,8 +272,8 @@ and B coefficients of the hybrid vertical grid
 <wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_vertical_grids>`__.
 
 When plotting data of differing grid types or horizontal resolutions
-using :func:`gcpy.plot.compare_single_level`
-or :func:`gcpy.plot.compare_zonal_mean`, you
+using :mod:`gcpy.plot.compare_single_level`
+or :mod:`gcpy.plot.compare_zonal_mean`, you
 can specify a comparison resolution using the :literal:`cmpres`
 argument. This resolution will be used for the difference panels in
 each plot (the bottom four panels rather than the top two raw data

@@ -34,7 +34,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.community.create_obspack_coords_file`
+   * - :mod:`gcpy.community.create_obspack_coords_file`
      - `gcpy/community/create_obspack_coords_file.py <https://github.com/geoschem/gcpy/blob/main/gcpy/community/create_obspack_coords_file.py>`_
 
 .. _obspack-usage:

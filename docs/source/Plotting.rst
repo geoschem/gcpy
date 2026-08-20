@@ -17,8 +17,8 @@ chapter.
 Six-panel comparison plots
 ==========================
 
-Functions :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean` generate six-panel plots
+Functions :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` generate six-panel plots
 comparing each variable between two datasets. These plots can either
 be saved to PDFs or generated sequentially for visualization in the
 Matplotlib GUI using :func:`matplotlib.pyplot.show`. Each plot uses
@@ -59,7 +59,7 @@ This function generates a comparison plot such as:
    :align: center
 
 For a list of input parameters, click on this link:
-:func:`gcpy.plot.compare_single_level`.
+:mod:`gcpy.plot.compare_single_level`.
 
 .. _plot-czm:
 
@@ -72,15 +72,15 @@ This function generates a comparison plot such as:
    :align: center
 
 For a list of input parameters, click on this link:
-:func:`gcpy.plot.compare_single_level`.
+:mod:`gcpy.plot.compare_single_level`.
 
 .. _plot-shared:
 
 Shared structure
 ----------------
 
-Both :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean` have four positional (required)
+Both :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` have four positional (required)
 arguments.
 
 .. option:: refdata <xarray.Dataset>
@@ -104,8 +104,8 @@ arguments.
 :option:`refstr` and :option:`devstr` title the top two panels of
 each six panel plot.
 
-Functions :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean` share many arguments. Some of
+Functions :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` share many arguments. Some of
 these arguments are plotting options that change the format of the plots:
 
 For example, you may wish to convert units to :math:`\mu`\ g/m\ :sup:`3` when
@@ -123,8 +123,8 @@ outcome.  This may be done with by setting the boolean options
 :literal:`flip_ref=True` and/or :literal:`flip_dev=True`.
 
 The :literal:`n_job` argument governs the parallel plotting settings
-of :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean`. GCPy uses the JobLib library to
+of :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean`. GCPy uses the JobLib library to
 create plots in parallel. Due to limitations with matplotlib, this
 parallelization creates plots (pages) in parallel rather than
 individual panels on a single page. Parallel plot creation is not
@@ -150,8 +150,8 @@ to, at most, the number of cores available on your system.
 Example script
 --------------
 
-Here is a basic script that calls both :func:`gcpy.plot.compare_zonal_mean` and
-:func:`gcpy.plot.compare_single_level`:
+Here is a basic script that calls both :mod:`gcpy.plot.compare_zonal_mean` and
+:mod:`gcpy.plot.compare_single_level`:
 
 .. code-block:: python
 
@@ -177,25 +177,25 @@ Here is a basic script that calls both :func:`gcpy.plot.compare_zonal_mean` and
 Single panel plots
 ==================
 
-Function :func:`gcpy.plot.single_panel` is used to create plots
+Function :mod:`gcpy.plot.single_panel` is used to create plots
 containing only one panel of GEOS-Chem data.  This function is used
-within :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean` to generate each panel plot. It
+within :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` to generate each panel plot. It
 can also be called directly on its own to quickly plot GEOS-Chem data
 in zonal mean or single level format.
 
-The :func:`gcpy.plot.single_panel` function expects data with a 1-length
+The :mod:`gcpy.plot.single_panel` function expects data with a 1-length
 (or non-existent) :literal:`T` (time) dimension, as well as a 1-length
 or non-existent :literal:`Z` (vertical level) dimension.  It also
 contains a few amenities to help with plotting GEOS-Chem data,
 including automatic grid detection for lat/lon or standard
-cubed-sphere :func:`xarray.DataArray`-s. You can also pass NumPy
+cubed-sphere :class:`xarray.DataArray`-s. You can also pass NumPy
 arrays to plot, though you'll need to manually pass grid info in this
 case (with the :literal:`gridtype`, :literal:`pedge`, and
 :literal:`pedge_ind` keyword arguments).
 
 The sample script shown below shows how you can data at a single level
-and timestep from an :func:`xarray.DataArray` object.
+and timestep from an :class:`xarray.DataArray` object.
 
 .. code-block:: python
 

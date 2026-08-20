@@ -30,7 +30,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.diagnostics.check_gchp_emission_diags`
+   * - :mod:`gcpy.examples.diagnostics.check_gchp_emission_diags`
      - `gcpy/examples/diagnostics/check_gchp_emission_diags.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/check_gchp_emission_diags.py>`_
 
 .. _check-gchp-usage:
