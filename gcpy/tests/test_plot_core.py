@@ -3,6 +3,11 @@ Unit tests covering the plotting-side "near-constant" tolerance guard
 added for GitHub issue #330 (zonal mean plots of constant fields
 showed color striping because a colorbar range computed from
 noisy-but-nominally-constant data was not collapsed to a flat scale).
+
+Also covers two follow-on fixes for the same over-eager tolerance
+collapsing real, non-constant, small-magnitude fields to a blank/
+white panel: PR #439 (single-level plots, e.g. HEMCO emissions) and
+zonal-mean Ref/Dev panels (e.g. TransportTracers species like Rn222).
 """
 import numpy as np
 from matplotlib import colors
@@ -20,6 +25,13 @@ NOISY_HI = 100.00064126
 # kg/m2/s, that is small in absolute terms but spatially varying.
 EMIS_VMIN = 0.0
 EMIS_VMAX = 3.0e-10
+
+# Order-of-magnitude of a real (non-noise) TransportTracers zonal-mean
+# field (e.g. SpeciesConcVV_Rn222 in ppb, or WetLossLS_Strat), which is
+# small enough in absolute terms to trip a fixed absolute tolerance
+# tuned for issue #330's ~100-magnitude test case.
+TRACER_VMIN = 0.0
+TRACER_VMAX = 5.0e-11
 
 
 def test_is_nearly_constant_true_for_regridding_noise():
@@ -80,14 +92,13 @@ def test_normalize_colors_collapses_near_constant_ratio_range_around_one():
     assert np.isclose(norm(1.0), 0.5)
 
 
-def test_normalize_colors_default_collapses_small_emissions_like_range():
-    # Documents the failure mode reported for single-level emissions
-    # plots: with the tolerance guard enabled (the default), a small
-    # but real (non-noise) HEMCO flux range gets incorrectly collapsed
-    # to a flat/blank color scale, because the fixed absolute tolerance
-    # in is_nearly_constant() has no relationship to the field's units.
+def test_normalize_colors_default_preserves_small_emissions_like_range():
+    # A small but real (non-noise) HEMCO flux range must not collapse
+    # to a flat/blank color scale, even with the tolerance guard
+    # enabled (the default), since Ref/Dev panels no longer use a
+    # fixed absolute tolerance (see comments in normalize_colors()).
     norm = normalize_colors(EMIS_VMIN, EMIS_VMAX)
-    assert (norm.vmin, norm.vmax) == (0.0, 1.0)
+    assert (norm.vmin, norm.vmax) == (EMIS_VMIN, EMIS_VMAX)
 
 
 def test_normalize_colors_no_tolerance_preserves_small_real_range():
@@ -143,3 +154,26 @@ def test_compute_norm_for_plot_zonal_mean_ref_still_collapses_noise():
         plot_type="zonal_mean",
     )
     assert (norm.vmin, norm.vmax) == (0.0, 1.0)
+
+
+def test_normalize_colors_zonal_mean_ref_preserves_small_real_range():
+    # Regression test for the blank/white Ref & Dev zonal-mean panels
+    # reported for TransportTracers fields (e.g. SpeciesConcVV_Rn222,
+    # WetLossLS_Strat): a small but real (non-noise) range must not be
+    # collapsed just because use_tolerance=True (the zonal-mean default).
+    norm = normalize_colors(TRACER_VMIN, TRACER_VMAX)
+    assert (norm.vmin, norm.vmax) == (TRACER_VMIN, TRACER_VMAX)
+
+
+def test_compute_norm_for_plot_zonal_mean_ref_preserves_small_tracer_range():
+    # Same fix, but end-to-end through compute_norm_for_plot(), the way
+    # it's actually called for a zonal-mean "ref" subplot (e.g.
+    # SpeciesConcVV_Rn222_ZonalMean.pdf, WetLossLS_Strat_ZonalMean.pdf).
+    plot_val, norm = compute_norm_for_plot(
+        np.array([TRACER_VMIN, TRACER_VMAX]),
+        TRACER_VMIN,
+        TRACER_VMAX,
+        "ref",
+        plot_type="zonal_mean",
+    )
+    assert (norm.vmin, norm.vmax) == (TRACER_VMIN, TRACER_VMAX)

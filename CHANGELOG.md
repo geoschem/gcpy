@@ -17,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed a float32 overflow in `gcpy/benchmark/modules/oh_metrics.py` that produced `inf` global airmass, CH4 lifetime, and MCF lifetime values
 - Fixed tuple unpack error in `gcpy/benchmark/modules/benchmark_species_changes.py`
 - Fixed blank/white Ref and Dev panels for small-magnitude fields (e.g. emissions) in single-level six-panel plots in `gcpy/plot/core.py` and `gcpy/plot/six_plot.py`
+- Fixed blank/white Ref and Dev panels for small-magnitude fields in zonal-mean plots in `gcpy/plot/core.py`
 
 ### Removed
 - Removed the Advected column from the wiki tables in `gcpy/benchmark/modules/benchmark_species_changes.py`
