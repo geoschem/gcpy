@@ -10,7 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
 
 ### Changed
-- Bumped pytest to 9.0.3 in `_setup.py` and environment files; Updated documentation accordingly
+- Bumped pytest to 9.0.3 and updated documentation accordingly
+- Updated paths to model vs observations data in 1-year benchmark yaml files
 
 ### Fixed
 - Fixed a float32 overflow in `gcpy/benchmark/modules/oh_metrics.py` that produced `inf` global airmass, CH4 lifetime, and MCF lifetime values
