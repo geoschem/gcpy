@@ -356,7 +356,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 benchmark_type=bmk_type,
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
             # --------------------------------------------------------------
@@ -382,7 +383,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     plot_by_spc_cat=config["options"]["outputs"][
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
                 )
 
         # ==================================================================
@@ -521,7 +523,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
             # --------------------------------------------------------------
@@ -542,7 +545,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     subdst=bmk_mon_yr_strs_dev[mon],
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
                 )
 
         # ==================================================================
@@ -1013,7 +1017,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 benchmark_type=bmk_type,
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
             # --------------------------------------------------------------
@@ -1039,7 +1044,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     plot_by_spc_cat=config["options"]["outputs"][
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
                 )
 
         # ==============================================================
@@ -1182,7 +1188,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
             # --------------------------------------------------------------
@@ -1203,7 +1210,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     subdst=bmk_mon_yr_strs_dev[mon],
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
                 )
 
         # ==================================================================
@@ -1685,7 +1693,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 plot_by_spc_cat=config["options"]["outputs"][
                     "plot_options"]["by_spc_cat"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
             # --------------------------------------------------------------
@@ -1712,7 +1721,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     plot_by_spc_cat=config["options"]["outputs"][
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
                 )
 
         # ==================================================================
@@ -1862,7 +1872,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 time_mean=True,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
             # --------------------------------------------------------------
@@ -1884,7 +1895,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     cmpres=cmpres,
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
                 )
 
         # ==================================================================
@@ -2396,7 +2408,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 second_ref=gcc_dev,
                 second_dev=gchp_dev,
                 cats_in_ugm3=None,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
             # --------------------------------------------------------------
@@ -2424,7 +2437,8 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     second_ref=gcc_dev[mon_ind],
                     second_dev=gchp_dev[mon_ind],
                     cats_in_ugm3=None,
-                    n_job=config["options"]["n_cores"]
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
                 )
 
     # ==================================================================

@@ -8,12 +8,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
 - Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
-- Added `yaxis_units` kwarg to `gcpy/plot/single_panel.py` to display Y-axis as model levels instead of pressure
+- Added keyword argument `yaxis_units` to routines in:
+  - `gcpy/plot/compare_zonal_mean.py`
+  - `gcpy/plot/six_plot.py`
+  - `gcpy/plot/single_panel`
+  - `gcpy/benchmark/modules/benchmark_funcs.py`
+- Added `yaxis_units: pressure` to `gcpy/benchmark/config/*.yml` and `gcpy/benchmark/cloud/*.yml` files
 
 ### Changed
 - Bumped pytest to 9.0.3 and updated documentation accordingly
 - Updated paths to model vs observations data in 1-year benchmark yaml files
 - Passed kwarg `yaxis_units` down from `compare_zonal_mean` to `six_plot` to `single_panel`
+- Updated `run_benchmark*` routines to read `yaxis_units` from YAML files and to pass its value to relevant benchmark routines
 
 ### Fixed
 - Fixed `NameError` in `gcpy/regrid.py`'s `regrid_vertical` (stale `n_other` references left over from the `np_other` NumPy 2.0 compatibility rename) that broke any Ref vs. Dev zonal-mean comparison on mismatched vertical grids
