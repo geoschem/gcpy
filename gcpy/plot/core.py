@@ -149,7 +149,17 @@ def normalize_colors(
         # carries tiny numerical noise, e.g. from regridding (see
         # GitHub issue #330). Only safe for plot types where fields
         # cannot have legitimately tiny absolute magnitudes.
-        is_constant = is_nearly_constant([vmin, vmax])
+        #
+        # Ref/Dev panels (not is_difference, not is_ratio) don't have
+        # a natural zero/one anchor, so we skip the absolute tolerance
+        # and use the relative tolerance only. This still catches the
+        # regridding noise from issue #330 (which is a relative error),
+        # but no longer mistakes small-but-real fields, like
+        # TransportTracers species, for "constant".
+        if not is_difference and not is_ratio:
+            is_constant = is_nearly_constant([vmin, vmax], atol=0.0)
+        else:
+            is_constant = is_nearly_constant([vmin, vmax])
     else:
         is_constant = (
             (vmin == 0 and vmax == 0)
