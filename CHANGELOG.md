@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
 - Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
+- Added `yaxis_units` kwarg to `gcpy/plot/single_panel.py` to display Y-axis as model levels instead of pressure
 
 ### Changed
 - Bumped pytest to 9.0.3 and updated documentation accordingly
