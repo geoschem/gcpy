@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Changed
 - Bumped pytest to 9.0.3 and updated documentation accordingly
 - Updated paths to model vs observations data in 1-year benchmark yaml files
+- Passed kwarg `yaxis_units` down from `compare_zonal_mean` to `six_plot` to `single_panel`
 
 ### Fixed
 - Fixed `NameError` in `gcpy/regrid.py`'s `regrid_vertical` (stale `n_other` references left over from the `np_other` NumPy 2.0 compatibility rename) that broke any Ref vs. Dev zonal-mean comparison on mismatched vertical grids
