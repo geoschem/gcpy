@@ -343,6 +343,8 @@ def compare_data(config, data):
             flip_ref=flip_ref,
             flip_dev=flip_dev,
             varlist=varlist_zonal,
+            yaxis_units=config[
+                "options"]["zonal_mean"].get("yaxis_units", "pressure"),
             pdfname=pdfname,
             weightsdir=config["paths"]["weights_dir"],
             n_job=config["options"]["n_cores"],

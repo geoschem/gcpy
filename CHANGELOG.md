@@ -9,11 +9,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
 - Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
 - Added keyword argument `yaxis_units` to routines in:
-  - `gcpy/plot/compare_zonal_mean.py`
-  - `gcpy/plot/six_plot.py`
-  - `gcpy/plot/single_panel`
   - `gcpy/benchmark/modules/benchmark_funcs.py`
-- Added `yaxis_units: pressure` to `gcpy/benchmark/config/*.yml` and `gcpy/benchmark/cloud/*.yml` files
+  - `gcpy/examples/diagnostics/compare_diags.py`
+  - `gcpy/plot/compare_zonal_mean.py`
+  - `gcpy/plot/single_panel`
+  - `gcpy/plot/six_plot.py`
+- Added `yaxis_units: pressure` to the following YAML files:
+  - `gcpy/benchmark/config/*.yml`
+  - `gcpy/benchmark/cloud/*.yml`
+  - `gcpy/examples/diagnostics/compare_diags.yml`
 
 ### Changed
 - Bumped pytest to 9.0.3 and updated documentation accordingly
