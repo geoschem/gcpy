@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated paths to model vs observations data in 1-year benchmark yaml files
 
 ### Fixed
+- Fixed `NameError` in `gcpy/regrid.py`'s `regrid_vertical` (stale `n_other` references left over from the `np_other` NumPy 2.0 compatibility rename) that broke any Ref vs. Dev zonal-mean comparison on mismatched vertical grids
 - Fixed a float32 overflow in `gcpy/benchmark/modules/oh_metrics.py` that produced `inf` global airmass, CH4 lifetime, and MCF lifetime values
 - Fixed tuple unpack error in `gcpy/benchmark/modules/benchmark_species_changes.py`
 - Fixed blank/white Ref and Dev panels for small-magnitude fields (e.g. emissions) in single-level six-panel plots in `gcpy/plot/core.py` and `gcpy/plot/six_plot.py`
