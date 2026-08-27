@@ -122,6 +122,18 @@ datasets may be misaligned and result in an undesired plotting
 outcome.  This may be done with by setting the boolean options
 :literal:`flip_ref=True` and/or :literal:`flip_dev=True`.
 
+For zonal mean plots, the :literal:`yaxis_units` argument controls
+what units are used for the Y-axis. The default value,
+:literal:`yaxis_units="pressure"`, plots pressure (hPa) on the
+Y-axis (the status quo behavior). Setting
+:literal:`yaxis_units="level"` instead plots the model vertical
+level index on the Y-axis, which can be useful for diagnostic
+purposes (e.g. checking stratosphere/mesosphere level changes).
+This argument is accepted by :mod:`gcpy.plot.single_panel`,
+:mod:`gcpy.plot.compare_zonal_mean`, and :mod:`gcpy.plot.six_plot`.
+Note that :literal:`log_yaxis` is ignored when
+:literal:`yaxis_units="level"`.
+
 The :literal:`n_job` argument governs the parallel plotting settings
 of :mod:`gcpy.plot.compare_single_level` and
 :mod:`gcpy.plot.compare_zonal_mean`. GCPy uses the JobLib library to

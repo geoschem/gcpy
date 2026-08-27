@@ -111,6 +111,7 @@ zonal mean plots.
      zonal_mean:
        create_plot: True
        pdfname: zonal_mean_comparison.pdf
+       yaxis_units: "pressure"        # Values: pressure, level
      totals_and_diffs:
        create_table: True
        diff_type: absdiff             # Values: percent, pctdiff, %, abs, absdiff

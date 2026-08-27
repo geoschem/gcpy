@@ -461,6 +461,20 @@ the top two panels which show data directly from each dataset). There
 are only two scenarios where you will need to pass extra information
 to GCPy to help it determine grids and to regrid when plotting.
 
+.. note::
+
+   If :literal:`Ref` and :literal:`Dev` are on different vertical
+   grids (i.e. a different number of levels) and you request
+   :literal:`yaxis_units="level"` for a zonal mean plot, the
+   :literal:`Ref` and :literal:`Dev` panels will use their own
+   native level numbering while the difference/ratio panels use the
+   common (smaller) target grid's level numbering. As a result,
+   level numbers will not necessarily line up across all six panels.
+   This limitation does not apply to the default
+   :literal:`yaxis_units="pressure"`, since both :literal:`Ref` and
+   :literal:`Dev` are physically interpolated onto a shared pressure
+   grid. See :mod:`gcpy.plot.compare_zonal_mean` for more information.
+
 Pass stretched-grid file paths
 ------------------------------
 
