@@ -42,6 +42,7 @@ def single_panel(
         pedge=np.full((1, 1), -1),
         pedge_ind=np.full((1, 1), -1),
         log_yaxis=False,
+        yaxis_units="pressure",
         xtick_positions=None,
         xticklabels=None,
         proj=ccrs.PlateCarree(),
@@ -123,6 +124,11 @@ def single_panel(
         Set this flag to True to enable log scaling of pressure in
         zonal mean plots.
         Default value: False
+    yaxis_units : str, optional
+        Units to use for the Y-axis of zonal mean plots. Either
+        "pressure" (hPa) or "level" (model vertical level index).
+        log_yaxis is ignored when yaxis_units is "level".
+        Default value: "pressure"
     xtick_positions : list of float, optional
         Locations of lat/lon or lon ticks on plot.
         Default value: None (will place automatically for zonal mean plots)
@@ -174,6 +180,10 @@ def single_panel(
         Plot object created from input.
     """    
     verify_variable_type(plot_vals, (xr.DataArray, np.ndarray, DaskArray))
+    if yaxis_units not in ("pressure", "level"):
+        raise ValueError(
+            f"yaxis_units must be 'pressure' or 'level', got {yaxis_units!r}"
+        )
 
     # Create empty lists for keyword arguments
     if pres_range is None:
@@ -363,21 +373,28 @@ def single_panel(
     ax.set_title(title)
     if plot_type == "zonal_mean":
         # Zonal mean plot
+        if yaxis_units == "level":
+            yvals = pedge_ind
+        else:
+            yvals = pedge[pedge_ind]
         plot = ax.pcolormesh(
             grid["lat_b"],
-            pedge[pedge_ind],
+            yvals,
             plot_vals,
             cmap=comap,
             norm=norm,
             **extra_plot_args)
         ax.set_aspect("auto")
-        ax.set_ylabel("Pressure (hPa)")
-        if log_yaxis:
-            ax.set_yscale("log")
-            ax.yaxis.set_major_formatter(
-                ticker.FuncFormatter(lambda y, _: f"{y:g}")
-            )
-        ax.invert_yaxis()
+        if yaxis_units == "level":
+            ax.set_ylabel("Model Level")
+        else:
+            ax.set_ylabel("Pressure (hPa)")
+            if log_yaxis:
+                ax.set_yscale("log")
+                ax.yaxis.set_major_formatter(
+                    ticker.FuncFormatter(lambda y, _: f"{y:g}")
+                )
+            ax.invert_yaxis()
         ax.set_xticks(xtick_positions)
         ax.set_xticklabels(xticklabels)
 

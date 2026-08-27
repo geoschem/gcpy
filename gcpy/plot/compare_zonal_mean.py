@@ -62,6 +62,7 @@ def compare_zonal_mean(
         verbose=False,
         log_color_scale=False,
         log_yaxis=False,
+        yaxis_units="pressure",
         extra_title_txt=None,
         n_job=-1,
         sigdiff_list=None,
@@ -158,6 +159,18 @@ def compare_zonal_mean(
         Set this flag to True if you wish to create zonal mean
         plots with a log-pressure Y-axis.
         Default value: False
+    yaxis_units : str, optional
+        Units to use for the Y-axis of zonal mean plots. Either
+        "pressure" (hPa) or "level" (model vertical level index).
+        NOTE: If Ref and Dev are on different vertical grids (different
+        number of levels), the Ref and Dev panels use their own native
+        level numbering while the difference/ratio panels use the
+        common (smaller) target grid's level numbering, so level
+        numbers will not necessarily line up across all 6 panels.
+        This limitation does not apply to yaxis_units="pressure",
+        since both Ref and Dev are physically interpolated onto a
+        shared pressure grid.
+        Default value: "pressure"
     extra_title_txt : str, optional
         Specifies extra text (e.g. a date string such as "Jan2016")
         for the top-of-plot title.
@@ -1002,6 +1015,7 @@ def compare_zonal_mean(
                 pedge_inds[i],
                 log_yaxis,
                 plot_type="zonal_mean",
+                yaxis_units=yaxis_units,
                 xtick_positions=xtick_positions,
                 xticklabels=xticklabels,
                 ratio_log=ratio_logs[i],

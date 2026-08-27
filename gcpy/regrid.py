@@ -1175,9 +1175,9 @@ def regrid_vertical(src_data_3d, xmat_regrid, target_levs=None):
     except AttributeError:
         np_other = np.product(src_data_3d.shape[1:])   # NumPy < 2.0
     # ------------------------------------------------------------------
-    temp_data = np.zeros((nlev_out, n_other))
-    in_data = np.reshape(np.array(src_data_3d), (nlev_in, n_other))
-    for ix in range(n_other):
+    temp_data = np.zeros((nlev_out, np_other))
+    in_data = np.reshape(np.array(src_data_3d), (nlev_in, np_other))
+    for ix in range(np_other):
         in_data_vec = np.matrix(in_data[:, ix])
         temp_data[:, ix] = in_data_vec * xmat_renorm
     out_data = np.reshape(temp_data, out_shape)

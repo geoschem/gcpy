@@ -8,12 +8,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
 - Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
+- Added keyword argument `yaxis_units` to routines in:
+  - `gcpy/benchmark/modules/benchmark_funcs.py`
+  - `gcpy/examples/diagnostics/compare_diags.py`
+  - `gcpy/plot/compare_zonal_mean.py`
+  - `gcpy/plot/single_panel`
+  - `gcpy/plot/six_plot.py`
+- Added `yaxis_units: pressure` to the following YAML files:
+  - `gcpy/benchmark/config/*.yml`
+  - `gcpy/benchmark/cloud/*.yml`
+  - `gcpy/examples/diagnostics/compare_diags.yml`
 
 ### Changed
 - Bumped pytest to 9.0.3 and updated documentation accordingly
 - Updated paths to model vs observations data in 1-year benchmark yaml files
+- Passed kwarg `yaxis_units` down from `compare_zonal_mean` to `six_plot` to `single_panel`
+- Updated `run_benchmark*` routines to read `yaxis_units` from YAML files and to pass its value to relevant benchmark routines
 
 ### Fixed
+- Fixed `NameError` in `gcpy/regrid.py`'s `regrid_vertical` (stale `n_other` references left over from the `np_other` NumPy 2.0 compatibility rename) that broke any Ref vs. Dev zonal-mean comparison on mismatched vertical grids
 - Fixed a float32 overflow in `gcpy/benchmark/modules/oh_metrics.py` that produced `inf` global airmass, CH4 lifetime, and MCF lifetime values
 - Fixed tuple unpack error in `gcpy/benchmark/modules/benchmark_species_changes.py`
 - Fixed blank/white Ref and Dev panels for small-magnitude fields (e.g. emissions) in single-level six-panel plots in `gcpy/plot/core.py` and `gcpy/plot/six_plot.py`

@@ -52,6 +52,7 @@ def six_plot(
         pedge=np.full((1, 1), -1),
         pedge_ind=np.full((1, 1), -1),
         log_yaxis=False,
+        yaxis_units="pressure",
         xtick_positions=None,
         xticklabels=None,
         plot_type="single_level",
@@ -127,6 +128,10 @@ def six_plot(
         Set this flag to True to enable log scaling of pressure
         in zonal mean plots.
         Default value: False
+    yaxis_units : str, optional
+        Units to use for the Y-axis of zonal mean plots. Either
+        "pressure" (hPa) or "level" (model vertical level index).
+        Default value: "pressure"
     xtick_positions : list of float, optional
         Locations of lat/lon or lon ticks on plot.
         Default value: None
@@ -203,6 +208,7 @@ def six_plot(
         pedge=pedge,
         pedge_ind=pedge_ind,
         log_yaxis=log_yaxis,
+        yaxis_units=yaxis_units,
         xtick_positions=xtick_positions,
         xticklabels=xticklabels,
         proj=proj,

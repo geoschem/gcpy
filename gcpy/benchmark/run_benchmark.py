@@ -389,7 +389,8 @@ def run_benchmark_default(config):
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -466,7 +467,8 @@ def run_benchmark_default(config):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gcc_vs_gcc_sigdiff,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -519,7 +521,8 @@ def run_benchmark_default(config):
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -563,7 +566,8 @@ def run_benchmark_default(config):
                 dst=gcc_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -963,7 +967,8 @@ def run_benchmark_default(config):
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -1058,7 +1063,8 @@ def run_benchmark_default(config):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gcc_sigdiff,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -1121,7 +1127,8 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -1165,7 +1172,8 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gcc_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -1573,7 +1581,8 @@ def run_benchmark_default(config):
                 benchmark_type=config["options"]["bmk_type"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -1682,7 +1691,8 @@ def run_benchmark_default(config):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 sigdiff_files=gchp_vs_gchp_sigdiff,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -1755,7 +1765,8 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -1799,7 +1810,8 @@ def run_benchmark_default(config):
                 dst=gchp_vs_gchp_resultsdir,
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
         # ==================================================================
@@ -2252,7 +2264,8 @@ def run_benchmark_default(config):
                 second_ref=gcc_dev,
                 second_dev=gchp_dev,
                 cats_in_ugm3=None,
-                n_job=config["options"]["n_cores"]
+                n_job=config["options"]["n_cores"],
+                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
             )
 
 
