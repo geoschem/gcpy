@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased] - TBD
 ### Added
+- Added function `noise_atol` and constants `NOISE_REL_TOL` and `RATIO_ABS_TOL` to `gcpy/plot/core.py`
+- Added functions `ref_dev_data_scale` and `colorbar_for_negligible_diff` to `gcpy/plot/six_plot.py`
+- Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
 - Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
 - Added keyword argument `yaxis_units` to routines in:
@@ -20,6 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `gcpy/examples/diagnostics/compare_diags.yml`
 
 ### Changed
+- Replaced the hardcoded `rtol` and `atol` defaults of `ref_equals_dev` in `gcpy/plot/six_plot.py` with the `NOISE_REL_TOL` and `RATIO_ABS_TOL` constants from `gcpy/plot/core.py`
 - Bumped pytest to 9.0.3 and updated documentation accordingly
 - Updated paths to model vs observations data in 1-year benchmark yaml files
 - Passed kwarg `yaxis_units` down from `compare_zonal_mean` to `six_plot` to `single_panel`
@@ -31,6 +35,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed tuple unpack error in `gcpy/benchmark/modules/benchmark_species_changes.py`
 - Fixed blank/white Ref and Dev panels for small-magnitude fields (e.g. emissions) in single-level six-panel plots in `gcpy/plot/core.py` and `gcpy/plot/six_plot.py`
 - Fixed blank/white Ref and Dev panels for small-magnitude fields in zonal-mean plots in `gcpy/plot/core.py`
+- Fixed blank/white difference panels for small-magnitude fields (e.g. `EmisCO_Aircraft`, ~1e-13 kg/m2/s) in zonal-mean plots; `normalize_colors` in `gcpy/plot/core.py` now scales its absolute tolerance to the magnitude of the Ref and Dev data instead of using a fixed `atol=1e-7`, which had no relationship to the units of the field
+- Fixed the misleading -1..1 colorbar shown on a difference panel whose color scale was collapsed; such panels are now labeled "Differences negligible throughout domain"
 
 ### Removed
 - Removed the Advected column from the wiki tables in `gcpy/benchmark/modules/benchmark_species_changes.py`

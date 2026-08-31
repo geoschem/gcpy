@@ -48,6 +48,45 @@ dataset and the values in the Ref Dataset. The left bottom panel uses
 a full dynamic color map, while the right bottom panel caps the color
 map at 0.5 and 2.0.
 
+.. _plot-flat-colorbars:
+
+Panels with nothing to show
+---------------------------
+
+When there is no meaningful structure to plot in a panel, GCPy
+replaces its color scale with a flat one and its colorbar with a
+single label explaining why.  This is deliberate: without it, a
+colorbar would be stretched across nothing but numerical noise, which
+renders as spurious color "striping" (see `GitHub issue #330
+<https://github.com/geoschem/gcpy/issues/330>`_).  The labels are:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Colorbar label
+     - Meaning
+   * - :literal:`Zero throughout domain`
+     - Every value in the panel is exactly zero.
+   * - :literal:`Undefined throughout domain`
+     - Every value in the panel is :literal:`NaN`.
+   * - :literal:`Differences negligible throughout domain`
+     - The :literal:`Dev - Ref` differences in this panel are
+       negligible compared to the magnitude of the :literal:`Ref` and
+       :literal:`Dev` data themselves, so they are numerical noise
+       (e.g. floating-point round-off or regridding error) rather
+       than a real signal.
+   * - :literal:`Ref and Dev equal throughout domain`
+     - The :literal:`Dev/Ref` ratio is 1 everywhere.
+
+The negligible-difference threshold is relative, not absolute: a
+difference is suppressed only if it is smaller than
+:code:`gcpy.plot.core.NOISE_REL_TOL` (currently
+:math:`1 \times 10^{-5}`) times the magnitude of the data being
+differenced, i.e. unless Ref and Dev agree to better than about
+5 parts per million.  A field with very small absolute values, such as an
+aircraft emissions flux of order :math:`10^{-13}` kg m\ :sup:`-2`
+s\ :sup:`-1`, will therefore still have its real differences plotted.
+
 .. _plot-csl:
 
 Function :code:`compare_single_level`
