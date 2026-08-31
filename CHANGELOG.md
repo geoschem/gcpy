@@ -7,7 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased] - TBD
 ### Added
 - Added function `noise_atol` and constants `NOISE_REL_TOL` and `RATIO_ABS_TOL` to `gcpy/plot/core.py`
-- Added functions `ref_dev_data_scale` and `colorbar_for_negligible_diff` to `gcpy/plot/six_plot.py`
+- Added functions `ref_dev_data_scale`, `colorbar_for_negligible_diff`, and `colorbar_for_flat_restricted_range` to `gcpy/plot/six_plot.py`
 - Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
 - Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`

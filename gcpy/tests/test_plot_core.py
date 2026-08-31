@@ -19,6 +19,7 @@ from matplotlib import colors
 from gcpy.util import is_nearly_constant
 from gcpy.plot.core import NOISE_REL_TOL, noise_atol, normalize_colors
 from gcpy.plot.six_plot import (
+    colorbar_ticks_and_format,
     compute_norm_for_plot,
     ref_dev_data_scale,
     ref_equals_dev,
@@ -423,3 +424,54 @@ def test_negligible_absdiff_implies_ref_equals_dev(rel_diff):
             f"difference panel blanked at rel_diff={rel_diff:g} while "
             "the ratio panel still plots a difference"
         )
+
+
+# ----------------------------------------------------------------------
+# Sparse fields (zero over most of the domain, e.g. aircraft emissions)
+# ----------------------------------------------------------------------
+
+def _absdiff_cbar_label(vmin, vmax, data_scale, subplot="res_absdiff"):
+    """Render one absdiff colorbar and return its tick label(s)."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from gcpy.plot.core import normalize_colors
+
+    norm = normalize_colors(vmin, vmax, is_difference=True,
+                            data_scale=data_scale)
+    fig, axes = plt.subplots()
+    mesh = axes.pcolormesh(np.zeros((4, 4)), cmap="RdBu_r", norm=norm)
+    cbar = fig.colorbar(mesh, ax=axes, orientation="horizontal")
+    cbar.mappable.set_norm(norm)
+    cbar = colorbar_ticks_and_format(
+        np.zeros((4, 4)), cbar, vmin, vmax, subplot,
+        data_scale=data_scale, use_tolerance=True,
+    )
+    fig.canvas.draw()
+    labels = [t.get_text() for t in cbar.ax.get_xticklabels()]
+    plt.close(fig)
+    return labels
+
+
+def test_restricted_panel_of_sparse_field_is_not_called_negligible():
+    # A sparse field (aircraft emissions are zero over most of the
+    # domain) makes the 5th and 95th percentiles of Dev - Ref both
+    # zero, collapsing the restricted-range panel.  That is NOT the
+    # same as the differences being negligible -- the dynamic-range
+    # panel beside it still shows real structure -- so it must not
+    # claim they are.
+    labels = _absdiff_cbar_label(-0.0, 0.0, AIRCRAFT_SCALE)
+    assert labels == ["Zero within the 5th-95th percentile range"]
+
+
+def test_genuinely_negligible_diff_is_still_labeled_negligible():
+    labels = _absdiff_cbar_label(-NOISY_DIFF, NOISY_DIFF, NOISY_HI,
+                                 subplot="dyn_absdiff")
+    assert labels == ["Differences negligible throughout domain"]
+
+
+def test_real_diff_panel_keeps_its_numeric_colorbar():
+    labels = _absdiff_cbar_label(-AIRCRAFT_DIFF, AIRCRAFT_DIFF,
+                                 AIRCRAFT_SCALE, subplot="dyn_absdiff")
+    assert "Differences negligible throughout domain" not in labels
+    assert "Zero within the 5th-95th percentile range" not in labels

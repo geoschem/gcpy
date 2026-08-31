@@ -77,6 +77,11 @@ renders as spurious color "striping" (see `GitHub issue #330
        than a real signal.
    * - :literal:`Ref and Dev equal throughout domain`
      - The :literal:`Dev/Ref` ratio is 1 everywhere.
+   * - :literal:`Zero within the 5th-95th percentile range`
+     - Shown on a restricted-range difference panel when the field is
+       zero over most of the domain (e.g. aircraft emissions), so that
+       its 5th and 95th percentiles are both zero.  The dynamic-range
+       panel beside it may still show real differences.
 
 The negligible-difference threshold is relative, not absolute: a
 difference is suppressed only if it is smaller than

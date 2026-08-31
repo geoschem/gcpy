@@ -856,6 +856,13 @@ def colorbar_ticks_and_format(
                 atol=noise_atol(data_scale)
             )
     ):
+        # A restricted-range panel of a sparse field (e.g. aircraft
+        # emissions, which are zero over most of the domain) collapses
+        # because its 5th and 95th percentiles are both zero, not
+        # because the differences are negligible -- the dynamic-range
+        # panel beside it may well show real structure.  Say so.
+        if vmin == 0 and vmax == 0:
+            return colorbar_for_flat_restricted_range(cbar)
         return colorbar_for_negligible_diff(cbar)
 
     #-------------------------------------------------------------------
@@ -967,6 +974,31 @@ def colorbar_for_negligible_diff(cbar):
     cbar.set_ticks(
         pos,
         labels=["Differences negligible throughout domain"]
+    )
+    cbar.minorticks_off()
+    return cbar
+
+
+def colorbar_for_flat_restricted_range(cbar):
+    """
+    Formats a colorbar object for a "restricted range" subplot whose
+    5th and 95th percentiles are both zero, which happens when a field
+    is zero over most of the domain (e.g. aircraft emissions).
+
+    Parameters
+    ----------
+    cbar : matplotlib.colorbar.Colorbar
+        The input colorbar.
+
+    Returns
+    -------
+    cbar : matplotlib.colorbar.Colorbar
+        The modified colorbar.
+    """
+    pos = [0.0]
+    cbar.set_ticks(
+        pos,
+        labels=["Zero within the 5th-95th percentile range"]
     )
     cbar.minorticks_off()
     return cbar
