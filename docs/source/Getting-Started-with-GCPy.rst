@@ -43,87 +43,115 @@ GCPy requires several other Python packages, which are listed below.
    * - Package
      - Version (Python 3.12)
      - Version (Python 3.13)
+     - Version (Python 3.14)
    * - `cartopy <https://scitools.org.uk/cartopy/docs/latest/>`_
      - 0.23.0
      - 0.24.0
+     - 0.25.0
    * - cf_xarray
      - 0.9.1
      - 0.10.0
+     - 0.11.3
    * - dask
      - 2025.3.0
      - 2025.3.0
+     - 2026.7.1
    * - esmf [#A]_ [#B]_
      - 8.6.1
      - 8.8.1
+     - 8.9.1
    * - `esmpy <https://www.earthsystemcog.org/projects/esmpy/>`_ [#A]_ [#B]_
      - 8.6.1
      - 8.8.1
+     - 8.9.1
    * - gridspec
+     - 0.1.0
      - 0.1.0
      - 0.1.0
    * - ipython
      - 8.25.0
      - 9.0.0
+     - 9.16.1
    * - `joblib <https://joblib.readthedocs.io/en/latest/>`_
      - 1.4.2
      - 1.4.2
+     - 1.5.3
    * - jupyter
      - 1.0.0
+     - 1.1.1
      - 1.1.1
    * - `matplotlib <https://matplotlib.org/>`_
      - 3.8.4
      - 3.10.1
+     - 3.11.1
    * - netcdf4
      - 1.6.5
      - 1.7.2
+     - 1.7.4
    * - netcdf-fortran
      - 4.6.1
      - 4.6.1
+     - 4.6.3
    * - `numpy <http://www.numpy.org/>`_
      - 1.26.4
      - 2.1.3
+     - 2.5.2
    * - `pandas <https://pandas.pydata.org/docs/>`_
      - 2.2.2
      - 2.2.3
+     - 3.0.5
    * - pip
      - 24.0
      - 25.0.1
+     - 26.2.1
    * - pylint
      - 3.2.2
      - 3.3.4
+     - 4.0.7
    * - pypdf
-     - 6.4.0
-     - 6.4.0
+     - 6.16.1
+     - 6.16.1
+     - 6.16.1
    * - pyproj
      - 3.6.1
      - 3.7.1
+     - 3.7.2
    * - pytest
      - 9.0.3
      - 9.0.3
+     - 9.1.1
    * - `python <https://www.python.org/>`_
      - 3.12.0
      - 3.13.0
+     - 3.14.0
    * - requests
      - 2.32.3
      - 2.32.3
+     - 2.34.2
    * - `scipy <http://www.scipy.org/>`_
      - 1.13.1
      - 1.15.2
+     - 1.18.0
    * - `sparselt <https://github.com/liambindle/sparselt>`_
+     - 0.1.3
      - 0.1.3
      - 0.1.3
    * - tabulate
      - 0.9.0
      - 0.9.0
+     - 0.10.0
    * - tk
+     - 8.6.13
      - 8.6.13
      - 8.6.13
    * - `xarray <http://xarray.pydata.org>`_
      - 2024.5.0
      - 2025.1.2
+     - 2026.7.0
    * - `xesmf <https://xesmf.readthedocs.io>`_
      - 0.8.5
      - 0.8.5
+     - 0.9.2
 
 .. rubric:: Notes
 
@@ -146,11 +174,14 @@ Ths file contains the package specifications listed above under the
 
 We also maintain a GCPy environment file for backwards compatibility
 with Python 3.12
-(:file:`docs/environment_files/gcpy_environment_py312.yml`).  However,
-we have not yet been able to construct a GCPy environment using Python
-3.14, due to conflicts in installing the :program:`esmf` and
-:program:`xesmf` packages.  We hope to be able to resolve this in the
-near future.
+(:file:`docs/environment_files/gcpy_environment_py312.yml`), as well as
+an environment file for Python 3.14
+(:file:`docs/environment_files/gcpy_environment_py314.yml`), which
+contains the package specifications listed above under the
+**Version (Python 3.14)** column.  Earlier releases of GCPy could not
+build a Python 3.14 environment due to conflicts in installing the
+:program:`esmf` and :program:`xesmf` packages; these have since been
+resolved upstream on `conda-forge <https://conda-forge.org/>`_.
 
 .. _install-methods:
 

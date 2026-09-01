@@ -1,6 +1,7 @@
 """
 Common variables and functions used by modules in gcpy.plot.
 """
+import logging
 from os import path
 import warnings
 from matplotlib import colors
@@ -10,6 +11,13 @@ from gcpy.util import is_nearly_constant
 
 # Save warnings format to undo overwriting built into pypdf
 _warning_format = warnings.showwarning
+
+# Silence benign "findfont: Failed to find font weight ..." messages.
+# These come from Matplotlib's font_manager logger (not the warnings
+# module), and only indicate that the installed font family lacks an
+# exact-weight face for a style setting below (e.g. "medium");
+# Matplotlib already falls back to the closest available weight.
+logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 
 # Current directory
 _plot_dir = path.dirname(__file__)
