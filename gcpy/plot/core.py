@@ -95,6 +95,50 @@ def noise_atol(data_scale):
     return NOISE_REL_TOL * scale
 
 
+def mask_meaningless_ratio(fracdiff, ref, dev, data_scale):
+    """
+    Masks the cells of a Dev/Ref ratio array in which both Ref and Dev
+    are negligible compared to the magnitude of the field, so that the
+    ratio panel does not present numerical noise as though it were
+    signal.
+
+    Where a field is really zero, regridding (and float32 round-off)
+    leaves behind a tiny residue instead of an exact zero.  Dividing
+    one such residue by another gives a ratio that is arbitrary and
+    routinely saturates the color scale, painting whole regions solid
+    red next to regions of exact zeros left gray.
+
+    Parameters
+    ----------
+    fracdiff : numpy array
+        The Dev/Ref ratio array.
+    ref, dev : numpy array
+        The Ref and Dev data that were divided, in physical units.
+    data_scale : float or None
+        Magnitude of the Ref and Dev data (see
+        six_plot.ref_dev_data_scale).  If None, nothing is masked.
+
+    Returns
+    -------
+    fracdiff : numpy array
+        The ratio array, with the noise-only cells set to NaN.
+
+    Notes
+    -----
+    Only cells where *both* Ref and Dev are negligible are masked.  A
+    cell where Ref is negligible but Dev is not represents a real
+    change from nothing to something, and its large ratio is
+    meaningful, so it is left alone.
+    """
+    atol = noise_atol(data_scale)
+    if atol <= 0.0:
+        return fracdiff
+
+    is_noise = (np.abs(ref) <= atol) & (np.abs(dev) <= atol)
+
+    return np.where(is_noise, np.nan, fracdiff)
+
+
 def normalize_colors(
         vmin,
         vmax,

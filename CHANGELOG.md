@@ -8,7 +8,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### Added
 - Added function `noise_atol` and constants `NOISE_REL_TOL` and `RATIO_ABS_TOL` to `gcpy/plot/core.py`
 - Added functions `ref_dev_data_scale`, `colorbar_for_negligible_diff`, and `colorbar_for_flat_restricted_range` to `gcpy/plot/six_plot.py`
+- Added function `mask_meaningless_ratio` to `gcpy/plot/core.py`
 - Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
+- Added `gcpy/tests/test_util.py`
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
 - Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
 - Added keyword argument `yaxis_units` to routines in:
@@ -37,6 +39,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed blank/white Ref and Dev panels for small-magnitude fields in zonal-mean plots in `gcpy/plot/core.py`
 - Fixed blank/white difference panels for small-magnitude fields (e.g. `EmisCO_Aircraft`, ~1e-13 kg/m2/s) in zonal-mean plots; `normalize_colors` in `gcpy/plot/core.py` now scales its absolute tolerance to the magnitude of the Ref and Dev data instead of using a fixed `atol=1e-7`, which had no relationship to the units of the field
 - Fixed the misleading -1..1 colorbar shown on a difference panel whose color scale was collapsed; such panels are now labeled "Differences negligible throughout domain"
+- Fixed `get_nan_mask` in `gcpy/util.py`, which built its mask from the original array rather than the filled one and so masked nothing at all; it also no longer fails on all-NaN input
+- Fixed blank ratio colorbars (no gradient, ticks, or label) on zonal-mean plots where Ref and Dev are both zero; `colorbar_for_all_zero_or_nan` placed its tick at 0.0, which lies outside the [0.5, 2.0] range of a ratio panel norm and stretched the colorbar axes
+- Fixed `vmin_vmax_for_absdiff_plots` in `gcpy/plot/six_plot.py` to use `np.nanpercentile` instead of `np.percentile`, so that a single NaN no longer collapses the restricted-range difference panel to a flat color scale while it still draws the real (saturated) data
+- Fixed ratio panels rendering numerical noise as saturated color in both `gcpy/plot/compare_zonal_mean.py` and `gcpy/plot/compare_single_level.py`; where a field is really zero, regridding leaves a tiny residue in both Ref and Dev, and dividing one by the other gave an arbitrary ratio.  Such cells are now masked
+- Fixed the fallback `normalize_colors` call in `gcpy/plot/single_panel.py`, which omitted `use_tolerance` and so applied the near-constant tolerance to single-level data, contrary to the scoping decided in GitHub issue #439
 
 ### Removed
 - Removed the Advected column from the wiki tables in `gcpy/benchmark/modules/benchmark_species_changes.py`

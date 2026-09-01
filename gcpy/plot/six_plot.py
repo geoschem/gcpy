@@ -528,10 +528,14 @@ def vmin_vmax_for_absdiff_plots(
         return -vmax, vmax
 
     # Absdiff (restricted range) subplot
+    # NOTE: Use the NaN-safe percentile, to match the dynamic-range
+    # branch above.  np.percentile returns NaN if the array holds even
+    # one NaN, which collapses the panel to a flat color scale while
+    # it still draws the real (saturated) data underneath.
     if subplot in "res_absdiff":
         [pct5, pct95] = [
-            np.percentile(plot_val, 5),
-            np.percentile(plot_val, 95),
+            np.nanpercentile(plot_val, 5),
+            np.nanpercentile(plot_val, 95),
         ]
         vmax = np.max([np.abs(pct5), np.abs(pct95)])
         verbose_print(verbose, rowcol, -vmax, vmax)
@@ -918,10 +922,16 @@ def colorbar_for_all_zero_or_nan(
     cbar : matplotlib.colorbar.Colorbar
         The modified colorbar.
     """
+    # Place the tick at the value the panel's color scale is anchored
+    # to.  Ratio panels are anchored at 1, and their norm spans
+    # [0.5, 2.0]; a tick at 0.0 falls outside that range, which
+    # stretches the colorbar axes and leaves it blank.
     pos = [0.0]
     if subplot in ("ref", "dev"):
         if not use_cmap_RdBu:
             pos = [0.5]
+    elif subplot in ("dyn_ratio", "res_ratio"):
+        pos = [1.0]
     labels = ["Zero throughout domain"]
     if all_nan:
         labels = ["Undefined throughout domain"]

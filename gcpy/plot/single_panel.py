@@ -363,11 +363,17 @@ def single_panel(
         elif isinstance(plot_vals, np.ndarray):
             vmin = np.min(plot_vals) if vmin is None else vmin
             vmax = np.max(plot_vals) if vmax is None else vmax
+        # NOTE: Pass use_tolerance=False so that a standalone panel
+        # behaves the same way the corresponding panel of a six-panel
+        # plot does (see compute_norm_for_plot in six_plot.py).  The
+        # default is True, which would apply the near-constant
+        # tolerance to single-level data as well (see GitHub #439).
         norm = normalize_colors(
             vmin,
             vmax,
             is_difference=use_cmap_RdBu,
-            log_color_scale=log_color_scale)
+            log_color_scale=log_color_scale,
+            use_tolerance="zonal_mean" in plot_type)
 
     # Create plot
     ax.set_title(title)

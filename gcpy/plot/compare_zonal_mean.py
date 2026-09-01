@@ -28,8 +28,8 @@ from gcpy.util import \
 from gcpy.units import check_units, data_unit_is_mol_per_mol
 from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
-    _warning_format, WhGrYlRd
-from gcpy.plot.six_plot import six_plot
+    mask_meaningless_ratio, _warning_format, WhGrYlRd
+from gcpy.plot.six_plot import ref_dev_data_scale, six_plot
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -807,6 +807,18 @@ def compare_zonal_mean(
         else:
             zm_fracdiff = np.abs(np.array(zm_dev_cmp)) /    \
                 np.abs(np.array(zm_ref_cmp))
+            # Suppress ratios of numerical noise to numerical noise,
+            # which would otherwise saturate the color scale wherever
+            # the field is really zero but regridding left a residue
+            zm_fracdiff = mask_meaningless_ratio(
+                zm_fracdiff,
+                np.array(zm_ref_cmp),
+                np.array(zm_dev_cmp),
+                ref_dev_data_scale(
+                    [vmin_ref, vmin_dev, vmin_both],
+                    [vmax_ref, vmax_dev, vmax_both]
+                )
+            )
         zm_fracdiff = np.where(np.abs(zm_fracdiff) ==
                                np.inf, np.nan, zm_fracdiff)
         zm_fracdiff[zm_fracdiff > 1e308] = np.nan

@@ -28,8 +28,8 @@ from gcpy.util import \
 from gcpy.units import check_units, data_unit_is_mol_per_mol
 from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
-    _warning_format, WhGrYlRd
-from gcpy.plot.six_plot import six_plot
+    mask_meaningless_ratio, _warning_format, WhGrYlRd
+from gcpy.plot.six_plot import ref_dev_data_scale, six_plot
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -825,6 +825,16 @@ def compare_single_level(
         # ==============================================================
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
+
+        # Magnitude of the Ref & Dev data, used to suppress ratios of
+        # numerical noise to numerical noise (which would otherwise
+        # saturate the color scale wherever the field is really zero
+        # but regridding left a residue behind)
+        data_scale = ref_dev_data_scale(
+            [vmin_ref, vmin_dev, vmin_both],
+            [vmax_ref, vmax_dev, vmax_both]
+        )
+
         if cmpgridtype == "ll":
             # Replace fractional difference plots with absolute difference
             # of fractional datasets if necessary
@@ -834,6 +844,12 @@ def compare_single_level(
             else:
                 fracdiff = np.abs(np.array(ds_dev_cmp)) /    \
                     np.abs(np.array(ds_ref_cmp))
+                fracdiff = mask_meaningless_ratio(
+                    fracdiff,
+                    np.array(ds_ref_cmp),
+                    np.array(ds_dev_cmp),
+                    data_scale
+                )
         else:
             if frac_ds_dev_cmp is not None and frac_ds_ref_cmp is not None:
                 fracdiff = frac_ds_dev_cmp_reshaped -        \
@@ -841,6 +857,12 @@ def compare_single_level(
             else:
                 fracdiff = np.abs(ds_dev_cmp_reshaped) /     \
                     np.abs(ds_ref_cmp_reshaped)
+                fracdiff = mask_meaningless_ratio(
+                    fracdiff,
+                    ds_ref_cmp_reshaped,
+                    ds_dev_cmp_reshaped,
+                    data_scale
+                )
 
         # Replace Infinity values with NaN
         fracdiff = np.where(np.abs(fracdiff) == np.inf, np.nan, fracdiff)

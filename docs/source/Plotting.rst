@@ -83,6 +83,17 @@ renders as spurious color "striping" (see `GitHub issue #330
        its 5th and 95th percentiles are both zero.  The dynamic-range
        panel beside it may still show real differences.
 
+Gray cells in a ratio panel mark places where no meaningful
+:literal:`Dev/Ref` ratio exists: either :literal:`Ref` is zero there,
+or both :literal:`Ref` and :literal:`Dev` are negligible compared to
+the magnitude of the field.  The latter matters for fields that are
+zero over much of the domain, such as aircraft emissions: regridding
+leaves a tiny residue rather than an exact zero, and dividing one
+residue by another yields an arbitrary ratio that would otherwise
+saturate the color scale.  A cell in which :literal:`Ref` is
+negligible but :literal:`Dev` is not represents a real change, so its
+ratio is kept.
+
 The negligible-difference threshold is relative, not absolute: a
 difference is suppressed only if it is smaller than
 :code:`gcpy.plot.core.NOISE_REL_TOL` (currently

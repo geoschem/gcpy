@@ -1952,15 +1952,25 @@ def get_nan_mask(
 
     Returns
     -------
-    new_data : numpy array
-        Original array with NaN values removed.
+    new_data : numpy masked array
+        Original array with the NaN values masked out.
+
+    Notes
+    -----
+    The mask is built from the NaN test itself rather than by
+    comparing against the fill value.  Comparing against the fill
+    matched nothing when applied to the original array, and cannot
+    work at all for all-NaN input, where nanmax (and therefore the
+    fill) is itself NaN.
     """
 
-    # remove NaNs
-    fill = np.nanmax(data) + 100000
-    new_data = np.where(np.isnan(data), fill, data)
-    new_data = np.ma.masked_where(data == fill, data)
-    return new_data
+    # Substitute a fill value that cannot occur in the data, so that
+    # the underlying data of the masked array holds no NaNs
+    is_nan = np.isnan(data)
+    finite = data[np.isfinite(data)]
+    fill = finite.max() + 100000 if finite.size else 0.0
+
+    return np.ma.masked_where(is_nan, np.where(is_nan, fill, data))
 
 
 def all_zero_or_nan(

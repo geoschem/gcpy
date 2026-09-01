@@ -17,8 +17,11 @@ import pytest
 from matplotlib import colors
 
 from gcpy.util import is_nearly_constant
-from gcpy.plot.core import NOISE_REL_TOL, noise_atol, normalize_colors
+from gcpy.plot.core import NOISE_REL_TOL, mask_meaningless_ratio, \
+    noise_atol, normalize_colors
 from gcpy.plot.six_plot import (
+    colorbar_for_all_zero_or_nan,
+    vmin_vmax_for_absdiff_plots,
     colorbar_ticks_and_format,
     compute_norm_for_plot,
     ref_dev_data_scale,
@@ -475,3 +478,199 @@ def test_real_diff_panel_keeps_its_numeric_colorbar():
                                  AIRCRAFT_SCALE, subplot="dyn_absdiff")
     assert "Differences negligible throughout domain" not in labels
     assert "Zero within the 5th-95th percentile range" not in labels
+
+
+# ----------------------------------------------------------------------
+# Ratio panels: noise divided by noise, and the collapsed-colorbar anchor
+# ----------------------------------------------------------------------
+
+# Magnitude of a field whose real values are ~1e-8, and the residue
+# that CS->LL regridding leaves where the field is really zero.
+FIELD_SCALE = 1.0e-8
+RESIDUE = 1.0e-25
+
+
+def test_mask_meaningless_ratio_masks_noise_over_noise():
+    # Both Ref and Dev are regridding residue: their ratio is
+    # arbitrary and used to paint the panel solid red.
+    ref = np.array([RESIDUE, 2 * RESIDUE])
+    dev = np.array([5 * RESIDUE, RESIDUE])
+    out = mask_meaningless_ratio(np.abs(dev) / np.abs(ref),
+                                 ref, dev, FIELD_SCALE)
+    assert np.isnan(out).all()
+
+
+def test_mask_meaningless_ratio_keeps_real_data():
+    ref = np.array([2.0e-9, 4.0e-9])
+    dev = np.array([2.2e-9, 3.6e-9])
+    out = mask_meaningless_ratio(np.abs(dev) / np.abs(ref),
+                                 ref, dev, FIELD_SCALE)
+    assert not np.isnan(out).any()
+    assert np.allclose(out, [1.1, 0.9])
+
+
+def test_mask_meaningless_ratio_keeps_nothing_to_something():
+    # Ref negligible but Dev real is a genuine change, not noise, so
+    # its large ratio must survive.
+    ref = np.array([RESIDUE])
+    dev = np.array([2.0e-9])
+    out = mask_meaningless_ratio(np.abs(dev) / np.abs(ref),
+                                 ref, dev, FIELD_SCALE)
+    assert not np.isnan(out).any()
+
+
+def test_mask_meaningless_ratio_without_scale_is_a_no_op():
+    ref = np.array([RESIDUE, 2.0e-9])
+    dev = np.array([5 * RESIDUE, 2.2e-9])
+    frac = np.abs(dev) / np.abs(ref)
+    out = mask_meaningless_ratio(frac, ref, dev, None)
+    assert np.array_equal(out, frac)
+
+
+@pytest.mark.parametrize("subplot, expected", [
+    ("dyn_ratio", 1.0),    # MidpointLogNorm spans [0.5, 2.0] about 1.0
+    ("res_ratio", 1.0),
+    ("dyn_absdiff", 0.0),  # Normalize spans [-1, 1] about 0.0
+    ("res_absdiff", 0.0),
+])
+def test_collapsed_colorbar_tick_matches_the_panel_anchor(subplot, expected):
+    # Regression test: a tick at 0.0 on a ratio panel falls outside
+    # its [0.5, 2.0] norm, which stretched the colorbar axes and left
+    # it rendering completely blank -- no gradient, ticks or label.
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from gcpy.plot.core import normalize_colors
+
+    is_ratio = "ratio" in subplot
+    norm = normalize_colors(
+        np.nan, np.nan, is_difference=True,
+        log_color_scale=is_ratio, ratio_log=is_ratio, is_ratio=is_ratio,
+    )
+    fig, axes = plt.subplots()
+    mesh = axes.pcolormesh(np.full((4, 4), np.nan), cmap="RdBu_r", norm=norm)
+    cbar = fig.colorbar(mesh, ax=axes, orientation="horizontal")
+    cbar.mappable.set_norm(norm)
+    cbar = colorbar_for_all_zero_or_nan(cbar, subplot, all_nan=True)
+    fig.canvas.draw()
+    ticks = list(cbar.get_ticks())
+    xlim = cbar.ax.get_xlim()
+    plt.close(fig)
+
+    assert ticks == [expected]
+    # The tick must lie inside the norm, so the axes are not stretched
+    assert xlim == (norm.vmin, norm.vmax)
+
+
+def test_res_absdiff_range_ignores_nans():
+    # Regression test: np.percentile returns NaN if the array holds a
+    # single NaN, which made vmin/vmax NaN.  is_nearly_constant treats
+    # an all-non-finite range as constant, so the panel collapsed to a
+    # flat -1..1 scale and got labeled "negligible" -- while still
+    # drawing the real, now fully saturated, differences underneath.
+    data = np.array([[-50.0, 50.0, np.nan], [10.0, -10.0, 20.0]])
+
+    vmin, vmax = vmin_vmax_for_absdiff_plots(data, "res_absdiff", (1, 1))
+
+    assert np.isfinite(vmin) and np.isfinite(vmax)
+    assert vmax > 0.0 and vmin == -vmax
+    # and it must therefore NOT be mistaken for a constant panel
+    norm = normalize_colors(vmin, vmax, is_difference=True, data_scale=50.0)
+    assert (norm.vmin, norm.vmax) != (-1.0, 1.0)
+
+
+# ----------------------------------------------------------------------
+# Single-level parity: the same protections, wired to the same places
+# ----------------------------------------------------------------------
+
+def _latlon_dataset(values, name="EmisCO_Total"):
+    """Wraps a (lat, lon) array as a one-level GEOS-Chem-like Dataset."""
+    import xarray as xr
+    from gcpy.grid import make_grid_ll
+
+    grid = make_grid_ll("4x5")
+    dset = xr.Dataset(
+        {name: (("time", "lev", "lat", "lon"), values[None, None, ...])},
+        coords={"time": [0], "lev": [1.0],
+                "lat": np.asarray(grid["lat"]),
+                "lon": np.asarray(grid["lon"])},
+    )
+    dset[name].attrs.update(units="kg/m2/s", long_name=name)
+    return dset
+
+
+def test_single_level_ratio_masks_noise_over_noise():
+    # compare_single_level computes Dev/Ref the same way
+    # compare_zonal_mean does, so it needs the same protection: half
+    # this map is real emissions and half is regridding residue.
+    import matplotlib
+    matplotlib.use("Agg")
+    import sys
+    from gcpy.plot.compare_single_level import compare_single_level
+
+    rng = np.random.default_rng(2)
+    nlat, nlon, half = 46, 72, 36
+    ref = np.zeros((nlat, nlon))
+    dev = np.zeros((nlat, nlon))
+    ref[:, :half] = 2.0e-9 * rng.random((nlat, half))
+    dev[:, :half] = ref[:, :half] * 1.05
+    ref[:, half:] = 1.0e-25 * rng.random((nlat, half))
+    dev[:, half:] = 1.0e-25 * rng.random((nlat, half))
+
+    seen = {}
+    six = sys.modules["gcpy.plot.six_plot"]
+    original = six.compute_norm_for_plot
+
+    def spy(plot_val, vmin, vmax, subplot, **kwargs):
+        out, norm = original(plot_val, vmin, vmax, subplot, **kwargs)
+        if "ratio" in subplot:
+            bad = (np.ma.getmaskarray(out)
+                   | np.isnan(np.ma.filled(out, 0.0)))
+            seen[subplot] = (bad[:, :half], bad[:, half:])
+        return out, norm
+
+    six.compute_norm_for_plot = spy
+    try:
+        compare_single_level(
+            _latlon_dataset(ref), "Ref", _latlon_dataset(dev), "Dev",
+            varlist=["EmisCO_Total"],
+        )
+    finally:
+        six.compute_norm_for_plot = original
+
+    assert seen, "no ratio panel was drawn"
+    for subplot, (real_half, noise_half) in seen.items():
+        assert not real_half.any(), f"{subplot} masked real data"
+        assert noise_half.all(), f"{subplot} left noise unmasked"
+
+
+def test_single_panel_fallback_norm_respects_plot_type():
+    # single_panel builds its own norm when none is supplied.  That
+    # fallback used to omit use_tolerance, which defaults to True, so
+    # a standalone single-level panel took the near-constant tolerance
+    # path that six_plot deliberately keeps it out of (GitHub #439).
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import xarray as xr
+    from gcpy.grid import make_grid_ll
+    from gcpy.plot.single_panel import single_panel
+
+    grid = make_grid_ll("4x5")
+    lat, lon = np.asarray(grid["lat"]), np.asarray(grid["lon"])
+    # Constant to within the relative tolerance, but far from zero
+    const = xr.DataArray(
+        np.full((lat.size, lon.size), NOISY_LO),
+        dims=("lat", "lon"), coords={"lat": lat, "lon": lon},
+    )
+
+    plt.figure()
+    try:
+        plot = single_panel(const, plot_type="single_level", grid=grid)
+        vmin, vmax = plot.norm.vmin, plot.norm.vmax
+    finally:
+        plt.close("all")
+
+    # Must not collapse onto the 0..1 sentinel: the field is ~100
+    assert (vmin, vmax) != (0.0, 1.0)
+    assert vmin > 1.0 and vmax > 1.0
