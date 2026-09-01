@@ -5,16 +5,24 @@ paths:
   weights_dir: /n/holylfs06/LABS/jacob_lab/Shared/GEOS-CHEM/gcgrid/gcdata/ExtData/GCHP/RegriddingWeights
 
 data:
+  # NOTE: flip_levels indexes a dataset's vertical levels from the top
+  # of the atmosphere instead of from the surface.  Set it the same way
+  # for ref and dev unless you really mean to compare opposite ends of
+  # the column; setting it for only one side makes a single-level plot
+  # show, say, the model top of ref beside the surface of dev.  GCPy
+  # warns if the two disagree.
   ref:
     label: "GCC_ref"
     dir: GCC_ref
     subdir: OutputDir
     file: GEOSChem.SpeciesConc.20190701_0000z.nc4
+    flip_levels: False
   dev:
     label: "GCC_dev"
     dir: GCC_dev
     subdir: OutputDir
     file: GEOSChem.SpeciesConc.20190701_0000z.nc4
+    flip_levels: False
 
 options:
   verbose: False

@@ -732,6 +732,47 @@ def get_diff_of_diffs(
     return absdiffs, fracdiffs
 
 
+def warn_if_flip_levels_mismatch(flip_ref, flip_dev):
+    """
+    Warns if the vertical levels of only one of Ref and Dev are to be
+    flipped, which would compare opposite ends of the vertical grid.
+
+    Parameters
+    ----------
+    flip_ref, flip_dev : bool
+        Whether the Ref (resp. Dev) vertical levels are to be flipped,
+        as passed to slice_by_lev_and_time.
+
+    Returns
+    -------
+    is_mismatched : bool
+        Whether a warning was issued.
+
+    Notes
+    -----
+    A single-level plot would then show, say, the top-of-atmosphere
+    level of Ref beside the surface level of Dev.  For surface-only
+    fields such as emissions that renders one panel entirely zero and
+    makes the difference panels equal to the other dataset, which is
+    easily mistaken for a real change.
+    """
+    if bool(flip_ref) == bool(flip_dev):
+        return False
+
+    flipped, other = ("Ref", "Dev") if flip_ref else ("Dev", "Ref")
+    warnings.warn(
+        f"The vertical levels of {flipped} will be flipped but those "
+        f"of {other} will not, so the two datasets will be indexed "
+        f"from opposite ends of the vertical grid.  A single-level "
+        f"plot will compare the top of {flipped} against the bottom "
+        f"of {other}.  Set flip_levels the same way for both unless "
+        f"this is what you intend.",
+        UserWarning,
+        stacklevel=3
+    )
+    return True
+
+
 def slice_by_lev_and_time(
         dset,
         varname,
@@ -1952,15 +1993,25 @@ def get_nan_mask(
 
     Returns
     -------
-    new_data : numpy array
-        Original array with NaN values removed.
+    new_data : numpy masked array
+        Original array with the NaN values masked out.
+
+    Notes
+    -----
+    The mask is built from the NaN test itself rather than by
+    comparing against the fill value.  Comparing against the fill
+    matched nothing when applied to the original array, and cannot
+    work at all for all-NaN input, where nanmax (and therefore the
+    fill) is itself NaN.
     """
 
-    # remove NaNs
-    fill = np.nanmax(data) + 100000
-    new_data = np.where(np.isnan(data), fill, data)
-    new_data = np.ma.masked_where(data == fill, data)
-    return new_data
+    # Substitute a fill value that cannot occur in the data, so that
+    # the underlying data of the masked array holds no NaNs
+    is_nan = np.isnan(data)
+    finite = data[np.isfinite(data)]
+    fill = finite.max() + 100000 if finite.size else 0.0
+
+    return np.ma.masked_where(is_nan, np.where(is_nan, fill, data))
 
 
 def all_zero_or_nan(
@@ -2003,7 +2054,7 @@ def is_nearly_constant(
     Parameters
     ----------
     values : numpy array
-        Input data (may contain NaNs).
+        Input data (may contain NaNs, and may be a masked array).
     rtol : float, optional
         Relative tolerance.
         Default value: 1e-5
@@ -2023,7 +2074,11 @@ def is_nearly_constant(
         (e.g. all-NaN) is treated as trivially constant.
     """
 
-    arr = np.asarray(values, dtype=float)
+    # Convert masked entries to NaN so that they are dropped by the
+    # isfinite test below.  A plain np.asarray would discard the mask
+    # and expose whatever fill value sits underneath it (see
+    # get_nan_mask, whose fill is deliberately out of range).
+    arr = np.ma.filled(np.ma.asarray(values, dtype=float), np.nan)
     finite = arr[np.isfinite(arr)]
     if finite.size == 0:
         return True

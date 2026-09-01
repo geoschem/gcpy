@@ -24,6 +24,19 @@ WhGrYlRd = colors.ListedColormap(_rgb_WhGrYlRd / 255.0)
 # Use a style sheet to control plot attributes
 gcpy_style = path.join(_plot_dir, "gcpy_plot_style")
 
+# Relative tolerance for deciding that a Ref vs. Dev difference is
+# numerical noise rather than real signal.  For difference panels it
+# is scaled by the magnitude of the Ref & Dev data (see noise_atol),
+# so it does not depend on the units of the field.  The same value
+# serves as the rtol of six_plot.ref_equals_dev, so that the
+# difference and ratio rows agree about when Ref and Dev differ.
+NOISE_REL_TOL = 1.0e-5
+
+# Absolute tolerance for comparing dimensionless ratio data against
+# 1.0 (see six_plot.ref_equals_dev).  Ratios are anchored at 1, so
+# NOISE_REL_TOL dominates; this is only a floor for values near zero.
+RATIO_ABS_TOL = 1.0e-10
+
 
 def six_panel_subplot_names(diff_of_diffs):
     """
@@ -52,6 +65,80 @@ def six_panel_subplot_names(diff_of_diffs):
     ]
 
 
+def noise_atol(data_scale):
+    """
+    Returns the absolute tolerance for deciding whether a difference
+    panel holds real signal or only numerical noise.  Scaling the
+    tolerance by the magnitude of the data lets one criterion serve
+    both a field of magnitude ~100 and one of magnitude ~1e-13.
+
+    Parameters
+    ----------
+    data_scale : float or None
+        Magnitude of the Ref and Dev data (i.e. the largest absolute
+        value in either field).
+
+    Returns
+    -------
+    atol : float
+        Absolute tolerance to pass to is_nearly_constant.  A missing
+        or non-finite data_scale yields 0.0, so that the panel
+        collapses only on exact equality.
+    """
+    if data_scale is None:
+        return 0.0
+
+    scale = abs(float(data_scale))
+    if not np.isfinite(scale):
+        return 0.0
+
+    return NOISE_REL_TOL * scale
+
+
+def mask_meaningless_ratio(fracdiff, ref, dev, data_scale):
+    """
+    Masks the cells of a Dev/Ref ratio array in which both Ref and Dev
+    are negligible compared to the magnitude of the field, so that the
+    ratio panel does not present numerical noise as though it were
+    signal.
+
+    Where a field is really zero, regridding (and float32 round-off)
+    leaves behind a tiny residue instead of an exact zero.  Dividing
+    one such residue by another gives a ratio that is arbitrary and
+    routinely saturates the color scale, painting whole regions solid
+    red next to regions of exact zeros left gray.
+
+    Parameters
+    ----------
+    fracdiff : numpy array
+        The Dev/Ref ratio array.
+    ref, dev : numpy array
+        The Ref and Dev data that were divided, in physical units.
+    data_scale : float or None
+        Magnitude of the Ref and Dev data (see
+        six_plot.ref_dev_data_scale).  If None, nothing is masked.
+
+    Returns
+    -------
+    fracdiff : numpy array
+        The ratio array, with the noise-only cells set to NaN.
+
+    Notes
+    -----
+    Only cells where *both* Ref and Dev are negligible are masked.  A
+    cell where Ref is negligible but Dev is not represents a real
+    change from nothing to something, and its large ratio is
+    meaningful, so it is left alone.
+    """
+    atol = noise_atol(data_scale)
+    if atol <= 0.0:
+        return fracdiff
+
+    is_noise = (np.abs(ref) <= atol) & (np.abs(dev) <= atol)
+
+    return np.where(is_noise, np.nan, fracdiff)
+
+
 def normalize_colors(
         vmin,
         vmax,
@@ -60,6 +147,7 @@ def normalize_colors(
         ratio_log=False,
         is_ratio=False,
         use_tolerance=True,
+        data_scale=None,
 ):
     """
     Normalizes a data range to the colormap range used by matplotlib
@@ -95,12 +183,16 @@ def normalize_colors(
         both NaN) before collapsing to a flat color scale (False).
         The tolerance-based check exists to avoid color striping on
         zonal-mean plots of constant fields with tiny CS->LL
-        regridding noise (see GitHub issue #330); it should be
-        disabled for plot types (e.g. single-level maps) where fields
-        can have legitimately tiny absolute magnitudes (e.g. HEMCO
-        emissions fluxes), since a fixed absolute tolerance would
-        otherwise mistake real small-magnitude signals for noise.
+        regridding noise (see GitHub issue #330).  Single-level plots
+        pass False (see GitHub issue #439).
         Default value: True
+    data_scale : float, optional
+        Magnitude of the Ref and Dev data that were differenced to
+        produce this panel.  Used only for difference panels, to scale
+        the tolerance that decides whether the panel holds real signal
+        or only numerical noise.  If None, such a panel collapses only
+        when vmin and vmax are exactly equal.
+        Default value: None
 
     Returns
     -------
@@ -144,22 +236,27 @@ def normalize_colors(
             )
 
     if use_tolerance:
-        # Using a tolerance here (rather than exact equality) avoids
-        # visible color "striping" when a nominally-constant field
-        # carries tiny numerical noise, e.g. from regridding (see
-        # GitHub issue #330). Only safe for plot types where fields
-        # cannot have legitimately tiny absolute magnitudes.
-        #
-        # Ref/Dev panels (not is_difference, not is_ratio) don't have
-        # a natural zero/one anchor, so we skip the absolute tolerance
-        # and use the relative tolerance only. This still catches the
-        # regridding noise from issue #330 (which is a relative error),
-        # but no longer mistakes small-but-real fields, like
-        # TransportTracers species, for "constant".
-        if not is_difference and not is_ratio:
-            is_constant = is_nearly_constant([vmin, vmax], atol=0.0)
-        else:
+        # Tolerating tiny numerical noise (rather than requiring exact
+        # equality) keeps it from stretching the colorbar into visible
+        # color "striping" (see GitHub issue #330).  Each panel type is
+        # anchored to a different value, so each needs its own atol.
+        if is_ratio:
+            # Anchored at 1 and dimensionless: rtol alone suffices
             is_constant = is_nearly_constant([vmin, vmax])
+        elif is_difference:
+            # Symmetric about zero (see vmin_vmax_for_absdiff_plots),
+            # so rtol can never fire.  Scale atol to the data: a fixed
+            # one, being in unknown units, blanked out small-magnitude
+            # fields such as EmisCO_Aircraft (~1e-13 kg/m2/s).
+            is_constant = is_nearly_constant(
+                [vmin, vmax],
+                atol=noise_atol(data_scale)
+            )
+        else:
+            # Ref/Dev have no natural anchor: rtol only.  Still catches
+            # the issue #330 noise, which is a relative error, without
+            # mistaking small-but-real fields for constant.
+            is_constant = is_nearly_constant([vmin, vmax], atol=0.0)
     else:
         is_constant = (
             (vmin == 0 and vmax == 0)
