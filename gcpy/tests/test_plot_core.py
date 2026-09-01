@@ -686,3 +686,54 @@ def test_ref_equals_dev_survives_the_nan_mask():
 
     assert ref_equals_dev(ratio)
     assert ref_equals_dev(get_nan_mask(ratio))
+
+
+# ----------------------------------------------------------------------
+# Ratio panels with nothing to show: say which side vanished
+# ----------------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "subplot, all_zero, all_nan, ref_is_zero, dev_is_zero, expected",
+    [
+        # Ref zero, Dev real: Dev/Ref is a division by zero everywhere
+        ("dyn_ratio", False, True, True, False,
+         "Ref is zero throughout domain"),
+        ("res_ratio", False, True, True, False,
+         "Ref is zero throughout domain"),
+        # Dev zero, Ref real: the ratio is identically zero.  Note this
+        # case arrives via all_zero, not all_nan.
+        ("dyn_ratio", True, False, False, True,
+         "Dev is zero throughout domain"),
+        ("res_ratio", True, False, False, True,
+         "Dev is zero throughout domain"),
+        # Both zero is 0/0, which really is undefined -- left alone
+        ("dyn_ratio", False, True, True, True,
+         "Undefined throughout domain"),
+        # Neither zero, but the data is all NaN for some other reason
+        ("dyn_ratio", False, True, False, False,
+         "Undefined throughout domain"),
+        # Non-ratio panels must be untouched by the new wording
+        ("dyn_absdiff", True, False, True, False, "Zero throughout domain"),
+        ("ref", True, False, True, False, "Zero throughout domain"),
+        ("dev", False, True, True, False, "Undefined throughout domain"),
+    ],
+)
+def test_ratio_colorbar_names_the_side_that_is_zero(
+        subplot, all_zero, all_nan, ref_is_zero, dev_is_zero, expected
+):
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots()
+    mesh = axes.pcolormesh(np.full((4, 4), np.nan), cmap="RdBu_r")
+    cbar = fig.colorbar(mesh, ax=axes, orientation="horizontal")
+    cbar = colorbar_for_all_zero_or_nan(
+        cbar, subplot, all_nan=all_nan,
+        ref_is_zero=ref_is_zero, dev_is_zero=dev_is_zero,
+    )
+    fig.canvas.draw()
+    labels = [t.get_text() for t in cbar.ax.get_xticklabels()]
+    plt.close(fig)
+
+    assert labels == [expected]

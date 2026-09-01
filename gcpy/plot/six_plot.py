@@ -191,6 +191,13 @@ def six_plot(
     elif rowcol[0] == 2:
         data_scale = 1.0
 
+    # Whether Ref or Dev is zero everywhere.  vmins & vmaxs hold the
+    # Ref, Dev and combined ranges, so a field whose min and max are
+    # both zero is zero throughout the domain.  That is what makes a
+    # Dev/Ref ratio undefined (Ref zero) or identically zero (Dev zero).
+    ref_is_zero = vmins[0] == 0 and vmaxs[0] == 0
+    dev_is_zero = vmins[1] == 0 and vmaxs[1] == 0
+
     # Compute the norm object (i.e. put the colorscale on a
     # range of 0..1, which are matplotlib color coordinates)
     # (also remove NaNs in data for ratio plots)
@@ -258,6 +265,8 @@ def six_plot(
         log_color_scale=log_color_scale,
         data_scale=data_scale,
         use_tolerance="zonal_mean" in plot_type,
+        ref_is_zero=ref_is_zero,
+        dev_is_zero=dev_is_zero,
     )
     cbar.set_label(unit)
 
@@ -761,6 +770,8 @@ def colorbar_ticks_and_format(
         log_color_scale=False,
         data_scale=None,
         use_tolerance=False,
+        ref_is_zero=False,
+        dev_is_zero=False,
 ):
     """
     Adjusts colorbar tick placement and label formatting style
@@ -799,6 +810,10 @@ def colorbar_ticks_and_format(
         Whether normalize_colors was called with its near-constant
         tolerance enabled (i.e. this is a zonal-mean plot).
         Default value: False
+    ref_is_zero, dev_is_zero : bool, optional
+        Whether the Ref (resp. Dev) data are zero throughout the
+        domain.  Used to say why a ratio panel has nothing to show.
+        Default value: False
 
     Returns
     -------
@@ -816,6 +831,8 @@ def colorbar_ticks_and_format(
             subplot,
             all_nan=all_nan,
             use_cmap_RdBu=use_cmap_RdBu,
+            ref_is_zero=ref_is_zero,
+            dev_is_zero=dev_is_zero,
         )
 
     # ==================================================================
@@ -897,6 +914,8 @@ def colorbar_for_all_zero_or_nan(
         subplot,
         all_nan=False,
         use_cmap_RdBu=False,
+        ref_is_zero=False,
+        dev_is_zero=False,
 ):
     """
     Formats a colorbar object for the case when Ref or Dev
@@ -915,6 +934,10 @@ def colorbar_for_all_zero_or_nan(
     use_cmap_RdBu : bool, optional
         Indicates that we are using a difference colortable (True)
         or not (False).
+        Default value: False
+    ref_is_zero, dev_is_zero : bool, optional
+        Whether the Ref (resp. Dev) data are zero throughout the
+        domain.  Used to say why a ratio panel has nothing to show.
         Default value: False
 
     Returns
@@ -935,6 +958,17 @@ def colorbar_for_all_zero_or_nan(
     labels = ["Zero throughout domain"]
     if all_nan:
         labels = ["Undefined throughout domain"]
+
+    # A ratio panel with nothing to show is far more informative if it
+    # says which side vanished.  Dev/Ref is undefined when Ref is zero
+    # and identically zero when Dev is zero; when both are zero it is
+    # 0/0, which really is just undefined, so that case is left alone.
+    if subplot in ("dyn_ratio", "res_ratio") and ref_is_zero != dev_is_zero:
+        if ref_is_zero:
+            labels = ["Ref is zero throughout domain"]
+        else:
+            labels = ["Dev is zero throughout domain"]
+
     cbar.set_ticks(pos, labels=labels)
     cbar.minorticks_off()
     return cbar

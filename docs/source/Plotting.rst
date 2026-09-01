@@ -77,6 +77,14 @@ renders as spurious color "striping" (see `GitHub issue #330
        than a real signal.
    * - :literal:`Ref and Dev equal throughout domain`
      - The :literal:`Dev/Ref` ratio is 1 everywhere.
+   * - :literal:`Ref is zero throughout domain`
+     - Shown on a ratio panel when :literal:`Ref` is zero everywhere
+       but :literal:`Dev` is not.  :literal:`Dev/Ref` is then a
+       division by zero at every point, so no ratio can be drawn even
+       though the difference panels above may show a real change.
+   * - :literal:`Dev is zero throughout domain`
+     - Shown on a ratio panel when :literal:`Dev` is zero everywhere
+       but :literal:`Ref` is not, so the ratio is zero everywhere.
    * - :literal:`Zero within the 5th-95th percentile range`
      - Shown on a restricted-range difference panel when the field is
        zero over most of the domain (e.g. aircraft emissions), so that

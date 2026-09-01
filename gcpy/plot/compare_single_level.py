@@ -872,7 +872,12 @@ def compare_single_level(
         fracdiff_is_all_zero = not np.any(fracdiff) or       \
             (np.nanmin(fracdiff) == 0 and
              np.nanmax(fracdiff) == 0)
-        fracdiff_is_all_nan = np.isnan(fracdiff).all() or ref_is_all_zero
+        # NOTE: Do not add "or ref_is_all_zero" here.  It is redundant
+        # for a genuine ratio (dividing by an all-zero Ref already makes
+        # every cell inf or NaN), and in diff-of-diffs mode fracdiff is
+        # a difference rather than a quotient, so two identical Ref
+        # files would blank both row-3 panels of real data.
+        fracdiff_is_all_nan = np.isnan(fracdiff).all()
 
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/
