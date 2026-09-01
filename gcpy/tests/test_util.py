@@ -3,7 +3,7 @@ Unit tests for helper routines in gcpy/util.py.
 """
 import numpy as np
 
-from gcpy.util import get_nan_mask
+from gcpy.util import get_nan_mask, is_nearly_constant
 
 
 def test_get_nan_mask_masks_the_nans():
@@ -32,3 +32,21 @@ def test_get_nan_mask_handles_all_nan():
     out = get_nan_mask(np.array([np.nan, np.nan]))
 
     assert np.ma.getmaskarray(out).all()
+
+
+def test_is_nearly_constant_respects_a_mask():
+    # A masked array's underlying data still holds whatever sits under
+    # the mask.  get_nan_mask deliberately fills with a value far above
+    # the data, so reading through the mask would make a constant array
+    # look wildly variable.
+    masked = get_nan_mask(np.array([1.0, 1.0, np.nan, 1.0]))
+
+    assert is_nearly_constant(masked)
+    assert is_nearly_constant(masked, target=1.0)
+
+
+def test_is_nearly_constant_still_detects_real_variation_when_masked():
+    masked = get_nan_mask(np.array([0.5, 1.0, np.nan, 2.0]))
+
+    assert not is_nearly_constant(masked)
+    assert not is_nearly_constant(masked, target=1.0)

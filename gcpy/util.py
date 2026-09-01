@@ -2013,7 +2013,7 @@ def is_nearly_constant(
     Parameters
     ----------
     values : numpy array
-        Input data (may contain NaNs).
+        Input data (may contain NaNs, and may be a masked array).
     rtol : float, optional
         Relative tolerance.
         Default value: 1e-5
@@ -2033,7 +2033,11 @@ def is_nearly_constant(
         (e.g. all-NaN) is treated as trivially constant.
     """
 
-    arr = np.asarray(values, dtype=float)
+    # Convert masked entries to NaN so that they are dropped by the
+    # isfinite test below.  A plain np.asarray would discard the mask
+    # and expose whatever fill value sits underneath it (see
+    # get_nan_mask, whose fill is deliberately out of range).
+    arr = np.ma.filled(np.ma.asarray(values, dtype=float), np.nan)
     finite = arr[np.isfinite(arr)]
     if finite.size == 0:
         return True

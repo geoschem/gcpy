@@ -16,7 +16,7 @@ import numpy as np
 import pytest
 from matplotlib import colors
 
-from gcpy.util import is_nearly_constant
+from gcpy.util import get_nan_mask, is_nearly_constant
 from gcpy.plot.core import NOISE_REL_TOL, mask_meaningless_ratio, \
     noise_atol, normalize_colors
 from gcpy.plot.six_plot import (
@@ -674,3 +674,15 @@ def test_single_panel_fallback_norm_respects_plot_type():
     # Must not collapse onto the 0..1 sentinel: the field is ~100
     assert (vmin, vmax) != (0.0, 1.0)
     assert vmin > 1.0 and vmax > 1.0
+
+
+def test_ref_equals_dev_survives_the_nan_mask():
+    # six_plot passes the ratio panel's data through get_nan_mask
+    # before handing it to colorbar_ticks_and_format, so ref_equals_dev
+    # sees a masked array.  Reading through that mask exposed the fill
+    # value and the "Ref and Dev equal throughout domain" label stopped
+    # appearing on any sparse field whose Ref and Dev were identical.
+    ratio = np.array([1.0, 1.0, np.nan, 1.0, np.nan])
+
+    assert ref_equals_dev(ratio)
+    assert ref_equals_dev(get_nan_mask(ratio))
