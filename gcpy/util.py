@@ -732,6 +732,47 @@ def get_diff_of_diffs(
     return absdiffs, fracdiffs
 
 
+def warn_if_flip_levels_mismatch(flip_ref, flip_dev):
+    """
+    Warns if the vertical levels of only one of Ref and Dev are to be
+    flipped, which would compare opposite ends of the vertical grid.
+
+    Parameters
+    ----------
+    flip_ref, flip_dev : bool
+        Whether the Ref (resp. Dev) vertical levels are to be flipped,
+        as passed to slice_by_lev_and_time.
+
+    Returns
+    -------
+    is_mismatched : bool
+        Whether a warning was issued.
+
+    Notes
+    -----
+    A single-level plot would then show, say, the top-of-atmosphere
+    level of Ref beside the surface level of Dev.  For surface-only
+    fields such as emissions that renders one panel entirely zero and
+    makes the difference panels equal to the other dataset, which is
+    easily mistaken for a real change.
+    """
+    if bool(flip_ref) == bool(flip_dev):
+        return False
+
+    flipped, other = ("Ref", "Dev") if flip_ref else ("Dev", "Ref")
+    warnings.warn(
+        f"The vertical levels of {flipped} will be flipped but those "
+        f"of {other} will not, so the two datasets will be indexed "
+        f"from opposite ends of the vertical grid.  A single-level "
+        f"plot will compare the top of {flipped} against the bottom "
+        f"of {other}.  Set flip_levels the same way for both unless "
+        f"this is what you intend.",
+        UserWarning,
+        stacklevel=3
+    )
+    return True
+
+
 def slice_by_lev_and_time(
         dset,
         varname,

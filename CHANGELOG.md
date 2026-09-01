@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added function `noise_atol` and constants `NOISE_REL_TOL` and `RATIO_ABS_TOL` to `gcpy/plot/core.py`
 - Added functions `ref_dev_data_scale`, `colorbar_for_negligible_diff`, and `colorbar_for_flat_restricted_range` to `gcpy/plot/six_plot.py`
 - Added function `mask_meaningless_ratio` to `gcpy/plot/core.py`
+- Added function `warn_if_flip_levels_mismatch` to `gcpy/util.py`, called from `compare_single_level` and `compare_zonal_mean`, which warns when `flip_levels` is set for only one of Ref and Dev
 - Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
 - Added `gcpy/tests/test_util.py`
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
