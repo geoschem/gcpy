@@ -58,6 +58,7 @@ def six_plot(
         xticklabels=None,
         plot_type="single_level",
         ratio_log=False,
+        data_scale=None,
         proj=ccrs.PlateCarree(),
         ll_plot_func='imshow',
         **extra_plot_args
@@ -148,6 +149,15 @@ def six_plot(
     ratio_log : bool, optional
         Set this flag to True to enable log scaling for ratio plots.
         Default value: False
+    data_scale : float, optional
+        Magnitude of the Ref and Dev data that the difference row was
+        computed from (see ref_dev_data_scale), which scales that
+        row's noise tolerance.  Pass the comparison-grid Ref & Dev
+        magnitude, so that the difference row and the ratio row judge
+        "do Ref and Dev differ?" against the same data.  If None, it
+        is derived from vmins & vmaxs, which describe the native-grid
+        fields that row 1 plots.
+        Default value: None
     proj : cartopy.crs.Projection, optional
         Projection for plotting data.
         Default value: ccrs.PlateCarree()
@@ -185,11 +195,21 @@ def six_plot(
     # differences), which is dimensionless.  Key it off the row index,
     # not the subplot name: six_panel_subplot_names() names rows 2 and
     # 3 identically for diff-of-diffs plots.
-    data_scale = None
+    # Row 2's scale should come from the caller, which holds the
+    # comparison-grid Ref & Dev this row was differenced from.
+    # Deriving it from vmins & vmaxs instead measures the *native*
+    # grid fields row 1 plots, and those are not the same number once
+    # Ref or Dev has been regridded.  A native maximum smaller than
+    # the comparison-grid one makes this row's tolerance tighter than
+    # the ratio row's, and the two rows then disagree about whether
+    # Ref and Dev differ.
     if rowcol[0] == 1:
-        data_scale = ref_dev_data_scale(vmins, vmaxs)
+        if data_scale is None:
+            data_scale = ref_dev_data_scale(vmins, vmaxs)
     elif rowcol[0] == 2:
         data_scale = 1.0
+    else:
+        data_scale = None
 
     # Whether Ref or Dev is zero everywhere.  vmins & vmaxs hold the
     # Ref, Dev and combined ranges, so a field whose min and max are

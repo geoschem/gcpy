@@ -1023,3 +1023,63 @@ def test_restricted_range_ratio_panel_never_collapses():
     )
     assert (vmin, vmax) == (0.5, 2.0)
     assert not _ratio_collapsed(vmin, vmax)
+
+
+# ======================================================================
+# The difference row's noise tolerance must be anchored to the same
+# data the ratio row divides by.  data_scale used to come from the
+# native-grid Ref & Dev that row 1 plots, while both lower rows are
+# built from the comparison-grid arrays.  Regridding moves the maximum,
+# and a native maximum below the comparison-grid one leaves the
+# difference row with the tighter tolerance, so it could draw real
+# structure while the ratio row beside it reported "Ref and Dev equal
+# throughout domain" (GCHP TransportTracers PassiveTracer, c24 -> 1x1.25).
+# ======================================================================
+
+def _rows_for(max_abs_diff, ref_cmp_max, data_scale):
+    """Returns (difference row collapsed, ratio row says equal)."""
+    collapsed = diff_is_negligible(-max_abs_diff, max_abs_diff, data_scale)
+    # The ratio row divides pointwise by the comparison-grid Ref; the
+    # largest deviation from 1 sits where the difference is largest.
+    equal = bool(ref_equals_dev(
+        np.array([1.0 + max_abs_diff / ref_cmp_max, 1.0])
+    ))
+    return collapsed, equal
+
+
+def test_ratio_equal_implies_difference_negligible_when_scales_match():
+    # With data_scale taken from the comparison grid, "ratio says
+    # equal" must imply "difference is negligible" at every magnitude.
+    ref_cmp_max = 100.06
+    for diff in np.logspace(-8, -2, 4000):
+        collapsed, equal = _rows_for(diff, ref_cmp_max, ref_cmp_max)
+        assert not (equal and not collapsed), (
+            f"rows disagree at max|Dev-Ref|={diff:.4e}"
+        )
+
+
+def test_native_grid_scale_lets_the_two_rows_disagree():
+    # Documents the failure mode: a native-grid maximum below the
+    # comparison-grid one opens a window where the difference row
+    # draws while the ratio row calls Ref and Dev equal.
+    ref_cmp_max = 100.06      # what the lower rows are built from
+    native_max = 99.0         # what data_scale used to come from
+    disagreements = [
+        diff for diff in np.logspace(-6, -2, 20000)
+        if _rows_for(diff, ref_cmp_max, native_max) == (False, True)
+    ]
+    assert disagreements, "expected a reachable disagreement window"
+    lo, hi = min(disagreements), max(disagreements)
+    assert np.isclose(lo, NOISE_REL_TOL * native_max, rtol=1e-3)
+    assert np.isclose(hi, NOISE_REL_TOL * ref_cmp_max, rtol=1e-3)
+
+
+def test_six_plot_prefers_a_caller_supplied_data_scale():
+    # six_plot derives data_scale from vmins/vmaxs only as a fallback;
+    # the caller's comparison-grid value must win for the difference row.
+    from gcpy.plot.six_plot import ref_dev_data_scale
+    native = ref_dev_data_scale([99.0, 99.0], [99.0, 99.0])
+    assert native == 99.0
+    diff = NOISE_REL_TOL * 100.0        # negligible against 100.06
+    assert not diff_is_negligible(-diff, diff, native)
+    assert diff_is_negligible(-diff, diff, 100.06)

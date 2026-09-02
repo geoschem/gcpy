@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added function `constant_rel_tol` and constants `CONSTANT_TOL_ULPS`, `REGRID_NOISE_REL_TOL`, and `CONSTANT_REL_TOL` to `gcpy/plot/core.py`
 - Added function `diff_is_negligible` to `gcpy/plot/core.py`, which is the single criterion the difference and ratio rows now share
 - Added keyword argument `data_scale` to `single_panel` in `gcpy/plot/single_panel.py`
+- Added keyword argument `data_scale` to `six_plot` in `gcpy/plot/six_plot.py`, passed from `compare_single_level` and `compare_zonal_mean`
 - Added function `colorbar_for_constant_field` to `gcpy/plot/six_plot.py`
 - Added function `warn_if_flip_levels_mismatch` to `gcpy/util.py`, called from `compare_single_level` and `compare_zonal_mean`, which warns when `flip_levels` is set for only one of Ref and Dev
 - Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
@@ -42,6 +43,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Changed the `Abs diff [g]` rows of the mass conservation table to use exponential format with 4 decimal places
 - Changed Ref/Dev panels that are constant everywhere to use label "Constant at <value> throughout domain"
 - Updated `gcpy/examples/plotting/create_test_plot.py` to import `gcpy.plot` directly
+- Updated `single_panel` to accept the `data_scale` argument from an external caller when available
+-  Updated six-panel plots to scale noise tolerance by the magnitude of Ref and Dev data on the comparison grid (not the native grid) 
 
 ### Fixed
 - Fixed `NameError` in `gcpy/regrid.py`'s `regrid_vertical` (stale `n_other` references left over from the `np_other` NumPy 2.0 compatibility rename) that broke any Ref vs. Dev zonal-mean comparison on mismatched vertical grids
@@ -62,7 +65,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed the difference row and the ratio row of a six-panel plot disagreeing about whether Ref and Dev differ
 - Fixed the ratio panel's color-scale collapse using `is_nearly_constant`'s own `rtol` default rather than the `NOISE_REL_TOL` constant
 - Fixed the ratio panel's color-scale collapse by testing the width of the `Dev/Ref` range instead of its distance from 1
-- Fixed `single_panel` in `gcpy/plot/single_panel.py` not passing `data_scale` or `rel_tol` to `normalize_colors` when it builds its own norm, so a standalone zonal-mean difference panel could never collapse for holding only noise, and a standalone Ref/Dev panel used the real*4 fallback tolerance instead of the precision of its own data
 - Fixed the `end_mass`row of the mass conservation table in `gcpy/benchmark/modules/benchmark_mass_cons_table.py`
 - Fixed stale parameter names in the `compute_diff_statistics` docstring
 - Fixed the fallback `normalize_colors` call in `gcpy/plot/single_panel.py`, which omitted `use_tolerance`
