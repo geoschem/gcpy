@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added function `warn_if_flip_levels_mismatch` to `gcpy/util.py`, called from `compare_single_level` and `compare_zonal_mean`, which warns when `flip_levels` is set for only one of Ref and Dev
 - Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
 - Added `gcpy/tests/test_util.py`
+- Added `gcpy/tests/test_benchmark_mass_cons_table.py`
 - Added `gcpy/benchmark/modules/benchmark_gchp_stats.py`
 - Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
 - Added keyword argument `yaxis_units` to routines in:
@@ -56,6 +57,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed the difference row and the ratio row of a six-panel plot disagreeing about whether Ref and Dev differ, e.g. a `TransportTracers` `PassiveTracer` difference panel showing a real offset while the ratio panel beside it reported "Ref and Dev equal throughout domain"; difference panels are symmetric about zero, so testing their full color range measured twice the largest `|Dev - Ref|` and applied half of `NOISE_REL_TOL`, while `ref_equals_dev` applied all of it
 - Changed `NOISE_REL_TOL` in `gcpy/plot/core.py` from `1e-5` to `5e-6`, so that closing that factor-of-two gap leaves the difference panels' existing sensitivity unchanged and only the ratio row moves
 - Fixed the ratio panel's color-scale collapse using `is_nearly_constant`'s own `rtol` default rather than `NOISE_REL_TOL`, which let it drift from the "Ref and Dev equal throughout domain" label beside it
+- Fixed the End mass row of the mass conservation table in `gcpy/benchmark/modules/benchmark_mass_cons_table.py`, whose Abs Diff and % Diff columns were computed from the start-of-run mass instead of the end-of-run mass
+- Fixed the Abs diff [g] rows of the mass conservation table truncating to whole grams via `np.int64`, which printed a sub-gram spread as an exact `0` and so reported GCHP `PassiveTracer` as conserving mass perfectly; the rows now use the same `.4e` format as the columns beside them
+- Fixed stale parameter names in the `compute_diff_statistics` docstring
 - Fixed the fallback `normalize_colors` call in `gcpy/plot/single_panel.py`, which omitted `use_tolerance`
 - Fixed `gcpy/examples/plotting/create_test_plot.py` to import `gcpy.plot` directly instead of relying on that side effect
 
