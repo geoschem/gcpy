@@ -30,6 +30,7 @@ from gcpy.plot.six_plot import (
     compute_norm_for_plot,
     ref_dev_data_scale,
     ref_equals_dev,
+    vmin_vmax_for_ratio_plots,
 )
 
 # Magnitude of the regridding noise reported in GitHub issue #330
@@ -957,3 +958,68 @@ def test_ratio_panel_collapse_uses_the_shared_constant():
     lo, hi = 1.0, 1.0 + NOISE_REL_TOL * 4.0
     norm = normalize_colors(lo, hi, is_difference=True, is_ratio=True)
     assert (norm.vmin, norm.vmax) != (0.5, 2.0)
+
+
+# ======================================================================
+# The ratio panel's color-scale collapse and the "Ref and Dev equal
+# throughout domain" label beside it must agree.  The collapse tested
+# the width of the ratio range while ref_equals_dev tested the range's
+# distance from 1, so the two disagreed across a factor-of-two band.
+# ======================================================================
+
+def _ratio_collapsed(vmin, vmax):
+    """Whether normalize_colors collapsed a ratio panel's color scale.
+
+    Called the way compute_norm_for_plot calls it for a ratio subplot.
+    A collapsed panel gets MidpointLogNorm, which carries a midpoint
+    attribute; an uncollapsed one gets a plain LogNorm, which does not.
+    """
+    norm = normalize_colors(
+        vmin,
+        vmax,
+        is_difference=True,
+        log_color_scale=True,
+        ratio_log=False,
+        is_ratio=True,
+        use_tolerance=True,
+    )
+    return hasattr(norm, "midpoint")
+
+
+def test_ratio_collapse_measures_distance_from_one():
+    # A range wholly to one side of 1 is not "constant" just because
+    # it is narrow: Dev/Ref is 1.00003 everywhere, i.e. Ref and Dev
+    # really do differ.
+    assert not _ratio_collapsed(1.0 + 3.0e-5, 1.0 + 3.2e-5)
+
+    # ...while a narrow range straddling 1 still collapses.
+    assert _ratio_collapsed(1.0 - 1.0e-9, 1.0 + 1.0e-9)
+
+
+def test_ratio_collapse_agrees_with_ref_equals_dev_label():
+    # Sweep the band the two criteria used to straddle, going through
+    # the real vmin/vmax the dynamic-range ratio panel is given.
+    for half_spread in np.logspace(-9, -3, 120):
+        arr = np.linspace(1.0 - half_spread, 1.0 + half_spread, 32)
+        vmin, vmax = vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+        assert _ratio_collapsed(vmin, vmax) == bool(ref_equals_dev(arr)), (
+            f"collapse and label disagree at half_spread={half_spread:.3e}"
+        )
+
+
+def test_ratio_collapse_uses_the_same_tolerance_as_the_label():
+    # Straddle NOISE_REL_TOL itself.  Both sides must switch there,
+    # not at half of it.
+    assert _ratio_collapsed(1.0, 1.0 + NOISE_REL_TOL * 0.5)
+    assert not _ratio_collapsed(1.0, 1.0 + NOISE_REL_TOL * 2.0)
+
+
+def test_restricted_range_ratio_panel_never_collapses():
+    # vmin_vmax_for_ratio_plots hands the restricted-range panel a
+    # fixed 0.5 to 2.0, which must keep its real color scale; the
+    # Ref-equals-Dev case is handled by the label, not by collapsing.
+    vmin, vmax = vmin_vmax_for_ratio_plots(
+        np.full(8, 1.0), "res_ratio", 0
+    )
+    assert (vmin, vmax) == (0.5, 2.0)
+    assert not _ratio_collapsed(vmin, vmax)

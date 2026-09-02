@@ -80,8 +80,9 @@ def constant_rel_tol(data=None):
     Returns the relative tolerance for deciding that a Ref or Dev
     field is constant across the domain, and so should get a flat
     color scale instead of one stretched across numerical noise
-    (see GitHub issue #330).  The tolerance is scaled to the
-    precision the data is carried at; see CONSTANT_TOL_ULPS.
+    (see GitHub issue #330).  The tolerance is scaled to the precision
+    the data is carried at and floored at the regridding noise level;
+    see CONSTANT_TOL_ULPS and REGRID_NOISE_REL_TOL.
 
     Parameters
     ----------
@@ -382,13 +383,18 @@ def normalize_colors(
         # color "striping" (see GitHub issue #330).  Each panel type is
         # anchored to a different value, so each needs its own atol.
         if is_ratio:
-            # Anchored at 1 and dimensionless: rtol alone suffices.
-            # Passed explicitly so this stays in step with the label
-            # from ref_equals_dev; is_nearly_constant's own default
-            # is a separate number that would drift from it.
+            # Anchored at 1, so test the distance from 1 rather than
+            # the width of the range.  These arguments deliberately
+            # match six_plot.ref_equals_dev exactly, which draws the
+            # label for this same panel: testing the span instead let
+            # a range sitting wholly to one side of 1 (say 1.000030 to
+            # 1.000032) collapse as constant while the label beside it
+            # correctly said Ref and Dev differ.
             is_constant = is_nearly_constant(
                 [vmin, vmax],
                 rtol=NOISE_REL_TOL,
+                atol=RATIO_ABS_TOL,
+                target=1.0,
             )
         elif is_difference:
             # Symmetric about zero (see vmin_vmax_for_absdiff_plots).
