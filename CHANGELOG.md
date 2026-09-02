@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added function `noise_atol` and constants `NOISE_REL_TOL` and `RATIO_ABS_TOL` to `gcpy/plot/core.py`
 - Added functions `ref_dev_data_scale`, `colorbar_for_negligible_diff`, and `colorbar_for_flat_restricted_range` to `gcpy/plot/six_plot.py`
 - Added function `mask_meaningless_ratio` to `gcpy/plot/core.py`
+- Added function `constant_rel_tol` and constants `CONSTANT_TOL_ULPS`, `REGRID_NOISE_REL_TOL`, and `CONSTANT_REL_TOL` to `gcpy/plot/core.py`
+- Added function `colorbar_for_constant_field` to `gcpy/plot/six_plot.py`
 - Added function `warn_if_flip_levels_mismatch` to `gcpy/util.py`, called from `compare_single_level` and `compare_zonal_mean`, which warns when `flip_levels` is set for only one of Ref and Dev
 - Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
 - Added `gcpy/tests/test_util.py`
@@ -40,14 +42,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed blank/white Ref and Dev panels for small-magnitude fields in zonal-mean plots in `gcpy/plot/core.py`
 - Fixed blank/white difference panels for small-magnitude fields (e.g. `EmisCO_Aircraft`, ~1e-13 kg/m2/s) in zonal-mean plots; `normalize_colors` in `gcpy/plot/core.py` now scales its absolute tolerance to the magnitude of the Ref and Dev data instead of using a fixed `atol=1e-7`, which had no relationship to the units of the field
 - Fixed the misleading -1..1 colorbar shown on a difference panel whose color scale was collapsed; such panels are now labeled "Differences negligible throughout domain"
-- Fixed uninformative ratio-panel colorbar labels: a ratio panel now reports "Ref is zero throughout domain" or "Dev is zero throughout domain" instead of the generic "Undefined throughout domain" or "Zero throughout domain", so that a blank ratio row can be reconciled with a populated difference row
-- Fixed `fracdiff_is_all_nan` in `gcpy/plot/compare_single_level.py`, whose `or ref_is_all_zero` clause blanked both fractional-difference panels of a diff-of-diffs plot whenever the two Ref files were identical
-- Fixed `is_nearly_constant` in `gcpy/util.py` to honor a masked array's mask instead of reading the fill value underneath it, which stopped the "Ref and Dev equal throughout domain" label from appearing on ratio panels of sparse fields
-- Fixed `get_nan_mask` in `gcpy/util.py`, which built its mask from the original array rather than the filled one and so masked nothing at all; it also no longer fails on all-NaN input
-- Fixed blank ratio colorbars (no gradient, ticks, or label) on zonal-mean plots where Ref and Dev are both zero; `colorbar_for_all_zero_or_nan` placed its tick at 0.0, which lies outside the [0.5, 2.0] range of a ratio panel norm and stretched the colorbar axes
-- Fixed `vmin_vmax_for_absdiff_plots` in `gcpy/plot/six_plot.py` to use `np.nanpercentile` instead of `np.percentile`, so that a single NaN no longer collapses the restricted-range difference panel to a flat color scale while it still draws the real (saturated) data
-- Fixed ratio panels rendering numerical noise as saturated color in both `gcpy/plot/compare_zonal_mean.py` and `gcpy/plot/compare_single_level.py`; where a field is really zero, regridding leaves a tiny residue in both Ref and Dev, and dividing one by the other gave an arbitrary ratio.  Such cells are now masked
-- Fixed the fallback `normalize_colors` call in `gcpy/plot/single_panel.py`, which omitted `use_tolerance` and so applied the near-constant tolerance to single-level data, contrary to the scoping decided in GitHub issue #439
+- Fixed ratio panel plots to Ratio to report "Ref is zero throughout domain" or "Dev is zero throughout domain" instead of a more generic label
+- Fixed `fracdiff_is_all_nan` in `gcpy/plot/compare_single_level.py`, whose `or ref_is_all_zero` clause blanked both fracdiff panels of a diff-of-diffs plot whenever the two Ref files were identical
+- Fixed `is_nearly_constant` in `gcpy/util.py` to honor a masked array's mask instead of reading the fill value underneath it
+- Fixed `get_nan_mask` in `gcpy/util.py`, which built its mask from the original array rather than the filled one and so masked nothing at all
+- Fixed blank ratio colorbars (no gradient, ticks, or label) on zonal-mean plots where Ref and Dev are both zero
+- Fixed `vmin_vmax_for_absdiff_plots` in `gcpy/plot/six_plot.py` to use `np.nanpercentile` instead of `np.percentile`
+- Fixed ratio panels rendering numerical noise as saturated color in both `gcpy/plot/compare_zonal_mean.py` and `gcpy/plot/compare_single_level.py`
+- Fixed zonal-mean Ref and Dev panels collapsing onto a blank `0..1` colorbar labeled in the field's own units
+- Fixed the near-constant tolerance being a single hardcoded number, which cannot serve both `real*4` and `real*8` inputs
+- Fixed the missing colorbar label on a Ref or Dev panel whose color scale was collapsed; such panels are now labeled "Constant at <value> throughout domain"
+- Fixed the fallback `normalize_colors` call in `gcpy/plot/single_panel.py`, which omitted `use_tolerance`
+- Fixed `gcpy/examples/plotting/create_test_plot.py` to import `gcpy.plot` directly instead of relying on that side effect
 
 ### Removed
 - Removed the Advected column from the wiki tables in `gcpy/benchmark/modules/benchmark_species_changes.py`

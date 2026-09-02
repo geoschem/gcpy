@@ -17,12 +17,16 @@ import pytest
 from matplotlib import colors
 
 from gcpy.util import get_nan_mask, is_nearly_constant
-from gcpy.plot.core import NOISE_REL_TOL, mask_meaningless_ratio, \
-    noise_atol, normalize_colors
+import matplotlib.pyplot as plt
+
+from gcpy.plot.core import CONSTANT_REL_TOL, NOISE_REL_TOL, \
+    constant_rel_tol, mask_meaningless_ratio, noise_atol, \
+    normalize_colors
 from gcpy.plot.six_plot import (
     colorbar_for_all_zero_or_nan,
     vmin_vmax_for_absdiff_plots,
     colorbar_ticks_and_format,
+    colorbar_for_constant_field,
     compute_norm_for_plot,
     ref_dev_data_scale,
     ref_equals_dev,
@@ -737,3 +741,132 @@ def test_ratio_colorbar_names_the_side_that_is_zero(
     plt.close(fig)
 
     assert labels == [expected]
+
+
+# ======================================================================
+# Ref/Dev "is this field constant" tolerance, scaled to the precision
+# the data is carried at.  Regression tests for the TransportTracers
+# PassiveTracer restart (~100 ppb) whose Ref & Dev zonal-mean panels
+# collapsed onto a blank 0-1 colorbar labeled in ppb, because the
+# near-constant check inherited is_nearly_constant's 1e-5 default.
+# ======================================================================
+
+# A PassiveTracer restart initialized to 1e-7 v/v, i.e. 100 ppb, with
+# the real structure it carries: a relative spread of 7.5e-6, which a
+# 1e-5 tolerance swallowed.
+TRACER_RST_VMIN = 99.99925
+TRACER_RST_VMAX = 100.00000
+
+# The issue #330 CS->LL regridding noise, in relative terms
+REGRID_NOISE_REL = (NOISY_HI - NOISY_LO) / NOISY_HI
+
+
+def test_constant_rel_tol_defaults_to_real4_when_precision_unknown():
+    assert constant_rel_tol() == CONSTANT_REL_TOL
+    assert constant_rel_tol(None) == CONSTANT_REL_TOL
+    assert constant_rel_tol([1.0, 2.0]) == CONSTANT_REL_TOL
+
+
+def test_constant_rel_tol_is_looser_for_real4_than_real8():
+    tol32 = constant_rel_tol(np.zeros(4, dtype=np.float32))
+    tol64 = constant_rel_tol(np.zeros(4, dtype=np.float64))
+    assert tol32 > tol64, "real*4 round-off needs the looser tolerance"
+
+
+def test_constant_rel_tol_real4_straddles_roundoff_and_real_signal():
+    # Must sit above real*4 round-off but below the real structure in
+    # a PassiveTracer restart, or one of the two gets misclassified.
+    tol = constant_rel_tol(np.zeros(4, dtype=np.float32))
+    eps32 = float(np.finfo(np.float32).eps)
+    signal = (TRACER_RST_VMAX - TRACER_RST_VMIN) / TRACER_RST_VMAX
+    assert eps32 < tol < signal
+
+
+def test_constant_rel_tol_floored_at_regridding_noise_for_real8():
+    # Interpolation error is a property of the regridding scheme, not
+    # of the dtype, so real*8 must not drop below the floor and let
+    # issue #330's striping back in.
+    tol = constant_rel_tol(np.zeros(4, dtype=np.float64))
+    assert tol >= REGRID_NOISE_REL
+
+
+def test_normalize_colors_preserves_real_tracer_restart_range():
+    # The reported bug: these panels must keep their true 100 ppb
+    # range, not collapse to a dimensionless 0-1 scale.
+    norm = normalize_colors(
+        TRACER_RST_VMIN,
+        TRACER_RST_VMAX,
+        rel_tol=constant_rel_tol(np.zeros(4, dtype=np.float32)),
+    )
+    assert (norm.vmin, norm.vmax) == (TRACER_RST_VMIN, TRACER_RST_VMAX)
+
+
+def test_normalize_colors_still_collapses_regridding_noise():
+    # ...while the issue #330 noise it was built for still collapses.
+    norm = normalize_colors(
+        NOISY_LO,
+        NOISY_HI,
+        rel_tol=constant_rel_tol(np.zeros(4, dtype=np.float32)),
+    )
+    assert (norm.vmin, norm.vmax) == (0.0, 1.0)
+
+
+def test_normalize_colors_rel_tol_is_scale_invariant():
+    # atol is 0 on this path, so the same relative spread must be
+    # judged identically whether the field is ppb (~1e2) or an
+    # aircraft emission flux (~1e-13).
+    rel = 7.5e-6
+    tol = constant_rel_tol(np.zeros(4, dtype=np.float32))
+    for mag in (1.0e2, 1.0e0, 1.0e-6, 1.0e-13):
+        norm = normalize_colors(mag * (1.0 - rel), mag, rel_tol=tol)
+        assert (norm.vmin, norm.vmax) != (0.0, 1.0), f"collapsed at {mag:g}"
+
+
+def test_compute_norm_for_plot_zonal_mean_keeps_tracer_restart_range():
+    # End-to-end through the call the zonal-mean Ref panel actually
+    # makes, with the field supplied so its precision is used.
+    plot_val = np.array(
+        [TRACER_RST_VMIN, TRACER_RST_VMAX],
+        dtype=np.float32,
+    )
+    _, norm = compute_norm_for_plot(
+        plot_val,
+        TRACER_RST_VMIN,
+        TRACER_RST_VMAX,
+        "ref",
+        plot_type="zonal_mean",
+    )
+    assert (norm.vmin, norm.vmax) == (TRACER_RST_VMIN, TRACER_RST_VMAX)
+
+
+def test_colorbar_for_constant_field_names_the_value():
+    # A collapsed panel must say what the constant is.  Leaving the
+    # numeric ticks of the dimensionless norm on a colorbar labeled in
+    # the field's units is what made a 100 ppb field read as 1 ppb.
+    _, axes = plt.subplots()
+    mappable = axes.imshow(np.full((2, 2), 100.0))
+    cbar = plt.colorbar(mappable, ax=axes)
+    cbar = colorbar_for_constant_field(cbar, 100.0, 100.0)
+    labels = [tick.get_text() for tick in cbar.ax.get_yticklabels()]
+    plt.close("all")
+    assert labels == ["Constant at 100 throughout domain"]
+
+
+def test_colorbar_ticks_and_format_labels_constant_ref_panel():
+    # The missing branch: a Ref panel that normalize_colors collapsed
+    # had no label path and fell through to generic numeric ticks.
+    _, axes = plt.subplots()
+    mappable = axes.imshow(np.full((2, 2), 0.5))
+    cbar = plt.colorbar(mappable, ax=axes)
+    cbar = colorbar_ticks_and_format(
+        np.full((2, 2), NOISY_LO, dtype=np.float32),
+        cbar,
+        NOISY_LO,
+        NOISY_HI,
+        "ref",
+        use_tolerance=True,
+    )
+    labels = [tick.get_text() for tick in cbar.ax.get_yticklabels()]
+    plt.close("all")
+    assert len(labels) == 1
+    assert labels[0].startswith("Constant at ")

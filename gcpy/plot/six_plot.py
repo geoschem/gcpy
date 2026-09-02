@@ -18,8 +18,8 @@ from dask.array import Array as DaskArray
 import xarray as xr
 import cartopy.crs as ccrs
 from gcpy.util import get_nan_mask, is_nearly_constant, verify_variable_type
-from gcpy.plot.core import NOISE_REL_TOL, RATIO_ABS_TOL, gcpy_style, \
-    noise_atol, normalize_colors
+from gcpy.plot.core import NOISE_REL_TOL, RATIO_ABS_TOL, \
+    constant_rel_tol, gcpy_style, noise_atol, normalize_colors
 from gcpy.plot.single_panel import single_panel
 
 # Suppress numpy divide by zero warnings to prevent output spam
@@ -697,6 +697,7 @@ def compute_norm_for_plot(
             log_color_scale=log_color_scale,
             ratio_log=ratio_log,
             use_tolerance=use_tolerance,
+            rel_tol=constant_rel_tol(plot_val),
         )
 
     # ==================================================================
@@ -839,6 +840,35 @@ def colorbar_ticks_and_format(
     # Data is plottable: Pick the locations and format of tick
     # labels depending the subplot and the colormap that is used.
     # ==================================================================
+
+    #-------------------------------------------------------------------
+    # Ref & Dev subplots that normalize_colors collapsed for being
+    # constant across the domain.  Without this they keep numeric
+    # ticks taken from a dimensionless 0-1 (or -1..1) norm while the
+    # colorbar is labeled in the field's units, so the panel reads as
+    # though the field topped out at 1 -- e.g. a TransportTracers
+    # PassiveTracer restart at 100 ppb appearing to max out at 1 ppb.
+    #
+    # Checked ahead of the log-scale branch below because
+    # normalize_colors likewise settles "is constant" before it
+    # considers log scaling, and returns a linear collapsed norm
+    # either way.
+    #-------------------------------------------------------------------
+    if (
+            subplot in ("ref", "dev")
+            and use_tolerance
+            and is_nearly_constant(
+                [vmin, vmax],
+                rtol=constant_rel_tol(plot_val),
+                atol=0.0,
+            )
+    ):
+        return colorbar_for_constant_field(
+            cbar,
+            vmin,
+            vmax,
+            use_cmap_RdBu=use_cmap_RdBu,
+        )
 
     #-------------------------------------------------------------------
     # Ref and Dev subplots, log scale
@@ -994,6 +1024,52 @@ def colorbar_for_ref_equals_dev(cbar):
         pos,
         labels=["Ref and Dev equal throughout domain"]
     )
+    cbar.minorticks_off()
+    return cbar
+
+
+def colorbar_for_constant_field(cbar, vmin, vmax, use_cmap_RdBu=False):
+    """
+    Formats a colorbar object for a Ref or Dev subplot whose data is
+    constant across the domain (to within constant_rel_tol), and whose
+    color scale normalize_colors therefore collapsed to a flat range.
+
+    That collapsed range is dimensionless -- [0, 1], or [-1, 1] for a
+    difference colormap -- so leaving numeric ticks on it labels the
+    colorbar in the field's units with values the field never takes.
+    A single tick naming the constant is both honest and more useful.
+
+    Parameters
+    ----------
+    cbar : matplotlib.colorbar.Colorbar
+        The input colorbar.
+    vmin, vmax : float
+        Min and max of the data range, in the field's own units
+        (i.e. before normalize_colors collapsed them).
+    use_cmap_RdBu : bool, optional
+        Whether this panel uses a blue-white-red difference colormap
+        (True) or not (False).  Sets which anchor the tick goes on.
+        Default value: False
+
+    Returns
+    -------
+    cbar : matplotlib.colorbar.Colorbar
+        The modified colorbar.
+    """
+    # Match the tick to the anchor of the collapsed norm that
+    # normalize_colors returned: [-1, 1] for a difference colormap,
+    # otherwise [0, 1].
+    pos = [0.0] if use_cmap_RdBu else [0.5]
+
+    # vmin and vmax agree to within constant_rel_tol, so either one
+    # names the constant; the midpoint avoids favoring an endpoint.
+    value = 0.5 * (float(vmin) + float(vmax))
+    if np.isfinite(value):
+        label = f"Constant at {value:.6g} throughout domain"
+    else:
+        label = "Constant throughout domain"
+
+    cbar.set_ticks(pos, labels=[label])
     cbar.minorticks_off()
     return cbar
 

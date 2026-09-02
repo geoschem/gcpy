@@ -37,6 +37,91 @@ NOISE_REL_TOL = 1.0e-5
 # NOISE_REL_TOL dominates; this is only a floor for values near zero.
 RATIO_ABS_TOL = 1.0e-10
 
+# Number of ULPs (units in the last place) of the data's own
+# precision that a Ref or Dev field may span and still count as
+# constant across the domain.  See constant_rel_tol.
+CONSTANT_TOL_ULPS = 8
+
+# Floor on that tolerance, set by regridding rather than by storage
+# precision.  The CS->LL regridding noise reported in GitHub issue
+# #330 spans 5e-9 in relative terms, which is ~4e7 ULPs of real*8 and
+# so would never be caught by the ULP term alone.  Interpolation error
+# is a property of the regridding scheme, not of the dtype, so it
+# needs its own floor.  1e-8 leaves 2x headroom over the observed
+# case; raise it if striping reappears on a real*8 field.
+REGRID_NOISE_REL_TOL = 1.0e-8
+
+# The tolerance that constant_rel_tol returns for real*4 data, which
+# is the great majority of GEOS-Chem output.  Named for use as the
+# fallback when a field's precision cannot be determined, and by the
+# unit tests.
+CONSTANT_REL_TOL = max(
+    CONSTANT_TOL_ULPS * float(np.finfo(np.float32).eps),
+    REGRID_NOISE_REL_TOL,
+)
+
+
+def constant_rel_tol(data=None):
+    """
+    Returns the relative tolerance for deciding that a Ref or Dev
+    field is constant across the domain, and so should get a flat
+    color scale instead of one stretched across numerical noise
+    (see GitHub issue #330).
+
+    A single hardcoded tolerance cannot serve every field, because
+    GEOS-Chem carries some inputs as real*4 and others as real*8: a
+    value loose enough to swallow real*4 round-off (~1.2e-7 relative)
+    would also swallow real structure that a real*8 field can
+    legitimately resolve several decades below that.  So scale the
+    tolerance to the precision the data is actually carried at, and
+    floor it at the regridding noise level, which does not depend on
+    the dtype.
+
+    Parameters
+    ----------
+    data : xarray.DataArray or numpy.ndarray, optional
+        The field being plotted.  If it is missing, or its precision
+        cannot be determined, CONSTANT_REL_TOL (the real*4 value) is
+        returned, since most GEOS-Chem output is real*4.
+        Default value: None
+
+    Returns
+    -------
+    rtol : float
+        Relative tolerance to pass to is_nearly_constant.
+
+    Notes
+    -----
+    The on-disk dtype is preferred over the in-memory one.  An array
+    read from a real*4 file and promoted to float64 by regridding
+    still carries only real*4 information, and judging it by float64
+    round-off would mistake that file's round-off for real signal.
+    """
+    dtype = None
+
+    # Prefer the on-disk dtype recorded by xarray at read time
+    encoding = getattr(data, "encoding", None)
+    if isinstance(encoding, dict):
+        dtype = encoding.get("dtype", None)
+
+    # Otherwise fall back to the in-memory dtype
+    if dtype is None:
+        dtype = getattr(data, "dtype", None)
+
+    # Tested explicitly: np.finfo(None) quietly reports float64
+    # rather than raising, which would silently apply real*8
+    # precision to data whose dtype we never actually learned.
+    if dtype is None:
+        return CONSTANT_REL_TOL
+
+    try:
+        eps = float(np.finfo(dtype).eps)
+    except (TypeError, ValueError):
+        # Not a float dtype (or no dtype at all): assume real*4
+        return CONSTANT_REL_TOL
+
+    return max(CONSTANT_TOL_ULPS * eps, REGRID_NOISE_REL_TOL)
+
 
 def six_panel_subplot_names(diff_of_diffs):
     """
@@ -148,6 +233,7 @@ def normalize_colors(
         is_ratio=False,
         use_tolerance=True,
         data_scale=None,
+        rel_tol=None,
 ):
     """
     Normalizes a data range to the colormap range used by matplotlib
@@ -192,6 +278,13 @@ def normalize_colors(
         the tolerance that decides whether the panel holds real signal
         or only numerical noise.  If None, such a panel collapses only
         when vmin and vmax are exactly equal.
+        Default value: None
+    rel_tol : float, optional
+        Relative tolerance for deciding that a Ref or Dev panel is
+        constant across the domain.  Callers should pass
+        constant_rel_tol(data) so that the tolerance matches the
+        precision the field is carried at (real*4 vs real*8).  If
+        None, the real*4 value CONSTANT_REL_TOL is used.
         Default value: None
 
     Returns
@@ -255,8 +348,17 @@ def normalize_colors(
         else:
             # Ref/Dev have no natural anchor: rtol only.  Still catches
             # the issue #330 noise, which is a relative error, without
-            # mistaking small-but-real fields for constant.
-            is_constant = is_nearly_constant([vmin, vmax], atol=0.0)
+            # mistaking small-but-real fields for constant.  The rtol
+            # is passed explicitly because is_nearly_constant's 1e-5
+            # default is looser than the real structure carried by
+            # some benchmark fields (see CONSTANT_REL_TOL).
+            if rel_tol is None:
+                rel_tol = CONSTANT_REL_TOL
+            is_constant = is_nearly_constant(
+                [vmin, vmax],
+                rtol=rel_tol,
+                atol=0.0,
+            )
     else:
         is_constant = (
             (vmin == 0 and vmax == 0)
