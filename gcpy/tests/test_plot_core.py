@@ -20,8 +20,8 @@ from gcpy.util import get_nan_mask, is_nearly_constant
 import matplotlib.pyplot as plt
 
 from gcpy.plot.core import CONSTANT_REL_TOL, NOISE_REL_TOL, \
-    constant_rel_tol, mask_meaningless_ratio, noise_atol, \
-    normalize_colors
+    constant_rel_tol, diff_is_negligible, mask_meaningless_ratio, \
+    noise_atol, normalize_colors
 from gcpy.plot.six_plot import (
     colorbar_for_all_zero_or_nan,
     vmin_vmax_for_absdiff_plots,
@@ -870,3 +870,92 @@ def test_colorbar_ticks_and_format_labels_constant_ref_panel():
     plt.close("all")
     assert len(labels) == 1
     assert labels[0].startswith("Constant at ")
+
+
+# ======================================================================
+# Agreement between the difference row and the ratio row.  Both are
+# governed by NOISE_REL_TOL, but the difference panels are symmetric
+# about zero, so testing their full span measured 2 * max|Dev - Ref|
+# and applied an effective tolerance of NOISE_REL_TOL / 2.  A real
+# 7.5e-6 relative difference (a TransportTracers PassiveTracer restart,
+# 14.7.0 vs 14.8.0) fell in the resulting factor-of-two gap: the
+# difference row plotted the offset while the ratio row beside it
+# announced "Ref and Dev equal throughout domain".
+# ======================================================================
+
+# Magnitude of a PassiveTracer restart, in ppb
+DIFF_SCALE = 100.0
+
+# Relative Dev - Ref difference between the 14.7.0 and 14.8.0 restarts
+TRACER_REL_DIFF = 7.5e-6
+
+
+def _rows_agree(rel_diff, data_scale=DIFF_SCALE):
+    """Returns (difference row says negligible, ratio row says equal)."""
+    half = rel_diff * data_scale
+    norm = normalize_colors(
+        -half, half, is_difference=True, data_scale=data_scale
+    )
+    diff_negligible = (norm.vmin, norm.vmax) == (-1.0, 1.0)
+    ratio_equal = bool(ref_equals_dev(np.full(8, 1.0 + rel_diff)))
+    return diff_negligible, ratio_equal
+
+
+def test_diff_is_negligible_tests_half_the_span():
+    # The criterion is on max|Dev - Ref|, which is half of a symmetric
+    # panel's span -- not on the span itself.
+    scale = DIFF_SCALE
+    atol = noise_atol(scale)
+    assert diff_is_negligible(-atol, atol, scale)
+    assert not diff_is_negligible(-2.0 * atol, 2.0 * atol, scale)
+
+
+def test_diff_is_negligible_requires_flat_panel_without_data_scale():
+    # No usable data_scale means no tolerance to apply (cf. noise_atol)
+    assert diff_is_negligible(0.0, 0.0, None)
+    assert not diff_is_negligible(-1.0, 1.0, None)
+
+
+def test_diff_and_ratio_rows_agree_on_the_tracer_restart():
+    # The reported contradiction: these two must not disagree.
+    diff_negligible, ratio_equal = _rows_agree(TRACER_REL_DIFF)
+    assert diff_negligible == ratio_equal, (
+        "difference and ratio rows disagree about whether Ref and Dev "
+        "differ"
+    )
+    # ...and both should report the difference, since it is real
+    assert not diff_negligible
+    assert not ratio_equal
+
+
+def test_diff_and_ratio_rows_agree_across_magnitudes():
+    # Sweep the band the two rows used to straddle, plus decades to
+    # either side, at magnitudes spanning ppb to aircraft-emission flux.
+    for scale in (1.0e2, 1.0e0, 1.0e-13):
+        for rel_diff in np.logspace(-8, -3, 60):
+            diff_negligible, ratio_equal = _rows_agree(rel_diff, scale)
+            assert diff_negligible == ratio_equal, (
+                f"rows disagree at scale={scale:g}, "
+                f"rel_diff={rel_diff:.3e}"
+            )
+
+
+def test_noise_rel_tol_is_the_threshold_both_rows_use():
+    # Straddle NOISE_REL_TOL itself and confirm both rows switch there.
+    below = _rows_agree(NOISE_REL_TOL * 0.5)
+    above = _rows_agree(NOISE_REL_TOL * 2.0)
+    assert below == (True, True), "both rows should call this noise"
+    assert above == (False, False), "both rows should call this signal"
+
+
+def test_ratio_panel_collapse_uses_the_shared_constant():
+    # The ratio panel's own color-scale collapse must move with the
+    # label from ref_equals_dev, rather than tracking
+    # is_nearly_constant's separate default.
+    lo, hi = 1.0, 1.0 + NOISE_REL_TOL * 0.5
+    norm = normalize_colors(lo, hi, is_difference=True, is_ratio=True)
+    assert (norm.vmin, norm.vmax) == (0.5, 2.0)
+
+    lo, hi = 1.0, 1.0 + NOISE_REL_TOL * 4.0
+    norm = normalize_colors(lo, hi, is_difference=True, is_ratio=True)
+    assert (norm.vmin, norm.vmax) != (0.5, 2.0)

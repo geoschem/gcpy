@@ -30,7 +30,24 @@ gcpy_style = path.join(_plot_dir, "gcpy_plot_style")
 # so it does not depend on the units of the field.  The same value
 # serves as the rtol of six_plot.ref_equals_dev, so that the
 # difference and ratio rows agree about when Ref and Dev differ.
-NOISE_REL_TOL = 1.0e-5
+#
+# The criterion is on the largest |Dev - Ref| in the panel, i.e. the
+# rows agree when max|Dev - Ref| <= NOISE_REL_TOL * data_scale.
+#
+# That agreement used to be nominal only.  Difference panels are
+# symmetric about zero (see vmin_vmax_for_absdiff_plots), so testing
+# their full vmin..vmax span measured 2 * max|Dev - Ref| and applied
+# an effective tolerance of NOISE_REL_TOL / 2, while
+# ref_equals_dev tested the ratio's deviation from 1 and applied
+# NOISE_REL_TOL.  A difference of 7.5e-6 relative -- a
+# TransportTracers PassiveTracer restart, 14.7.0 vs 14.8.0 -- landed
+# in the resulting factor-of-two gap, so the difference row plotted a
+# real offset while the ratio row beside it announced "Ref and Dev
+# equal throughout domain".  diff_is_negligible now tests the
+# half-span explicitly, and the constant is 5e-6 rather than 1e-5 so
+# that closing the gap leaves the difference panels' long-standing
+# sensitivity untouched and only the ratio row moves.
+NOISE_REL_TOL = 5.0e-6
 
 # Absolute tolerance for comparing dimensionless ratio data against
 # 1.0 (see six_plot.ref_equals_dev).  Ratios are anchored at 1, so
@@ -178,6 +195,48 @@ def noise_atol(data_scale):
         return 0.0
 
     return NOISE_REL_TOL * scale
+
+
+def diff_is_negligible(vmin, vmax, data_scale):
+    """
+    Returns whether a difference panel holds only numerical noise
+    rather than real signal, so that its color scale should be
+    collapsed and its colorbar labeled as such.
+
+    Parameters
+    ----------
+    vmin, vmax : float
+        Min and max of the difference panel's data range.  These are
+        symmetric about zero (see six_plot.vmin_vmax_for_absdiff_plots).
+    data_scale : float or None
+        Magnitude of the Ref and Dev data (see
+        six_plot.ref_dev_data_scale).
+
+    Returns
+    -------
+    is_negligible : bool
+        Whether the panel's differences are negligible compared to the
+        magnitude of the data that was differenced.
+
+    Notes
+    -----
+    The test is on half the span, not the whole of it.  Because the
+    range is symmetric about zero, half the span is the largest
+    |Dev - Ref| in the panel, which is the quantity NOISE_REL_TOL is
+    defined against and the quantity six_plot.ref_equals_dev tests on
+    the ratio row.  Comparing the full span instead applied an
+    effective tolerance of NOISE_REL_TOL / 2, which is how the two
+    rows came to disagree by a factor of two while sharing a constant
+    whose whole purpose was to keep them in step.
+    """
+    atol = noise_atol(data_scale)
+
+    # Without a usable data_scale there is no tolerance to apply, so
+    # collapse only a panel that is exactly flat (cf. noise_atol).
+    if atol <= 0.0:
+        return float(vmin) == float(vmax)
+
+    return abs(0.5 * (float(vmax) - float(vmin))) <= atol
 
 
 def mask_meaningless_ratio(fracdiff, ref, dev, data_scale):
@@ -334,17 +393,20 @@ def normalize_colors(
         # color "striping" (see GitHub issue #330).  Each panel type is
         # anchored to a different value, so each needs its own atol.
         if is_ratio:
-            # Anchored at 1 and dimensionless: rtol alone suffices
-            is_constant = is_nearly_constant([vmin, vmax])
-        elif is_difference:
-            # Symmetric about zero (see vmin_vmax_for_absdiff_plots),
-            # so rtol can never fire.  Scale atol to the data: a fixed
-            # one, being in unknown units, blanked out small-magnitude
-            # fields such as EmisCO_Aircraft (~1e-13 kg/m2/s).
+            # Anchored at 1 and dimensionless: rtol alone suffices.
+            # Passed explicitly so this stays in step with the label
+            # from ref_equals_dev; is_nearly_constant's own default
+            # is a separate number that would drift from it.
             is_constant = is_nearly_constant(
                 [vmin, vmax],
-                atol=noise_atol(data_scale)
+                rtol=NOISE_REL_TOL,
             )
+        elif is_difference:
+            # Symmetric about zero (see vmin_vmax_for_absdiff_plots).
+            # Scale the tolerance to the data: a fixed one, being in
+            # unknown units, blanked out small-magnitude fields such
+            # as EmisCO_Aircraft (~1e-13 kg/m2/s).
+            is_constant = diff_is_negligible(vmin, vmax, data_scale)
         else:
             # Ref/Dev have no natural anchor: rtol only.  Still catches
             # the issue #330 noise, which is a relative error, without

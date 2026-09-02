@@ -125,13 +125,25 @@ only carries real*4 information, so the on-disk dtype is preferred
 where xarray has recorded it.
 
 The negligible-difference threshold is relative, not absolute: a
-difference is suppressed only if it is smaller than
-:code:`gcpy.plot.core.NOISE_REL_TOL` (currently
-:math:`1 \times 10^{-5}`) times the magnitude of the data being
-differenced, i.e. unless Ref and Dev agree to better than about
+difference is suppressed only if the largest :literal:`|Dev - Ref|` in
+the panel is smaller than :code:`gcpy.plot.core.NOISE_REL_TOL`
+(currently :math:`5 \times 10^{-6}`) times the magnitude of the data
+being differenced, i.e. unless Ref and Dev agree to better than about
 5 parts per million.  A field with very small absolute values, such as an
 aircraft emissions flux of order :math:`10^{-13}` kg m\ :sup:`-2`
 s\ :sup:`-1`, will therefore still have its real differences plotted.
+
+The same threshold decides both the difference row and the ratio row,
+so the two always agree about whether Ref and Dev differ.  Note that
+the criterion is on the largest :literal:`|Dev - Ref|`, not on the
+width of the difference panel's color range: that range is symmetric
+about zero, so its full span is twice the largest difference, and
+testing the span applied an effective tolerance of half
+:code:`NOISE_REL_TOL`.  A difference landing between the two -- for
+instance the 7.5 parts per million between the 14.7.0 and 14.8.0
+:literal:`TransportTracers` :literal:`PassiveTracer` restarts -- was
+plotted by the difference row while the ratio row beside it reported
+:literal:`Ref and Dev equal throughout domain`.
 
 .. _plot-csl:
 

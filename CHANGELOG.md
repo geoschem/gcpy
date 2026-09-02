@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added functions `ref_dev_data_scale`, `colorbar_for_negligible_diff`, and `colorbar_for_flat_restricted_range` to `gcpy/plot/six_plot.py`
 - Added function `mask_meaningless_ratio` to `gcpy/plot/core.py`
 - Added function `constant_rel_tol` and constants `CONSTANT_TOL_ULPS`, `REGRID_NOISE_REL_TOL`, and `CONSTANT_REL_TOL` to `gcpy/plot/core.py`
+- Added function `diff_is_negligible` to `gcpy/plot/core.py`, which is the single criterion the difference and ratio rows now share
 - Added function `colorbar_for_constant_field` to `gcpy/plot/six_plot.py`
 - Added function `warn_if_flip_levels_mismatch` to `gcpy/util.py`, called from `compare_single_level` and `compare_zonal_mean`, which warns when `flip_levels` is set for only one of Ref and Dev
 - Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
@@ -52,6 +53,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Fixed zonal-mean Ref and Dev panels collapsing onto a blank `0..1` colorbar labeled in the field's own units
 - Fixed the near-constant tolerance being a single hardcoded number, which cannot serve both `real*4` and `real*8` inputs
 - Fixed the missing colorbar label on a Ref or Dev panel whose color scale was collapsed; such panels are now labeled "Constant at <value> throughout domain"
+- Fixed the difference row and the ratio row of a six-panel plot disagreeing about whether Ref and Dev differ, e.g. a `TransportTracers` `PassiveTracer` difference panel showing a real offset while the ratio panel beside it reported "Ref and Dev equal throughout domain"; difference panels are symmetric about zero, so testing their full color range measured twice the largest `|Dev - Ref|` and applied half of `NOISE_REL_TOL`, while `ref_equals_dev` applied all of it
+- Changed `NOISE_REL_TOL` in `gcpy/plot/core.py` from `1e-5` to `5e-6`, so that closing that factor-of-two gap leaves the difference panels' existing sensitivity unchanged and only the ratio row moves
+- Fixed the ratio panel's color-scale collapse using `is_nearly_constant`'s own `rtol` default rather than `NOISE_REL_TOL`, which let it drift from the "Ref and Dev equal throughout domain" label beside it
 - Fixed the fallback `normalize_colors` call in `gcpy/plot/single_panel.py`, which omitted `use_tolerance`
 - Fixed `gcpy/examples/plotting/create_test_plot.py` to import `gcpy.plot` directly instead of relying on that side effect
 

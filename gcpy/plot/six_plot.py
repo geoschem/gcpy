@@ -19,7 +19,7 @@ import xarray as xr
 import cartopy.crs as ccrs
 from gcpy.util import get_nan_mask, is_nearly_constant, verify_variable_type
 from gcpy.plot.core import NOISE_REL_TOL, RATIO_ABS_TOL, \
-    constant_rel_tol, gcpy_style, noise_atol, normalize_colors
+    constant_rel_tol, diff_is_negligible, gcpy_style, normalize_colors
 from gcpy.plot.single_panel import single_panel
 
 # Suppress numpy divide by zero warnings to prevent output spam
@@ -902,10 +902,7 @@ def colorbar_ticks_and_format(
     if (
             "absdiff" in subplot
             and use_tolerance
-            and is_nearly_constant(
-                [vmin, vmax],
-                atol=noise_atol(data_scale)
-            )
+            and diff_is_negligible(vmin, vmax, data_scale)
     ):
         # A restricted-range panel of a sparse field (e.g. aircraft
         # emissions, which are zero over most of the domain) collapses
