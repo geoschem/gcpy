@@ -744,11 +744,9 @@ def test_ratio_colorbar_names_the_side_that_is_zero(
 
 
 # ======================================================================
-# Ref/Dev "is this field constant" tolerance, scaled to the precision
-# the data is carried at.  Regression tests for the TransportTracers
-# PassiveTracer restart (~100 ppb) whose Ref & Dev zonal-mean panels
-# collapsed onto a blank 0-1 colorbar labeled in ppb, because the
-# near-constant check inherited is_nearly_constant's 1e-5 default.
+# Ref/Dev "is this field constant" tolerance, scaled to the data's
+# precision.  Regression tests for the PassiveTracer restart (100 ppb)
+# whose zonal-mean panels collapsed onto a blank 0-1 ppb colorbar.
 # ======================================================================
 
 # A PassiveTracer restart initialized to 1e-7 v/v, i.e. 100 ppb, with

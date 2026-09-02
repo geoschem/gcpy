@@ -843,16 +843,11 @@ def colorbar_ticks_and_format(
 
     #-------------------------------------------------------------------
     # Ref & Dev subplots that normalize_colors collapsed for being
-    # constant across the domain.  Without this they keep numeric
-    # ticks taken from a dimensionless 0-1 (or -1..1) norm while the
-    # colorbar is labeled in the field's units, so the panel reads as
-    # though the field topped out at 1 -- e.g. a TransportTracers
-    # PassiveTracer restart at 100 ppb appearing to max out at 1 ppb.
-    #
-    # Checked ahead of the log-scale branch below because
-    # normalize_colors likewise settles "is constant" before it
-    # considers log scaling, and returns a linear collapsed norm
-    # either way.
+    # constant.  Without this they keep numeric ticks from a
+    # dimensionless norm on a colorbar labeled in the field's units,
+    # so a 100 ppb field reads as though it topped out at 1 ppb.
+    # Checked before the log-scale branch, as normalize_colors also
+    # decides "is constant" before it considers log scaling.
     #-------------------------------------------------------------------
     if (
             subplot in ("ref", "dev")

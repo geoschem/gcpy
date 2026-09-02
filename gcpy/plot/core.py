@@ -60,12 +60,9 @@ RATIO_ABS_TOL = 1.0e-10
 CONSTANT_TOL_ULPS = 8
 
 # Floor on that tolerance, set by regridding rather than by storage
-# precision.  The CS->LL regridding noise reported in GitHub issue
-# #330 spans 5e-9 in relative terms, which is ~4e7 ULPs of real*8 and
-# so would never be caught by the ULP term alone.  Interpolation error
-# is a property of the regridding scheme, not of the dtype, so it
-# needs its own floor.  1e-8 leaves 2x headroom over the observed
-# case; raise it if striping reappears on a real*8 field.
+# precision: issue #330's noise is 5e-9 relative, far too coarse for
+# the ULP term to catch on real*8 data.  1e-8 leaves 2x headroom;
+# raise it if striping reappears on a real*8 field.
 REGRID_NOISE_REL_TOL = 1.0e-8
 
 # The tolerance that constant_rel_tol returns for real*4 data, which
@@ -83,16 +80,8 @@ def constant_rel_tol(data=None):
     Returns the relative tolerance for deciding that a Ref or Dev
     field is constant across the domain, and so should get a flat
     color scale instead of one stretched across numerical noise
-    (see GitHub issue #330).
-
-    A single hardcoded tolerance cannot serve every field, because
-    GEOS-Chem carries some inputs as real*4 and others as real*8: a
-    value loose enough to swallow real*4 round-off (~1.2e-7 relative)
-    would also swallow real structure that a real*8 field can
-    legitimately resolve several decades below that.  So scale the
-    tolerance to the precision the data is actually carried at, and
-    floor it at the regridding noise level, which does not depend on
-    the dtype.
+    (see GitHub issue #330).  The tolerance is scaled to the
+    precision the data is carried at; see CONSTANT_TOL_ULPS.
 
     Parameters
     ----------
@@ -408,12 +397,9 @@ def normalize_colors(
             # as EmisCO_Aircraft (~1e-13 kg/m2/s).
             is_constant = diff_is_negligible(vmin, vmax, data_scale)
         else:
-            # Ref/Dev have no natural anchor: rtol only.  Still catches
-            # the issue #330 noise, which is a relative error, without
-            # mistaking small-but-real fields for constant.  The rtol
-            # is passed explicitly because is_nearly_constant's 1e-5
-            # default is looser than the real structure carried by
-            # some benchmark fields (see CONSTANT_REL_TOL).
+            # Ref/Dev have no natural anchor: rtol only, scaled to the
+            # data's precision by constant_rel_tol.  is_nearly_constant's
+            # own 1e-5 default is too loose (see CONSTANT_REL_TOL).
             if rel_tol is None:
                 rel_tol = CONSTANT_REL_TOL
             is_constant = is_nearly_constant(
