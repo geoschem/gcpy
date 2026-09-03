@@ -604,14 +604,27 @@ def vmin_vmax_for_ratio_plots(
     """
     # Ratio (dynamic range) subplot)
     if subplot in "dyn_ratio":
-        vmin = np.min(
-            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
-        )
-        if np.abs(vmin) > 0.0:                     # If vmin > 0, compute
-            vmax = 1.0 / vmin                      # vmax as its reciprocal
+        # Anchor the range on the largest deviation from 1, measuring
+        # both ends against 1 rather than against zero, and reflect it
+        # to keep the range symmetric about 1 in log space.
+        #
+        # Taking the extreme nearest zero instead is only right for a
+        # ratio that straddles 1.  A one-sided ratio then anchors on
+        # the end nearest 1, so the range excludes its own data, and a
+        # ratio whose near end is exactly 1 -- which is what Dev/Ref
+        # gives whenever Ref and Dev are identical over part of the
+        # domain -- collapsed to vmin == vmax == 1.  That left the
+        # panel flat and stacked every tick label at one position.
+        data_min = np.abs(np.nanmin(plot_val))
+        data_max = np.abs(np.nanmax(plot_val))
+        if data_min > 0.0:
+            vmax = np.max([data_max, 1.0 / data_min])
         else:
-            vmax = np.abs(np.nanmax(plot_val))     # Otherwise compute vmin
-            vmin = 1.0 / vmax                      # as reciprocal of vmax
+            vmax = data_max                        # Avoid a divide by zero
+        if vmax > 0.0:
+            vmin = 1.0 / vmax
+        else:
+            vmin = vmax                            # Ratio is zero everywhere
         if vmin > vmax:
             vmin, vmax = vmax, vmin                # Swap values if needed
         verbose_print(verbose, rowcol, vmin, vmax)
@@ -1150,6 +1163,33 @@ def colorbar_for_flat_restricted_range(cbar):
     return cbar
 
 
+def unique_ticks(pos):
+    """
+    Removes repeated tick positions, preserving order.
+
+    Tick positions for a ratio colorbar are built from vmin, vmax and
+    the fixed anchor at 1.  Those coincide as the range narrows, and a
+    repeated position draws every one of its labels at the same spot,
+    which renders as an unreadable smudge rather than as a number.
+
+    Parameters
+    ----------
+    pos : list of float
+        Candidate tick positions.
+
+    Returns
+    -------
+    pos : list of float
+        The same positions with duplicates dropped, in the order given.
+    """
+    seen = []
+    for val in pos:
+        if not any(val == other for other in seen):
+            seen.append(val)
+
+    return seen
+
+
 def colorbar_for_dyn_ratio_plots(
         cbar,
         vmin,
@@ -1175,7 +1215,7 @@ def colorbar_for_dyn_ratio_plots(
     # place tickmarks at [vmin, 1, vmax].  This should help
     # to avoid the tick labels from running together.
     if vmin > 0.999 and vmax < 1.001:
-        pos = [vmin, 1.0, vmax]
+        pos = unique_ticks([vmin, 1.0, vmax])
         cbar.set_ticks(pos)
         cbar.formatter = ticker.ScalarFormatter()
         cbar.formatter.set_useOffset(False)
@@ -1187,7 +1227,9 @@ def colorbar_for_dyn_ratio_plots(
     # This should be good enough for most cases.  Perhaps
     # think about implementing a better method later on.
     if vmin > 0.1 and vmax < 10.0:
-        pos = [vmin, (vmin+1.0)/2.0, 1.0, (vmax+1.0)/2.0, vmax]
+        pos = unique_ticks(
+            [vmin, (vmin+1.0)/2.0, 1.0, (vmax+1.0)/2.0, vmax]
+        )
         cbar.set_ticks(pos)
         cbar.formatter = ticker.ScalarFormatter()
         cbar.formatter.set_useOffset(False)

@@ -31,6 +31,7 @@ from gcpy.plot.six_plot import (
     compute_norm_for_plot,
     ref_dev_data_scale,
     ref_equals_dev,
+    unique_ticks,
     vmin_vmax_for_ratio_plots,
 )
 
@@ -1152,3 +1153,160 @@ def test_negligible_label_still_defaults_to_zero_for_difference_panels():
     plt.close("all")
     assert ticks == [0.0]
     assert labels == ["Differences negligible throughout domain"]
+
+
+# ======================================================================
+# The dynamic-range ratio panel anchored its color range on whichever
+# extreme was nearest zero and reflected it about 1.  That is only
+# right for a ratio that straddles 1: a one-sided ratio anchored on the
+# end nearest 1, so the range excluded its own data, and a ratio whose
+# near end is exactly 1 -- what Dev/Ref gives wherever Ref and Dev are
+# identical over part of the domain -- collapsed to vmin == vmax == 1,
+# leaving the panel flat and stacking every tick label at one position.
+# ======================================================================
+
+ONE_SIDED_HIGH = (1.0, 1.00002)      # Dev >= Ref, identical over part
+ONE_SIDED_LOW = (0.99998, 1.0)       # Dev <= Ref, identical over part
+STRADDLES_ONE = (0.99998, 1.00002)
+BIG_ONE_SIDED = (1.0, 1.5)           # a 50% ratio, also collapsed before
+
+
+def _ratio_range(lo, hi):
+    arr = np.linspace(lo, hi, 64)
+    return vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+
+
+@pytest.mark.parametrize(
+    "lo,hi",
+    [ONE_SIDED_HIGH, ONE_SIDED_LOW, STRADDLES_ONE, BIG_ONE_SIDED,
+     (0.9, 1.0), (0.5, 2.0)],
+)
+def test_dyn_ratio_range_contains_its_data(lo, hi):
+    # A color range that excludes the data saturates the panel.
+    vmin, vmax = _ratio_range(lo, hi)
+    assert vmin <= lo * (1.0 + 1.0e-12)
+    assert hi <= vmax * (1.0 + 1.0e-12)
+
+
+@pytest.mark.parametrize(
+    "lo,hi",
+    [ONE_SIDED_HIGH, ONE_SIDED_LOW, STRADDLES_ONE, BIG_ONE_SIDED,
+     (0.9, 1.0), (0.5, 2.0)],
+)
+def test_dyn_ratio_range_is_symmetric_about_one(lo, hi):
+    # Ratios are anchored at 1, so the range must be symmetric in log
+    # space: vmin and vmax reciprocals of each other.
+    vmin, vmax = _ratio_range(lo, hi)
+    assert np.isclose(vmin * vmax, 1.0, rtol=1.0e-12)
+
+
+@pytest.mark.parametrize("lo,hi", [ONE_SIDED_HIGH, BIG_ONE_SIDED])
+def test_dyn_ratio_range_not_degenerate_for_a_varying_ratio(lo, hi):
+    # Regression test for the reported plot: min(Dev/Ref) is exactly 1
+    # wherever Ref and Dev agree over part of the domain, which used to
+    # give vmin == vmax == 1.
+    vmin, vmax = _ratio_range(lo, hi)
+    assert vmin < vmax
+
+
+def test_dyn_ratio_range_survives_a_zero_ratio():
+    # Dev is zero somewhere, so the ratio is too.  Must not divide by
+    # zero, and must still bracket the data.
+    arr = np.concatenate([np.zeros(8), np.full(56, 2.0)])
+    with np.errstate(divide="raise", invalid="raise"):
+        vmin, vmax = vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+    assert np.isfinite(vmin) and np.isfinite(vmax)
+    assert vmax >= 2.0
+
+
+def test_unique_ticks_drops_repeats_and_keeps_order():
+    assert unique_ticks([1.0, 1.0, 1.0]) == [1.0]
+    assert unique_ticks([0.9, 1.0, 1.1]) == [0.9, 1.0, 1.1]
+    assert unique_ticks([1.0, 0.9, 1.0]) == [1.0, 0.9]
+
+
+def test_dyn_ratio_colorbar_labels_do_not_collide():
+    # End to end on the reported case: a ratio that is 1 over most of
+    # the domain with a patch above it.  Every tick must sit at its own
+    # position, with no two label boxes overlapping.
+    arr = np.concatenate([np.full(60, 1.0), np.full(4, 1.00002)])
+    vmin, vmax = vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+    norm = normalize_colors(
+        vmin, vmax, is_difference=True, log_color_scale=True,
+        ratio_log=True, is_ratio=True, use_tolerance=True,
+    )
+    figs, axs = plt.subplots(3, 2, figsize=[12, 15.3])
+    plt.subplots_adjust(left=0.10, right=0.925, bottom=0.05,
+                        wspace=0.25, hspace=0.35)
+    axes = axs[2][0]
+    mappable = axes.imshow(np.full((2, 2), 1.0), norm=norm, cmap="RdBu_r")
+    cbar = plt.colorbar(mappable, ax=axes, orientation="horizontal",
+                        pad=0.15)
+    cbar.mappable.set_norm(norm)
+    cbar = colorbar_ticks_and_format(
+        arr, cbar, vmin, vmax, "dyn_ratio",
+        use_tolerance=True, log_color_scale=True,
+    )
+    figs.canvas.draw()
+    ticks = [float(t) for t in cbar.get_ticks()]
+    extents = [t.get_window_extent() for t in cbar.ax.get_xticklabels()]
+    plt.close("all")
+
+    assert len(ticks) == len(set(ticks)), "repeated tick positions"
+    overlaps = [
+        i for i in range(len(extents) - 1)
+        if extents[i].x1 > extents[i + 1].x0
+    ]
+    assert not overlaps, f"tick labels overlap at {overlaps}"
+
+
+# Reconstructed from the reported plot: the GCHP TransportTracers
+# PassiveTracer zonal mean for Jan2019 (14.7.0-rc.0 vs 14.8.0-rc.0).
+# Its ratio panel's colorbar read "0.999999181.000000001.00000082",
+# three labels run together.  The old range anchored on the extreme
+# nearest 1 and so stopped at 1.00000082 while the data reached about
+# 1.000015; excluding the data forced eight decimals of precision, and
+# three ten-character labels do not fit across the colorbar.
+REPORTED_RATIO_MIN = 0.99999918
+REPORTED_RATIO_MAX = 1.000015
+
+
+def test_reported_ratio_colorbar_labels_are_readable():
+    arr = np.concatenate([
+        np.full(32, REPORTED_RATIO_MIN),
+        np.full(32, REPORTED_RATIO_MAX),
+    ])
+    vmin, vmax = vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+
+    # The range must now contain the data it is describing
+    assert vmin <= REPORTED_RATIO_MIN
+    assert REPORTED_RATIO_MAX <= vmax
+
+    norm = normalize_colors(
+        vmin, vmax, is_difference=True, log_color_scale=True,
+        ratio_log=True, is_ratio=True, use_tolerance=True,
+    )
+    figs, axs = plt.subplots(3, 2, figsize=[12, 15.3])
+    plt.subplots_adjust(left=0.10, right=0.925, bottom=0.05,
+                        wspace=0.25, hspace=0.35)
+    axes = axs[2][0]
+    mappable = axes.imshow(np.full((2, 2), 1.0), norm=norm, cmap="RdBu_r")
+    cbar = plt.colorbar(mappable, ax=axes, orientation="horizontal",
+                        pad=0.15)
+    cbar.mappable.set_norm(norm)
+    cbar = colorbar_ticks_and_format(
+        arr, cbar, vmin, vmax, "dyn_ratio",
+        use_tolerance=True, log_color_scale=True,
+    )
+    figs.canvas.draw()
+    tick_labels = cbar.ax.get_xticklabels()
+    extents = [t.get_window_extent() for t in tick_labels]
+    joined = "".join(t.get_text() for t in tick_labels)
+    plt.close("all")
+
+    assert joined != "0.999999181.000000001.00000082"
+    overlaps = [
+        i for i in range(len(extents) - 1)
+        if extents[i].x1 > extents[i + 1].x0
+    ]
+    assert not overlaps, f"tick labels overlap at {overlaps}: {joined}"
