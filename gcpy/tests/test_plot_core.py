@@ -27,6 +27,7 @@ from gcpy.plot.six_plot import (
     vmin_vmax_for_absdiff_plots,
     colorbar_ticks_and_format,
     colorbar_for_constant_field,
+    colorbar_for_negligible_diff,
     compute_norm_for_plot,
     ref_dev_data_scale,
     ref_equals_dev,
@@ -410,7 +411,9 @@ def test_ref_dev_data_scale_all_nan_returns_none():
 def test_negligible_absdiff_implies_ref_equals_dev(rel_diff):
     """
     Whenever the difference panel is blanked as "negligible", the ratio
-    panel must agree and report "Ref and Dev equal throughout domain".
+    panel must agree that Ref and Dev do not meaningfully differ.  (Which
+    wording it uses depends on whether they are exactly equal; this test
+    covers the predicate, not the label.)
 
     The reverse need not hold (the ratio panel is the more forgiving of
     the two), but this direction must: it would be contradictory to
@@ -1083,3 +1086,69 @@ def test_six_plot_prefers_a_caller_supplied_data_scale():
     diff = NOISE_REL_TOL * 100.0        # negligible against 100.06
     assert not diff_is_negligible(-diff, diff, native)
     assert diff_is_negligible(-diff, diff, 100.06)
+
+
+# ======================================================================
+# The ratio row's "Ref and Dev equal throughout domain" is a strong
+# claim, but ref_equals_dev is a tolerance test that also passes when
+# Ref and Dev differ by up to NOISE_REL_TOL.  Reserve that wording for
+# a ratio that is exactly 1, and label the tolerance case the way the
+# difference row already labels it, so that output which did not change
+# at all can be told from output that changed too little to matter.
+# ======================================================================
+
+def _ratio_colorbar_label(ratio, subplot="dyn_ratio"):
+    """Returns (labels, tick positions) for a ratio panel's colorbar."""
+    _, axes = plt.subplots()
+    mappable = axes.imshow(np.full((2, 2), 1.0))
+    cbar = plt.colorbar(mappable, ax=axes)
+    cbar = colorbar_ticks_and_format(
+        ratio,
+        cbar,
+        float(np.min(ratio)),
+        float(np.max(ratio)),
+        subplot,
+        use_tolerance=True,
+    )
+    labels = [tick.get_text() for tick in cbar.ax.get_yticklabels()]
+    ticks = [float(t) for t in cbar.get_ticks()]
+    plt.close("all")
+    return labels, ticks
+
+
+@pytest.mark.parametrize("subplot", ["dyn_ratio", "res_ratio"])
+def test_identical_ref_and_dev_still_labeled_equal(subplot):
+    # Dev/Ref is exactly 1 (x/x is exactly 1.0 in IEEE), so Ref and Dev
+    # really are identical and the stronger wording is earned.
+    labels, _ = _ratio_colorbar_label(np.full(16, 1.0), subplot)
+    assert labels == ["Ref and Dev equal throughout domain"]
+
+
+@pytest.mark.parametrize("subplot", ["dyn_ratio", "res_ratio"])
+def test_ratio_within_tolerance_labeled_negligible(subplot):
+    # Ref and Dev differ, just by less than NOISE_REL_TOL.  Calling
+    # that "equal" overstates it.
+    ratio = np.full(16, 1.0 + NOISE_REL_TOL * 0.5)
+    labels, _ = _ratio_colorbar_label(ratio, subplot)
+    assert labels == ["Differences negligible throughout domain"]
+
+
+def test_negligible_label_on_a_ratio_panel_is_anchored_at_one():
+    # A ratio panel's collapsed norm spans 0.5 to 2.0, so a tick at the
+    # difference row's 0.0 would fall outside it and blank the colorbar.
+    ratio = np.full(16, 1.0 + NOISE_REL_TOL * 0.5)
+    _, ticks = _ratio_colorbar_label(ratio)
+    assert ticks == [1.0]
+
+
+def test_negligible_label_still_defaults_to_zero_for_difference_panels():
+    # The new anchor must not disturb the difference row.
+    _, axes = plt.subplots()
+    mappable = axes.imshow(np.zeros((2, 2)))
+    cbar = plt.colorbar(mappable, ax=axes)
+    cbar = colorbar_for_negligible_diff(cbar)
+    ticks = [float(t) for t in cbar.get_ticks()]
+    labels = [tick.get_text() for tick in cbar.ax.get_yticklabels()]
+    plt.close("all")
+    assert ticks == [0.0]
+    assert labels == ["Differences negligible throughout domain"]

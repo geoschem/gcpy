@@ -898,9 +898,17 @@ def colorbar_ticks_and_format(
     #-------------------------------------------------------------------
     if subplot in ("dyn_ratio", "res_ratio"):
 
-        # When Ref == Dev
+        # When Ref and Dev agree.  "Equal" is a strong claim, and this
+        # test is a tolerance: it also passes when Ref and Dev differ by
+        # up to NOISE_REL_TOL.  Reserve that wording for a ratio that is
+        # exactly 1 everywhere, so a reader can tell output that did not
+        # change at all from output that changed too little to matter,
+        # and label the tolerance case the way the difference row above
+        # already labels it.
         if ref_equals_dev(plot_val):
-            return colorbar_for_ref_equals_dev(cbar)
+            if ref_equals_dev(plot_val, rtol=0.0, atol=0.0):
+                return colorbar_for_ref_equals_dev(cbar)
+            return colorbar_for_negligible_diff(cbar, pos=1.0)
 
         # Dynamic range ratio subplot
         if subplot in "dyn_ratio":
@@ -1086,25 +1094,31 @@ def colorbar_for_constant_field(cbar, vmin, vmax, use_cmap_RdBu=False):
     return cbar
 
 
-def colorbar_for_negligible_diff(cbar):
+def colorbar_for_negligible_diff(cbar, pos=0.0):
     """
-    Formats a colorbar object for an "absolute difference" subplot in
-    which the Dev - Ref spread is negligible compared to the Ref and
-    Dev data themselves, and so was collapsed to a flat color range.
+    Formats a colorbar object for a subplot in which the difference
+    between Ref and Dev is negligible compared to the Ref and Dev data
+    themselves, and so was collapsed to a flat color range.
 
     Parameters
     ----------
     cbar : matplotlib.colorbar.Colorbar
         The input colorbar.
+    pos : float, optional
+        Value the colorbar is anchored to, where the single tick is
+        placed.  Difference panels are centered on zero; ratio panels
+        pass 1.0, since a tick at 0.0 falls outside their 0.5 to 2.0
+        range, which stretches the colorbar axes and leaves it blank
+        (cf. colorbar_for_all_zero_or_nan).
+        Default value: 0.0
 
     Returns
     -------
     cbar : matplotlib.colorbar.Colorbar
         The modified colorbar.
     """
-    pos = [0.0]
     cbar.set_ticks(
-        pos,
+        [pos],
         labels=["Differences negligible throughout domain"]
     )
     cbar.minorticks_off()

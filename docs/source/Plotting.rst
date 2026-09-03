@@ -70,13 +70,18 @@ renders as spurious color "striping" (see `GitHub issue #330
    * - :literal:`Undefined throughout domain`
      - Every value in the panel is :literal:`NaN`.
    * - :literal:`Differences negligible throughout domain`
-     - The :literal:`Dev - Ref` differences in this panel are
-       negligible compared to the magnitude of the :literal:`Ref` and
-       :literal:`Dev` data themselves, so they are numerical noise
-       (e.g. floating-point round-off or regridding error) rather
-       than a real signal.
+     - The difference between :literal:`Ref` and :literal:`Dev` is
+       negligible compared to the magnitude of the data itself, so it
+       is numerical noise (e.g. floating-point round-off or regridding
+       error) rather than a real signal.  Shown on a difference panel,
+       and on a ratio panel whose :literal:`Dev/Ref` is within
+       :code:`gcpy.plot.core.NOISE_REL_TOL` of 1 but not exactly 1.
    * - :literal:`Ref and Dev equal throughout domain`
-     - The :literal:`Dev/Ref` ratio is 1 everywhere.
+     - The :literal:`Dev/Ref` ratio is *exactly* 1 everywhere, i.e.
+       :literal:`Ref` and :literal:`Dev` are identical.  A ratio that
+       is merely within tolerance of 1 gets the negligible-difference
+       label above instead, so that output which did not change at all
+       can be told from output that changed too little to matter.
    * - :literal:`Ref is zero throughout domain`
      - Shown on a ratio panel when :literal:`Ref` is zero everywhere
        but :literal:`Dev` is not.  :literal:`Dev/Ref` is then a
@@ -143,7 +148,7 @@ testing the span applied an effective tolerance of half
 instance the 7.5 parts per million between the 14.7.0 and 14.8.0
 :literal:`TransportTracers` :literal:`PassiveTracer` restarts -- was
 plotted by the difference row while the ratio row beside it reported
-:literal:`Ref and Dev equal throughout domain`.
+that :literal:`Ref` and :literal:`Dev` agreed throughout the domain.
 
 .. _plot-csl:
 

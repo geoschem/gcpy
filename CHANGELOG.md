@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added function `diff_is_negligible` to `gcpy/plot/core.py`, which is the single criterion the difference and ratio rows now share
 - Added keyword argument `data_scale` to `single_panel` in `gcpy/plot/single_panel.py`
 - Added keyword argument `data_scale` to `six_plot` in `gcpy/plot/six_plot.py`, passed from `compare_single_level` and `compare_zonal_mean`
+- Added keyword argument `pos` to `colorbar_for_negligible_diff` in `gcpy/plot/six_plot.py`
 - Added function `colorbar_for_constant_field` to `gcpy/plot/six_plot.py`
 - Added function `warn_if_flip_levels_mismatch` to `gcpy/util.py`, called from `compare_single_level` and `compare_zonal_mean`, which warns when `flip_levels` is set for only one of Ref and Dev
 - Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
