@@ -833,9 +833,17 @@ def compare_single_level(
         # numerical noise to numerical noise (which would otherwise
         # saturate the color scale wherever the field is really zero
         # but regridding left a residue behind)
+        # Take the magnitude from the comparison-grid arrays the
+        # difference and ratio rows are built from, not the native-grid
+        # vmins & vmaxs of row 1: regridding moves the maximum, and a
+        # native maximum below the comparison-grid one leaves the
+        # difference row with a tighter tolerance than the ratio row,
+        # so the two disagree about whether Ref and Dev differ.
         data_scale = ref_dev_data_scale(
-            [vmin_ref, vmin_dev, vmin_both],
-            [vmax_ref, vmax_dev, vmax_both]
+            [np.nanmin(np.array(ds_ref_cmp)),
+             np.nanmin(np.array(ds_dev_cmp))],
+            [np.nanmax(np.array(ds_ref_cmp)),
+             np.nanmax(np.array(ds_dev_cmp))]
         )
 
         if cmpgridtype == "ll":
@@ -1142,6 +1150,7 @@ def compare_single_level(
                 log_color_scale,
                 plot_type="single_level",
                 ratio_log=ratio_logs[i],
+                data_scale=data_scale,
                 proj=proj,
                 ll_plot_func=ll_plot_func,
                 **extra_plot_args

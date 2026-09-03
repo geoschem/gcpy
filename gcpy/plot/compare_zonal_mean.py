@@ -761,6 +761,20 @@ def compare_zonal_mean(
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
+
+        # Magnitude of the Ref & Dev data that the difference and ratio
+        # rows are built from.  Take it from the comparison-grid arrays
+        # those rows actually use, not from the native-grid vmins &
+        # vmaxs of row 1: regridding moves the maximum, and a native
+        # maximum below the comparison-grid one leaves the difference
+        # row with a tighter tolerance than the ratio row, so the two
+        # disagree about whether Ref and Dev differ.
+        cmp_data_scale = ref_dev_data_scale(
+            [np.nanmin(np.array(zm_ref_cmp)),
+             np.nanmin(np.array(zm_dev_cmp))],
+            [np.nanmax(np.array(zm_ref_cmp)),
+             np.nanmax(np.array(zm_dev_cmp))]
+        )
         if diff_of_diffs:
             frac_zm_dev_cmp = frac_ds_dev_cmp.mean(axis=2)
             frac_zm_ref_cmp = frac_ds_ref_cmp.mean(axis=2)
@@ -817,10 +831,7 @@ def compare_zonal_mean(
                 zm_fracdiff,
                 np.array(zm_ref_cmp),
                 np.array(zm_dev_cmp),
-                ref_dev_data_scale(
-                    [vmin_ref, vmin_dev, vmin_both],
-                    [vmax_ref, vmax_dev, vmax_both]
-                )
+                cmp_data_scale
             )
         zm_fracdiff = np.where(np.abs(zm_fracdiff) ==
                                np.inf, np.nan, zm_fracdiff)
@@ -1034,6 +1045,7 @@ def compare_zonal_mean(
                 xtick_positions=xtick_positions,
                 xticklabels=xticklabels,
                 ratio_log=ratio_logs[i],
+                data_scale=cmp_data_scale,
                 **extra_plot_args
             )
 

@@ -14,7 +14,8 @@ from gcpy.grid import get_vert_grid, get_pressure_indices, \
     call_make_grid, get_input_res
 from gcpy.regrid import regrid_comparison_data, create_regridders
 from gcpy.util import reshape_MAPL_CS, all_zero_or_nan, verify_variable_type
-from gcpy.plot.core  import gcpy_style, normalize_colors, WhGrYlRd
+from gcpy.plot.core  import constant_rel_tol, gcpy_style, \
+    normalize_colors, WhGrYlRd
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -53,6 +54,7 @@ def single_panel(
         weightsdir='.',
         vmin=None,
         vmax=None,
+        data_scale=None,
         return_list_of_plots=False,
         **extra_plot_args
 ):
@@ -166,6 +168,16 @@ def single_panel(
     vmax : float, optional
         Maximum for colorbars.
         Default value: None (will use plot value maximum)
+    data_scale : float, optional
+        Magnitude of the Ref and Dev data that were differenced to
+        produce plot_vals, used only when plot_vals is a difference
+        (use_cmap_RdBu=True) and norm is None.  It scales the
+        tolerance below which the panel counts as holding only
+        numerical noise (see gcpy.plot.core.noise_atol); a standalone
+        panel cannot derive it, because it is handed the difference
+        rather than the Ref and Dev fields it came from.  If None,
+        such a panel collapses only when it is exactly flat.
+        Default value: None
     return_list_of_plots : bool, optional
         Return plots as a list. This is helpful if you are using
         a cubed-sphere grid and would like access to all 6 plots.
@@ -363,17 +375,22 @@ def single_panel(
         elif isinstance(plot_vals, np.ndarray):
             vmin = np.min(plot_vals) if vmin is None else vmin
             vmax = np.max(plot_vals) if vmax is None else vmax
-        # NOTE: Pass use_tolerance=False so that a standalone panel
-        # behaves the same way the corresponding panel of a six-panel
-        # plot does (see compute_norm_for_plot in six_plot.py).  The
-        # default is True, which would apply the near-constant
-        # tolerance to single-level data as well (see GitHub #439).
+        # Mirror the choices compute_norm_for_plot makes for the
+        # corresponding panel of a six-panel plot, so that a standalone
+        # panel renders the same way: the near-constant tolerance is
+        # for zonal means only (applying it to single-level data
+        # blanked real fields, see GitHub issue #439), the Ref/Dev
+        # tolerance follows the precision this field is carried at,
+        # and a difference panel's noise tolerance follows the
+        # magnitude of the data it came from.
         norm = normalize_colors(
             vmin,
             vmax,
             is_difference=use_cmap_RdBu,
             log_color_scale=log_color_scale,
-            use_tolerance="zonal_mean" in plot_type)
+            use_tolerance="zonal_mean" in plot_type,
+            data_scale=data_scale,
+            rel_tol=constant_rel_tol(plot_vals))
 
     # Create plot
     ax.set_title(title)

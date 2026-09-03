@@ -30,12 +30,104 @@ gcpy_style = path.join(_plot_dir, "gcpy_plot_style")
 # so it does not depend on the units of the field.  The same value
 # serves as the rtol of six_plot.ref_equals_dev, so that the
 # difference and ratio rows agree about when Ref and Dev differ.
-NOISE_REL_TOL = 1.0e-5
+#
+# The criterion is on the largest |Dev - Ref| in the panel, i.e. the
+# rows agree when max|Dev - Ref| <= NOISE_REL_TOL * data_scale.
+#
+# That agreement used to be nominal only.  Difference panels are
+# symmetric about zero (see vmin_vmax_for_absdiff_plots), so testing
+# their full vmin..vmax span measured 2 * max|Dev - Ref| and applied
+# an effective tolerance of NOISE_REL_TOL / 2, while
+# ref_equals_dev tested the ratio's deviation from 1 and applied
+# NOISE_REL_TOL.  A difference of 7.5e-6 relative -- a
+# TransportTracers PassiveTracer restart, 14.7.0 vs 14.8.0 -- landed
+# in the resulting factor-of-two gap, so the difference row plotted a
+# real offset while the ratio row beside it announced "Ref and Dev
+# equal throughout domain".  diff_is_negligible now tests the
+# half-span explicitly, and the constant is 5e-6 rather than 1e-5 so
+# that closing the gap leaves the difference panels' long-standing
+# sensitivity untouched and only the ratio row moves.
+NOISE_REL_TOL = 5.0e-6
 
 # Absolute tolerance for comparing dimensionless ratio data against
 # 1.0 (see six_plot.ref_equals_dev).  Ratios are anchored at 1, so
 # NOISE_REL_TOL dominates; this is only a floor for values near zero.
 RATIO_ABS_TOL = 1.0e-10
+
+# Number of ULPs (units in the last place) of the data's own
+# precision that a Ref or Dev field may span and still count as
+# constant across the domain.  See constant_rel_tol.
+CONSTANT_TOL_ULPS = 8
+
+# Floor on that tolerance, set by regridding rather than by storage
+# precision: issue #330's noise is 5e-9 relative, far too coarse for
+# the ULP term to catch on real*8 data.  1e-8 leaves 2x headroom;
+# raise it if striping reappears on a real*8 field.
+REGRID_NOISE_REL_TOL = 1.0e-8
+
+# The tolerance that constant_rel_tol returns for real*4 data, which
+# is the great majority of GEOS-Chem output.  Named for use as the
+# fallback when a field's precision cannot be determined, and by the
+# unit tests.
+CONSTANT_REL_TOL = max(
+    CONSTANT_TOL_ULPS * float(np.finfo(np.float32).eps),
+    REGRID_NOISE_REL_TOL,
+)
+
+
+def constant_rel_tol(data=None):
+    """
+    Returns the relative tolerance for deciding that a Ref or Dev
+    field is constant across the domain, and so should get a flat
+    color scale instead of one stretched across numerical noise
+    (see GitHub issue #330).  The tolerance is scaled to the precision
+    the data is carried at and floored at the regridding noise level;
+    see CONSTANT_TOL_ULPS and REGRID_NOISE_REL_TOL.
+
+    Parameters
+    ----------
+    data : xarray.DataArray or numpy.ndarray, optional
+        The field being plotted.  If it is missing, or its precision
+        cannot be determined, CONSTANT_REL_TOL (the real*4 value) is
+        returned, since most GEOS-Chem output is real*4.
+        Default value: None
+
+    Returns
+    -------
+    rtol : float
+        Relative tolerance to pass to is_nearly_constant.
+
+    Notes
+    -----
+    The on-disk dtype is preferred over the in-memory one.  An array
+    read from a real*4 file and promoted to float64 by regridding
+    still carries only real*4 information, and judging it by float64
+    round-off would mistake that file's round-off for real signal.
+    """
+    dtype = None
+
+    # Prefer the on-disk dtype recorded by xarray at read time
+    encoding = getattr(data, "encoding", None)
+    if isinstance(encoding, dict):
+        dtype = encoding.get("dtype", None)
+
+    # Otherwise fall back to the in-memory dtype
+    if dtype is None:
+        dtype = getattr(data, "dtype", None)
+
+    # Tested explicitly: np.finfo(None) quietly reports float64
+    # rather than raising, which would silently apply real*8
+    # precision to data whose dtype we never actually learned.
+    if dtype is None:
+        return CONSTANT_REL_TOL
+
+    try:
+        eps = float(np.finfo(dtype).eps)
+    except (TypeError, ValueError):
+        # Not a float dtype (or no dtype at all): assume real*4
+        return CONSTANT_REL_TOL
+
+    return max(CONSTANT_TOL_ULPS * eps, REGRID_NOISE_REL_TOL)
 
 
 def six_panel_subplot_names(diff_of_diffs):
@@ -95,6 +187,48 @@ def noise_atol(data_scale):
     return NOISE_REL_TOL * scale
 
 
+def diff_is_negligible(vmin, vmax, data_scale):
+    """
+    Returns whether a difference panel holds only numerical noise
+    rather than real signal, so that its color scale should be
+    collapsed and its colorbar labeled as such.
+
+    Parameters
+    ----------
+    vmin, vmax : float
+        Min and max of the difference panel's data range.  These are
+        symmetric about zero (see six_plot.vmin_vmax_for_absdiff_plots).
+    data_scale : float or None
+        Magnitude of the Ref and Dev data (see
+        six_plot.ref_dev_data_scale).
+
+    Returns
+    -------
+    is_negligible : bool
+        Whether the panel's differences are negligible compared to the
+        magnitude of the data that was differenced.
+
+    Notes
+    -----
+    The test is on half the span, not the whole of it.  Because the
+    range is symmetric about zero, half the span is the largest
+    |Dev - Ref| in the panel, which is the quantity NOISE_REL_TOL is
+    defined against and the quantity six_plot.ref_equals_dev tests on
+    the ratio row.  Comparing the full span instead applied an
+    effective tolerance of NOISE_REL_TOL / 2, which is how the two
+    rows came to disagree by a factor of two while sharing a constant
+    whose whole purpose was to keep them in step.
+    """
+    atol = noise_atol(data_scale)
+
+    # Without a usable data_scale there is no tolerance to apply, so
+    # collapse only a panel that is exactly flat (cf. noise_atol).
+    if atol <= 0.0:
+        return float(vmin) == float(vmax)
+
+    return abs(0.5 * (float(vmax) - float(vmin))) <= atol
+
+
 def mask_meaningless_ratio(fracdiff, ref, dev, data_scale):
     """
     Masks the cells of a Dev/Ref ratio array in which both Ref and Dev
@@ -148,6 +282,7 @@ def normalize_colors(
         is_ratio=False,
         use_tolerance=True,
         data_scale=None,
+        rel_tol=None,
 ):
     """
     Normalizes a data range to the colormap range used by matplotlib
@@ -192,6 +327,13 @@ def normalize_colors(
         the tolerance that decides whether the panel holds real signal
         or only numerical noise.  If None, such a panel collapses only
         when vmin and vmax are exactly equal.
+        Default value: None
+    rel_tol : float, optional
+        Relative tolerance for deciding that a Ref or Dev panel is
+        constant across the domain.  Callers should pass
+        constant_rel_tol(data) so that the tolerance matches the
+        precision the field is carried at (real*4 vs real*8).  If
+        None, the real*4 value CONSTANT_REL_TOL is used.
         Default value: None
 
     Returns
@@ -241,22 +383,36 @@ def normalize_colors(
         # color "striping" (see GitHub issue #330).  Each panel type is
         # anchored to a different value, so each needs its own atol.
         if is_ratio:
-            # Anchored at 1 and dimensionless: rtol alone suffices
-            is_constant = is_nearly_constant([vmin, vmax])
-        elif is_difference:
-            # Symmetric about zero (see vmin_vmax_for_absdiff_plots),
-            # so rtol can never fire.  Scale atol to the data: a fixed
-            # one, being in unknown units, blanked out small-magnitude
-            # fields such as EmisCO_Aircraft (~1e-13 kg/m2/s).
+            # Anchored at 1, so test the distance from 1 rather than
+            # the width of the range.  These arguments deliberately
+            # match six_plot.ref_equals_dev exactly, which draws the
+            # label for this same panel: testing the span instead let
+            # a range sitting wholly to one side of 1 (say 1.000030 to
+            # 1.000032) collapse as constant while the label beside it
+            # correctly said Ref and Dev differ.
             is_constant = is_nearly_constant(
                 [vmin, vmax],
-                atol=noise_atol(data_scale)
+                rtol=NOISE_REL_TOL,
+                atol=RATIO_ABS_TOL,
+                target=1.0,
             )
+        elif is_difference:
+            # Symmetric about zero (see vmin_vmax_for_absdiff_plots).
+            # Scale the tolerance to the data: a fixed one, being in
+            # unknown units, blanked out small-magnitude fields such
+            # as EmisCO_Aircraft (~1e-13 kg/m2/s).
+            is_constant = diff_is_negligible(vmin, vmax, data_scale)
         else:
-            # Ref/Dev have no natural anchor: rtol only.  Still catches
-            # the issue #330 noise, which is a relative error, without
-            # mistaking small-but-real fields for constant.
-            is_constant = is_nearly_constant([vmin, vmax], atol=0.0)
+            # Ref/Dev have no natural anchor: rtol only, scaled to the
+            # data's precision by constant_rel_tol.  is_nearly_constant's
+            # own 1e-5 default is too loose (see CONSTANT_REL_TOL).
+            if rel_tol is None:
+                rel_tol = CONSTANT_REL_TOL
+            is_constant = is_nearly_constant(
+                [vmin, vmax],
+                rtol=rel_tol,
+                atol=0.0,
+            )
     else:
         is_constant = (
             (vmin == 0 and vmax == 0)

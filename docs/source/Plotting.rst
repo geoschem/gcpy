@@ -70,13 +70,18 @@ renders as spurious color "striping" (see `GitHub issue #330
    * - :literal:`Undefined throughout domain`
      - Every value in the panel is :literal:`NaN`.
    * - :literal:`Differences negligible throughout domain`
-     - The :literal:`Dev - Ref` differences in this panel are
-       negligible compared to the magnitude of the :literal:`Ref` and
-       :literal:`Dev` data themselves, so they are numerical noise
-       (e.g. floating-point round-off or regridding error) rather
-       than a real signal.
+     - The difference between :literal:`Ref` and :literal:`Dev` is
+       negligible compared to the magnitude of the data itself, so it
+       is numerical noise (e.g. floating-point round-off or regridding
+       error) rather than a real signal.  Shown on a difference panel,
+       and on a ratio panel whose :literal:`Dev/Ref` is within
+       :code:`gcpy.plot.core.NOISE_REL_TOL` of 1 but not exactly 1.
    * - :literal:`Ref and Dev equal throughout domain`
-     - The :literal:`Dev/Ref` ratio is 1 everywhere.
+     - The :literal:`Dev/Ref` ratio is *exactly* 1 everywhere, i.e.
+       :literal:`Ref` and :literal:`Dev` are identical.  A ratio that
+       is merely within tolerance of 1 gets the negligible-difference
+       label above instead, so that output which did not change at all
+       can be told from output that changed too little to matter.
    * - :literal:`Ref is zero throughout domain`
      - Shown on a ratio panel when :literal:`Ref` is zero everywhere
        but :literal:`Dev` is not.  :literal:`Dev/Ref` is then a
@@ -85,6 +90,12 @@ renders as spurious color "striping" (see `GitHub issue #330
    * - :literal:`Dev is zero throughout domain`
      - Shown on a ratio panel when :literal:`Dev` is zero everywhere
        but :literal:`Ref` is not, so the ratio is zero everywhere.
+   * - :literal:`Constant at <value> throughout domain`
+     - Shown on a :literal:`Ref` or :literal:`Dev` panel whose data is
+       the same everywhere, to within the precision the field is
+       carried at.  The label names the value, because the collapsed
+       color scale itself is dimensionless and its numeric ticks would
+       otherwise be read as values in the field's units.
    * - :literal:`Zero within the 5th-95th percentile range`
      - Shown on a restricted-range difference panel when the field is
        zero over most of the domain (e.g. aircraft emissions), so that
@@ -102,14 +113,42 @@ saturate the color scale.  A cell in which :literal:`Ref` is
 negligible but :literal:`Dev` is not represents a real change, so its
 ratio is kept.
 
+The threshold for calling a :literal:`Ref` or :literal:`Dev` panel
+constant is set by :code:`gcpy.plot.core.constant_rel_tol`, which
+scales it to the precision the field is carried at rather than using
+one fixed number.  A single tolerance cannot serve every field:
+GEOS-Chem carries some inputs as real*4 and others as real*8, and a
+value loose enough to swallow real*4 round-off (about
+:math:`1.2 \times 10^{-7}` in relative terms) would also swallow real
+structure that a real*8 field can legitimately resolve several decades
+below that.  The tolerance is :code:`CONSTANT_TOL_ULPS` units in the
+last place of the field's own dtype, floored at
+:code:`REGRID_NOISE_REL_TOL`, since interpolation error is a property
+of the regridding scheme rather than of the dtype.  Note that a field
+read from a real*4 file and promoted to float64 by regridding still
+only carries real*4 information, so the on-disk dtype is preferred
+where xarray has recorded it.
+
 The negligible-difference threshold is relative, not absolute: a
-difference is suppressed only if it is smaller than
-:code:`gcpy.plot.core.NOISE_REL_TOL` (currently
-:math:`1 \times 10^{-5}`) times the magnitude of the data being
-differenced, i.e. unless Ref and Dev agree to better than about
+difference is suppressed only if the largest :literal:`|Dev - Ref|` in
+the panel is smaller than :code:`gcpy.plot.core.NOISE_REL_TOL`
+(currently :math:`5 \times 10^{-6}`) times the magnitude of the data
+being differenced, i.e. unless Ref and Dev agree to better than about
 5 parts per million.  A field with very small absolute values, such as an
 aircraft emissions flux of order :math:`10^{-13}` kg m\ :sup:`-2`
 s\ :sup:`-1`, will therefore still have its real differences plotted.
+
+The same threshold decides both the difference row and the ratio row,
+so the two always agree about whether Ref and Dev differ.  Note that
+the criterion is on the largest :literal:`|Dev - Ref|`, not on the
+width of the difference panel's color range: that range is symmetric
+about zero, so its full span is twice the largest difference, and
+testing the span applied an effective tolerance of half
+:code:`NOISE_REL_TOL`.  A difference landing between the two -- for
+instance the 7.5 parts per million between the 14.7.0 and 14.8.0
+:literal:`TransportTracers` :literal:`PassiveTracer` restarts -- was
+plotted by the difference row while the ratio row beside it reported
+that :literal:`Ref` and :literal:`Dev` agreed throughout the domain.
 
 .. _plot-csl:
 
