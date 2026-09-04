@@ -24,6 +24,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `gcpy/benchmark/config/*.yml`
   - `gcpy/benchmark/cloud/*.yml`
   - `gcpy/examples/diagnostics/compare_diags.yml`
+- Added `.gitattributes`, `CLAUDE.md` and `SECURITY.md` files 
+- Added `.pylintrc` which will ignore harmless warnings based on GCPy's code style
+- Added "AI disclosure" section to `.github/PULL_REQUEST_TEMPLATE.md`
 
 ### Changed
 - Replaced the hardcoded `rtol` and `atol` defaults of `ref_equals_dev` in `gcpy/plot/six_plot.py` with the `NOISE_REL_TOL` and `RATIO_ABS_TOL` constants from `gcpy/plot/core.py`
