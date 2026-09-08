@@ -15,20 +15,21 @@ from gcpy.regrid import make_regridder_sg2sg, reformat_dims, \
 from gcpy.util import verify_variable_type
 from gcpy.cstools import get_cubed_sphere_res, is_gchp_lev_positive_down
 
-# Ignore any FutureWarnings
-warnings.simplefilter(action="ignore", category=FutureWarning)
-
-# Ignore the RuntimeWarning that runpy emits because gcpy/__init__.py already
-# imports this module before "python -m gcpy.file_regrid" re-executes it
+# Ignore benign warnings
+warnings.simplefilter(
+    action="ignore",
+    category=FutureWarning
+)
 warnings.filterwarnings(
     "ignore",
     category=RuntimeWarning,
     message=r".*found in sys\.modules after import of package.*"
 )
-
-# Ignore benign UserWarnings that xesmf emits while constructing regridders
-# (F_CONTIGUOUS performance note, and ambiguous lat/lon dimension detection)
-warnings.filterwarnings("ignore", category=UserWarning, module=r"xesmf\..*")
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    module=r"xesmf\..*"
+)
 
 
 def file_regrid(

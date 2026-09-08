@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Bumped pypdf to 6.16.1 and updated documentation accordingly
 - Bumped pytest to 9.0.3 in `_setup.py` and environment files; Updated documentation accordingly
 - Prevented `RuntimeWarning` messages from occurring in `gcpy/file_regrid.py`
+- Bumped pip to 26.2.1 and updated documentation accordingly
 
 ### Fixed
 - Fixed `NameError` in `gcpy/regrid.py`'s `regrid_vertical` (stale `n_other` references left over from the `np_other` NumPy 2.0 compatibility rename) that broke any Ref vs. Dev zonal-mean comparison on mismatched vertical grids

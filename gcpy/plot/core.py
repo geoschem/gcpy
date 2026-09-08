@@ -13,10 +13,6 @@ from gcpy.util import is_nearly_constant
 _warning_format = warnings.showwarning
 
 # Silence benign "findfont: Failed to find font weight ..." messages.
-# These come from Matplotlib's font_manager logger (not the warnings
-# module), and only indicate that the installed font family lacks an
-# exact-weight face for a style setting below (e.g. "medium");
-# Matplotlib already falls back to the closest available weight.
 logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
 
 # Current directory

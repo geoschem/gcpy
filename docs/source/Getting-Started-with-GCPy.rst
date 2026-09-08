@@ -101,8 +101,8 @@ GCPy requires several other Python packages, which are listed below.
      - 2.2.3
      - 3.0.5
    * - pip
-     - 24.0
-     - 25.0.1
+     - 26.2.1
+     - 26.2.1
      - 26.2.1
    * - pylint
      - 3.2.2
