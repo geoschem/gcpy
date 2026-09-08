@@ -161,7 +161,7 @@ def noise_atol(data_scale):
     Returns
     -------
     atol : float
-        Absolute tolerance to pass to :func:`gcpy.utilis_nearly_constant`.
+        Absolute tolerance to pass to :func:`gcpy.util.is_nearly_constant`.
         A missing or non-finite data_scale yields 0.0, so that the panel
         collapses to a flat color scale only on exact equality.
     """
