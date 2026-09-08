@@ -375,14 +375,10 @@ def single_panel(
         elif isinstance(plot_vals, np.ndarray):
             vmin = np.min(plot_vals) if vmin is None else vmin
             vmax = np.max(plot_vals) if vmax is None else vmax
-        # Mirror the choices compute_norm_for_plot makes for the
-        # corresponding panel of a six-panel plot, so that a standalone
-        # panel renders the same way: the near-constant tolerance is
-        # for zonal means only (applying it to single-level data
-        # blanked real fields, see GitHub issue #439), the Ref/Dev
-        # tolerance follows the precision this field is carried at,
-        # and a difference panel's noise tolerance follows the
-        # magnitude of the data it came from.
+
+        # Use the same options as gcpy.core.compute_norm_for_plot
+        # here.  This will ensure that a standalone plot will render
+        # in the same way that six-panel comparison plots do.
         norm = normalize_colors(
             vmin,
             vmax,

@@ -531,6 +531,7 @@ def compare_zonal_mean(
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
             if diff_of_diffs:
                 frac_ds_devs[i].data = frac_ds_devs[i].data[::-1, :, :]
+
     # ==================================================================
     # Get the area variables if normalize_by_area=True. They can be
     # either in the main datasets as variable AREA or in the optionally
@@ -762,18 +763,14 @@ def compare_zonal_mean(
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
 
-        # Magnitude of the Ref & Dev data that the difference and ratio
-        # rows are built from.  Take it from the comparison-grid arrays
-        # those rows actually use, not from the native-grid vmins &
-        # vmaxs of row 1: regridding moves the maximum, and a native
-        # maximum below the comparison-grid one leaves the difference
-        # row with a tighter tolerance than the ratio row, so the two
-        # disagree about whether Ref and Dev differ.
+        # Compute the magnitude of the Ref & Dev data on the
+        # comparison grid (rather than the native grids).  This
+        # is needed to determine if differences and ratios contain
+        # valid signal (which should be plotted) or numerical
+        # noise (which should not be plotted).
         cmp_data_scale = ref_dev_data_scale(
-            [np.nanmin(np.array(zm_ref_cmp)),
-             np.nanmin(np.array(zm_dev_cmp))],
-            [np.nanmax(np.array(zm_ref_cmp)),
-             np.nanmax(np.array(zm_dev_cmp))]
+            [np.nanmin(np.array(zm_ref_cmp)), np.nanmin(np.array(zm_dev_cmp))],
+            [np.nanmax(np.array(zm_ref_cmp)), np.nanmax(np.array(zm_dev_cmp))]
         )
         if diff_of_diffs:
             frac_zm_dev_cmp = frac_ds_dev_cmp.mean(axis=2)
@@ -801,8 +798,10 @@ def compare_zonal_mean(
         # This will have implications as to how we set min and max
         # values for the color ranges below.
         # ==============================================================
-        ref_values = ds_ref.values if isinstance(ds_ref, xr.DataArray) else ds_ref
-        dev_values = ds_dev.values if isinstance(ds_dev, xr.DataArray) else ds_dev
+        ref_values = ds_ref.values \
+            if isinstance(ds_ref, xr.DataArray) else ds_ref
+        dev_values = ds_dev.values \
+            if isinstance(ds_dev, xr.DataArray) else ds_dev
         ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ref_values)
         dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(dev_values)
 
@@ -825,8 +824,7 @@ def compare_zonal_mean(
             zm_fracdiff = np.abs(np.array(zm_dev_cmp)) /    \
                 np.abs(np.array(zm_ref_cmp))
             # Suppress ratios of numerical noise to numerical noise,
-            # which would otherwise saturate the color scale wherever
-            # the field is really zero but regridding left a residue
+            # which would result in unphysical plots.
             zm_fracdiff = mask_meaningless_ratio(
                 zm_fracdiff,
                 np.array(zm_ref_cmp),
@@ -1067,6 +1065,7 @@ def compare_zonal_mean(
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
+
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(1 - max(fracdiff)) > 0.1
@@ -1080,7 +1079,6 @@ def compare_zonal_mean(
 
     # ==================================================================
     # Call figure generation function in a parallel loop over variables
-    #
     # ==================================================================
 
     # Disable parallelization if this routine is already being
