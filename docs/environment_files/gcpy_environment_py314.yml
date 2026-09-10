@@ -1,0 +1,59 @@
+---
+# ======================================================================
+# GCPy environment file (based on Python 3.14)
+#
+# If you wish to build a Mamba/Conda environment with the dependencies
+# for GCPy, use this command:
+#
+# $ mamba env create -n gcpy_env --file=/path/to/gcpy/environment.yml
+# =====================================================================
+name: gcpy_env
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  #
+  # GCpy dependencies
+  #
+  - cartopy              =0.25.0      # Geospatial data processing
+  - cf_xarray            =0.11.3      # CF conventions for xarray
+  - dask                 =2026.7.1    # Parallel library; backend for xarray
+  - esmf                 =8.9.1       # Earth System Model Framework
+  - esmpy                =8.9.1       # Python wrapper for ESMF
+  - gridspec             =0.1.0       # Define Earth System Model grids
+  - ipython              =9.16.1      # Interactive Python (used by Jupyter)
+  - joblib               =1.5.3       # Parallelize python code
+  - jupyter              =1.1.1       # Jupyter Notebook
+  - matplotlib           =3.11.1      # Creates plots and visualizations
+  - netcdf4              =1.7.4       # Python wrapper for netCDF
+  - netcdf-fortran       =4.6.3       # Python wrapper for netCDF-Fortran
+  - numpy                =2.5.2       # Optimized mathematical functions
+  - pandas               =3.0.5       # Tables/timeseries manipulation
+  - pip                  =26.2.1      # Install packages from PyPi
+  - pylint               =4.0.7       # Python linter
+  - pyproj               =3.7.2       # Python map projections library
+  - python               =3.14=*cp314 # Python language (standard,
+                                      #  GIL-enabled build; avoids the
+                                      #  free-threaded "cp314t" build, since
+                                      #  cftime and other C-extension
+                                      #  dependencies have not yet
+                                      #  declared free-threading support)
+  - pypdf                =6.16.1      # PDF utilities (bookmarks, etc.)
+  - pytest               =9.1.1       # Testing framework
+  - requests             =2.34.2      # HTTP library
+  - scipy                =1.18.0      # Scientific python package
+  - sparselt             =0.1.3       # Regridding earth system model data
+  - tabulate             =0.10.0      # Pretty-printing for column data
+  - tk                   =8.6.13      # Tcl/tk library
+  - xarray               =2026.7.0    # Read data from netCDF etc files
+  - xesmf                =0.9.2       # Universal regridder
+  #
+  # ReadTheDocs dependencies
+  #
+  - sphinx               =9.1.0       # Sphinx package
+  - sphinx_rtd_theme     =3.1.0       # ReadTheDocs theme
+  - sphinxcontrib-bibtex =2.7.0       # Bibliography extension
+  - sphinx-autobuild     =2025.8.25   # Builds docs & displays to browser
+  - myst-parser          =5.1.0       # Formerly recommonmark
+  - docutils             =0.22.4      # Processes plaintext to other formats
+  - jinja2               =3.1.6       # Templating
