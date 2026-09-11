@@ -6,17 +6,27 @@ can be printed on the GEOS-Chem wiki.
 Example
 -------
 
-.. code-block:: bash
+:literal:`spcdb_files` takes a list of paths, so call
+:func:`make_benchmark_species_changes_wiki_tables` directly from
+Python rather than via the command line:
 
-   $ conda activate gcpy_env
-   $ python gcpy.benchmark.modules.benchmark_species_changes \
-     --ref-label   "14.4.0"                                  \
-     --ref-log     "gcc_14.4.0/14.4.0.log"                   \
-     --dev-label   "14.5.0"                                  \
-     --dev-log     "gcc_14.5.0/14.5.0.log"                   \
-     --spcdb-files ["gcc_14.4.0/species_database.yml",       \
-                    "gcc_14.5.0/species_database.yml"],      \
-     --output-file "wiki_tables.txt"
+.. code-block:: python
+
+   from gcpy.benchmark.modules.benchmark_species_changes import (
+       make_benchmark_species_changes_wiki_tables
+   )
+
+   make_benchmark_species_changes_wiki_tables(
+       ref_label="14.4.0",
+       ref_log="gcc_14.4.0/14.4.0.log",
+       dev_label="14.5.0",
+       dev_log="gcc_14.5.0/14.5.0.log",
+       spcdb_files=[
+           "gcc_14.4.0/species_database.yml",
+           "gcc_14.5.0/species_database.yml",
+       ],
+       output_file="wiki_tables.txt",
+   )
 """
 
 from os.path import exists

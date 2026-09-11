@@ -36,7 +36,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.profile.gprofng_functions`
+   * - :mod:`gcpy.profile.gprofng_functions`
      - `gcpy/profile/gprofng_functions.py <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/gprofng_functions.py>`_
 
 .. _code-profiling-gprofng-usage:
@@ -142,16 +142,16 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.profile.vtune_utils`
+   * - :mod:`gcpy.profile.vtune_utils`
      - `gcpy/profile/vtune_utils.py
        <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_utils.py>`_
-   * - :func:`gcpy.profile.vtune_list_hotspots`
+   * - :mod:`gcpy.profile.vtune_list_hotspots`
      - `gcpy/profile/vtune_list_hotspots.py
        <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_list_hotspots.py>`_
-   * - :func:`gcpy.profile.vtune_compare_hotspots`
+   * - :mod:`gcpy.profile.vtune_compare_hotspots`
      - `gcpy/profile/vtune_compare_hotspots.py
        <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_compare_hotspots.py>`_
-   * - :func:`gcpy.profile.vtune_plot_hotspots`
+   * - :mod:`gcpy.profile.vtune_plot_hotspots`
      - `gcpy/profile/vtune_plot_hotspots.py
        <https://github.com/geoschem/gcpy/blob/main/gcpy/profile/vtune_plot_hotspots.py>`_
 

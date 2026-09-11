@@ -13,7 +13,7 @@ found near the end of the run, is taken as the memory used).  Timing
 info is not read from ``allPEs.log`` directly (it is only archived
 inside a private tar.gz, not a public artifact); instead this script
 reads the "Benchmark_Timers_<ref>_vs_<dev>.txt" table that gcpy's own
-:mod:`benchmark_scrape_gchp_timers` module already produces from
+:mod:`gcpy.benchmark.modules.benchmark_scrape_gchp_timers` module already produces from
 ``allPEs.log`` during the benchmark pipeline, and publishes as a
 public diff-table artifact. Because GCHP's MAPL timers are coarser
 than GEOS-Chem Classic's (e.g. no separate Gas-phase chem/Photolysis/

@@ -30,7 +30,7 @@ The source code for creating benchmark plots is located in the
    * - File or folder
      - Description
    * - :file:`run_benchmark.py`
-     - Benchmark driver script :func:`gcpy.benchmark.run_benchmark`
+     - Benchmark driver script :mod:`gcpy.benchmark.run_benchmark`
    * - :file:`benchmark_slurm.sh`
      - Bash script to submit :file:`run_benchmark.py` as a SLURM batch job
    * - :file:`cloud/`
@@ -41,9 +41,10 @@ The source code for creating benchmark plots is located in the
        1-month and 1-year benchmark plot jobs.
    * - :file:`__init__.py`
      - Python import script
-   * - :func:`gcpy.benchmark.modules`
+   * - :file:`modules/` 
      - Contains Python modules imported into the
-       :file:`run_benchmark.py` script.
+       :file:`run_benchmark.py` script.  See
+       :mod:`gcpy.benchmark.modules` for a detailed listing.
    * - :file:`README.md`
      - Readme file in Markdown format
 
@@ -92,10 +93,10 @@ tables from GEOS-Chem benchmark simulations.
         #
         obs_data:
           ebas_o3:
-            data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/ebas_sfc_o3_2019
+            data_dir: /n/lab_storage/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
             data_label: "O3 (EBAS, 2019)"
           sondes:
-            data_dir: /n/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
+            data_dir: /n/lab_storage/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
             data_file: allozonesondes_2010-2019.csv
             site_file: allozonesondes_site_elev.csv
 
@@ -213,6 +214,8 @@ tables from GEOS-Chem benchmark simulations.
         plot_options:
           by_spc_cat: True
           by_hco_cat: True
+          # yaxis_units: "pressure" or "level" for the zonal-mean plot Y-axis
+          yaxis_units: "pressure"
         #
         # Benchmark tables
         #
@@ -256,7 +259,7 @@ tables from GEOS-Chem benchmark simulations.
 
    |br|
 
-#. Run :func:`gcpy.benchmark.run_benchmark`.  You may do this in 2
+#. Run :mod:`gcpy.benchmark.run_benchmark`.  You may do this in 2
    ways:
 
    #. Direct execution from the command line:
@@ -279,14 +282,14 @@ tables from GEOS-Chem benchmark simulations.
       .. code-block:: bash
 
          #!/bin/bash
-
+         
          #SBATCH -c 8
          #SBATCH -N 1
          #SBATCH -t 0-6:00
          #SBATCH -p sapphire,huce_cascade,seas_compute,shared
          #SBATCH --mem=180000
          #SBATCH --mail-type=END
-
+         
          #============================================================================
          # This us a sample SLURM script that you can use to run the GCPy
          # benchmark plotting code as a SLURM batch job.
@@ -305,33 +308,33 @@ tables from GEOS-Chem benchmark simulations.
          #
          # (3) For diff-of-diffs plots, we recommend using 6 cores.
          #============================================================================
-
+         
          # Apply all bash initialization settings
          . ~/.bashrc
-
+         
          # Make sure to set multiple threads; Joblib will use multiple
          # cores to parallelize certain plotting operations.
          export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
          export OMP_STACKSIZE=500m
-
+         
          # Use a non-interactive backend for matplotlib (we're printing to file)
          export MPLBACKEND=agg
-
+         
          # Turn on Python environment (edit for your setup)
          conda activate gcpy_env
-
+         
          # Specify a YAML file with benchmark options
          # Uncomment the file that you wish:
-         #config="1mo_benchmark.yml"
-         config="1yr_fullchem_benchmark.yml"
+         config="1mo_benchmark.yml"
+         #config="1yr_fullchem_benchmark.yml"
          #config="1yr_tt_benchmark.yml"
-
+         
          # Call the run_benchmark script to make the plots
          python -m gcpy.benchmark.run_benchmark "${config}" > "${config/.yml/.log}" 2>&1
-
+         
          # Turn off python environment
          conda deactivate
-
+         
          exit 0
 
       Lastly, start the SLURM batch execution with this command:
@@ -385,9 +388,9 @@ create summary tables will be described :ref:`in a separate section
 
    * - Function
      - Plot that it creates
-   * - :func:`gcpy.benchmark.modules.benchmark_models_vs_obs`
+   * - :mod:`gcpy.benchmark.modules.benchmark_models_vs_obs`
      - Modeled ozone vs. surface observations [#D]_ [#E]_
-   * - :func:`gcpy.benchmark.modules.benchmark_models_vs_sondes`
+   * - :mod:`gcpy.benchmark.modules.benchmark_models_vs_sondes`
      - Vertical profiles of modeled ozone vs. ozonesondes [#D]_
 
 .. rubric:: Notes:
@@ -407,8 +410,8 @@ create summary tables will be described :ref:`in a separate section
 
 .. [#C] In this function, parallelization occurs at the species
 	category level. In all other functions, parallelization occurs
-	within calls to :func:`gcpy.plot.compare_single_level`  and
-	:func:`gcpy.plot.compare_zonal_mean()`.
+	within calls to :mod:`gcpy.plot.compare_single_level`  and
+	:mod:`gcpy.plot.compare_zonal_mean`.
 
 .. [#D] Only available in 1-year fullchem benchmarks.
 
@@ -487,11 +490,11 @@ The following functions generate summary tables from GEOS-Chem benchmark output:
    | |br|                                                                                                         |
    | Global OH metrics                                                                                            |
    +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.module.benchmark_funcs.make_benchmark_operations_budget` |br|                          |
+   | :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_operations_budget` |br|                         |
    | |br|                                                                                                         |
    | Species mass after each operation                                                                            |
    +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.ste_flux/make_benchmark_ste_table` |br|                                        |
+   | :func:`gcpy.benchmark.modules.ste_flux.make_benchmark_ste_table` |br|                                        |
    | |br|                                                                                                         |
    | Stratosphere-troposphere flux of O\ :sub:`3`                                                                 |
    +--------------------------------------------------------------------------------------------------------------+
@@ -507,3 +510,83 @@ Many of these functions use pre-defined lists of variables in YAML
 files. If one dataset includes a variable but the other dataset does
 not, the data for that variable in the latter dataset will be
 considered to be NaN and will be plotted as such.
+
+.. _bmk-standalone-scripts:
+
+====================================
+Standalone benchmark utility scripts
+====================================
+
+Unlike the plotting and tabling functions above, the scripts below are
+run directly from the command line rather than being called from
+:file:`run_benchmark.py`.
+
+benchmark_gcclassic_stats.py
+----------------------------
+
+:mod:`gcpy.benchmark.modules.benchmark_gcclassic_stats` scrapes wall
+clock time, peak memory usage, OH metrics, and timer statistics from
+the public S3 benchmark artifacts of a 1-month GEOS-Chem Classic
+benchmark run, and prints them in a format that can be pasted into the
+"GEOS-Chem 1-month Benchmark Stats" Google spreadsheet.
+
+Example:
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ python -m gcpy.benchmark.modules.benchmark_gchp_stats 14.8.0-alpha.5 14.8.0-alpha.6
+      
+benchmark_gchp_stats.py
+-----------------------
+
+:mod:`gcpy.benchmark.modules.benchmark_gchp_stats` scrapes wall clock
+time, peak memory usage, OH metrics, and timer statistics from the
+public S3 benchmark artifacts of a 1-month GCHP benchmark run, and
+prints them in a format that can be pasted into the "GEOS-Chem 1-month
+Benchmark Stats" Google spreadsheet.
+
+Unlike GEOS-Chem Classic, GCHP does not wrap its executable in
+:literal:`/usr/bin/time -v`, so this script instead parses the
+:literal:`Mem/Swap Used (MB)` lines that MAPL prints to the run log,
+and reads the :file:`Benchmark_Timers_<ref>_vs_<dev>.txt` table
+already produced by
+:mod:`gcpy.benchmark.modules.benchmark_scrape_gchp_timers`.
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+   $ python -m gcpy.benchmark.modules.benchmark_gchp_stats 14.8.0-alpha.5 14.8.0-alpha.6
+
+benchmark_species_changes.py
+-----------------------------
+
+:file:`gcpy/benchmark/modules/benchmark_species_changes.py` generates
+GEOS-Chem wiki-formatted tables listing the species that were added
+and removed between two versions (by comparing the species metadata
+read from each version's log file), plus a summary table of species
+counts by category (total species, dry-deposited, wet-deposited, and
+photolyzed) for the Ref and Dev versions, with the change and percent
+change between them.
+
+Because :literal:`spcdb_files` takes a list of paths, call
+:func:`gcpy.benchmark.modules.benchmark_species_changes.make_benchmark_species_changes_wiki_tables`
+directly from Python rather than via the command line:
+
+.. code-block:: python
+
+   from gcpy.benchmark.modules.benchmark_species_changes import (
+       make_benchmark_species_changes_wiki_tables
+   )
+
+   make_benchmark_species_changes_wiki_tables(
+       ref_label="14.4.0",
+       ref_log="gcc_14.4.0/14.4.0.log",
+       dev_label="14.5.0",
+       dev_log="gcc_14.5.0/14.5.0.log",
+       spcdb_files=[
+           "gcc_14.4.0/species_database.yml",
+           "gcc_14.5.0/species_database.yml",
+       ],
+       output_file="wiki_tables.txt",
+   )

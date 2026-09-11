@@ -33,7 +33,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.gcst.generate_gchp_speciesconcvv_list`
+   * - :mod:`gcpy.examples.gcst.generate_gchp_speciesconcvv_list`
      - `gcpy/examples/gcst/generate_gchp_speciesconcvv_list.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/gcst/generate_gchp_speciesconcvv_list.py>`_
 
 .. _gcst-speciesconcvv-usage:
@@ -67,7 +67,7 @@ Next, activate your GCPy environment with:
 
    $ conda activate gcpy_env
 
-Then run script :func:`gcpy.examples.gcst.generate_gchp_speciesconcvv_list`
+Then run script :mod:`gcpy.examples.gcst.generate_gchp_speciesconcvv_list`
 and pass it the log file and the name of a file where output will be sent:
 
 .. code-block:: console
@@ -110,7 +110,7 @@ log (listing which tests produced output that differs from a
 previous integration test).  Reading through both logs by hand to
 compile a summary is time-consuming.
 
-Script :func:`gchp.examples.gcst.generate_inttest_report` parses both
+Script :mod:`gcpy.examples.gcst.generate_inttest_report` parses both
 logs and produces a concise, plain-text (GitHub-Markdown-friendly)
 report that summarizes the execution and diff results, suitable for
 pastingdirectly into a pull request or issue comment. 
@@ -125,7 +125,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.gcst.generate_inttest_report`
+   * - :mod:`gcpy.examples.gcst.generate_inttest_report`
      - `gcpy/examples/gcst/generate_inttest_report.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/gcst/generate_inttest_report.py>`_
 
 .. _gcst-inttest-report-usage:
@@ -147,7 +147,7 @@ Next, activate your GCPy environment:
 
    $ conda activate gcpy_env
 
-Then run :func:`gcpy.examples.gcst.generate_inttest_report`, supplying the
+Then run :mod:`gcpy.examples.gcst.generate_inttest_report`, supplying the
 execution-test log, the diff-test log, and a label identifying the
 reference version that the tests were compared against:
 

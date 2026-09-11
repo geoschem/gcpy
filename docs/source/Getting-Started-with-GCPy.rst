@@ -56,6 +56,10 @@ GCPy requires several other Python packages, which are listed below.
      - 2025.3.0
      - 2025.3.0
      - 2026.7.1
+   * - `docutils <https://docutils.sourceforge.io/>`_
+     - 0.21.2
+     - 0.21.2
+     - 0.22.4
    * - esmf [#A]_ [#B]_
      - 8.6.1
      - 8.8.1
@@ -72,6 +76,10 @@ GCPy requires several other Python packages, which are listed below.
      - 8.25.0
      - 9.0.0
      - 9.16.1
+   * - `jinja2 <https://jinja.palletsprojects.com/en/stable/>`_
+     - 3.1.6
+     - 3.1.6
+     - 3.16
    * - `joblib <https://joblib.readthedocs.io/en/latest/>`_
      - 1.4.2
      - 1.4.2
@@ -84,6 +92,10 @@ GCPy requires several other Python packages, which are listed below.
      - 3.8.4
      - 3.10.1
      - 3.11.1
+   * - `myst-parser <https://github.com/executablebooks/MyST-Parser>`_
+     - 5.0.0
+     - 5.0.0
+     - 5.1.0
    * - netcdf4
      - 1.6.5
      - 1.7.2
@@ -136,6 +148,22 @@ GCPy requires several other Python packages, which are listed below.
      - 0.1.3
      - 0.1.3
      - 0.1.3
+   * - `sphinx <https://www.sphinx-doc.org/>`_
+     - 8.2.3
+     - 8.2.3
+     - 9.1.0
+   * - `sphinx-autobuild <https://github.com/sphinx-doc/sphinx-autobuild>`_
+     - 2024.2.4
+     - 2024.2.4
+     - 2024.2.4
+   * - `sphinx_rtd_theme <https://github.com/readthedocs/sphinx_rtd_theme>`_
+     - 3.1.0
+     - 3.1.0
+     - 3.1.0
+   * - `sphinxcontrib-bibtex <https://pypi.org/project/sphinxcontrib-bibtex/>`_
+     - 2.6.5
+     - 2.6.5
+     - 2.7.0
    * - tabulate
      - 0.9.0
      - 0.9.0

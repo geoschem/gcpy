@@ -28,7 +28,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.plotting.create_test_plot`
+   * - :mod:`gcpy.examples.plotting.create_test_plot`
      - `gcpy/examples/plotting/create_test_plot.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/create_test_plot.py>`_
 
 .. _test-plot-usage:

@@ -51,7 +51,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.diagnostics.compare_diags`
+   * - :mod:`gcpy.examples.diagnostics.compare_diags`
      - `gcpy/examples/diagnostics/compare_diags.py
        <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/compare_diags.py>`_
        `gcpy/examples/diagnostics/compare_diags.yml <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/compare_diags.yml>`_
@@ -113,6 +113,7 @@ zonal mean plots.
      zonal_mean:
        create_plot: True
        pdfname: zonal_mean_comparison.pdf
+       yaxis_units: "pressure"        # Values: pressure, level
      totals_and_diffs:
        create_table: True
        diff_type: absdiff             # Values: percent, pctdiff, %, abs, absdiff

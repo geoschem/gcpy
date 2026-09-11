@@ -35,7 +35,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.plotting.plot_single_panel`
+   * - :mod:`gcpy.examples.plotting.plot_single_panel`
      - `gcpy/examples/plotting/plot_single_panel.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/plot_single_panel.py>`_
 
 .. _single-panel-usage:

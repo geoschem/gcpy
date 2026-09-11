@@ -24,7 +24,7 @@ Creating plots from KPP-Standalone output
 Quick-look plots
 ----------------
 
-You can use GCPy :func:`gcpy.kpp.kppsa_quick_look` to
+You can use GCPy :mod:`gcpy.kpp.kppsa_quick_look` to
 generate a vertical profile for a given species at a given observation
 site.  This can be useful as a quick-look sanity check.
 
@@ -49,7 +49,7 @@ which will generate this plot:
 Vertical profiles at multiple observation sites
 -----------------------------------------------
 
-You can use GCPy module :func:`gcpy.kpp.kppsa_plot_sites` to
+You can use GCPy module :mod:`gcpy.kpp.kppsa_plot_sites` to
 generate vertical profile plots for a given species at multiple
 observation locations.
 
@@ -95,13 +95,13 @@ List of functions
 
    * - Function
      - Description
-   * - :func:`gcpy.kpp.kppsa_quick_look`
+   * - :mod:`gcpy.kpp.kppsa_quick_look`
      - Creates a "quick-look" vertical profile plot.  Useful as a
        sanity check.
-   * - :func:`gcpy.kpp.kppsa_plot_sites`
+   * - :mod:`gcpy.kpp.kppsa_plot_sites`
      - Creates vertical profile plots of a given species at various
        locations.
-   * - :func:`gcpy.kpp.kpp_utils.kppsa_get_file_list`
+   * - :func:`gcpy.kpp.kppsa_utils.kppsa_get_file_list`
      - Returns a list of KPP-Standalone log files matching a search
        criteria.
    * - :func:`gcpy.kpp.kppsa_utils.kppsa_read_one_csv_file`
