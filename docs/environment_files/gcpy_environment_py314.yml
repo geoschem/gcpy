@@ -53,7 +53,7 @@ dependencies:
   - sphinx               =9.1.0       # Sphinx package
   - sphinx_rtd_theme     =3.1.0       # ReadTheDocs theme
   - sphinxcontrib-bibtex =2.7.0       # Bibliography extension
-  - sphinx-autobuild     =2025.8.25   # Builds docs & displays to browser
+  - sphinx-autobuild     =2024.2.4    # Builds docs & displays to browser
   - myst-parser          =5.1.0       # Formerly recommonmark
   - docutils             =0.22.4      # Processes plaintext to other formats
   - jinja2               =3.1.6       # Templating
