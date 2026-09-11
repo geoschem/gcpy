@@ -30,7 +30,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.diagnostics.check_gchp_emission_diags`
+   * - :mod:`gcpy.examples.diagnostics.check_gchp_emission_diags`
      - `gcpy/examples/diagnostics/check_gchp_emission_diags.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/check_gchp_emission_diags.py>`_
 
 .. _check-gchp-usage:
@@ -49,13 +49,11 @@ folder for GCHP run directory template files.
 
    $ cd gchp/run
 
-Activate your GCPy environment with mamba or conda:
+Activate your GCPy environment with conda:
 
 .. code-block:: console
 
-   $ mamba activate gcpy_env    # If using mamba, or
-
-   $ conda activate gcpy_env    # If using conda
+   $ conda activate gcpy_env
 
 Use one of these commands to check GCHP emissions diagnostics for a
 given simulation type:

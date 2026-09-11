@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
 """
-Reads a GEOS-Chem classic log file listing species names and writes
-out the corresponding :literal:`SpeciesConcVV_*` entries for use in a
-GCHP :file:`HISTORY.rc` collection.
+Reads a GCHP log file listing species names and writes out the
+corresponding :literal:`<diag-prefix>_*` entries for use in a GCHP
+:file:`HISTORY.rc` collection.
 
 Examples
 --------
-
-Examples
---------
-.. code-block:: bash
+.. code-block:: console
 
    $ conda activate gcpy_env
-   $ python generate_gchp_speciesconcvv_list.py \
-       --diag_prefix <prefix> \
+   $ python -m gcpy.examples.gcst.generate_gchp_diag_list \
+       --diag-prefix <prefix> \
        --input-file </path/to/log/file> \
        --output-file </path/to/output/file>
 
@@ -21,10 +18,12 @@ Parameters
 ----------
 --diag-prefix : str
     Prefix of the diagnostic field (e.g. SpeciesConcVV, JValues, etc.)
+    Required.
 --input-file : str
-    Path to a GCHP log file.
+    Path to a GCHP log file.  Required.
 --output-file : str
     Path of the file to which diagnostic entries will be written.
+    Required.
 
 """
 import argparse
@@ -35,7 +34,7 @@ from gcpy.constants import ENCODING
 def read_file(diag_prefix, input_file):
     """
     Reads a GEOS-Chem log file and extracts species names, converting
-    each into a GCHP SpeciesConcVV_* diagnostic entry.
+    each into a GCHP <diag_prefix>_* diagnostic entry.
 
     Parameters
     ----------
@@ -47,7 +46,7 @@ def read_file(diag_prefix, input_file):
     Returns
     -------
     varlist : list of str
-        SpeciesConcVV_* entries, one per species, in reverse order
+        <diag_prefix>_* entries, one per species, in reverse order
         (as they should appear in the GCHP HISTORY.rc file).
     """
     # Open file
@@ -100,13 +99,13 @@ def read_file(diag_prefix, input_file):
 
 def write_file(varlist, output_file):
     """
-    Writes SpeciesConcVV_* entries to a file, formatted for use in a
+    Writes <diag_prefix>_* entries to a file, formatted for use in a
     GCHP HISTORY.rc collection's .fields list.
 
     Parameters
     ----------
     varlist : list of str
-        SpeciesConcVV_* entries to write, e.g. as returned by
+        <diag_prefix>_* entries to write, e.g. as returned by
         read_file().
     output_file : str
         Path to the file where the entries will be written.
@@ -118,16 +117,19 @@ def write_file(varlist, output_file):
 
 def generate_list(diag_prefix, input_file, output_file):
     """
-    Reads species names from a GEOS-Chem log file and writes the
-    corresponding SpeciesConcVV_* entries to an output file for use
+    Reads species names from a GCHP log file and writes the
+    corresponding <diag_prefix>_* entries to an output file for use
     in a GCHP HISTORY.rc collection.
 
     Parameters
     ----------
+    diag_prefix : str
+        Prefix of the diagnostic field (e.g. "SpeciesConcVV",
+        "JValues").
     input_file : str
-        Path to the GEOS-Chem classic log file listing species names.
+        Path to the GCHP log file listing species names.
     output_file : str
-        Path to the file where the SpeciesConcVV_* entries will be
+        Path to the file where the <diag_prefix>_* entries will be
         written.
     """
     varlist = read_file(diag_prefix, input_file)
@@ -139,23 +141,23 @@ def main():
     Command-line entry point.
     """
     parser = argparse.ArgumentParser(
-        prog='generate_inttest_report.py',
-        description='Generate a plain-text GEOS-Chem integration-test report.',
+        prog='generate_gchp_diag_list.py',
+        description='Generate GCHP HISTORY.rc diagnostic entries from a GCHP log file.',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             'Examples:\n'
             '\n'
-            '  python generate_inttest_report.py \\\n'
-            '      --diag_prefix SpeciesConcVV \\\n'
+            '  python -m gcpy.examples.gcst.generate_gchp_diag_list \\\n'
+            '      --diag-prefix SpeciesConcVV \\\n'
             '      --input-file  gchp.YYYYMMDD_hhmmss.log \\\n'
-            '      --output-file HISTORY.rc.snippets.txt \\\n'
+            '      --output-file HISTORY.rc.snippets.txt\n'
         ),
     )
     parser.add_argument(
         '--diag-prefix',
         required=True,
         metavar='DIAG_PREFIX',
-        help='Diagnostic field prefix (e.g. "SpeciesConcVV"),',
+        help='Diagnostic field prefix (e.g. "SpeciesConcVV")',
     )
     parser.add_argument(
         '--input-file',

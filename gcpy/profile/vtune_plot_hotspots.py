@@ -158,7 +158,7 @@ def main():
 
     # Raise an error if too few or too many arguments are passed
     if len(argv) != 4:
-        msg = "Usage: python -m gcpy.examples.vtune_plot_hotspots "
+        msg = "Usage: python -m gcpy.profile.vtune_plot_hotspots "
         msg += " FILENAME N_MIN N_MAX"
         raise ValueError(msg)
 

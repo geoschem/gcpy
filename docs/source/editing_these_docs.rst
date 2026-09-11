@@ -38,38 +38,40 @@ Sphinx and its dependencies, which are listed in the table below.
      - Version
    * - sphinx
      - Creates online user manual documentation from markup text files
-     - 7.2.6
+     - 8.2.3
    * - `sphinx-autobuild <https://github.com/sphinx-doc/sphinx-autobuild>`_
      - Dynamically builds Sphinx documentation and displays it in a
        browser
-     - 2021.3.14
+     - 2024.2.4
    * - `sphinx_rtd_theme <https://github.com/readthedocs/sphinx_rtd_theme>`_
      - Sphinx theme for ReadTheDocs
-     - 2.0.0
+     - 3.1.0
    * - `sphinxcontrib-bibtex <https://pypi.org/project/sphinxcontrib-bibtex/>`_
      - Inserts LaTeX-style bibliography citations into ReadTheDocs
        documentation
-     - 2.6.2
+     - 2.6.5
    * - `docutils <https://docutils.sourceforge.io/>`_
      - Processes plaintext documentation into HTML and other formats
-     - 0.20.1
-   * - `recommonmark  <https://github.com/readthedocs/recommonmark>`_
-     - Parses text for docutils
-     - 0.7.1
+     - 0.21.2
+   * - `myst-parser <https://github.com/executablebooks/MyST-Parser>`_
+     - Parses Markdown (.md) source files for docutils
+     - 5.0.0
    * - `jinja2 <https://jinja.palletsprojects.com/en/stable/>`_
      - Replaces tokenized strings with text
      - 3.1.6
 
 Sphinx and its dependencies are now bundled into the standard GCPy
 Conda/Mamba environment files, so no separate environment is needed.
-The YAML files :file:`docs/environment_files/gcpy_environment_py312.yml`
-and :file:`docs/environment_files/gcpy_environment_py313.yml` contain the
+The YAML files :file:`docs/environment_files/gcpy_environment_py312.yml`,
+:file:`docs/environment_files/gcpy_environment_py313.yml`, and
+:file:`docs/environment_files/gcpy_environment_py314.yml` contain the
 proper package specifications.  Use one of these commands:
 
 .. code-block:: console
 
    $ conda env create -n gcpy_env --file=docs/environment_files/gcpy_environment_py312.yml   # Python 3.12
    $ conda env create -n gcpy_env --file=docs/environment_files/gcpy_environment_py313.yml   # Python 3.13
+   $ conda env create -n gcpy_env --file=docs/environment_files/gcpy_environment_py314.yml   # Python 3.14
 
 This step only needs to be done once.
 
@@ -97,18 +99,18 @@ Build the documentation
 
       (gcpy_env) $ git checkout docs/dev   # Skip if you are already on the docs/dev branch
 
-#. Start the :command:`sphinx-autobuild` server:
-
-   .. code-block:: console
-
-      (gcpy_env) $ sphinx-autobuild source build/html
-
 #. Remove any HTML files (in :file:`docs/build/html`) that might be
    left behind from a previous build:
 
    .. code-block:: console
 
       (gcpy_env) $ make clean
+
+#. Start the :command:`sphinx-autobuild` server:
+
+   .. code-block:: console
+
+      (gcpy_env) $ sphinx-autobuild source build/html
 
    This will parse the reST-format files in the :file:`docs/source/`
    directory tree and generate new HTML files in

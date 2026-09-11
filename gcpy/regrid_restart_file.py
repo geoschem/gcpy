@@ -52,8 +52,7 @@ def file_path(path):
 
     Parameters
     ----------
-
-    file_path : str
+    path : str
         A path to a file.
 
     Returns

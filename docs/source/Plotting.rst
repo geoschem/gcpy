@@ -17,8 +17,8 @@ chapter.
 Six-panel comparison plots
 ==========================
 
-Functions :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean` generate six-panel plots
+Functions :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` generate six-panel plots
 comparing each variable between two datasets. These plots can either
 be saved to PDFs or generated sequentially for visualization in the
 Matplotlib GUI using :func:`matplotlib.pyplot.show`. Each plot uses
@@ -48,6 +48,79 @@ dataset and the values in the Ref Dataset. The left bottom panel uses
 a full dynamic color map, while the right bottom panel caps the color
 map at 0.5 and 2.0.
 
+.. _plot-flat-colorbars:
+
+Panels with nothing to show
+---------------------------
+
+When there is no meaningful structure to plot in a panel, GCPy
+replaces its color scale with a flat one and its colorbar with a
+single label explaining why.  Otherwise the colorbar would be
+stretched across nothing but numerical noise, which can show a
+spurious color striping artifact (see `GitHub issue #330
+<https://github.com/geoschem/gcpy/issues/330>`_).  The labels are:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Colorbar label
+     - Meaning
+   * - "Zero throughout domain"
+     - Shown when every value in the panel is exactly zero.
+   * - "Undefined throughout domain"
+     - Shown when every value in the panel is :literal:`NaN`
+       (not-a-number).
+   * - "Differences negligible throughout domain"
+     - Shown when the difference between :literal:`Ref` and
+       :literal:`Dev` is negligible compared to the magnitude of the
+       data itself (i.e. numerical noise).  On a ratio panel this
+       appears on both kinds of plot; on a difference panel it is
+       zonal mean plots only.
+   * - "Ref and Dev equal throughout domain"
+     - Shown on a ratio panel when :literal:`Ref` and :literal:`Dev`
+       are *exactly* equal at every point, so the ratio is exactly 1
+       everywhere.  This is a stronger statement than "differences
+       negligible": it means the output did not change at all, rather
+       than changing by too little to matter.
+   * - "Ref is zero throughout domain"
+     - Shown on a ratio panel when :literal:`Ref` is zero everywhere
+       but :literal:`Dev` is not.
+   * - "Dev is zero throughout domain"
+     - Shown on a ratio panel when :literal:`Dev` is zero everywhere
+       but :literal:`Ref` is not.
+   * - "Constant at <value> throughout domain"
+     - Shown on a :literal:`Ref` or :literal:`Dev` panel whose data is
+       the same everywhere, to within the precision the field is
+       carried at (32-bit or 64-bit floating point).  Zonal mean plots
+       only.
+   * - "Constant throughout domain"
+     - Shown in place of the label above when the constant value
+       itself cannot be represented finitely (i.e. the midpoint of the
+       panel's range is not a finite number), so that no numeric value
+       can be quoted.  Zonal mean plots only.
+   * - "Zero within the 5th-95th percentile range"
+     - Shown on a restricted-range difference panel when the field is
+       zero over most of the domain, so that its 5th and 95th
+       percentiles are both zero. (However, the dynamic-range
+       difference panel located to the left of it may still show real
+       differences.)  Zonal mean plots only.
+
+Labels marked "Zonal mean plots only" above are emitted by
+:mod:`gcpy.plot.compare_zonal_mean` but not by
+:mod:`gcpy.plot.compare_single_level`.  Collapsing a panel on a
+*tolerance* (rather than on an exact match) is only done for zonal
+mean plots, because that is where the regridding onto a common
+vertical grid introduces the numerical noise that the tolerance exists
+to absorb.  The remaining labels appear on both kinds of plot.
+
+Gray cells in a ratio panel mark places where no meaningful
+:literal:`Dev/Ref` ratio exists: either :literal:`Ref` is zero there,
+or both :literal:`Ref` and :literal:`Dev` are negligible compared to
+the magnitude of the field.  The latter matters for fields that are
+zero over much of the domain, as regridding may result in numerical
+noise, which will then produce spurious :literal:`Dev/Ref` ratios.
+
 .. _plot-csl:
 
 Function :code:`compare_single_level`
@@ -59,7 +132,7 @@ This function generates a comparison plot such as:
    :align: center
 
 For a list of input parameters, click on this link:
-:func:`gcpy.plot.compare_single_level`.
+:mod:`gcpy.plot.compare_single_level`.
 
 .. _plot-czm:
 
@@ -72,45 +145,71 @@ This function generates a comparison plot such as:
    :align: center
 
 For a list of input parameters, click on this link:
-:func:`gcpy.plot.compare_single_level`.
+:mod:`gcpy.plot.compare_zonal_mean`.
 
 .. _plot-shared:
 
 Shared structure
 ----------------
 
-Both :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean` have four positional (required)
+Both :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` have four positional (required)
 arguments.
 
 .. option:: refdata <xarray.Dataset>
 
    Dataset used as reference in comparison
 
-.. option:: refstr <str> | <list of str>
+.. option:: refstr <str>
 
-   String description for reference data to be used in plots OR list
-   containing [ref1str, ref2str] for diff-of-diffs plots
+   String description for reference data to be used in plots
 
-.. option:: devdata : xarray.Dataset
+.. option:: devdata <xarray.Dataset>
 
    Dataset used as development in comparison
 
-.. option:: devstr <str> | <list of str>
+.. option:: devstr <str>
 
    String description for development data to be used in plots
-   OR list containing [dev1str, dev2str] for diff-of-diffs plots
 
 :option:`refstr` and :option:`devstr` title the top two panels of
 each six panel plot.
 
-Functions :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean` share many arguments. Some of
+Functions :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` share many arguments. Some of
 these arguments are plotting options that change the format of the plots:
 
 For example, you may wish to convert units to :math:`\mu`\ g/m\ :sup:`3` when
 generating comparison plots of aerosol species.  Activate this option
 by setting the keyword argument :literal:`convert_to_ugm3=True`.
+
+.. important::
+
+   When you set :literal:`convert_to_ugm3=True` you must also pass
+   :literal:`spcdb_files`, a list of the paths to the
+   :file:`species_database.yml` files in the Ref and Dev run
+   directories.  The molecular weights needed for the unit conversion
+   are read from those files.  Omitting :literal:`spcdb_files` raises:
+
+   .. code-block:: none
+
+      ValueError: You must pass 'spcdb_files' when convert_to_ugm3=True!
+
+   For example:
+
+   .. code-block:: python
+
+      compare_single_level(
+          refdata,
+          refstr,
+          devdata,
+          devstr,
+          convert_to_ugm3=True,
+          spcdb_files=[
+              "/path/to/ref/rundir/species_database.yml",
+              "/path/to/dev/rundir/species_database.yml",
+          ],
+      )
 
 Other arguments are necessary to achieve a correct plot depending on
 the format of :literal:`refdata` and :literal:`devdata` and require
@@ -119,12 +218,78 @@ specify if one of the datasets should be flipped vertically if Z
 coordinates in that dataset do not denote decreasing pressure as Z
 index increases, otherwise the vertical coordinates between your two
 datasets may be misaligned and result in an undesired plotting
-outcome.  This may be done with by setting the boolean options
+outcome.  This may be done by setting the boolean options
 :literal:`flip_ref=True` and/or :literal:`flip_dev=True`.
 
+.. important::
+
+   Set :literal:`flip_ref` and :literal:`flip_dev` the same way unless
+   you genuinely intend to compare opposite ends of the vertical
+   column.  GCPy issues a :literal:`UserWarning` whenever only one of
+   the two is set:
+
+   .. code-block:: none
+
+      UserWarning: The vertical levels of Ref will be flipped but
+      those of Dev will not, so the two datasets will be indexed from
+      opposite ends of the vertical grid. ...
+
+   The warning is expected if a one-sided flip is what you want (i.e.
+   only one of your two datasets is stored top-of-atmosphere first),
+   and in that case it may safely be ignored.  Otherwise it is telling
+   you about a configuration mistake that is easy to miss in the
+   output: a single-level plot then shows the model top of one dataset
+   beside the surface of the other.  For a surface-only field such as
+   emissions, one panel comes out entirely zero and the difference
+   panels simply reproduce the other dataset, which looks like a real
+   change.
+
+   The equivalent setting in the :ref:`compare_diags example script
+   <comp-diags>` is the :literal:`flip_levels` key, set separately
+   under :literal:`ref` and :literal:`dev` in its YAML configuration
+   file.
+
+For zonal mean plots, the :literal:`yaxis_units` argument controls
+what units are used for the Y-axis. The default value,
+:literal:`yaxis_units="pressure"`, plots pressure (hPa) on the
+Y-axis (the status quo behavior). Setting
+:literal:`yaxis_units="level"` instead plots the model vertical
+level index on the Y-axis, which can be useful for diagnostic
+purposes (e.g. checking stratosphere/mesosphere level changes).
+This argument is accepted by :mod:`gcpy.plot.single_panel`,
+:mod:`gcpy.plot.compare_zonal_mean`, and :mod:`gcpy.plot.six_plot`.
+Note that :literal:`log_yaxis` is ignored when
+:literal:`yaxis_units="level"`.
+
+For zonal mean plots, the :literal:`data_scale` argument sets the
+magnitude against which GCPy judges whether a difference panel holds
+real signal or only numerical noise.  Differences smaller than
+:literal:`data_scale` times a fixed relative tolerance are treated as
+noise, and the panel is then collapsed to a flat color scale and
+labeled :literal:`"Differences negligible throughout domain"` rather
+than being stretched across values that carry no information (see
+:ref:`plot-flat-colorbars`).
+
+You will not normally need to set this argument.
+:mod:`gcpy.plot.compare_zonal_mean` and :mod:`gcpy.plot.six_plot`
+derive it automatically from the Ref and Dev data ranges, and the
+default value :literal:`data_scale=None` selects that behavior.  It
+exists for callers that plot a *pre-computed* difference field with
+:mod:`gcpy.plot.single_panel`: such a panel receives only the
+difference, never the Ref and Dev fields it came from, so it cannot
+work out the scale on its own.  Passing :literal:`data_scale` supplies
+it, and makes a standalone panel collapse on the same criterion that
+the corresponding panel of a six-panel plot would use.  If it is not
+passed, a standalone difference panel collapses only when it is
+exactly flat.
+
+The argument is only consulted for difference panels on zonal mean
+plots — that is, when :literal:`use_cmap_RdBu=True` and no explicit
+:literal:`norm` was supplied.  It is ignored otherwise.
+
 The :literal:`n_job` argument governs the parallel plotting settings
-of :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean`. GCPy uses the JobLib library to
+of :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean`. GCPy uses the JobLib library to
 create plots in parallel. Due to limitations with matplotlib, this
 parallelization creates plots (pages) in parallel rather than
 individual panels on a single page. Parallel plot creation is not
@@ -150,8 +315,8 @@ to, at most, the number of cores available on your system.
 Example script
 --------------
 
-Here is a basic script that calls both :func:`gcpy.plot.compare_zonal_mean` and
-:func:`gcpy.plot.compare_single_level`:
+Here is a basic script that calls both :mod:`gcpy.plot.compare_zonal_mean` and
+:mod:`gcpy.plot.compare_single_level`:
 
 .. code-block:: python
 
@@ -177,25 +342,25 @@ Here is a basic script that calls both :func:`gcpy.plot.compare_zonal_mean` and
 Single panel plots
 ==================
 
-Function :func:`gcpy.plot.single_panel` is used to create plots
+Function :mod:`gcpy.plot.single_panel` is used to create plots
 containing only one panel of GEOS-Chem data.  This function is used
-within :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean` to generate each panel plot. It
+within :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` to generate each panel plot. It
 can also be called directly on its own to quickly plot GEOS-Chem data
 in zonal mean or single level format.
 
-The :func:`gcpy.plot.single_panel` function expects data with a 1-length
+The :mod:`gcpy.plot.single_panel` function expects data with a 1-length
 (or non-existent) :literal:`T` (time) dimension, as well as a 1-length
 or non-existent :literal:`Z` (vertical level) dimension.  It also
 contains a few amenities to help with plotting GEOS-Chem data,
 including automatic grid detection for lat/lon or standard
-cubed-sphere :func:`xarray.DataArray`-s. You can also pass NumPy
+cubed-sphere :class:`xarray.DataArray`-s. You can also pass NumPy
 arrays to plot, though you'll need to manually pass grid info in this
 case (with the :literal:`gridtype`, :literal:`pedge`, and
 :literal:`pedge_ind` keyword arguments).
 
 The sample script shown below shows how you can data at a single level
-and timestep from an :func:`xarray.DataArray` object.
+and timestep from an :class:`xarray.DataArray` object.
 
 .. code-block:: python
 

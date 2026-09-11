@@ -33,7 +33,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.gcst.generate_gchp_speciesconcvv_list`
+   * - :mod:`gcpy.examples.gcst.generate_gchp_speciesconcvv_list`
      - `gcpy/examples/gcst/generate_gchp_speciesconcvv_list.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/gcst/generate_gchp_speciesconcvv_list.py>`_
 
 .. _gcst-speciesconcvv-usage:
@@ -67,7 +67,7 @@ Next, activate your GCPy environment with:
 
    $ conda activate gcpy_env
 
-Then run script :func:`gcpy.examples.gcst.generate_gchp_speciesconcvv_list`
+Then run script :mod:`gcpy.examples.gcst.generate_gchp_speciesconcvv_list`
 and pass it the log file and the name of a file where output will be sent:
 
 .. code-block:: console
@@ -98,6 +98,93 @@ Deactivate the python environment when you are finished.
 
    (gcpy_env) $ conda deactivate
 
+.. _gcst-diag-list:
+
+===============================================
+Generate diagnostic entries for GCHP HISTORY.rc
+===============================================
+
+This script is a generalization of the
+:ref:`previous one <gcst-speciesconcvv>`.  Rather than always emitting
+:literal:`SpeciesConcVV_` entries, it takes the diagnostic prefix as a
+command-line argument, so the same script can build the
+:file:`HISTORY.rc` field list for any per-species diagnostic
+collection (:literal:`SpeciesConcVV`, :literal:`JValues`, etc.).
+
+.. _gcst-diag-list-source:
+
+Source code
+-----------
+
+.. list-table::
+   :header-rows: 1
+
+   * - Description
+     - Script location
+   * - :mod:`gcpy.examples.gcst.generate_gchp_diag_list`
+     - `gcpy/examples/gcst/generate_gchp_diag_list.py
+       <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/gcst/generate_gchp_diag_list.py>`_
+
+.. _gcst-diag-list-usage:
+
+Usage
+-----
+
+As with the :ref:`SpeciesConcVV script <gcst-speciesconcvv-usage>`,
+start from a GCHP log file containing the :literal:`SPECIES NAMES AND
+INDICES` section.  Activate your GCPy environment:
+
+.. code-block:: console
+
+   $ conda activate gcpy_env
+
+Then run the script, passing the diagnostic prefix, the log file, and
+the name of the file where output will be sent.  All three arguments
+are required:
+
+.. code-block:: console
+
+   (gcpy_env) $ python -m gcpy.examples.gcst.generate_gchp_diag_list \
+                --diag-prefix JValues                                \
+                --input-file  gchp.YYYYMMDD_hhmmss.log               \
+                --output-file jvalues_entries.txt
+
+.. option:: --diag-prefix <str>
+
+   Prefix of the diagnostic field, without the trailing underscore
+   (e.g. :literal:`SpeciesConcVV`, :literal:`JValues`).
+
+.. option:: --input-file <str>
+
+   Path to a GCHP log file listing species names and indices.
+
+.. option:: --output-file <str>
+
+   Path of the file to which the diagnostic entries will be written.
+
+The output file will contain one comma-terminated entry per species,
+named :literal:`<diag-prefix>_<species>` and listed in the order
+expected in the GCHP :file:`HISTORY.rc` file (reversed alphabetical
+order):
+
+.. code-block:: text
+
+                            'JValues_O2                   ', 'GCHPchem',
+                            'JValues_O3                   ', 'GCHPchem',
+                            'JValues_ACTA                 ', 'GCHPchem',
+                            'JValues_ACET                 ', 'GCHPchem',
+                            ...
+
+You can then paste these lines directly into the corresponding
+collection's :literal:`.fields` list in your GCHP :file:`HISTORY.rc`
+file.
+
+Deactivate the python environment when you are finished.
+
+.. code-block:: console
+
+   (gcpy_env) $ conda deactivate
+
 .. _gcst-inttest-report:
 
 ===================================
@@ -110,7 +197,7 @@ log (listing which tests produced output that differs from a
 previous integration test).  Reading through both logs by hand to
 compile a summary is time-consuming.
 
-Script :func:`gchp.examples.gcst.generate_inttest_report` parses both
+Script :mod:`gcpy.examples.gcst.generate_inttest_report` parses both
 logs and produces a concise, plain-text (GitHub-Markdown-friendly)
 report that summarizes the execution and diff results, suitable for
 pastingdirectly into a pull request or issue comment. 
@@ -125,7 +212,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.gcst.generate_inttest_report`
+   * - :mod:`gcpy.examples.gcst.generate_inttest_report`
      - `gcpy/examples/gcst/generate_inttest_report.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/gcst/generate_inttest_report.py>`_
 
 .. _gcst-inttest-report-usage:
@@ -147,7 +234,7 @@ Next, activate your GCPy environment:
 
    $ conda activate gcpy_env
 
-Then run :func:`gcpy.examples.gcst.generate_inttest_report`, supplying the
+Then run :mod:`gcpy.examples.gcst.generate_inttest_report`, supplying the
 execution-test log, the diff-test log, and a label identifying the
 reference version that the tests were compared against:
 
@@ -181,7 +268,7 @@ report is a compact confirmation:
    %%%  All execution tests passed!  %%%
    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-   All GEOS-Chem Classic tests were zero-diff w/r/t <ref-label>
+   All GEOS-Chem Classic tests were zero-diff w/r/t <ref-label>.
 
 Otherwise, the report lists the failed/pending tests and the tests
 with differences, along with the verbatim header block and failure

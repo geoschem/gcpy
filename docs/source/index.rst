@@ -18,6 +18,7 @@ GCPy: The GEOS-Chem Python toolkit
       <a href="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py312.yml"><img src="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py312.yml/badge.svg" alt="build-gcpy-environment-py312" /></a>
       <a href="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py313.yml"><img src="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py313.yml/badge.svg" alt="build-gcpy-environment-py313" /></a>
       <br />
+      <a href="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py314.yml"><img src="https://github.com/geoschem/gcpy/actions/workflows/build-gcpy-environment-py314.yml/badge.svg" alt="build-gcpy-environment-py314" /></a>
      <a href="https://anaconda.org/conda-forge/geoschem-gcpy"><img src="https://anaconda.org/conda-forge/geoschem-gcpy/badges/downloads.svg" alt="Downloads" /> </a>
    </p>
 
@@ -60,6 +61,7 @@ For documentation on setting up and running GEOS-Chem please see our
    Compare-Diags
    Code-Profiling
    Check-GCHP-Emission-Diags
+   Display-GCClassic-Grid-Info
    KPP-Standalone
    Hemco-Examples
    GCST-Examples
