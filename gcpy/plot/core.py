@@ -49,7 +49,7 @@ RATIO_ABS_TOL = 1.0e-10
 
 # Number of ULPs (units in the last place) of the data's own
 # precision that a Ref or Dev field may span and still count as
-# constant across the domain.  See gcpy.plot.six_plot.constant_rel_tol.
+# constant across the domain.  See gcpy.plot.core.constant_rel_tol.
 CONSTANT_TOL_ULPS = 8
 
 # Relative tolerance for numerical noise caused by regridding
@@ -165,7 +165,8 @@ def noise_atol(data_scale):
     Returns
     -------
     atol : float
-        Absolute tolerance to pass to :func:`gcpy.util.is_nearly_constant`.
+        Absolute tolerance below which a difference in the data is
+        considered numerical noise.
         A missing or non-finite data_scale yields 0.0, so that the panel
         collapses to a flat color scale only on exact equality.
     """
@@ -180,7 +181,7 @@ def noise_atol(data_scale):
 
 
 def diff_is_negligible(vmin, vmax, data_scale):
-    """
+    r"""
     Returns whether a difference panel holds only numerical noise
     rather than real signal, so that its color scale should be
     collapsed to a flat color scale and its colorbar labeled as such.
@@ -204,7 +205,7 @@ def diff_is_negligible(vmin, vmax, data_scale):
     -----
     The test is on half the span, not the whole of it.  Because the
     range is symmetric about zero, half the span is the largest
-    |Dev - Ref| in the panel.
+    \|Dev - Ref\| in the panel.
     """
     atol = noise_atol(data_scale)
 

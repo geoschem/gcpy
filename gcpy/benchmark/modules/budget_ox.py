@@ -244,6 +244,10 @@ class _GlobVars:
         ----------
         collection : str
             Name of the collection to read.
+        prefix : str, optional
+            Prefix of the diagnostic variable names to select.  If
+            None, all variables are kept.
+            Default value: None
 
         Returns
         -------

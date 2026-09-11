@@ -62,14 +62,16 @@ Sphinx and its dependencies, which are listed in the table below.
 
 Sphinx and its dependencies are now bundled into the standard GCPy
 Conda/Mamba environment files, so no separate environment is needed.
-The YAML files :file:`docs/environment_files/gcpy_environment_py312.yml`
-and :file:`docs/environment_files/gcpy_environment_py313.yml` contain the
+The YAML files :file:`docs/environment_files/gcpy_environment_py312.yml`,
+:file:`docs/environment_files/gcpy_environment_py313.yml`, and
+:file:`docs/environment_files/gcpy_environment_py314.yml` contain the
 proper package specifications.  Use one of these commands:
 
 .. code-block:: console
 
    $ conda env create -n gcpy_env --file=docs/environment_files/gcpy_environment_py312.yml   # Python 3.12
    $ conda env create -n gcpy_env --file=docs/environment_files/gcpy_environment_py313.yml   # Python 3.13
+   $ conda env create -n gcpy_env --file=docs/environment_files/gcpy_environment_py314.yml   # Python 3.14
 
 This step only needs to be done once.
 
@@ -97,18 +99,18 @@ Build the documentation
 
       (gcpy_env) $ git checkout docs/dev   # Skip if you are already on the docs/dev branch
 
-#. Start the :command:`sphinx-autobuild` server:
-
-   .. code-block:: console
-
-      (gcpy_env) $ sphinx-autobuild source build/html
-
 #. Remove any HTML files (in :file:`docs/build/html`) that might be
    left behind from a previous build:
 
    .. code-block:: console
 
       (gcpy_env) $ make clean
+
+#. Start the :command:`sphinx-autobuild` server:
+
+   .. code-block:: console
+
+      (gcpy_env) $ sphinx-autobuild source build/html
 
    This will parse the reST-format files in the :file:`docs/source/`
    directory tree and generate new HTML files in

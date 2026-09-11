@@ -79,7 +79,7 @@ GCPy requires several other Python packages, which are listed below.
    * - `jinja2 <https://jinja.palletsprojects.com/en/stable/>`_
      - 3.1.6
      - 3.1.6
-     - 3.16
+     - 3.1.6
    * - `joblib <https://joblib.readthedocs.io/en/latest/>`_
      - 1.4.2
      - 1.4.2
@@ -137,8 +137,8 @@ GCPy requires several other Python packages, which are listed below.
      - 3.13.0
      - 3.14.0
    * - requests
-     - 2.32.3
-     - 2.32.3
+     - 2.33.0
+     - 2.33.0
      - 2.34.2
    * - `scipy <http://www.scipy.org/>`_
      - 1.13.1
@@ -178,7 +178,7 @@ GCPy requires several other Python packages, which are listed below.
      - 2026.7.0
    * - `xesmf <https://xesmf.readthedocs.io>`_
      - 0.8.5
-     - 0.8.5
+     - 0.8.8
      - 0.9.2
 
 .. rubric:: Notes
@@ -364,7 +364,7 @@ dependencies compatible with GCPy without interfering with Python
 packages you use for other work.
 
 GCPy ships with YAML files that specify Python environments for Python
-3.12 and 3.13.  These are located in the
+3.12, 3.13, and 3.14.  These are located in the
 :file:`docs/environment_files` folder.  The symbolic link
 :file:`environment.yml`, located in the top-level directory of the
 package, points to the default environment (which is based on Python

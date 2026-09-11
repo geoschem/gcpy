@@ -6,9 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [1.8.1] - 2026-09-11
 ### Added
-- Added constants `CONTANT_REL_TOL`, `CONSTANT_TOL_ULPS`, `NOISE_REL_TOL`, `REGRID_NOISE_REL_TOL` to `gcpy/plot/core.py`
+- Added constants `CONSTANT_REL_TOL`, `CONSTANT_TOL_ULPS`, `NOISE_REL_TOL`, `REGRID_NOISE_REL_TOL` to `gcpy/plot/core.py`
 - Added functions `constant_rel_tol`, `diff_is_negligible`, `mask_meaningless_ratio`, `noise_atol` to `gcpy/plot/core.py`
-- Added functions `colorbar_for_constant_field`, `colorbar_for_negligible_diff`, `colorbar_for_restricted_range`, `ref_dev_data_scale`, `unique_ticks` to `gcpy/plot/six_plot.py`
+- Added functions `colorbar_for_constant_field`, `colorbar_for_negligible_diff`, `colorbar_for_flat_restricted_range`, `ref_dev_data_scale`, `unique_ticks` to `gcpy/plot/six_plot.py`
 - Added keyword argument `data_scale` to functions `gcpy.plot.single_panel.single_panel` and `gcpy.plot.six_plot.six_plot`
 - Added function `warn_if_flip_levels_mismatch` to `gcpy/util.py`, called from `compare_single_level` and `compare_zonal_mean`
 - Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - `gcpy/benchmark/modules/benchmark_funcs.py`
   - `gcpy/examples/diagnostics/compare_diags.py`
   - `gcpy/plot/compare_zonal_mean.py`
-  - `gcpy/plot/single_panel`
+  - `gcpy/plot/single_panel.py`
   - `gcpy/plot/six_plot.py`
 - Added `yaxis_units: pressure` to the following YAML files:
   - `gcpy/benchmark/config/*.yml`
@@ -40,7 +40,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Changed ratio panel plots to Ratio to report "Ref is zero throughout domain" or "Dev is zero throughout domain" instead of a more generic label
 - Changed the `Abs diff [g]` rows of the mass conservation table to use exponential format with 4 decimal places
 - Changed Ref/Dev panels that are constant everywhere to use label "Constant at <value> throughout domain"
-- Changed difference and ratio plots to read "Differences negligble througout domain" if all values are numerical noise
+- Changed difference and ratio plots to read "Differences negligible throughout domain" if all values are numerical noise
 - Updated `gcpy/examples/plotting/create_test_plot.py` to import `gcpy.plot` directly
 - Updated `single_panel` to accept the `data_scale` argument from an external caller when available
 - Updated function `vmin_vmax_for_absdiff_plots` in `gcpy/plot/six_plot.py` to use `np.nanpercentile` instead of `np.percentile`

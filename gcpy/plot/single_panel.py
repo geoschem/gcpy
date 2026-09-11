@@ -170,12 +170,20 @@ def single_panel(
         Default value: None (will use plot value maximum)
     data_scale : float, optional
         Magnitude of the Ref and Dev data that were differenced to
-        produce plot_vals, used only when plot_vals is a difference
-        (use_cmap_RdBu=True) and norm is None.  It scales the
-        tolerance below which the panel counts as holding only
-        numerical noise (see gcpy.plot.core.noise_atol); a standalone
-        panel cannot derive it, because it is handed the difference
-        rather than the Ref and Dev fields it came from.  If None,
+        produce plot_vals.  It scales the tolerance below which the
+        panel counts as holding only numerical noise
+        (see :func:`gcpy.plot.core.noise_atol`), so that a difference
+        panel showing nothing but noise collapses to a flat color
+        scale instead of displaying spurious structure.
+
+        This argument is only consulted when all three of the
+        following hold: plot_vals is a difference
+        (use_cmap_RdBu=True), norm is None, and plot_type is a zonal
+        mean.  Otherwise it is ignored.
+
+        A standalone panel cannot derive this value, because it is
+        handed the difference rather than the Ref and Dev fields it
+        came from, so a caller that has them should pass it.  If None,
         such a panel collapses only when it is exactly flat.
         Default value: None
     return_list_of_plots : bool, optional

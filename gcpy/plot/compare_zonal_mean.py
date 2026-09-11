@@ -163,6 +163,7 @@ def compare_zonal_mean(
     yaxis_units : str, optional
         Units to use for the Y-axis of zonal mean plots. Either
         "pressure" (hPa) or "level" (model vertical level index).
+        log_yaxis is ignored when yaxis_units is "level".
         NOTE: If Ref and Dev are on different vertical grids (different
         number of levels), the Ref and Dev panels use their own native
         level numbering while the difference/ratio panels use the

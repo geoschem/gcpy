@@ -9,7 +9,7 @@ Compare diagnostic outputs
 ##########################
 
 This example demonstrates GCPy's diagnostic comparison capabilities.
-Following the example below will generate a table commparing the sums
+Following the example below will generate a table comparing the sums
 of individual variables from two GEOS-Chem diagnostic or restart
 files.
 

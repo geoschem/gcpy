@@ -141,8 +141,6 @@ def compute_total_mass(
 
     Parameters
     ----------
-    t_idx : int
-        Time index.
     dset : xr.Dataset
         Data [mol/mol dry air].
     area : xr.DataArray

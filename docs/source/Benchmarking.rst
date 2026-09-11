@@ -93,7 +93,7 @@ tables from GEOS-Chem benchmark simulations.
         #
         obs_data:
           ebas_o3:
-            data_dir: /n/lab_storage/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
+            data_dir: /n/lab_storage/jacob_lab/Lab/obs_data_for_bmk/ebas_sfc_o3_2019
             data_label: "O3 (EBAS, 2019)"
           sondes:
             data_dir: /n/lab_storage/jacob_lab/Lab/obs_data_for_bmk/sondes_2010-2019
@@ -229,7 +229,7 @@ tables from GEOS-Chem benchmark simulations.
         sanity_check_table: True
         ste_table: True # GCC only
         summary_table: False
-        timing_table: False
+        timing_table: True
         #
         # Comparison plots for selected collections
         # (not normally used for benchmarks)
@@ -349,8 +349,9 @@ tables from GEOS-Chem benchmark simulations.
 Benchmark plotting functions
 ============================
 
-Module :code:`gcpy.benchmark_funcs` contains several functions for
-creating plots and tables from GEOS-Chem benchmark simulations. The
+Module :mod:`gcpy.benchmark.modules.benchmark_funcs` contains several
+functions for creating plots and tables from GEOS-Chem benchmark
+simulations. The
 specific outputs generated have been requested by the `GEOS-Chem
 Steering Committee <https://geoschem.github.io/steering-cmte>`_  in
 order to facilitate comparing benchmark output from different model
@@ -406,7 +407,7 @@ create summary tables will be described :ref:`in a separate section
 	plots to separate folders based on category (as denoted by the
 	plot_by_spc_cat flag). The full list of species categories is
 	denoted in `benchmark_categories.yml
-	<https://github.com/geoschem/gcpy/blob/dev/gcpy/benchmark_categories.yml>`_
+	<https://github.com/geoschem/gcpy/blob/dev/gcpy/benchmark/modules/benchmark_categories.yml>`_
 
 .. [#C] In this function, parallelization occurs at the species
 	category level. In all other functions, parallelization occurs
@@ -535,7 +536,7 @@ Example:
 .. code-block:: console
 
    $ conda activate gcpy_env
-   $ python -m gcpy.benchmark.modules.benchmark_gchp_stats 14.8.0-alpha.5 14.8.0-alpha.6
+   $ python -m gcpy.benchmark.modules.benchmark_gcclassic_stats 14.8.0-alpha.5 14.8.0-alpha.6
       
 benchmark_gchp_stats.py
 -----------------------

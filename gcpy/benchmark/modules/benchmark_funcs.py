@@ -98,14 +98,6 @@ def create_total_emissions_table(
         template will be set to "Emis{}", where {} will be replaced
         by the species name.
         Default value: "Emis{}_"
-    ref_area_varname : str, optional
-        Name of the variable containing the grid box surface areas
-        (in m2) in the ref dataset.
-        Default value: 'AREA'
-    dev_area_varname : str, optional
-        Name of the variable containing the grid box surface areas
-        (in m2) in the dev dataset.
-        Default value: 'AREA'
     refmetdata : xr.Dataset, optional
         Dataset containing ref meteorology and area.
         Default value: None
@@ -949,6 +941,10 @@ def make_benchmark_conc_plots(
     plots : list of str, optional
         List of plot types to create.
         Default value: ['sfc', '500hpa', 'zonalmean']
+    use_cmap_RdBu : bool, optional
+        Set this flag to True to use a diverging red-blue color map
+        for the Ref and Dev panels instead of the default color map.
+        Default value: False
     log_color_scale : bool, optional
         Set this flag to True to enable plotting data (not diffs)
         on a log color scale.
@@ -3888,6 +3884,10 @@ def make_benchmark_mass_accumulation_tables(
     verbose : bool, optional
         Set this flag to True to print extra informational output.
         Default value: False.
+    label : str, optional
+        Text describing the point in the simulation at which the
+        masses were taken, used in the table header.
+        Default value: "at end of simulation"
     """
     # ==================================================================
     # Initialization

@@ -608,7 +608,7 @@ def regrid_ll_to_cssg(
     ----------
     dset : xarray.Dataset
         Data on a lat/lon grid.
-    cs_res_in : int
+    cs_res_out : int
         Cubed-sphere grid resolution.
     dim_format_out : str
         Either "checkpoint" (for restart files) or
@@ -1450,33 +1450,33 @@ def main():
     -i, --filein
         Input file, contains original data.
 
-    -o --fileout
+    -o, --fileout
         Output file, contains regridded data.
 
-    --sg-params-in
+    --sg_params_in
         Input grid stretching parameters (GCHP only).
 
-    --sg-params-out
+    --sg_params_out
         Output grid stretching parameters (GCHP only).
 
-    --dim-format-in
+    --dim_format_in
         Format of the input file's dimensions:
-        ("checkpoint", "diagnostics". "classic")
+        ("checkpoint", "diagnostic", "classic")
 
-    --dim-format-out
+    --dim_format_out
         Format of the output file's dimensions:
-        ("checkpoint", "diagnostics", "classic")
+        ("checkpoint", "diagnostic", "classic")
 
     --cs_res_out
         Cubed-sphere resolution for the output file (e.g 24, 48, 360)
 
     --ll_res_out
-        Resolution for the output file in 'latxlon` format
+        Resolution for the output file in 'latxlon' format
 
     --verbose
         Toggles verbose printout on (True) or off (False).
 
-    -w --weightsdir
+    -w, --weightsdir
         Directory where regridding weights are stored (or will be created)
     """
 

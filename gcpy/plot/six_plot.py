@@ -136,6 +136,7 @@ def six_plot(
     yaxis_units : str, optional
         Units to use for the Y-axis of zonal mean plots. Either
         "pressure" (hPa) or "level" (model vertical level index).
+        log_yaxis is ignored when yaxis_units is "level".
         Default value: "pressure"
     xtick_positions : list of float, optional
         Locations of lat/lon or lon ticks on plot.
@@ -150,10 +151,19 @@ def six_plot(
         Set this flag to True to enable log scaling for ratio plots.
         Default value: False
     data_scale : float, optional
-        Magnitude of the Ref and Dev data.  This is used to determine
-        if the data contains valid signal (which should be plotted)
-        or contains numerical noise everywhere (which shouldn't be
-        plotted).
+        Magnitude of the Ref and Dev data, used to decide whether a
+        difference panel holds valid signal (which should be plotted)
+        or numerical noise everywhere (which should collapse to a flat
+        color scale).  See :func:`gcpy.plot.core.noise_atol`.
+
+        Only the difference row consults this value; the ratio row
+        uses a scale of 1.0 and the Ref/Dev row does not use one at
+        all.  If None, the difference row derives the scale from the
+        Ref and Dev data ranges via
+        :func:`gcpy.plot.six_plot.ref_dev_data_scale`, so most callers
+        need not pass it.  As with
+        :func:`gcpy.plot.single_panel.single_panel`, the value is only
+        consulted for zonal-mean plots.
         Default value: None
     proj : cartopy.crs.Projection, optional
         Projection for plotting data.

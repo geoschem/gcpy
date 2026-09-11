@@ -35,7 +35,9 @@ Source code
    * - :mod:`gcpy.community.format_hemco_data`
      - `gcpy/community/format_hemco_data.py
        <https://github.com/geoschem/gcpy/blob/main/gcpy/community/format_hemco_data.py>`_
-       `gcpy/examples/hemco/format_hemco_demo.py <https://github.com/geoschem/gcpy/blob/main/gcpy/community/format_hemco_demo.py>`_
+   * - :mod:`gcpy.examples.hemco.format_hemco_demo`
+     - `gcpy/examples/hemco/format_hemco_demo.py
+       <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/hemco/format_hemco_demo.py>`_
 
 .. _hco-fmt-usage:
 

@@ -36,10 +36,10 @@ Make sure that you have :ref:`specified the proper Matplotlib backend
 .. code-block:: console
 
    $ python -m gcpy.examples.plotting.plot_comparisons \
-     --ref   /path/to/ref/diagnostic/or/restart/file \
-     --dev   /path/to/dev/diagnostic/or/restart/file \
-     --var   variable-name-to-plot \
-     --level level-to-plot
+     --ref       /path/to/ref/diagnostic/or/restart/file \
+     --dev       /path/to/dev/diagnostic/or/restart/file \
+     --varname   variable-name-to-plot \
+     --level     level-to-plot
 
 Note that the :code:`level-to-plot` starts from 0.
 
@@ -48,8 +48,8 @@ from two different GEOS-Chem simulations, you would use this command:
 
 .. code-block:: console
 
-   $ python -m gcpy.examples.plottings.plot_comparisons \
-     --ref   /path/to/ref/GEOSChem.SpeciesConc.20190701_0000z.nc4 \
-     --dev   /path/to/dev/GEOSChem.SpeciesConc.20190701_0000z.nc4 \
-     --var   SpeciesConcVV_O3 \
-     --level 0
+   $ python -m gcpy.examples.plotting.plot_comparisons \
+     --ref       /path/to/ref/GEOSChem.SpeciesConc.20190701_0000z.nc4 \
+     --dev       /path/to/dev/GEOSChem.SpeciesConc.20190701_0000z.nc4 \
+     --varname   SpeciesConcVV_O3 \
+     --level     0

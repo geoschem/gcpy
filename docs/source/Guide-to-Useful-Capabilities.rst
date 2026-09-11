@@ -51,8 +51,8 @@ Single-panel example:
     # Plot surface Ozone over the North Pacific
     single_panel(
         ds['SpeciesRst_O3'].isel(lev=0),
-	title='Surface Ozone over the North Pacific',
-	extent=[80, -90, -10, 60]
+        title='Surface Ozone over the North Pacific',
+        extent=[80, -90, -10, 60]
     )
     plt.show()
 
@@ -68,8 +68,8 @@ Zonal mean example:
     # Plot global zonal mean of Ozone
     single_panel(
         ds['SpeciesRst_O3'],
-	plot_type='zonal_mean',
-	title='Global Zonal Mean of Ozone'
+        plot_type='zonal_mean',
+        title='Global Zonal Mean of Ozone'
     )
     plt.show()
 
@@ -113,11 +113,11 @@ Single level comparison:
     # Plot comparison of surface ozone over the North Pacific
     compare_single_level(
         gcc_ds,
-	'GEOS-Chem Classic',
-	gchp_ds,
-	'GCHP',
-	varlist=['SpeciesConc_O3'],
-	extra_title_txt='Surface'
+        'GEOS-Chem Classic',
+        gchp_ds,
+        'GCHP',
+        varlist=['SpeciesConcVV_O3'],
+        extra_title_txt='Surface'
     )
     plt.show()
 
@@ -136,10 +136,10 @@ Zonal mean comparison:
     # Plot comparison of global zonal mean ozone
     compare_zonal_mean(
         gcc_ds,
-	'GEOS-Chem Classic',
-	gchp_ds,
-	'GCHP',
-	varlist=['SpeciesConc_O3']
+        'GEOS-Chem Classic',
+        gchp_ds,
+        'GCHP',
+        varlist=['SpeciesConcVV_O3']
     )
     plt.show()
 

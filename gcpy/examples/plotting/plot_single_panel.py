@@ -25,10 +25,9 @@ Command-line arguments
 
    Variable name to plot.
 
-.. option:: [-l <int>, --level <int>]
+.. option:: -l <int>, --level <int>
 
    Level to plot (single-level plots only), starting at 0.
-   Default: ``0``
 
 Examples
 --------
@@ -40,7 +39,7 @@ single-level plots.
 .. code-block:: console
 
    $ conda activate gcpy_env
-   (gcpy_env) $ python -m gcpy.examples.plotting.plot_comparisons \
+   (gcpy_env) $ python -m gcpy.examples.plotting.plot_single_panel \
                 --infile GEOSChem.SpeciesConc.20190701_0000z.nc4  \
                 --varname SpeciesConcVV_O3                        \
                 --level 22

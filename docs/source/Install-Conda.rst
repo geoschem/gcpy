@@ -13,15 +13,15 @@ installation methods for GCPy.  Some of these installation methods use
 the `Conda <https://anaconda.org/anaconda/conda>`_ package manager.
 If :program:`Conda` has not been already installed on your system, you
 can install it following the instructions in this chapter.
-not already present on your system.
 
 .. important::
 
    Previous versions of this documentation encouraged users to install
-   the :program:`Mamba` package mamager.  However, :program:`Mamba` has
+   the :program:`Mamba` package manager.  However, :program:`Mamba` has
    been deprecated as of August 2024 and is slated for removal as a
    stand-alone package. :program:`Mamba` functionality has since been
-   incorporated into :program:`Conda` version 2.24 and later.
+   incorporated into :program:`Conda` version 23.10 and later, which
+   uses the :program:`libmamba` dependency solver by default.
 
    We have updated these installation instructions accordingly, and
    now direct users to install :program:`Conda` via the
@@ -128,7 +128,7 @@ We recommend installing :program:`Conda` from the :program:`Miniforge` distribut
    path or type a new path and then press :literal:`ENTER`.
 
 
-   :program:`Miniforge` will downlad and install Python software
+   :program:`Miniforge` will download and install Python software
    packages into the  :file:`pkgs` subfolder of the root
    installation path.  Similarly, when you :ref:`create Python
    environments <install-dev-gcpy-install>`, these will be

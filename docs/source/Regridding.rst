@@ -479,18 +479,16 @@ Pass stretched-grid file paths
 ------------------------------
 
 Stretched-grid parameters cannot currently be automatically determined
-from grid coordinates. If you are plotting stretched-grid data in
-:mod:`gcpy.plot.compare_single_level` or
-:mod:`gcpy.plot.compare_zonal_mean` (even if regridding to another
-format), you need to use the :code:`sg_ref_path` or
-:code:`sg_dev_path` arguments to pass the path of your original
-stretched-grid restart file to GCPy. If using
-:mod:`gcpy.plot.single_panel`, pass the file path using
-:code:`sg_path`. Stretched-grid restart files created using GCPy
-contain the specified stretch factor, target longitude, and target
-latitude in their metadata.  Currently, output files from
-stretched-grid runs of GCHP do not contain any metadata that specifies
-the stretched-grid used. 
+from grid coordinates. If you are plotting stretched-grid data with
+:mod:`gcpy.plot.single_panel`, pass the path of your original
+stretched-grid restart file using the :code:`sg_path` argument.
+:mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` instead read the stretch factor,
+target longitude, and target latitude from the metadata of the
+datasets passed to them. Stretched-grid restart files created using
+GCPy contain these parameters in their metadata.  Currently, output
+files from stretched-grid runs of GCHP do not contain any metadata
+that specifies the stretched-grid used.
 
 Pass vertical grid parameters for non-72/47-level grids
 -------------------------------------------------------
@@ -502,7 +500,10 @@ vertical grid, you will need to pass the corresponding `grid
 parameters
 <http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_vertical_grids#Reference_section_for_vertical_grids>`_
 using the :code:`ref_vert_params` or :code:`dev_vert_params` keyword
-arguments.
+arguments of :mod:`gcpy.plot.compare_zonal_mean`.  (These keyword
+arguments are specific to :mod:`gcpy.plot.compare_zonal_mean`;
+:mod:`gcpy.plot.compare_single_level` does not accept them.  The
+:mod:`gcpy.plot.single_panel` equivalent is :code:`vert_params`.)
 
 Automatic regridding decision process
 -------------------------------------

@@ -10,7 +10,7 @@ Examples
 .. code-block:: console
 
    $ conda activate gcpy_env
-   $ python -m gcpy.benchmark.modules.benchmark_scrape_gcclassic_stats \
+   $ python -m gcpy.benchmark.modules.benchmark_gcclassic_stats \
      14.5.0-alpha.5 \
      14.5.0-alpha.6
 """
@@ -76,6 +76,16 @@ def format_timer(timer):
     """
     Strips spaces and preceding "=>" characters from a
     GEOS-Chem Classic timer name
+
+    Parameters
+    ----------
+    timer : str
+        The raw GEOS-Chem Classic timer name.
+
+    Returns
+    -------
+    timer : str
+        The cleaned-up timer name.
     """
     return timer.strip().replace("=> ", "").replace(":", "")
 

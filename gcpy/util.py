@@ -542,6 +542,9 @@ def add_missing_variables(
     verbose : bool, optional
         Toggles extra debug print output.
         Default value: False
+    **kwargs
+        Additional keyword arguments are accepted for call-signature
+        compatibility and are ignored.
 
     Returns
     -------
@@ -765,8 +768,9 @@ def warn_if_flip_levels_mismatch(flip_ref, flip_dev):
         f"of {other} will not, so the two datasets will be indexed "
         f"from opposite ends of the vertical grid.  A single-level "
         f"plot will compare the top of {flipped} against the bottom "
-        f"of {other}.  Set flip_levels the same way for both unless "
-        f"this is what you intend.",
+        f"of {other}.  Set flip_ref and flip_dev the same way for "
+        f"both (or, in compare_diags, the flip_levels key under both "
+        f"ref and dev) unless this is what you intend.",
         UserWarning,
         stacklevel=3
     )
@@ -2157,6 +2161,20 @@ def dataset_reader(
 def read_config_file(config_file, quiet=False):
     """
     Reads configuration information from a YAML file.
+
+    Parameters
+    ----------
+    config_file : str
+        Path to the YAML file to be read.
+    quiet : bool, optional
+        Set this flag to True to suppress printing the name of the
+        configuration file to stdout.
+        Default value: False
+
+    Returns
+    -------
+    config : dict
+        Configuration information read from config_file.
     """
     # Read the configuration file in YAML format
     try:
@@ -2363,6 +2381,16 @@ def trim_cloud_benchmark_label(
     """
     Removes the first part of the cloud benchmark label string
     (e.g. "gchp-c24-1Hr", "gcc-4x5-1Mon", etc) to avoid clutter.
+
+    Parameters
+    ----------
+    label : str
+        The cloud benchmark label string.
+
+    Returns
+    -------
+    label : str
+        The label, with the leading simulation descriptor removed.
     """
     verify_variable_type(label, str)
 

@@ -57,12 +57,12 @@ Type this at the command line:
 
 .. code-block:: console
 
-    conda activate gcpy_env
+    $ conda activate gcpy_env
     (gcpy_env) $ python -m gcpy.kpp.kppsa_plot_sites  \
      --refdir   /path/to/KPP-Standalone/Ref/log/files \
      --reflabel Rosenbrock                            \
      --devdir   /path/to/KPP-Standalone/Dev/log/files \
-     --devlabel Backwards Euler                       \
+     --devlabel "Backwards Euler"                     \
      --pattern  20190701_0040.log                     \
      --species  O3                                    \
      --pdfname  KPP-Standalone-O3-20190701-0040.pdf

@@ -539,7 +539,7 @@ def test_mask_meaningless_ratio_without_scale_is_a_no_op():
 @pytest.mark.parametrize("subplot, expected", [
     ("dyn_ratio", 1.0),    # MidpointLogNorm spans [0.5, 2.0] about 1.0
     ("res_ratio", 1.0),
-    ("dyn_absdiff", 0.0),  # Normalize spans [-1, 1] about 0.0
+    ("dyn_absdiff", 0.0),  # linear Normalize, anchored at 0.0
     ("res_absdiff", 0.0),
 ])
 def test_collapsed_colorbar_tick_matches_the_panel_anchor(subplot, expected):
@@ -567,8 +567,21 @@ def test_collapsed_colorbar_tick_matches_the_panel_anchor(subplot, expected):
     plt.close(fig)
 
     assert ticks == [expected]
-    # The tick must lie inside the norm, so the axes are not stretched
-    assert xlim == (norm.vmin, norm.vmax)
+
+    # The regression this guards against: a tick outside the norm
+    # stretches the colorbar axes, leaving it blank.  Assert the
+    # invariant directly...
+    assert norm.vmin <= ticks[0] <= norm.vmax
+
+    # ...and that the axes still span exactly the norm.  Compared with
+    # a tolerance rather than ==, because a log-scaled ratio norm
+    # round-trips its bounds through log(), which costs half a ULP
+    # (0.5 comes back as 0.49999999999999994).  The tolerance is kept
+    # far tighter than pytest.approx's 1e-6 default: round-trip noise
+    # is ~1e-16 relative, whereas an actually stretched axis is orders
+    # of magnitude wide, so 1e-12 admits the former and rejects the
+    # latter.
+    assert xlim == pytest.approx((norm.vmin, norm.vmax), rel=1e-12)
 
 
 def test_res_absdiff_range_ignores_nans():

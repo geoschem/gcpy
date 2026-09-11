@@ -111,7 +111,7 @@ setup(
         "pylint==3.3.4",
         "pyproj==3.7.1",
         "python==3.13",
-        "pypdf==6.7.1",
+        "pypdf==6.16.1",
         "pytest==9.0.3",
         "requests==2.33.0",
         "scipy==1.15.2",
