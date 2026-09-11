@@ -17,15 +17,22 @@ import pytest
 from matplotlib import colors
 
 from gcpy.util import get_nan_mask, is_nearly_constant
-from gcpy.plot.core import NOISE_REL_TOL, mask_meaningless_ratio, \
+import matplotlib.pyplot as plt
+
+from gcpy.plot.core import CONSTANT_REL_TOL, NOISE_REL_TOL, \
+    constant_rel_tol, diff_is_negligible, mask_meaningless_ratio, \
     noise_atol, normalize_colors
 from gcpy.plot.six_plot import (
     colorbar_for_all_zero_or_nan,
     vmin_vmax_for_absdiff_plots,
     colorbar_ticks_and_format,
+    colorbar_for_constant_field,
+    colorbar_for_negligible_diff,
     compute_norm_for_plot,
     ref_dev_data_scale,
     ref_equals_dev,
+    unique_ticks,
+    vmin_vmax_for_ratio_plots,
 )
 
 # Magnitude of the regridding noise reported in GitHub issue #330
@@ -405,7 +412,9 @@ def test_ref_dev_data_scale_all_nan_returns_none():
 def test_negligible_absdiff_implies_ref_equals_dev(rel_diff):
     """
     Whenever the difference panel is blanked as "negligible", the ratio
-    panel must agree and report "Ref and Dev equal throughout domain".
+    panel must agree that Ref and Dev do not meaningfully differ.  (Which
+    wording it uses depends on whether they are exactly equal; this test
+    covers the predicate, not the label.)
 
     The reverse need not hold (the ratio panel is the more forgiving of
     the two), but this direction must: it would be contradictory to
@@ -737,3 +746,567 @@ def test_ratio_colorbar_names_the_side_that_is_zero(
     plt.close(fig)
 
     assert labels == [expected]
+
+
+# ======================================================================
+# Ref/Dev "is this field constant" tolerance, scaled to the data's
+# precision.  Regression tests for the PassiveTracer restart (100 ppb)
+# whose zonal-mean panels collapsed onto a blank 0-1 ppb colorbar.
+# ======================================================================
+
+# A PassiveTracer restart initialized to 1e-7 v/v, i.e. 100 ppb, with
+# the real structure it carries: a relative spread of 7.5e-6, which a
+# 1e-5 tolerance swallowed.
+TRACER_RST_VMIN = 99.99925
+TRACER_RST_VMAX = 100.00000
+
+# The issue #330 CS->LL regridding noise, in relative terms
+REGRID_NOISE_REL = (NOISY_HI - NOISY_LO) / NOISY_HI
+
+
+def test_constant_rel_tol_defaults_to_real4_when_precision_unknown():
+    assert constant_rel_tol() == CONSTANT_REL_TOL
+    assert constant_rel_tol(None) == CONSTANT_REL_TOL
+    assert constant_rel_tol([1.0, 2.0]) == CONSTANT_REL_TOL
+
+
+def test_constant_rel_tol_is_looser_for_real4_than_real8():
+    tol32 = constant_rel_tol(np.zeros(4, dtype=np.float32))
+    tol64 = constant_rel_tol(np.zeros(4, dtype=np.float64))
+    assert tol32 > tol64, "real*4 round-off needs the looser tolerance"
+
+
+def test_constant_rel_tol_real4_straddles_roundoff_and_real_signal():
+    # Must sit above real*4 round-off but below the real structure in
+    # a PassiveTracer restart, or one of the two gets misclassified.
+    tol = constant_rel_tol(np.zeros(4, dtype=np.float32))
+    eps32 = float(np.finfo(np.float32).eps)
+    signal = (TRACER_RST_VMAX - TRACER_RST_VMIN) / TRACER_RST_VMAX
+    assert eps32 < tol < signal
+
+
+def test_constant_rel_tol_floored_at_regridding_noise_for_real8():
+    # Interpolation error is a property of the regridding scheme, not
+    # of the dtype, so real*8 must not drop below the floor and let
+    # issue #330's striping back in.
+    tol = constant_rel_tol(np.zeros(4, dtype=np.float64))
+    assert tol >= REGRID_NOISE_REL
+
+
+def test_normalize_colors_preserves_real_tracer_restart_range():
+    # The reported bug: these panels must keep their true 100 ppb
+    # range, not collapse to a dimensionless 0-1 scale.
+    norm = normalize_colors(
+        TRACER_RST_VMIN,
+        TRACER_RST_VMAX,
+        rel_tol=constant_rel_tol(np.zeros(4, dtype=np.float32)),
+    )
+    assert (norm.vmin, norm.vmax) == (TRACER_RST_VMIN, TRACER_RST_VMAX)
+
+
+def test_normalize_colors_still_collapses_regridding_noise():
+    # ...while the issue #330 noise it was built for still collapses.
+    norm = normalize_colors(
+        NOISY_LO,
+        NOISY_HI,
+        rel_tol=constant_rel_tol(np.zeros(4, dtype=np.float32)),
+    )
+    assert (norm.vmin, norm.vmax) == (0.0, 1.0)
+
+
+def test_normalize_colors_rel_tol_is_scale_invariant():
+    # atol is 0 on this path, so the same relative spread must be
+    # judged identically whether the field is ppb (~1e2) or an
+    # aircraft emission flux (~1e-13).
+    rel = 7.5e-6
+    tol = constant_rel_tol(np.zeros(4, dtype=np.float32))
+    for mag in (1.0e2, 1.0e0, 1.0e-6, 1.0e-13):
+        norm = normalize_colors(mag * (1.0 - rel), mag, rel_tol=tol)
+        assert (norm.vmin, norm.vmax) != (0.0, 1.0), f"collapsed at {mag:g}"
+
+
+def test_compute_norm_for_plot_zonal_mean_keeps_tracer_restart_range():
+    # End-to-end through the call the zonal-mean Ref panel actually
+    # makes, with the field supplied so its precision is used.
+    plot_val = np.array(
+        [TRACER_RST_VMIN, TRACER_RST_VMAX],
+        dtype=np.float32,
+    )
+    _, norm = compute_norm_for_plot(
+        plot_val,
+        TRACER_RST_VMIN,
+        TRACER_RST_VMAX,
+        "ref",
+        plot_type="zonal_mean",
+    )
+    assert (norm.vmin, norm.vmax) == (TRACER_RST_VMIN, TRACER_RST_VMAX)
+
+
+def test_colorbar_for_constant_field_names_the_value():
+    # A collapsed panel must say what the constant is.  Leaving the
+    # numeric ticks of the dimensionless norm on a colorbar labeled in
+    # the field's units is what made a 100 ppb field read as 1 ppb.
+    _, axes = plt.subplots()
+    mappable = axes.imshow(np.full((2, 2), 100.0))
+    cbar = plt.colorbar(mappable, ax=axes)
+    cbar = colorbar_for_constant_field(cbar, 100.0, 100.0)
+    labels = [tick.get_text() for tick in cbar.ax.get_yticklabels()]
+    plt.close("all")
+    assert labels == ["Constant at 100 throughout domain"]
+
+
+def test_colorbar_ticks_and_format_labels_constant_ref_panel():
+    # The missing branch: a Ref panel that normalize_colors collapsed
+    # had no label path and fell through to generic numeric ticks.
+    _, axes = plt.subplots()
+    mappable = axes.imshow(np.full((2, 2), 0.5))
+    cbar = plt.colorbar(mappable, ax=axes)
+    cbar = colorbar_ticks_and_format(
+        np.full((2, 2), NOISY_LO, dtype=np.float32),
+        cbar,
+        NOISY_LO,
+        NOISY_HI,
+        "ref",
+        use_tolerance=True,
+    )
+    labels = [tick.get_text() for tick in cbar.ax.get_yticklabels()]
+    plt.close("all")
+    assert len(labels) == 1
+    assert labels[0].startswith("Constant at ")
+
+
+# ======================================================================
+# Agreement between the difference row and the ratio row.  Both are
+# governed by NOISE_REL_TOL, but the difference panels are symmetric
+# about zero, so testing their full span measured 2 * max|Dev - Ref|
+# and applied an effective tolerance of NOISE_REL_TOL / 2.  A real
+# 7.5e-6 relative difference (a TransportTracers PassiveTracer restart,
+# 14.7.0 vs 14.8.0) fell in the resulting factor-of-two gap: the
+# difference row plotted the offset while the ratio row beside it
+# announced "Ref and Dev equal throughout domain".
+# ======================================================================
+
+# Magnitude of a PassiveTracer restart, in ppb
+DIFF_SCALE = 100.0
+
+# Relative Dev - Ref difference between the 14.7.0 and 14.8.0 restarts
+TRACER_REL_DIFF = 7.5e-6
+
+
+def _rows_agree(rel_diff, data_scale=DIFF_SCALE):
+    """Returns (difference row says negligible, ratio row says equal)."""
+    half = rel_diff * data_scale
+    norm = normalize_colors(
+        -half, half, is_difference=True, data_scale=data_scale
+    )
+    diff_negligible = (norm.vmin, norm.vmax) == (-1.0, 1.0)
+    ratio_equal = bool(ref_equals_dev(np.full(8, 1.0 + rel_diff)))
+    return diff_negligible, ratio_equal
+
+
+def test_diff_is_negligible_tests_half_the_span():
+    # The criterion is on max|Dev - Ref|, which is half of a symmetric
+    # panel's span -- not on the span itself.
+    scale = DIFF_SCALE
+    atol = noise_atol(scale)
+    assert diff_is_negligible(-atol, atol, scale)
+    assert not diff_is_negligible(-2.0 * atol, 2.0 * atol, scale)
+
+
+def test_diff_is_negligible_requires_flat_panel_without_data_scale():
+    # No usable data_scale means no tolerance to apply (cf. noise_atol)
+    assert diff_is_negligible(0.0, 0.0, None)
+    assert not diff_is_negligible(-1.0, 1.0, None)
+
+
+def test_diff_and_ratio_rows_agree_on_the_tracer_restart():
+    # The reported contradiction: these two must not disagree.
+    diff_negligible, ratio_equal = _rows_agree(TRACER_REL_DIFF)
+    assert diff_negligible == ratio_equal, (
+        "difference and ratio rows disagree about whether Ref and Dev "
+        "differ"
+    )
+    # ...and both should report the difference, since it is real
+    assert not diff_negligible
+    assert not ratio_equal
+
+
+def test_diff_and_ratio_rows_agree_across_magnitudes():
+    # Sweep the band the two rows used to straddle, plus decades to
+    # either side, at magnitudes spanning ppb to aircraft-emission flux.
+    for scale in (1.0e2, 1.0e0, 1.0e-13):
+        for rel_diff in np.logspace(-8, -3, 60):
+            diff_negligible, ratio_equal = _rows_agree(rel_diff, scale)
+            assert diff_negligible == ratio_equal, (
+                f"rows disagree at scale={scale:g}, "
+                f"rel_diff={rel_diff:.3e}"
+            )
+
+
+def test_noise_rel_tol_is_the_threshold_both_rows_use():
+    # Straddle NOISE_REL_TOL itself and confirm both rows switch there.
+    below = _rows_agree(NOISE_REL_TOL * 0.5)
+    above = _rows_agree(NOISE_REL_TOL * 2.0)
+    assert below == (True, True), "both rows should call this noise"
+    assert above == (False, False), "both rows should call this signal"
+
+
+def test_ratio_panel_collapse_uses_the_shared_constant():
+    # The ratio panel's own color-scale collapse must move with the
+    # label from ref_equals_dev, rather than tracking
+    # is_nearly_constant's separate default.
+    lo, hi = 1.0, 1.0 + NOISE_REL_TOL * 0.5
+    norm = normalize_colors(lo, hi, is_difference=True, is_ratio=True)
+    assert (norm.vmin, norm.vmax) == (0.5, 2.0)
+
+    lo, hi = 1.0, 1.0 + NOISE_REL_TOL * 4.0
+    norm = normalize_colors(lo, hi, is_difference=True, is_ratio=True)
+    assert (norm.vmin, norm.vmax) != (0.5, 2.0)
+
+
+# ======================================================================
+# The ratio panel's color-scale collapse and the "Ref and Dev equal
+# throughout domain" label beside it must agree.  The collapse tested
+# the width of the ratio range while ref_equals_dev tested the range's
+# distance from 1, so the two disagreed across a factor-of-two band.
+# ======================================================================
+
+def _ratio_collapsed(vmin, vmax):
+    """Whether normalize_colors collapsed a ratio panel's color scale.
+
+    Called the way compute_norm_for_plot calls it for a ratio subplot.
+    A collapsed panel gets MidpointLogNorm, which carries a midpoint
+    attribute; an uncollapsed one gets a plain LogNorm, which does not.
+    """
+    norm = normalize_colors(
+        vmin,
+        vmax,
+        is_difference=True,
+        log_color_scale=True,
+        ratio_log=False,
+        is_ratio=True,
+        use_tolerance=True,
+    )
+    return hasattr(norm, "midpoint")
+
+
+def test_ratio_collapse_measures_distance_from_one():
+    # A range wholly to one side of 1 is not "constant" just because
+    # it is narrow: Dev/Ref is 1.00003 everywhere, i.e. Ref and Dev
+    # really do differ.
+    assert not _ratio_collapsed(1.0 + 3.0e-5, 1.0 + 3.2e-5)
+
+    # ...while a narrow range straddling 1 still collapses.
+    assert _ratio_collapsed(1.0 - 1.0e-9, 1.0 + 1.0e-9)
+
+
+def test_ratio_collapse_agrees_with_ref_equals_dev_label():
+    # Sweep the band the two criteria used to straddle, going through
+    # the real vmin/vmax the dynamic-range ratio panel is given.
+    for half_spread in np.logspace(-9, -3, 120):
+        arr = np.linspace(1.0 - half_spread, 1.0 + half_spread, 32)
+        vmin, vmax = vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+        assert _ratio_collapsed(vmin, vmax) == bool(ref_equals_dev(arr)), (
+            f"collapse and label disagree at half_spread={half_spread:.3e}"
+        )
+
+
+def test_ratio_collapse_uses_the_same_tolerance_as_the_label():
+    # Straddle NOISE_REL_TOL itself.  Both sides must switch there,
+    # not at half of it.
+    assert _ratio_collapsed(1.0, 1.0 + NOISE_REL_TOL * 0.5)
+    assert not _ratio_collapsed(1.0, 1.0 + NOISE_REL_TOL * 2.0)
+
+
+def test_restricted_range_ratio_panel_never_collapses():
+    # vmin_vmax_for_ratio_plots hands the restricted-range panel a
+    # fixed 0.5 to 2.0, which must keep its real color scale; the
+    # Ref-equals-Dev case is handled by the label, not by collapsing.
+    vmin, vmax = vmin_vmax_for_ratio_plots(
+        np.full(8, 1.0), "res_ratio", 0
+    )
+    assert (vmin, vmax) == (0.5, 2.0)
+    assert not _ratio_collapsed(vmin, vmax)
+
+
+# ======================================================================
+# The difference row's noise tolerance must be anchored to the same
+# data the ratio row divides by.  data_scale used to come from the
+# native-grid Ref & Dev that row 1 plots, while both lower rows are
+# built from the comparison-grid arrays.  Regridding moves the maximum,
+# and a native maximum below the comparison-grid one leaves the
+# difference row with the tighter tolerance, so it could draw real
+# structure while the ratio row beside it reported "Ref and Dev equal
+# throughout domain" (GCHP TransportTracers PassiveTracer, c24 -> 1x1.25).
+# ======================================================================
+
+def _rows_for(max_abs_diff, ref_cmp_max, data_scale):
+    """Returns (difference row collapsed, ratio row says equal)."""
+    collapsed = diff_is_negligible(-max_abs_diff, max_abs_diff, data_scale)
+    # The ratio row divides pointwise by the comparison-grid Ref; the
+    # largest deviation from 1 sits where the difference is largest.
+    equal = bool(ref_equals_dev(
+        np.array([1.0 + max_abs_diff / ref_cmp_max, 1.0])
+    ))
+    return collapsed, equal
+
+
+def test_ratio_equal_implies_difference_negligible_when_scales_match():
+    # With data_scale taken from the comparison grid, "ratio says
+    # equal" must imply "difference is negligible" at every magnitude.
+    ref_cmp_max = 100.06
+    for diff in np.logspace(-8, -2, 4000):
+        collapsed, equal = _rows_for(diff, ref_cmp_max, ref_cmp_max)
+        assert not (equal and not collapsed), (
+            f"rows disagree at max|Dev-Ref|={diff:.4e}"
+        )
+
+
+def test_native_grid_scale_lets_the_two_rows_disagree():
+    # Documents the failure mode: a native-grid maximum below the
+    # comparison-grid one opens a window where the difference row
+    # draws while the ratio row calls Ref and Dev equal.
+    ref_cmp_max = 100.06      # what the lower rows are built from
+    native_max = 99.0         # what data_scale used to come from
+    disagreements = [
+        diff for diff in np.logspace(-6, -2, 20000)
+        if _rows_for(diff, ref_cmp_max, native_max) == (False, True)
+    ]
+    assert disagreements, "expected a reachable disagreement window"
+    lo, hi = min(disagreements), max(disagreements)
+    assert np.isclose(lo, NOISE_REL_TOL * native_max, rtol=1e-3)
+    assert np.isclose(hi, NOISE_REL_TOL * ref_cmp_max, rtol=1e-3)
+
+
+def test_six_plot_prefers_a_caller_supplied_data_scale():
+    # six_plot derives data_scale from vmins/vmaxs only as a fallback;
+    # the caller's comparison-grid value must win for the difference row.
+    from gcpy.plot.six_plot import ref_dev_data_scale
+    native = ref_dev_data_scale([99.0, 99.0], [99.0, 99.0])
+    assert native == 99.0
+    diff = NOISE_REL_TOL * 100.0        # negligible against 100.06
+    assert not diff_is_negligible(-diff, diff, native)
+    assert diff_is_negligible(-diff, diff, 100.06)
+
+
+# ======================================================================
+# The ratio row's "Ref and Dev equal throughout domain" is a strong
+# claim, but ref_equals_dev is a tolerance test that also passes when
+# Ref and Dev differ by up to NOISE_REL_TOL.  Reserve that wording for
+# a ratio that is exactly 1, and label the tolerance case the way the
+# difference row already labels it, so that output which did not change
+# at all can be told from output that changed too little to matter.
+# ======================================================================
+
+def _ratio_colorbar_label(ratio, subplot="dyn_ratio"):
+    """Returns (labels, tick positions) for a ratio panel's colorbar."""
+    _, axes = plt.subplots()
+    mappable = axes.imshow(np.full((2, 2), 1.0))
+    cbar = plt.colorbar(mappable, ax=axes)
+    cbar = colorbar_ticks_and_format(
+        ratio,
+        cbar,
+        float(np.min(ratio)),
+        float(np.max(ratio)),
+        subplot,
+        use_tolerance=True,
+    )
+    labels = [tick.get_text() for tick in cbar.ax.get_yticklabels()]
+    ticks = [float(t) for t in cbar.get_ticks()]
+    plt.close("all")
+    return labels, ticks
+
+
+@pytest.mark.parametrize("subplot", ["dyn_ratio", "res_ratio"])
+def test_identical_ref_and_dev_still_labeled_equal(subplot):
+    # Dev/Ref is exactly 1 (x/x is exactly 1.0 in IEEE), so Ref and Dev
+    # really are identical and the stronger wording is earned.
+    labels, _ = _ratio_colorbar_label(np.full(16, 1.0), subplot)
+    assert labels == ["Ref and Dev equal throughout domain"]
+
+
+@pytest.mark.parametrize("subplot", ["dyn_ratio", "res_ratio"])
+def test_ratio_within_tolerance_labeled_negligible(subplot):
+    # Ref and Dev differ, just by less than NOISE_REL_TOL.  Calling
+    # that "equal" overstates it.
+    ratio = np.full(16, 1.0 + NOISE_REL_TOL * 0.5)
+    labels, _ = _ratio_colorbar_label(ratio, subplot)
+    assert labels == ["Differences negligible throughout domain"]
+
+
+def test_negligible_label_on_a_ratio_panel_is_anchored_at_one():
+    # A ratio panel's collapsed norm spans 0.5 to 2.0, so a tick at the
+    # difference row's 0.0 would fall outside it and blank the colorbar.
+    ratio = np.full(16, 1.0 + NOISE_REL_TOL * 0.5)
+    _, ticks = _ratio_colorbar_label(ratio)
+    assert ticks == [1.0]
+
+
+def test_negligible_label_still_defaults_to_zero_for_difference_panels():
+    # The new anchor must not disturb the difference row.
+    _, axes = plt.subplots()
+    mappable = axes.imshow(np.zeros((2, 2)))
+    cbar = plt.colorbar(mappable, ax=axes)
+    cbar = colorbar_for_negligible_diff(cbar)
+    ticks = [float(t) for t in cbar.get_ticks()]
+    labels = [tick.get_text() for tick in cbar.ax.get_yticklabels()]
+    plt.close("all")
+    assert ticks == [0.0]
+    assert labels == ["Differences negligible throughout domain"]
+
+
+# ======================================================================
+# The dynamic-range ratio panel anchored its color range on whichever
+# extreme was nearest zero and reflected it about 1.  That is only
+# right for a ratio that straddles 1: a one-sided ratio anchored on the
+# end nearest 1, so the range excluded its own data, and a ratio whose
+# near end is exactly 1 -- what Dev/Ref gives wherever Ref and Dev are
+# identical over part of the domain -- collapsed to vmin == vmax == 1,
+# leaving the panel flat and stacking every tick label at one position.
+# ======================================================================
+
+ONE_SIDED_HIGH = (1.0, 1.00002)      # Dev >= Ref, identical over part
+ONE_SIDED_LOW = (0.99998, 1.0)       # Dev <= Ref, identical over part
+STRADDLES_ONE = (0.99998, 1.00002)
+BIG_ONE_SIDED = (1.0, 1.5)           # a 50% ratio, also collapsed before
+
+
+def _ratio_range(lo, hi):
+    arr = np.linspace(lo, hi, 64)
+    return vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+
+
+@pytest.mark.parametrize(
+    "lo,hi",
+    [ONE_SIDED_HIGH, ONE_SIDED_LOW, STRADDLES_ONE, BIG_ONE_SIDED,
+     (0.9, 1.0), (0.5, 2.0)],
+)
+def test_dyn_ratio_range_contains_its_data(lo, hi):
+    # A color range that excludes the data saturates the panel.
+    vmin, vmax = _ratio_range(lo, hi)
+    assert vmin <= lo * (1.0 + 1.0e-12)
+    assert hi <= vmax * (1.0 + 1.0e-12)
+
+
+@pytest.mark.parametrize(
+    "lo,hi",
+    [ONE_SIDED_HIGH, ONE_SIDED_LOW, STRADDLES_ONE, BIG_ONE_SIDED,
+     (0.9, 1.0), (0.5, 2.0)],
+)
+def test_dyn_ratio_range_is_symmetric_about_one(lo, hi):
+    # Ratios are anchored at 1, so the range must be symmetric in log
+    # space: vmin and vmax reciprocals of each other.
+    vmin, vmax = _ratio_range(lo, hi)
+    assert np.isclose(vmin * vmax, 1.0, rtol=1.0e-12)
+
+
+@pytest.mark.parametrize("lo,hi", [ONE_SIDED_HIGH, BIG_ONE_SIDED])
+def test_dyn_ratio_range_not_degenerate_for_a_varying_ratio(lo, hi):
+    # Regression test for the reported plot: min(Dev/Ref) is exactly 1
+    # wherever Ref and Dev agree over part of the domain, which used to
+    # give vmin == vmax == 1.
+    vmin, vmax = _ratio_range(lo, hi)
+    assert vmin < vmax
+
+
+def test_dyn_ratio_range_survives_a_zero_ratio():
+    # Dev is zero somewhere, so the ratio is too.  Must not divide by
+    # zero, and must still bracket the data.
+    arr = np.concatenate([np.zeros(8), np.full(56, 2.0)])
+    with np.errstate(divide="raise", invalid="raise"):
+        vmin, vmax = vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+    assert np.isfinite(vmin) and np.isfinite(vmax)
+    assert vmax >= 2.0
+
+
+def test_unique_ticks_drops_repeats_and_keeps_order():
+    assert unique_ticks([1.0, 1.0, 1.0]) == [1.0]
+    assert unique_ticks([0.9, 1.0, 1.1]) == [0.9, 1.0, 1.1]
+    assert unique_ticks([1.0, 0.9, 1.0]) == [1.0, 0.9]
+
+
+def test_dyn_ratio_colorbar_labels_do_not_collide():
+    # End to end on the reported case: a ratio that is 1 over most of
+    # the domain with a patch above it.  Every tick must sit at its own
+    # position, with no two label boxes overlapping.
+    arr = np.concatenate([np.full(60, 1.0), np.full(4, 1.00002)])
+    vmin, vmax = vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+    norm = normalize_colors(
+        vmin, vmax, is_difference=True, log_color_scale=True,
+        ratio_log=True, is_ratio=True, use_tolerance=True,
+    )
+    figs, axs = plt.subplots(3, 2, figsize=[12, 15.3])
+    plt.subplots_adjust(left=0.10, right=0.925, bottom=0.05,
+                        wspace=0.25, hspace=0.35)
+    axes = axs[2][0]
+    mappable = axes.imshow(np.full((2, 2), 1.0), norm=norm, cmap="RdBu_r")
+    cbar = plt.colorbar(mappable, ax=axes, orientation="horizontal",
+                        pad=0.15)
+    cbar.mappable.set_norm(norm)
+    cbar = colorbar_ticks_and_format(
+        arr, cbar, vmin, vmax, "dyn_ratio",
+        use_tolerance=True, log_color_scale=True,
+    )
+    figs.canvas.draw()
+    ticks = [float(t) for t in cbar.get_ticks()]
+    extents = [t.get_window_extent() for t in cbar.ax.get_xticklabels()]
+    plt.close("all")
+
+    assert len(ticks) == len(set(ticks)), "repeated tick positions"
+    overlaps = [
+        i for i in range(len(extents) - 1)
+        if extents[i].x1 > extents[i + 1].x0
+    ]
+    assert not overlaps, f"tick labels overlap at {overlaps}"
+
+
+# Reconstructed from the reported plot: the GCHP TransportTracers
+# PassiveTracer zonal mean for Jan2019 (14.7.0-rc.0 vs 14.8.0-rc.0).
+# Its ratio panel's colorbar read "0.999999181.000000001.00000082",
+# three labels run together.  The old range anchored on the extreme
+# nearest 1 and so stopped at 1.00000082 while the data reached about
+# 1.000015; excluding the data forced eight decimals of precision, and
+# three ten-character labels do not fit across the colorbar.
+REPORTED_RATIO_MIN = 0.99999918
+REPORTED_RATIO_MAX = 1.000015
+
+
+def test_reported_ratio_colorbar_labels_are_readable():
+    arr = np.concatenate([
+        np.full(32, REPORTED_RATIO_MIN),
+        np.full(32, REPORTED_RATIO_MAX),
+    ])
+    vmin, vmax = vmin_vmax_for_ratio_plots(arr, "dyn_ratio", 0)
+
+    # The range must now contain the data it is describing
+    assert vmin <= REPORTED_RATIO_MIN
+    assert REPORTED_RATIO_MAX <= vmax
+
+    norm = normalize_colors(
+        vmin, vmax, is_difference=True, log_color_scale=True,
+        ratio_log=True, is_ratio=True, use_tolerance=True,
+    )
+    figs, axs = plt.subplots(3, 2, figsize=[12, 15.3])
+    plt.subplots_adjust(left=0.10, right=0.925, bottom=0.05,
+                        wspace=0.25, hspace=0.35)
+    axes = axs[2][0]
+    mappable = axes.imshow(np.full((2, 2), 1.0), norm=norm, cmap="RdBu_r")
+    cbar = plt.colorbar(mappable, ax=axes, orientation="horizontal",
+                        pad=0.15)
+    cbar.mappable.set_norm(norm)
+    cbar = colorbar_ticks_and_format(
+        arr, cbar, vmin, vmax, "dyn_ratio",
+        use_tolerance=True, log_color_scale=True,
+    )
+    figs.canvas.draw()
+    tick_labels = cbar.ax.get_xticklabels()
+    extents = [t.get_window_extent() for t in tick_labels]
+    joined = "".join(t.get_text() for t in tick_labels)
+    plt.close("all")
+
+    assert joined != "0.999999181.000000001.00000082"
+    overlaps = [
+        i for i in range(len(extents) - 1)
+        if extents[i].x1 > extents[i + 1].x0
+    ]
+    assert not overlaps, f"tick labels overlap at {overlaps}: {joined}"

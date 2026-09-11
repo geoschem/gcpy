@@ -829,13 +829,15 @@ def compare_single_level(
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
 
-        # Magnitude of the Ref & Dev data, used to suppress ratios of
-        # numerical noise to numerical noise (which would otherwise
-        # saturate the color scale wherever the field is really zero
-        # but regridding left a residue behind)
+        # Compute the magnitude of the Ref & Dev data.  This is used to
+        # determine whether differences and ratios are valid data (which
+        # should be plotted) or are numerical noise (which should not
+        # be plotted).
         data_scale = ref_dev_data_scale(
-            [vmin_ref, vmin_dev, vmin_both],
-            [vmax_ref, vmax_dev, vmax_both]
+            [np.nanmin(np.array(ds_ref_cmp)),
+             np.nanmin(np.array(ds_dev_cmp))],
+            [np.nanmax(np.array(ds_ref_cmp)),
+             np.nanmax(np.array(ds_dev_cmp))]
         )
 
         if cmpgridtype == "ll":
@@ -875,11 +877,6 @@ def compare_single_level(
         fracdiff_is_all_zero = not np.any(fracdiff) or       \
             (np.nanmin(fracdiff) == 0 and
              np.nanmax(fracdiff) == 0)
-        # NOTE: Do not add "or ref_is_all_zero" here.  It is redundant
-        # for a genuine ratio (dividing by an all-zero Ref already makes
-        # every cell inf or NaN), and in diff-of-diffs mode fracdiff is
-        # a difference rather than a quotient, so two identical Ref
-        # files would blank both row-3 panels of real data.
         fracdiff_is_all_nan = np.isnan(fracdiff).all()
 
         # For cubed-sphere, take special care to avoid a spurious
@@ -1059,8 +1056,14 @@ def compare_single_level(
                        plot_extent[:], plot_extent[:],
                        plot_extent[:], plot_extent[:]]
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
-        grids = [refgrid, devgrid, regional_cmp_grid.copy(), regional_cmp_grid.copy(),
-                 regional_cmp_grid.copy(), regional_cmp_grid.copy()]
+        grids = [
+            refgrid,
+            devgrid,
+            regional_cmp_grid.copy(),
+            regional_cmp_grid.copy(),
+            regional_cmp_grid.copy(),
+            regional_cmp_grid.copy()
+        ]
         axs = [ax0, ax1, ax2, ax3, ax4, ax5]
         rowcols = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
         titles = [
@@ -1142,6 +1145,7 @@ def compare_single_level(
                 log_color_scale,
                 plot_type="single_level",
                 ratio_log=ratio_logs[i],
+                data_scale=data_scale,
                 proj=proj,
                 ll_plot_func=ll_plot_func,
                 **extra_plot_args
@@ -1166,6 +1170,7 @@ def compare_single_level(
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
+
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(1 - max(fracdiff)) > 0.1

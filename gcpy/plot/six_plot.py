@@ -18,8 +18,8 @@ from dask.array import Array as DaskArray
 import xarray as xr
 import cartopy.crs as ccrs
 from gcpy.util import get_nan_mask, is_nearly_constant, verify_variable_type
-from gcpy.plot.core import NOISE_REL_TOL, RATIO_ABS_TOL, gcpy_style, \
-    noise_atol, normalize_colors
+from gcpy.plot.core import NOISE_REL_TOL, RATIO_ABS_TOL, \
+    constant_rel_tol, diff_is_negligible, gcpy_style, normalize_colors
 from gcpy.plot.single_panel import single_panel
 
 # Suppress numpy divide by zero warnings to prevent output spam
@@ -58,6 +58,7 @@ def six_plot(
         xticklabels=None,
         plot_type="single_level",
         ratio_log=False,
+        data_scale=None,
         proj=ccrs.PlateCarree(),
         ll_plot_func='imshow',
         **extra_plot_args
@@ -107,7 +108,7 @@ def six_plot(
         List of length 3 of minimum ref value, dev value,
         and minimum of both (the last for use with match_cbar=True).
         Also scales the difference panels' noise tolerance (see
-        routine ref_dev_data_scale).
+        routine :func:`gcpy.plot.six_plot.ref_dev_data_scale`).
     vmaxs : list of float
         List of length 3 of maximum ref value, dev value,
         and maximum of both (the last for use with match_cbar=True).
@@ -148,6 +149,12 @@ def six_plot(
     ratio_log : bool, optional
         Set this flag to True to enable log scaling for ratio plots.
         Default value: False
+    data_scale : float, optional
+        Magnitude of the Ref and Dev data.  This is used to determine
+        if the data contains valid signal (which should be plotted)
+        or contains numerical noise everywhere (which shouldn't be
+        plotted).
+        Default value: None
     proj : cartopy.crs.Projection, optional
         Projection for plotting data.
         Default value: ccrs.PlateCarree()
@@ -179,17 +186,14 @@ def six_plot(
         verbose=verbose,
     )
 
-    # Magnitude of this panel's data, used to scale its noise
-    # tolerance.  Row 2 is in the physical units of Ref & Dev; row 3
-    # is a ratio (or, for diff-of-diffs, a difference of fractional
-    # differences), which is dimensionless.  Key it off the row index,
-    # not the subplot name: six_panel_subplot_names() names rows 2 and
-    # 3 identically for diff-of-diffs plots.
-    data_scale = None
+    # Magnitude of this panel's data, used to scale its noise tolerance.
     if rowcol[0] == 1:
-        data_scale = ref_dev_data_scale(vmins, vmaxs)
+        if data_scale is None:
+            data_scale = ref_dev_data_scale(vmins, vmaxs)
     elif rowcol[0] == 2:
         data_scale = 1.0
+    else:
+        data_scale = None
 
     # Whether Ref or Dev is zero everywhere.  vmins & vmaxs hold the
     # Ref, Dev and combined ranges, so a field whose min and max are
@@ -584,14 +588,27 @@ def vmin_vmax_for_ratio_plots(
     """
     # Ratio (dynamic range) subplot)
     if subplot in "dyn_ratio":
-        vmin = np.min(
-            [np.abs(np.nanmin(plot_val)), np.abs(np.nanmax(plot_val))]
-        )
-        if np.abs(vmin) > 0.0:                     # If vmin > 0, compute
-            vmax = 1.0 / vmin                      # vmax as its reciprocal
+        # Anchor the range on the largest deviation from 1, measuring
+        # both ends against 1 rather than against zero, and reflect it
+        # to keep the range symmetric about 1 in log space.
+        #
+        # Taking the extreme nearest zero instead is only right for a
+        # ratio that straddles 1.  A one-sided ratio then anchors on
+        # the end nearest 1, so the range excludes its own data, and a
+        # ratio whose near end is exactly 1 -- which is what Dev/Ref
+        # gives whenever Ref and Dev are identical over part of the
+        # domain -- collapsed to vmin == vmax == 1.  That left the
+        # panel flat and stacked every tick label at one position.
+        data_min = np.abs(np.nanmin(plot_val))
+        data_max = np.abs(np.nanmax(plot_val))
+        if data_min > 0.0:
+            vmax = np.max([data_max, 1.0 / data_min])
         else:
-            vmax = np.abs(np.nanmax(plot_val))     # Otherwise compute vmin
-            vmin = 1.0 / vmax                      # as reciprocal of vmax
+            vmax = data_max                        # Avoid a divide by zero
+        if vmax > 0.0:
+            vmin = 1.0 / vmax
+        else:
+            vmin = vmax                            # Ratio is zero everywhere
         if vmin > vmax:
             vmin, vmax = vmax, vmin                # Swap values if needed
         verbose_print(verbose, rowcol, vmin, vmax)
@@ -606,7 +623,7 @@ def ref_dev_data_scale(vmins, vmaxs):
     """
     Returns the magnitude of the Ref and Dev data of a six-panel plot,
     which scales the difference panels' noise tolerance (see
-    gcpy.plot.core.noise_atol).
+    :func:`gcpy.plot.core.noise_atol`).
 
     Parameters
     ----------
@@ -620,12 +637,6 @@ def ref_dev_data_scale(vmins, vmaxs):
     data_scale : float or None
         Largest absolute value among the finite entries, or None if
         there are none (e.g. Ref and Dev are both all NaN).
-
-    Notes
-    -----
-    All six entries are scanned, not just the "both" pair, because
-    compare_zonal_mean builds those with np.min & np.max rather than
-    their NaN-safe forms, so an all-NaN Ref would poison them.
     """
     vals = np.abs(np.asarray(list(vmins) + list(vmaxs), dtype=float))
     vals = vals[np.isfinite(vals)]
@@ -662,7 +673,7 @@ def compute_norm_for_plot(
         use a tolerance (rather than exact equality) to decide if
         vmin/vmax are "nearly constant", since that is the only plot
         type where CS->LL regridding noise on constant fields has been
-        observed to cause color striping (see GitHub issue #330).
+        observed to cause spurious color striping (see GitHub issue #330).
         Default value: "single_level"
     use_cmap_RdBu : bool, optional
         Toggles a blue-white-red colormap on (True) or off (False).
@@ -674,7 +685,8 @@ def compute_norm_for_plot(
         Toggles log scaling for ratio plots on (True) or not (False).
         Default value: False
     data_scale : float, optional
-        Magnitude of the Ref and Dev data (see ref_dev_data_scale).
+        Magnitude of the Ref and Dev data (see
+        :func:`gcpy.plot.six_plot.ref_dev_data_scale`).
         Used only by the difference panels, to scale the tolerance
         below which their spread counts as noise instead of signal.
         Default value: None
@@ -697,6 +709,7 @@ def compute_norm_for_plot(
             log_color_scale=log_color_scale,
             ratio_log=ratio_log,
             use_tolerance=use_tolerance,
+            rel_tol=constant_rel_tol(plot_val),
         )
 
     # ==================================================================
@@ -802,7 +815,8 @@ def colorbar_ticks_and_format(
         Toggles a logarithmic color scale on (True) or off (False).
         Default value: False
     data_scale : float, optional
-        Magnitude of the Ref and Dev data (see ref_dev_data_scale).
+        Magnitude of the Ref and Dev data (see
+        :func:`gcpy.plot.six_plot.ref_dev_data_scale`).
         Used to recognize a difference panel that was collapsed for
         holding only noise, so that we can label it as such.
         Default value: None
@@ -841,6 +855,30 @@ def colorbar_ticks_and_format(
     # ==================================================================
 
     #-------------------------------------------------------------------
+    # Ref & Dev subplots that normalize_colors collapsed for being
+    # constant.  Without this they keep numeric ticks from a
+    # dimensionless norm on a colorbar labeled in the field's units,
+    # so a 100 ppb field reads as though it topped out at 1 ppb.
+    # Checked before the log-scale branch, as normalize_colors also
+    # decides "is constant" before it considers log scaling.
+    #-------------------------------------------------------------------
+    if (
+            subplot in ("ref", "dev")
+            and use_tolerance
+            and is_nearly_constant(
+                [vmin, vmax],
+                rtol=constant_rel_tol(plot_val),
+                atol=0.0,
+            )
+    ):
+        return colorbar_for_constant_field(
+            cbar,
+            vmin,
+            vmax,
+            use_cmap_RdBu=use_cmap_RdBu,
+        )
+
+    #-------------------------------------------------------------------
     # Ref and Dev subplots, log scale
     #-------------------------------------------------------------------
     if subplot in ("ref", "dev") and log_color_scale:
@@ -853,9 +891,17 @@ def colorbar_ticks_and_format(
     #-------------------------------------------------------------------
     if subplot in ("dyn_ratio", "res_ratio"):
 
-        # When Ref == Dev
+        # When Ref and Dev agree.  "Equal" is a strong claim, and this
+        # test is a tolerance: it also passes when Ref and Dev differ by
+        # up to NOISE_REL_TOL.  Reserve that wording for a ratio that is
+        # exactly 1 everywhere, so a reader can tell output that did not
+        # change at all from output that changed too little to matter,
+        # and label the tolerance case the way the difference row above
+        # already labels it.
         if ref_equals_dev(plot_val):
-            return colorbar_for_ref_equals_dev(cbar)
+            if ref_equals_dev(plot_val, rtol=0.0, atol=0.0):
+                return colorbar_for_ref_equals_dev(cbar)
+            return colorbar_for_negligible_diff(cbar, pos=1.0)
 
         # Dynamic range ratio subplot
         if subplot in "dyn_ratio":
@@ -872,10 +918,7 @@ def colorbar_ticks_and_format(
     if (
             "absdiff" in subplot
             and use_tolerance
-            and is_nearly_constant(
-                [vmin, vmax],
-                atol=noise_atol(data_scale)
-            )
+            and diff_is_negligible(vmin, vmax, data_scale)
     ):
         # A restricted-range panel of a sparse field (e.g. aircraft
         # emissions, which are zero over most of the domain) collapses
@@ -998,25 +1041,71 @@ def colorbar_for_ref_equals_dev(cbar):
     return cbar
 
 
-def colorbar_for_negligible_diff(cbar):
+def colorbar_for_constant_field(cbar, vmin, vmax, use_cmap_RdBu=False):
     """
-    Formats a colorbar object for an "absolute difference" subplot in
-    which the Dev - Ref spread is negligible compared to the Ref and
-    Dev data themselves, and so was collapsed to a flat color range.
+    Formats a colorbar object for a Ref or Dev subplot whose data is
+    constant across the domain (to within constant_rel_tol), and whose
+    color scale normalize_colors therefore collapsed to a flat range.
 
     Parameters
     ----------
     cbar : matplotlib.colorbar.Colorbar
         The input colorbar.
+    vmin, vmax : float
+        Min and max of the data range, in the field's own units
+        (i.e. before :func:`gcpy.plot.core.normalize_colors`
+        collapsed them).
+    use_cmap_RdBu : bool, optional
+        Whether this panel uses a blue-white-red difference colormap
+        (True) or not (False).  Sets which anchor the tick goes on.
+        Default value: False
 
     Returns
     -------
     cbar : matplotlib.colorbar.Colorbar
         The modified colorbar.
     """
-    pos = [0.0]
+    # Match the tick to the anchor of the collapsed norm that
+    # normalize_colors returned: [-1, 1] for a difference colormap,
+    # otherwise [0, 1].
+    pos = [0.0] if use_cmap_RdBu else [0.5]
+
+    # vmin and vmax agree to within constant_rel_tol, so either one
+    # names the constant; the midpoint avoids favoring an endpoint.
+    value = 0.5 * (float(vmin) + float(vmax))
+    if np.isfinite(value):
+        label = f"Constant at {value:.6g} throughout domain"
+    else:
+        label = "Constant throughout domain"
+
+    cbar.set_ticks(pos, labels=[label])
+    cbar.minorticks_off()
+    return cbar
+
+
+def colorbar_for_negligible_diff(cbar, pos=0.0):
+    """
+    Formats a colorbar object for a subplot in which the difference
+    between Ref and Dev is negligible compared to the Ref and Dev data
+    themselves, and so was collapsed to a flat color range.
+
+    Parameters
+    ----------
+    cbar : matplotlib.colorbar.Colorbar
+        The input colorbar.
+    pos : float, optional
+        Value the colorbar is anchored to, where the single tick is
+        placed.  Difference panels are centered on zero; ratio panels
+        are centered on 1.0.
+        Default value: 0.0
+
+    Returns
+    -------
+    cbar : matplotlib.colorbar.Colorbar
+        The modified colorbar.
+    """
     cbar.set_ticks(
-        pos,
+        [pos],
         labels=["Differences negligible throughout domain"]
     )
     cbar.minorticks_off()
@@ -1027,17 +1116,17 @@ def colorbar_for_flat_restricted_range(cbar):
     """
     Formats a colorbar object for a "restricted range" subplot whose
     5th and 95th percentiles are both zero, which happens when a field
-    is zero over most of the domain (e.g. aircraft emissions).
+    is zero over most of the domain.
 
     Parameters
     ----------
     cbar : matplotlib.colorbar.Colorbar
-        The input colorbar.
+        The input colorbar
 
     Returns
     -------
     cbar : matplotlib.colorbar.Colorbar
-        The modified colorbar.
+        The modified colorbar
     """
     pos = [0.0]
     cbar.set_ticks(
@@ -1046,6 +1135,33 @@ def colorbar_for_flat_restricted_range(cbar):
     )
     cbar.minorticks_off()
     return cbar
+
+
+def unique_ticks(pos):
+    """
+    Removes repeated tick positions, preserving order.
+
+    Tick positions for a ratio colorbar are built from vmin, vmax
+    and the fixed anchor at 1.0.  Those coincide as the range narrows,
+    and a repeated position draws every one of its labels at the same
+    spot, which renders as an unreadable smudge rather than as a number.
+
+    Parameters
+    ----------
+    pos : list of float
+        Candidate tick positions.
+
+    Returns
+    -------
+    pos : list of float
+        The same positions with duplicates dropped, in the order given.
+    """
+    seen = []
+    for val in pos:
+        if not any(val == other for other in seen):
+            seen.append(val)
+
+    return seen
 
 
 def colorbar_for_dyn_ratio_plots(
@@ -1073,7 +1189,7 @@ def colorbar_for_dyn_ratio_plots(
     # place tickmarks at [vmin, 1, vmax].  This should help
     # to avoid the tick labels from running together.
     if vmin > 0.999 and vmax < 1.001:
-        pos = [vmin, 1.0, vmax]
+        pos = unique_ticks([vmin, 1.0, vmax])
         cbar.set_ticks(pos)
         cbar.formatter = ticker.ScalarFormatter()
         cbar.formatter.set_useOffset(False)
@@ -1085,7 +1201,9 @@ def colorbar_for_dyn_ratio_plots(
     # This should be good enough for most cases.  Perhaps
     # think about implementing a better method later on.
     if vmin > 0.1 and vmax < 10.0:
-        pos = [vmin, (vmin+1.0)/2.0, 1.0, (vmax+1.0)/2.0, vmax]
+        pos = unique_ticks(
+            [vmin, (vmin+1.0)/2.0, 1.0, (vmax+1.0)/2.0, vmax]
+        )
         cbar.set_ticks(pos)
         cbar.formatter = ticker.ScalarFormatter()
         cbar.formatter.set_useOffset(False)

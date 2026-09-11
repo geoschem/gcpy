@@ -55,61 +55,49 @@ Panels with nothing to show
 
 When there is no meaningful structure to plot in a panel, GCPy
 replaces its color scale with a flat one and its colorbar with a
-single label explaining why.  This is deliberate: without it, a
-colorbar would be stretched across nothing but numerical noise, which
-renders as spurious color "striping" (see `GitHub issue #330
+single label explaining why.  Otherwise the colorbar would be
+stretched across nothing but numerical noise, which can show a
+spurious color striping artifact (see `GitHub issue #330
 <https://github.com/geoschem/gcpy/issues/330>`_).  The labels are:
 
 .. list-table::
    :header-rows: 1
+   :widths: 40 60
 
    * - Colorbar label
      - Meaning
-   * - :literal:`Zero throughout domain`
-     - Every value in the panel is exactly zero.
-   * - :literal:`Undefined throughout domain`
-     - Every value in the panel is :literal:`NaN`.
-   * - :literal:`Differences negligible throughout domain`
-     - The :literal:`Dev - Ref` differences in this panel are
-       negligible compared to the magnitude of the :literal:`Ref` and
-       :literal:`Dev` data themselves, so they are numerical noise
-       (e.g. floating-point round-off or regridding error) rather
-       than a real signal.
-   * - :literal:`Ref and Dev equal throughout domain`
-     - The :literal:`Dev/Ref` ratio is 1 everywhere.
-   * - :literal:`Ref is zero throughout domain`
+   * - "Zero throughout domain"
+     - Shown when every value in the panel is exactly zero.
+   * - "Undefined throughout domain"
+     - Shown when every value in the panel is :literal:`NaN`
+       (not-a-number).
+   * - "Differences negligible throughout domain"
+     - Shown when the difference between :literal:`Ref` and
+       :literal:`Dev` is negligible compared to the magnitude of the
+       data itself (i.e. numerical noise).
+   * - "Ref is zero throughout domain"
      - Shown on a ratio panel when :literal:`Ref` is zero everywhere
-       but :literal:`Dev` is not.  :literal:`Dev/Ref` is then a
-       division by zero at every point, so no ratio can be drawn even
-       though the difference panels above may show a real change.
-   * - :literal:`Dev is zero throughout domain`
+       but :literal:`Dev` is not.
+   * - "Dev is zero throughout domain"
      - Shown on a ratio panel when :literal:`Dev` is zero everywhere
-       but :literal:`Ref` is not, so the ratio is zero everywhere.
-   * - :literal:`Zero within the 5th-95th percentile range`
+       but :literal:`Ref` is not.
+   * - "Constant at <value> throughout domain"
+     - Shown on a :literal:`Ref` or :literal:`Dev` panel whose data is
+       the same everywhere, to within the precision the field is
+       carried at (32-bit or 64-bit floating point).
+   * - "Zero within the 5th-95th percentile range"
      - Shown on a restricted-range difference panel when the field is
-       zero over most of the domain (e.g. aircraft emissions), so that
-       its 5th and 95th percentiles are both zero.  The dynamic-range
-       panel beside it may still show real differences.
+       zero over most of the domain, so that its 5th and 95th
+       percentiles are both zero. (However, the dynamic-range
+       difference panel located to the left of it may still show real
+       differences.)
 
 Gray cells in a ratio panel mark places where no meaningful
 :literal:`Dev/Ref` ratio exists: either :literal:`Ref` is zero there,
 or both :literal:`Ref` and :literal:`Dev` are negligible compared to
 the magnitude of the field.  The latter matters for fields that are
-zero over much of the domain, such as aircraft emissions: regridding
-leaves a tiny residue rather than an exact zero, and dividing one
-residue by another yields an arbitrary ratio that would otherwise
-saturate the color scale.  A cell in which :literal:`Ref` is
-negligible but :literal:`Dev` is not represents a real change, so its
-ratio is kept.
-
-The negligible-difference threshold is relative, not absolute: a
-difference is suppressed only if it is smaller than
-:code:`gcpy.plot.core.NOISE_REL_TOL` (currently
-:math:`1 \times 10^{-5}`) times the magnitude of the data being
-differenced, i.e. unless Ref and Dev agree to better than about
-5 parts per million.  A field with very small absolute values, such as an
-aircraft emissions flux of order :math:`10^{-13}` kg m\ :sup:`-2`
-s\ :sup:`-1`, will therefore still have its real differences plotted.
+zero over much of the domain, as regridding may result in numerical
+noise, which will then produce spurious :literal:`Dev/Ref` ratios.
 
 .. _plot-csl:
 
