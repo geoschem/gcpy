@@ -24,12 +24,13 @@ from gcpy.regrid import regrid_comparison_data, create_regridders
 from gcpy.util import \
     reshape_MAPL_CS, get_diff_of_diffs, get_molwt_from_metadata, \
     all_zero_or_nan, slice_by_lev_and_time, compare_varnames, \
-    read_species_metadata, verify_variable_type
+    read_species_metadata, verify_variable_type, \
+    warn_if_flip_levels_mismatch
 from gcpy.units import check_units, data_unit_is_mol_per_mol
 from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
-    _warning_format, WhGrYlRd
-from gcpy.plot.six_plot import six_plot
+    mask_meaningless_ratio, _warning_format, WhGrYlRd
+from gcpy.plot.six_plot import ref_dev_data_scale, six_plot
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -192,6 +193,8 @@ def compare_single_level(
     # Error check arguments
     verify_variable_type(refdata, xr.Dataset)
     verify_variable_type(devdata, xr.Dataset)
+
+    warn_if_flip_levels_mismatch(flip_ref, flip_dev)
 
     # Create empty lists for keyword arguments
     if extent is None:
@@ -825,6 +828,18 @@ def compare_single_level(
         # ==============================================================
         # Calculate fractional difference, set divides by zero to NaN
         # ==============================================================
+
+        # Compute the magnitude of the Ref & Dev data.  This is used to
+        # determine whether differences and ratios are valid data (which
+        # should be plotted) or are numerical noise (which should not
+        # be plotted).
+        data_scale = ref_dev_data_scale(
+            [np.nanmin(np.array(ds_ref_cmp)),
+             np.nanmin(np.array(ds_dev_cmp))],
+            [np.nanmax(np.array(ds_ref_cmp)),
+             np.nanmax(np.array(ds_dev_cmp))]
+        )
+
         if cmpgridtype == "ll":
             # Replace fractional difference plots with absolute difference
             # of fractional datasets if necessary
@@ -834,6 +849,12 @@ def compare_single_level(
             else:
                 fracdiff = np.abs(np.array(ds_dev_cmp)) /    \
                     np.abs(np.array(ds_ref_cmp))
+                fracdiff = mask_meaningless_ratio(
+                    fracdiff,
+                    np.array(ds_ref_cmp),
+                    np.array(ds_dev_cmp),
+                    data_scale
+                )
         else:
             if frac_ds_dev_cmp is not None and frac_ds_ref_cmp is not None:
                 fracdiff = frac_ds_dev_cmp_reshaped -        \
@@ -841,6 +862,12 @@ def compare_single_level(
             else:
                 fracdiff = np.abs(ds_dev_cmp_reshaped) /     \
                     np.abs(ds_ref_cmp_reshaped)
+                fracdiff = mask_meaningless_ratio(
+                    fracdiff,
+                    ds_ref_cmp_reshaped,
+                    ds_dev_cmp_reshaped,
+                    data_scale
+                )
 
         # Replace Infinity values with NaN
         fracdiff = np.where(np.abs(fracdiff) == np.inf, np.nan, fracdiff)
@@ -850,7 +877,7 @@ def compare_single_level(
         fracdiff_is_all_zero = not np.any(fracdiff) or       \
             (np.nanmin(fracdiff) == 0 and
              np.nanmax(fracdiff) == 0)
-        fracdiff_is_all_nan = np.isnan(fracdiff).all() or ref_is_all_zero
+        fracdiff_is_all_nan = np.isnan(fracdiff).all()
 
         # For cubed-sphere, take special care to avoid a spurious
         # boundary line, as described here: https://stackoverflow.com/
@@ -1029,8 +1056,14 @@ def compare_single_level(
                        plot_extent[:], plot_extent[:],
                        plot_extent[:], plot_extent[:]]
         plot_vals = [ds_ref, ds_dev, absdiff, absdiff, fracdiff, fracdiff]
-        grids = [refgrid, devgrid, regional_cmp_grid.copy(), regional_cmp_grid.copy(),
-                 regional_cmp_grid.copy(), regional_cmp_grid.copy()]
+        grids = [
+            refgrid,
+            devgrid,
+            regional_cmp_grid.copy(),
+            regional_cmp_grid.copy(),
+            regional_cmp_grid.copy(),
+            regional_cmp_grid.copy()
+        ]
         axs = [ax0, ax1, ax2, ax3, ax4, ax5]
         rowcols = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1)]
         titles = [
@@ -1112,6 +1145,7 @@ def compare_single_level(
                 log_color_scale,
                 plot_type="single_level",
                 ratio_log=ratio_logs[i],
+                data_scale=data_scale,
                 proj=proj,
                 ll_plot_func=ll_plot_func,
                 **extra_plot_args
@@ -1136,6 +1170,7 @@ def compare_single_level(
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
+
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(1 - max(fracdiff)) > 0.1

@@ -48,6 +48,57 @@ dataset and the values in the Ref Dataset. The left bottom panel uses
 a full dynamic color map, while the right bottom panel caps the color
 map at 0.5 and 2.0.
 
+.. _plot-flat-colorbars:
+
+Panels with nothing to show
+---------------------------
+
+When there is no meaningful structure to plot in a panel, GCPy
+replaces its color scale with a flat one and its colorbar with a
+single label explaining why.  Otherwise the colorbar would be
+stretched across nothing but numerical noise, which can show a
+spurious color striping artifact (see `GitHub issue #330
+<https://github.com/geoschem/gcpy/issues/330>`_).  The labels are:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Colorbar label
+     - Meaning
+   * - "Zero throughout domain"
+     - Shown when every value in the panel is exactly zero.
+   * - "Undefined throughout domain"
+     - Shown when every value in the panel is :literal:`NaN`
+       (not-a-number).
+   * - "Differences negligible throughout domain"
+     - Shown when the difference between :literal:`Ref` and
+       :literal:`Dev` is negligible compared to the magnitude of the
+       data itself (i.e. numerical noise).
+   * - "Ref is zero throughout domain"
+     - Shown on a ratio panel when :literal:`Ref` is zero everywhere
+       but :literal:`Dev` is not.
+   * - "Dev is zero throughout domain"
+     - Shown on a ratio panel when :literal:`Dev` is zero everywhere
+       but :literal:`Ref` is not.
+   * - "Constant at <value> throughout domain"
+     - Shown on a :literal:`Ref` or :literal:`Dev` panel whose data is
+       the same everywhere, to within the precision the field is
+       carried at (32-bit or 64-bit floating point).
+   * - "Zero within the 5th-95th percentile range"
+     - Shown on a restricted-range difference panel when the field is
+       zero over most of the domain, so that its 5th and 95th
+       percentiles are both zero. (However, the dynamic-range
+       difference panel located to the left of it may still show real
+       differences.)
+
+Gray cells in a ratio panel mark places where no meaningful
+:literal:`Dev/Ref` ratio exists: either :literal:`Ref` is zero there,
+or both :literal:`Ref` and :literal:`Dev` are negligible compared to
+the magnitude of the field.  The latter matters for fields that are
+zero over much of the domain, as regridding may result in numerical
+noise, which will then produce spurious :literal:`Dev/Ref` ratios.
+
 .. _plot-csl:
 
 Function :code:`compare_single_level`

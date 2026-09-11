@@ -880,6 +880,7 @@ def make_benchmark_conc_plots(
         plots=["sfc", "500hpa", "zonalmean"],
         use_cmap_RdBu=False,
         log_color_scale=False,
+        yaxis_units="pressure",
         sigdiff_files=None,
         normalize_by_area=False,
         cats_in_ugm3=["Aerosols", "Secondary_Organic_Aerosols"],
@@ -952,6 +953,10 @@ def make_benchmark_conc_plots(
         Set this flag to True to enable plotting data (not diffs)
         on a log color scale.
         Default value: False
+    yaxis_units : str, optional
+        Units to use for the Y-axis of zonal mean plots. Either
+        "pressure" (hPa) or "level" (model vertical level index).
+        Default value: "pressure"
     normalize_by_area : bool, optional
         Set this flag to true to enable normalization of data
         by surface area (i.e. kg s-1 --> kg s-1 m-2).
@@ -1244,6 +1249,7 @@ def make_benchmark_conc_plots(
             pdfname=pdfname,
             use_cmap_RdBu=use_cmap_RdBu,
             log_color_scale=log_color_scale,
+            yaxis_units=yaxis_units,
             normalize_by_area=normalize_by_area,
             extra_title_txt=extra_title_txt,
             weightsdir=weightsdir,
@@ -1498,6 +1504,7 @@ def make_benchmark_conc_plots(
                 pdfname=pdfname,
                 use_cmap_RdBu=use_cmap_RdBu,
                 log_color_scale=log_color_scale,
+                yaxis_units=yaxis_units,
                 normalize_by_area=normalize_by_area,
                 extra_title_txt=extra_title_txt,
                 sigdiff_list=diff_zm,
@@ -1544,6 +1551,7 @@ def make_benchmark_conc_plots(
                 use_cmap_RdBu=use_cmap_RdBu,
                 pres_range=[1, 100],
                 log_yaxis=True,
+                yaxis_units=yaxis_units,
                 extra_title_txt=extra_title_txt,
                 log_color_scale=log_color_scale,
                 normalize_by_area=normalize_by_area,
@@ -2295,6 +2303,7 @@ def make_benchmark_jvalue_plots(
         flip_ref=False,
         flip_dev=False,
         log_color_scale=False,
+        yaxis_units="pressure",
         sigdiff_files=None,
         weightsdir='.',
         n_job=-1,
@@ -2368,6 +2377,10 @@ def make_benchmark_jvalue_plots(
         Set this flag to True if you wish to enable plotting data
         (not diffs) on a log color scale.
         Default value: False
+    yaxis_units : str, optional
+        Units to use for the Y-axis of zonal mean plots. Either
+        "pressure" (hPa) or "level" (model vertical level index).
+        Default value: "pressure"
     sigdiff_files : list of str, optional
         Filenames that will contain the lists of J-values having
         significant differences in the 'sfc', '500hpa', and
@@ -2606,6 +2619,7 @@ def make_benchmark_jvalue_plots(
             flip_ref=flip_ref,
             flip_dev=flip_dev,
             log_color_scale=log_color_scale,
+            yaxis_units=yaxis_units,
             extra_title_txt=extra_title_txt,
             sigdiff_list=diff_zm,
             weightsdir=weightsdir,
@@ -2641,6 +2655,7 @@ def make_benchmark_jvalue_plots(
             pdfname=pdfname,
             pres_range=[1, 100],
             log_yaxis=True,
+            yaxis_units=yaxis_units,
             flip_ref=flip_ref,
             flip_dev=flip_dev,
             extra_title_txt=extra_title_txt,
@@ -2912,6 +2927,7 @@ def make_benchmark_collection_3d_var_plots(
         flip_ref=False,
         flip_dev=False,
         log_color_scale=False,
+        yaxis_units="pressure",
         weightsdir='.',
         n_job=-1,
         time_mean=False,
@@ -2977,6 +2993,10 @@ def make_benchmark_collection_3d_var_plots(
         Set this flag to True if you wish to enable plotting data
         (not diffs) on a log color scale.
         Default value: False
+    yaxis_units : str, optional
+        Units to use for the Y-axis of zonal mean plots. Either
+        "pressure" (hPa) or "level" (model vertical level index).
+        Default value: "pressure"
     weightsdir : str, optional
         Directory in which to place (and possibly reuse) xESMF regridder
         netCDF files.
@@ -3143,6 +3163,7 @@ def make_benchmark_collection_3d_var_plots(
             flip_ref=flip_ref,
             flip_dev=flip_dev,
             log_color_scale=log_color_scale,
+            yaxis_units=yaxis_units,
             extra_title_txt=extra_title_txt,
             weightsdir=weightsdir,
             n_job=n_job,
@@ -3170,6 +3191,7 @@ def make_benchmark_collection_3d_var_plots(
             pdfname=pdfname,
             pres_range=[1, 100],
             log_yaxis=True,
+            yaxis_units=yaxis_units,
             flip_ref=flip_ref,
             flip_dev=flip_dev,
             extra_title_txt=extra_title_txt,
@@ -4339,6 +4361,7 @@ def make_benchmark_wetdep_plots(
         benchmark_type="TransportTracersBenchmark",
         plots=["sfc", "500hpa", "zonalmean"],
         log_color_scale=False,
+        yaxis_units="pressure",
         normalize_by_area=False,
         areas=None,
         refmet=None,
@@ -4395,6 +4418,10 @@ def make_benchmark_wetdep_plots(
     log_color_scale : bool, optional
         Set this flag to True to enable plotting data (not diffs)
         on a log color scale.
+    yaxis_units : str, optional
+        Units to use for the Y-axis of zonal mean plots. Either
+        "pressure" (hPa) or "level" (model vertical level index).
+        Default value: "pressure"
     normalize_by_area : bool, optional
         Set this flag to true to enable normalization of data
         by surface area (i.e. kg s-1 --> kg s-1 m-2).
@@ -4556,6 +4583,7 @@ def make_benchmark_wetdep_plots(
             devmet=devmetds,
             pdfname=pdfname,
             log_color_scale=log_color_scale,
+            yaxis_units=yaxis_units,
             normalize_by_area=normalize_by_area,
             extra_title_txt=datestr,
             weightsdir=weightsdir,
@@ -4586,6 +4614,7 @@ def make_benchmark_wetdep_plots(
             pdfname=pdfname,
             pres_range=[1, 100],
             log_yaxis=True,
+            yaxis_units=yaxis_units,
             extra_title_txt=datestr,
             normalize_by_area=normalize_by_area,
             weightsdir=weightsdir,

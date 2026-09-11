@@ -145,7 +145,7 @@ def get_species_metadata(log_file, species_database):
         species[name] = append_keys(
             species[name],
             species_database[name],
-            ["Is_Advected", "Is_Aerosol", "Is_Gas", "Formula", "FullName"]
+            ["Is_Aerosol", "Is_Gas", "Formula", "FullName"]
         )
 
     return pd.DataFrame.from_dict(species).drop("ModelId")
@@ -180,7 +180,6 @@ def write_wiki_table_header(ofile):
     line += "!width='100px' bgcolor='#CCCCCC'|Name\n"
     line += "!width='100px' bgcolor='#CCCCCC'|Formula\n"
     line += "!width='200px' bgcolor='#CCCCCC'|Fullname\n"
-    line += "!width='30px' bgcolor='#CCCCCC'|Advected\n"
     line += "!width='30px' bgcolor='#CCCCCC'|Dry deposited\n"
     line += "!width='30px' bgcolor='#CCCCCC'|Gas\n"
     line += "!width='30px' bgcolor='#CCCCCC'|Photolyzed\n"
@@ -204,7 +203,6 @@ def write_wiki_row(species, ofile):
     line += f"|{species.name}\n"
     line += f"|{species['Formula']}\n"
     line += f"|{species['FullName']}\n"
-    line += f"|{bool_to_str(species['Is_Advected'])}\n"
     line += f"|{bool_to_str(species['DryDepId'])}\n"
     line += f"|{bool_to_str(species['Is_Gas'])}\n"
     line += f"|{bool_to_str(species['PhotolId'])}\n"
@@ -246,6 +244,99 @@ def create_table(keys, species, ofile):
 
     write_wiki_table_footer(ofile)
 
+    print(" ", file=ofile)
+
+
+def compute_species_summary_counts(species):
+    """
+    Computes summary counts of species by category.
+
+    Parameters
+    ----------
+    species : pd.DataFrame
+        Species metadata (species as columns, attributes as index).
+
+    Returns
+    -------
+    counts : dict
+        Summary counts keyed by species metric name.
+    """
+    return {
+        "Total # species": species.shape[1],
+        "# dry deposited": int(species.loc["DryDepId"].sum()),
+        "# wet deposited": int(species.loc["WetDepId"].sum()),
+        "# photolyzed": int(species.loc["PhotolId"].sum()),
+    }
+
+
+def pct_change_str(ref_val, dev_val):
+    """
+    Formats the percent change between a Ref and Dev value for
+    display in the Summary wiki table.
+
+    Parameters
+    ----------
+    ref_val : int
+        Value for the Ref version.
+    dev_val : int
+        Value for the Dev version.
+
+    Returns
+    -------
+    result : str
+        Formatted percent change, e.g. "+1.41%" or "0%".
+    """
+    if ref_val == 0:
+        return "N/A"
+    pct = (dev_val - ref_val) / ref_val * 100.0
+    if pct == 0:
+        return "0%"
+    sign = "+" if pct > 0 else ""
+    return f"{sign}{pct:.2f}%"
+
+
+def write_summary_table(ref, dev, ref_label, dev_label, ofile):
+    """
+    Writes a wiki table summarizing species counts by category
+    for the Ref and Dev versions.
+
+    Parameters
+    ----------
+    ref : pd.DataFrame
+        Species metadata for the Ref version.
+    dev : pd.DataFrame
+        Species metadata for the Dev version.
+    ref_label : str
+        Label for the Ref version.
+    dev_label : str
+        Label for the Dev version.
+    ofile : io.TextIOWrapper
+        Output file handle.
+    """
+    ref_counts = compute_species_summary_counts(ref)
+    dev_counts = compute_species_summary_counts(dev)
+
+    print("=== Summary ===\n", file=ofile)
+
+    line = "{| border=1 cellspacing=0 cellpadding=5\n"
+    line += "!width='150px' bgcolor='#CCCCCC'|Species metric\n"
+    line += f"!width='80px' bgcolor='#CCCCCC'|{ref_label}\n"
+    line += f"!width='80px' bgcolor='#CCCCCC'|{dev_label}\n"
+    line += "!width='80px' bgcolor='#CCCCCC'|Change\n"
+    line += "!width='80px' bgcolor='#CCCCCC'|% Change\n"
+    print(line, file=ofile)
+
+    for metric, ref_val in ref_counts.items():
+        dev_val = dev_counts[metric]
+        line = "|-valign='top'\n"
+        line += f"|{metric}\n"
+        line += f"|{ref_val}\n"
+        line += f"|{dev_val}\n"
+        line += f"| {dev_val - ref_val}\n"
+        line += f"| {pct_change_str(ref_val, dev_val)}\n"
+        print(line, file=ofile)
+
+    write_wiki_table_footer(ofile)
     print(" ", file=ofile)
 
 
@@ -318,11 +409,11 @@ def make_benchmark_species_changes_wiki_tables(
     # Read the species database files in the Ref & Dev rundirs, and
     # return a dict containing metadata for the union of species.
     # We'll need properties such as mol. wt. for unit conversions, etc.
-    species_database = read_species_metadata(spcdb_files, quiet=True)
+    ref_spcdb, dev_spcdb = read_species_metadata(spcdb_files, quiet=True)
 
     # Get species metadata for the Ref and Dev versions
-    ref = get_species_metadata(ref_log, species_database)
-    dev = get_species_metadata(dev_log, species_database)
+    ref = get_species_metadata(ref_log, ref_spcdb)
+    dev = get_species_metadata(dev_log, dev_spcdb)
 
     # Get list of species in Ref, Dev and both Ref & Dev
     in_ref = set(list(ref.columns))
@@ -339,6 +430,8 @@ def make_benchmark_species_changes_wiki_tables(
 
     # Create the wiki tables
     with open(output_file, "w", encoding="utf-8") as ofile:
+
+        write_summary_table(ref, dev, ref_label, dev_label, ofile)
 
         print("=== Species added ===\n", file=ofile)
         print(

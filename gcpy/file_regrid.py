@@ -15,8 +15,21 @@ from gcpy.regrid import make_regridder_sg2sg, reformat_dims, \
 from gcpy.util import verify_variable_type
 from gcpy.cstools import get_cubed_sphere_res, is_gchp_lev_positive_down
 
-# Ignore any FutureWarnings
-warnings.simplefilter(action="ignore", category=FutureWarning)
+# Ignore benign warnings
+warnings.simplefilter(
+    action="ignore",
+    category=FutureWarning
+)
+warnings.filterwarnings(
+    "ignore",
+    category=RuntimeWarning,
+    message=r".*found in sys\.modules after import of package.*"
+)
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    module=r"xesmf\..*"
+)
 
 
 def file_regrid(

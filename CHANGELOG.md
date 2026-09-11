@@ -4,6 +4,60 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+### Added
+- Added constants `CONTANT_REL_TOL`, `CONSTANT_TOL_ULPS`, `NOISE_REL_TOL`, `REGRID_NOISE_REL_TOL` to `gcpy/plot/core.py`
+- Added functions `constant_rel_tol`, `diff_is_negligible`, `mask_meaningless_ratio`, `noise_atol` to `gcpy/plot/core.py`
+- Added functions `colorbar_for_constant_field`, `colorbar_for_negligible_diff`, `colorbar_for_restricted_range`, `ref_dev_data_scale`, `unique_ticks` to `gcpy/plot/six_plot.py`
+- Added keyword argument `data_scale` to functions `gcpy.plot.single_panel.single_panel` and `gcpy.plot.six_plot.six_plot`
+- Added function `warn_if_flip_levels_mismatch` to `gcpy/util.py`, called from `compare_single_level` and `compare_zonal_mean`
+- Added a section to `docs/source/Plotting.rst` describing the colorbar labels used for six-panel plots that have no meaningful structure to show
+- Added unit test modules `gcpy/tests/test_util.py`, `gcpy/tests/test_benchmark_mass_cons_table.py`, `gcpy/tests/test_single_panel.py` 
+- Added `gcpy/benchmark/modules/benchmark_gchp_stats.py` to print GCHP benchmark statistics
+- Added routine to generate summary table to `gcpy/benchmark/modules/benchmark_species_changes.py`
+- Added keyword argument `yaxis_units` to routines in:
+  - `gcpy/benchmark/modules/benchmark_funcs.py`
+  - `gcpy/examples/diagnostics/compare_diags.py`
+  - `gcpy/plot/compare_zonal_mean.py`
+  - `gcpy/plot/single_panel`
+  - `gcpy/plot/six_plot.py`
+- Added `yaxis_units: pressure` to the following YAML files:
+  - `gcpy/benchmark/config/*.yml`
+  - `gcpy/benchmark/cloud/*.yml`
+  - `gcpy/examples/diagnostics/compare_diags.yml`
+- Added `docs/environment_files/gcpy_environment_py314.yml`
+- Added GitHub Action `build-gcpy-environment-py314.yml` to build and test the GCPy environment with Python 3.14
+
+### Changed
+- Bumped pytest to 9.0.3 and updated documentation accordingly
+- Updated paths to the model vs observations data files in the 1-year benchmark yaml config files
+- Passed kwarg `yaxis_units` down from `compare_zonal_mean` to `six_plot` to `single_panel`
+- Updated `run_benchmark*` routines to read `yaxis_units` from YAML files and to pass its value to relevant benchmark routines
+- Updated ReadTheDocs documentation for the GCPy environment with Python 3.14
+- Bumped pypdf to 6.16.1 and updated documentation accordingly
+- Prevented `RuntimeWarning` messages from occurring in `gcpy/file_regrid.py`
+- Bumped pip to 26.2.1 and updated documentation accordingly
+- Changed ratio panel plots to Ratio to report "Ref is zero throughout domain" or "Dev is zero throughout domain" instead of a more generic label
+- Changed the `Abs diff [g]` rows of the mass conservation table to use exponential format with 4 decimal places
+- Changed Ref/Dev panels that are constant everywhere to use label "Constant at <value> throughout domain"
+- Changed difference and ratio plots to read "Differences negligble througout domain" if all values are numerical noise
+- Updated `gcpy/examples/plotting/create_test_plot.py` to import `gcpy.plot` directly
+- Updated `single_panel` to accept the `data_scale` argument from an external caller when available
+- Updated function `vmin_vmax_for_absdiff_plots` in `gcpy/plot/six_plot.py` to use `np.nanpercentile` instead of `np.percentile`
+
+### Fixed
+- Fixed `NameError` in `gcpy/regrid.py`'s `regrid_vertical` by removing stale `n_other` references
+- Fixed a float32 overflow in `gcpy/benchmark/modules/oh_metrics.py` that produced `inf` global airmass, CH4 lifetime, and MCF lifetime values
+- Fixed tuple unpack error in `gcpy/benchmark/modules/benchmark_species_changes.py`
+- Fixed `get_nan_mask` in `gcpy/util.py`, which built its mask from the original array rather than the filled one
+- Fixed blank ratio colorbars (no gradient, ticks, or label) on zonal-mean plots where Ref and Dev are both zero
+- Fixed ratio panels rendering numerical noise as saturated color in both `gcpy/plot/compare_zonal_mean.py` and `gcpy/plot/compare_single_level.py`
+- Fixed the difference row and the ratio row of a six-panel plot disagreeing about whether Ref and Dev differ
+- Fixed the `end_mass` row of the mass conservation table in `gcpy/benchmark/modules/benchmark_mass_cons_table.py`
+
+### Removed
+- Removed the Advected column from the wiki tables in `gcpy/benchmark/modules/benchmark_species_changes.py`
+
 ## [1.8.0] - 2026-08-10
 ### Added
 - Added HONO and NAP to `gcpy/benchmark/modules/emission_species.yml`

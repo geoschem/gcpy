@@ -24,12 +24,13 @@ from gcpy.regrid import regrid_comparison_data, create_regridders, gen_xmat, \
 from gcpy.util import \
     get_molwt_from_metadata, reshape_MAPL_CS, get_diff_of_diffs, \
     all_zero_or_nan, compare_varnames, \
-    read_species_metadata, verify_variable_type
+    read_species_metadata, verify_variable_type, \
+    warn_if_flip_levels_mismatch
 from gcpy.units import check_units, data_unit_is_mol_per_mol
 from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
-    _warning_format, WhGrYlRd
-from gcpy.plot.six_plot import six_plot
+    mask_meaningless_ratio, _warning_format, WhGrYlRd
+from gcpy.plot.six_plot import ref_dev_data_scale, six_plot
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -62,6 +63,7 @@ def compare_zonal_mean(
         verbose=False,
         log_color_scale=False,
         log_yaxis=False,
+        yaxis_units="pressure",
         extra_title_txt=None,
         n_job=-1,
         sigdiff_list=None,
@@ -158,6 +160,18 @@ def compare_zonal_mean(
         Set this flag to True if you wish to create zonal mean
         plots with a log-pressure Y-axis.
         Default value: False
+    yaxis_units : str, optional
+        Units to use for the Y-axis of zonal mean plots. Either
+        "pressure" (hPa) or "level" (model vertical level index).
+        NOTE: If Ref and Dev are on different vertical grids (different
+        number of levels), the Ref and Dev panels use their own native
+        level numbering while the difference/ratio panels use the
+        common (smaller) target grid's level numbering, so level
+        numbers will not necessarily line up across all 6 panels.
+        This limitation does not apply to yaxis_units="pressure",
+        since both Ref and Dev are physically interpolated onto a
+        shared pressure grid.
+        Default value: "pressure"
     extra_title_txt : str, optional
         Specifies extra text (e.g. a date string such as "Jan2016")
         for the top-of-plot title.
@@ -195,6 +209,8 @@ def compare_zonal_mean(
     warnings.showwarning = _warning_format
     verify_variable_type(refdata, xr.Dataset)
     verify_variable_type(devdata, xr.Dataset)
+
+    warn_if_flip_levels_mismatch(flip_ref, flip_dev)
 
     # Create empty lists for keyword arguments
     if sigdiff_list is None:
@@ -515,6 +531,7 @@ def compare_zonal_mean(
             ds_devs[i].data = ds_devs[i].data[::-1, :, :]
             if diff_of_diffs:
                 frac_ds_devs[i].data = frac_ds_devs[i].data[::-1, :, :]
+
     # ==================================================================
     # Get the area variables if normalize_by_area=True. They can be
     # either in the main datasets as variable AREA or in the optionally
@@ -745,6 +762,16 @@ def compare_zonal_mean(
         # Comparison
         zm_dev_cmp = ds_dev_cmp.mean(axis=2)
         zm_ref_cmp = ds_ref_cmp.mean(axis=2)
+
+        # Compute the magnitude of the Ref & Dev data on the
+        # comparison grid (rather than the native grids).  This
+        # is needed to determine if differences and ratios contain
+        # valid signal (which should be plotted) or numerical
+        # noise (which should not be plotted).
+        cmp_data_scale = ref_dev_data_scale(
+            [np.nanmin(np.array(zm_ref_cmp)), np.nanmin(np.array(zm_dev_cmp))],
+            [np.nanmax(np.array(zm_ref_cmp)), np.nanmax(np.array(zm_dev_cmp))]
+        )
         if diff_of_diffs:
             frac_zm_dev_cmp = frac_ds_dev_cmp.mean(axis=2)
             frac_zm_ref_cmp = frac_ds_ref_cmp.mean(axis=2)
@@ -771,8 +798,10 @@ def compare_zonal_mean(
         # This will have implications as to how we set min and max
         # values for the color ranges below.
         # ==============================================================
-        ref_values = ds_ref.values if isinstance(ds_ref, xr.DataArray) else ds_ref
-        dev_values = ds_dev.values if isinstance(ds_dev, xr.DataArray) else ds_dev
+        ref_values = ds_ref.values \
+            if isinstance(ds_ref, xr.DataArray) else ds_ref
+        dev_values = ds_dev.values \
+            if isinstance(ds_dev, xr.DataArray) else ds_dev
         ref_is_all_zero, ref_is_all_nan = all_zero_or_nan(ref_values)
         dev_is_all_zero, dev_is_all_nan = all_zero_or_nan(dev_values)
 
@@ -794,6 +823,14 @@ def compare_zonal_mean(
         else:
             zm_fracdiff = np.abs(np.array(zm_dev_cmp)) /    \
                 np.abs(np.array(zm_ref_cmp))
+            # Suppress ratios of numerical noise to numerical noise,
+            # which would result in unphysical plots.
+            zm_fracdiff = mask_meaningless_ratio(
+                zm_fracdiff,
+                np.array(zm_ref_cmp),
+                np.array(zm_dev_cmp),
+                cmp_data_scale
+            )
         zm_fracdiff = np.where(np.abs(zm_fracdiff) ==
                                np.inf, np.nan, zm_fracdiff)
         zm_fracdiff[zm_fracdiff > 1e308] = np.nan
@@ -1002,9 +1039,11 @@ def compare_zonal_mean(
                 pedge_inds[i],
                 log_yaxis,
                 plot_type="zonal_mean",
+                yaxis_units=yaxis_units,
                 xtick_positions=xtick_positions,
                 xticklabels=xticklabels,
                 ratio_log=ratio_logs[i],
+                data_scale=cmp_data_scale,
                 **extra_plot_args
             )
 
@@ -1026,6 +1065,7 @@ def compare_zonal_mean(
             pdf.savefig(figs)
             pdf.close()
             plt.close(figs)
+
         # ==============================================================
         # Update the list of variables with significant differences.
         # Criterion: abs(1 - max(fracdiff)) > 0.1
@@ -1039,7 +1079,6 @@ def compare_zonal_mean(
 
     # ==================================================================
     # Call figure generation function in a parallel loop over variables
-    #
     # ==================================================================
 
     # Disable parallelization if this routine is already being

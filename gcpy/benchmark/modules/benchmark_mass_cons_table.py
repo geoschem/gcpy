@@ -258,9 +258,9 @@ def compute_diff_statistics(
 
     Parameters
     ----------
-    ref_masses : dict
+    ref : dict
         Statistics for Ref model.
-    dev_masses : dict
+    dev : dict
         Statistics for Dev model.
 
     Returns
@@ -276,7 +276,7 @@ def compute_diff_statistics(
     minmax_absdiff_g   = compute_diff("minmax_absdiff_g",   ref, dev)
     minmax_pctdiff     = compute_diff("minmax_pctdiff",     ref, dev)
     start_mass         = compute_diff("start_mass",         ref, dev)
-    end_mass           = compute_diff("start_mass",         ref, dev)
+    end_mass           = compute_diff("end_mass",           ref, dev)
     startend_absdiff_g = compute_diff("startend_absdiff_g", ref, dev)
     startend_pctdiff   = compute_diff("startend_pctdiff",   ref, dev)
     mean_mass          = compute_diff("mean_mass",          ref, dev)
@@ -518,8 +518,8 @@ def make_benchmark_mass_conservation_table(
         template += f"{diff_stats['min_mass__pctdiff'] : >13.4e}"
         print(template, file=ofile)
         template  =  " Abs diff [g]          "
-        template += f"{np.int64(ref_stats['minmax_absdiff_g']) : >17d}    "
-        template += f"{np.int64(dev_stats['minmax_absdiff_g']) : >17d} "
+        template += f"{ref_stats['minmax_absdiff_g'] : >17.4e}    "
+        template += f"{dev_stats['minmax_absdiff_g'] : >17.4e} "
         template += f"{diff_stats['minmax_absdiff_g__absdiff'] : >13.4e}  "
         template += f"{diff_stats['minmax_absdiff_g__pctdiff'] : >13.4e}"
         print(template, file=ofile)
@@ -543,8 +543,8 @@ def make_benchmark_mass_conservation_table(
         template += f"{diff_stats['end_mass__pctdiff'] : >13.4e}"
         print(template, file=ofile)
         template  =  " Abs diff [g]          "
-        template += f"{np.int64(ref_stats['startend_absdiff_g']) : >17d}    "
-        template += f"{np.int64(dev_stats['startend_absdiff_g']) : >17d} "
+        template += f"{ref_stats['startend_absdiff_g'] : >17.4e}    "
+        template += f"{dev_stats['startend_absdiff_g'] : >17.4e} "
         template += f"{diff_stats['startend_absdiff_g__absdiff'] : >13.4e}  "
         template += f"{diff_stats['startend_absdiff_g__pctdiff'] : >13.4e}"
         print(template, file=ofile)

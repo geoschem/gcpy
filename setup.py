@@ -25,6 +25,8 @@ CLASSIFIERS = [
     'Intended Audience :: Science/Research',
     'Programming Language :: Python',
     'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
     'Topic :: Scientific/Engineering',
 ]
 
@@ -105,12 +107,12 @@ setup(
         "netcdf-fortran==4.6.1",
         "numpy==2.1.3",
         "pandas==2.2.3",
-        "pip==26.1.2",
+        "pip==26.2.1",
         "pylint==3.3.4",
         "pyproj==3.7.1",
         "python==3.13",
         "pypdf==6.7.1",
-        "pytest==8.3.4",
+        "pytest==9.0.3",
         "requests==2.33.0",
         "scipy==1.15.2",
         "sparselt==0.1.3",

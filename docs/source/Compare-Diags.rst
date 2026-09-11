@@ -95,11 +95,13 @@ zonal mean plots.
        dir: GCC_ref
        subdir: OutputDir
        file: GEOSChem.SpeciesConc.20190701_0000z.nc4
+       flip_levels: False
      dev:
        label: "GCC_dev"
        dir: GCC_dev
        subdir: OutputDir
        file: GEOSChem.SpeciesConc.20190701_0000z.nc4
+       flip_levels: False
 
    options:
      verbose: False
@@ -119,6 +121,21 @@ zonal mean plots.
        skip_small_diffs: True
        small_diff_threshold: 0.0000
      n_cores: -1
+
+.. important::
+
+   :literal:`flip_levels` indexes a dataset's vertical levels from the
+   top of the atmosphere rather than from the surface.  Set it the same
+   way for :literal:`ref` and :literal:`dev` unless you genuinely intend
+   to compare opposite ends of the column.
+
+   Setting it on only one side is easy to miss and hard to spot in the
+   output: a single-level plot then shows the model top of one dataset
+   beside the surface of the other.  For a surface-only field such as
+   emissions, one panel comes out entirely zero and the difference
+   panels simply reproduce the other dataset, which looks like a real
+   change rather than a configuration mistake.  GCPy issues a warning
+   when the two settings disagree.
 
 Then, run the script with:
 
