@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     # Tell parser which arguments to expect
     parser = argparse.ArgumentParser(
-        description="General cubed-sphere to cubed-sphere regridder."
+        description="Create a HEMCO mask file from a country-ID file."
     )
     parser.add_argument(
         "-i", "--filein",

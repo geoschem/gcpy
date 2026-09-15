@@ -65,10 +65,10 @@ def make_benchmark_drydep_plots(
         and denotes a date string (such as "Jan2016") that
         corresponds to the month that is being plotted.
         Default value: None
-    benchmark_type : str, optional
-        A string denoting the type of benchmark output to plot, options are
-        FullChemBenchmark, TransportTracersBenchmark, or CH4Benchmark.
-        Default value: "FullChemBenchmark"
+    cmpres : str, optional
+        Grid resolution at which to compare Ref and Dev.  If None,
+        a default comparison resolution will be chosen.
+        Default value: None
     overwrite : bool, optional
         Set this flag to True to overwrite files in the
         destination folder (specified by the dst argument).
@@ -76,6 +76,18 @@ def make_benchmark_drydep_plots(
     verbose : bool, optional
         Set this flag to True to print extra informational output.
         Default value: False
+    log_color_scale : bool, optional
+        Set this flag to True to enable plotting data (in the Ref and
+        Dev panels) on a log color scale.
+        Default value: False
+    weightsdir : str, optional
+        Path to the directory containing regridding weights (or
+        where weights will be created).
+        Default value: "."
+    sigdiff_files : list of str, optional
+        Paths to files where the lists of variables with significant
+        differences will be written.
+        Default value: None
     n_job : int, optional
         Defines the number of simultaneous workers for parallel plotting.
         Set to 1 to disable parallel plotting. Value of -1 allows the

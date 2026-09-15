@@ -7,7 +7,7 @@ Examples
 
 1. Copy this file to a different folder and navigate to that folder.
 
-2. Also download the file https://gcgrid.s3.amazonaws.com/HEMCO/GCClassic_Output/14.0.0/2019/GEOSChem.ProdLoss.20190101_0000z.nc4 to the same folder and rename it to :file:`HEMCO_demonstration_file.rc.`
+2. Also download the file https://gcgrid.s3.amazonaws.com/HEMCO/GCClassic_Output/14.0.0/2019/GEOSChem.ProdLoss.20190101_0000z.nc4 to the same folder and rename it to :file:`HEMCO_demonstration_file.nc`.
 
 3. Run the following commands:
 

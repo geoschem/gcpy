@@ -15,8 +15,21 @@ from gcpy.regrid import make_regridder_sg2sg, reformat_dims, \
 from gcpy.util import verify_variable_type
 from gcpy.cstools import get_cubed_sphere_res, is_gchp_lev_positive_down
 
-# Ignore any FutureWarnings
-warnings.simplefilter(action="ignore", category=FutureWarning)
+# Ignore benign warnings
+warnings.simplefilter(
+    action="ignore",
+    category=FutureWarning
+)
+warnings.filterwarnings(
+    "ignore",
+    category=RuntimeWarning,
+    message=r".*found in sys\.modules after import of package.*"
+)
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    module=r"xesmf\..*"
+)
 
 
 def file_regrid(
@@ -595,7 +608,7 @@ def regrid_ll_to_cssg(
     ----------
     dset : xarray.Dataset
         Data on a lat/lon grid.
-    cs_res_in : int
+    cs_res_out : int
         Cubed-sphere grid resolution.
     dim_format_out : str
         Either "checkpoint" (for restart files) or
@@ -1437,33 +1450,33 @@ def main():
     -i, --filein
         Input file, contains original data.
 
-    -o --fileout
+    -o, --fileout
         Output file, contains regridded data.
 
-    --sg-params-in
+    --sg_params_in
         Input grid stretching parameters (GCHP only).
 
-    --sg-params-out
+    --sg_params_out
         Output grid stretching parameters (GCHP only).
 
-    --dim-format-in
+    --dim_format_in
         Format of the input file's dimensions:
-        ("checkpoint", "diagnostics". "classic")
+        ("checkpoint", "diagnostic", "classic")
 
-    --dim-format-out
+    --dim_format_out
         Format of the output file's dimensions:
-        ("checkpoint", "diagnostics", "classic")
+        ("checkpoint", "diagnostic", "classic")
 
     --cs_res_out
         Cubed-sphere resolution for the output file (e.g 24, 48, 360)
 
     --ll_res_out
-        Resolution for the output file in 'latxlon` format
+        Resolution for the output file in 'latxlon' format
 
     --verbose
         Toggles verbose printout on (True) or off (False).
 
-    -w --weightsdir
+    -w, --weightsdir
         Directory where regridding weights are stored (or will be created)
     """
 

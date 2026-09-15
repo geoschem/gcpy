@@ -9,7 +9,7 @@ Compare diagnostic outputs
 ##########################
 
 This example demonstrates GCPy's diagnostic comparison capabilities.
-Following the example below will generate a table commparing the sums
+Following the example below will generate a table comparing the sums
 of individual variables from two GEOS-Chem diagnostic or restart
 files.
 
@@ -51,7 +51,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.diagnostics.compare_diags`
+   * - :mod:`gcpy.examples.diagnostics.compare_diags`
      - `gcpy/examples/diagnostics/compare_diags.py
        <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/compare_diags.py>`_
        `gcpy/examples/diagnostics/compare_diags.yml <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/diagnostics/compare_diags.yml>`_
@@ -95,11 +95,13 @@ zonal mean plots.
        dir: GCC_ref
        subdir: OutputDir
        file: GEOSChem.SpeciesConc.20190701_0000z.nc4
+       flip_levels: False
      dev:
        label: "GCC_dev"
        dir: GCC_dev
        subdir: OutputDir
        file: GEOSChem.SpeciesConc.20190701_0000z.nc4
+       flip_levels: False
 
    options:
      verbose: False
@@ -111,6 +113,7 @@ zonal mean plots.
      zonal_mean:
        create_plot: True
        pdfname: zonal_mean_comparison.pdf
+       yaxis_units: "pressure"        # Values: pressure, level
      totals_and_diffs:
        create_table: True
        diff_type: absdiff             # Values: percent, pctdiff, %, abs, absdiff
@@ -119,6 +122,21 @@ zonal mean plots.
        skip_small_diffs: True
        small_diff_threshold: 0.0000
      n_cores: -1
+
+.. important::
+
+   :literal:`flip_levels` indexes a dataset's vertical levels from the
+   top of the atmosphere rather than from the surface.  Set it the same
+   way for :literal:`ref` and :literal:`dev` unless you genuinely intend
+   to compare opposite ends of the column.
+
+   Setting it on only one side is easy to miss and hard to spot in the
+   output: a single-level plot then shows the model top of one dataset
+   beside the surface of the other.  For a surface-only field such as
+   emissions, one panel comes out entirely zero and the difference
+   panels simply reproduce the other dataset, which looks like a real
+   change rather than a configuration mistake.  GCPy issues a warning
+   when the two settings disagree.
 
 Then, run the script with:
 

@@ -367,14 +367,10 @@ def prepare_data_for_plot(
         Names of station sites.
     ref_dataarray : xr.DataArray
         Data from the Ref model version.
-    ref_label : str
-        Label for the Ref model data.
     ref_cs_grid : xr.Dataset
         Metadata for Ref cubed-sphere grid.
     dev_dataarray : xr.DataArray
         Data from the Dev model version.
-    dev_label : str
-        Label for the Dev model data.
     dev_cs_grid : xr.Dataset
         Metadata for Dev cubed-sphere grid.
     gc_levels : pd.DataFrame
@@ -492,13 +488,15 @@ def plot_single_station(
         Y-axis title for each subplot.
     obs_dataframe : pd.DataFrame
         Observations at each station site.
+    obs_label : str
+        Label for the observational data.
     obs_site_name : str
         Name of the station site.
     ref_series : pd.Series
         Data from the Ref model version.
     ref_label : str
         Label for the Ref model data.
-    dev_dataarray : pd.Series
+    dev_series : pd.Series
         Data from the Dev model version.
     dev_label : str
         Label for the Dev model data.
@@ -615,6 +613,8 @@ def plot_one_page(
 
     Parameters
     ----------
+    pdf : matplotlib.backends.backend_pdf.PdfPages
+        PDF object to which the page will be written.
     obs_dataframe : pd.DataFrame
         Observations at each station site.
     obs_label : str
@@ -639,6 +639,10 @@ def plot_one_page(
         Metadata for model vertical levels.
     rows_per_page : int, optional
         Number of rows to plot on a page.
+        Default value: 3
+    cols_per_page : int, optional
+        Number of columns to plot on a page.
+        Default value: 3
     varname : str, optional
         Variable name for model data.
     """

@@ -25,10 +25,9 @@ Command-line arguments
 
    Variable name to plot.
 
-.. option:: [-l <int>, --level <int>]
+.. option:: -l <int>, --level <int>
 
    Level to plot (single-level plots only), starting at 0.
-   Default: ``0``
 
 Examples
 --------
@@ -40,7 +39,7 @@ single-level plots.
 .. code-block:: console
 
    $ conda activate gcpy_env
-   (gcpy_env) $ python -m gcpy.examples.plotting.plot_comparisons \
+   (gcpy_env) $ python -m gcpy.examples.plotting.plot_single_panel \
                 --infile GEOSChem.SpeciesConc.20190701_0000z.nc4  \
                 --varname SpeciesConcVV_O3                        \
                 --level 22
@@ -178,6 +177,19 @@ def single_panel_examples(infile, varname, level):
     )
     plt.show()
 
+    # You can instead display the Y-axis in model level units
+    # (useful for diagnostic purposes, e.g. stratosphere/mesosphere
+    # level changes) by setting yaxis_units="level"
+    single_panel(
+        darr,
+        pres_range=[0, 100],
+        yaxis_units="level",
+        log_color_scale=True,
+        plot_type="zonal_mean",
+        title=f"Zonal mean plot for {varname}, stratosphere-only, model level Y-axis"
+    )
+    plt.show()
+
 
 def main():
     """
@@ -214,7 +226,7 @@ def main():
     args = parser.parse_args()
 
     # Call the plot_single_panel routine
-    plot_single_panel_examples(
+    single_panel_examples(
         args.infile,
         args.varname,
         args.level

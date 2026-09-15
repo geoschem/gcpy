@@ -28,10 +28,9 @@ Command-line arguments
  
    Variable name to plot.
   
-.. option:: [-l <int>, --level <int>]
+.. option:: -l <int>, --level <int>
 
    Level to plot (single-level plots only), starting at 0.
-   Default: ``0``
 
 Examples
 --------
@@ -188,7 +187,7 @@ def main():
 
     # Tell the parser which arguments to look for
     parser = argparse.ArgumentParser(
-        description="Single-panel plotting example program"
+        description="Six-panel comparison plotting example program"
     )
     parser.add_argument(
         "-r", "--ref",

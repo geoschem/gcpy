@@ -46,7 +46,7 @@ Using Online Regridding Weights
 ===============================
 
 You can regrid existing GEOS-Chem restart or diagnostic files using
-GCPy function :func:`gcpy.file_regrid`. This function can called
+GCPy function :mod:`gcpy.file_regrid`. This function can called
 directly from the command line or from within a Python script,
 as shown in the (:ref:`examples <regrid-classic-example>`) below.
 
@@ -56,7 +56,7 @@ as shown in the (:ref:`examples <regrid-classic-example>`) below.
    recommend using the :ref:`offline regridding weights method
    <regrid-gchp>`.
 
-For a list of input arguments, see :func:`gcpy.file_regrid` in the API
+For a list of input arguments, see :mod:`gcpy.file_regrid` in the API
 reference section.
 
 .. _regrid-classic-example:
@@ -164,7 +164,7 @@ Regridding with :literal:`GCPy`, :literal:`gridspec` and
    :literal:`gridspec`.
 #. Create regridding weights for the transformation using
    :literal:`ESMF_RegridWeightGen`.
-#. Run the regridding operation using the :func:`gcpy.regrid_restart_file`
+#. Run the regridding operation using the :mod:`gcpy.regrid_restart_file`
    submodule of GCPy.
 
 .. _regrid-gchp-example-1:
@@ -228,7 +228,7 @@ GCHP c24 restart file.
         46x72_to_c24_weights.nc                     \
         GEOSChem.Restart.20190701_0000z.c24_old.nc4
 
-   (Click on :func:`gcpy.regrid_restart_file` for a list of input and
+   (Click on :mod:`gcpy.regrid_restart_file` for a list of input and
    output arguments to the function.)
 
    In this example (lat-lon to cubed-sphere) we need to use a
@@ -241,7 +241,7 @@ GCHP c24 restart file.
       contains all of the variables and attributes that you wish to
       include in the regridded restart file.
 
-   After running :func:`gcpy.regrid_restart_file`, a single restart file
+   After running :mod:`gcpy.regrid_restart_file`, a single restart file
    named :file:`new_restart_file.nc` will be created.  You can rename
    this file and use it to initialize your GCHP C24 simulation. |br|
    |br|
@@ -313,14 +313,14 @@ C48 to C60 to demonstrate the standard cubed-sphere regridding process:
         c48_to_c60_weights.nc                   \
         GEOSChem.Restart.20190701_0000z.c48.nc4
 
-   (Click on :func:`gcpy.regrid_restart_file` to see its input and
+   (Click on :mod:`gcpy.regrid_restart_file` to see its input and
    output arguments.)
 
    Because we are regridding from one cubed-sphere grid to another
    cubed-sphere grid, we can use the file to be regridded as the
    template file.
 
-   After running :func:`gcpy.regrid_restart_file`, a single restart
+   After running :mod:`gcpy.regrid_restart_file`, a single restart
    file named :file:`new_restart_file.nc` will be created.  You can
    rename this file as you wish and use it for your GCHP C60
    simulation. |br|
@@ -408,7 +408,7 @@ times 48) in that area.
          c48_to_c48_stretched_weights.nc         \
          GEOSChem.Restart.20190701_0000z.c48.nc4
 
-   (Click on :func:`gcpy.regrid_restart_file` to see its input and
+   (Click on :mod:`gcpy.regrid_restart_file` to see its input and
    output arguments.)
 
    Because we are regridding from one cubed-sphere grid to another
@@ -450,33 +450,45 @@ Regridding for Plotting in GCPy
 ===============================
 
 When plotting in GCPy (e.g. through
-:func:`gcpy.plot.compare_single_level` or
-:func:`gcpy.plot.compare_zonal_mean`), the vast majority of
+:mod:`gcpy.plot.compare_single_level` or
+:mod:`gcpy.plot.compare_zonal_mean`), the vast majority of
 regridding is handled internally. You can optionally request a
 specific horizontal comparison resolution in
-:func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean`.  Note that all regridding
+:mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean`.  Note that all regridding
 in these plotting functions only applies to the comparison panels (not
 the top two panels which show data directly from each dataset). There
 are only two scenarios where you will need to pass extra information
 to GCPy to help it determine grids and to regrid when plotting.
 
+.. note::
+
+   If :literal:`Ref` and :literal:`Dev` are on different vertical
+   grids (i.e. a different number of levels) and you request
+   :literal:`yaxis_units="level"` for a zonal mean plot, the
+   :literal:`Ref` and :literal:`Dev` panels will use their own
+   native level numbering while the difference/ratio panels use the
+   common (smaller) target grid's level numbering. As a result,
+   level numbers will not necessarily line up across all six panels.
+   This limitation does not apply to the default
+   :literal:`yaxis_units="pressure"`, since both :literal:`Ref` and
+   :literal:`Dev` are physically interpolated onto a shared pressure
+   grid. See :mod:`gcpy.plot.compare_zonal_mean` for more information.
+
 Pass stretched-grid file paths
 ------------------------------
 
 Stretched-grid parameters cannot currently be automatically determined
-from grid coordinates. If you are plotting stretched-grid data in
-:func:`gcpy.plot.compare_single_level` or
-:func:`gcpy.plot.compare_zonal_mean` (even if regridding to another
-format), you need to use the :code:`sg_ref_path` or
-:code:`sg_dev_path` arguments to pass the path of your original
-stretched-grid restart file to GCPy. If using
-:func:`gcpy.plot.single_panel`, pass the file path using
-:code:`sg_path`. Stretched-grid restart files created using GCPy
-contain the specified stretch factor, target longitude, and target
-latitude in their metadata.  Currently, output files from
-stretched-grid runs of GCHP do not contain any metadata that specifies
-the stretched-grid used. 
+from grid coordinates. If you are plotting stretched-grid data with
+:mod:`gcpy.plot.single_panel`, pass the path of your original
+stretched-grid restart file using the :code:`sg_path` argument.
+:mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean` instead read the stretch factor,
+target longitude, and target latitude from the metadata of the
+datasets passed to them. Stretched-grid restart files created using
+GCPy contain these parameters in their metadata.  Currently, output
+files from stretched-grid runs of GCHP do not contain any metadata
+that specifies the stretched-grid used.
 
 Pass vertical grid parameters for non-72/47-level grids
 -------------------------------------------------------
@@ -488,14 +500,17 @@ vertical grid, you will need to pass the corresponding `grid
 parameters
 <http://wiki.seas.harvard.edu/geos-chem/index.php/GEOS-Chem_vertical_grids#Reference_section_for_vertical_grids>`_
 using the :code:`ref_vert_params` or :code:`dev_vert_params` keyword
-arguments.
+arguments of :mod:`gcpy.plot.compare_zonal_mean`.  (These keyword
+arguments are specific to :mod:`gcpy.plot.compare_zonal_mean`;
+:mod:`gcpy.plot.compare_single_level` does not accept them.  The
+:mod:`gcpy.plot.single_panel` equivalent is :code:`vert_params`.)
 
 Automatic regridding decision process
 -------------------------------------
 
 When you do not specify a horizontal comparison resolution using the
-:code:`cmpres` argument in :func:`gcpy.plot.compare_single_level` and
-:func:`gcpy.plot.compare_zonal_mean`, GCPy follows several steps to
+:code:`cmpres` argument in :mod:`gcpy.plot.compare_single_level` and
+:mod:`gcpy.plot.compare_zonal_mean`, GCPy follows several steps to
 determine what comparison resolution it should use:
 
 - If both input grids are lat/lon, use the highest resolution between

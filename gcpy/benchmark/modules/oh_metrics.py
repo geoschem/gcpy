@@ -132,7 +132,7 @@ def total_airmass(data):
         Total atmospheric air mass [molecules].
     """
 
-    airmass_kg = np.nansum(data["AirMassColumnFull"].values)
+    airmass_kg = np.nansum(data["AirMassColumnFull"].values, dtype=np.float64)
     airmass_m = airmass_kg * (AVOGADRO / MW_AIR_kg)
 
     return airmass_kg, airmass_m
@@ -158,7 +158,10 @@ def global_mean_oh(data, airmass_kg, mw_oh_kg):
     """
     # Divide out total airmass to get total mean OH concentration [kg m-3]
     # Then convert mean OH from [kg m-3] to [1e5 molec cm-3]
-    mean_oh = np.nansum(data["OHwgtByAirMassColumnFull"].values)
+    mean_oh = np.nansum(
+        data["OHwgtByAirMassColumnFull"].values,
+        dtype=np.float64
+    )
     mean_oh = mean_oh / airmass_kg
     mean_oh *= (AVOGADRO / (mw_oh_kg * 1.0e6)) * 1.0e-5
 
@@ -189,8 +192,14 @@ def lifetimes_wrt_oh(data, airmass_m):
     s_per_yr = np.float64(86400.0) * np.float64(365.25)
 
     # Loss of OH by CH4+OH and MCF+OH reactions [molec]
-    oh_loss_by_ch4 = np.nansum(data["LossOHbyCH4columnTrop"].values)
-    oh_loss_by_mcf = np.nansum(data["LossOHbyMCFcolumnTrop"].values)
+    oh_loss_by_ch4 = np.nansum(
+        data["LossOHbyCH4columnTrop"].values,
+        dtype=np.float64
+    )
+    oh_loss_by_mcf = np.nansum(
+        data["LossOHbyMCFcolumnTrop"].values,
+        dtype=np.float64
+    )
 
     # CH4 and MCF lifetimes against OH [years]
     ch4_life_wrt_oh = (airmass_m / oh_loss_by_ch4) / s_per_yr

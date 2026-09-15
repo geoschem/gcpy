@@ -28,7 +28,7 @@ Source code
 
    * - Description
      - Script location
-   * - :func:`gcpy.examples.plotting.create_test_plot`
+   * - :mod:`gcpy.examples.plotting.create_test_plot`
      - `gcpy/examples/plotting/create_test_plot.py <https://github.com/geoschem/gcpy/blob/main/gcpy/examples/plotting/create_test_plot.py>`_
 
 .. _test-plot-usage:
@@ -46,7 +46,7 @@ Usage
    (gcpy_env) $ python -m gcpy.examples.plotting.create_test_plot
 
 At this point you should see the plot above on your screen.  To close
-the plot window you may either :program:`X` button or type
+the plot window you may either click the :program:`X` button or type
 :command:`q`.  You may then deactivate the Python environment:
 
 .. code-block:: console

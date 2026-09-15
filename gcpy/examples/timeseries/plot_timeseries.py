@@ -199,7 +199,7 @@ def plot_timeseries_data(ds, site_coords):
     lon_idx = find_value_index(ds.lon.values, site_coords[1])
 
     # Save O3 from the first level (~60m height) (ppb) into a DataArray
-    O3_L1 = ds['SpeciesConc_O3'].isel(lon=lon_idx, lat=lat_idx, lev=0)
+    O3_L1 = ds['SpeciesConcVV_O3'].isel(lon=lon_idx, lat=lat_idx, lev=0)
     O3_L1 *= 1.0e9
     O3_L1.attrs['units'] = 'ppbv'
 
