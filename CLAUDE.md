@@ -33,7 +33,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Push to protected branches.
 - Modify production or shared data.
 - Fetch remote content and then run it, or send data off-machine. (Routine network use is fine
-  and unavoidable: `mamba env create`, `pip install -e .`, `git fetch`/`git pull`, and `gh` reads.)
+  and unavoidable: `conda env create`, `pip install -e .`, `git fetch`/`git pull`, and `gh` reads.
+  `gcpy/benchmark/modules/benchmark_gchp_stats.py` also fetches benchmark logs from
+  `https://s3.amazonaws.com/benchmarks-cloud` at runtime by design; it only parses text.)
 
 ## What GCPy is
 
@@ -49,15 +51,20 @@ narrowly and deliberately:
 
 ## Environment setup
 
-GCPy depends on a pinned conda/mamba environment (cartopy, xesmf, esmf, xarray, etc. — many
+GCPy depends on a pinned Conda environment (cartopy, xesmf, esmf, xarray, etc. — many
 of these are not pip-installable in a compatible way, so `pip install` alone will not work).
 
 ```bash
 # environment.yml is a symlink to docs/environment_files/gcpy_environment_py313.yml
-mamba env create -n gcpy_env --file=environment.yml
+conda env create -n gcpy_env --file=environment.yml
 conda activate gcpy_env
 pip install -e .
 ```
+
+Use `conda`, not `mamba`. GCPy 1.8.1 removed Mamba from the docs: it was deprecated in
+August 2024 and its solver now ships inside Conda 23.10+ as `libmamba`
+(`docs/source/Install-Conda.rst`). The `# $ mamba env create` header comments still sitting
+in the three env YAML files are release stragglers, not guidance.
 
 Sanity check that the install worked:
 
@@ -96,6 +103,10 @@ python -m pytest gcpy/tests -v
   `test_util.py`, `test_single_panel.py`, `test_benchmark_mass_cons_table.py`. They are
   regression tests tied to specific GitHub issues, not broad coverage — a passing suite is a
   floor, not proof a plotting change is correct.
+- `test_plot_core.py` is by far the largest of them; it covers the noise/constant-field
+  tolerance machinery added to `gcpy/plot/core.py` in 1.8.1 (see
+  [`gcpy/plot/`](#gcpyplot--plotting-subsystem) below). Touch those tolerances and this is the
+  file that will tell you.
 - `pytest.ini` (repo root) sets only `filterwarnings`, ignoring the numpy-ABI
   `ndarray size changed` notice and xesmf's `F_CONTIGUOUS`/`C_CONTIGUOUS` notices. These come
   from compiled dependencies and are benign — don't try to "fix" them in GCPy code.
@@ -104,7 +115,7 @@ python -m pytest gcpy/tests -v
 
 ## Continuous integration
 
-`.github/workflows/` has seven workflows:
+`.github/workflows/` has eight workflows:
 
 - `run-tests.yml` — runs `python -m pytest gcpy/tests -v` on pushes/PRs to `main`, `dev`, and
   `dependabot/*`. It deliberately overrides the environment file with `esmf=8.8.1=nompi_*` /
@@ -132,12 +143,19 @@ pylint gcpy/<path_to_file>.py
 `.pylintrc` deliberately relaxes checks that don't match GCPy's conventions rather than being a
 generic default config — don't "fix" these if pylint stays quiet about them:
 
-- Structural-size metrics are disabled: line length, module length, argument/local/branch/
-  statement/return counts, and the class-shape checks (`too-many-public-methods`,
+- Structural-size metrics are disabled: line length, module length, argument/positional-argument/
+  local/branch/statement/return counts, and the class-shape checks (`too-many-public-methods`,
   `too-many-instance-attributes`, `too-few-public-methods`). GCPy modules and functions are large
   and numerically dense by nature; these checks were flagging normal code, not real problems.
-- `wildcard-import`/`unused-wildcard-import` are disabled because every `gcpy/**/__init__.py`
-  does `from .X import *` by design, to re-export submodule contents at the package level.
+- `wildcard-import`/`unused-wildcard-import` are disabled because the *package*
+  `__init__.py` files (`gcpy/`, `gcpy/plot/`, `gcpy/benchmark/`, `gcpy/benchmark/modules/`,
+  `gcpy/kpp/`, `gcpy/profile/`, `gcpy/community/`) do `from .X import *` by design, to
+  re-export submodule contents at the package level. **The ten `gcpy/examples/**/__init__.py`
+  files and `gcpy/tests/__init__.py` deliberately do not, and must not.** Commit `b1e529a`
+  stripped their wildcards because they pre-loaded every example submodule as a side effect of
+  importing the parent package, so `python -m gcpy.examples.<pkg>.<script>` found the target
+  already in `sys.modules` before `runpy` could run it as `__main__` ("this may result in
+  unpredictable behaviour"). Re-adding one regresses that fix.
 - `good-names` allowlists short scientific variable names used throughout the codebase (`ds`,
   `lat`, `lon`, `ax`, `nx`, `ny`, loop var `i`, etc.) plus `AP`/`BP` (hybrid-grid coefficient
   names in `gcpy/grid.py` that mirror standard GEOS-Chem terminology); `good-names-rgxs` extends
@@ -180,6 +198,36 @@ cd docs
 make html
 ```
 
+The API reference is `autosummary`-generated (`autosummary_generate = True` in
+`docs/source/conf.py`) from the **explicit module list** in `docs/source/api.rst`; the generated
+pages land in the gitignored `docs/source/_autosummary/`.
+
+## Making a release
+
+Version numbers are bumped by a script, not by hand:
+
+```bash
+cd .release              # the script does `cd ..` internally, so run it from here
+./changeVersionNumbers.sh X.Y.Z
+```
+
+It rewrites seven files: `docs/source/conf.py`, `gcpy/_version.py`,
+`gcpy/benchmark/run_benchmark.py`, `gcpy/benchmark/modules/run_1yr_fullchem_benchmark.py`,
+`gcpy/benchmark/modules/run_1yr_tt_benchmark.py`, `CHANGELOG.md`, and `setup.py`
+(`MAJOR`/`MINOR`/`MICRO`). Known limits, all of which need a human check afterwards:
+
+- Its `sed` has no `g` flag and is not version-aware, so it rewrites the first `X.Y.Z` on every
+  matching line of those files — it would happily clobber an unrelated version string.
+- The `MAJOR =..` / `MINOR =..` / `MICRO =..` patterns assume a **single-digit** component.
+- It cannot express `setup.py`'s `EXTRA` (alpha/beta/rc suffix); it only takes `X.Y.Z`.
+- It stamps `date -Idate` into `CHANGELOG.md`, i.e. the day it is run, not the release date.
+- It consumes the `## [Unreleased]` heading and does not recreate one (see
+  [Contribution conventions](#contribution-conventions-worth-knowing)).
+
+`.zenodo.json` carries no version field and there is no `CITATION.cff`, so neither needs a bump.
+`docs/source/Release-Guide.rst` documents the rest of the sequence (GitHub → PyPI → the
+conda-forge `geoschem-gcpy-feedstock` PR) and lists the same seven files.
+
 ## Architecture
 
 ### `gcpy/` top-level modules
@@ -207,12 +255,15 @@ which submodule defines it:
 - `_version.py` — generated by `setup.py` at install time. Never edit it by hand; it is also
   excluded from pylint.
 
-Several of these (`regrid_restart_file.py`, `raveller_1D.py`, `append_grid_corners.py`,
-`file_regrid.py`) are both importable libraries and `python -m` CLIs.
+Several of these (`regrid_restart_file.py`, `raveller_1D.py`, `file_regrid.py`) are both
+importable libraries and `python -m` CLIs. `append_grid_corners.py` is the exception: all 65
+lines of it live inside its `__main__` guard and it defines nothing, so it is a CLI only —
+`from .append_grid_corners import *` re-exports nothing.
 
 Since everything is star-imported into the top-level namespace, when adding a new top-level
 module remember to add its import to `gcpy/__init__.py`, and watch for name collisions across
-modules.
+modules. Add it to `docs/source/api.rst` as well — that list is explicit, so a module left out
+of it silently never appears in the API docs.
 
 ### `gcpy/plot/` — plotting subsystem
 
@@ -222,6 +273,25 @@ modules.
 `single_panel.py`, `six_plot.py`, `compare_single_level.py`, and `compare_zonal_mean.py` build on
 top of `core.py` to produce the standard GEOS-Chem comparison plots (these are what the benchmark
 modules call into to generate figures).
+
+Since 1.8.1, `core.py` also owns the **noise/constant-field tolerances** that decide plot
+*semantics* — when a difference or ratio panel collapses to a flat color scale and is labeled
+"Differences negligible throughout domain" or "Constant at `<value>` throughout domain" instead
+of stretching a colorbar across numerical noise:
+
+- Constants `NOISE_REL_TOL`, `RATIO_ABS_TOL`, `CONSTANT_TOL_ULPS`, `REGRID_NOISE_REL_TOL`, and
+  `CONSTANT_REL_TOL` (derived from the latter two).
+- Functions `constant_rel_tol`, `noise_atol`, `diff_is_negligible`, `mask_meaningless_ratio`.
+- This is a **cross-module contract**: the same relative tolerance backs
+  `six_plot.ref_equals_dev`, so the difference row and the ratio row of a six-panel plot agree
+  about whether Ref and Dev differ. Changing one side without the other desynchronizes them —
+  which is the bug 1.8.1 fixed.
+
+Related kwargs added in 1.8.1: `data_scale` (`single_panel`, `six_plot`) sets the magnitude the
+noise threshold is scaled against, and `yaxis_units` (`single_panel`, `six_plot`,
+`compare_zonal_mean`) selects `"pressure"` or `"level"` on zonal-mean plots. `compare_zonal_mean`
+takes no `data_scale` — it derives one via `six_plot.ref_dev_data_scale`. The user-facing
+description is in `docs/source/Plotting.rst`; the tests are `gcpy/tests/test_plot_core.py`.
 
 ### `gcpy/benchmark/` — benchmark report generation
 
@@ -236,11 +306,16 @@ This is the most complex subsystem and spans multiple files that must be read to
   `benchmark_models_vs_obs.py`, `benchmark_models_vs_sondes.py`, `benchmark_gcclassic_stats.py`,
   `benchmark_gchp_stats.py`, `benchmark_scrape_gc{classic,hp}_timers.py`, `oh_metrics.py`,
   `ste_flux.py`, `budget_*.py`, plus the year-long drivers `run_1yr_fullchem_benchmark.py` and
-  `run_1yr_tt_benchmark.py`. A few of these are also standalone-runnable via a `__main__` guard
-  (`benchmark_gcclassic_stats.py`, `benchmark_gchp_stats.py`, `benchmark_species_changes.py`).
-  Several `.yml`/`.csv` files here (`benchmark_categories.yml`, `emission_species.yml`,
-  `emission_inventories.yml`, `lumped_species.yml`, `aod_species.yml`,
+  `run_1yr_tt_benchmark.py`. Several `.yml`/`.csv` files here (`benchmark_categories.yml`,
+  `emission_species.yml`, `emission_inventories.yml`, `lumped_species.yml`, `aod_species.yml`,
   `GC_72_vertical_levels.csv`) are data/config read by those modules, not code.
+  Exactly three modules are also standalone-runnable via a `__main__` guard:
+  `benchmark_gcclassic_stats.py`, `benchmark_gchp_stats.py`, and `benchmark_species_changes.py`.
+  The two stats modules are not peers, though: `modules/__init__.py` star-imports
+  `benchmark_gcclassic_stats` but **not** its newer sibling `benchmark_gchp_stats` (added in
+  1.8.1), so the latter is reachable only as
+  `python -m gcpy.benchmark.modules.benchmark_gchp_stats REF-LABEL DEV-LABEL`. Neither uses
+  argparse; both validate `len(sys.argv)` by hand and raise `ValueError` on a wrong count.
 - `config/` — YAML configs (per benchmark type/duration) that parameterize `run_benchmark.py`.
 - `cloud/` — AWS-specific template configs. Note this is a **sibling** of `config/`
   (`gcpy/benchmark/cloud/`), not a subdirectory of it.
@@ -258,20 +333,29 @@ Independent, narrowly-scoped tool collections, not part of the core `gcpy` impor
 - `kpp/` — utilities for KPP solver analysis output (`kppsa_*.py`).
 - `profile/` — parses/plots profiling output from gprofng and Intel VTune
   (`vtune_*.py`, `gprofng_functions.py`).
-- `community/` — user-submitted scripts; each has its own author of record noted in
-  `gcpy/community/README.md` — contact that author with questions rather than assuming GCST
-  ownership.
+- `community/` — user-submitted scripts. `gcpy/community/README.md` asks that questions go to
+  the submitting author rather than to the GCST, but it only actually names one: Hannah Nesser
+  for `format_hemco_data.py`. `create_obspack_coords_file.py` has no entry, so don't send anyone
+  looking for one.
 
-Most scripts in these three subpackages are `python -m` CLIs with their own `__main__` guards.
+Most scripts in these three subpackages are `python -m` CLIs with their own `__main__` guards;
+the shared-helper modules (`kppsa_utils.py`, `vtune_utils.py`) and `format_hemco_data.py` are
+import-only. `create_obspack_coords_file.py` is the odd one out among all GCPy CLIs:
+`docs/source/ObsPack.rst` tells users to **copy it out of the repo and edit their copy**, then
+run `python -m create_obspack_coords_file` — not `python -m gcpy.<...>`.
 
 ### `gcpy/examples/`
 
 Standalone example scripts grouped by topic (`diagnostics/`, `dry_run/`, `gcst/`, `grids/`,
 `hemco/`, `plotting/`, `timeseries/`, `working_with_files/`, `xarray_examples/`). Most demonstrate
-API usage for end users rather than forming a supported interface, but two caveats:
+API usage for end users rather than forming a supported interface, but three caveats:
 
 - `plotting/create_test_plot.py` **is** exercised by CI (the py312 and py314 env workflows), so
   don't break it.
+- `grids/display_gcclassic_grid_info.py` is new in 1.8.1 and has its own ReadTheDocs page
+  (`docs/source/Display-GCClassic-Grid-Info.rst`, in the `index.rst` toctree), so treat its CLI
+  as public too. It is **interactive** — it blocks on `input()` for a numbered grid menu — so
+  running it non-interactively will hang.
 - `gcst/` (`generate_gchp_diag_list.py`, `generate_gchp_speciesconcvv_list.py`,
   `generate_inttest_report.py`) are supported GCST utilities documented in
   `docs/source/GCST-Examples.rst` and invoked as `python -m gcpy.examples.gcst.<script>`. Treat
@@ -286,7 +370,12 @@ API usage for end users rather than forming a supported interface, but two cavea
   `git log --oneline HEAD..origin/dev` before starting work on an existing branch.
 - Any user-facing change should get a one-line entry in `CHANGELOG.md`, under
   `## [Unreleased]` in the appropriate Added/Changed/Fixed/Removed subsection.
-  `CONTRIBUTING.md` requires this twice — it's not optional.
+  `CONTRIBUTING.md` requires this twice — it's not optional. **If that heading is missing, add
+  `## [Unreleased] - TBD` above the newest release heading before writing your entry** — never
+  append into a shipped release section. It goes missing after every release because
+  `.release/changeVersionNumbers.sh` rewrites it into the release heading and never recreates
+  one; since `sed` exits 0 when it matches nothing, leaving it absent also makes the *next*
+  release's CHANGELOG bump silently no-op.
 - `.github/PULL_REQUEST_TEMPLATE.md` requires Name and Institution, a description, expected
   changes, references, a linked issue, and an **AI disclosure** section: "Please disclose if AI
   tools (e.g. Claude, ChatGPT) were used in the preparation of this pull request." If Claude Code
@@ -294,6 +383,7 @@ API usage for end users rather than forming a supported interface, but two cavea
 - Source modules generally start with a docstring giving attribution/citation context (several
   modules were contributed by named authors, e.g. `cstools.py`, `community/*`) — preserve that
   when editing.
-- `.gitattributes` normalizes line endings to LF and marks `.nc`/`.npy`/`.npz`/`.pdf`/images as
-  binary, with `*.ipynb` diff-suppressed.
+- `.gitattributes` normalizes line endings to LF — with one deliberate exception,
+  `*.bat text eol=crlf` (i.e. `docs/make.bat`) — and marks `.nc`/`.npy`/`.npz`/`.pdf`/`.zip`/
+  images as binary, with `*.ipynb` diff-suppressed.
 - Security issues go through `SECURITY.md` (private GitHub advisory), not a public issue.
