@@ -1,0 +1,36 @@
+# Normalize line endings for text files, let Git decide on checkout
+* text=auto eol=lf
+
+# Source and text files
+*.py text
+*.sh text eol=lf
+*.rst text
+*.md text
+*.txt text
+*.yml text
+*.yaml text
+*.json text
+*.csv text
+*.cfg text
+*.ini text
+*.bat text eol=crlf
+
+# Jupyter notebooks: avoid noisy diffs from execution counts/outputs
+*.ipynb text -diff
+
+# Binary/image formats: never diff or normalize line endings
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.nc binary
+*.npy binary
+*.npz binary
+*.zip binary
+
+# Linguist: keep the language stats focused on the actual package code
+docs/* linguist-documentation
+gcpy/examples/* linguist-documentation
+*.ipynb linguist-documentation
