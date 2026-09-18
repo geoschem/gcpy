@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added dry and wet deposition categories to `gcpy/benchmark/modules/benchmark_categories.yml`
 - Added `WetLossConv` and `WetLossLS` plots (normalized by area) to the 1-month and 1-year fullchem benchmarks
 - Added `species_list` and `plot_strat_zonal_mean` arguments to `make_benchmark_wetdep_plots`
+- Added a section to `docs/source/Benchmarking.rst` describing how to download the observational data used in 1-year benchmarks
 
 ### Changed
 - Changed `gcpy/examples/dry_run/download_data.py` to read its YAML configuration file with `yaml.safe_load`
