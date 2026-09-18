@@ -12,7 +12,8 @@ The `GEOS-Chem Support Team
 <https://geoschem.github.io/support-team>`_ uses GCPy to produce
 comparison plots and summary tables from GEOS-Chem benchmark
 simulations.  In this chapter we will describe this capability of
-GCPy.
+GCPy, and how you can also generate plots and tables from benchmark
+output.
 
 .. _bmk-scripts:
 
@@ -41,12 +42,63 @@ The source code for creating benchmark plots is located in the
        1-month and 1-year benchmark plot jobs.
    * - :file:`__init__.py`
      - Python import script
-   * - :file:`modules/` 
+   * - :file:`modules/`
      - Contains Python modules imported into the
        :file:`run_benchmark.py` script.  See
        :mod:`gcpy.benchmark.modules` for a detailed listing.
    * - :file:`README.md`
      - Readme file in Markdown format
+
+.. _bmk-obs-data:
+
+======================================================
+Observational data used for 1-year fullchem benchmarks
+======================================================
+
+GCPy can create plots comparing GEOS-Chem ozone (obtained from 1-year
+`full-chemistry benchmark simulations
+<https://geos-chem.readthedocs.io/en/stable/geos-chem-shared-docs/simulations/fullchem.html>`__)
+against surface observations from `EBAS
+<https://ebas-data.nilu.no/>`_ (2019) and against ozonesondes
+(2010-2019).  Both datasets are bundled into a single tarball
+(approximately 7 MB), which you may download with the `AWS CLI 
+<https://aws.amazon.com/cli/>`_:
+
+.. code-block:: console
+
+   $ aws s3 cp s3://geos-chem-1yr-benchmarks/obs_data_for_bmk.tar.gz .
+
+or with :program:`wget`:
+
+.. code-block:: console
+
+   $ wget https://geos-chem-1yr-benchmarks.s3.amazonaws.com/obs_data_for_bmk.tar.gz
+
+Then extract the tarball:
+
+.. code-block:: console
+
+   $ tar xvzf obs_data_for_bmk.tar.gz
+
+This creates the following directories:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Directory
+     - Contents
+   * - :file:`obs_data_for_bmk/ebas_sfc_o3_2019`
+     - Hourly surface O\ :sub:`3` observations for 2019, in NASA Ames
+       format, obtained from `EBAS <https://ebas-data.nilu.no/>`_.
+   * - :file:`obs_data_for_bmk/sondes_2010-2019`
+     - Ozonesonde profiles for 2010-2019
+       (:file:`allozonesondes_2010-2019.csv`), plus site locations and
+       elevations (:file:`allozonesondes_site_elev.csv`).
+
+Specify the paths to these directories in the :literal:`obs_data`
+section of your benchmark configuration file, as described in
+:ref:`bmk-steps` below.
 
 .. _bmk-steps:
 
@@ -100,6 +152,21 @@ tables from GEOS-Chem benchmark simulations.
             data_file: allozonesondes_2010-2019.csv
             site_file: allozonesondes_site_elev.csv
 
+   By default, the :literal:`obs_data` paths shown above point to the
+   copy of the observational data on the Harvard Cannon cluster.  If
+   you are working elsewhere, edit these to point to your own copy of
+   the data (see :ref:`bmk-obs-data` above).
+
+   The :file:`weights_dir` path specifies the location of regridding
+   weights that map between lat-lon and cubed-sphere grids.  The
+   default path is specific to the Harvard Cannon cluster.  If you do
+   not already have pre-computed regridding weights, you can point
+   :file:`weights_dir` to an empty folder, and GCPy will generate the
+   regridding weights there on-the-fly using ESMF's regridding
+   functionality.  These weights will then be used on subsequent
+   calls to the benchmark plotting routines, which will significantly
+   speed up regridding operations.
+   
    |br|
 
 #. Edit the :literal:`data` section to specify the directories (and
@@ -282,14 +349,14 @@ tables from GEOS-Chem benchmark simulations.
       .. code-block:: bash
 
          #!/bin/bash
-         
+
          #SBATCH -c 8
          #SBATCH -N 1
          #SBATCH -t 0-6:00
          #SBATCH -p sapphire,huce_cascade,seas_compute,shared
          #SBATCH --mem=180000
          #SBATCH --mail-type=END
-         
+
          #============================================================================
          # This us a sample SLURM script that you can use to run the GCPy
          # benchmark plotting code as a SLURM batch job.
@@ -308,33 +375,33 @@ tables from GEOS-Chem benchmark simulations.
          #
          # (3) For diff-of-diffs plots, we recommend using 6 cores.
          #============================================================================
-         
+
          # Apply all bash initialization settings
          . ~/.bashrc
-         
+
          # Make sure to set multiple threads; Joblib will use multiple
          # cores to parallelize certain plotting operations.
          export OMP_NUM_THREADS=$SLURM_CPUS_PER_TASK
          export OMP_STACKSIZE=500m
-         
+
          # Use a non-interactive backend for matplotlib (we're printing to file)
          export MPLBACKEND=agg
-         
+
          # Turn on Python environment (edit for your setup)
          conda activate gcpy_env
-         
+
          # Specify a YAML file with benchmark options
          # Uncomment the file that you wish:
          config="1mo_benchmark.yml"
          #config="1yr_fullchem_benchmark.yml"
          #config="1yr_tt_benchmark.yml"
-         
+
          # Call the run_benchmark script to make the plots
          python -m gcpy.benchmark.run_benchmark "${config}" > "${config/.yml/.log}" 2>&1
-         
+
          # Turn off python environment
          conda deactivate
-         
+
          exit 0
 
       Lastly, start the SLURM batch execution with this command:
@@ -343,6 +410,22 @@ tables from GEOS-Chem benchmark simulations.
 
          $ sbatch benchmark_slurm.sh
 
+      .. tip::
+
+	 If your computer system uses a scheduler other than SLURM,
+	 replace these tags:
+
+         .. code-block:: bash
+
+            #SBATCH -c 8
+            #SBATCH -N 1
+            #SBATCH -t 0-6:00
+            #SBATCH -p sapphire,huce_cascade,seas_compute,shared
+            #SBATCH --mem=180000
+            #SBATCH --mail-type=END
+	 
+	 with the equivalent commands for your scheduler.
+	 
 .. _bmk-funcs-plot:
 
 ============================
@@ -537,7 +620,7 @@ Example:
 
    $ conda activate gcpy_env
    $ python -m gcpy.benchmark.modules.benchmark_gcclassic_stats 14.8.0-alpha.5 14.8.0-alpha.6
-      
+
 benchmark_gchp_stats.py
 -----------------------
 
