@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `.gitattributes`, `CLAUDE.md` and `SECURITY.md` files
 - Added `.pylintrc` which will ignore harmless warnings based on GCPy's code style
 - Added "AI disclosure" section to `.github/PULL_REQUEST_TEMPLATE.md`
+- Added `.github/dependabot.yml` to open monthly version-update PRs for GitHub Actions against `dev`
 
 ### Changed
 - Changed `gcpy/examples/dry_run/download_data.py` to read its YAML configuration file with `yaml.safe_load`
