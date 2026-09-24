@@ -4,6 +4,15 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - TBD
+### Added
+- Added `.gitattributes`, `CLAUDE.md` and `SECURITY.md` files
+- Added `.pylintrc` which will ignore harmless warnings based on GCPy's code style
+- Added "AI disclosure" section to `.github/PULL_REQUEST_TEMPLATE.md`
+
+### Changed
+- Changed `gcpy/examples/dry_run/download_data.py` to read its YAML configuration file with `yaml.safe_load`
+
 ## [1.8.1] - 2026-09-11
 ### Added
 - Added constants `CONSTANT_REL_TOL`, `CONSTANT_TOL_ULPS`, `NOISE_REL_TOL`, `REGRID_NOISE_REL_TOL` to `gcpy/plot/core.py`
@@ -24,12 +33,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `yaxis_units: pressure` to the following YAML files:
   - `gcpy/benchmark/config/*.yml`
   - `gcpy/benchmark/cloud/*.yml`
-  - `gcpy/examples/diagnostics/compare_diags.yml
+  - `gcpy/examples/diagnostics/compare_diags.yml`
 - Added `docs/environment_files/gcpy_environment_py314.yml`
 - Added GitHub Action `build-gcpy-environment-py314.yml` to build and test the GCPy environment with Python 3.14
-- Added `.gitattributes`, `CLAUDE.md` and `SECURITY.md` files 
-- Added `.pylintrc` which will ignore harmless warnings based on GCPy's code style
-- Added "AI disclosure" section to `.github/PULL_REQUEST_TEMPLATE.md`
 
 ### Changed
 - Bumped pytest to 9.0.3 and updated documentation accordingly

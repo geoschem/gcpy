@@ -1,4 +1,4 @@
-# Normalize line endings for text files, let Git decide on checkout
+# Treat files as text when Git detects them as such, and store and check them out with LF
 * text=auto eol=lf
 
 # Source and text files
@@ -31,6 +31,6 @@
 *.zip binary
 
 # Linguist: keep the language stats focused on the actual package code
-docs/* linguist-documentation
-gcpy/examples/* linguist-documentation
+docs/** linguist-documentation
+gcpy/examples/** linguist-documentation
 *.ipynb linguist-documentation

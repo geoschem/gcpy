@@ -4,10 +4,10 @@
 
 GCPy does not maintain long-term support branches. Security fixes are only made against the latest release and the `main`/`dev` development branches.
 
-| Version         | Supported          |
-| ---------------- | ------------------ |
-| Latest release    | :white_check_mark: |
-| Older releases     | :x:                 |
+| Version        | Supported          |
+| -------------- | ------------------ |
+| Latest release | :white_check_mark: |
+| Older releases | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -17,6 +17,6 @@ Please do not disclose the issue publicly until the GCST has had a chance to inv
 
 ## What to Expect
 
-The GEOS-Chem Support Team will acknowledge your report, investigate, and work with you on a fix and disclosure timeline. Since GCPy is maintained by a small team, response times may vary, but security reports are treated as a high priority ahead of feature work. 
+The GEOS-Chem Support Team will acknowledge your report, investigate, and work with you on a fix and disclosure timeline. Since GCPy is maintained by a small team, response times may vary, but security reports are treated as a high priority ahead of feature work.
 
 For non-security bugs and user questions, please see [SUPPORT.md](SUPPORT.md) and use [GitHub issues](https://github.com/geoschem/gcpy/issues/new/choose) instead.
