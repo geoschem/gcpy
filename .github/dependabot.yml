@@ -1,0 +1,21 @@
+---
+#
+# Dependabot version updates for GCPy
+# See: https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+#
+# Only GitHub Actions are version-updated here.  Python dependency pins in
+# setup.py must be kept in sync with the conda environment files in
+# docs/environment_files/, which Dependabot cannot edit, so those are left
+# to Dependabot security updates plus manual bumps.
+#
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    target-branch: "dev"
+    schedule:
+      interval: "monthly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
