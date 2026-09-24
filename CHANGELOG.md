@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Changed `gcpy/examples/dry_run/download_data.py` to read its YAML configuration file with `yaml.safe_load`
 - Added read-only `permissions` blocks to `run-tests.yml` and the `build-gcpy-environment-py31*.yml` GitHub Actions
 - Updated CodeQL to also scan GitHub Actions as well as Python code
+- Pinned `pypa/gh-action-pypi-publish` in `publish-python.yml` to the commit SHA for v1.14.2 instead of the moving `release/v1` branch
 
 ## [1.8.1] - 2026-09-11
 ### Added
