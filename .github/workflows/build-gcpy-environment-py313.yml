@@ -12,6 +12,11 @@ on:
     # These must be a subset of the branches above
     branches: [ "main", "dev", "dependabot/*" ]
 
+# Give the GITHUB_TOKEN read-only access;
+# these jobs only check out and test code
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest

@@ -599,7 +599,8 @@ def parse_args():
 
     # Read the YAML configuration file
     try:
-        config = yaml.load(open("download_data.yml"), Loader=yaml.FullLoader)
+        with open("download_data.yml", encoding="utf-8") as ifile:
+            config = yaml.safe_load(ifile)
     except FileNotFoundError:
         msg = "Could not find configuration file 'download_data.yml'!"
         raise FileNotFoundError(msg)
