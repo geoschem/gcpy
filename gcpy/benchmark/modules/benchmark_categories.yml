@@ -1,4 +1,38 @@
+---
+#
+# benchmark_categories.yml: Assigns GEOS-Chem species to the
+# categories used to organize the benchmark plots.
+#
+# Layout:
+#
+#   <BenchmarkType>:          FullChemBenchmark,
+#                             TransportTracersBenchmark,
+#                             or CH4Benchmark
+#     <Category>:             One PDF file (and output folder)
+#                             per category
+#       <Subcategory>:        One PDF bookmark group per
+#                             subcategory
+#         - <Species>         Bare species name (e.g. SO4)
+#
+# Species concentration and emissions plots make one PDF for each
+# category.  A species may be listed in more than one category.
+# Lumped species (e.g. SOx) are defined in lumped_species.yml.
+#
+# Deposition categories (DryDepVel, WetLossConv, WetLossLS) list
+# which species are shown in the dry and wet deposition plots.
+#
+# A copy of this file is saved with the benchmark output, so the
+# categories used for a given set of plots are always on record.
+#
+
+# ======================================================================
+# Categories for FullChemBenchmark
+# ======================================================================
 FullChemBenchmark:
+
+  # --------------------------------------------------------------------
+  # Aerosols
+  # --------------------------------------------------------------------
   Aerosols:
     Dust:
       - DST1
@@ -41,6 +75,35 @@ FullChemBenchmark:
       - SO4s
     Metals:
       - pFe
+  Secondary_Organic_Aerosols:
+    Complex_SOA:
+      - TSOA0
+      - TSOA1
+      - TSOA2
+      - TSOA3
+      - ASOA1
+      - ASOA2
+      - ASOA3
+      - ASOAN
+      - TSOG0
+      - TSOG1
+      - TSOG2
+      - TSOG3
+      - ASOG1
+      - ASOG2
+      - ASOG3
+    Isoprene_SOA:
+      - INDIOL
+      - LVOCOA
+      - SOAIE
+      - SOAGX
+    Simple_SOA:
+      - SOAP
+      - SOAS
+
+  # --------------------------------------------------------------------
+  # Halogens
+  # --------------------------------------------------------------------
   Bromine:
     Bromine:
       - Bry
@@ -96,6 +159,10 @@ FullChemBenchmark:
       - HI
       - HOI
       - OIO
+
+  # --------------------------------------------------------------------
+  # Nitrogen, Oxygen, Sulfur, CO, OH
+  # --------------------------------------------------------------------
   Nitrogen:
     Nitrogen:
       - NOy
@@ -105,7 +172,7 @@ FullChemBenchmark:
       - HNO4
       - MPAN
       - NIT
-      - 'NO'
+      - 'NO'   # '' prevents YAML reading this as "no" (i.e. false)
       - NO2
       - NO3
       - N2O5
@@ -130,6 +197,19 @@ FullChemBenchmark:
       - CO
       - OH
       - NOx
+  Sulfur:
+    Sulfur:
+      - SOx
+      - DMS
+      - HMS
+      - MSA
+      - OCS
+      - SO2
+      - SO4
+
+  # --------------------------------------------------------------------
+  # Organics
+  # --------------------------------------------------------------------
   Primary_Organics:
     Alcohols:
       - EOH
@@ -165,31 +245,6 @@ FullChemBenchmark:
       - O1D
       - OH
       - RO2
-  Secondary_Organic_Aerosols:
-    Complex_SOA:
-      - TSOA0
-      - TSOA1
-      - TSOA2
-      - TSOA3
-      - ASOA1
-      - ASOA2
-      - ASOA3
-      - ASOAN
-      - TSOG0
-      - TSOG1
-      - TSOG2
-      - TSOG3
-      - ASOG1
-      - ASOG2
-      - ASOG3
-    Isoprene_SOA:
-      - INDIOL
-      - LVOCOA
-      - SOAIE
-      - SOAGX
-    Simple_SOA:
-      - SOAP
-      - SOAS
   Secondary_Organics:
     Acids:
       - ACTA
@@ -224,16 +279,61 @@ FullChemBenchmark:
     Peroxides:
       - ETHP
       - MP
-  Sulfur:
-    Sulfur:
-      - SOx
-      - DMS
-      - HMS
-      - MSA
-      - OCS
+
+  # --------------------------------------------------------------------
+  # Dry and wet deposition
+  # --------------------------------------------------------------------
+  DryDepVel:
+    DryDepVel:
+      - ACET
+      - HNO3
+      - NH3
+      - NH4
+      - NIT
+      - NITs
+      - O3
+      - SO4
+  WetLossConv:
+    WetLossConv:
+      - BCPI
+      - CH2O
+      - DST1
+      - H2O2
+      - HNO3
+      - NH3
+      - NH4
+      - NIT
+      - NITs
+      - OCPI
+      - SALA
+      - SALC
       - SO2
       - SO4
+  WetLossLS:
+    WetLossLS:
+      - BCPI
+      - CH2O
+      - DST1
+      - H2O2
+      - HNO3
+      - NH3
+      - NH4
+      - NIT
+      - NITs
+      - OCPI
+      - SALA
+      - SALC
+      - SO2
+      - SO4
+
+# ======================================================================
+# Categories for TransportTracersBenchmark
+# ======================================================================
 TransportTracersBenchmark:
+
+  # --------------------------------------------------------------------
+  # Radionuclides
+  # --------------------------------------------------------------------
   RnPbBeTracers:
     RnPbBeTracers:
       - Rn222
@@ -243,6 +343,10 @@ TransportTracersBenchmark:
       - Be7s
       - Be10
       - Be10s
+
+  # --------------------------------------------------------------------
+  # Transport tracers
+  # --------------------------------------------------------------------
   TransportTracers:
     TransportTracers:
       - PassiveTracer
@@ -257,6 +361,10 @@ TransportTracersBenchmark:
       - e90_n
       - e90_s
       - st80_25
+
+  # --------------------------------------------------------------------
+  # Wet deposition
+  # --------------------------------------------------------------------
   WetLossConv:
     WetLossConv:
       - Pb210
@@ -273,6 +381,10 @@ TransportTracersBenchmark:
       - Be7Strat
       - Be10
       - Be10Strat
+
+# ======================================================================
+# Categories for CH4 benchmark
+# ======================================================================
 CH4Benchmark:
   CH4:
     CH4:

@@ -21,6 +21,9 @@ EMISSION_INV = "emission_inventories.yml"
 LUMPED_SPC = "lumped_species.yml"
 SPECIES_DATABASE = "species_database.yml"
 
+# Constants
+DEPOSITION_CATS = ["DryDepVel", "WetLossConv", "WetLossLS"]
+
 def make_output_dir(
         dst,
         collection,
@@ -525,7 +528,9 @@ def add_lumped_species_to_dataset(
 
 
 def get_species_categories(
-        benchmark_type="FullChemBenchmark"
+        benchmark_type="FullChemBenchmark",
+        include_deposition=False,
+        quiet=True,
 ):
     """
     Returns the list of benchmark categories that each species
@@ -536,6 +541,13 @@ def get_species_categories(
     ----------
     benchmark_type : str, optional
         Specifies the type of the benchmark.
+    include_deposition : bool, optional
+        Logical flag to decide if we should include the dry and
+        wet deposition categories in the output.
+        Default: False (i.e. do not include deposition categories)
+    quiet : bool, optional
+        Will suppress verbose output.
+        Default value: True
 
     Returns
     -------
@@ -547,9 +559,50 @@ def get_species_categories(
         os.path.join(
             os.path.dirname(__file__),
             ifile,
-        )
+        ),
+        quiet=quiet,
     )
-    return spc_cat_dict[benchmark_type]
+    catdict = spc_cat_dict[benchmark_type]
+    if not include_deposition:
+        catdict = {
+            cat: subcats for cat, subcats in catdict.items()
+            if cat not in DEPOSITION_CATS
+        }
+    return catdict
+
+
+def get_deposition_species(
+        category,
+        benchmark_type="FullChemBenchmark",
+):
+    """
+    Returns the list of species to plot for a deposition
+    category, as listed in benchmark_categories.yml.
+
+    Parameters
+    ----------
+    category : str
+        Deposition category ("DryDepVel", "WetLossConv", "WetLossLS").
+    benchmark_type : str, optional
+        Specifies the type of the benchmark.
+
+    Returns
+    -------
+    spc_list : list of str or None
+        Bare species names, or None (meaning plot all species)
+        if the category is not listed.
+    """
+    catdict = get_species_categories(
+        benchmark_type,
+        include_deposition=True,
+        quiet=True,
+    )
+    if category not in catdict:
+        return None
+    return [
+        spc for subcat in catdict[category].values()
+        for spc in subcat
+    ]
 
 
 def archive_species_categories(
