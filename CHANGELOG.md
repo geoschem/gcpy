@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Pinned `pypa/gh-action-pypi-publish` in `publish-python.yml` to the commit SHA for v1.14.2 instead of the moving `release/v1` branch
 - Moved drydep species list out of `benchmark_drydep.py` and into the `benchmark_categories.yml` file
 - Updated `get_species_categories` to omit deposition categories unless `include_deposition=True` is passed
+- Updated `run_benchmark.py` and `run_1yr_fullchem_benchmark.py` to generate wetdep plots in fullchem benchmarks
 
 ## [1.8.1] - 2026-09-11
 ### Added

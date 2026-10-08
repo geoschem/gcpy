@@ -57,35 +57,59 @@ import sys
 import warnings
 from datetime import datetime
 import numpy as np
-from gcpy.util import \
-    copy_file_to_dir, get_filepath, read_config_file
-from gcpy.date_time import \
-    add_months, datetime64_to_str, is_full_year
-from gcpy.benchmark.modules.benchmark_funcs import \
-    diff_of_diffs_toprow_title, create_benchmark_summary_table, \
-    create_benchmark_sanity_check_table, \
-    make_benchmark_conc_plots, make_benchmark_emis_plots, \
-    make_benchmark_emis_tables, make_benchmark_jvalue_plots, \
-    make_benchmark_aod_plots, make_benchmark_mass_tables, \
-    make_benchmark_mass_accumulation_tables, \
-    make_benchmark_operations_budget, \
-    make_benchmark_collection_2d_var_plots, \
+from gcpy.util import (
+    copy_file_to_dir,
+    get_filepath,
+    read_config_file
+)
+from gcpy.date_time import (
+    add_months,
+    datetime64_to_str,
+    is_full_year
+)
+from gcpy.benchmark.modules.benchmark_funcs import (
+    diff_of_diffs_toprow_title,
+    create_benchmark_summary_table,
+    create_benchmark_sanity_chck_table,
+    make_benchmark_aod_plots,
+    make_benchmark_collection_2d_var_plots,
     make_benchmark_collection_3d_var_plots
+    make_benchmark_conc_plots,
+    make_benchmark_emis_plots,
+    make_benchmark_emis_tables,
+    make_benchmark_jvalue_plots,
+    make_benchmark_mass_tables,
+    make_benchmark_mass_accumulation_tables,
+    make_benchmark_operations_budget,
+    make_benchmark_wetdep_plots
+)
 from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
 from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
-from gcpy.benchmark.modules.run_1yr_fullchem_benchmark \
-    import run_benchmark as run_1yr_benchmark
-from gcpy.benchmark.modules.run_1yr_tt_benchmark \
-    import run_benchmark as run_1yr_tt_benchmark
-from gcpy.benchmark.modules.benchmark_utils import \
-    gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
-    get_log_filepaths, get_species_database_files, print_benchmark_info
-from gcpy.benchmark.modules.benchmark_drydep import \
-    drydepvel_species, make_benchmark_drydep_plots
-from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
+from gcpy.benchmark.modules.run_1yr_fullchem_benchmark import (
+    run_benchmark as run_1yr_benchmark
+)
+from gcpy.benchmark.modules.run_1yr_tt_benchmark import (
+    run_benchmark as run_1yr_tt_benchmark
+)
+from gcpy.benchmark.modules.benchmark_utils import (
+    gcc_vs_gcc_dirs,
+    gchp_vs_gcc_dirs,
+    gchp_vs_gchp_dirs,
+    get_deposition_species,
+    get_log_filepaths,
+    get_species_database_files,
+    print_benchmark_info
+)
+from gcpy.benchmark.modules.benchmark_drydep import (
+    drydepvel_species,
+    make_benchmark_drydep_plots
+)
+from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import (
     make_benchmark_gcclassic_timing_table
-from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
+)
+from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import (
     make_benchmark_gchp_timing_table
+)
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -313,6 +337,23 @@ def run_benchmark_default(config):
         os.path.join(gchp_vs_gchp_resultsdir, "SigDiffs_zonalmean.txt"),
         os.path.join(gchp_vs_gchp_resultsdir, "SigDiffs_emissions.txt"),
     ]
+
+    # ======================================================================
+    # Collection list to use in the summary tables
+    # NOTE: Skip wetdep diagnostics if they haven't been generated
+    # ======================================================================
+    summary_table_collections = [
+        'AerosolMass',
+        'Aerosols',
+        'DryDep',
+        'Emissions',
+        'JValues',
+        'Metrics',
+        'SpeciesConc',
+        'StateMet',
+    ]
+    if config["options"]["outputs"].get("plot_wetdep", False):
+        summary_table_collections += ['WetLossConv', 'WetLossLS']
 
     # ======================================================================
     # Print the list of plots & tables to the screen
@@ -620,6 +661,48 @@ def run_benchmark_default(config):
             )
 
         # ==================================================================
+        # GCC vs GCC wet deposition plots
+        # ==================================================================
+        if config["options"]["outputs"].get("plot_wetdep", False):
+            print("\n%%% Creating GCC vs. GCC wet deposition plots %%%")
+
+            for collection in ["WetLossConv", "WetLossLS"]:
+                
+                # Filepaths
+                ref = get_filepath(
+                    gcc_vs_gcc_refdir,
+                    collection,
+                    gcc_ref_date
+                )
+                dev = get_filepath(
+                    gcc_vs_gcc_devdir,
+                    collection,
+                    gcc_dev_date
+                )
+
+                # Create plots
+                make_benchmark_wetdep_plots(
+                    ref,
+                    gcc_vs_gcc_refstr,
+                    dev,
+                    gcc_vs_gcc_devstr,
+                    collection,
+                    spcdb_files,
+                    refmet=refmet,
+                    devmet=devmet,
+                    dst=gcc_vs_gcc_resultsdir,
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=config["options"]["bmk_type"],
+                    overwrite=True,
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get(
+                        "plot_options", {}).get("yaxis_units", "pressure"),
+                    species_list=get_deposition_species(
+                        collection, config["options"]["bmk_type"]),
+                    plot_strat_zonal_mean=False,
+                )
+            
+        # ==================================================================
         # GCC vs GCC global mass tables
         # ==================================================================
         if config["options"]["outputs"]["mass_table"]:
@@ -839,16 +922,7 @@ def run_benchmark_default(config):
                 gcc_vs_gcc_devdir,
                 config["data"]["dev"]["gcc"]["version"],
                 gcc_dev_date,
-                collections = [
-                    'AerosolMass',
-                    'Aerosols',
-                    'DryDep',
-                    'Emissions',
-                    'JValues',
-                    'Metrics',
-                    'SpeciesConc',
-                    'StateMet'
-                ],
+                collections=summary_table_collections,
                 dst=gcc_vs_gcc_tablesdir,
                 outfilename="Summary.txt",
                 overwrite=True,
@@ -1240,6 +1314,51 @@ def run_benchmark_default(config):
             )
 
         # ==================================================================
+        # GCHP vs GCC wet deposition plots
+        # ==================================================================
+        if config["options"]["outputs"].get("plot_wetdep", False):
+            print("\n%%% Creating GCHP vs. GCC wet deposition plots %%%")
+
+            for collection in ["WetLossConv", "WetLossLS"]:
+
+                # Filepaths
+                ref = get_filepath(
+                    gchp_vs_gcc_refdir,
+                    collection,
+                    gcc_ref_date
+                )
+                dev = get_filepath(
+                    gchp_vs_gcc_devdir,
+                    collection,
+                    gchp_dev_date,
+                    is_gchp=True
+                )
+
+                # Create plots
+                make_benchmark_wetdep_plots(
+                    ref,
+                    gchp_vs_gcc_refstr,
+                    dev,
+                    gchp_vs_gcc_devstr,
+                    collection,
+                    spcdb_files,
+                    refmet=refmet,
+                    devmet=devmet,
+                    dst=gchp_vs_gcc_resultsdir,
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=config["options"]["bmk_type"],
+                    overwrite=True,
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get(
+                        "plot_options", {}).get("yaxis_units", "pressure"),
+                    species_list=get_deposition_species(
+                        collection, config["options"]["bmk_type"]
+                    ),
+                    plot_strat_zonal_mean=False,
+                    normalize_by_area=True,
+                )
+
+        # ==================================================================
         # GCHP vs GCC global mass tables
         # ==================================================================
         if config["options"]["outputs"]["mass_table"]:
@@ -1471,16 +1590,7 @@ def run_benchmark_default(config):
                 gchp_vs_gcc_devdir,
                 config["data"]["dev"]["gchp"]["version"],
                 gchp_dev_date,
-                collections=[
-                    'AerosolMass',
-                    'Aerosols',
-                    'DryDep',
-                    'Emissions',
-                    'JValues',
-                    'Metrics',
-                    'SpeciesConc',
-                    'StateMet',
-                ],
+                collections=summary_table_collections,
                 dst=gchp_vs_gcc_tablesdir,
                 outfilename="Summary.txt",
                 overwrite=True,
@@ -1884,6 +1994,53 @@ def run_benchmark_default(config):
             )
 
         # ==================================================================
+        # GCHP vs GCHP wet deposition plots
+        # ==================================================================
+        if config["options"]["outputs"].get("plot_wetdep", False):
+            print("\n%%% Creating GCHP vs. GCC wet deposition plots %%%")
+
+            for collection in ["WetLossConv", "WetLossLS"]:
+
+                # Filepaths
+                ref = get_filepath(
+                    gchp_vs_gchp_refdir,
+                    collection,
+                    gchp_ref_date,
+                    is_gchp=True
+                    
+                )
+                dev = get_filepath(
+                    gchp_vs_gcc_devdir,
+                    collection,
+                    gchp_dev_date,
+                    is_gchp=True
+                )
+
+                # Create plots
+                make_benchmark_wetdep_plots(
+                    ref,
+                    gchp_vs_gchp_refstr,
+                    dev,
+                    gchp_vs_gchp_devstr,
+                    collection,
+                    spcdb_files,
+                    refmet=refmet,
+                    devmet=devmet,
+                    dst=gcc_vs_gcc_resultsdir,
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=config["options"]["bmk_type"],
+                    overwrite=True,
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=config["options"]["outputs"].get(
+                        "plot_options", {}).get("yaxis_units", "pressure"),
+                    species_list=get_deposition_species(
+                        collection, config["options"]["bmk_type"]
+                    ),
+                    plot_strat_zonal_mean=False,
+                    normalize_by_area=True,
+                )
+
+        # ==================================================================
         # GCHP vs GCHP global mass tables
         # ==================================================================
         if config["options"]["outputs"]["mass_table"]:
@@ -2166,16 +2323,7 @@ def run_benchmark_default(config):
                 gchp_vs_gchp_devdir,
                 config["data"]["dev"]["gchp"]["version"],
                 gchp_dev_date,
-                collections=[
-                    'AerosolMass',
-                    'Aerosols',
-                    'DryDep',
-                    'Emissions',
-                    'JValues',
-                    'Metrics',
-                    'SpeciesConc',
-                    'StateMet',
-                ],
+                collections=summary_table_collections,
                 dst=gchp_vs_gchp_tablesdir,
                 outfilename="Summary.txt",
                 overwrite=True,

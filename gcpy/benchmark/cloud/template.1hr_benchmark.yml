@@ -123,11 +123,11 @@ options:
     plot_drydep: False
     plot_emis: False
     plot_jvalues: False
+    plot_wetdep: False
     plot_options:
       by_spc_cat: True
       by_hco_cat: True
-      # yaxis_units: "pressure" or "level" for the zonal-mean plot Y-axis
-      yaxis_units: "pressure"
+      yaxis_units: "pressure"   # "pressure" or "level"
     #
     # Benchmark tables
     #
