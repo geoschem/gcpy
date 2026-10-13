@@ -1810,11 +1810,12 @@ def make_benchmark_emis_plots(
     # Create regridding files if necessary while not in parallel loop
     [_ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
-    # Combine 2D and 3D variables into an overall list
+    # Combine 2D and 3D variables into an overall list,
+    # but exclude "AREA" from the plots.
     vardict = compare_varnames(refds, devds, quiet=not verbose)
     vars2D = vardict["commonvars2D"]
     vars3D = vardict["commonvars3D"]
-    varlist = vars2D + vars3D
+    varlist = [var for var in vars2D + vars3D if var != "AREA"]
 
     # ==================================================================
     # Compute column sums for 3D emissions
@@ -5727,9 +5728,8 @@ def create_benchmark_summary_table(
     # Read data and look differences btw Ref & Dev versions
     # ==================================================================
 
-    # Variables to skip
-    skip_vars = SKIP_THESE_VARS
-    skip_vars.append("AREA")
+    # Variables to skip.  Add "AREA" locally but not globally.
+    skip_vars = SKIP_THESE_VARS + ["AREA"]
 
     # Pick the proper function to read the data
     reader = dataset_reader(
@@ -5984,9 +5984,8 @@ def create_benchmark_sanity_check_table(
         verbose=verbose
     )
 
-    # Variables to skip
-    skip_vars = SKIP_THESE_VARS
-    skip_vars.append("AREA")
+    # Variables to skip.  Add "AREA" locally but not globally.
+    skip_vars = SKIP_THESE_VARS + ["AREA"]
 
     # ==================================================================
     # Open output file and write header
