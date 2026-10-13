@@ -777,6 +777,85 @@ def warn_if_flip_levels_mismatch(flip_ref, flip_dev):
     return True
 
 
+def normalize_mapl3_vertical_dims(dset, varlist=None):
+    """
+    Makes MAPL3 GCHP output look like MAPL2 output in the vertical, so
+    that it can be compared with compare_single_level and
+    compare_zonal_mean.
+
+    MAPL3 History writes variables on level edges (e.g. 73 levels) on a
+    separate "edge" dimension, and a single collection can mix them with
+    variables on level centers (e.g. 72 levels, on "lev").  MAPL2 used
+    "lev" for both, in separate collections.  This routine keeps only
+    one of the two vertical dimensions and names it "lev":
+
+    - Dataset without an "edge" dimension: returned unchanged.
+    - Requested variables all on "edge": the "lev" dimension (and its
+      variables) is dropped and "edge" is renamed to "lev".
+    - Requested variables all on "lev": the "edge" dimension (and its
+      variables) is dropped.
+    - Requested variables on both: ValueError (compare them separately).
+    - varlist is None: the "edge" dimension (and its variables) is
+      dropped, with a warning listing the skipped variables.
+
+    Parameters
+    ----------
+    dset : xarray.Dataset
+        GEOS-Chem output dataset.
+    varlist : list of str, optional
+        Variables that will be compared.  Default value: None
+
+    Returns
+    -------
+    dset : xarray.Dataset
+        The dataset with a single vertical dimension, "lev".
+
+    Notes
+    -----
+    The order of the vertical levels is never changed.  MAPL3 labels
+    every variable positive="down", but fields that MAPL3 passes
+    through from ExtData keep the vertical order of their input files,
+    so the attribute cannot be relied on to decide whether to flip.
+    """
+    verify_variable_type(dset, xr.Dataset)
+
+    if "edge" not in dset.dims:
+        return dset
+
+    if varlist is None:
+        edge_vars = [var for var in dset.data_vars
+                     if "edge" in dset[var].dims]
+        if edge_vars:
+            warnings.warn(
+                "Skipping variables on the MAPL3 level-edge dimension "
+                f"'edge': {', '.join(edge_vars)}.  Pass them in varlist, "
+                "separately from variables on 'lev', to compare them.",
+                UserWarning,
+                stacklevel=3
+            )
+        return dset.drop_dims("edge")
+
+    requested = [var for var in varlist if var in dset.data_vars]
+    on_edge = [var for var in requested if "edge" in dset[var].dims]
+    on_lev = [var for var in requested if "lev" in dset[var].dims]
+
+    if on_edge and on_lev:
+        msg = (
+            "Cannot compare variables on level edges ('edge': "
+            f"{', '.join(on_edge)}) and on level centers ('lev': "
+            f"{', '.join(on_lev)}) in the same call.  Compare them in "
+            "separate calls."
+        )
+        raise ValueError(msg)
+
+    if on_edge:
+        if "lev" in dset.dims:
+            dset = dset.drop_dims("lev")
+        return dset.rename({"edge": "lev"})
+
+    return dset.drop_dims("edge")
+
+
 def slice_by_lev_and_time(
         dset,
         varname,

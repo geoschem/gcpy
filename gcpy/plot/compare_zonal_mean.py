@@ -25,7 +25,7 @@ from gcpy.util import \
     get_molwt_from_metadata, reshape_MAPL_CS, get_diff_of_diffs, \
     all_zero_or_nan, compare_varnames, \
     read_species_metadata, verify_variable_type, \
-    warn_if_flip_levels_mismatch
+    warn_if_flip_levels_mismatch, normalize_mapl3_vertical_dims
 from gcpy.units import check_units, data_unit_is_mol_per_mol
 from gcpy.constants import MW_AIR_g, NO_STRETCH_SG_PARAMS
 from gcpy.plot.core import gcpy_style, six_panel_subplot_names, \
@@ -212,6 +212,15 @@ def compare_zonal_mean(
     verify_variable_type(devdata, xr.Dataset)
 
     warn_if_flip_levels_mismatch(flip_ref, flip_dev)
+
+    # MAPL3 output can mix level-center ("lev") and level-edge ("edge")
+    # variables in one file; keep one, named "lev" (never reorders levels)
+    refdata = normalize_mapl3_vertical_dims(refdata, varlist)
+    devdata = normalize_mapl3_vertical_dims(devdata, varlist)
+    if second_ref is not None:
+        second_ref = normalize_mapl3_vertical_dims(second_ref, varlist)
+    if second_dev is not None:
+        second_dev = normalize_mapl3_vertical_dims(second_dev, varlist)
 
     # Create empty lists for keyword arguments
     if sigdiff_list is None:

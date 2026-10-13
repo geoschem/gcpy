@@ -5,9 +5,10 @@ import warnings
 
 import numpy as np
 import pytest
+import xarray as xr
 
 from gcpy.util import get_nan_mask, is_nearly_constant, \
-    warn_if_flip_levels_mismatch
+    warn_if_flip_levels_mismatch, normalize_mapl3_vertical_dims
 
 
 def test_get_nan_mask_masks_the_nans():
@@ -99,3 +100,78 @@ def test_flip_levels_guard_accepts_non_bool_truthiness():
 
     assert warned is True
     assert len(caught) == 1
+
+
+# ----------------------------------------------------------------------
+# MAPL3 vertical dimensions ("lev" for level centers, "edge" for edges)
+# ----------------------------------------------------------------------
+
+def _make_mapl3_dataset():
+    """MAPL3-style cubed-sphere dataset mixing lev (72) and edge (73)."""
+    dims_lev = ("time", "lev", "nf", "Ydim", "Xdim")
+    dims_edge = ("time", "edge", "nf", "Ydim", "Xdim")
+    shape_lev = (1, 72, 6, 2, 2)
+    shape_edge = (1, 73, 6, 2, 2)
+    return xr.Dataset(
+        {
+            "MFX": (dims_lev,
+                    np.arange(np.prod(shape_lev), dtype=float)
+                    .reshape(shape_lev)),
+            "PLE0": (dims_edge,
+                     np.arange(np.prod(shape_edge), dtype=float)
+                     .reshape(shape_edge)),
+            "AREA": (("nf", "Ydim", "Xdim"), np.ones((6, 2, 2))),
+        },
+        coords={
+            "lev": np.arange(1, 73, dtype=float),
+            "edge": np.arange(1, 74, dtype=float),
+        },
+    )
+
+
+def test_normalize_mapl3_leaves_datasets_without_edge_alone():
+    dset = _make_mapl3_dataset().drop_dims("edge")
+
+    assert normalize_mapl3_vertical_dims(dset, ["MFX"]) is dset
+
+
+def test_normalize_mapl3_edge_variables_become_lev():
+    dset = _make_mapl3_dataset()
+    out = normalize_mapl3_vertical_dims(dset, ["PLE0"])
+
+    assert "edge" not in out.dims
+    assert out.sizes["lev"] == 73
+    assert "MFX" not in out.data_vars
+    assert "AREA" in out.data_vars
+    assert out["PLE0"].dims[1] == "lev"
+    # Level order must be exactly as in the file (no flipping)
+    assert np.array_equal(out["PLE0"].values, dset["PLE0"].values)
+    assert np.array_equal(out["lev"].values, dset["edge"].values)
+
+
+def test_normalize_mapl3_lev_variables_drop_edge():
+    dset = _make_mapl3_dataset()
+    out = normalize_mapl3_vertical_dims(dset, ["MFX"])
+
+    assert "edge" not in out.dims
+    assert out.sizes["lev"] == 72
+    assert "PLE0" not in out.data_vars
+    assert "AREA" in out.data_vars
+    assert np.array_equal(out["MFX"].values, dset["MFX"].values)
+
+
+def test_normalize_mapl3_rejects_mixed_lev_and_edge():
+    with pytest.raises(ValueError, match="separate calls"):
+        normalize_mapl3_vertical_dims(_make_mapl3_dataset(), ["MFX", "PLE0"])
+
+
+def test_normalize_mapl3_without_varlist_skips_edge_with_warning():
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        out = normalize_mapl3_vertical_dims(_make_mapl3_dataset())
+
+    assert "edge" not in out.dims
+    assert "PLE0" not in out.data_vars
+    assert "MFX" in out.data_vars
+    assert len(caught) == 1
+    assert "PLE0" in str(caught[0].message)
