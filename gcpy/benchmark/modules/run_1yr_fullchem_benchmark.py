@@ -55,35 +55,68 @@ need to set the following environment variable in your shell:
 
 import os
 import warnings
-from calendar import monthrange
+from calendar import (
+    monthrange
+)
 import numpy as np
-from joblib import Parallel, delayed
-from gcpy.util import copy_file_to_dir, get_filepath, get_filepaths
-from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
-from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
-from gcpy.benchmark.modules.budget_ox import global_ox_budget
-from gcpy.date_time import datetime64_to_str
-#TODO: Peel out routines from benchmark_funcs.py into smaller
-# routines in the gcpy/benchmark/modules folder, such as these:
-from gcpy.benchmark.modules.benchmark_funcs import \
-    diff_of_diffs_toprow_title, make_benchmark_conc_plots, \
-    make_benchmark_emis_plots, make_benchmark_emis_tables, \
-    make_benchmark_jvalue_plots, make_benchmark_aod_plots, \
-    make_benchmark_mass_tables, make_benchmark_operations_budget, \
-    make_benchmark_aerosol_tables
-from gcpy.benchmark.modules.benchmark_utils import \
-    gcc_vs_gcc_dirs, gchp_vs_gcc_dirs, gchp_vs_gchp_dirs, \
-    get_log_filepaths, get_species_database_files, print_benchmark_info
-from gcpy.benchmark.modules.benchmark_models_vs_obs \
-    import make_benchmark_models_vs_obs_plots
-from gcpy.benchmark.modules.benchmark_models_vs_sondes \
-    import make_benchmark_models_vs_sondes_plots
-from gcpy.benchmark.modules.benchmark_drydep \
-    import drydepvel_species, make_benchmark_drydep_plots
-from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import \
+from joblib import (
+    delayed,
+    Parallel
+)
+from gcpy.util import (
+    copy_file_to_dir,
+    get_filepath,
+    get_filepaths
+)
+from gcpy.benchmark.modules.ste_flux import (
+    make_benchmark_ste_table
+)
+from gcpy.benchmark.modules.oh_metrics import (
+    make_benchmark_oh_metrics
+)
+from gcpy.benchmark.modules.budget_ox import (
+    global_ox_budget
+)
+from gcpy.date_time import (
+    datetime64_to_str
+)
+from gcpy.benchmark.modules.benchmark_funcs import (
+    diff_of_diffs_toprow_title,
+    make_benchmark_aerosol_tables,
+    make_benchmark_aod_plots,
+    make_benchmark_conc_plots,
+    make_benchmark_emis_plots,
+    make_benchmark_emis_tables,
+    make_benchmark_jvalue_plots,
+    make_benchmark_mass_tables,
+    make_benchmark_operations_budget,
+    make_benchmark_wetdep_plots
+)
+from gcpy.benchmark.modules.benchmark_utils import (
+    gcc_vs_gcc_dirs,
+    gchp_vs_gcc_dirs,
+    gchp_vs_gchp_dirs,
+    get_deposition_species,
+    get_log_filepaths,
+    get_species_database_files,
+    print_benchmark_info
+)
+from gcpy.benchmark.modules.benchmark_models_vs_obs import (
+    make_benchmark_models_vs_obs_plots
+)
+from gcpy.benchmark.modules.benchmark_models_vs_sondes import (
+    make_benchmark_models_vs_sondes_plots
+)
+from gcpy.benchmark.modules.benchmark_drydep import (
+    drydepvel_species,
+    make_benchmark_drydep_plots
+)
+from gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers import (
     make_benchmark_gcclassic_timing_table
-from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import \
+)
+from gcpy.benchmark.modules.benchmark_scrape_gchp_timers import (
     make_benchmark_gchp_timing_table
+)
 
 # Tell matplotlib not to look for an X-window
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
@@ -112,6 +145,10 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
     bmk_mon_strs = ["Jan", "Apr", "Jul", "Oct"]
     bmk_mon_inds = [0, 3, 6, 9]
     bmk_n_months = len(bmk_mon_strs)
+
+    # Units for the zonal mean Y-axis plots
+    yaxis_units = config["options"]["outputs"].get(
+        "plot_options", {}).get("yaxis_units", "pressure")
 
     # ======================================================================
     # Data directories
@@ -357,7 +394,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 n_job=config["options"]["n_cores"],
-                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                yaxis_units=yaxis_units,
             )
 
             # --------------------------------------------------------------
@@ -384,7 +421,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
-                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                    yaxis_units=yaxis_units,
                 )
 
         # ==================================================================
@@ -524,7 +561,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 n_job=config["options"]["n_cores"],
-                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                yaxis_units=yaxis_units,
             )
 
             # --------------------------------------------------------------
@@ -546,7 +583,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
-                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                    yaxis_units=yaxis_units,
                 )
 
         # ==================================================================
@@ -668,6 +705,85 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     n_job=config["options"]["n_cores"],
                     varlist=drydepvel_species()
                 )
+
+        # ==================================================================
+        # GCC vs GCC wet deposition plots
+        # ==================================================================
+        if config["options"]["outputs"].get("plot_wetdep", False):
+            print("\n%%% Creating GCC vs. GCC wet deposition plots %%%")
+
+            for collection in ["WetLossConv", "WetLossLS"]:
+
+                # Species to plot
+                wetdep_spc = get_deposition_species(collection, bmk_type)
+
+                # ----------------------------------------------------------
+                # GCC vs GCC wet deposition plots: Annual mean
+                # ----------------------------------------------------------
+
+                # Filepaths
+                ref = get_filepaths(
+                    gcc_vs_gcc_refdir,
+                    collection,
+                    all_months_ref
+                )[0]
+                dev = get_filepaths(
+                    gcc_vs_gcc_devdir,
+                    collection,
+                    all_months_dev
+                )[0]
+
+                # Create plots
+                print(f"\nCreating {collection} plots for annual mean")
+                make_benchmark_wetdep_plots(
+                    ref,
+                    gcc_vs_gcc_refstr,
+                    dev,
+                    gcc_vs_gcc_devstr,
+                    collection,
+                    spcdb_files,
+                    refmet=refmet,
+                    devmet=devmet,
+                    dst=gcc_vs_gcc_resultsdir,
+                    datestr="AnnualMean",
+                    time_mean=True,
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=bmk_type,
+                    overwrite=True,
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=yaxis_units,
+                    species_list=wetdep_spc,
+                    plot_strat_zonal_mean=False,
+                )
+
+                # ----------------------------------------------------------
+                # GCC vs GCC wet deposition plots: Seasonal
+                # ----------------------------------------------------------
+                for mon in range(bmk_n_months):
+                    print(f"\nCreating {collection} plots for "
+                          f"{bmk_mon_strs[mon]}")
+
+                    # Create plots
+                    mon_ind = bmk_mon_inds[mon]
+                    make_benchmark_wetdep_plots(
+                        ref[mon_ind],
+                        gcc_vs_gcc_refstr,
+                        dev[mon_ind],
+                        gcc_vs_gcc_devstr,
+                        collection,
+                        spcdb_files,
+                        refmet=refmet[mon_ind],
+                        devmet=devmet[mon_ind],
+                        dst=gcc_vs_gcc_resultsdir,
+                        datestr=bmk_mon_yr_strs_dev[mon],
+                        weightsdir=config["paths"]["weights_dir"],
+                        benchmark_type=bmk_type,
+                        overwrite=True,
+                        n_job=config["options"]["n_cores"],
+                        yaxis_units=yaxis_units,
+                        species_list=wetdep_spc,
+                        plot_strat_zonal_mean=False,
+                    )
 
         # ==================================================================
         # GCC vs GCC mass tables
@@ -1018,7 +1134,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 benchmark_type=bmk_type,
                 overwrite=True,
                 n_job=config["options"]["n_cores"],
-                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                yaxis_units=yaxis_units,
             )
 
             # --------------------------------------------------------------
@@ -1045,7 +1161,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
-                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                    yaxis_units=yaxis_units,
                 )
 
         # ==============================================================
@@ -1189,7 +1305,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 n_job=config["options"]["n_cores"],
-                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                yaxis_units=yaxis_units,
             )
 
             # --------------------------------------------------------------
@@ -1211,7 +1327,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
-                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                    yaxis_units=yaxis_units,
                 )
 
         # ==================================================================
@@ -1335,6 +1451,88 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     n_job=config["options"]["n_cores"],
                     varlist=drydepvel_species()
                 )
+
+        # ==================================================================
+        # GCHP vs GCC wet deposition plots
+        # ==================================================================
+        if config["options"]["outputs"].get("plot_wetdep", False):
+            print("\n%%% Creating GCHP vs. GCC wet deposition plots %%%")
+
+            for collection in ["WetLossConv", "WetLossLS"]:
+
+                # Species to plot
+                wetdep_spc = get_deposition_species(collection, bmk_type)
+
+                # ----------------------------------------------------------
+                # GCHP vs GCC wet deposition plots: Annual mean
+                # ----------------------------------------------------------
+
+                # Filepaths
+                ref = get_filepaths(
+                    gchp_vs_gcc_refdir,
+                    collection,
+                    all_months_dev
+                )[0]
+                dev = get_filepaths(
+                    gchp_vs_gcc_devdir,
+                    collection,
+                    all_months_gchp_dev,
+                    is_gchp=True
+                )[0]
+
+                # Create plots
+                print(f"\nCreating {collection} plots for annual mean")
+                make_benchmark_wetdep_plots(
+                    ref,
+                    gchp_vs_gcc_refstr,
+                    dev,
+                    gchp_vs_gcc_devstr,
+                    collection,
+                    spcdb_files,
+                    refmet=refmet,
+                    devmet=devmet,
+                    dst=gchp_vs_gcc_resultsdir,
+                    datestr="AnnualMean",
+                    time_mean=True,
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=bmk_type,
+                    overwrite=True,
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=yaxis_units,
+                    species_list=wetdep_spc,
+                    plot_strat_zonal_mean=False,
+                    normalize_by_area=True,
+                )
+
+                # ----------------------------------------------------------
+                # GCHP vs GCC wet deposition plots: Seasonal
+                # ----------------------------------------------------------
+                for mon in range(bmk_n_months):
+                    print(f"\nCreating {collection} plots for "
+                          f"{bmk_mon_strs[mon]}")
+
+                    # Create plots
+                    mon_ind = bmk_mon_inds[mon]
+                    make_benchmark_wetdep_plots(
+                        ref[mon_ind],
+                        gchp_vs_gcc_refstr,
+                        dev[mon_ind],
+                        gchp_vs_gcc_devstr,
+                        collection,
+                        spcdb_files,
+                        refmet=refmet[mon_ind],
+                        devmet=devmet[mon_ind],
+                        dst=gchp_vs_gcc_resultsdir,
+                        datestr=bmk_mon_yr_strs_dev[mon],
+                        weightsdir=config["paths"]["weights_dir"],
+                        benchmark_type=bmk_type,
+                        overwrite=True,
+                        n_job=config["options"]["n_cores"],
+                        yaxis_units=yaxis_units,
+                        species_list=wetdep_spc,
+                        plot_strat_zonal_mean=False,
+                        normalize_by_area=True,
+                    )
 
         # ==================================================================
         # GCHP vs GCC global mass tables
@@ -1634,7 +1832,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             is_gchp=True
         )[0]
         devmet = get_filepaths(
-            gchp_vs_gcc_devdir,
+            gchp_vs_gchp_devdir,
             "StateMet",
             all_months_gchp_dev,
             is_gchp=True
@@ -1694,7 +1892,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     "plot_options"]["by_spc_cat"],
                 overwrite=True,
                 n_job=config["options"]["n_cores"],
-                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                yaxis_units=yaxis_units,
             )
 
             # --------------------------------------------------------------
@@ -1722,7 +1920,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         "plot_options"]["by_spc_cat"],
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
-                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                    yaxis_units=yaxis_units,
                 )
 
         # ==================================================================
@@ -1873,7 +2071,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 weightsdir=config["paths"]["weights_dir"],
                 overwrite=True,
                 n_job=config["options"]["n_cores"],
-                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                yaxis_units=yaxis_units,
             )
 
             # --------------------------------------------------------------
@@ -1896,7 +2094,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     weightsdir=config["paths"]["weights_dir"],
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
-                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                    yaxis_units=yaxis_units,
                 )
 
         # ==================================================================
@@ -2026,6 +2224,91 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     n_job=config["options"]["n_cores"],
                     varlist=drydepvel_species()
                 )
+
+        # ==================================================================
+        # GCHP vs GCHP wet deposition plots
+        # ==================================================================
+        if config["options"]["outputs"].get("plot_wetdep", False):
+            print("\n%%% Creating GCHP vs. GCHP wet deposition plots %%%")
+
+            for collection in ["WetLossConv", "WetLossLS"]:
+
+                # Species to plot
+                wetdep_spc = get_deposition_species(collection, bmk_type)
+
+                # ----------------------------------------------------------
+                # GCHP vs GCHP wet deposition plots: Annual mean
+                # ----------------------------------------------------------
+
+                # Filepaths
+                ref = get_filepaths(
+                    gchp_vs_gchp_refdir,
+                    collection,
+                    all_months_gchp_ref,
+                    is_gchp=True,
+                )[0]
+                dev = get_filepaths(
+                    gchp_vs_gchp_devdir,
+                    collection,
+                    all_months_gchp_dev,
+                    is_gchp=True
+                )[0]
+
+                # Create plots
+                print(f"\nCreating {collection} plots for annual mean")
+                make_benchmark_wetdep_plots(
+                    ref,
+                    gchp_vs_gchp_refstr,
+                    dev,
+                    gchp_vs_gchp_devstr,
+                    collection,
+                    spcdb_files,
+                    refmet=refmet,
+                    devmet=devmet,
+                    dst=gchp_vs_gchp_resultsdir,
+                    datestr="AnnualMean",
+                    cmpres=cmpres,
+                    time_mean=True,
+                    weightsdir=config["paths"]["weights_dir"],
+                    benchmark_type=bmk_type,
+                    overwrite=True,
+                    n_job=config["options"]["n_cores"],
+                    yaxis_units=yaxis_units,
+                    species_list=wetdep_spc,
+                    plot_strat_zonal_mean=False,
+                    normalize_by_area=True,
+                )
+
+                # ----------------------------------------------------------
+                # GCHP vs GCHP wet deposition plots: Seasonal
+                # ----------------------------------------------------------
+                for mon in range(bmk_n_months):
+                    print(f"\nCreating {collection} plots for "
+                          f"{bmk_mon_strs[mon]}")
+
+                    # Create plots
+                    mon_ind = bmk_mon_inds[mon]
+                    make_benchmark_wetdep_plots(
+                        ref[mon_ind],
+                        gchp_vs_gchp_refstr,
+                        dev[mon_ind],
+                        gchp_vs_gchp_devstr,
+                        collection,
+                        spcdb_files,
+                        refmet=refmet[mon_ind],
+                        devmet=devmet[mon_ind],
+                        dst=gchp_vs_gchp_resultsdir,
+                        datestr=bmk_mon_yr_strs_dev[mon],
+                        cmpres=cmpres,
+                        weightsdir=config["paths"]["weights_dir"],
+                        benchmark_type=bmk_type,
+                        overwrite=True,
+                        n_job=config["options"]["n_cores"],
+                        yaxis_units=yaxis_units,
+                        species_list=wetdep_spc,
+                        plot_strat_zonal_mean=False,
+                        normalize_by_area=True,
+                    )
 
         # ==================================================================
         # GCHP vs GCHP global mass tables
@@ -2409,7 +2692,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                 second_dev=gchp_dev,
                 cats_in_ugm3=None,
                 n_job=config["options"]["n_cores"],
-                yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                yaxis_units=yaxis_units,
             )
 
             # --------------------------------------------------------------
@@ -2438,7 +2721,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     second_dev=gchp_dev[mon_ind],
                     cats_in_ugm3=None,
                     n_job=config["options"]["n_cores"],
-                    yaxis_units=config["options"]["outputs"].get("plot_options", {}).get("yaxis_units", "pressure"),
+                    yaxis_units=yaxis_units,
                 )
 
     # ==================================================================
