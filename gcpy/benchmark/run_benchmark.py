@@ -55,7 +55,9 @@ need to set the following environment variable in your shell:
 import os
 import sys
 import warnings
-from datetime import datetime
+from datetime import (
+    datetime
+)
 import numpy as np
 from gcpy.util import (
     copy_file_to_dir,
@@ -83,8 +85,12 @@ from gcpy.benchmark.modules.benchmark_funcs import (
     make_benchmark_operations_budget,
     make_benchmark_wetdep_plots
 )
-from gcpy.benchmark.modules.ste_flux import make_benchmark_ste_table
-from gcpy.benchmark.modules.oh_metrics import make_benchmark_oh_metrics
+from gcpy.benchmark.modules.ste_flux import (
+    make_benchmark_ste_table
+)
+from gcpy.benchmark.modules.oh_metrics import (
+    make_benchmark_oh_metrics
+)
 from gcpy.benchmark.modules.run_1yr_fullchem_benchmark import (
     run_benchmark as run_1yr_benchmark
 )
@@ -674,6 +680,12 @@ def run_benchmark_default(config):
 
             for collection in ["WetLossConv", "WetLossLS"]:
 
+                # List of depositing species
+                species_list = get_deposition_species(
+                    collection,
+                    config["options"]["bmk_type"]
+                )
+
                 # Filepaths
                 ref = get_filepath(
                     gcc_vs_gcc_refdir,
@@ -702,9 +714,9 @@ def run_benchmark_default(config):
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
                     yaxis_units=yaxis_units,
-                    species_list=get_deposition_species(
-                        collection, config["options"]["bmk_type"]),
+                    species_list=species_list,
                     plot_strat_zonal_mean=False,
+                    normalize_by_area=True,
                 )
 
         # ==================================================================
@@ -1317,6 +1329,12 @@ def run_benchmark_default(config):
 
             for collection in ["WetLossConv", "WetLossLS"]:
 
+                # List of depositing species
+                species_list = get_deposition_species(
+                    collection,
+                    config["options"]["bmk_type"]
+                )
+
                 # Filepaths
                 ref = get_filepath(
                     gchp_vs_gcc_refdir,
@@ -1346,9 +1364,7 @@ def run_benchmark_default(config):
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
                     yaxis_units=yaxis_units,
-                    species_list=get_deposition_species(
-                        collection, config["options"]["bmk_type"]
-                    ),
+                    species_list=species_list,
                     plot_strat_zonal_mean=False,
                     normalize_by_area=True,
                 )
@@ -1996,6 +2012,12 @@ def run_benchmark_default(config):
 
             for collection in ["WetLossConv", "WetLossLS"]:
 
+                # List of depositing species
+                species_list = get_deposition_species(
+                    collection,
+                    config["options"]["bmk_type"]
+                )
+
                 # Filepaths
                 ref = get_filepath(
                     gchp_vs_gchp_refdir,
@@ -2026,9 +2048,7 @@ def run_benchmark_default(config):
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
                     yaxis_units=yaxis_units,
-                    species_list=get_deposition_species(
-                        collection, config["options"]["bmk_type"]
-                    ),
+                    species_list=species_list,
                     plot_strat_zonal_mean=False,
                     normalize_by_area=True,
                 )

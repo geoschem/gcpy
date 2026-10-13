@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `.github/dependabot.yml` to open monthly version-update PRs for GitHub Actions against `dev`
 - Added `DEPOSITION_CATS` and `get_deposition_species` to `gcpy/benchmark/modules/benchmark_utils.py`
 - Added dry and wet deposition categories to `gcpy/benchmark/modules/benchmark_categories.yml`
-- Added `WetLossConv` and `WetLossLS` plots to the 1-month and 1-year fullchem benchmarks (plot_wetdep option)"
+- Added `WetLossConv` and `WetLossLS` plots (normalized by area) to the 1-month and 1-year fullchem benchmarks
 - Added `species_list` and `plot_strat_zonal_mean` arguments to `make_benchmark_wetdep_plots`
 
 ### Changed

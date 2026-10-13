@@ -715,7 +715,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             for collection in ["WetLossConv", "WetLossLS"]:
 
                 # Species to plot
-                wetdep_spc = get_deposition_species(collection, bmk_type)
+                species_list = get_deposition_species(collection, bmk_type)
 
                 # ----------------------------------------------------------
                 # GCC vs GCC wet deposition plots: Annual mean
@@ -752,8 +752,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
                     yaxis_units=yaxis_units,
-                    species_list=wetdep_spc,
+                    species_list=species_list,
                     plot_strat_zonal_mean=False,
+                    normalize_by_area=True,
                 )
 
                 # ----------------------------------------------------------
@@ -781,8 +782,9 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         overwrite=True,
                         n_job=config["options"]["n_cores"],
                         yaxis_units=yaxis_units,
-                        species_list=wetdep_spc,
+                        species_list=species_list,
                         plot_strat_zonal_mean=False,
+                        normalize_by_area=True,
                     )
 
         # ==================================================================
@@ -1461,7 +1463,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             for collection in ["WetLossConv", "WetLossLS"]:
 
                 # Species to plot
-                wetdep_spc = get_deposition_species(collection, bmk_type)
+                species_list = get_deposition_species(collection, bmk_type)
 
                 # ----------------------------------------------------------
                 # GCHP vs GCC wet deposition plots: Annual mean
@@ -1499,7 +1501,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
                     yaxis_units=yaxis_units,
-                    species_list=wetdep_spc,
+                    species_list=species_list,
                     plot_strat_zonal_mean=False,
                     normalize_by_area=True,
                 )
@@ -1529,7 +1531,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         overwrite=True,
                         n_job=config["options"]["n_cores"],
                         yaxis_units=yaxis_units,
-                        species_list=wetdep_spc,
+                        species_list=species_list,
                         plot_strat_zonal_mean=False,
                         normalize_by_area=True,
                     )
@@ -2234,7 +2236,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
             for collection in ["WetLossConv", "WetLossLS"]:
 
                 # Species to plot
-                wetdep_spc = get_deposition_species(collection, bmk_type)
+                species_list = get_deposition_species(collection, bmk_type)
 
                 # ----------------------------------------------------------
                 # GCHP vs GCHP wet deposition plots: Annual mean
@@ -2274,7 +2276,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                     overwrite=True,
                     n_job=config["options"]["n_cores"],
                     yaxis_units=yaxis_units,
-                    species_list=wetdep_spc,
+                    species_list=species_list,
                     plot_strat_zonal_mean=False,
                     normalize_by_area=True,
                 )
@@ -2305,7 +2307,7 @@ def run_benchmark(config, bmk_year_ref, bmk_year_dev):
                         overwrite=True,
                         n_job=config["options"]["n_cores"],
                         yaxis_units=yaxis_units,
-                        species_list=wetdep_spc,
+                        species_list=species_list,
                         plot_strat_zonal_mean=False,
                         normalize_by_area=True,
                     )
