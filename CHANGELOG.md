@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ting changed files, checking import, running tests · 1m 24s
 - Updated `make_benchmark_emis_plots` to exclude `AREA` in the all-species emissions PDF"
 - Updated benchmark Summary and Sanity Check table functions to not append `AREA` to the global `SKIP_THESE_VARS` list; This prevents downstream errors.
+- Updated `gcpy/plot/compare_single_level.py` and  `gcpy/plot/compare_zonal_mean.py` to ensure that `refmet` and `devmet` are not `None` before attempting to use them
 
 ## [1.8.1] - 2026-09-11
 ### Added

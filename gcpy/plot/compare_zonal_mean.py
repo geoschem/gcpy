@@ -539,11 +539,12 @@ def compare_zonal_mean(
     # passed meteorology datasets as Met_AREAM2.
     # ==================================================================
     if normalize_by_area:
-        if "AREA" in refdata.data_vars.keys():
+
+        # Ref
+        if "AREA" in refdata.data_vars:
             ref_area = refdata["AREA"]
-        elif refmet is not None:
-            if "Met_AREAM2" in refmet.data_vars.keys():
-                ref_area = refmet["Met_AREAM2"]
+        elif refmet is not None and "Met_AREAM2" in refmet.data_vars:
+            ref_area = refmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
                 + "present in the Ref dataset and ref met with Met_AREAM2" \
@@ -554,15 +555,15 @@ def compare_zonal_mean(
         if refgridtype == 'cs':
             ref_area = reshape_MAPL_CS(ref_area)
 
-        if "AREA" in devdata.data_vars.keys():
+        # Dev
+        if "AREA" in devdata.data_vars:
             dev_area = devdata["AREA"]
-        elif devmet is not None:
-            if "Met_AREAM2" in devmet.data_vars.keys():
-                dev_area = devmet["Met_AREAM2"]
+        elif devmet is not None and "Met_AREAM2" in devmet.data_vars:
+            dev_area = devmet["Met_AREAM2"]
         else:
             msg = "normalize_by_area = True but AREA not " \
                 + "present in the Dev dataset and dev met with Met_AREAM2" \
-                | " not passed!"
+                + " not passed!"
             raise ValueError(msg)
         if "time" in dev_area.dims:
             dev_area = dev_area.isel(time=0)
