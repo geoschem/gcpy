@@ -1810,11 +1810,12 @@ def make_benchmark_emis_plots(
     # Create regridding files if necessary while not in parallel loop
     [_ for _ in create_regridders(refds, devds, weightsdir=weightsdir)]
 
-    # Combine 2D and 3D variables into an overall list
+    # Combine 2D and 3D variables into an overall list,
+    # but exclude "AREA" from the plots.
     vardict = compare_varnames(refds, devds, quiet=not verbose)
     vars2D = vardict["commonvars2D"]
     vars3D = vardict["commonvars3D"]
-    varlist = vars2D + vars3D
+    varlist = [var for var in vars2D + vars3D if var != "AREA"]
 
     # ==================================================================
     # Compute column sums for 3D emissions
@@ -4369,6 +4370,8 @@ def make_benchmark_wetdep_plots(
         weightsdir='.',
         n_job=-1,
         time_mean=False,
+        species_list=None,
+        plot_strat_zonal_mean=True,
 ):
     """
     Creates PDF files containing plots of species concentration
@@ -4447,6 +4450,14 @@ def make_benchmark_wetdep_plots(
     time_mean : bool, optional
         Determines if we should average the datasets over time.
         Default value: False
+    species_list : list, optional
+        List of bare species names (e.g. ["HNO3", "SO4", ...]) to
+        include in wet deposition plots.  If omitted, then all
+        common species in Ref and Dev will be plotted.
+        Default value: None (i.e. plot all common species)
+    plot_strat_zonal_mean : bool, optional
+        Toggle for plotting the stratospheric zonal mean plot.
+        Default value: True
     """
 
     # Create destination plot directory
@@ -4498,10 +4509,18 @@ def make_benchmark_wetdep_plots(
     # GCHP files, which causes problems with area normalization (ewl)
     #[refds, devds] = add_missing_variables(refds, devds)
 
-    # Get list of variables in collection
+    # Get list of variables in collection.  If species_list isn't passed,
+    # then this will be taken from the common variables in Ref & Dev.
     vardict = compare_varnames(refds, devds, quiet=not verbose)
-    varlist = [v for v in vardict["commonvars3D"] if collection + "_" in v]
-    varlist.sort()
+    common = [v for v in vardict["commonvars3D"] if collection + "_" in v]
+    if species_list is None:
+        varlist = sorted(common)
+    else:
+        varlist = [f"{collection}_{v}" for v in species_list
+                   if f"{collection}_{v}" in common]
+    if not varlist:
+        print(f"Warning: no {collection} variables to plot; skipping")
+        return
 
     # Surface plots
     if "sfc" in plots:
@@ -4598,35 +4617,36 @@ def make_benchmark_wetdep_plots(
         )
 
         # Stratosphere
-        if datestr is not None:
-            plotfilename = f"{collection}_Strat_ZonalMean_{datestr}.pdf"
-        else:
-            plotfilename = f"{collection}_Strat_ZonalMean.pdf"
-        pdfname = os.path.join(targetdst, plotfilename)
-        compare_zonal_mean(
-            refds,
-            refstr,
-            devds,
-            devstr,
-            varlist=varlist,
-            refmet=refmetds,
-            devmet=devmetds,
-            pdfname=pdfname,
-            pres_range=[1, 100],
-            log_yaxis=True,
-            yaxis_units=yaxis_units,
-            extra_title_txt=datestr,
-            normalize_by_area=normalize_by_area,
-            weightsdir=weightsdir,
-            n_job=n_job,
-            spcdb_files=spcdb_files
-        )
-        add_bookmarks_to_pdf(
-            pdfname,
-            varlist,
-            remove_prefix=collection + '_',
-            verbose=verbose
-        )
+        if plot_strat_zonal_mean:
+            if datestr is not None:
+                plotfilename = f"{collection}_Strat_ZonalMean_{datestr}.pdf"
+            else:
+                plotfilename = f"{collection}_Strat_ZonalMean.pdf"
+            pdfname = os.path.join(targetdst, plotfilename)
+            compare_zonal_mean(
+                refds,
+                refstr,
+                devds,
+                devstr,
+                varlist=varlist,
+                refmet=refmetds,
+                devmet=devmetds,
+                pdfname=pdfname,
+                pres_range=[1, 100],
+                log_yaxis=True,
+                yaxis_units=yaxis_units,
+                extra_title_txt=datestr,
+                normalize_by_area=normalize_by_area,
+                weightsdir=weightsdir,
+                n_job=n_job,
+                spcdb_files=spcdb_files
+            )
+            add_bookmarks_to_pdf(
+                pdfname,
+                varlist,
+                remove_prefix=collection + '_',
+                verbose=verbose
+            )
 
     # -------------------------------------------
     # Clean up
@@ -5708,9 +5728,8 @@ def create_benchmark_summary_table(
     # Read data and look differences btw Ref & Dev versions
     # ==================================================================
 
-    # Variables to skip
-    skip_vars = SKIP_THESE_VARS
-    skip_vars.append("AREA")
+    # Variables to skip.  Add "AREA" locally but not globally.
+    skip_vars = SKIP_THESE_VARS + ["AREA"]
 
     # Pick the proper function to read the data
     reader = dataset_reader(
@@ -5965,9 +5984,8 @@ def create_benchmark_sanity_check_table(
         verbose=verbose
     )
 
-    # Variables to skip
-    skip_vars = SKIP_THESE_VARS
-    skip_vars.append("AREA")
+    # Variables to skip.  Add "AREA" locally but not globally.
+    skip_vars = SKIP_THESE_VARS + ["AREA"]
 
     # ==================================================================
     # Open output file and write header

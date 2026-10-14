@@ -120,8 +120,7 @@ options:
     plot_drydep: True
     plot_wetdep: True
     plot_options:
-      # yaxis_units: "pressure" or "level" for the zonal-mean plot Y-axis
-      yaxis_units: "pressure"
+      yaxis_units: "pressure"   # "pressure" or "level"
     #
     # Benchmark tables
     #

@@ -6,9 +6,10 @@ import gc
 import numpy as np
 from gcpy import util
 from gcpy.plot.compare_single_level import compare_single_level
-from gcpy.benchmark.modules.benchmark_utils import \
-    get_common_varnames, make_output_dir, pdf_filename, \
-    print_sigdiffs, read_ref_and_dev
+from gcpy.benchmark.modules.benchmark_utils import (
+    get_common_varnames, get_deposition_species, make_output_dir,
+    pdf_filename, print_sigdiffs, read_ref_and_dev
+)
 
 # Suppress numpy divide by zero warnings to prevent output spam
 np.seterr(divide="ignore", invalid="ignore")
@@ -176,16 +177,30 @@ def make_benchmark_drydep_plots(
     gc.collect()
 
 
-def drydepvel_species():
+def drydepvel_species(
+        benchmark_type="FullChemBenchmark"
+):
     """
     Returns a list of species for the dry deposition velocity
-    (DryDepVel) benchmark plots:
+    (DryDepVel) benchmark plots, as listed in the DryDepVel
+    category of benchmark_categories.yml.
+
+    Parameters
+    ----------
+    benchmark_type : str, optional
+        Specifies the type of the benchmark.
 
     Returns
     -------
-    varnames (list of str): Variable names to plot
+    varnames : list of str or None
+        Variable names to plot (e.g. "DryDepVel_O3"), or None
+        (meaning plot all DryDepVel variables) if the category
+        is not listed.
     """
-    # These are key dry deposition species (as per Mat Evans)
-    return ["DryDepVel_ACET", "DryDepVel_HNO3", "DryDepVel_NH3",
-            "DryDepVel_NH4", "DryDepVel_NIT", "DryDepVel_NITs",
-            "DryDepVel_O3", "DryDepVel_SO4"]
+    spc_list = get_deposition_species(
+        "DryDepVel",
+        benchmark_type
+    )
+    if spc_list is None:
+        return None
+    return [f"DryDepVel_{spc}" for spc in spc_list]
