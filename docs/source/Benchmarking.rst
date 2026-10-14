@@ -68,12 +68,6 @@ against surface observations from `EBAS
 
    $ aws s3 cp s3://geos-chem-1yr-benchmarks/obs_data_for_bmk.tar.gz .
 
-or with :program:`wget`:
-
-.. code-block:: console
-
-   $ wget https://geos-chem-1yr-benchmarks.s3.amazonaws.com/obs_data_for_bmk.tar.gz
-
 Then extract the tarball:
 
 .. code-block:: console
@@ -277,12 +271,12 @@ tables from GEOS-Chem benchmark simulations.
         plot_drydep: True
         plot_emis: True
         plot_jvalues: True
+        plot_wetdep: True
         plot_models_vs_obs: True
         plot_options:
           by_spc_cat: True
           by_hco_cat: True
-          # yaxis_units: "pressure" or "level" for the zonal-mean plot Y-axis
-          yaxis_units: "pressure"
+          yaxis_units: "pressure"   # "pressure" or "level"
         #
         # Benchmark tables
         #
@@ -412,8 +406,8 @@ tables from GEOS-Chem benchmark simulations.
 
       .. tip::
 
-	 If your computer system uses a scheduler other than SLURM,
-	 replace these tags:
+         If your computer system uses a scheduler other than SLURM,
+         replace these tags:
 
          .. code-block:: bash
 
@@ -423,9 +417,9 @@ tables from GEOS-Chem benchmark simulations.
             #SBATCH -p sapphire,huce_cascade,seas_compute,shared
             #SBATCH --mem=180000
             #SBATCH --mail-type=END
-	 
-	 with the equivalent commands for your scheduler.
-	 
+
+         with the equivalent commands for your scheduler.
+
 .. _bmk-funcs-plot:
 
 ============================
@@ -448,23 +442,23 @@ create summary tables will be described :ref:`in a separate section
 .. list-table:: **Functions creating six-panel comparison plots**
    :align: center
    :header-rows: 1
-   :widths: 70 30
+   :widths: 65 35
 
    * - Function
      - Plot that it creates
    * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_aod_plots`
      - Aerosol optical depth
-   * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_conc_plots` [#A]_ [#B]_ [#C]_
-     - Species concentrations
-   * - :func:`gcpy.benchmark.modules.benchmark_drydep.make_benchmark_drydep_plots`
-     - Dry deposition velocities
+   * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_conc_plots` 
+     - Species concentrations [#A]_ [#B]_ [#C]_
+   * - :func:`gcpy.benchmark.modules.benchmark_drydep.make_benchmark_drydep_plots` 
+     - Dry deposition velocities [#D]_
    * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_emis_plots`
      - Emissions (by species and category)
    * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_jvalue_plots`
      - J-values (photolysis)
-   * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_wetdep_plots`
-     - Wet deposition of soluble species
-
+   * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_wetdep_plots` 
+     - Wet deposition of soluble species [#E]_
+       
 .. list-table:: **Functions creating model vs. observation plots**
    :align: center
    :header-rows: 1
@@ -472,10 +466,10 @@ create summary tables will be described :ref:`in a separate section
 
    * - Function
      - Plot that it creates
-   * - :mod:`gcpy.benchmark.modules.benchmark_models_vs_obs`
-     - Modeled ozone vs. surface observations [#D]_ [#E]_
-   * - :mod:`gcpy.benchmark.modules.benchmark_models_vs_sondes`
-     - Vertical profiles of modeled ozone vs. ozonesondes [#D]_
+   * - :mod:`gcpy.benchmark.modules.benchmark_models_vs_obs` 
+     - Modeled ozone vs. surface observations [#F]_ [#G]_
+   * - :mod:`gcpy.benchmark.modules.benchmark_models_vs_sondes` 
+     - Vertical profiles of modeled ozone vs. sondes [#F]_
 
 .. rubric:: Notes:
 
@@ -490,27 +484,48 @@ create summary tables will be described :ref:`in a separate section
 	plots to separate folders based on category (as denoted by the
 	plot_by_spc_cat flag). The full list of species categories is
 	denoted in `benchmark_categories.yml
-	<https://github.com/geoschem/gcpy/blob/dev/gcpy/benchmark/modules/benchmark_categories.yml>`_
+	<https://github.com/geoschem/gcpy/blob/dev/gcpy/benchmark/modules/benchmark_categories.yml>`__
 
 .. [#C] In this function, parallelization occurs at the species
 	category level. In all other functions, parallelization occurs
-	within calls to :mod:`gcpy.plot.compare_single_level`  and
+	within calls to :mod:`gcpy.plot.compare_single_level` and
 	:mod:`gcpy.plot.compare_zonal_mean`.
 
-.. [#D] Only available in 1-year fullchem benchmarks.
+.. [#D] Dry deposition species are now specified in the
+	`benchmark_categories.yml
+	<https://github.com/geoschem/gcpy/blob/dev/gcpy/benchmark/modules/benchmark_categories.yml>`__
+	configuration file, instead of being hardwired in
+	:mod:`gcpy.benchmark.modules.benchmark_drydep`.
+	
+.. [#E] Wet deposition plots are generated for :literal:`WetLossConv`
+	and :literal:`WetLossLS` categories, in both full-chemistry
+	and TransportTracers benchmarks.  In the full-chemistry
+	benchmarks, quantities are normalized by area, having units of
+	kg m\ :sup:`-2` s\ :sup:`-1`.  Wet deposition species are also
+	now specified in `benchmark_categories.yml
+	<https://github.com/geoschem/gcpy/blob/dev/gcpy/benchmark/modules/benchmark_categories.yml>`__.
+	     
+.. [#F] Only available in 1-year fullchem benchmarks.
 
-.. [#E] GEOS-Chem :literal:`SpeciesConc` O\ :sub:`3` diagnostic
+.. [#G] GEOS-Chem :literal:`SpeciesConcVV_O3` diagnostic
 	outputs vs. the `EBAS 2019 <https://ebas-data.nilu.no/>`_
 	observations.
 
 The functions listed above create comparison plots of most GEOS-Chem
-output variables divided into specific categories, e.g. species
+output variables divided into specific categories (e.g. species
 categories such as :literal:`Aerosols` or :literal:`Bromine` for the
-:literal:`SpeciesConcVV` diagnostic. In eachcategory, these function
+:literal:`SpeciesConcVV` diagnostic).  In each category, these function
 create single level PDFs for the surface and 500hPa and zonal
 mean PDFs for the entire atmosphere and only the stratosphere (defined
-a 1-100hPa). For
-:func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_emis_plots`,
+a 1-100hPa).  Stratospheric zonal means for the :literal:`WetLossConv`
+and :literal:`WetLossLS` categories are skipped, as wet deposition
+does not occur that high up in the atmosphere.  Thus, the
+full-chemistry wet deposition plots contain only single level PDFs
+for the surface and 500hPa and zonal mean PDFs for the entire
+atmosphere.
+
+For :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_emis_plots`
+and :func:`gcpy.benchmark.modules.benchmark_drydep.make_benchmark_drydep_plots`,
 only single level plots at the surface are produced. All of these
 plotting functions include bookmarks within the generated PDFs that
 point to the pages containing each plotted quantity. Thus these
@@ -532,61 +547,38 @@ Benchmark tabling functions
 
 The following functions generate summary tables from GEOS-Chem benchmark output:
 
-
-.. table:: **Functions creating benchmark tables**
-
-   +--------------------------------------------------------------------------------------------------------------+
-   | Function and table that it creates                                                                           |
-   +==============================================================================================================+
-   | :func:`gcpy.benchmark.modules.budget_ox.global_ox_budget` |br|                                               |
-   | |br|                                                                                                         |
-   | Ox budget (1yr benchmarks only)                                                                              |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_aerosol_tables` |br|                            |
-   | |br|                                                                                                         |
-   | Global aerosol burdens (1yr benchmarks only)                                                                 |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_emis_tables` |br|                               |
-   | |br|                                                                                                         |
-   | Emissions (by species & inventory)                                                                           |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers.make_benchmark_gcclassic_timing_table` |br|  |
-   | |br|                                                                                                         |
-   | GEOS-Chem Classic timers output                                                                              |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.benchmark_scrape_gchp_timers.make_benchmark_gchp_timing_table` |br|            |
-   | |br|                                                                                                         |
-   | GCHP timers output                                                                                           |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_mass_tables` |br|                               |
-   | |br|                                                                                                         |
-   | Total mass of each species                                                                                   |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_mass_accumulation_tables` |br|                  |
-   | |br|                                                                                                         |
-   | Mass accumulation for each species                                                                           |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.benchmark_mass_cons_table.make_benchmark_mass_conservation_table` |br|         |
-   | |br|                                                                                                         |
-   | Timeseries of the PassiveTracer species                                                                      |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.oh_metrics.make_benchmark_oh_metrics` |br|                                     |
-   | |br|                                                                                                         |
-   | Global OH metrics                                                                                            |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_operations_budget` |br|                         |
-   | |br|                                                                                                         |
-   | Species mass after each operation                                                                            |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.ste_flux.make_benchmark_ste_table` |br|                                        |
-   | |br|                                                                                                         |
-   | Stratosphere-troposphere flux of O\ :sub:`3`                                                                 |
-   +--------------------------------------------------------------------------------------------------------------+
-   | :func:`gcpy.benchmark.modules.budget_tt.transport_tracers_budgets` |br|                                      |
-   | |br|                                                                                                         |
-   | Rn222, Pb210, Be7 budgets (1yr benchmarks only)                                                              |
-   +--------------------------------------------------------------------------------------------------------------+
-
+.. list-table:: **Functions creating benchmark tables**
+   :align: center
+   :header-rows: 1
+   :widths: 70 30
+   
+   * - Function
+     - Table that it creates
+   * - :func:`gcpy.benchmark.modules.budget_ox.global_ox_budget` [#F]_
+     - Ox budget 
+   * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_aerosol_tables` [#F]_
+     - Global aerosol burdens 
+   * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_emis_tables`
+     - Emissions (by species and inventory)
+   * - :func:`gcpy.benchmark.modules.benchmark_scrape_gcclassic_timers.make_benchmark_gcclassic_timing_table`
+     - GEOS-Chem Classic timers output
+   * - :func:`gcpy.benchmark.modules.benchmark_scrape_gchp_timers.make_benchmark_gchp_timing_table`
+     - GCHP timers output
+   * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_mass_tables`
+     - Total mass of each species
+   * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_mass_accumulation_tables`
+     - Mass accumulation for each species
+   * - :func:`gcpy.benchmark.modules.benchmark_mass_cons_table.make_benchmark_mass_conservation_table`
+     - Timeseries of the PassiveTracer species
+   * - :func:`gcpy.benchmark.modules.oh_metrics.make_benchmark_oh_metrics`
+     - Global OH metrics
+   * - :func:`gcpy.benchmark.modules.benchmark_funcs.make_benchmark_operations_budget`
+     - Species mass after each operation
+   * - :func:`gcpy.benchmark.modules.ste_flux.make_benchmark_ste_table` [#F]_
+     - Stratosphere-troposphere flux of O\ :sub:`3`
+   * - :func:`gcpy.benchmark.modules.budget_tt.transport_tracers_budgets`
+     - Rn222, Pb210, Be7 budgets
+       
 The functions listed above create summary tables for quantities such as
 total mass of species, total mass of emissions, and OH metrics.
 
