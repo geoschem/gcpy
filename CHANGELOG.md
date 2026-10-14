@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added dry and wet deposition categories to `gcpy/benchmark/modules/benchmark_categories.yml`
 - Added `WetLossConv` and `WetLossLS` plots (normalized by area) to the 1-month and 1-year fullchem benchmarks
 - Added `species_list` and `plot_strat_zonal_mean` arguments to `make_benchmark_wetdep_plots`
+- Added a section to `docs/source/Benchmarking.rst` describing how to download the observational data used in 1-year benchmarks
 
 ### Changed
 - Changed `gcpy/examples/dry_run/download_data.py` to read its YAML configuration file with `yaml.safe_load`
@@ -22,10 +23,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Pinned `pypa/gh-action-pypi-publish` in `publish-python.yml` to the commit SHA for v1.14.2 instead of the moving `release/v1` branch
 - Moved drydep species list out of `benchmark_drydep.py` and into the `benchmark_categories.yml` file
 - Updated `get_species_categories` to omit deposition categories unless `include_deposition=True` is passed
-ting changed files, checking import, running tests · 1m 24s
-- Updated `make_benchmark_emis_plots` to exclude `AREA` in the all-species emissions PDF"
+- Updated `make_benchmark_emis_plots` to exclude `AREA` in the all-species emissions PDF
 - Updated benchmark Summary and Sanity Check table functions to not append `AREA` to the global `SKIP_THESE_VARS` list; This prevents downstream errors.
-- Updated `gcpy/plot/compare_single_level.py` and  `gcpy/plot/compare_zonal_mean.py` to ensure that `refmet` and `devmet` are not `None` before attempting to use them
+- Updated `gcpy/plot/compare_single_level.py` and `gcpy/plot/compare_zonal_mean.py` to ensure that `refmet` and `devmet` are not `None` before attempting to use them
 
 ## [1.8.1] - 2026-09-11
 ### Added
