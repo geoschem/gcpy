@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Added `WetLossConv` and `WetLossLS` plots (normalized by area) to the 1-month and 1-year fullchem benchmarks
 - Added `species_list` and `plot_strat_zonal_mean` arguments to `make_benchmark_wetdep_plots`
 - Added a section to `docs/source/Benchmarking.rst` describing how to download the observational data used in 1-year benchmarks
+- Added example script `gcpy/examples/timeseries/plot_point_timeseries.py`, plus documentation in `docs/source/Point-Timeseries.rst`
 
 ### Changed
 - Changed `gcpy/examples/dry_run/download_data.py` to read its YAML configuration file with `yaml.safe_load`
@@ -26,6 +27,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated `make_benchmark_emis_plots` to exclude `AREA` in the all-species emissions PDF
 - Updated benchmark Summary and Sanity Check table functions to not append `AREA` to the global `SKIP_THESE_VARS` list; This prevents downstream errors.
 - Updated `gcpy/plot/compare_single_level.py` and `gcpy/plot/compare_zonal_mean.py` to ensure that `refmet` and `devmet` are not `None` before attempting to use them
+
+### Removed
+- Removed example script `gcpy/examples/timeseries/plot_timeseries.py`, which is superseded by `plot_point_timeseries.py`
 
 ## [1.8.1] - 2026-09-11
 ### Added
