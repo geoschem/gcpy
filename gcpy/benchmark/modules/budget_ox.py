@@ -665,7 +665,7 @@ def print_budget(
         print(f"      Net POx - LOx     {v:11.6f}\n", file=f)
         v = metrics["dyn"]
         print("  * Dynamics", file=f)
-        print(f"      Strat Flux(Ox)    {v:11.4f}\n", file=f)
+        print(f"      Strat Flux(Ox) from mass balance (Acc - (Chem - Dry - Wet))    {v:11.4f}\n", file=f)
         print("\n  Ox SINKS                Tg Ox a-1", file=f)
         print("  -----------------      ----------\n", file=f)
         v = drydep
@@ -685,7 +685,7 @@ def print_budget(
         print(f"      Chem+Dyn-Dry-Wet  {v:11.6f}  Tg Ox a-1", file=f)
         print("\n  * Ox Lifetime", file=f)
         v = metrics["life"]
-        print(f"     Mass/(LOx+Dyn+Wet) {v:11.6f}  days", file=f)
+        print(f"     Mass/(LOx+Dry+Wet) {v:11.6f}  days", file=f)
         print(file=f)
 
         f.close()
