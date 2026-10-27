@@ -4,6 +4,10 @@ All notable changes to GCPy will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased - [TBD]
+### Fixed
+- Fixed print statements for clarity in budget_ox.py
+
 ## [1.8.1] - 2026-09-11
 ### Added
 - Added constants `CONSTANT_REL_TOL`, `CONSTANT_TOL_ULPS`, `NOISE_REL_TOL`, `REGRID_NOISE_REL_TOL` to `gcpy/plot/core.py`
