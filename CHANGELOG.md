@@ -28,6 +28,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - Updated benchmark Summary and Sanity Check table functions to not append `AREA` to the global `SKIP_THESE_VARS` list; This prevents downstream errors.
 - Updated `gcpy/plot/compare_single_level.py` and `gcpy/plot/compare_zonal_mean.py` to ensure that `refmet` and `devmet` are not `None` before attempting to use them
 
+### Fixed
+- Fixed print statements for clarity in `gcpy/benchmark/modules/budget_ox.py`
+
 ### Removed
 - Removed example script `gcpy/examples/timeseries/plot_timeseries.py`, which is superseded by `plot_point_timeseries.py`
 
